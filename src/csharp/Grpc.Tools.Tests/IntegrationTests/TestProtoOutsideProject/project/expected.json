@@ -2,13 +2,13 @@
     "Files": {
         "../api/greet.proto": {
             "--csharp_out": [
-                "out"
+                "${TEMP}grpctoolstest/${TESTID}/generated"
             ],
             "--plugin": [
                 "protoc-gen-grpc=dummy-plugin-not-used"
             ],
             "--grpc_out": [
-                "out"
+                "${TEMP}grpctoolstest/${TESTID}/generated"
             ],
             "--grpc_opt": [
                 "no_server"
@@ -18,7 +18,7 @@
                 "../api"
             ],
             "--dependency_out": [
-                "IGNORE:obj/Debug/netstandard2.0/f935d8280597a47e_greet.protodep"
+                "REGEX:${TEMP}grpctoolstest/${TESTID}/obj/Debug/netstandard2.0/.*_greet.protodep"
             ],
             "--error_format": [
                 "msvs"

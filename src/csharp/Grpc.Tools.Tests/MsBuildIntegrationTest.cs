@@ -24,6 +24,7 @@ using System.Reflection;
 using System.Collections.Specialized;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace Grpc.Tools.Tests
@@ -44,6 +45,7 @@ namespace Grpc.Tools.Tests
     /// with expected results.
     /// </para>
     /// </remarks>
+    [TestFixture]
     public class MsBuildIntegrationTest
     {
         private const string TASKS_ASSEMBLY_PROPERTY = "_Protobuf_MsBuildAssembly";
@@ -52,7 +54,34 @@ namespace Grpc.Tools.Tests
         private const string PLUGIN_FULLPATH_PROPERTY = "gRPC_PluginFullPath";
         private const string TOOLS_BUILD_DIR_PROPERTY = "GrpcToolsBuildDir";
 
-        private static bool isMono = Type.GetType("Mono.Runtime") != null;
+        private const string MSBUILD_LOG_VERBOSITY = "diagnostic"; // "diagnostic" or "detailed"
+
+        // The tests create files in the TEMP directory.
+
+        // Whether or not to delete files created in the tests. When developing a test
+        // or diagnosing a problem it may be useful to disable deleting the files so
+        // that the output can be examined.
+        private readonly bool doCleanup = true;
+
+        // We try and delete old test output directories that may not have been deleted because
+        // the test terminated before the cleanup code ran. We only delete these directories
+        // if they are older than the age specified here. This prevents deleting directories
+        // still in use if tests are run an parallel.
+        private const int CLEANUP_DIR_AGE_MINUTES = 15;
+
+        // Is this a Mono runtime?
+        private static readonly bool isMono = Type.GetType("Mono.Runtime") != null;
+
+        private string testId;
+        private string fakeProtoc;
+        private string grpcToolsDir;
+        private string grpcToolsBuildDir;
+        private string tasksAssembly;
+        private string testDataDir;
+        private string testProjectDir;
+        private string testOutBaseDir;
+        private string testOutDir;
+        private string tempDir;
 
         private void SkipIfMonoOrNet45()
         {
@@ -74,54 +103,131 @@ namespace Grpc.Tools.Tests
 #endif
         }
 
+        [OneTimeSetUp]
+        public void InitOnce()
+        {
+            SetUpCommonPaths();
+            if (doCleanup)
+            {
+                // Delete old test directories than may have been left around
+                // by a previous run.
+                CleanupOldResults(testOutBaseDir);
+            }
+        }
+
+        [SetUp]
+        public void InitTest()
+        {
+            SkipIfMonoOrNet45();
+
+            testId = Guid.NewGuid().ToString();
+            Console.WriteLine($"TestID for test: {testId}");
+        }
+
+        [TearDown]
+        public void AfterTest()
+        {
+            if (doCleanup)
+            {
+                if (Directory.Exists(testOutDir))
+                {
+                    DeleteDirectoryWithRetry(testOutDir);
+                }
+            }
+        }
+
         [Test]
         public void TestSingleProto()
         {
-            SkipIfMonoOrNet45();
-            string testId = Guid.NewGuid().ToString();
+            SetUpSpecificPaths("TestSingleProto");
 
-            TryRunMsBuild("TestSingleProto",
-                "file.proto:File.cs;FileGrpc.cs",
-                testId
-                );
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs");
+
+            TryRunMsBuild("TestSingleProto", expectedFiles.ToString());
         }
 
         [Test]
         public void TestMultipleProtos()
         {
-            SkipIfMonoOrNet45();
-            string testId = Guid.NewGuid().ToString();
+            SetUpSpecificPaths("TestMultipleProtos");
 
-            TryRunMsBuild("TestMultipleProtos",
-                "file.proto:File.cs;FileGrpc.cs" +
-                "|protos/another.proto:Another.cs;AnotherGrpc.cs" +
-                "|second.proto:Second.cs;SecondGrpc.cs",
-                testId
-                );
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs")
+                .Add("protos/another.proto", "Another.cs", "AnotherGrpc.cs")
+                .Add("second.proto", "Second.cs", "SecondGrpc.cs");
+
+            TryRunMsBuild("TestMultipleProtos", expectedFiles.ToString());
         }
 
         [Test]
         public void TestAtInPath()
         {
-            SkipIfMonoOrNet45();
-            string testId = Guid.NewGuid().ToString();
+            SetUpSpecificPaths("TestAtInPath");
 
-            TryRunMsBuild("TestAtInPath",
-                "@protos/file.proto:File.cs;FileGrpc.cs",
-                testId
-                );
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("@protos/file.proto", "File.cs", "FileGrpc.cs");
+
+            TryRunMsBuild("TestAtInPath", expectedFiles.ToString());
         }
 
         [Test]
         public void TestProtoOutsideProject()
         {
-            SkipIfMonoOrNet45();
-            string testId = Guid.NewGuid().ToString();
+            SetUpSpecificPaths("TestProtoOutsideProject/project");
 
-            TryRunMsBuild("TestProtoOutsideProject/project",
-                "../api/greet.proto:Greet.cs;GreetGrpc.cs",
-                testId
-                );
+            // The "out" directory is outside the project folder in this test case
+            var outDir = Path.GetFullPath(testOutDir + "/");
+            Console.WriteLine($"out = {outDir}");
+            CleanupOldResults(outDir);
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("../api/greet.proto", "Greet.cs", "GreetGrpc.cs");
+
+            TryRunMsBuild("TestProtoOutsideProject/project", expectedFiles.ToString());
+        }
+
+        /// <summary>
+        /// Set up common paths for all the tests
+        /// </summary>
+        private void SetUpCommonPaths()
+        {
+            var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var parentDir = System.IO.Directory.GetParent(assemblyDir).FullName;
+
+            testDataDir = Path.GetFullPath(parentDir + "/../../IntegrationTests/");
+
+            // Path for fake proto.
+            // On Windows we have to wrap the python script in a BAT script since we can only
+            // pass one executable name without parameters to the MSBuild
+            // - e.g. we can't give "python fakeprotoc.py"
+            var fakeProtocScript = Platform.IsWindows ? "fakeprotoc.bat" : "fakeprotoc.py";
+            fakeProtoc = Path.GetFullPath($"{parentDir}/../../scripts/{fakeProtocScript}");
+
+            // Paths for Grpc.Tools files
+            grpcToolsDir = Path.GetFullPath($"{parentDir}/../../../Grpc.Tools");
+            grpcToolsBuildDir = Path.GetFullPath($"{grpcToolsDir}/build");
+            // Task assembly is needed to run the extension tasks
+            tasksAssembly = Path.GetFullPath($"{grpcToolsDir}/bin/Debug/netstandard1.3/{TASKS_ASSEMBLY_DLL}");
+
+            // output directory
+            tempDir = Path.GetFullPath(System.IO.Path.GetTempPath()).Replace('\\','/');
+            if (!tempDir.EndsWith("/"))
+            {
+                tempDir += "/";
+            }
+            testOutBaseDir = Path.GetFullPath(tempDir + "grpctoolstest/");
+        }
+
+        /// <summary>
+        /// Set up test specific paths
+        /// </summary>
+        /// <param name="testName">Name of the test</param>
+        private void SetUpSpecificPaths(string testName)
+        {
+            // Paths for test data
+            testProjectDir = Path.GetFullPath(testDataDir + testName);
+            testOutDir = Path.GetFullPath(testOutBaseDir + testId);
         }
 
         /// <summary>
@@ -130,67 +236,36 @@ namespace Grpc.Tools.Tests
         /// <param name="testName">Name of test and name of directory containing the test</param>
         /// <param name="filesToGenerate">Tell the fake protoc script which files to generate</param>
         /// <param name="testId">A unique ID for the test run - used to create results file</param>
-        private void TryRunMsBuild(string testName, string filesToGenerate, string testId)
+        private void TryRunMsBuild(string testName, string filesToGenerate)
         {
-            var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var parentDir = System.IO.Directory.GetParent(assemblyDir).FullName;
-
-            // Path for fake proto
-            var fakeProtocScript = Platform.IsWindows ? "fakeprotoc.bat" : "fakeprotoc.py";
-            var fakeProtoc = Path.GetFullPath($"{parentDir}/../../scripts/{fakeProtocScript}");
-
-            // Paths for Grpc.Tools files
-            var grpcToolsDir = Path.GetFullPath($"{parentDir}/../../../Grpc.Tools");
-            var grpcToolsBuildDir = Path.GetFullPath($"{grpcToolsDir}/build");
-            // Task assembly is needed to run the extension tasks
-            var tasksAssembly = Path.GetFullPath($"{grpcToolsDir}/bin/Debug/netstandard1.3/{TASKS_ASSEMBLY_DLL}");
-
-            // Paths for test data
-            var testdataDir = Path.GetFullPath(parentDir+ "/../../Integration.Tests/");
-            var testDir = Path.GetFullPath(testdataDir + testName);
-
-            Console.WriteLine($"testDir = {testDir}");
-
-            // Clean up test output dirs: bin obj log
-            if (Directory.Exists(testDir+"/bin"))
-            {
-                DeleteDirectoryWithRetry(testDir + "/bin");
-            }
-
-            if (Directory.Exists(testDir + "/obj"))
-            {
-                DeleteDirectoryWithRetry(testDir + "/obj");
-            }
-
-            if (Directory.Exists(testDir + "/log"))
-            {
-                DeleteDirectoryWithRetry(testDir + "/log");
-            }
-
-            _ = Directory.CreateDirectory(testDir + "/log");
+            Directory.CreateDirectory(testOutDir);
 
             // create the arguments for the "dotnet build"
             var args = $"build -p:{TASKS_ASSEMBLY_PROPERTY}={tasksAssembly}"
+                + $" -p:TestOutDir={testOutDir}"
+                + $" -p:BaseOutputPath={testOutDir}/bin/"
+                + $" -p:BaseIntermediateOutputPath={testOutDir}/obj/"
                 + $" -p:{TOOLS_BUILD_DIR_PROPERTY}={grpcToolsBuildDir}"
                 + $" -p:{PROTBUF_FULLPATH_PROPERTY}={fakeProtoc}"
                 + $" -p:{PLUGIN_FULLPATH_PROPERTY}=dummy-plugin-not-used"
-                + $" -fl -flp:LogFile=log/msbuild.log;verbosity=detailed"
+                + $" -fl -flp:LogFile={testOutDir}/log/msbuild.log;verbosity={MSBUILD_LOG_VERBOSITY}"
                 + $" msbuildtest.csproj";
 
             // To pass additional parameters to fake protoc process
             // we need to use environment variables
             var envVariables = new StringDictionary {
-                { "FAKEPROTOC_PROJECTDIR", testDir },
+                { "FAKEPROTOC_PROJECTDIR", testProjectDir },
+                { "FAKEPROTOC_OUTDIR", testOutDir },
                 { "FAKEPROTOC_GENERATE_EXPECTED", filesToGenerate },
                 { "FAKEPROTOC_TESTID", testId }
             };
 
             // Run the "dotnet build"
-            ProcessMsbuild(args, testDir, envVariables);
+            ProcessMsbuild(args, testProjectDir, envVariables);
 
             // Check the results JSON matches the expected JSON
-            Results actualResults = Results.Read(testDir + "/log/" + testId + ".json");
-            Results expectedResults = Results.Read(testDir + "/expected.json");
+            Results actualResults = Results.Read(testOutDir + "/log/results.json");
+            Results expectedResults = Results.Read(testProjectDir + "/expected.json");
             CompareResults(expectedResults, actualResults);
         }
 
@@ -254,27 +329,70 @@ namespace Grpc.Tools.Tests
             CollectionAssert.AreEqual(protofiles, actual.ProtoFiles, "Proto files do not match");
 
             // check protoc arguments
+            // TODO improve this checking as we are comparing two sets - should check actual results
+            // are a subset of expected results. At the moment there is only one value
+            // in each set, but in theory there can be more than one value for repeated arguments.
             foreach (string protofile in protofiles)
             {
                 SortedSet<string> expectedArgs = expected.GetArgumentNames(protofile);
                 SortedSet<string> actualArgs = actual.GetArgumentNames(protofile);
                 CollectionAssert.IsSupersetOf(actualArgs, expectedArgs, "Missing protoc arguments for " + protofile);
 
-                // check the values
-                // Any argument with value starting IGNORE: will not be compared but must exist
+                // Check the values.
+                // Any value with:
+                // - IGNORE: - will not be compared but must exist
+                // - REGEX: - compare using a regular expression
+                // - anything else is an exact match
+                // Expected results can also have tokens that are replace before comparing:
+                // - ${TESTID} - the testID
+                // - ${TEMP} - the path of te temporary directory
                 foreach (string argname in expectedArgs)
                 {
                     SortedSet<string> expectedValues = expected.GetArgumentValues(protofile, argname);
-                    SortedSet<string> actualValues = actual.GetArgumentValues(protofile, argname);
+                    SortedSet<string> actualValuesSet = actual.GetArgumentValues(protofile, argname);
+
+                    // Copy to array so we can index the array when printing out errors
+                    string[] actualValues = new string[actualValuesSet.Count];
+                    actualValuesSet.CopyTo(actualValues);
+
                     foreach (string value in expectedValues)
                     {
                         if (value.StartsWith("IGNORE:"))
                             continue;
-                        Assert.IsTrue(actualValues.Contains(value),
-                            $"Missing value for '{protofile}' with argument '{argname}' expected: '{value}'");
+
+                        string val = ReplaceTokens(value);
+                        if (val.StartsWith("REGEX:"))
+                        {
+                            string pattern = val.Substring(6);
+                            bool anyMatched = false;
+                            foreach (string s in actualValues)
+                            {
+                                if (Regex.IsMatch(s, pattern))
+                                {
+                                    anyMatched = true;
+                                    break;
+                                }
+                            }
+                            Assert.IsTrue(anyMatched,
+                                 $"Missing value for '{protofile}' with argument '{argname}' expected: '{val}'\n" +
+                                 $"  actual: '{actualValues[0]}'");
+                        }
+                        else
+                        {
+                            Assert.IsTrue(actualValuesSet.Contains(val),
+                                $"Missing value for '{protofile}' with argument '{argname}' expected: '{val}'\n" +
+                                $"  actual: '{actualValues[0]}'");
+                        }
                     }
                 }
             }
+        }
+
+        private string ReplaceTokens(string original)
+        {
+            return original
+                .Replace("${TESTID}", testId)
+                .Replace("${TEMP}", tempDir);
         }
 
         /// <summary>
@@ -300,6 +418,78 @@ namespace Grpc.Tools.Tests
             {
                 System.Threading.Thread.Sleep(200);
                 Directory.Delete(path, true);
+            }
+        }
+
+        /// <summary>
+        /// Get directories that match a UUID
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private  string[] SafeGetTestDirectories(string path)
+        {
+            try
+            {
+                // Matching directory names against a possible UUID format rather
+                // than getting all directories - this is to be safe so we don't
+                // accidently do a "rm *" if there is a coding error in the tests.
+                return Directory.GetDirectories(path, "*-*-*-*-*");
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"Unable to get test directories: {e}");
+                return new string[0];
+            }
+        }
+
+        /// <summary>
+        /// Delete old directories under the given directory.
+        /// The directory names must look like a UUID and must be older
+        /// that CLEANUP_DIR_AGE_MINUTES minutes.
+        /// </summary>
+        /// <param name="baseDir"></param>
+        private void CleanupOldResults(string baseDir)
+        {
+            if (Directory.Exists(baseDir))
+            {
+                DateTime newestTime = DateTime.Now.AddMinutes(-CLEANUP_DIR_AGE_MINUTES);
+
+                string[] dirs = SafeGetTestDirectories(baseDir);
+                foreach (string dir in dirs)
+                {
+                    try
+                    {
+                        DateTime creationTime = Directory.GetCreationTime(dir);
+                        if (creationTime < newestTime)
+                        {
+                            DeleteDirectoryWithRetry(dir);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Unable to delete test directory: {dir}: {e}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper class for formatting the string specifying the list of proto files and
+        /// the expected generated files for each proto file.
+        /// </summary>
+        public class ExpectedFilesBuilder
+        {
+            private readonly List<string> protoAndFiles = new List<string>();
+
+            public ExpectedFilesBuilder Add(string protoFile, params string[] files)
+            {
+                protoAndFiles.Add(protoFile + ":" + string.Join(";", files));
+                return this;
+            }
+
+            public override string ToString()
+            {
+                return string.Join("|", protoAndFiles.ToArray());
             }
         }
 

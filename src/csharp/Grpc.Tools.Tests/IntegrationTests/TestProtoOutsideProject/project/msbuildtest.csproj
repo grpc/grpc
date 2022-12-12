@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-     Note: common properties for tests are imported from the 
-     Directory.Build.props file in the parent directoty
+ <!--
+     Note: common properties and targetes for tests are imported from the 
+     Directory.Build.props and Directory.Build.targets files in the parent directoty
   -->
-
-  <!-- These would normally be imported from the Grpc.Tools NuGet package -->
-  <Import Project="$(GrpcToolsBuildDir)\_grpc\_Grpc.Tools.props"/>
-  <Import Project="$(GrpcToolsBuildDir)\_protobuf\Google.Protobuf.Tools.props"/>
 
   <!-- The protobuf compiler settings to test -->
 
@@ -15,11 +11,12 @@
   <PropertyGroup>
     <!-- full path to parent directory -->
     <ParentDir>$(MSBuildThisFileDirectory)..\</ParentDir>
-    <ProtoApiRepoBaseDir>$(ParentDir)\api</ProtoApiRepoBaseDir>
-    <AutoGenOutputBaseDir>$(MSBuildThisFileDirectory)out</AutoGenOutputBaseDir>
+    <ProtoApiRepoBaseDir>$(ParentDir)api\</ProtoApiRepoBaseDir>
+    <AutoGenOutputBaseDir>$(TestOutDir)\generated\</AutoGenOutputBaseDir>
   </PropertyGroup>
 
   <ItemGroup>
+
     <Protobuf Include = "$(ProtoApiRepoBaseDir)\**\*.proto"
               Link = "ProtoApi\%(RecursiveDir)%(Filename)%(Extension)"
               Access = "Public"
@@ -30,9 +27,5 @@
               GrpcOutputDir = "$(AutoGenOutputBaseDir)"
               GrpcServices = "client" />
   </ItemGroup>
-	
-  <!-- These would normally be imported from the Grpc.Tools NuGet package -->
-  <Import Project="$(GrpcToolsBuildDir)\_grpc\_Grpc.Tools.targets"/>
-  <Import Project="$(GrpcToolsBuildDir)\_protobuf\Google.Protobuf.Tools.targets"/>
   
 </Project>

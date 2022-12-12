@@ -1,0 +1,30 @@
+<!--
+  This overrides the Directory.Build.props in src/csharp/ 
+  since we want different settings for the integration tests
+-->
+<Project>
+
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>8.0</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- These would normally be imported from the Grpc.Tools NuGet package -->
+  <Import Project="$(GrpcToolsBuildDir)\_grpc\_Grpc.Tools.props"/>
+  <Import Project="$(GrpcToolsBuildDir)\_protobuf\Google.Protobuf.Tools.props"/>
+  
+  <!-- Common properties for tests. -->
+  <!-- The <Protobuf_...> properties would normally be set when the files are imported
+       via the NuGet package.
+  -->
+  <PropertyGroup>
+    <Protobuf_Generator>CSharp</Protobuf_Generator>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Protobuf_IntermediatePath>$(BaseIntermediateOutputPath)Debug/netstandard2.0</Protobuf_IntermediatePath>
+  </PropertyGroup>
+
+</Project>

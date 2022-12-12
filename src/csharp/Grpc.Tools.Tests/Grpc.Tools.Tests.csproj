@@ -8,9 +8,10 @@
   <Import Project="..\Grpc.Tools\SourceLink.csproj.include" />
 
   <ItemGroup>
-    <Compile Remove="Integration.Tests\**" />
-    <EmbeddedResource Remove="Integration.Tests\**" />
-    <None Remove="Integration.Tests\**" />
+    <!-- Prevent tests data files from being compiled into this project -->
+    <Compile Remove="IntegrationTests\**" />
+    <EmbeddedResource Remove="IntegrationTests\**" />
+    <None Remove="IntegrationTests\**" />
   </ItemGroup>
 
   <ItemGroup>

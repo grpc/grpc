@@ -26,7 +26,8 @@
 # to pass additional argument when called from the MSBuild scripts under test.
 #
 # Environment variables:
-# FAKEPROTOC_PROJECTDIR - output directory for generated files and output file
+# FAKEPROTOC_PROJECTDIR - project directory
+# FAKEPROTOC_OUTDIR - output directory for generated files and output file
 # FAKEPROTOC_GENERATE_EXPECTED - list of expected generated files in format:
 #         file1.proto:csfile1.cs;csfile2.cs|file2.proto:csfile3.cs;csfile4.cs|...
 # FAKEPROTOC_TESTID - unique id for the test used as name for JSON results file
@@ -41,12 +42,16 @@ import sys
 dbg = True
 dbgfile = None
 
-# Env variable: output directory for generated files and output file
+# Env variable: project directory
 FAKEPROTOC_PROJECTDIR = None
+# Env variable: output directory for generated files and output file
+FAKEPROTOC_OUTDIR = None
 # Env variable: list of expected generated files
 FAKEPROTOC_GENERATE_EXPECTED = None
 # Env variable: unique id for the test used as name for JSON results file
 FAKEPROTOC_TESTID = None
+
+log_dir = None
 
 protoc_args = []
 protoc_args_dict = {}
@@ -165,7 +170,12 @@ def add_protoc_arg_to_dict(name, value):
 
 def relative_to_project(file):
     """ Convert a file path to one relative to the project directory """
-    return normalise_slashes(os.path.relpath(os.path.abspath(file), FAKEPROTOC_PROJECTDIR))
+    try:
+        return normalise_slashes(os.path.relpath(os.path.abspath(file), FAKEPROTOC_PROJECTDIR))
+    except ValueError:
+        # On Windows if the paths are on different drives then we get this error
+        # Just return the absolute path
+        return normalise_slashes(os.path.abspath(file))
 
 def normalise_slashes(path):
     """ Change all backslashes to forward slashes """
@@ -173,14 +183,12 @@ def normalise_slashes(path):
 
 def write_results_json(pf):
     """ Write out the results JSON file """
-    global protoc_args_dict
     global results_json
-    global FAKEPROTOC_PROJECTDIR
 
     # Read existing json.
     # Since protoc may be called more than once each build/test if there is
     # more than one protoc file, we read the existing data to add to it.
-    fname = os.path.abspath(FAKEPROTOC_PROJECTDIR+"/log/"+FAKEPROTOC_TESTID+".json")
+    fname = os.path.abspath(log_dir+"/results.json")
     if os.path.isfile(fname):
         results_json = json.load(open(fname,"r"))
         protoc_files_dict = results_json.get("Files")
@@ -226,7 +234,6 @@ def generate_cs_files(protoname):
     Create expected cs files.
     """
     write_debug("\ngenerate_cs_files")
-    global proto_to_generated
 
     to_match = normalise_slashes(protoname)
     to_generate = proto_to_generated.get(to_match)
@@ -249,8 +256,6 @@ def generate_cs_files(protoname):
 def create_dependency_file(protoname):
     """ Create the expected dependecy file """
     write_debug("\ncreate_dependency_file")
-    global proto_to_generated
-    global FAKEPROTOC_PROJECTDIR
 
     if dependencyfile is None:
         write_debug("dependencyfile is None")
@@ -266,11 +271,20 @@ def create_dependency_file(protoname):
         with open(dependencyfile, "w") as out:
             nfiles = len(to_generate)
             for i in range(0, nfiles):
-                file = os.path.join(FAKEPROTOC_PROJECTDIR, grpcout, to_generate[i])
+                file = os.path.join(grpcout, to_generate[i])
                 if i == nfiles-1:
                     print(file+": "+protoname, file=out)
                 else:
                     print(file+" \\", file=out)
+
+def getenv(name):
+    # Note there is a bug in .NET core 3.x that lowercases the environment
+    # variable names when they are added via Process.StartInfo, so we need to
+    # check both cases here (only an issue on Linux which is case sensitive)
+    value = os.getenv(name)
+    if value is None:
+        value = os.getenv(name.lower())
+    return value
 
 def main():
     global FAKEPROTOC_PROJECTDIR
@@ -278,34 +292,37 @@ def main():
     global FAKEPROTOC_TESTID
     global dbg
     global protofile
+    global log_dir
 
     # Check environment variables for the additional arguments used in the tests.
-    # Note there is a bug in .NET core 3.x that lowercases the environment
-    # variable names when they are added via Process.StartInfo, so we need to
-    # check both cases here (only an issue on Linux which is case sensitive)
-    FAKEPROTOC_PROJECTDIR = os.getenv('FAKEPROTOC_PROJECTDIR')
-    if FAKEPROTOC_PROJECTDIR is None:
-        FAKEPROTOC_PROJECTDIR = os.getenv('fakeprotoc_projectdir')
+
+    FAKEPROTOC_PROJECTDIR = getenv('FAKEPROTOC_PROJECTDIR')
     if FAKEPROTOC_PROJECTDIR is None:
         print("FAKEPROTOC_PROJECTDIR not set")
         sys.exit(1)
     FAKEPROTOC_PROJECTDIR = os.path.abspath(FAKEPROTOC_PROJECTDIR)
 
-    FAKEPROTOC_GENERATE_EXPECTED = os.getenv('FAKEPROTOC_GENERATE_EXPECTED')
-    if FAKEPROTOC_GENERATE_EXPECTED is None:
-        FAKEPROTOC_GENERATE_EXPECTED = os.getenv('fakeprotoc_generate_expected')
+    FAKEPROTOC_OUTDIR = getenv('FAKEPROTOC_OUTDIR')
+    if FAKEPROTOC_OUTDIR is None:
+        print("FAKEPROTOC_OUTDIR not set")
+        sys.exit(1)
+    FAKEPROTOC_OUTDIR = os.path.abspath(FAKEPROTOC_OUTDIR)
+
+    FAKEPROTOC_GENERATE_EXPECTED = getenv('FAKEPROTOC_GENERATE_EXPECTED')
     if FAKEPROTOC_GENERATE_EXPECTED is None:
         print("FAKEPROTOC_GENERATE_EXPECTED not set")
         sys.exit(1)
 
-    FAKEPROTOC_TESTID = os.getenv('FAKEPROTOC_TESTID')
-    if FAKEPROTOC_TESTID is None:
-        FAKEPROTOC_TESTID = os.getenv('fakeprotoc_testid')
+    FAKEPROTOC_TESTID = getenv('FAKEPROTOC_TESTID')
     if FAKEPROTOC_TESTID is None:
         print("FAKEPROTOC_TESTID not set")
         sys.exit(1)
 
-    create_debug(FAKEPROTOC_PROJECTDIR+"/log/fakeprotoc-dbg.txt")
+    log_dir = os.path.join(FAKEPROTOC_OUTDIR, "log")
+    if not os.path.isdir(log_dir):
+        os.makedirs(log_dir)
+
+    create_debug(log_dir+"/fakeprotoc-dbg.txt")
 
     timestamp = str(datetime.datetime.now())
     if dbg:
