@@ -178,7 +178,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
 
 TEST(
     CredentialsTest,
-    TlsChannelCredentialsWithStaticDataCertificateProviderAndMinMaxTlsVersions) {
+    TlsChannelCredentialsWithStaticDataCertificateProviderAndGoodMinMaxTlsVersions) {
   experimental::IdentityKeyCertPair key_cert_pair;
   key_cert_pair.private_key = kIdentityCertPrivateKey;
   key_cert_pair.certificate_chain = kIdentityCertContents;
@@ -191,6 +191,23 @@ TEST(
   options.set_max_tls_version(grpc_tls_version::TLS1_3);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
+TEST(
+    CredentialsTest,
+    TlsChannelCredentialsWithStaticDataCertificateProviderAndBadMinMaxTlsVersions) {
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = kIdentityCertPrivateKey;
+  key_cert_pair.certificate_chain = kIdentityCertContents;
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+      kRootCertContents, identity_key_cert_pairs);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.set_min_tls_version(grpc_tls_version::TLS1_3);
+  options.set_max_tls_version(grpc_tls_version::TLS1_2);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() == nullptr);
 }
 
 }  // namespace

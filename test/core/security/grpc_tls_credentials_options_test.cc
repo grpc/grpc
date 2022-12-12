@@ -65,6 +65,19 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
+TEST_F(GrpcTlsCredentialsOptionsTest, BadTlsVersions) {
+  auto options = grpc_tls_credentials_options_create();
+  options->set_max_tls_version(grpc_tls_version::TLS1_2);
+  options->set_min_tls_version(grpc_tls_version::TLS1_3);
+  auto credentials = grpc_tls_credentials_create(options);
+  EXPECT_EQ(credentials, nullptr);
+  // The same options can be reused since the ownership is retained with the
+  // credentials failing to be created.
+  auto server_credentials = grpc_tls_server_credentials_create(options);
+  EXPECT_EQ(server_credentials, nullptr);
+  delete options;
+}
+
 //
 // Tests for Default Root Certs.
 //

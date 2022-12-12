@@ -46,6 +46,12 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
+  // In this case, there will be non-retriable handshake errors.
+  if (options->min_tls_version() == grpc_tls_version::TLS1_3 &&
+      options->max_tls_version() == grpc_tls_version::TLS1_2) {
+    gpr_log(GPR_ERROR, "TLS min version must not be higher than max version.");
+    return false;
+  }
   // In the following conditions, there won't be any issues, but it might
   // indicate callers are doing something wrong with the API.
   if (is_client && options->cert_request_type() !=
