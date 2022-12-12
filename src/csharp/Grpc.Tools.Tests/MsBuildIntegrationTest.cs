@@ -69,9 +69,6 @@ namespace Grpc.Tools.Tests
         // still in use if tests are run an parallel.
         private const int CLEANUP_DIR_AGE_MINUTES = 15;
 
-        // Is this a Mono runtime?
-        private static readonly bool isMono = Type.GetType("Mono.Runtime") != null;
-
         private string testId;
         private string fakeProtoc;
         private string grpcToolsDir;
@@ -82,26 +79,6 @@ namespace Grpc.Tools.Tests
         private string testOutBaseDir;
         private string testOutDir;
         private string tempDir;
-
-        private void SkipIfMonoOrNet45()
-        {
-            // We only want to run these tests once. This test class is just a driver
-            // for calling the "dotnet build" processes, so it doesn't matter what
-            // the runtime of this class actually is.
-            //
-            // If we were to allow the tests to be run on both .NET Framework (or Mono) and
-            // .NET Core then we could get into a situation where both are running in
-            // parallel which would cause the tests to fail as both would be writing to
-            // the same files.
-
-            if (isMono)
-            {
-                Assert.Ignore("Skipping test when mono runtime");
-            }
-#if NET45
-            Assert.Ignore("Skipping test when NET45");
-#endif
-        }
 
         [OneTimeSetUp]
         public void InitOnce()
@@ -118,8 +95,13 @@ namespace Grpc.Tools.Tests
         [SetUp]
         public void InitTest()
         {
-            SkipIfMonoOrNet45();
-
+#if NET45
+            // We need to run these tests for one framework.
+            // This test class is just a driver for calling the
+            // "dotnet build" processes, so it doesn't matter what
+            // the runtime of this class actually is.
+            Assert.Ignore("Skipping test when NET45");
+#endif
             testId = Guid.NewGuid().ToString();
             Console.WriteLine($"TestID for test: {testId}");
         }
