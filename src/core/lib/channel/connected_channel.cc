@@ -888,6 +888,13 @@ class ServerStream final : public ConnectedChannelStream {
 
   Poll<ServerMetadataHandle> Poll() {
     absl::MutexLock lock(mu());
+
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO, "%sPollConnectedChannel: %s",
+              Activity::current()->DebugTag().c_str(),
+              ActiveOpsString().c_str());
+    }
+
     if (auto* p =
             absl::get_if<GotInitialMetadata>(&client_initial_metadata_state_)) {
       auto* server_to_client = GetContext<Arena>()->New<Pipe<MessageHandle>>();
@@ -955,6 +962,27 @@ class ServerStream final : public ConnectedChannelStream {
     PipeReceiver<MessageHandle>* outgoing_messages;
     ArenaPromise<ServerMetadataHandle> promise;
   };
+
+  std::string ActiveOpsString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+    std::vector<std::string> ops;
+    Match(
+        client_initial_metadata_state_,
+        [&](const Uninitialized&) { ops.push_back("UNINITIALIZED"); },
+        [&](const GettingInitialMetadata&) { ops.push_back("GETTING"); },
+        [&](const GotInitialMetadata&) { ops.push_back("GOT"); },
+        [&](const Running&) { ops.push_back("RUNNING"); });
+    // Send message
+    std::string send_message_state = SendMessageString();
+    if (send_message_state != "WAITING") {
+      ops.push_back(absl::StrCat("send_message:", send_message_state));
+    }
+    // Receive message
+    std::string recv_message_state = RecvMessageString();
+    if (recv_message_state != "IDLE") {
+      ops.push_back(absl::StrCat("recv_message:", recv_message_state));
+    }
+    return absl::StrJoin(ops, " ");
+  }
 
   using ClientInitialMetadataState =
       absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,

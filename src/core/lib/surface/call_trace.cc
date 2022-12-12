@@ -69,7 +69,7 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                             Activity::current()->DebugTag().c_str(),
                             source_filter->name, (*p)->DebugString().c_str());
                   } else {
-                    gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: <<pending>",
+                    gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: <<pending>>",
                             Activity::current()->DebugTag().c_str(),
                             source_filter->name);
                   }
