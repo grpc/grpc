@@ -420,7 +420,6 @@ CORE_SOURCE_FILES = [
     'src/core/ext/xds/xds_cluster_specifier_plugin.cc',
     'src/core/ext/xds/xds_common_types.cc',
     'src/core/ext/xds/xds_endpoint.cc',
-    'src/core/ext/xds/xds_health_status.cc',
     'src/core/ext/xds/xds_http_fault_filter.cc',
     'src/core/ext/xds/xds_http_filters.cc',
     'src/core/ext/xds/xds_http_rbac_filter.cc',
