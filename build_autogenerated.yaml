@@ -293,7 +293,7 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
-  - include/grpc/impl/grpc_types.h
+  - include/grpc/impl/connectivity_state.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -889,6 +889,7 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -897,6 +898,7 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
+  - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -1885,7 +1887,7 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
-  - include/grpc/impl/grpc_types.h
+  - include/grpc/impl/connectivity_state.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -2171,6 +2173,7 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -2179,6 +2182,7 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
+  - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -3420,7 +3424,7 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
-  - include/grpc/impl/grpc_types.h
+  - include/grpc/impl/connectivity_state.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -5131,6 +5135,20 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: cancel_callback_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/cancel_callback_test.cc
+  deps:
+  - absl/meta:type_traits
+  - absl/types:variant
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -5645,6 +5663,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6918,6 +6937,7 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -7012,6 +7032,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -8952,6 +8973,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -9609,6 +9631,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -11954,6 +11977,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/try_concurrently_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
