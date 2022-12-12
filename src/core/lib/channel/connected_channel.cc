@@ -295,7 +295,74 @@ class ConnectedChannelStream : public Orphanable {
     push_batches_.push_back(batch);
   }
 
+  void PollSendMessage(PipeReceiver<MessageHandle>* outgoing_messages,
+                       ClientMetadataHandle* client_trailing_metadata)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    if (absl::holds_alternative<Closed>(send_message_state_)) {
+      message_to_send_.reset();
+    }
+    if (absl::holds_alternative<Idle>(send_message_state_)) {
+      message_to_send_.reset();
+      send_message_state_ = outgoing_messages->Next();
+    }
+    if (auto* next = absl::get_if<PipeReceiver<MessageHandle>::NextType>(
+            &send_message_state_)) {
+      auto r = (*next)();
+      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
+        memset(&send_message_, 0, sizeof(send_message_));
+        send_message_.payload = batch_payload();
+        send_message_.on_complete = &send_message_batch_done_;
+        // No value => half close from above.
+        if (p->has_value()) {
+          message_to_send_ = std::move(**p);
+          send_message_state_ = SendMessageToTransport{};
+          send_message_.send_message = true;
+          batch_payload()->send_message.send_message =
+              message_to_send_->payload();
+          batch_payload()->send_message.flags = message_to_send_->flags();
+        } else {
+          if (grpc_call_trace.enabled()) {
+            gpr_log(GPR_INFO, "%sPollConnectedChannel: half close",
+                    Activity::current()->DebugTag().c_str());
+          }
+          GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
+          send_message_state_ = Closed{};
+          send_message_.send_trailing_metadata = true;
+          if (client_trailing_metadata != nullptr) {
+            *client_trailing_metadata =
+                GetContext<Arena>()->MakePooled<ClientMetadata>(
+                    GetContext<Arena>());
+            batch_payload()->send_trailing_metadata.send_trailing_metadata =
+                client_trailing_metadata->get();
+            batch_payload()->send_trailing_metadata.sent = nullptr;
+          } else {
+            return;  // Skip rest of function for server
+          }
+        }
+        IncrementRefCount("send_message");
+        send_message_waker_ = Activity::current()->MakeOwningWaker();
+        SchedulePush(&send_message_);
+      }
+    }
+  }
+
+  std::string SendMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+    return Match(
+        send_message_state_, [](Idle) -> std::string { return "IDLE"; },
+        [](Closed) -> std::string { return "CLOSED"; },
+        [](const PipeReceiver<MessageHandle>::NextType&) -> std::string {
+          return "WAITING";
+        },
+        [](SendMessageToTransport) -> std::string { return "SENDING"; });
+  }
+
+  // TODO(ctiller): move to private
+  struct Idle {};
+  struct Closed {};
+
  private:
+  struct SendMessageToTransport {};
+
   class StreamDeleter {
    public:
     explicit StreamDeleter(ConnectedChannelStream* impl) : impl_(impl) {}
@@ -344,6 +411,24 @@ class ConnectedChannelStream : public Orphanable {
     Unref("push");
   }
 
+  void SendMessageBatchDone(grpc_error_handle error) {
+    {
+      MutexLock lock(&mu_);
+      if (error != absl::OkStatus()) {
+        // Note that we're in error here, the call will be closed by the
+        // transport in a moment, and we'll return from the promise with an
+        // error - so we don't need to do any extra work to close out pipes or
+        // the like.
+        send_message_state_ = Closed{};
+      }
+      if (!absl::holds_alternative<Closed>(send_message_state_)) {
+        send_message_state_ = Idle{};
+      }
+      send_message_waker_.Wakeup();
+    }
+    Unref("send_message");
+  }
+
   mutable Mutex mu_;
   grpc_transport* const transport_;
   CallContext* const call_context_{GetContext<CallContext>()};
@@ -358,6 +443,19 @@ class ConnectedChannelStream : public Orphanable {
   grpc_closure push_ =
       MakeMemberClosure<ConnectedChannelStream, &ConnectedChannelStream::Push>(
           this, DEBUG_LOCATION);
+
+  MessageHandle message_to_send_ ABSL_GUARDED_BY(mu_);
+  absl::variant<Idle, Closed, PipeReceiver<MessageHandle>::NextType,
+                SendMessageToTransport>
+      send_message_state_ ABSL_GUARDED_BY(mu_);
+  grpc_transport_stream_op_batch send_message_;
+  grpc_closure send_message_batch_done_ =
+      MakeMemberClosure<ConnectedChannelStream,
+                        &ConnectedChannelStream::SendMessageBatchDone>(
+          this, DEBUG_LOCATION);
+
+  Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
+
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
 };
@@ -479,48 +577,7 @@ class ClientStream : public ConnectedChannelStream {
       trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
       SchedulePush(&metadata_);
     }
-    if (absl::holds_alternative<Closed>(send_message_state_)) {
-      message_to_send_.reset();
-    }
-    if (absl::holds_alternative<Idle>(send_message_state_)) {
-      message_to_send_.reset();
-      send_message_state_ = client_to_server_messages_->Next();
-    }
-    if (auto* next = absl::get_if<PipeReceiver<MessageHandle>::NextType>(
-            &send_message_state_)) {
-      auto r = (*next)();
-      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
-        memset(&send_message_, 0, sizeof(send_message_));
-        send_message_.payload = batch_payload();
-        send_message_.on_complete = &send_message_batch_done_;
-        // No value => half close from above.
-        if (p->has_value()) {
-          message_to_send_ = std::move(**p);
-          send_message_state_ = SendMessageToTransport{};
-          send_message_.send_message = true;
-          batch_payload()->send_message.send_message =
-              message_to_send_->payload();
-          batch_payload()->send_message.flags = message_to_send_->flags();
-        } else {
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%sPollConnectedChannel: half close",
-                    Activity::current()->DebugTag().c_str());
-          }
-          GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
-          client_trailing_metadata_ =
-              GetContext<Arena>()->MakePooled<ClientMetadata>(
-                  GetContext<Arena>());
-          send_message_state_ = Closed{};
-          send_message_.send_trailing_metadata = true;
-          batch_payload()->send_trailing_metadata.send_trailing_metadata =
-              client_trailing_metadata_.get();
-          batch_payload()->send_trailing_metadata.sent = nullptr;
-        }
-        IncrementRefCount("send_message");
-        send_message_waker_ = Activity::current()->MakeOwningWaker();
-        SchedulePush(&send_message_);
-      }
-    }
+    PollSendMessage(client_to_server_messages_, &client_trailing_metadata_);
     if (auto* pending =
             absl::get_if<PendingReceiveMessage>(&recv_message_state_)) {
       if (pending->received) {
@@ -634,24 +691,6 @@ class ClientStream : public ConnectedChannelStream {
     Unref("metadata_batch_done");
   }
 
-  void SendMessageBatchDone(grpc_error_handle error) {
-    {
-      MutexLock lock(mu());
-      if (error != absl::OkStatus()) {
-        // Note that we're in error here, the call will be closed by the
-        // transport in a moment, and we'll return from the promise with an
-        // error - so we don't need to do any extra work to close out pipes or
-        // the like.
-        send_message_state_ = Closed{};
-      }
-      if (!absl::holds_alternative<Closed>(send_message_state_)) {
-        send_message_state_ = Idle{};
-      }
-      send_message_waker_.Wakeup();
-    }
-    Unref("send_message");
-  }
-
   void RecvMessageBatchDone(grpc_error_handle error) {
     {
       MutexLock lock(mu());
@@ -683,10 +722,6 @@ class ClientStream : public ConnectedChannelStream {
   }
 
  private:
-  struct Idle {};
-  struct Closed {};
-  struct SendMessageToTransport {};
-
   enum class ServerInitialMetadataState : uint8_t {
     // Initial metadata has not been received from the server.
     kNotReceived,
@@ -724,16 +759,6 @@ class ClientStream : public ConnectedChannelStream {
     return absl::StrJoin(ops, " ");
   }
 
-  std::string SendMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    return Match(
-        send_message_state_, [](Idle) -> std::string { return "IDLE"; },
-        [](Closed) -> std::string { return "CLOSED"; },
-        [](const PipeReceiver<MessageHandle>::NextType&) -> std::string {
-          return "WAITING";
-        },
-        [](SendMessageToTransport) -> std::string { return "SENDING"; });
-  }
-
   std::string RecvMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     return Match(
         recv_message_state_, [](Idle) -> std::string { return "IDLE"; },
@@ -757,15 +782,10 @@ class ClientStream : public ConnectedChannelStream {
   bool finished_ ABSL_GUARDED_BY(mu()) = false;
   Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu());
   Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu());
-  Waker send_message_waker_ ABSL_GUARDED_BY(mu());
   Waker recv_message_waker_ ABSL_GUARDED_BY(mu());
   Latch<ServerMetadata*>* server_initial_metadata_latch_;
   PipeReceiver<MessageHandle>* client_to_server_messages_;
   PipeSender<MessageHandle>* server_to_client_messages_;
-  MessageHandle message_to_send_ ABSL_GUARDED_BY(mu());
-  absl::variant<Idle, Closed, PipeReceiver<MessageHandle>::NextType,
-                SendMessageToTransport>
-      send_message_state_ ABSL_GUARDED_BY(mu());
   struct PendingReceiveMessage {
     absl::optional<SliceBuffer> payload;
     uint32_t flags;
@@ -787,10 +807,6 @@ class ClientStream : public ConnectedChannelStream {
   grpc_transport_stream_op_batch metadata_;
   grpc_closure metadata_batch_done_ =
       MakeMemberClosure<ClientStream, &ClientStream::MetadataBatchDone>(
-          this, DEBUG_LOCATION);
-  grpc_transport_stream_op_batch send_message_;
-  grpc_closure send_message_batch_done_ =
-      MakeMemberClosure<ClientStream, &ClientStream::SendMessageBatchDone>(
           this, DEBUG_LOCATION);
   grpc_closure recv_message_batch_done_ =
       MakeMemberClosure<ClientStream, &ClientStream::RecvMessageBatchDone>(
@@ -876,6 +892,7 @@ class ServerStream final : public ConnectedChannelStream {
                   &server_to_client->receiver, std::move(promise)});
     }
     if (auto* p = absl::get_if<Running>(&client_initial_metadata_state_)) {
+      PollSendMessage(p->outgoing_messages, nullptr);
       auto poll = p->promise();
       if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
         client_initial_metadata_state_.emplace<Uninitialized>();
