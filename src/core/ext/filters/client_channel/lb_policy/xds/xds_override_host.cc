@@ -95,6 +95,7 @@ class SubchannelEntry : public RefCounted<SubchannelEntry> {
  private:
   absl::Mutex mu_;
   SubchannelInterface* subchannel_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_connectivity_state state_ ABSL_GUARDED_BY(mu_) = GRPC_CHANNEL_IDLE;
 };
 
 class SubchannelByAddressMap {
