@@ -282,6 +282,9 @@ class ConnectedChannelStream : public Orphanable {
   void SetStream(grpc_stream* stream) { stream_.reset(stream); }
   grpc_stream_refcount* stream_refcount() { return &stream_refcount_; }
   Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
+  grpc_transport_stream_op_batch_payload* batch_payload() {
+    return &batch_payload_;
+  }
 
   void SchedulePush(grpc_transport_stream_op_batch* batch)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -355,6 +358,8 @@ class ConnectedChannelStream : public Orphanable {
   grpc_closure push_ =
       MakeMemberClosure<ConnectedChannelStream, &ConnectedChannelStream::Push>(
           this, DEBUG_LOCATION);
+  grpc_transport_stream_op_batch_payload batch_payload_{
+      GetContext<grpc_call_context_element>()};
 };
 
 class ClientStream : public ConnectedChannelStream {
@@ -390,11 +395,11 @@ class ClientStream : public ConnectedChannelStream {
       auto* cancel_op =
           GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
       cancel_op->cancel_stream = true;
-      cancel_op->payload = &batch_payload_;
+      cancel_op->payload = batch_payload();
       auto* s = stream();
       cancel_op->on_complete = NewClosure(
           [this](grpc_error_handle) { Unref("shutdown client stream"); });
-      batch_payload_.cancel_stream.cancel_error = absl::CancelledError();
+      batch_payload()->cancel_stream.cancel_error = absl::CancelledError();
       grpc_transport_perform_stream_op(transport(), s, cancel_op);
     }
     Unref("orphan client stream");
@@ -415,13 +420,14 @@ class ClientStream : public ConnectedChannelStream {
       auto& pending_recv_message =
           absl::get<PendingReceiveMessage>(recv_message_state_);
       memset(&recv_message_, 0, sizeof(recv_message_));
-      recv_message_.payload = &batch_payload_;
+      recv_message_.payload = batch_payload();
       recv_message_.on_complete = nullptr;
       recv_message_.recv_message = true;
-      batch_payload_.recv_message.recv_message = &pending_recv_message.payload;
-      batch_payload_.recv_message.flags = &pending_recv_message.flags;
-      batch_payload_.recv_message.call_failed_before_recv_message = nullptr;
-      batch_payload_.recv_message.recv_message_ready =
+      batch_payload()->recv_message.recv_message =
+          &pending_recv_message.payload;
+      batch_payload()->recv_message.flags = &pending_recv_message.flags;
+      batch_payload()->recv_message.call_failed_before_recv_message = nullptr;
+      batch_payload()->recv_message.recv_message_ready =
           &recv_message_batch_done_;
       IncrementRefCount("recv_message");
       recv_message_waker_ = Activity::current()->MakeOwningWaker();
@@ -443,28 +449,28 @@ class ClientStream : public ConnectedChannelStream {
       metadata_.send_initial_metadata = true;
       metadata_.recv_initial_metadata = true;
       metadata_.recv_trailing_metadata = true;
-      metadata_.payload = &batch_payload_;
+      metadata_.payload = batch_payload();
       metadata_.on_complete = &metadata_batch_done_;
-      batch_payload_.send_initial_metadata.send_initial_metadata =
+      batch_payload()->send_initial_metadata.send_initial_metadata =
           client_initial_metadata_.get();
-      batch_payload_.send_initial_metadata.peer_string =
+      batch_payload()->send_initial_metadata.peer_string =
           GetContext<CallContext>()->peer_string_atm_ptr();
       server_initial_metadata_ =
           GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-      batch_payload_.recv_initial_metadata.recv_initial_metadata =
+      batch_payload()->recv_initial_metadata.recv_initial_metadata =
           server_initial_metadata_.get();
-      batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
+      batch_payload()->recv_initial_metadata.recv_initial_metadata_ready =
           &recv_initial_metadata_ready_;
-      batch_payload_.recv_initial_metadata.trailing_metadata_available =
+      batch_payload()->recv_initial_metadata.trailing_metadata_available =
           nullptr;
-      batch_payload_.recv_initial_metadata.peer_string = nullptr;
+      batch_payload()->recv_initial_metadata.peer_string = nullptr;
       server_trailing_metadata_ =
           GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-      batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
+      batch_payload()->recv_trailing_metadata.recv_trailing_metadata =
           server_trailing_metadata_.get();
-      batch_payload_.recv_trailing_metadata.collect_stats =
+      batch_payload()->recv_trailing_metadata.collect_stats =
           &GetContext<CallContext>()->call_stats()->transport_stream_stats;
-      batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
+      batch_payload()->recv_trailing_metadata.recv_trailing_metadata_ready =
           &recv_trailing_metadata_ready_;
       IncrementRefCount("metadata_batch_done");
       IncrementRefCount("initial_metadata_ready");
@@ -485,16 +491,16 @@ class ClientStream : public ConnectedChannelStream {
       auto r = (*next)();
       if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
         memset(&send_message_, 0, sizeof(send_message_));
-        send_message_.payload = &batch_payload_;
+        send_message_.payload = batch_payload();
         send_message_.on_complete = &send_message_batch_done_;
         // No value => half close from above.
         if (p->has_value()) {
           message_to_send_ = std::move(**p);
           send_message_state_ = SendMessageToTransport{};
           send_message_.send_message = true;
-          batch_payload_.send_message.send_message =
+          batch_payload()->send_message.send_message =
               message_to_send_->payload();
-          batch_payload_.send_message.flags = message_to_send_->flags();
+          batch_payload()->send_message.flags = message_to_send_->flags();
         } else {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO, "%sPollConnectedChannel: half close",
@@ -506,9 +512,9 @@ class ClientStream : public ConnectedChannelStream {
                   GetContext<Arena>());
           send_message_state_ = Closed{};
           send_message_.send_trailing_metadata = true;
-          batch_payload_.send_trailing_metadata.send_trailing_metadata =
+          batch_payload()->send_trailing_metadata.send_trailing_metadata =
               client_trailing_metadata_.get();
-          batch_payload_.send_trailing_metadata.sent = nullptr;
+          batch_payload()->send_trailing_metadata.sent = nullptr;
         }
         IncrementRefCount("send_message");
         send_message_waker_ = Activity::current()->MakeOwningWaker();
@@ -790,8 +796,6 @@ class ClientStream : public ConnectedChannelStream {
       MakeMemberClosure<ClientStream, &ClientStream::RecvMessageBatchDone>(
           this, DEBUG_LOCATION);
   grpc_transport_stream_op_batch recv_message_;
-  grpc_transport_stream_op_batch_payload batch_payload_{
-      GetContext<grpc_call_context_element>()};
 };
 
 class ClientConnectedCallPromise {
