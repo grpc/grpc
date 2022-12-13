@@ -23,7 +23,7 @@
 
 #include <stdbool.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/sync.h>
 
 /** How is an fd to be used? */

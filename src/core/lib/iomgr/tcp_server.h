@@ -25,7 +25,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"

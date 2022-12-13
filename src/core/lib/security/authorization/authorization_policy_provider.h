@@ -20,7 +20,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"

@@ -23,7 +23,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/support/channel_arguments.h>
 
