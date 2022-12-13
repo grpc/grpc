@@ -309,9 +309,8 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   }
   connection_state->timer_handle =
       RunAfter(timeout, [this, connection_state]() {
+        grpc_core::MutexLock lock(&connection_state->mu);
         if (CancelConnect(connection_state->connection_handle)) {
-          // delete the other ref to the connection state
-          delete connection_state->on_connected;
           connection_state->on_connected_user_callback(
               absl::DeadlineExceededError("Connection timed out"));
         }
@@ -329,23 +328,26 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
                             "Attempted to cancel an invalid connection handle");
     return false;
   }
-  grpc_core::MutexLock lock(&connection_mu_);
-  if (!known_connection_handles_.contains(handle)) {
-    GRPC_EVENT_ENGINE_TRACE(
-        "Unknown connection handle: %s",
-        HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
-    return false;
+  {
+    grpc_core::MutexLock lock(&connection_mu_);
+    if (!known_connection_handles_.contains(handle)) {
+      GRPC_EVENT_ENGINE_TRACE(
+          "Unknown connection handle: %s",
+          HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
+      return false;
+    }
+    known_connection_handles_.erase(handle);
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
   grpc_core::MutexLock state_lock(&connection_state->mu);
   if (!Cancel(connection_state->timer_handle)) {
     // Could not cancel the deadline timer
-    known_connection_handles_.erase(handle);
     return false;
   }
   connection_state->socket->MaybeShutdown(
       absl::CancelledError("CancelConnect"));
-  known_connection_handles_.erase(handle);
+  // Release the connection_state shared_ptr. connection_state is now invalid.
+  delete connection_state->on_connected;
   GRPC_EVENT_ENGINE_TRACE(
       "Successfully cancelled connection %s",
       HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
