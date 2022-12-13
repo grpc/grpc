@@ -460,13 +460,6 @@ void XdsOverrideHostLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (xds_override_host_policy_->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_override_host_lb %p] child connectivity state update: "
-            "state=%s (%s) picker=%p",
-            xds_override_host_policy_.get(), ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
-  }
   // Save the state and picker.
   xds_override_host_policy_->state_ = state;
   xds_override_host_policy_->status_ = status;
