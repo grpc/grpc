@@ -95,14 +95,13 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   }
-  auto picker = WaitForConnected();
+  WaitForConnected();
+  ExpectState(GRPC_CHANNEL_READY);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
-  EXPECT_TRUE(ExpectPickComplete(picker.get()).has_value());
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
-  EXPECT_TRUE(ExpectPickComplete(picker.get()).has_value());
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
+  std::unordered_set<absl::optional<std::string>> picks{
+      ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get())};
+  ASSERT_THAT(picks, UnorderedElementsAreArray(kAddresses));
   // Make sure child policy works
   EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
   // Check that the host is overridden
@@ -131,13 +130,9 @@ TEST_F(XdsOverrideHostTest, OverrideHostSubchannelNotFound) {
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   }
-  auto picker = WaitForConnected();
-  ASSERT_NE(picker, nullptr);
-  EXPECT_TRUE(ExpectPickComplete(picker.get()).has_value());
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
-  EXPECT_TRUE(ExpectPickComplete(picker.get()).has_value());
-  picker = ExpectState(GRPC_CHANNEL_READY);
+  WaitForConnected();
+  ExpectState(GRPC_CHANNEL_READY);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   // Make sure child policy works
   EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
@@ -168,8 +163,6 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   }
   picker = WaitForConnected();
-  ASSERT_NE(picker, nullptr);
-  EXPECT_TRUE(ExpectPickComplete(picker.get()).has_value());
   ExpectState(GRPC_CHANNEL_READY);
   ExpectState(GRPC_CHANNEL_READY);
   ExpectState(GRPC_CHANNEL_READY);
