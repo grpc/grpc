@@ -357,10 +357,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake CallState implementation, for use in PickArgs.
-  class FakeCallState : public ClientChannel::LoadBalancedCall::LbCallState {
+  class FakeCallState : public ClientChannel::LbCallStateInternal {
    public:
-    FakeCallState(std::map<UniqueTypeName, std::string> attributes)
-        : LbCallState(nullptr), attributes_(attributes) {}
+    explicit FakeCallState(std::map<UniqueTypeName, std::string> attributes)
+        : attributes_(attributes) {}
 
     ~FakeCallState() override {
       for (void* allocation : allocations_) {
@@ -598,9 +598,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // the result was something other than Complete.
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, std::string> call_state = {},
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
       SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker, call_state);
+    auto pick_result = DoPick(picker, call_attributes);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
