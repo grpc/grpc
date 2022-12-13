@@ -35,6 +35,7 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
+#include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
@@ -121,6 +122,15 @@ std::string XdsClusterResource::ToString() const {
   }
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
+  if (!host_override_statuses.empty()) {
+    std::vector<const char*> statuses;
+    statuses.reserve(host_override_statuses.size());
+    for (const auto& status : host_override_statuses) {
+      statuses.push_back(status.ToString());
+    }
+    contents.push_back(absl::StrCat("override_host_statuses={",
+                                    absl::StrJoin(statuses, ", "), "}"));
+  }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -616,6 +626,29 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       }
     }
     cds_update.outlier_detection = outlier_detection_update;
+  }
+  // Validate override host status.
+  if (XdsHostOverrideEnabled()) {
+    const auto* common_lb_config =
+        envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
+    if (common_lb_config != nullptr) {
+      ValidationErrors::ScopedField field(&errors, ".common_lb_config");
+      const auto* override_host_status =
+          envoy_config_cluster_v3_Cluster_CommonLbConfig_override_host_status(
+              common_lb_config);
+      if (override_host_status != nullptr) {
+        ValidationErrors::ScopedField field(&errors, ".override_host_status");
+        size_t size;
+        const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
+            override_host_status, &size);
+        for (size_t i = 0; i < size; ++i) {
+          auto status = XdsHealthStatus::FromUpb(statuses[i]);
+          if (status.has_value()) {
+            cds_update.host_override_statuses.insert(*status);
+          }
+        }
+      }
+    }
   }
   // Return result.
   if (!errors.ok()) return errors.status("errors validating Cluster resource");

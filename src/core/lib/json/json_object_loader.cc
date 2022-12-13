@@ -110,6 +110,16 @@ void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
   *static_cast<Json::Object*>(dst) = json.object_value();
 }
 
+void LoadUnprocessedJsonArray::LoadInto(const Json& json, const JsonArgs&,
+                                        void* dst,
+                                        ValidationErrors* errors) const {
+  if (json.type() != Json::Type::ARRAY) {
+    errors->AddError("is not an array");
+    return;
+  }
+  *static_cast<Json::Array*>(dst) = json.array_value();
+}
+
 void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                           ValidationErrors* errors) const {
   if (json.type() != Json::Type::ARRAY) {

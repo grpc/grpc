@@ -1903,6 +1903,8 @@ src/core/ext/xds/xds_common_types.cc \
 src/core/ext/xds/xds_common_types.h \
 src/core/ext/xds/xds_endpoint.cc \
 src/core/ext/xds/xds_endpoint.h \
+src/core/ext/xds/xds_health_status.cc \
+src/core/ext/xds/xds_health_status.h \
 src/core/ext/xds/xds_http_fault_filter.cc \
 src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \

@@ -39,7 +39,7 @@ namespace testing {
 namespace {
 
 using ::envoy::config::cluster::v3::CustomClusterType;
-using ::envoy::config::endpoint::v3::HealthStatus;
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 
 class RingHashTest : public XdsEnd2endTest {
@@ -504,11 +504,9 @@ TEST_P(RingHashTest, EndpointWeights) {
   // Endpoint 2 has weight 2.
   EdsResourceArgs args(
       {{"locality0",
-        {CreateEndpoint(0, ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
-                        0),
-         CreateEndpoint(1, ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
-                        1),
-         CreateEndpoint(2, ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 0),
+         CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(2, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                         2)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
