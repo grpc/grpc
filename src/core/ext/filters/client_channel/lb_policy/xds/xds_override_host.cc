@@ -376,12 +376,6 @@ RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannel(
   absl::MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
   if (it == subchannel_map_.end()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[xds_override_host_lb %p] Subchannel for address %s was not found",
-          this, std::string(address).c_str());
-    }
     return nullptr;
   }
   return it->second->GetSubchannel();
