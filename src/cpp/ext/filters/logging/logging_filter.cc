@@ -368,6 +368,8 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
                       return message;
                     }),
                 [calld]() mutable -> grpc_core::ArenaPromise<absl::Status> {
+                  // TODO(ctiller): We do not hit half-close for some reason
+                  GPR_ASSERT(0);
                   calld->LogClientHalfClose(/*is_client=*/true);
                   return grpc_core::ImmediateOkStatus();
                 })),
@@ -448,6 +450,8 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
                       return message;
                     }),
                 [calld]() mutable -> grpc_core::ArenaPromise<absl::Status> {
+                  // TODO(ctiller): We do not hit half-close for some reason
+                  GPR_ASSERT(0);
                   calld->LogClientHalfClose(/*is_client=*/false);
                   return grpc_core::ImmediateOkStatus();
                 })),
