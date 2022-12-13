@@ -358,7 +358,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
 
 // Generates the discovery mechanism config for the specified cluster name.
 //
-// If no CdsUpdate has been received for the cluster, starts the watcher
+// If no CDS update has been received for the cluster, starts the watcher
 // if needed, and returns false.  Otherwise, generates the discovery
 // mechanism config, adds it to *discovery_mechanisms, and returns true.
 //
@@ -461,6 +461,13 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
   if (state.update->lrs_load_reporting_server.has_value()) {
     mechanism["lrsLoadReportingServer"] =
         state.update->lrs_load_reporting_server->ToJson();
+  }
+  if (!state.update->host_override_statuses.empty()) {
+    Json::Array status_list;
+    for (const auto& status : state.update->host_override_statuses) {
+      status_list.emplace_back(status.ToString());
+    }
+    mechanism["overrideHostStatus"] = std::move(status_list);
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;
