@@ -88,7 +88,7 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
         }
         Slice received = buf.TakeFirst();
         gpr_log(GPR_ERROR, "Received message %d: %.*s", message_id,
-                received.as_string_view().length(),
+                static_cast<int>(received.as_string_view().length()),
                 received.as_string_view().data());
         read_done.Notify();
       },
@@ -107,7 +107,7 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
-  auto handle = engine->Connect(
+  engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
           gpr_log(GPR_ERROR, "Error connecting: %s",
