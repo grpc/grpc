@@ -177,13 +177,14 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       grpc_chttp2_transport_start_reading(self->result_->transport,
                                           args->read_buffer,
                                           &self->on_receive_settings_, nullptr);
-      self->timer_handle_ =
-          self->args_.channel_args.GetObject<EventEngine>()->RunAfter(
-              self->args_.deadline - Timestamp::Now(), [self = self->Ref()] {
-                ApplicationCallbackExecCtx callback_exec_ctx;
-                ExecCtx exec_ctx;
-                static_cast<Chttp2Connector*>(self.get())->OnTimeout();
-              });
+      RefCountedPtr<Chttp2Connector> cc = self->Ref();
+      self->event_engine_ = args->args.GetObjectRef<EventEngine>();
+      self->timer_handle_ = self->event_engine_->RunAfter(
+          self->args_.deadline - Timestamp::Now(), [self = std::move(cc)] {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+          });
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
@@ -212,8 +213,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
       }
       self->MaybeNotify(error);
       if (self->timer_handle_.has_value()) {
-        if (self->args_.channel_args.GetObject<EventEngine>()->Cancel(
-                *self->timer_handle_)) {
+        if (self->event_engine_->Cancel(*self->timer_handle_)) {
           // If we have cancelled the timer successfully, call Notify() again
           // since the timer callback will not be called now.
           self->MaybeNotify(absl::OkStatus());
