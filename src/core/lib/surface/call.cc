@@ -2480,13 +2480,10 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
                                         const Completion& completion,
                                         PipeReceiver<MessageHandle>* receiver) {
   GPR_ASSERT(!outstanding_recv_.has_value());
-  if (!completed_) {
-    recv_message_completion_ =
-        AddOpToCompletion(completion, PendingOp::kReceiveMessage);
-    outstanding_recv_.emplace(receiver->Next());
-  } else {
-    FailCompletion(completion);
-  }
+  recv_message_ = op.data.recv_message.recv_message;
+  recv_message_completion_ =
+      AddOpToCompletion(completion, PendingOp::kReceiveMessage);
+  outstanding_recv_.emplace(receiver->Next());
 }
 
 void PromiseBasedCall::PollRecvMessage(
