@@ -34,7 +34,6 @@ avoidness = collections.defaultdict(int)
 consumes = {}
 no_update = set()
 buildozer_commands = []
-needs_codegen_base_src = set()
 original_deps = {}
 original_external_deps = {}
 skip_headers = collections.defaultdict(set)
