@@ -21,7 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -29,7 +32,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/handshaker.h"
 
 namespace grpc_core {
@@ -44,7 +46,7 @@ class Chttp2Connector : public SubchannelConnector {
  private:
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
-  static void OnTimeout(void* arg, grpc_error_handle error);
+  void OnTimeout() ABSL_LOCKS_EXCLUDED(mu_);
 
   // We cannot invoke notify_ until both OnTimeout() and OnReceiveSettings()
   // have been called since that is an indicator to the upper layer that we are
@@ -66,8 +68,8 @@ class Chttp2Connector : public SubchannelConnector {
   // the handshake manager, and then again after handshake is done.
   grpc_endpoint* endpoint_ = nullptr;
   grpc_closure on_receive_settings_;
-  grpc_timer timer_;
-  grpc_closure on_timeout_;
+  grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle_
+      ABSL_GUARDED_BY(mu_);
   absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
