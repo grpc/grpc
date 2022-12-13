@@ -41,6 +41,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+#include "call.h"
+#include "server.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -1959,6 +1961,8 @@ class PromiseBasedCall : public Call,
 
   Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
+  virtual ServerCallContext* server_call_context() = 0;
+
  protected:
   class ScopedContext
       : public ScopedActivity,
@@ -2553,6 +2557,10 @@ void CallContext::UpdateDeadline(Timestamp deadline) {
   call_->UpdateDeadline(deadline);
 }
 
+ServerCallContext* CallContext::server_call_context() {
+  return call_->server_call_context();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PublishMetadataArray
 
@@ -2623,6 +2631,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   std::string DebugTag() const override {
     return absl::StrFormat("CLIENT_CALL[%p]: ", this);
   }
+
+  ServerCallContext* server_call_context() override { return nullptr; }
 
  private:
   // Poll the underlying promise (and sundry objects) once.
@@ -2968,6 +2978,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     return absl::StrFormat("SERVER_CALL[%p]: ", this);
   }
 
+  ServerCallContext* server_call_context() override { return &call_context_; }
+
  private:
   grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops) const;
   void CommitBatch(const grpc_op* ops, size_t nops,
@@ -2992,21 +3004,20 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
     CallArgs call_args, grpc_completion_queue* cq,
     grpc_metadata_array* publish_initial_metadata,
     absl::FunctionRef<void(grpc_call* call)> publish) {
-  auto* call = static_cast<ServerPromiseBasedCall*>(this->call());
-  call->mu()->AssertHeld();
-  call->SetCompletionQueueLocked(cq);
-  call->server_to_client_messages_ = call_args.server_to_client_messages;
-  call->client_to_server_messages_ = call_args.client_to_server_messages;
-  call->send_initial_metadata_latch_ = call_args.server_initial_metadata;
-  call->incoming_compression_algorithm_ =
+  call_->mu()->AssertHeld();
+  call_->SetCompletionQueueLocked(cq);
+  call_->server_to_client_messages_ = call_args.server_to_client_messages;
+  call_->client_to_server_messages_ = call_args.client_to_server_messages;
+  call_->send_initial_metadata_latch_ = call_args.server_initial_metadata;
+  call_->incoming_compression_algorithm_ =
       call_args.client_initial_metadata->get(GrpcEncodingMetadata())
           .value_or(GRPC_COMPRESS_NONE);
   PublishMetadataArray(publish_initial_metadata,
                        call_args.client_initial_metadata.get());
-  publish(call->c_ptr());
-  return [call]() {
-    call->mu()->AssertHeld();
-    return call->PollTopOfCall();
+  publish(call_->c_ptr());
+  return [this]() {
+    call_->mu()->AssertHeld();
+    return call_->PollTopOfCall();
   };
 }
 

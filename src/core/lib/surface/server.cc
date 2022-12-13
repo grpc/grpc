@@ -1327,7 +1327,8 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
           default:
             GPR_UNREACHABLE_CODE(abort());
         }
-        return static_cast<ServerCallContext*>(GetContext<CallContext>())
+        return GetContext<CallContext>()
+            ->server_call_context()
             ->CompletePromise(std::move(call_args), rc->cq_bound_to_call,
                               rc->initial_metadata,
                               [rc, cq_for_new_request](grpc_call* call) {

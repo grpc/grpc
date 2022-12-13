@@ -862,8 +862,7 @@ class ServerStream final : public ConnectedChannelStream {
         GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream)));
     grpc_transport_init_stream(
         transport, stream(), stream_refcount(),
-        static_cast<ServerCallContext*>(GetContext<CallContext>())
-            ->server_stream_data(),
+        GetContext<CallContext>()->server_call_context()->server_stream_data(),
         GetContext<Arena>());
     grpc_transport_set_pops(transport, stream(),
                             GetContext<CallContext>()->polling_entity());

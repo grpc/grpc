@@ -38,6 +38,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "http_trace.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -666,6 +667,10 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       flow_control(&t->flow_control) {
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
+    if (grpc_http_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "HTTP:%p/%p creating accept stream %d [from %p]", t,
+              this, id, server_data);
+    }
     *t->accepting_stream = this;
     grpc_chttp2_stream_map_add(&t->stream_map, id, this);
     post_destructive_reclaimer(t);
@@ -745,7 +750,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
   t->accept_stream_cb(t->accept_stream_cb_user_data, &t->base,
-                      reinterpret_cast<void*>(id));
+                      reinterpret_cast<void*>(static_cast<uintptr_t>(id)));
   t->accepting_stream = nullptr;
   return accepting;
 }
@@ -1824,6 +1829,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       &s->flow_control);
   grpc_error_handle error;
 
+  gpr_log(GPR_INFO, "maybe_complete_recv_message %p %p frame_storage=%" PRIdPTR,
+          t, s, s->frame_storage.length);
+
   // Lambda is immediately invoked as a big scoped section that can be
   // exited out of at any point by returning.
   [&]() {
@@ -2046,6 +2054,14 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
                                     int close_writes, grpc_error_handle error) {
+  if (grpc_http_trace.enabled()) {
+    gpr_log(
+        GPR_DEBUG, "MARK_STREAM_CLOSED: t=%p s=%p(id=%d) %s [%s]", t, s, s->id,
+        (close_reads && close_writes)
+            ? "read+write"
+            : (close_reads ? "read" : (close_writes ? "write" : "nothing??")),
+        error.ToString().c_str());
+  }
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
     grpc_error_handle overall_error = removal_error(error, s, "Stream removed");

@@ -389,11 +389,15 @@ struct grpc_chttp2_transport
   uint32_t incoming_stream_id = 0;
 
   /* active parser */
-  void* parser_data = nullptr;
   grpc_chttp2_stream* incoming_stream = nullptr;
-  grpc_error_handle (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
-                              grpc_chttp2_stream* s, const grpc_slice& slice,
-                              int is_last);
+  struct Parser {
+    const char* name;
+    grpc_error_handle (*parser)(void* parser_user_data,
+                                grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+                                const grpc_slice& slice, int is_last);
+    void* user_data = nullptr;
+  };
+  Parser parser;
 
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 

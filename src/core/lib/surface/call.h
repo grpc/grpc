@@ -76,6 +76,35 @@ typedef struct grpc_call_create_args {
 
 namespace grpc_core {
 class PromiseBasedCall;
+class ServerPromiseBasedCall;
+
+class ServerCallContext {
+ public:
+  ServerCallContext(ServerPromiseBasedCall* call,
+                    const void* server_stream_data)
+      : call_(call), server_stream_data_(server_stream_data) {
+    gpr_log(GPR_DEBUG, "ServerCallContext %p gets server_stream_data %p", this,
+            server_stream_data);
+  }
+  ArenaPromise<ServerMetadataHandle> CompletePromise(
+      CallArgs call_args, grpc_completion_queue* cq,
+      grpc_metadata_array* publish_initial_metadata,
+      absl::FunctionRef<void(grpc_call* call)> publish);
+
+  // Server stream data as supplied by the transport (so we can link the
+  // transport stream up with the call again).
+  // TODO(ctiller): legacy API - once we move transports to promises we'll
+  // create the promise directly and not need to pass around this token.
+  const void* server_stream_data() {
+    gpr_log(GPR_DEBUG, "ServerCallContext %p returns server_stream_data %p",
+            this, server_stream_data_);
+    return server_stream_data_;
+  }
+
+ private:
+  ServerPromiseBasedCall* const call_;
+  const void* const server_stream_data_;
+};
 
 // TODO(ctiller): move more call things into this type
 class CallContext {
@@ -100,6 +129,8 @@ class CallContext {
   gpr_atm* peer_string_atm_ptr();
   grpc_polling_entity* polling_entity() { return &pollent_; }
 
+  ServerCallContext* server_call_context();
+
  protected:
   PromiseBasedCall* call() { return call_; }
 
@@ -118,24 +149,6 @@ class CallContext {
 template <>
 struct ContextType<CallContext> {};
 
-class ServerCallContext : public CallContext {
- public:
-  ServerCallContext(PromiseBasedCall* call, const void* server_stream_data)
-      : CallContext(call), server_stream_data_(server_stream_data) {}
-  ArenaPromise<ServerMetadataHandle> CompletePromise(
-      CallArgs call_args, grpc_completion_queue* cq,
-      grpc_metadata_array* publish_initial_metadata,
-      absl::FunctionRef<void(grpc_call* call)> publish);
-
-  // Server stream data as supplied by the transport (so we can link the
-  // transport stream up with the call again).
-  // TODO(ctiller): legacy API - once we move transports to promises we'll
-  // create the promise directly and not need to pass around this token.
-  const void* server_stream_data() { return server_stream_data_; }
-
- private:
-  const void* const server_stream_data_;
-};
 }  // namespace grpc_core
 
 /* Create a new call based on \a args.
