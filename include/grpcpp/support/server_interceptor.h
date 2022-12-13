@@ -22,6 +22,7 @@
 #include <atomic>
 #include <vector>
 
+#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/string_ref.h>
@@ -99,7 +100,7 @@ class ServerRpcInfo {
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
       experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
-    GPR_CODEGEN_ASSERT(pos < interceptors_.size());
+    GPR_ASSERT(pos < interceptors_.size());
     interceptors_[pos]->Intercept(interceptor_methods);
   }
 

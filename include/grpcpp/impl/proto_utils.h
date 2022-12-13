@@ -24,6 +24,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
@@ -53,16 +54,16 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
   if (static_cast<size_t>(byte_size) <= GRPC_SLICE_INLINED_SIZE) {
     Slice slice(byte_size);
     // We serialize directly into the allocated slices memory
-    GPR_CODEGEN_ASSERT(slice.end() == msg.SerializeWithCachedSizesToArray(
-                                          const_cast<uint8_t*>(slice.begin())));
+    GPR_ASSERT(slice.end() == msg.SerializeWithCachedSizesToArray(
+                                  const_cast<uint8_t*>(slice.begin())));
     ByteBuffer tmp(&slice, 1);
     bb->Swap(&tmp);
 
-    return g_core_codegen_interface->ok();
+    return grpc::Status::OK;
   }
   ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
   return msg.SerializeToZeroCopyStream(&writer)
-             ? g_core_codegen_interface->ok()
+             ? grpc::Status::OK
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
 }
 
@@ -77,7 +78,7 @@ Status GenericDeserialize(ByteBuffer* buffer,
   if (buffer == nullptr) {
     return Status(StatusCode::INTERNAL, "No payload");
   }
-  Status result = g_core_codegen_interface->ok();
+  Status result = grpc::Status::OK;
   {
     ProtoBufferReader reader(buffer);
     if (!reader.status().ok()) {
