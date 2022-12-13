@@ -24,5 +24,4 @@
 #include "grpcpp/grpcpp.h"
 #include "grpcpp/support/byte_buffer.h"
 #include "grpcpp/support/status.h"
-#include "grpcpp/support/status_code_enum.h"
 #include "grpcpp/support/string_ref.h"
