@@ -68,8 +68,8 @@ class Chttp2Connector : public SubchannelConnector {
   // the handshake manager, and then again after handshake is done.
   grpc_endpoint* endpoint_ = nullptr;
   grpc_closure on_receive_settings_;
-  grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle_
-      ABSL_GUARDED_BY(mu_);
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      timer_handle_ ABSL_GUARDED_BY(mu_);
   absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };

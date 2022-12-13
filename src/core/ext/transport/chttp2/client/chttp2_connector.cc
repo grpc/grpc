@@ -211,8 +211,15 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
         self->result_->Reset();
       }
       self->MaybeNotify(error);
-      self->args_.channel_args.GetObject<EventEngine>()->Cancel(
-          self->timer_handle_);
+      if (self->timer_handle_.has_value()) {
+        if (self->args_.channel_args.GetObject<EventEngine>()->Cancel(
+                *self->timer_handle_)) {
+          // If we have cancelled the timer successfully, call Notify() again
+          // since the timer callback will not be called now.
+          self->MaybeNotify(absl::OkStatus());
+        }
+        self->timer_handle_.reset();
+      }
     } else {
       // OnTimeout() was already invoked. Call Notify() again so that notify_
       // can be invoked.
@@ -224,6 +231,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
 
 void Chttp2Connector::OnTimeout() {
   MutexLock lock(&mu_);
+  timer_handle_.reset();
   if (!notify_error_.has_value()) {
     // The transport did not receive the settings frame in time. Destroy the
     // transport.
