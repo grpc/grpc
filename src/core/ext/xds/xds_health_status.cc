@@ -51,6 +51,8 @@ const char* XdsHealthStatus::ToString() const {
       return "HEALTHY";
     case kDraining:
       return "DRAINING";
+    default:
+      return "<INVALID>";
   }
 }
 
