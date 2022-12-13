@@ -31,17 +31,4 @@
 #include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/support/status.h>
 
-namespace grpc {
-
-const Status& CoreCodegen::ok() { return grpc::Status::OK; }
-
-const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
-
-void CoreCodegen::assert_fail(const char* failed_assertion, const char* file,
-                              int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "assertion failed: %s",
-          failed_assertion);
-  abort();
-}
-
-}  // namespace grpc
+namespace grpc {}  // namespace grpc
