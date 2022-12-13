@@ -104,7 +104,8 @@ class WindowsEventEngine : public EventEngine,
   // OnConnectCompleted callback herein.
   struct ConnectionState {
     // everything is guarded by mu;
-    grpc_core::Mutex mu;
+    grpc_core::Mutex mu
+        ABSL_ACQUIRED_BEFORE(WindowsEventEngine::connection_mu_);
     EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
     EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu);
     EventEngine::OnConnectCallback on_connected_user_callback
@@ -131,18 +132,23 @@ class WindowsEventEngine : public EventEngine,
 
   void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
 
-  // Implementation of CancelConnect.
-  // If called from within the deadline timer, set
-  // try_to_cancel_deadline_timer = false
-  bool CancelConnectInternal(ConnectionHandle handle,
-                             bool try_to_cancel_deadline_timer);
+  // CancelConnect called from within the deadline timer.
+  // In this case, the connection_state->mu is already locked, and timer
+  // cancellation is not possible.
+  bool CancelConnectFromDeadlineTimer(ConnectionState* connection_state)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ConnectionState::mu);
+
+  // Completes the connection cancellation logic after checking handle validity
+  // and optionally cancelling deadline timers.
+  bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ConnectionState::mu);
 
   class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
-  grpc_core::Mutex connection_mu_;
+  grpc_core::Mutex connection_mu_ ABSL_ACQUIRED_AFTER(ConnectionState::mu);
   grpc_core::CondVar connection_cv_;
   ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
   std::atomic<intptr_t> aba_token_{0};

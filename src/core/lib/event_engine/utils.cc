@@ -26,6 +26,10 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+std::string HandleToStringInternal(uintptr_t a, uintptr_t b) {
+  return absl::StrCat("{", a, ",", b, "}");
+}
+
 grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
                                  EventEngine::Duration delta) {
   return now +

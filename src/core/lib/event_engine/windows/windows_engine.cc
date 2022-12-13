@@ -310,8 +310,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   connection_state->timer_handle =
       RunAfter(timeout, [this, connection_state]() {
         grpc_core::MutexLock lock(&connection_state->mu);
-        if (CancelConnectInternal(connection_state->connection_handle,
-                                  /*try_to_cancel_deadline_timer=*/false)) {
+        if (CancelConnectFromDeadlineTimer(connection_state.get())) {
           connection_state->on_connected_user_callback(
               absl::DeadlineExceededError("Connection timed out"));
         }
@@ -323,17 +322,13 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
-  return CancelConnectInternal(handle, /*try_to_cancel_deadline_timer=*/true);
-}
-
-bool WindowsEventEngine::CancelConnectInternal(
-    EventEngine::ConnectionHandle handle, bool try_to_cancel_deadline_timer) {
   if (TaskHandleComparator<ConnectionHandle>::Eq()(handle,
                                                    invalid_connection_handle)) {
     GRPC_EVENT_ENGINE_TRACE("%s",
                             "Attempted to cancel an invalid connection handle");
     return false;
   }
+  // Erase the connection handle, which may be unknown
   {
     grpc_core::MutexLock lock(&connection_mu_);
     if (!known_connection_handles_.contains(handle)) {
@@ -346,17 +341,31 @@ bool WindowsEventEngine::CancelConnectInternal(
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
   grpc_core::MutexLock state_lock(&connection_state->mu);
-  if (try_to_cancel_deadline_timer && !Cancel(connection_state->timer_handle)) {
-    // Could not cancel the deadline timer
-    return false;
+  if (!Cancel(connection_state->timer_handle)) return false;
+  return CancelConnectInternalStateLocked(connection_state);
+}
+
+bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
+    ConnectionState* connection_state) {
+  // Erase the connection handle, which is guaranteed to exist.
+  {
+    grpc_core::MutexLock lock(&connection_mu_);
+    GPR_ASSERT(known_connection_handles_.erase(
+                   connection_state->connection_handle) == 1);
   }
+  return CancelConnectInternalStateLocked(connection_state);
+}
+
+bool WindowsEventEngine::CancelConnectInternalStateLocked(
+    ConnectionState* connection_state) {
   connection_state->socket->MaybeShutdown(
       absl::CancelledError("CancelConnect"));
   // Release the connection_state shared_ptr. connection_state is now invalid.
   delete connection_state->on_connected;
-  GRPC_EVENT_ENGINE_TRACE(
-      "Successfully cancelled connection %s",
-      HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
+  GRPC_EVENT_ENGINE_TRACE("Successfully cancelled connection %s",
+                          HandleToString<EventEngine::ConnectionHandle>(
+                              connection_state->connection_handle)
+                              .c_str());
   return true;
 }
 
