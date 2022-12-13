@@ -310,7 +310,8 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   connection_state->timer_handle =
       RunAfter(timeout, [this, connection_state]() {
         grpc_core::MutexLock lock(&connection_state->mu);
-        if (CancelConnect(connection_state->connection_handle)) {
+        if (CancelConnectInternal(connection_state->connection_handle,
+                                  /*try_to_cancel_deadline_timer=*/false)) {
           connection_state->on_connected_user_callback(
               absl::DeadlineExceededError("Connection timed out"));
         }
@@ -322,6 +323,11 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
+  return CancelConnectInternal(handle, /*try_to_cancel_deadline_timer=*/true);
+}
+
+bool WindowsEventEngine::CancelConnectInternal(
+    EventEngine::ConnectionHandle handle, bool try_to_cancel_deadline_timer) {
   if (TaskHandleComparator<ConnectionHandle>::Eq()(handle,
                                                    invalid_connection_handle)) {
     GRPC_EVENT_ENGINE_TRACE("%s",
@@ -340,7 +346,7 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
   grpc_core::MutexLock state_lock(&connection_state->mu);
-  if (!Cancel(connection_state->timer_handle)) {
+  if (try_to_cancel_deadline_timer && !Cancel(connection_state->timer_handle)) {
     // Could not cancel the deadline timer
     return false;
   }

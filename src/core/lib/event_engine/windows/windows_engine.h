@@ -131,6 +131,12 @@ class WindowsEventEngine : public EventEngine,
 
   void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
 
+  // Implementation of CancelConnect.
+  // If called from within the deadline timer, set
+  // try_to_cancel_deadline_timer = false
+  bool CancelConnectInternal(ConnectionHandle handle,
+                             bool try_to_cancel_deadline_timer);
+
   class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
