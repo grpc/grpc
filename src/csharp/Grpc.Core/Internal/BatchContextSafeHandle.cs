@@ -137,7 +137,7 @@ namespace Grpc.Core.Internal
             return true;
         }
 
-        // This method decodes the status details string "safely" and returns and empty
+        // This method decodes the status details string "safely" and returns an empty
         // string in case it seems corrupt.
         // This is to stop UnaryCall from hanging if there is an issue with decoding
         // the UTF8 status details string (likely due to an unexplained corruption).
