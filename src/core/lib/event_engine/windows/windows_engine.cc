@@ -44,14 +44,15 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// ---- IOCPWorker ----
+// ---- IOCPWorkClosure ----
 
-WindowsEventEngine::IOCPWorker::IOCPWorker(Executor* executor, IOCP* iocp)
+WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(Executor* executor,
+                                                     IOCP* iocp)
     : executor_(executor), iocp_(iocp) {
   executor_->Run(this);
 }
 
-void WindowsEventEngine::IOCPWorker::Run() {
+void WindowsEventEngine::IOCPWorkClosure::Run() {
   auto result = iocp_->Work(std::chrono::seconds(60), [this] {
     workers_++;
     executor_->Run(this);
@@ -64,7 +65,7 @@ void WindowsEventEngine::IOCPWorker::Run() {
   if (--workers_ == 0) done_signal_.Notify();
 }
 
-void WindowsEventEngine::IOCPWorker::WaitForShutdown() {
+void WindowsEventEngine::IOCPWorkClosure::WaitForShutdown() {
   done_signal_.WaitForNotification();
 }
 
@@ -336,6 +337,12 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     return false;
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
+  grpc_core::MutexLock state_lock(&connection_state->mu);
+  if (!Cancel(connection_state->timer_handle)) {
+    // Could not cancel the deadline timer
+    known_connection_handles_.erase(handle);
+    return false;
+  }
   connection_state->socket->MaybeShutdown(
       absl::CancelledError("CancelConnect"));
   known_connection_handles_.erase(handle);

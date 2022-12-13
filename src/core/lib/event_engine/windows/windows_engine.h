@@ -116,9 +116,9 @@ class WindowsEventEngine : public EventEngine,
   };
 
   // A poll worker which schedules itself unless kicked
-  class IOCPWorker : public EventEngine::Closure {
+  class IOCPWorkClosure : public EventEngine::Closure {
    public:
-    explicit IOCPWorker(Executor* executor, IOCP* iocp);
+    explicit IOCPWorkClosure(Executor* executor, IOCP* iocp);
     void Run() override;
     void WaitForShutdown();
 
@@ -144,7 +144,7 @@ class WindowsEventEngine : public EventEngine,
   std::shared_ptr<ThreadPool> executor_;
   IOCP iocp_;
   TimerManager timer_manager_;
-  IOCPWorker iocp_worker_;
+  IOCPWorkClosure iocp_worker_;
 };
 
 }  // namespace experimental
