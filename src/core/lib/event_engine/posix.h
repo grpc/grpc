@@ -35,7 +35,7 @@ namespace experimental {
 
 /// This defines an EventEngine interface that posix specific event engines
 /// may implement to support additional functionality.
-class PosixEventEngine : public EventEngine {
+class PosixEngine : public EventEngine {
   class PosixEventEngineEndpoint : public EventEngine::Endpoint {
    public:
     /// Returns the file descriptor associated with the posix endpoint.
