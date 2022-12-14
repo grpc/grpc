@@ -222,21 +222,25 @@ void test_connect_cancellation_succeeds(void) {
   bool tried_ipv4 = false;
   ASSERT_TRUE(grpc_parse_uri(target_ipv6_addr_uri, &resolved_addr));
   auto try_bind = [&](int sock) {
-    if (sock < 0 || bind(sock, reinterpret_cast<sockaddr*>(resolved_addr.addr),
-                         resolved_addr.len) != 0) {
-      return false;
-    }
-    return true;
+    return (sock > 0 &&
+            bind(sock, reinterpret_cast<sockaddr*>(resolved_addr.addr),
+                 resolved_addr.len) == 0);
   };
   /* create a phony server */
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
   // Try ipv6
   if (!try_bind(svr_fd)) {
+    if (svr_fd > 0) {
+      close(svr_fd);
+    }
     // Failed to bind ipv6. Try ipv4
     ASSERT_TRUE(grpc_parse_uri(target_ipv4_addr_uri, &resolved_addr));
     svr_fd = socket(AF_INET, SOCK_STREAM, 0);
     tried_ipv4 = true;
     if (!try_bind(svr_fd)) {
+      if (svr_fd > 0) {
+        close(svr_fd);
+      }
       gpr_log(GPR_ERROR,
               "Skipping test. Failed to create a phony server bound to ipv6 or "
               "ipv4 address");
