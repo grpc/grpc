@@ -253,11 +253,11 @@ void test_connect_cancellation_succeeds(void) {
   while (create_more_client_connections) {
     const int kOne = 1;
     int client_socket = socket(tried_ipv4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
-    ASSERT_GT(client_socket, 0);
+    ASSERT_GE(client_socket, 0);
     setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &kOne, sizeof(kOne));
     // Make fd non-blocking.
     int flags = fcntl(client_socket, F_GETFL, 0);
-    EXPECT_EQ(fcntl(client_socket, F_SETFL, flags | O_NONBLOCK), 0);
+    ASSERT_EQ(fcntl(client_socket, F_SETFL, flags | O_NONBLOCK), 0);
 
     if (connect(client_socket, reinterpret_cast<sockaddr*>(resolved_addr.addr),
                 resolved_addr.len) == -1) {
@@ -268,8 +268,7 @@ void test_connect_cancellation_succeeds(void) {
         pfd.revents = 0;
         int ret = poll(&pfd, 1, 1000);
         if (ret == -1) {
-          gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
-          abort();
+          FAIL() << "poll() failed during connect; errno=" << errno;
         } else if (ret == 0) {
           // current connection attempt timed out. It indicates that the
           // kernel will cause any subsequent connection attempts to
@@ -277,8 +276,7 @@ void test_connect_cancellation_succeeds(void) {
           create_more_client_connections = false;
         }
       } else {
-        gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-        abort();
+        FAIL() << "Failed to connect to the server. errno=%d" << errno;
       }
     }
     client_sockets.push_back(client_socket);
