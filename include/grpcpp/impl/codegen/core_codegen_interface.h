@@ -21,12 +21,12 @@
 
 // IWYU pragma: private
 
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/sync.h>
-#include <grpcpp/impl/codegen/config.h>
-#include <grpcpp/impl/codegen/status.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
 
 namespace grpc {
 
@@ -40,56 +40,9 @@ namespace grpc {
 class CoreCodegenInterface {
  public:
   virtual ~CoreCodegenInterface() = default;
-
-  /// Upon a failed assertion, log the error.
-  virtual void assert_fail(const char* failed_assertion, const char* file,
-                           int line) = 0;
-
-  virtual grpc_slice grpc_empty_slice() = 0;
-  virtual grpc_slice grpc_slice_malloc(size_t length) = 0;
-  virtual void grpc_slice_unref(grpc_slice slice) = 0;
-  virtual grpc_slice grpc_slice_ref(grpc_slice slice) = 0;
-  virtual grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) = 0;
-  virtual grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split) = 0;
-  virtual grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end) = 0;
-  virtual void grpc_slice_buffer_add(grpc_slice_buffer* sb,
-                                     grpc_slice slice) = 0;
-  virtual void grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb,
-                                             grpc_slice slice) = 0;
-  virtual void grpc_slice_buffer_pop(grpc_slice_buffer* sb) = 0;
-  virtual grpc_slice grpc_slice_from_static_buffer(const void* buffer,
-                                                   size_t length) = 0;
-  virtual grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
-                                                   size_t length) = 0;
-
-  virtual void grpc_metadata_array_init(grpc_metadata_array* array) = 0;
-  virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;
-
-  virtual const Status& ok() = 0;
-  virtual const Status& cancelled() = 0;
-
-  virtual gpr_timespec gpr_inf_future(gpr_clock_type type) = 0;
-  virtual gpr_timespec gpr_time_0(gpr_clock_type type) = 0;
 };
 
 extern CoreCodegenInterface* g_core_codegen_interface;
-
-/// Codegen specific version of \a GPR_ASSERT.
-#define GPR_CODEGEN_ASSERT(x)                                              \
-  do {                                                                     \
-    if (GPR_UNLIKELY(!(x))) {                                              \
-      grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
-    }                                                                      \
-  } while (0)
-
-/// Codegen specific version of \a GPR_DEBUG_ASSERT.
-#ifndef NDEBUG
-#define GPR_CODEGEN_DEBUG_ASSERT(x) GPR_CODEGEN_ASSERT(x)
-#else
-#define GPR_CODEGEN_DEBUG_ASSERT(x) \
-  do {                              \
-  } while (0)
-#endif
 
 }  // namespace grpc
 

@@ -24,8 +24,9 @@
 #include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
@@ -68,9 +69,8 @@ inline grpc_metadata* FillMetadataArray(
     metadata_array[i].value = SliceReferencingString(iter->second);
   }
   if (!optional_error_details.empty()) {
-    metadata_array[i].key =
-        g_core_codegen_interface->grpc_slice_from_static_buffer(
-            kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
+    metadata_array[i].key = grpc_slice_from_static_buffer(
+        kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
     metadata_array[i].value = SliceReferencingString(optional_error_details);
   }
   return metadata_array;
@@ -319,7 +319,7 @@ class CallOpSendMessage {
       return;
     }
     if (msg_ != nullptr) {
-      GPR_CODEGEN_ASSERT(serializer_(msg_).ok());
+      GPR_ASSERT(serializer_(msg_).ok());
     }
     serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
@@ -778,7 +778,7 @@ class CallOpClientRecvStatus {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
-    error_message_ = g_core_codegen_interface->grpc_empty_slice();
+    error_message_ = grpc_empty_slice();
   }
 
  protected:
@@ -798,7 +798,7 @@ class CallOpClientRecvStatus {
     if (recv_status_ == nullptr || hijacked_) return;
     if (static_cast<StatusCode>(status_code_) == StatusCode::OK) {
       *recv_status_ = Status();
-      GPR_CODEGEN_DEBUG_ASSERT(debug_error_string_ == nullptr);
+      GPR_DEBUG_ASSERT(debug_error_string_ == nullptr);
     } else {
       *recv_status_ =
           Status(static_cast<StatusCode>(status_code_),
@@ -814,7 +814,7 @@ class CallOpClientRecvStatus {
     }
     // TODO(soheil): Find callers that set debug string even for status OK,
     //               and fix them.
-    g_core_codegen_interface->grpc_slice_unref(error_message_);
+    grpc_slice_unref(error_message_);
   }
 
   void SetInterceptionHookPoint(
@@ -977,7 +977,7 @@ class CallOpSet : public CallOpSetInterface,
       // WritesDone multiple times
       gpr_log(GPR_ERROR, "API misuse of type %s observed",
               grpc_call_error_to_string(err));
-      GPR_CODEGEN_ASSERT(false);
+      GPR_ASSERT(false);
     }
   }
 
@@ -987,9 +987,8 @@ class CallOpSet : public CallOpSetInterface,
     done_intercepting_ = true;
     // The following call_start_batch is internally-generated so no need for an
     // explanatory log on failure.
-    GPR_CODEGEN_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0,
-                                             core_cq_tag(),
-                                             nullptr) == GRPC_CALL_OK);
+    GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag(),
+                                     nullptr) == GRPC_CALL_OK);
   }
 
  private:

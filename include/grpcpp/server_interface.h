@@ -22,7 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_hook.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -103,10 +105,7 @@ class ServerInterface : public internal::CallHook {
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
   /// See \a ServerBuilder::AddCompletionQueue for details.
-  void Shutdown() {
-    ShutdownInternal(
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
-  }
+  void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
   /// Block waiting for all work to complete.
   ///
@@ -317,7 +316,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    GPR_CODEGEN_ASSERT(method);
+    GPR_ASSERT(method);
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);
   }
@@ -328,7 +327,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq,
                         void* tag) {
-    GPR_CODEGEN_ASSERT(method);
+    GPR_ASSERT(method);
     new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
                               notification_cq, tag);
   }

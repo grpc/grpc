@@ -476,6 +476,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cancel_callback",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/cancel_callback.h",
+    ],
+    deps = [
+        "poll",
+        "promise_like",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_factory",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
@@ -946,6 +959,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -3433,6 +3447,7 @@ grpc_cc_library(
         "error",
         "gpr_atm",
         "grpc_sockaddr",
+        "join",
         "json",
         "json_args",
         "json_object_loader",
@@ -3442,11 +3457,13 @@ grpc_cc_library(
         "pollset_set",
         "ref_counted",
         "resolved_address",
+        "seq",
         "slice",
         "slice_refcount",
         "status_helper",
         "subchannel_interface",
         "time",
+        "try_concurrently",
         "useful",
         "validation_errors",
         "//:backoff",
@@ -3464,8 +3481,8 @@ grpc_cc_library(
         "//:grpc_resolver_fake",
         "//:grpc_security_base",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
+        "//:promise",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
         "//:ref_counted_ptr",
@@ -3568,9 +3585,11 @@ grpc_cc_library(
         "ext/xds/xds_cluster_specifier_plugin.cc",
         "ext/xds/xds_common_types.cc",
         "ext/xds/xds_endpoint.cc",
+        "ext/xds/xds_health_status.cc",
         "ext/xds/xds_http_fault_filter.cc",
         "ext/xds/xds_http_filters.cc",
         "ext/xds/xds_http_rbac_filter.cc",
+        "ext/xds/xds_http_stateful_session_filter.cc",
         "ext/xds/xds_lb_policy_registry.cc",
         "ext/xds/xds_listener.cc",
         "ext/xds/xds_route_config.cc",
@@ -3588,9 +3607,11 @@ grpc_cc_library(
         "ext/xds/xds_cluster_specifier_plugin.h",
         "ext/xds/xds_common_types.h",
         "ext/xds/xds_endpoint.h",
+        "ext/xds/xds_health_status.h",
         "ext/xds/xds_http_fault_filter.h",
         "ext/xds/xds_http_filters.h",
         "ext/xds/xds_http_rbac_filter.h",
+        "ext/xds/xds_http_stateful_session_filter.h",
         "ext/xds/xds_lb_policy_registry.h",
         "ext/xds/xds_listener.h",
         "ext/xds/xds_route_config.h",
@@ -3646,8 +3667,12 @@ grpc_cc_library(
         "envoy_extensions_filters_http_rbac_upbdefs",
         "envoy_extensions_filters_http_router_upb",
         "envoy_extensions_filters_http_router_upbdefs",
+        "envoy_extensions_filters_http_stateful_session_upb",
+        "envoy_extensions_filters_http_stateful_session_upbdefs",
         "envoy_extensions_filters_network_http_connection_manager_upb",
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
+        "envoy_extensions_http_stateful_session_cookie_upb",
+        "envoy_extensions_http_stateful_session_cookie_upbdefs",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
@@ -3658,6 +3683,7 @@ grpc_cc_library(
         "envoy_service_load_stats_upbdefs",
         "envoy_service_status_upb",
         "envoy_service_status_upbdefs",
+        "envoy_type_http_upb",
         "envoy_type_matcher_upb",
         "envoy_type_upb",
         "error",
@@ -3669,6 +3695,7 @@ grpc_cc_library(
         "grpc_outlier_detection_header",
         "grpc_rbac_filter",
         "grpc_sockaddr",
+        "grpc_stateful_session_filter",
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",
@@ -3857,6 +3884,7 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "match",
         "pollset_set",
         "subchannel_interface",
         "time",
@@ -4243,8 +4271,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "closure",
-        "error",
         "grpc_outlier_detection_header",
         "iomgr_fwd",
         "json",
@@ -4257,11 +4283,11 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4284,8 +4310,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "closure",
-        "error",
         "grpc_lb_address_filtering",
         "json",
         "json_args",
@@ -4299,11 +4323,11 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -5051,6 +5075,31 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_stateful_session_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_stateful_session_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upb",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_type_http_upb",
+    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(
