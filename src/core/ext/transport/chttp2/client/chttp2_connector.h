@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
 
