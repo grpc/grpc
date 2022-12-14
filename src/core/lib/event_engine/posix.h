@@ -36,6 +36,7 @@ namespace experimental {
 /// This defines an EventEngine interface that posix specific event engines
 /// may implement to support additional functionality.
 class PosixEngine : public EventEngine {
+ public:
   class PosixEventEngineEndpoint : public EventEngine::Endpoint {
    public:
     /// Returns the file descriptor associated with the posix endpoint.
@@ -60,13 +61,11 @@ class PosixEngine : public EventEngine {
   /// Creates a PosixEventEngineEndpoint from an fd which is already assumed to
   /// be connected to a remote peer.
   /// \a fd - The connected socket file descriptor.
-  /// \a peer_addr - The address of the peer to which the provided fd has been
-  /// connected.
   /// \a config - Additional configuration to applied to the endpoint.
   /// \a memory_allocator - The endpoint may use the provided memory allocator
   /// to track memory allocations.
   virtual std::unique_ptr<PosixEventEngineEndpoint> CreateEndpointFromFd(
-      int fd, const ResolvedAddress& peer_addr, const EndpointConfig& config,
+      int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) = 0;
 
   /// Listens for incoming connection requests from gRPC clients and initiates
