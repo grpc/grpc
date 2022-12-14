@@ -20,7 +20,6 @@
 #define GRPCPP_IMPL_SERVICE_TYPE_H
 
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server_interface.h>

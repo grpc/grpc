@@ -21,7 +21,6 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/sync_stream.h>

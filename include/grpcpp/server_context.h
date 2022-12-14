@@ -65,8 +65,6 @@ class ServerReader;
 template <class W>
 class ServerWriter;
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 namespace internal {
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;

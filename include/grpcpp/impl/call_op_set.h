@@ -34,7 +34,6 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_hook.h>
 #include <grpcpp/impl/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/interceptor_common.h>
@@ -45,8 +44,6 @@
 #include <grpcpp/support/string_ref.h>
 
 namespace grpc {
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 class Call;

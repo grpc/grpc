@@ -27,7 +27,6 @@
 #include <grpc/support/time.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_hook.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_service_method.h>
@@ -43,8 +42,6 @@ class GenericServerContext;
 class ServerCompletionQueue;
 class ServerCredentials;
 class Service;
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// Models a gRPC server.
 ///

@@ -24,7 +24,6 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>

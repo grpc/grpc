@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/config.h>
-#include <grpcpp/impl/codegen/core_codegen.h>
 
 namespace grpc {
 
@@ -51,12 +50,7 @@ class GrpcLibrary {
 /// Instantiating this class ensures the proper initialization of gRPC.
 class GrpcLibraryInitializer final {
  public:
-  GrpcLibraryInitializer() {
-    if (grpc::g_core_codegen_interface == nullptr) {
-      static auto* const g_core_codegen = new CoreCodegen();
-      grpc::g_core_codegen_interface = g_core_codegen;
-    }
-  }
+  GrpcLibraryInitializer() {}
 
   /// A no-op method to force the linker to reference this class, which will
   /// take care of initializing and shutting down the gRPC runtime.
