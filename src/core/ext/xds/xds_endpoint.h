@@ -32,6 +32,7 @@
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "upb/def.h"
 
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -41,7 +42,7 @@
 
 namespace grpc_core {
 
-struct XdsEndpointResource {
+struct XdsEndpointResource : public XdsResourceType::ResourceData {
   struct Priority {
     struct Locality {
       RefCountedPtr<XdsLocalityName> name;
@@ -124,15 +125,11 @@ class XdsEndpointResourceType
   absl::string_view type_url() const override {
     return "envoy.config.endpoint.v3.ClusterLoadAssignment";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.ClusterLoadAssignment";
-  }
 
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource,
-                      bool is_v2) const override;
+                      absl::string_view serialized_resource) const override;
 
-  void InitUpbSymtab(upb_DefPool* symtab) const override {
+  void InitUpbSymtab(XdsClient*, upb_DefPool* symtab) const override {
     envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
   }
 };

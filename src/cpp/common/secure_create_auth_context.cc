@@ -18,7 +18,7 @@
 #include <memory>
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpcpp/security/auth_context.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

@@ -30,7 +30,6 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -46,11 +45,8 @@
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/support/alloc.h>
 
@@ -60,6 +56,8 @@
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
@@ -70,12 +68,8 @@ static const int kPollinCheck = POLLIN | POLLHUP | POLLERR;
 static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
-using ::grpc_event_engine::experimental::AnyInvocableClosure;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::posix_engine::WakeupFd;
 using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
 class PollEventHandle : public EventHandle {
@@ -100,10 +94,10 @@ class PollEventHandle : public EventHandle {
         write_closure_(
             reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
     poller_->Ref();
-    absl::MutexLock lock(&poller_->mu_);
+    grpc_core::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
   }
-  PollPoller* Poller() { return poller_; }
+  PollPoller* Poller() override { return poller_; }
   bool SetPendingActions(bool pending_read, bool pending_write) {
     pending_actions_ |= pending_read;
     if (pending_write) {
@@ -118,7 +112,7 @@ class PollEventHandle : public EventHandle {
     return false;
   }
   void ForceRemoveHandleFromPoller() {
-    absl::MutexLock lock(&poller_->mu_);
+    grpc_core::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListRemoveHandle(this);
   }
   int WrappedFd() override { return fd_; }
@@ -155,13 +149,13 @@ class PollEventHandle : public EventHandle {
   void SetWritable() override;
   void SetHasError() override;
   bool IsHandleShutdown() override {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return is_shutdown_;
   };
   inline void ExecutePendingActions() {
     int kick = 0;
     {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       if ((pending_actions_ & 1UL)) {
         if (SetReadyLocked(&read_closure_)) {
           kick = 1;
@@ -196,7 +190,7 @@ class PollEventHandle : public EventHandle {
     }
   }
   ~PollEventHandle() override = default;
-  absl::Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
+  grpc_core::Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
   PollPoller::HandlesList& ForkFdListPos() { return fork_fd_list_; }
   PollPoller::HandlesList& PollerHandlesListPos() {
     return poller_handles_list_;
@@ -211,7 +205,7 @@ class PollEventHandle : public EventHandle {
   int NotifyOnLocked(PosixEngineClosure** st, PosixEngineClosure* closure);
   // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
   // required.
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   std::atomic<int> ref_count_{1};
   int fd_;
   int pending_actions_;
@@ -335,7 +329,7 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 bool InitPollPollerPosix() {
-  if (!grpc_event_engine::posix_engine::SupportsWakeupFd()) {
+  if (!grpc_event_engine::experimental::SupportsWakeupFd()) {
     return false;
   }
   if (grpc_core::Fork::Enabled()) {
@@ -361,11 +355,11 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
 }
 
 void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
-                                   absl::string_view /* reason */) {
+                                   absl::string_view /*reason*/) {
   ForkFdListRemoveHandle(this);
   ForceRemoveHandleFromPoller();
   {
-    absl::ReleasableMutexLock lock(&mu_);
+    grpc_core::ReleasableMutexLock lock(&mu_);
     on_done_ = on_done;
     released_ = release_fd != nullptr;
     if (release_fd != nullptr) {
@@ -448,7 +442,7 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
   // of a closure which calls OrphanHandle or poller->Shutdown() prematurely.
   Ref();
   {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     // only shutdown once
     if (!is_shutdown_) {
       is_shutdown_ = true;
@@ -469,7 +463,7 @@ void PollEventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
   // poller->Shutdown() prematurely.
   Ref();
   {
-    absl::ReleasableMutexLock lock(&mu_);
+    grpc_core::ReleasableMutexLock lock(&mu_);
     if (NotifyOnLocked(&read_closure_, on_read)) {
       lock.Release();
       // NotifyOnLocked immediately scheduled some closure. It would have set
@@ -491,7 +485,7 @@ void PollEventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
   // poller->Shutdown() prematurely.
   Ref();
   {
-    absl::ReleasableMutexLock lock(&mu_);
+    grpc_core::ReleasableMutexLock lock(&mu_);
     if (NotifyOnLocked(&write_closure_, on_write)) {
       lock.Release();
       // NotifyOnLocked immediately scheduled some closure. It would have set
@@ -517,7 +511,7 @@ void PollEventHandle::NotifyOnError(PosixEngineClosure* on_error) {
 void PollEventHandle::SetReadable() {
   Ref();
   {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     SetReadyLocked(&read_closure_);
   }
   Unref();
@@ -526,7 +520,7 @@ void PollEventHandle::SetReadable() {
 void PollEventHandle::SetWritable() {
   Ref();
   {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     SetReadyLocked(&write_closure_);
   }
   Unref();
@@ -570,7 +564,7 @@ bool PollEventHandle::EndPollLocked(bool got_read, bool got_write) {
 }
 
 void PollPoller::KickExternal(bool ext) {
-  absl::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (was_kicked_) {
     if (ext) {
       was_kicked_ext_ = true;
@@ -649,6 +643,7 @@ Poller::WorkResult PollPoller::Work(
   bool was_kicked_ext = false;
   PollEventHandle* watcher_space[inline_elements];
   Events pending_events;
+  pending_events.clear();
   int timeout_ms =
       static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
   mu_.Lock();
@@ -684,7 +679,7 @@ Poller::WorkResult PollPoller::Work(
     PollEventHandle* head = poll_handles_list_head_;
     while (head != nullptr) {
       {
-        absl::MutexLock lock(head->mu());
+        grpc_core::MutexLock lock(head->mu());
         // There shouldn't be any orphaned fds at this point. This is because
         // prior to marking a handle as orphaned it is first removed from
         // poll handle list for the poller under the poller lock.
@@ -706,7 +701,14 @@ Poller::WorkResult PollPoller::Work(
     }
     mu_.Unlock();
 
-    if (!use_phony_poll_ || timeout_ms == 0) {
+    if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
+      // If use_phony_poll is true and pfd_count == 1, it implies only the
+      // wakeup_fd is present. Allow the call to get blocked in this case as
+      // well instead of crashing. This is because the poller::Work is called
+      // right after an event enging is constructed. Even if phony poll is
+      // expected to be used, we dont want to check for it until some actual
+      // event handles are registered. Otherwise the event engine construction
+      // may crash.
       r = poll(pfds, pfd_count, timeout_ms);
     } else {
       gpr_log(GPR_ERROR,
@@ -719,14 +721,14 @@ Poller::WorkResult PollPoller::Work(
         // Abort fail here.
         gpr_log(GPR_ERROR,
                 "(event_engine) PollPoller:%p encountered poll error: %s", this,
-                strerror(errno));
+                grpc_core::StrError(errno).c_str());
         GPR_ASSERT(false);
       }
 
       for (i = 1; i < pfd_count; i++) {
         PollEventHandle* head = watchers[i];
         int watch_mask;
-        absl::ReleasableMutexLock lock(head->mu());
+        grpc_core::ReleasableMutexLock lock(head->mu());
         if (head->IsWatched(watch_mask)) {
           head->SetWatched(-1);
           // This fd was Watched with a watch mask > 0.
@@ -765,7 +767,7 @@ Poller::WorkResult PollPoller::Work(
       for (i = 1; i < pfd_count; i++) {
         PollEventHandle* head = watchers[i];
         int watch_mask;
-        absl::ReleasableMutexLock lock(head->mu());
+        grpc_core::ReleasableMutexLock lock(head->mu());
         if (!head->IsWatched(watch_mask) || watch_mask == 0) {
           // IsWatched will be false if an orphan was invoked on the
           // handle while it was being polled. If watch_mask is 0, then the fd
@@ -821,7 +823,7 @@ Poller::WorkResult PollPoller::Work(
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
   }
-  return Poller::WorkResult::kOk;
+  return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 
 void PollPoller::Shutdown() {
@@ -829,7 +831,7 @@ void PollPoller::Shutdown() {
   Unref();
 }
 
-PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
+PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
     return new PollPoller(scheduler, use_phony_poll);
@@ -837,16 +839,13 @@ PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
   return nullptr;
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #else /* GRPC_POSIX_SOCKET_EV_POLL */
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
+namespace experimental {
 
 PollPoller::PollPoller(Scheduler* /* engine */) {
   GPR_ASSERT(false && "unimplemented");
@@ -871,7 +870,8 @@ void PollPoller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-PollPoller* GetPollPoller(Scheduler* /*scheduler*/, bool /* use_phony_poll */) {
+PollPoller* MakePollPoller(Scheduler* /*scheduler*/,
+                           bool /* use_phony_poll */) {
   return nullptr;
 }
 
@@ -887,7 +887,7 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_POSIX_SOCKET_EV_POLL */

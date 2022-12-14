@@ -33,8 +33,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds:ads_for_test_proto",
-        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing/xds/v3:ads_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
@@ -44,15 +42,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing/xds/v3:route_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
-    ],
-)
-
-grpc_cc_library(
-    name = "no_op_http_filter",
-    testonly = True,
-    hdrs = ["no_op_http_filter.h"],
-    deps = [
-        "//:grpc",
     ],
 )
 
@@ -73,8 +62,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//src/proto/grpc/testing/xds:ads_for_test_proto",
-        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing/xds/v3:ads_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
@@ -116,18 +103,15 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":no_op_http_filter",
         ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
+        "//src/core:channel_args",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//src/proto/grpc/testing/xds:cds_for_test_proto",
-        "//src/proto/grpc/testing/xds:eds_for_test_proto",
-        "//src/proto/grpc/testing/xds:lds_rds_for_test_proto",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
@@ -215,6 +199,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -285,7 +270,6 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":no_op_http_filter",
         ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",
@@ -346,6 +330,7 @@ grpc_cc_test(
         "//src/proto/grpc/lookup/v1:rls_config_proto",
         "//src/proto/grpc/lookup/v1:rls_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:rls_server",
     ],
 )
@@ -365,7 +350,6 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":no_op_http_filter",
         ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",

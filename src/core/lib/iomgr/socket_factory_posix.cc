@@ -22,7 +22,7 @@
 
 #ifdef GRPC_POSIX_SOCKET_SOCKET_FACTORY
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"

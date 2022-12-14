@@ -19,8 +19,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
 #include "src/core/lib/security/authorization/mock_cel/cel_expression.h"
 #include "src/core/lib/security/authorization/mock_cel/flat_expr_builder.h"
 
@@ -36,7 +34,7 @@ struct InterpreterOptions {
 
 inline std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder(
     const InterpreterOptions& options) {
-  return absl::make_unique<FlatExprBuilder>();
+  return std::make_unique<FlatExprBuilder>();
 }
 
 }  // namespace mock_cel

@@ -12,23 +12,81 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
+#include <stdlib.h>
 
-#include "absl/memory/memory.h"
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
+#include "src/core/lib/security/authorization/authorization_policy_provider.h"
+#include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
+#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/handshaker.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
+#include "src/core/tsi/transport_security_interface.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/filters/filter_fuzzer.pb.h"
 
@@ -36,14 +94,15 @@ bool squelch = true;
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-static gpr_timespec g_now;
+static grpc_core::Mutex g_now_mu;
+static gpr_timespec g_now ABSL_GUARDED_BY(g_now_mu);
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  gpr_timespec ts = g_now;
-  ts.clock_type = clock_type;
-  return ts;
+  grpc_core::MutexLock lock(&g_now_mu);
+  g_now.clock_type = clock_type;
+  return g_now;
 }
 
 namespace grpc_core {
@@ -58,8 +117,9 @@ const grpc_transport_vtable kFakeTransportVTable = {
     [](grpc_transport*, grpc_stream*, grpc_stream_refcount*, const void*,
        Arena*) -> int { abort(); },
     // make_call_promise
-    [](grpc_transport*,
-       ClientMetadataHandle) -> ArenaPromise<ServerMetadataHandle> { abort(); },
+    [](grpc_transport*, CallArgs) -> ArenaPromise<ServerMetadataHandle> {
+      abort();
+    },
     // set_pollset
     [](grpc_transport*, grpc_stream*, grpc_pollset*) { abort(); },
     // set_pollset_set
@@ -158,9 +218,9 @@ struct GlobalObjects {
       case filter_fuzzer::GlobalObjectAction::kFinishCheckCallHost:
         channel_security_connector->FinishCheckCallHost(
             action.finish_check_call_host().qry(),
-            absl::Status(
-                absl::StatusCode(action.finish_check_call_host().status()),
-                action.finish_check_call_host().message()));
+            absl::Status(static_cast<absl::StatusCode>(
+                             action.finish_check_call_host().status()),
+                         action.finish_check_call_host().message()));
         break;
     }
   }
@@ -189,7 +249,9 @@ RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                             GlobalObjects* globals) {
-  ChannelArgs args = ChannelArgs().SetObject(ResourceQuota::Default());
+  ChannelArgs args = CoreConfiguration::Get()
+                         .channel_args_preconditioning()
+                         .PreconditionChannelArgs(nullptr);
   for (const auto& arg : fuzz_args) {
     if (arg.key() == ResourceQuota::ChannelArgName()) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kResourceQuota) {
@@ -259,11 +321,12 @@ const grpc_channel_filter* FindFilter(absl::string_view name) {
 
 class MainLoop {
  public:
-  MainLoop(RefCountedPtr<grpc_channel_stack> channel_stack,
+  MainLoop(bool is_client, RefCountedPtr<grpc_channel_stack> channel_stack,
            const ChannelArgs& channel_args)
       : memory_allocator_(channel_args.GetObject<ResourceQuota>()
                               ->memory_quota()
                               ->CreateMemoryAllocator("test")),
+        is_client_(is_client),
         channel_stack_(std::move(channel_stack)) {}
 
   ~MainLoop() {
@@ -280,18 +343,20 @@ class MainLoop {
     switch (action.type_case()) {
       case filter_fuzzer::Action::TYPE_NOT_SET:
         break;
-      case filter_fuzzer::Action::kAdvanceTimeMicroseconds:
+      case filter_fuzzer::Action::kAdvanceTimeMicroseconds: {
+        MutexLock lock(&g_now_mu);
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(action.advance_time_microseconds(),
                                         GPR_TIMESPAN));
         break;
+      }
       case filter_fuzzer::Action::kCancel:
         calls_.erase(action.call());
         break;
       case filter_fuzzer::Action::kCreateCall:
-        calls_.emplace(
-            action.call(),
-            absl::make_unique<Call>(this, action.call(), action.create_call()));
+        calls_.emplace(action.call(), std::make_unique<Call>(
+                                          this, action.call(),
+                                          action.create_call(), is_client_));
         break;
       case filter_fuzzer::Action::kReceiveInitialMetadata:
         if (auto* call = GetCall(action.call())) {
@@ -347,6 +412,10 @@ class MainLoop {
     }
     void Drop() override { delete this; }
 
+    std::string ActivityDebugTag() const override {
+      return "WakeCall(" + std::to_string(id_) + ")";
+    }
+
    private:
     MainLoop* const main_loop_;
     uint32_t id_;
@@ -394,22 +463,26 @@ class MainLoop {
       }
 
       bool StartTransportOp(grpc_transport_op* op) override {
-        GRPC_ERROR_UNREF(op->disconnect_with_error);
-        GRPC_ERROR_UNREF(op->goaway_error);
-        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
         return true;
       }
     };
 
     Call(MainLoop* main_loop, uint32_t id,
-         const filter_fuzzer::Metadata& client_initial_metadata)
+         const filter_fuzzer::Metadata& client_initial_metadata, bool is_client)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
       auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
-      promise_ = main_loop_->channel_stack_->MakeCallPromise(
-          CallArgs{std::move(*LoadMetadata(client_initial_metadata,
-                                           &client_initial_metadata_)),
-                   server_initial_metadata});
+      CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
+                                                 &client_initial_metadata_)),
+                         server_initial_metadata, nullptr, nullptr};
+      if (is_client) {
+        promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
+            std::move(call_args));
+      } else {
+        promise_ = main_loop_->channel_stack_->MakeServerCallPromise(
+            std::move(call_args));
+      }
       Step();
     }
 
@@ -420,7 +493,7 @@ class MainLoop {
         if (promise_.has_value()) final_info_.reset();
         std::unique_ptr<grpc_call_final_info> final_info;
         if (final_info_) {
-          final_info = absl::make_unique<grpc_call_final_info>();
+          final_info = std::make_unique<grpc_call_final_info>();
           final_info->final_status =
               static_cast<grpc_status_code>(final_info_->status());
           final_info->error_string = final_info_->error_string().c_str();
@@ -480,7 +553,7 @@ class MainLoop {
     }
 
     void SetFinalInfo(filter_fuzzer::FinalInfo final_info) {
-      final_info_ = absl::make_unique<filter_fuzzer::FinalInfo>(final_info);
+      final_info_ = std::make_unique<filter_fuzzer::FinalInfo>(final_info);
     }
 
    private:
@@ -516,15 +589,15 @@ class MainLoop {
     };
 
     template <typename R>
-    absl::optional<MetadataHandle<R>> LoadMetadata(
+    absl::optional<Arena::PoolPtr<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
       if (*out != nullptr) return absl::nullopt;
-      *out = absl::make_unique<R>(arena_.get());
+      *out = std::make_unique<R>(arena_.get());
       for (const auto& md : metadata.metadata()) {
         (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
                        [](absl::string_view, const Slice&) {});
       }
-      return MetadataHandle<R>::TestOnlyWrap(out->get());
+      return Arena::PoolPtr<R>(out->get(), Arena::PooledDeleter(nullptr));
     }
 
     void Step() {
@@ -538,8 +611,8 @@ class MainLoop {
 
     Poll<ServerMetadataHandle> CheckCompletion() {
       if (server_trailing_metadata_ != nullptr) {
-        return ServerMetadataHandle::TestOnlyWrap(
-            server_trailing_metadata_.get());
+        return ServerMetadataHandle(server_trailing_metadata_.get(),
+                                    Arena::PooledDeleter(nullptr));
       }
       server_trailing_metadata_waker_ = MakeOwningWaker();
       return Pending{};
@@ -568,6 +641,7 @@ class MainLoop {
   }
 
   MemoryAllocator memory_allocator_;
+  const bool is_client_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
   std::map<uint32_t, std::unique_ptr<Call>> calls_;
   std::vector<uint32_t> wakeups_;
@@ -584,12 +658,14 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
     return;
   }
 
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
-  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
-  grpc_core::TestOnlySetProcessEpoch(g_now);
+  {
+    grpc_core::MutexLock lock(&g_now_mu);
+    g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+    grpc_core::TestOnlySetProcessEpoch(g_now);
+  }
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
@@ -603,8 +679,8 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
 
   grpc_core::ChannelStackBuilderImpl builder(
       msg.stack_name().c_str(),
-      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
-  builder.SetChannelArgs(channel_args);
+      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()),
+      channel_args);
   builder.AppendFilter(filter);
   const bool is_client =
       grpc_channel_stack_type_is_client(builder.channel_stack_type());
@@ -620,7 +696,7 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }();
 
   if (stack.ok()) {
-    grpc_core::MainLoop main_loop(std::move(*stack), channel_args);
+    grpc_core::MainLoop main_loop(is_client, std::move(*stack), channel_args);
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
       main_loop.Run(action, &globals);

@@ -43,7 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -114,8 +114,7 @@ class FakeHandshakeServer {
           0 /* expected max concurrent rpcs unset */);
     }
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(address_.c_str(),
-                             grpc::InsecureServerCredentials());
+    builder.AddListeningPort(address_, grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
     // TODO(apolcyn): when removing the global concurrent handshake limiting
     // queue, set MAX_CONCURRENT_STREAMS on this server.
@@ -158,7 +157,7 @@ class TestServer {
     grpc_server_start(server_);
     gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
             server_addr_.c_str());
-    server_thd_ = absl::make_unique<std::thread>(PollUntilShutdown, this);
+    server_thd_ = std::make_unique<std::thread>(PollUntilShutdown, this);
   }
 
   ~TestServer() {
@@ -211,7 +210,7 @@ class ConnectLoopRunner {
         loops_(loops),
         expected_connectivity_states_(expected_connectivity_states),
         reconnect_backoff_ms_(reconnect_backoff_ms) {
-    thd_ = absl::make_unique<std::thread>(ConnectLoop, this);
+    thd_ = std::make_unique<std::thread>(ConnectLoop, this);
   }
 
   ~ConnectLoopRunner() { thd_->join(); }
@@ -310,7 +309,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
     gpr_log(GPR_DEBUG,
             "start performing concurrent expected-to-succeed connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
           15 /* per connect deadline seconds */, 5 /* loops */,
           GRPC_CHANNEL_READY /* expected connectivity states */,
@@ -355,7 +354,7 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
           10 /* per connect deadline seconds */, 3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
@@ -394,7 +393,7 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
           20 /* per connect deadline seconds */, 2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
@@ -433,7 +432,7 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
           10 /* per connect deadline seconds */, 2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,

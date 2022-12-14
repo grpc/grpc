@@ -112,7 +112,7 @@ grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
 /* Get all addresses assigned to network interfaces on the machine and create a
    listener for each. requested_port is the port to use for every listener, or 0
    to select one random port that will be used for every listener. Set *out_port
-   to the port selected. Return GRPC_ERROR_NONE only if all listeners were
+   to the port selected. Return absl::OkStatus() only if all listeners were
    added. */
 grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
                                                       unsigned port_index,

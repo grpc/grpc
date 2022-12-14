@@ -16,14 +16,12 @@
  *
  */
 
-#include <stdbool.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/global_config.h"
 #include "test/core/util/test_config.h"
 
 static bool log_func_reached = false;

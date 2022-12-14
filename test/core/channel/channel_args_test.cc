@@ -20,22 +20,24 @@
 
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::CreateEventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
 
 TEST(ChannelArgsTest, Noop) { ChannelArgs(); }
 
@@ -164,6 +166,33 @@ TEST(ChannelArgsTest, RetrieveRawPointerFromStoredSharedPtr) {
   EXPECT_EQ(raw_obj->n, 42);
   // Refs: p and ChannelArgs
   EXPECT_EQ(2, shared_obj.use_count());
+}
+
+TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
+  ChannelArgs a;
+  a = a.SetObject(p);
+  Notification signal;
+  bool triggered = false;
+  a.GetObjectRef<EventEngine>()->Run([&triggered, &signal] {
+    triggered = true;
+    signal.Notify();
+  });
+  signal.WaitForNotification();
+  ASSERT_TRUE(triggered);
+}
+
+TEST(ChannelArgsTest, GetNonOwningEventEngine) {
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
+  ASSERT_TRUE(p.unique());
+  ChannelArgs a;
+  a = a.SetObject(p);
+  ASSERT_FALSE(p.unique());
+  ASSERT_EQ(p.use_count(), 2);
+  EventEngine* engine = a.GetObject<EventEngine>();
+  (void)engine;
+  // p and the channel args
+  ASSERT_EQ(p.use_count(), 2);
 }
 
 }  // namespace grpc_core

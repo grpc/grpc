@@ -21,13 +21,14 @@
 #include <stddef.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 
 grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slices,
                                               size_t nslices) {
@@ -45,7 +46,7 @@ grpc_byte_buffer* grpc_raw_compressed_byte_buffer_create(
   bb->data.raw.compression = compression;
   grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
   for (i = 0; i < nslices; i++) {
-    grpc_slice_ref(slices[i]);
+    grpc_core::CSliceRef(slices[i]);
     grpc_slice_buffer_add(&bb->data.raw.slice_buffer, slices[i]);
   }
   return bb;

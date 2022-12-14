@@ -22,6 +22,7 @@
 
 #include <grpc/byte_buffer_reader.h>
 
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code) {
@@ -48,13 +49,13 @@ grpc_gcp_HandshakerResp* alts_tsi_utils_deserialize_response(
   grpc_byte_buffer_reader bbr;
   grpc_byte_buffer_reader_init(&bbr, resp_buffer);
   grpc_slice slice = grpc_byte_buffer_reader_readall(&bbr);
-  size_t buf_size = GPR_SLICE_LENGTH(slice);
+  size_t buf_size = GRPC_SLICE_LENGTH(slice);
   void* buf = upb_Arena_Malloc(arena, buf_size);
-  memcpy(buf, reinterpret_cast<const char*>(GPR_SLICE_START_PTR(slice)),
+  memcpy(buf, reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
          buf_size);
   grpc_gcp_HandshakerResp* resp = grpc_gcp_HandshakerResp_parse(
       reinterpret_cast<char*>(buf), buf_size, arena);
-  grpc_slice_unref(slice);
+  grpc_core::CSliceUnref(slice);
   grpc_byte_buffer_reader_destroy(&bbr);
   if (resp == nullptr) {
     gpr_log(GPR_ERROR, "grpc_gcp_handshaker_resp_decode() failed");

@@ -70,12 +70,12 @@ struct grpc_ares_request {
       ABSL_GUARDED_BY(mu);
   /** the pointer to receive the service config in JSON */
   char** service_config_json_out ABSL_GUARDED_BY(mu) = nullptr;
-  /** the evernt driver used by this request */
+  /** the event driver used by this request */
   grpc_ares_ev_driver* ev_driver ABSL_GUARDED_BY(mu) = nullptr;
   /** number of ongoing queries */
   size_t pending_queries ABSL_GUARDED_BY(mu) = 0;
   /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error_handle error ABSL_GUARDED_BY(mu) = GRPC_ERROR_NONE;
+  grpc_error_handle error ABSL_GUARDED_BY(mu);
 };
 
 /* Asynchronously resolve \a name (A/AAAA records only).

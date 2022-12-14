@@ -25,7 +25,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -60,7 +61,7 @@ class ChildPolicyHandler::Helper
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                   std::unique_ptr<SubchannelPicker> picker) override {
+                   RefCountedPtr<SubchannelPicker> picker) override {
     if (parent_->shutting_down_) return;
     // If this request is from the pending child policy, ignore it until
     // it reports something other than CONNECTING, at which point we swap it
@@ -105,6 +106,10 @@ class ChildPolicyHandler::Helper
 
   absl::string_view GetAuthority() override {
     return parent_->channel_control_helper()->GetAuthority();
+  }
+
+  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+    return parent_->channel_control_helper()->GetEventEngine();
   }
 
   void AddTraceEvent(TraceSeverity severity,

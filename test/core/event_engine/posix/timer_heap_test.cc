@@ -18,21 +18,25 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <utility>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/timer.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 
 using testing::Contains;
 using testing::Not;
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 int64_t RandomDeadline(void) { return rand(); }
@@ -193,7 +197,7 @@ TEST(TimerHeapTest, RandomMutations) {
 }
 
 }  // namespace
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

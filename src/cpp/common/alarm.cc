@@ -20,13 +20,13 @@
 #include <functional>
 #include <utility>
 
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/gprpp/time.h"
@@ -89,15 +89,15 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     GRPC_CLOSURE_INIT(
         &on_alarm_,
         [](void* arg, grpc_error_handle error) {
-          grpc_core::Executor::Run(
-              GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error_handle error) {
-                    AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                    alarm->callback_(GRPC_ERROR_IS_NONE(error));
-                    alarm->Unref();
-                  },
-                  arg, nullptr),
-              error);
+          grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(
+                                       [](void* arg, grpc_error_handle error) {
+                                         AlarmImpl* alarm =
+                                             static_cast<AlarmImpl*>(arg);
+                                         alarm->callback_(error.ok());
+                                         alarm->Unref();
+                                       },
+                                       arg, nullptr),
+                                   error);
         },
         this, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&timer_,

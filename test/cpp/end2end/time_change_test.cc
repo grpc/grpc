@@ -41,9 +41,6 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/subprocess.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
 static std::string g_root;
 
 static gpr_mu g_mu;
@@ -134,12 +131,12 @@ class TimeChangeTest : public ::testing::Test {
  protected:
   TimeChangeTest() {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     server_address_ = addr_stream.str();
-    server_ = absl::make_unique<SubProcess>(std::vector<std::string>({
+    server_ = std::make_unique<SubProcess>(std::vector<std::string>({
         g_root + "/client_crash_test_server",
         "--address=" + server_address_,
     }));
@@ -152,7 +149,7 @@ class TimeChangeTest : public ::testing::Test {
         grpc_timeout_milliseconds_to_deadline(30000)));
   }
 
-  static void TearDownTestCase() { server_.reset(); }
+  static void TearDownTestSuite() { server_.reset(); }
 
   void SetUp() override {
     channel_ =

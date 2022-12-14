@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -35,11 +34,12 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -210,22 +210,11 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
   };
 
-  // A simple wrapper for ref-counting a picker from the child policy.
-  class RefCountedPicker : public RefCounted<RefCountedPicker> {
-   public:
-    explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-   private:
-    std::unique_ptr<SubchannelPicker> picker_;
-  };
-
   // A picker that wraps the picker from the child to perform drops.
   class Picker : public SubchannelPicker {
    public:
     Picker(XdsClusterImplLb* xds_cluster_impl_lb,
-           RefCountedPtr<RefCountedPicker> picker);
+           RefCountedPtr<SubchannelPicker> picker);
 
     PickResult Pick(PickArgs args) override;
 
@@ -236,7 +225,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     uint32_t max_concurrent_requests_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
-    RefCountedPtr<RefCountedPicker> picker_;
+    RefCountedPtr<SubchannelPicker> picker_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -251,9 +240,10 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -293,7 +283,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   // Latest state and picker reported by the child policy.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
-  RefCountedPtr<RefCountedPicker> picker_;
+  RefCountedPtr<SubchannelPicker> picker_;
 };
 
 //
@@ -366,7 +356,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
 //
 
 XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
-                                 RefCountedPtr<RefCountedPicker> picker)
+                                 RefCountedPtr<SubchannelPicker> picker)
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->config_->max_concurrent_requests()),
@@ -418,7 +408,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     }
     // Inject subchannel call tracker to record call completion.
     complete_pick->subchannel_call_tracker =
-        absl::make_unique<SubchannelCallTracker>(
+        std::make_unique<SubchannelCallTracker>(
             std::move(complete_pick->subchannel_call_tracker),
             std::move(locality_stats),
             call_counter_->Ref(DEBUG_LOCATION, "SubchannelCallTracker"));
@@ -531,7 +521,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (config_->drop_config() != nullptr && config_->drop_config()->drop_all()) {
-    auto drop_picker = absl::make_unique<Picker>(this, picker_);
+    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
@@ -544,7 +534,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   }
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
-    auto drop_picker = absl::make_unique<Picker>(this, picker_);
+    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
@@ -563,7 +553,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_impl_lb_trace);
@@ -611,7 +601,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   if (xds_cluster_impl_policy_->shutting_down_) return nullptr;
   // If load reporting is enabled, wrap the subchannel such that it
-  // includes the locality stats object, which will be used by the EdsPicker.
+  // includes the locality stats object, which will be used by the Picker.
   if (xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
           .has_value()) {
     RefCountedPtr<XdsLocalityName> locality_name;
@@ -652,7 +642,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
 
 void XdsClusterImplLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (xds_cluster_impl_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO,
@@ -665,8 +655,7 @@ void XdsClusterImplLb::Helper::UpdateState(
   // Save the state and picker.
   xds_cluster_impl_policy_->state_ = state;
   xds_cluster_impl_policy_->status_ = status;
-  xds_cluster_impl_policy_->picker_ =
-      MakeRefCounted<RefCountedPicker>(std::move(picker));
+  xds_cluster_impl_policy_->picker_ = std::move(picker);
   // Wrap the picker and return it to the channel.
   xds_cluster_impl_policy_->MaybeUpdatePickerLocked();
 }
@@ -678,6 +667,11 @@ void XdsClusterImplLb::Helper::RequestReresolution() {
 
 absl::string_view XdsClusterImplLb::Helper::GetAuthority() {
   return xds_cluster_impl_policy_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine*
+XdsClusterImplLb::Helper::GetEventEngine() {
+  return xds_cluster_impl_policy_->channel_control_helper()->GetEventEngine();
 }
 
 void XdsClusterImplLb::Helper::AddTraceEvent(TraceSeverity severity,
@@ -794,7 +788,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsClusterImplLbFactory>());
+      std::make_unique<XdsClusterImplLbFactory>());
 }
 
 }  // namespace grpc_core

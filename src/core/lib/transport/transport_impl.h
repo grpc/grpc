@@ -56,7 +56,7 @@ typedef struct grpc_transport_vtable {
      There is an on-going migration to move all filters to providing this, and
      then to drop perform_stream_op. */
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (*make_call_promise)(
-      grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata);
+      grpc_transport* self, grpc_core::CallArgs call_args);
 
   /* implementation of grpc_transport_set_pollset */
   void (*set_pollset)(grpc_transport* self, grpc_stream* stream,

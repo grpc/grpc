@@ -83,8 +83,8 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
   shutdown_client(f);
+  shutdown_server(f);
 
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
@@ -225,6 +225,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
 
     cqv.Expect(tag(2), true);
     cqv.Verify();
+
+    GPR_ASSERT(response_payload2_recv != nullptr);
   }
 
   // Cancel the call so that the client sets up an error status.

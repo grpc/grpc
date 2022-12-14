@@ -17,7 +17,9 @@
 
 #include <utility>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include "absl/status/status.h"
+
+#include <grpc/impl/grpc_types.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/status.h>
 
@@ -51,7 +53,7 @@ void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
     }
   };
   ClosureWithArg* arg = new ClosureWithArg(this, std::move(s));
-  grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(&arg->closure, absl::OkStatus());
 }
 
 bool ClientReactor::InternalTrailersOnly(const grpc_call* call) const {

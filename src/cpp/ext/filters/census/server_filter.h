@@ -31,8 +31,8 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/support/config.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -42,7 +42,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/cpp/common/channel_filter.h"
-#include "src/cpp/ext/filters/census/context.h"
 
 namespace grpc {
 
@@ -83,7 +82,7 @@ class CensusServerCallData : public CallData {
   static void OnDoneRecvMessageCb(void* user_data, grpc_error_handle error);
 
  private:
-  CensusContext context_;
+  experimental::CensusContext context_;
   // server method
   absl::string_view method_;
   std::string qualified_method_;

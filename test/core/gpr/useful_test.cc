@@ -16,11 +16,15 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 
-#include <gtest/gtest.h>
+#include <stdint.h>
+
+#include <limits>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

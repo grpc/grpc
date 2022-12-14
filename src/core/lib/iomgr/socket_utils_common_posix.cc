@@ -50,6 +50,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 /* set a socket to use zerocopy */
@@ -60,7 +61,7 @@ grpc_error_handle grpc_set_socket_zerocopy(int fd) {
   if (err != 0) {
     return GRPC_OS_ERROR(errno, "setsockopt(SO_ZEROCOPY)");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 #else
   (void)fd;
   return GRPC_OS_ERROR(ENOSYS, "setsockopt(SO_ZEROCOPY)");
@@ -84,7 +85,7 @@ grpc_error_handle grpc_set_socket_nonblocking(int fd, int non_blocking) {
     return GRPC_OS_ERROR(errno, "fcntl");
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_set_socket_no_sigpipe_if_possible(int fd) {
@@ -99,13 +100,13 @@ grpc_error_handle grpc_set_socket_no_sigpipe_if_possible(int fd) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
   }
   if ((newval != 0) != (val != 0)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_NOSIGPIPE");
+    return GRPC_ERROR_CREATE("Failed to set SO_NOSIGPIPE");
   }
 #else
   // Avoid unused parameter warning for conditional parameter
   (void)fd;
 #endif
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_set_socket_ip_pktinfo_if_possible(int fd) {
@@ -118,7 +119,7 @@ grpc_error_handle grpc_set_socket_ip_pktinfo_if_possible(int fd) {
     return GRPC_OS_ERROR(errno, "setsockopt(IP_PKTINFO)");
   }
 #endif
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
@@ -131,20 +132,20 @@ grpc_error_handle grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
     return GRPC_OS_ERROR(errno, "setsockopt(IPV6_RECVPKTINFO)");
   }
 #endif
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
-             ? GRPC_ERROR_NONE
+             ? absl::OkStatus()
              : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
 }
 
 grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
-             ? GRPC_ERROR_NONE
+             ? absl::OkStatus()
              : GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
 }
 
@@ -165,7 +166,7 @@ grpc_error_handle grpc_set_socket_cloexec(int fd, int close_on_exec) {
     return GRPC_OS_ERROR(errno, "fcntl");
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* set a socket to reuse old addresses */
@@ -180,17 +181,16 @@ grpc_error_handle grpc_set_socket_reuse_addr(int fd, int reuse) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEADDR)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEADDR");
+    return GRPC_ERROR_CREATE("Failed to set SO_REUSEADDR");
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* set a socket to reuse old addresses */
 grpc_error_handle grpc_set_socket_reuse_port(int fd, int reuse) {
 #ifndef SO_REUSEPORT
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "SO_REUSEPORT unavailable on compiling system");
+  return GRPC_ERROR_CREATE("SO_REUSEPORT unavailable on compiling system");
 #else
   int val = (reuse != 0);
   int newval;
@@ -202,10 +202,10 @@ grpc_error_handle grpc_set_socket_reuse_port(int fd, int reuse) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEPORT)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEPORT");
+    return GRPC_ERROR_CREATE("Failed to set SO_REUSEPORT");
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 #endif
 }
 
@@ -243,9 +243,9 @@ grpc_error_handle grpc_set_socket_low_latency(int fd, int low_latency) {
     return GRPC_OS_ERROR(errno, "getsockopt(TCP_NODELAY)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
+    return GRPC_ERROR_CREATE("Failed to set TCP_NODELAY");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* The default values for TCP_USER_TIMEOUT are currently configured to be in
@@ -347,18 +347,18 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
         if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                             sizeof(timeout))) {
           gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
-                  strerror(errno));
-          return GRPC_ERROR_NONE;
+                  grpc_core::StrError(errno).c_str());
+          return absl::OkStatus();
         }
         if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
           gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s",
-                  strerror(errno));
-          return GRPC_ERROR_NONE;
+                  grpc_core::StrError(errno).c_str());
+          return absl::OkStatus();
         }
         if (newval != timeout) {
           /* Do not fail on failing to set TCP_USER_TIMEOUT for now. */
           gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
-          return GRPC_ERROR_NONE;
+          return absl::OkStatus();
         }
       }
     }
@@ -367,7 +367,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* set a socket using a grpc_socket_mutator */
@@ -375,15 +375,15 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
   GPR_ASSERT(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_socket_mutator failed.");
+    return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
     int fd, grpc_fd_usage usage, const grpc_core::PosixTcpOptions& options) {
   if (options.socket_mutator == nullptr) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   return grpc_set_socket_with_mutator(fd, usage, options.socket_mutator);
 }
@@ -418,10 +418,11 @@ int grpc_ipv6_loopback_available(void) {
 
 static grpc_error_handle error_for_fd(int fd,
                                       const grpc_resolved_address* addr) {
-  if (fd >= 0) return GRPC_ERROR_NONE;
+  if (fd >= 0) return absl::OkStatus();
   auto addr_str = grpc_sockaddr_to_string(addr, false);
   grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
+      GRPC_OS_ERROR(errno, "socket"),
+      grpc_core::StatusStrProperty::kTargetAddress,
       addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
   return err;
 }
@@ -456,7 +457,7 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
     /* Check if we've got a valid dualstack socket. */
     if (*newfd >= 0 && grpc_set_socket_dualstack(*newfd)) {
       *dsmode = GRPC_DSMODE_DUALSTACK;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
     /* If this isn't an IPv4 address, then return whatever we've got. */
     if (!grpc_sockaddr_is_v4mapped(resolved_addr, nullptr)) {

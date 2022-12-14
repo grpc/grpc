@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -34,8 +33,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
@@ -45,15 +45,12 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -69,6 +66,8 @@ namespace grpc_core {
 TraceFlag grpc_lb_priority_trace(false, "priority_lb");
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 constexpr absl::string_view kPriority = "priority_experimental";
 
@@ -149,7 +148,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    std::unique_ptr<SubchannelPicker> GetPicker();
+    RefCountedPtr<SubchannelPicker> GetPicker();
 
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
@@ -162,28 +161,6 @@ class PriorityLb : public LoadBalancingPolicy {
     bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
 
    private:
-    // A simple wrapper for ref-counting a picker from the child policy.
-    class RefCountedPicker : public RefCounted<RefCountedPicker> {
-     public:
-      explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-          : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-     private:
-      std::unique_ptr<SubchannelPicker> picker_;
-    };
-
-    // A non-ref-counted wrapper for RefCountedPicker.
-    class RefCountedPickerWrapper : public SubchannelPicker {
-     public:
-      explicit RefCountedPickerWrapper(RefCountedPtr<RefCountedPicker> picker)
-          : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) override { return picker_->Pick(args); }
-
-     private:
-      RefCountedPtr<RefCountedPicker> picker_;
-    };
-
     class Helper : public ChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ChildPriority> priority)
@@ -195,9 +172,10 @@ class PriorityLb : public LoadBalancingPolicy {
           ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
-                       std::unique_ptr<SubchannelPicker> picker) override;
+                       RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -212,13 +190,10 @@ class PriorityLb : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
-      static void OnTimer(void* arg, grpc_error_handle error);
-      void OnTimerLocked(grpc_error_handle);
+      void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      grpc_timer timer_;
-      grpc_closure on_timer_;
-      bool timer_pending_ = true;
+      absl::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     class FailoverTimer : public InternallyRefCounted<FailoverTimer> {
@@ -228,13 +203,10 @@ class PriorityLb : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
-      static void OnTimer(void* arg, grpc_error_handle error);
-      void OnTimerLocked(grpc_error_handle);
+      void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      grpc_timer timer_;
-      grpc_closure on_timer_;
-      bool timer_pending_ = true;
+      absl::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.
@@ -243,7 +215,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
-        std::unique_ptr<SubchannelPicker> picker);
+        RefCountedPtr<SubchannelPicker> picker);
 
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
@@ -253,7 +225,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     absl::Status connectivity_status_;
-    RefCountedPtr<RefCountedPicker> picker_wrapper_;
+    RefCountedPtr<SubchannelPicker> picker_;
 
     bool seen_ready_or_idle_since_transient_failure_ = true;
 
@@ -421,7 +393,7 @@ void PriorityLb::ChoosePriorityLocked() {
         absl::UnavailableError("priority policy has empty priority list");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return;
   }
   // Iterate through priorities, searching for one in READY or IDLE,
@@ -544,36 +516,38 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
             child_priority_->name_.c_str(), child_priority_.get(),
             kChildRetentionInterval.millis());
   }
-  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-  Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(&timer_, Timestamp::Now() + kChildRetentionInterval,
-                  &on_timer_);
+  timer_handle_ =
+      child_priority_->priority_policy_->channel_control_helper()
+          ->GetEventEngine()
+          ->RunAfter(kChildRetentionInterval, [self = Ref(DEBUG_LOCATION,
+                                                          "Timer")]() mutable {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            auto self_ptr = self.get();
+            self_ptr->child_priority_->priority_policy_->work_serializer()->Run(
+                [self = std::move(self)]() { self->OnTimerLocked(); },
+                DEBUG_LOCATION);
+          });
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
-  if (timer_pending_) {
+  if (timer_handle_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO, "[priority_lb %p] child %s (%p): reactivating",
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
-    grpc_timer_cancel(&timer_);
+    child_priority_->priority_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(*timer_handle_);
+    timer_handle_.reset();
   }
   Unref();
 }
 
-void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<DeactivationTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
-  self->child_priority_->priority_policy_->work_serializer()->Run(
-      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
-}
-
-void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
-    grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked() {
+  if (timer_handle_.has_value()) {
+    timer_handle_.reset();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
@@ -581,11 +555,8 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
     child_priority_->priority_policy_->DeleteChild(child_priority_.get());
   }
-  Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -604,40 +575,40 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
         child_priority_.get(),
         child_priority_->priority_policy_->child_failover_timeout_.millis());
   }
-  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-  Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(
-      &timer_,
-      Timestamp::Now() +
-          child_priority_->priority_policy_->child_failover_timeout_,
-      &on_timer_);
+  timer_handle_ =
+      child_priority_->priority_policy_->channel_control_helper()
+          ->GetEventEngine()
+          ->RunAfter(
+              child_priority_->priority_policy_->child_failover_timeout_,
+              [self = Ref(DEBUG_LOCATION, "Timer")]() mutable {
+                ApplicationCallbackExecCtx callback_exec_ctx;
+                ExecCtx exec_ctx;
+                auto self_ptr = self.get();
+                self_ptr->child_priority_->priority_policy_->work_serializer()
+                    ->Run([self = std::move(self)]() { self->OnTimerLocked(); },
+                          DEBUG_LOCATION);
+              });
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
-  if (timer_pending_) {
+  if (timer_handle_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): cancelling failover timer",
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
-    grpc_timer_cancel(&timer_);
+    child_priority_->priority_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(*timer_handle_);
+    timer_handle_.reset();
   }
   Unref();
 }
 
-void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<FailoverTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
-  self->child_priority_->priority_policy_->work_serializer()->Run(
-      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
-}
-
-void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
-    grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked() {
+  if (timer_handle_.has_value()) {
+    timer_handle_.reset();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
@@ -645,14 +616,11 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_pending_ = false;
     child_priority_->OnConnectivityStateUpdateLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
         absl::Status(absl::StatusCode::kUnavailable, "failover timer fired"),
         nullptr);
   }
-  Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -684,17 +652,17 @@ void PriorityLb::ChildPriority::Orphan() {
   child_policy_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
-  picker_wrapper_.reset();
+  picker_.reset();
   Unref(DEBUG_LOCATION, "ChildPriority+Orphan");
 }
 
-std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>
+RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
 PriorityLb::ChildPriority::GetPicker() {
-  if (picker_wrapper_ == nullptr) {
-    return absl::make_unique<QueuePicker>(
+  if (picker_ == nullptr) {
+    return MakeRefCounted<QueuePicker>(
         priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"));
   }
-  return absl::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
+  return picker_;
 }
 
 absl::Status PriorityLb::ChildPriority::UpdateLocked(
@@ -735,7 +703,7 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(const ChannelArgs& args) {
   lb_policy_args.work_serializer = priority_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_priority_trace);
@@ -763,7 +731,7 @@ void PriorityLb::ChildPriority::ResetBackoffLocked() {
 
 void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
             "[priority_lb %p] child %s (%p): state update: %s (%s) picker %p",
@@ -779,9 +747,7 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   // TRANSIENT_FAILURE, but we have no new picker to report.  In that case,
   // just keep using the old picker, in case we wind up delegating to this
   // child when all priorities are failing.
-  if (picker != nullptr) {
-    picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
-  }
+  if (picker != nullptr) picker_ = std::move(picker);
   // If we transition to state CONNECTING and we've not seen
   // TRANSIENT_FAILURE more recently than READY or IDLE, start failover
   // timer if not already pending.
@@ -836,7 +802,7 @@ PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
 
 void PriorityLb::ChildPriority::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (priority_->priority_policy_->shutting_down_) return;
   // Notify the priority.
   priority_->OnConnectivityStateUpdateLocked(state, status, std::move(picker));
@@ -852,6 +818,11 @@ void PriorityLb::ChildPriority::Helper::RequestReresolution() {
 
 absl::string_view PriorityLb::ChildPriority::Helper::GetAuthority() {
   return priority_->priority_policy_->channel_control_helper()->GetAuthority();
+}
+
+EventEngine* PriorityLb::ChildPriority::Helper::GetEventEngine() {
+  return priority_->priority_policy_->channel_control_helper()
+      ->GetEventEngine();
 }
 
 void PriorityLb::ChildPriority::Helper::AddTraceEvent(
@@ -948,7 +919,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<PriorityLbFactory>());
+      std::make_unique<PriorityLbFactory>());
 }
 
 }  // namespace grpc_core

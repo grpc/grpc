@@ -25,14 +25,13 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -165,9 +164,9 @@ OrphanablePtr<SubchannelStreamClient> MakeHealthCheckClient(
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   return MakeOrphanable<SubchannelStreamClient>(
       std::move(connected_subchannel), interested_parties,
-      absl::make_unique<HealthStreamEventHandler>(std::move(service_name),
-                                                  std::move(channelz_node),
-                                                  std::move(watcher)),
+      std::make_unique<HealthStreamEventHandler>(std::move(service_name),
+                                                 std::move(channelz_node),
+                                                 std::move(watcher)),
       GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)
           ? "HealthCheckClient"
           : nullptr);

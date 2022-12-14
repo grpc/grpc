@@ -33,8 +33,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
@@ -260,7 +260,7 @@ class ClientChannel {
   void UpdateStateAndPickerLocked(
       grpc_connectivity_state state, const absl::Status& status,
       const char* reason,
-      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker)
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateServiceConfigInControlPlaneLocked(
@@ -332,7 +332,7 @@ class ClientChannel {
   // Fields used in the data plane.  Guarded by data_plane_mu_.
   //
   mutable Mutex data_plane_mu_;
-  std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
       ABSL_GUARDED_BY(data_plane_mu_);
   // Linked list of calls queued waiting for LB pick.
   LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(data_plane_mu_) = nullptr;
@@ -362,8 +362,7 @@ class ClientChannel {
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(*work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
-  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_) =
-      GRPC_ERROR_NONE;
+  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -508,10 +507,10 @@ class ClientChannel::LoadBalancedCall
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error_;
 
   // Set when we fail inside the LB call.
-  grpc_error_handle failure_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle failure_error_;
 
   grpc_closure pick_closure_;
 

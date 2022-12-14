@@ -23,12 +23,13 @@
 
 #include <stddef.h>
 
+#include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -64,6 +65,11 @@ struct grpc_auth_context
     : public grpc_core::RefCounted<grpc_auth_context,
                                    grpc_core::NonPolymorphicRefCount> {
  public:
+  // Base class for all extensions to inherit from.
+  class Extension {
+   public:
+    virtual ~Extension() = default;
+  };
   explicit grpc_auth_context(
       grpc_core::RefCountedPtr<grpc_auth_context> chained)
       : grpc_core::RefCounted<grpc_auth_context,
@@ -105,6 +111,9 @@ struct grpc_auth_context
   void set_peer_identity_property_name(const char* name) {
     peer_identity_property_name_ = name;
   }
+  void set_extension(std::unique_ptr<Extension> extension) {
+    extension_ = std::move(extension);
+  }
 
   void ensure_capacity();
   void add_property(const char* name, const char* value, size_t value_length);
@@ -114,6 +123,7 @@ struct grpc_auth_context
   grpc_core::RefCountedPtr<grpc_auth_context> chained_;
   grpc_auth_property_array properties_;
   const char* peer_identity_property_name_ = nullptr;
+  std::unique_ptr<Extension> extension_;
 };
 
 /* --- grpc_security_context_extension ---

@@ -27,7 +27,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -114,7 +114,7 @@ grpc_error_handle ServiceConfigChannelArgInitCallElem(
   }
   new (calld) ServiceConfigChannelArgCallData(std::move(service_config),
                                               method_config, args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void ServiceConfigChannelArgDestroyCallElem(
@@ -130,7 +130,7 @@ grpc_error_handle ServiceConfigChannelArgInitChannelElem(
   ServiceConfigChannelArgChannelData* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
   new (chand) ServiceConfigChannelArgChannelData(args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void ServiceConfigChannelArgDestroyChannelElem(grpc_channel_element* elem) {

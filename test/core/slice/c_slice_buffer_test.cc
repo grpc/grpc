@@ -16,11 +16,13 @@
  *
  */
 
-#include <gtest/gtest.h>
+#include <stddef.h>
 
-#include <grpc/grpc.h>
+#include "gtest/gtest.h"
+
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
+#include <grpc/support/alloc.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
@@ -154,25 +156,25 @@ void test_slice_buffer_first() {
   }
 
   grpc_slice* first = grpc_slice_buffer_peek_first(&buf);
-  ASSERT_EQ(GPR_SLICE_LENGTH(*first), GPR_SLICE_LENGTH(slices[0]));
+  ASSERT_EQ(GRPC_SLICE_LENGTH(*first), GRPC_SLICE_LENGTH(slices[0]));
   ASSERT_EQ(buf.count, 3);
   ASSERT_EQ(buf.length, 12);
 
   grpc_slice_buffer_sub_first(&buf, 1, 2);
   first = grpc_slice_buffer_peek_first(&buf);
-  ASSERT_EQ(GPR_SLICE_LENGTH(*first), 1);
+  ASSERT_EQ(GRPC_SLICE_LENGTH(*first), 1);
   ASSERT_EQ(buf.count, 3);
   ASSERT_EQ(buf.length, 10);
 
   grpc_slice_buffer_remove_first(&buf);
   first = grpc_slice_buffer_peek_first(&buf);
-  ASSERT_EQ(GPR_SLICE_LENGTH(*first), GPR_SLICE_LENGTH(slices[1]));
+  ASSERT_EQ(GRPC_SLICE_LENGTH(*first), GRPC_SLICE_LENGTH(slices[1]));
   ASSERT_EQ(buf.count, 2);
   ASSERT_EQ(buf.length, 9);
 
   grpc_slice_buffer_remove_first(&buf);
   first = grpc_slice_buffer_peek_first(&buf);
-  ASSERT_EQ(GPR_SLICE_LENGTH(*first), GPR_SLICE_LENGTH(slices[2]));
+  ASSERT_EQ(GRPC_SLICE_LENGTH(*first), GRPC_SLICE_LENGTH(slices[2]));
   ASSERT_EQ(buf.count, 1);
   ASSERT_EQ(buf.length, 5);
 

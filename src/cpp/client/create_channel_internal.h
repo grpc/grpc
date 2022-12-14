@@ -23,10 +23,9 @@
 #include <string>
 #include <vector>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 

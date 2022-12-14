@@ -16,8 +16,8 @@
 set -e
 cd $(dirname $0)/../../..
 
-ALL_IMAGES=( grpc-ext grpc-src alpine centos7 php-src php-future php-zts
-             fork-support i386 php8 )
+ALL_IMAGES=( grpc-ext grpc-src alpine centos7 php-src php-zts
+             fork-support i386 php8 php8.2 )
 
 if [[ "$1" == "--cmds" ]]; then
   for arg in "${ALL_IMAGES[@]}"
@@ -36,5 +36,6 @@ fi
 set -x
 for arg in "${lst[@]}"
 do
+  echo "Running $arg..."
   docker run -it --rm grpc-php/"$arg"
 done

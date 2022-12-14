@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <map>
 #include <string>
 #include <utility>
 
@@ -77,7 +76,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   BIO* bio = nullptr;
   const char* prop_value;
   int success = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;

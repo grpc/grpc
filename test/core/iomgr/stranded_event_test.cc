@@ -33,7 +33,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -334,7 +334,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
   // hit test timeouts because of that.
   test_servers.reserve(kNumCalls);
   for (int i = 0; i < kNumCalls; i++) {
-    test_servers.push_back(absl::make_unique<TestServer>());
+    test_servers.push_back(std::make_unique<TestServer>());
   }
   for (int i = 0; i < kNumCalls; i++) {
     auto test_server = test_servers[i].get();
@@ -374,7 +374,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
           grpc_slice_from_static_string("/foo"), nullptr,
           gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      auto test_call = absl::make_unique<TestCall>(channel, call, cq);
+      auto test_call = std::make_unique<TestCall>(channel, call, cq);
       // Start a call, and ensure that round_robin load balancing is configured
       StartCall(test_call.get());
       // Make sure the test is doing what it's meant to be doing
@@ -397,7 +397,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
         {
           grpc_core::MutexLock lock(&ping_pong_round_mu);
           ping_pong_round_cv.SignalAll();
-          while (int(ping_pong_round) != i) {
+          while (static_cast<int>(ping_pong_round) != i) {
             ping_pong_round_cv.Wait(&ping_pong_round_mu);
           }
         }

@@ -23,7 +23,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -100,7 +100,7 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
-void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
+void TCPConnectHandshaker::Shutdown(grpc_error_handle /*why*/) {
   // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
   {
@@ -113,12 +113,10 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
       // the necessary clean up.
       if (on_handshake_done_ != nullptr) {
         CleanupArgsForFailureLocked();
-        FinishLocked(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
+        FinishLocked(GRPC_ERROR_CREATE("tcp handshaker shutdown"));
       }
     }
   }
-  GRPC_ERROR_UNREF(why);
 }
 
 void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
@@ -134,8 +132,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
     MutexLock lock(&mu_);
-    FinishLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Resolved address in invalid format"));
+    FinishLocked(GRPC_ERROR_CREATE("Resolved address in invalid format"));
     return;
   }
   bind_endpoint_to_pollset_ =
@@ -167,15 +164,12 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       static_cast<TCPConnectHandshaker*>(arg));
   {
     MutexLock lock(&self->mu_);
-    if (!GRPC_ERROR_IS_NONE(error) || self->shutdown_) {
-      if (GRPC_ERROR_IS_NONE(error)) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
-      } else {
-        error = GRPC_ERROR_REF(error);
+    if (!error.ok() || self->shutdown_) {
+      if (error.ok()) {
+        error = GRPC_ERROR_CREATE("tcp handshaker shutdown");
       }
       if (self->endpoint_to_destroy_ != nullptr) {
-        grpc_endpoint_shutdown(self->endpoint_to_destroy_,
-                               GRPC_ERROR_REF(error));
+        grpc_endpoint_shutdown(self->endpoint_to_destroy_, error);
       }
       if (!self->shutdown_) {
         self->CleanupArgsForFailureLocked();
@@ -185,7 +179,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
         // The on_handshake_done_ is already as part of shutdown when
         // connecting So nothing to be done here other than unrefing the
         // error.
-        GRPC_ERROR_UNREF(error);
       }
       return;
     }
@@ -196,7 +189,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
                                        self->interested_parties_);
     }
-    self->FinishLocked(GRPC_ERROR_NONE);
+    self->FinishLocked(absl::OkStatus());
   }
 }
 
@@ -237,6 +230,9 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
     handshake_mgr->Add(
         MakeRefCounted<TCPConnectHandshaker>(interested_parties));
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kTCPConnectHandshakers;
+  }
   ~TCPConnectHandshakerFactory() override = default;
 };
 
@@ -244,8 +240,7 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
 
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<TCPConnectHandshakerFactory>());
+      HANDSHAKER_CLIENT, std::make_unique<TCPConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

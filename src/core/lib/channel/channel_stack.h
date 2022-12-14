@@ -49,12 +49,14 @@
 #include <stddef.h>
 
 #include <functional>
+#include <memory>
 
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -202,7 +204,6 @@ struct grpc_call_element {
    guarantees they live within a single malloc() allocation */
 struct grpc_channel_stack {
   grpc_stream_refcount refcount;
-  bool is_client;
   size_t count;
   /* Memory required for a call stack (computed at channel stack
      initialization) */
@@ -212,6 +213,14 @@ struct grpc_channel_stack {
   // promise conversion continues, we'll reconsider what grpc_channel_stack
   // should look like and this can go.
   grpc_core::ManualConstructor<std::function<void()>> on_destroy;
+
+  grpc_core::ManualConstructor<
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>>
+      event_engine;
+
+  grpc_event_engine::experimental::EventEngine* EventEngine() const {
+    return event_engine->get();
+  }
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.
@@ -225,8 +234,10 @@ struct grpc_channel_stack {
     return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
   }
 
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-      grpc_core::CallArgs call_args);
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+  MakeClientCallPromise(grpc_core::CallArgs call_args);
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+  MakeServerCallPromise(grpc_core::CallArgs call_args);
 };
 
 /* A call stack tracks a set of related filters for one call, and guarantees

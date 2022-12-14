@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
@@ -58,8 +58,7 @@ class MockCensusViewProvider : public CensusViewProvider {
  public:
   MOCK_METHOD0(FetchViewData, CensusViewProvider::ViewDataMap());
 
-  const ::opencensus::stats::ViewDescriptor& FindViewDescriptor(
-      const std::string& view_name) {
+  const ViewDescriptor& FindViewDescriptor(const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
     GPR_ASSERT(it != view_descriptor_map().end());
     return it->second;
@@ -140,7 +139,7 @@ class LoadReporterTest : public ::testing::Test {
     EXPECT_CALL(*mock_cpu, GetCpuStats())
         .WillOnce(Return(initial_cpu_stats_))
         .RetiresOnSaturation();
-    load_reporter_ = absl::make_unique<LoadReporter>(
+    load_reporter_ = std::make_unique<LoadReporter>(
         kFeedbackSampleWindowSeconds,
         std::unique_ptr<CensusViewProvider>(mock_census),
         std::unique_ptr<CpuStatsProvider>(mock_cpu));

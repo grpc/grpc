@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <string.h>
 
@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/server_context.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace load_reporter {

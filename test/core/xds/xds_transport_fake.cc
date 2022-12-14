@@ -18,11 +18,14 @@
 
 #include "test/core/xds/xds_transport_fake.h"
 
+#include <stdint.h>
+
 #include <functional>
 #include <memory>
 #include <utility>
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -39,21 +42,20 @@ namespace grpc_core {
 // FakeXdsTransportFactory::FakeStreamingCall
 //
 
+FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
+  // Can't call event_handler_->OnStatusReceived() or unref event_handler_
+  // synchronously, since those operations will trigger code in
+  // XdsClient that acquires its mutex, but it was already holding its
+  // mutex when it called us, so it would deadlock.
+  GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
+                                status_sent = status_sent_]() mutable {
+    ExecCtx exec_ctx;
+    if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
+    event_handler.reset();
+  });
+}
+
 void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
-  {
-    MutexLock lock(&mu_);
-    // Can't call event_handler_->OnStatusReceived() or unref event_handler_
-    // synchronously, since those operations will trigger code in
-    // XdsClient that acquires its mutex, but it was already holding its
-    // mutex when it called us, so it would deadlock.
-    GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
-                                  status_sent = status_sent_]() mutable {
-      ExecCtx exec_ctx;
-      if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
-      event_handler.reset();
-    });
-    status_sent_ = true;
-  }
   transport_->RemoveStream(method_, this);
   Unref();
 }
@@ -63,15 +65,9 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
   MutexLock lock(&mu_);
   from_client_messages_.push_back(std::move(payload));
   cv_.Signal();
-  // Can't call event_handler_->OnRequestSent() synchronously, since that
-  // operation will trigger code in XdsClient that acquires its mutex, but it
-  // was already holding its mutex when it called us, so it would deadlock.
-  GetDefaultEventEngine()->Run(
-      [event_handler = event_handler_->Ref()]() mutable {
-        ExecCtx exec_ctx;
-        event_handler->OnRequestSent(/*ok=*/true);
-        event_handler.reset();
-      });
+  if (transport_->auto_complete_messages_from_client()) {
+    CompleteSendMessageFromClientLocked(/*ok=*/true);
+  }
 }
 
 bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
@@ -91,6 +87,26 @@ FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient(
   std::string payload = from_client_messages_.front();
   from_client_messages_.pop_front();
   return payload;
+}
+
+void FakeXdsTransportFactory::FakeStreamingCall::
+    CompleteSendMessageFromClientLocked(bool ok) {
+  // Can't call event_handler_->OnRequestSent() synchronously, since that
+  // operation will trigger code in XdsClient that acquires its mutex, but it
+  // was already holding its mutex when it called us, so it would deadlock.
+  GetDefaultEventEngine()->Run(
+      [event_handler = event_handler_->Ref(), ok]() mutable {
+        ExecCtx exec_ctx;
+        event_handler->OnRequestSent(ok);
+        event_handler.reset();
+      });
+}
+
+void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
+    bool ok) {
+  GPR_ASSERT(!transport_->auto_complete_messages_from_client());
+  MutexLock lock(&mu_);
+  CompleteSendMessageFromClientLocked(ok);
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessageToClient(
@@ -189,18 +205,18 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
 //
 
 constexpr char FakeXdsTransportFactory::kAdsMethod[];
-constexpr char FakeXdsTransportFactory::kAdsV2Method[];
+constexpr char FakeXdsTransportFactory::kLrsMethod[];
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>
 FakeXdsTransportFactory::Create(
     const XdsBootstrap::XdsServer& server,
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* /*status*/) {
-  auto transport =
-      MakeOrphanable<FakeXdsTransport>(std::move(on_connectivity_failure));
   MutexLock lock(&mu_);
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
+  auto transport = MakeOrphanable<FakeXdsTransport>(
+      std::move(on_connectivity_failure), auto_complete_messages_from_client_);
   entry = transport->Ref();
   return transport;
 }
@@ -208,7 +224,13 @@ FakeXdsTransportFactory::Create(
 void FakeXdsTransportFactory::TriggerConnectionFailure(
     const XdsBootstrap::XdsServer& server, absl::Status status) {
   auto transport = GetTransport(server);
+  if (transport == nullptr) return;
   transport->TriggerConnectionFailure(std::move(status));
+}
+
+void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
+  MutexLock lock(&mu_);
+  auto_complete_messages_from_client_ = value;
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
@@ -216,15 +238,14 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
                                        const char* method,
                                        absl::Duration timeout) {
   auto transport = GetTransport(server);
+  if (transport == nullptr) return nullptr;
   return transport->WaitForStream(method, timeout);
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
 FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
   MutexLock lock(&mu_);
-  RefCountedPtr<FakeXdsTransport> transport = transport_map_[&server];
-  GPR_ASSERT(transport != nullptr);
-  return transport;
+  return transport_map_[&server];
 }
 
 }  // namespace grpc_core

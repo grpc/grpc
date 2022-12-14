@@ -80,6 +80,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

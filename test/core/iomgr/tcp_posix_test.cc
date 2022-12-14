@@ -184,7 +184,7 @@ static void read_cb(void* user_data, grpc_error_handle error) {
   size_t read_bytes;
   int current_data;
 
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
@@ -370,7 +370,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
 
 static void write_done(void* user_data /* write_socket_state */,
                        grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   struct write_socket_state* state =
       static_cast<struct write_socket_state*>(user_data);
   gpr_mu_lock(g_mu);
@@ -423,13 +423,13 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
 /* Verifier for timestamps callback for write_test */
 void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
                          grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(ts->sendmsg_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->scheduled_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
   gpr_atm* done_timestamps = static_cast<gpr_atm*>(arg);
-  gpr_atm_rel_store(done_timestamps, static_cast<gpr_atm>(1));
+  gpr_atm_rel_store(done_timestamps, gpr_atm{1});
 }
 
 /* Write to a socket using the grpc_tcp API, then drain it directly.
@@ -492,7 +492,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
                     grpc_schedule_on_exec_ctx);
 
   gpr_atm done_timestamps;
-  gpr_atm_rel_store(&done_timestamps, static_cast<gpr_atm>(0));
+  gpr_atm_rel_store(&done_timestamps, gpr_atm{0});
   grpc_endpoint_write(ep, &outgoing, &write_done_closure,
                       grpc_event_engine_can_track_errors() && collect_timestamps
                           ? &done_timestamps
@@ -505,7 +505,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
     grpc_pollset_worker* worker = nullptr;
     if (state.write_done &&
         (!(grpc_event_engine_can_track_errors() && collect_timestamps) ||
-         gpr_atm_acq_load(&done_timestamps) == static_cast<gpr_atm>(1))) {
+         gpr_atm_acq_load(&done_timestamps) == gpr_atm{1})) {
       break;
     }
     GPR_ASSERT(GRPC_LOG_IF_ERROR(

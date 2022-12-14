@@ -24,14 +24,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -39,6 +42,8 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -66,6 +71,45 @@ typedef struct grpc_call_create_args {
 
   grpc_core::Timestamp send_deadline;
 } grpc_call_create_args;
+
+namespace grpc_core {
+class PromiseBasedCall;
+
+// TODO(ctiller): move more call things into this type
+class CallContext {
+ public:
+  explicit CallContext(PromiseBasedCall* call) : call_(call) {}
+
+  // Run some action in the call activity context. This is needed to adapt some
+  // legacy systems to promises, and will likely disappear once that conversion
+  // is complete.
+  void RunInContext(absl::AnyInvocable<void()> fn);
+
+  // TODO(ctiller): remove this once transport APIs are promise based
+  void IncrementRefCount(const char* reason = "call_context");
+
+  // TODO(ctiller): remove this once transport APIs are promise based
+  void Unref(const char* reason = "call_context");
+
+  grpc_call_stats* call_stats() { return &call_stats_; }
+  gpr_atm* peer_string_atm_ptr();
+  grpc_polling_entity* polling_entity() { return &pollent_; }
+
+ private:
+  friend class PromiseBasedCall;
+  // Call final info.
+  grpc_call_stats call_stats_;
+  // Pollset stuff, can't wait to remove.
+  // TODO(ctiller): bring forth EventEngine.
+  grpc_polling_entity pollent_;
+  // TODO(ctiller): remove this once transport APIs are promise based and we
+  // don't need refcounting here.
+  PromiseBasedCall* const call_;
+};
+
+template <>
+struct ContextType<CallContext> {};
+}  // namespace grpc_core
 
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call

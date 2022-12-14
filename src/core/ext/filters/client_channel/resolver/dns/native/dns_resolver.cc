@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -31,7 +30,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
@@ -51,7 +50,6 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -190,12 +188,12 @@ void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
   if (gpr_stricmp(resolver, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(
-        absl::make_unique<NativeClientChannelDNSResolverFactory>());
+        std::make_unique<NativeClientChannelDNSResolverFactory>());
   } else {
     if (!builder->resolver_registry()->HasResolverFactory("dns")) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
       builder->resolver_registry()->RegisterResolverFactory(
-          absl::make_unique<NativeClientChannelDNSResolverFactory>());
+          std::make_unique<NativeClientChannelDNSResolverFactory>());
     }
   }
 }

@@ -45,10 +45,9 @@
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -58,40 +57,15 @@
 
 namespace grpc_core {
 
-// If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
-// will be appended to the user agent name reported to the xDS server.
-#ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
-#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING \
-  " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
-#else
-#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING ""
-#endif
-
-// If gRPC is built with -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="...", that string
-// will be appended to the user agent version reported to the xDS server.
-#ifdef GRPC_XDS_USER_AGENT_VERSION_SUFFIX
-#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING \
-  " " GRPC_XDS_USER_AGENT_VERSION_SUFFIX
-#else
-#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING ""
-#endif
-
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node, upb::SymbolTable* symtab)
+               const XdsBootstrap::Node* node, upb::SymbolTable* symtab,
+               std::string user_agent_name, std::string user_agent_version)
     : client_(client),
       tracer_(tracer),
       node_(node),
       symtab_(symtab),
-      build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
-                                  grpc_version_string(),
-                                  GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
-                                  GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)),
-      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
-                                    GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING)),
-      user_agent_version_(
-          absl::StrCat("C-core ", grpc_version_string(),
-                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
-                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {}
+      user_agent_name_(std::move(user_agent_name)),
+      user_agent_version_(std::move(user_agent_version)) {}
 
 namespace {
 
@@ -100,7 +74,6 @@ struct XdsApiContext {
   TraceFlag* tracer;
   upb_DefPool* symtab;
   upb_Arena* arena;
-  bool use_v3;
 };
 
 void PopulateMetadataValue(const XdsApiContext& context,
@@ -162,41 +135,7 @@ void PopulateMetadataValue(const XdsApiContext& context,
   }
 }
 
-// Helper functions to manually do protobuf string encoding, so that we
-// can populate the node build_version field that was removed in v3.
-std::string EncodeVarint(uint64_t val) {
-  std::string data;
-  do {
-    uint8_t byte = val & 0x7fU;
-    val >>= 7;
-    if (val) byte |= 0x80U;
-    data += byte;
-  } while (val);
-  return data;
-}
-std::string EncodeTag(uint32_t field_number, uint8_t wire_type) {
-  return EncodeVarint((field_number << 3) | wire_type);
-}
-std::string EncodeStringField(uint32_t field_number, const std::string& str) {
-  static const uint8_t kDelimitedWireType = 2;
-  return EncodeTag(field_number, kDelimitedWireType) +
-         EncodeVarint(str.size()) + str;
-}
-
-void PopulateBuildVersion(const XdsApiContext& context,
-                          envoy_config_core_v3_Node* node_msg,
-                          const std::string& build_version) {
-  std::string encoded_build_version = EncodeStringField(5, build_version);
-  // TODO(roth): This should use upb_Message_AddUnknown(), but that API is
-  // broken in the current version of upb, so we're using the internal
-  // API for now.  Change this once we upgrade to a version of upb that
-  // fixes this bug.
-  _upb_Message_AddUnknown(node_msg, encoded_build_version.data(),
-                          encoded_build_version.size(), context.arena);
-}
-
 void PopulateNode(const XdsApiContext& context, const XdsBootstrap::Node* node,
-                  const std::string& build_version,
                   const std::string& user_agent_name,
                   const std::string& user_agent_version,
                   envoy_config_core_v3_Node* node_msg) {
@@ -231,9 +170,6 @@ void PopulateNode(const XdsApiContext& context, const XdsBootstrap::Node* node,
             locality, StdStringToUpbString(node->locality_sub_zone()));
       }
     }
-  }
-  if (!context.use_v3) {
-    PopulateBuildVersion(context, node_msg, build_version);
   }
   envoy_config_core_v3_Node_set_user_agent_name(
       node_msg, StdStringToUpbString(user_agent_name));
@@ -271,13 +207,11 @@ std::string SerializeDiscoveryRequest(
 }  // namespace
 
 std::string XdsApi::CreateAdsRequest(
-    const XdsBootstrap::XdsServer& server, absl::string_view type_url,
-    absl::string_view version, absl::string_view nonce,
-    const std::vector<std::string>& resource_names, absl::Status status,
-    bool populate_node) {
+    absl::string_view type_url, absl::string_view version,
+    absl::string_view nonce, const std::vector<std::string>& resource_names,
+    absl::Status status, bool populate_node) {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr(),
-                                 server.ShouldUseV3()};
+  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
@@ -317,8 +251,8 @@ std::string XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(context, node_, build_version_, user_agent_name_,
-                 user_agent_version_, node_msg);
+    PopulateNode(context, node_, user_agent_name_, user_agent_version_,
+                 node_msg);
     envoy_config_core_v3_Node_add_client_features(
         node_msg, upb_StringView_FromString("xds.config.resource-in-sotw"),
         context.arena);
@@ -350,12 +284,10 @@ void MaybeLogDiscoveryResponse(
 
 }  // namespace
 
-absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
-                                      absl::string_view encoded_response,
+absl::Status XdsApi::ParseAdsResponse(absl::string_view encoded_response,
                                       AdsResponseParserInterface* parser) {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr(),
-                                 server.ShouldUseV3()};
+  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
@@ -391,8 +323,7 @@ absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
         UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
     // Unwrap Resource messages, if so wrapped.
     absl::string_view resource_name;
-    if (type_url == "envoy.api.v2.Resource" ||
-        type_url == "envoy.service.discovery.v3.Resource") {
+    if (type_url == "envoy.service.discovery.v3.Resource") {
       const auto* resource_wrapper = envoy_service_discovery_v3_Resource_parse(
           serialized_resource.data(), serialized_resource.size(), arena.ptr());
       if (resource_wrapper == nullptr) {
@@ -442,11 +373,9 @@ std::string SerializeLrsRequest(
 
 }  // namespace
 
-std::string XdsApi::CreateLrsInitialRequest(
-    const XdsBootstrap::XdsServer& server) {
+std::string XdsApi::CreateLrsInitialRequest() {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr(),
-                                 server.ShouldUseV3()};
+  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -454,8 +383,7 @@ std::string XdsApi::CreateLrsInitialRequest(
   envoy_config_core_v3_Node* node_msg =
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(context, node_, build_version_, user_agent_name_,
-               user_agent_version_, node_msg);
+  PopulateNode(context, node_, user_agent_name_, user_agent_version_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg,
       upb_StringView_FromString("envoy.lrs.supports_send_all_clusters"),
@@ -517,8 +445,7 @@ void LocalityStatsPopulate(
 std::string XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr(),
-                                 /*use_v3=*/false};
+  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -636,10 +563,8 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr(),
-                                 /*use_v3=*/true};
-  PopulateNode(context, node_, build_version_, user_agent_name_,
-               user_agent_version_, node);
+  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  PopulateNode(context, node_, user_agent_name_, user_agent_version_, node);
   // Dump each resource.
   std::vector<std::string> type_url_storage;
   for (const auto& p : resource_type_metadata_map) {

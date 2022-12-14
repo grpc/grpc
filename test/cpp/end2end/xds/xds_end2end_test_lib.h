@@ -33,7 +33,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -74,11 +73,6 @@ class XdsTestType {
     return *this;
   }
 
-  XdsTestType& set_use_v2() {
-    use_v2_ = true;
-    return *this;
-  }
-
   XdsTestType& set_use_xds_credentials() {
     use_xds_credentials_ = true;
     return *this;
@@ -106,7 +100,6 @@ class XdsTestType {
 
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
-  bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
   bool use_csds_streaming() const { return use_csds_streaming_; }
   HttpFilterConfigLocation filter_config_setup() const {
@@ -118,7 +111,7 @@ class XdsTestType {
   }
 
   std::string AsString() const {
-    std::string retval = use_v2_ ? "V2" : "V3";
+    std::string retval = "V3";
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     if (use_xds_credentials_) retval += "XdsCreds";
@@ -147,7 +140,6 @@ class XdsTestType {
  private:
   bool enable_load_reporting_ = false;
   bool enable_rds_testing_ = false;
-  bool use_v2_ = false;
   bool use_xds_credentials_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
@@ -193,7 +185,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Default values for locality fields.
   static const char kDefaultLocalityRegion[];
   static const char kDefaultLocalityZone[];
-  static const int kDefaultLocalityWeight = 3;
+  static const uint32_t kDefaultLocalityWeight = 3;
   static const int kDefaultLocalityPriority = 0;
 
   // Default resource names.
@@ -216,7 +208,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
    public:
     // A status notifier for xDS-enabled servers.
     class XdsServingStatusNotifier
-        : public grpc::experimental::XdsServerServingStatusNotifierInterface {
+        : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
@@ -398,10 +390,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   class BootstrapBuilder {
    public:
     BootstrapBuilder() {}
-    BootstrapBuilder& SetV2() {
-      v2_ = true;
-      return *this;
-    }
     BootstrapBuilder& SetIgnoreResourceDeletion() {
       ignore_resource_deletion_ = true;
       return *this;
@@ -453,7 +441,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::string MakeCertificateProviderText();
     std::string MakeAuthorityText();
 
-    bool v2_ = false;
     bool ignore_resource_deletion_ = false;
     std::string top_server_;
     std::string client_default_listener_resource_name_template_;
@@ -461,18 +448,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
     std::string server_listener_resource_name_template_ =
         "grpc/server?xds.resource.listening_address=%s";
-  };
-
-  class ScopedExperimentalEnvVar {
-   public:
-    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      grpc_core::SetEnv(env_var_, "true");
-    }
-
-    ~ScopedExperimentalEnvVar() { grpc_core::UnsetEnv(env_var_); }
-
-   private:
-    const char* env_var_;
   };
 
   // RPC services used to talk to the backends.
@@ -567,22 +542,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(
-          int port,
-          ::envoy::config::endpoint::v3::HealthStatus health_status =
-              ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
-          int lb_weight = 1)
+      explicit Endpoint(int port,
+                        ::envoy::config::core::v3::HealthStatus health_status =
+                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        int lb_weight = 1)
           : port(port), health_status(health_status), lb_weight(lb_weight) {}
 
       int port;
-      ::envoy::config::endpoint::v3::HealthStatus health_status;
+      ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
     };
 
     // A locality.
     struct Locality {
       Locality(std::string sub_zone, std::vector<Endpoint> endpoints,
-               int lb_weight = kDefaultLocalityWeight,
+               uint32_t lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority)
           : sub_zone(std::move(sub_zone)),
             endpoints(std::move(endpoints)),
@@ -591,7 +565,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
       const std::string sub_zone;
       std::vector<Endpoint> endpoints;
-      int lb_weight;
+      uint32_t lb_weight;
       int priority;
     };
 
@@ -609,8 +583,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // constructing an EDS resource.
   EdsResourceArgs::Endpoint CreateEndpoint(
       size_t backend_idx,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1) {
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
                                      health_status, lb_weight);
@@ -620,8 +594,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // for use in constructing an EDS resource.
   std::vector<EdsResourceArgs::Endpoint> CreateEndpointsForBackends(
       size_t start_index = 0, size_t stop_index = 0,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1);
 
   // Returns an endpoint for an unused port, for use in constructing an

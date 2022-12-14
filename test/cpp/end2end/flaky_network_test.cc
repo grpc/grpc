@@ -51,8 +51,6 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 #ifdef GPR_LINUX
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
@@ -183,7 +181,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     // ip6-looopback, but ipv6 support is not enabled by default in docker.
     port_ = SERVER_PORT;
 
-    server_ = absl::make_unique<ServerData>(port_, GetParam().credentials_type);
+    server_ = std::make_unique<ServerData>(port_, GetParam().credentials_type);
     server_->Start(server_host_);
   }
   void StopServer() { server_->Shutdown(); }
@@ -209,7 +207,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   bool SendRpc(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       int timeout_ms = 0, bool wait_for_ready = false) {
-    auto response = absl::make_unique<EchoResponse>();
+    auto response = std::make_unique<EchoResponse>();
     EchoRequest request;
     auto& msg = GetParam().message_content;
     request.set_message(msg);
@@ -251,7 +249,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;

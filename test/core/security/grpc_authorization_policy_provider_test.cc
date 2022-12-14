@@ -61,7 +61,7 @@ TEST(AuthorizationPolicyProviderTest,
 
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInitializationSuccessValidPolicy) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -81,7 +81,7 @@ TEST(AuthorizationPolicyProviderTest,
 
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInitializationFailedInvalidPolicy) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(INVALID_POLICY_PATH));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -90,7 +90,7 @@ TEST(AuthorizationPolicyProviderTest,
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -131,16 +131,12 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   EXPECT_EQ(allow_engine->num_policies(), 2);
   deny_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.deny_engine.get());
-  ASSERT_NE(deny_engine, nullptr);
-  EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
-  EXPECT_EQ(deny_engine->num_policies(), 0);
-  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
-      ->SetCallbackForTesting(nullptr);
+  EXPECT_EQ(deny_engine, nullptr);
 }
 
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInvalidPolicyRefreshSkipReload) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -190,7 +186,7 @@ TEST(AuthorizationPolicyProviderTest,
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -260,11 +256,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(allow_engine->num_policies(), 2);
   deny_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.deny_engine.get());
-  ASSERT_NE(deny_engine, nullptr);
-  EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
-  EXPECT_EQ(deny_engine->num_policies(), 0);
-  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
-      ->SetCallbackForTesting(nullptr);
+  EXPECT_EQ(deny_engine, nullptr);
 }
 
 }  // namespace grpc_core

@@ -24,6 +24,7 @@
 
 #include <algorithm>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
@@ -63,13 +64,13 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
 grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
     grpc_chttp2_ping_parser* parser, uint32_t length, uint8_t flags) {
   if (flags & 0xfe || length != 8) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return GRPC_ERROR_CREATE(
         absl::StrFormat("invalid ping: length=%d, flags=%02x", length, flags));
   }
   parser->byte = 0;
   parser->is_ack = flags;
   parser->opaque_8bytes = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
@@ -117,7 +118,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity =
-              std::max(t->ping_ack_capacity * 3 / 2, size_t(3));
+              std::max(t->ping_ack_capacity * 3 / 2, size_t{3});
           t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
         }
@@ -128,7 +129,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_set_disable_ping_ack(bool disable_ping_ack) {

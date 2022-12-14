@@ -34,7 +34,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -387,6 +387,14 @@ struct GrpcStatusContext {
   static const std::string& DisplayValue(const std::string& x);
 };
 
+// Annotation added by a transport to note that the status came from the wire.
+struct GrpcStatusFromWire {
+  static absl::string_view DebugKey() { return "GrpcStatusFromWire"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
+};
+
 // Annotation added by client surface code to denote wait-for-ready state
 struct WaitForReady {
   struct ValueType {
@@ -396,6 +404,15 @@ struct WaitForReady {
   static absl::string_view DebugKey() { return "WaitForReady"; }
   static constexpr bool kRepeatable = false;
   static std::string DisplayValue(ValueType x);
+};
+
+// Annotation added by a transport to note that server trailing metadata
+// is a Trailers-Only response.
+struct GrpcTrailersOnly {
+  static absl::string_view DebugKey() { return "GrpcTrailersOnly"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
 };
 
 namespace metadata_detail {
@@ -643,6 +660,13 @@ struct AdaptDisplayValueToLog<std::string> {
 template <>
 struct AdaptDisplayValueToLog<const std::string&> {
   static std::string ToString(const std::string& value) { return value; }
+};
+
+template <>
+struct AdaptDisplayValueToLog<absl::string_view> {
+  static std::string ToString(absl::string_view value) {
+    return std::string(value);
+  }
 };
 
 template <>
@@ -1301,7 +1325,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
-    grpc_core::GrpcStatusContext, grpc_core::WaitForReady>;
+    grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
+    grpc_core::WaitForReady, grpc_core::GrpcTrailersOnly>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;

@@ -273,9 +273,8 @@ static void timer_list_init() {
 
 static void timer_list_shutdown() {
   size_t i;
-  run_some_expired_timers(
-      grpc_core::Timestamp::InfFuture(), nullptr,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timer list shutdown"));
+  run_some_expired_timers(grpc_core::Timestamp::InfFuture(), nullptr,
+                          GRPC_ERROR_CREATE("Timer list shutdown"));
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
@@ -350,8 +349,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
     timer->pending = false;
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, timer->closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Attempt to create timer before initialization"));
+        GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
     return;
   }
 
@@ -360,7 +358,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
   grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   if (deadline <= now) {
     timer->pending = false;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, absl::OkStatus());
     gpr_mu_unlock(&shard->mu);
     /* early out */
     return;
@@ -450,7 +448,7 @@ static void timer_cancel(grpc_timer* timer) {
     REMOVE_FROM_HASH_TABLE(timer);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_CANCELLED);
+                            absl::CancelledError());
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -550,8 +548,7 @@ static size_t pop_timers(timer_shard* shard, grpc_core::Timestamp now,
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
     REMOVE_FROM_HASH_TABLE(timer);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, error);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -657,8 +654,6 @@ static grpc_timer_check_result run_some_expired_timers(
     gpr_spinlock_unlock(&g_shared_mutables.checker_mu);
   }
 
-  GRPC_ERROR_UNREF(error);
-
   return result;
 }
 
@@ -686,8 +681,8 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
 
   grpc_error_handle shutdown_error =
       now != grpc_core::Timestamp::InfFuture()
-          ? GRPC_ERROR_NONE
-          : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");
+          ? absl::OkStatus()
+          : GRPC_ERROR_CREATE("Shutting down timer system");
 
   // tracing
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
