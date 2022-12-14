@@ -57,7 +57,6 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/event_engine/memory_allocator.h )
   s.files += %w( include/grpc/event_engine/memory_request.h )
   s.files += %w( include/grpc/event_engine/port.h )
-  s.files += %w( include/grpc/event_engine/posix.h )
   s.files += %w( include/grpc/event_engine/slice.h )
   s.files += %w( include/grpc/event_engine/slice_buffer.h )
   s.files += %w( include/grpc/fork.h )

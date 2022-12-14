@@ -1359,11 +1359,10 @@ grpc_cc_library(
         "lib/event_engine/posix.h",
     ],
     external_deps = [
-        "absl/status",
-        "absl/status:statusor",
         "absl/functional:any_invocable",
+        "absl/status",
     ],
-    deps = [
+    deps = [package
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
