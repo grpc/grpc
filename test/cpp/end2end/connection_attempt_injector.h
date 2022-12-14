@@ -20,7 +20,6 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/timer.h"
 
 namespace grpc {
 namespace testing {
@@ -155,11 +154,9 @@ class ConnectionAttemptInjector final {
                   grpc_core::Timestamp deadline);
 
    private:
-    static void TimerCallback(void* arg, grpc_error_handle /*error*/);
+    void TimerCallback();
 
     QueuedAttempt attempt_;
-    grpc_timer timer_;
-    grpc_closure timer_callback_;
   };
 
   // Invoked for every TCP connection attempt.

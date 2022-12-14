@@ -833,7 +833,6 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/fork.h \
-include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/log.h \
@@ -848,6 +847,8 @@ include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
 include/grpc/impl/compression_types.h \
+include/grpc/impl/connectivity_state.h \
+include/grpc/impl/grpc_types.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
@@ -938,6 +939,7 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
@@ -1003,6 +1005,10 @@ src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+src/core/ext/filters/stateful_session/stateful_session_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
@@ -1200,8 +1206,12 @@ src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c \
 src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.h \
 src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c \
 src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h \
+src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c \
+src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.h \
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h \
+src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
+src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
@@ -1494,8 +1504,12 @@ src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdef
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
@@ -1662,12 +1676,16 @@ src/core/ext/xds/xds_common_types.cc \
 src/core/ext/xds/xds_common_types.h \
 src/core/ext/xds/xds_endpoint.cc \
 src/core/ext/xds/xds_endpoint.h \
+src/core/ext/xds/xds_health_status.cc \
+src/core/ext/xds/xds_health_status.h \
 src/core/ext/xds/xds_http_fault_filter.cc \
 src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
 src/core/ext/xds/xds_http_rbac_filter.cc \
 src/core/ext/xds/xds_http_rbac_filter.h \
+src/core/ext/xds/xds_http_stateful_session_filter.cc \
+src/core/ext/xds/xds_http_stateful_session_filter.h \
 src/core/ext/xds/xds_lb_policy_registry.cc \
 src/core/ext/xds/xds_lb_policy_registry.h \
 src/core/ext/xds/xds_listener.cc \
@@ -2073,6 +2091,7 @@ src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
 src/core/lib/promise/context.h \
+src/core/lib/promise/detail/basic_join.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
@@ -2081,6 +2100,7 @@ src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/for_each.h \
 src/core/lib/promise/intra_activity_waiter.h \
+src/core/lib/promise/join.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \

@@ -23,14 +23,14 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 struct ConnectionMetrics { /* Delivery rate in Bytes/s. */
   absl::optional<uint64_t> delivery_rate;
@@ -179,7 +179,7 @@ class TracedBufferList {
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)>);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H */

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_SUPPORT_METHOD_HANDLER_H
 #define GRPCPP_SUPPORT_METHOD_HANDLER_H
 
+#include <grpc/byte_buffer.h>
+#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/support/byte_buffer.h>
@@ -56,7 +58,7 @@ template <class Callable>
 template <class ResponseType>
 void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
                            ResponseType* rsp, grpc::Status& status) {
-  GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
+  GPR_ASSERT(!param.server_context->sent_initial_metadata_);
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
                             grpc::internal::CallOpServerSendStatus>
@@ -120,8 +122,8 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** /*handler_data*/) final {
-    auto* request = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call, sizeof(RequestType))) RequestType;
+    auto* request =
+        new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType;
     return UnaryDeserializeHelper(req, status,
                                   static_cast<BaseRequestType*>(request));
   }
@@ -229,8 +231,8 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
                     grpc::Status* status, void** /*handler_data*/) final {
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
-    auto* request = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call, sizeof(RequestType))) RequestType();
+    auto* request =
+        new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
     *status =
         grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
@@ -384,7 +386,7 @@ class ErrorMethodHandler : public grpc::internal::MethodHandler {
                     grpc::Status* /*status*/, void** /*handler_data*/) final {
     // We have to destroy any request payload
     if (req != nullptr) {
-      grpc::g_core_codegen_interface->grpc_byte_buffer_destroy(req);
+      grpc_byte_buffer_destroy(req);
     }
     return nullptr;
   }

@@ -19,7 +19,7 @@
 #ifndef GRPCPP_SERVER_CONTEXT_H
 #define GRPCPP_SERVER_CONTEXT_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 #include <cassert>
@@ -28,6 +28,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
@@ -441,8 +442,7 @@ class ServerContextBase {
   }
 
   void MaybeMarkCancelledOnRead() {
-    if (g_core_codegen_interface->grpc_call_failed_before_recv_message(
-            call_.call)) {
+    if (grpc_call_failed_before_recv_message(call_.call)) {
       marked_cancelled_.store(true, std::memory_order_release);
     }
   }

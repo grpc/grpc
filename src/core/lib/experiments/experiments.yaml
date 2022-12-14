@@ -73,8 +73,8 @@
 - name: flow_control_fixes
   description:
     Various fixes for flow control, max frame size setting.
-  default: debug
-  expiry: 2023/01/01
+  default: true
+  expiry: 2023/04/01
   owner: ctiller@google.com
   test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
@@ -123,7 +123,15 @@
 - name: posix_event_engine_enable_polling
   description:
     If set, enables polling on the default posix event engine.
-  default: debug
+  default: true
   expiry: 2023/01/01
   owner: vigneshbabu@google.com
   test_tags: ["event_engine_client_test"]
+- name: free_large_allocator
+  description:
+    If set, return all free bytes from a "big" allocator
+  default: false
+  expiry: 2023/04/01
+  owner: alishananda@google.com
+  test_tags: [resource_quota_test]
+

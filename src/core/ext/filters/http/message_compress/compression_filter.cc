@@ -18,7 +18,6 @@
 
 #include <inttypes.h>
 
-#include <cstdint>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -30,8 +29,8 @@
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
@@ -43,9 +42,10 @@
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map_pipe.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_concurrently.h"

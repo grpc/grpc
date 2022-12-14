@@ -16,12 +16,9 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
-#include <stdint.h>
-
-#include <utility>
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -33,6 +30,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/authorization/rbac_policy.h"
+#include "src/core/lib/security/authorization/rbac_translator.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -54,8 +53,10 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
     RbacPolicies policies)
     : allow_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
           std::move(policies.allow_policy))),
-      deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
-          std::move(policies.deny_policy))) {}
+      deny_engine_(policies.deny_policy.has_value()
+                       ? MakeRefCounted<GrpcAuthorizationEngine>(
+                             std::move(*policies.deny_policy))
+                       : nullptr) {}
 
 namespace {
 
@@ -159,8 +160,12 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   MutexLock lock(&mu_);
   allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->allow_policy));
-  deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies_or->deny_policy));
+  if (rbac_policies_or->deny_policy.has_value()) {
+    deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
+        std::move(*rbac_policies_or->deny_policy));
+  } else {
+    deny_engine_.reset();
+  }
   if (cb_ != nullptr) {
     cb_(contents_changed, absl::OkStatus());
   }

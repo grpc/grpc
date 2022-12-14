@@ -26,6 +26,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -36,6 +37,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
@@ -220,9 +222,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     // Called at test tear-down time to ensure that we have not left any
     // unexpected events in the queue.
-    void ExpectQueueEmpty() {
+    void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
-      EXPECT_TRUE(queue_.empty());
+      EXPECT_TRUE(queue_.empty()) << location.file() << ":" << location.line();
       for (const Event& event : queue_) {
         gpr_log(GPR_ERROR, "UNEXPECTED EVENT LEFT IN QUEUE: %s",
                 EventString(event).c_str());
@@ -375,7 +377,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   LoadBalancingPolicyTest()
       : work_serializer_(std::make_shared<WorkSerializer>()) {}
 
-  ~LoadBalancingPolicyTest() override {
+  void TearDown() override {
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
@@ -400,11 +402,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Creates an LB policy config from json.
   static RefCountedPtr<LoadBalancingPolicy::Config> MakeConfig(
-      const Json& json) {
-    return CoreConfiguration::Get()
-        .lb_policy_registry()
-        .ParseLoadBalancingConfig(json)
-        .value();
+      const Json& json, SourceLocation location = SourceLocation()) {
+    auto status_or_config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            json);
+    EXPECT_TRUE(status_or_config.ok())
+        << status_or_config.status() << "\n"
+        << location.file() << ":" << location.line();
+    return status_or_config.value();
   }
 
   // Converts an address URI into a grpc_resolved_address.
@@ -485,20 +490,22 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
-    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
-      if (update.state == GRPC_CHANNEL_CONNECTING) {
-        EXPECT_TRUE(update.status.ok())
-            << update.status << " at " << location.file() << ":"
-            << location.line();
-        ExpectPickQueued(update.picker.get(), location);
-        return true;  // Keep going.
-      }
-      EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
-          << ConnectivityStateName(update.state) << " at " << location.file()
-          << ":" << location.line();
-      final_picker = std::move(update.picker);
-      return false;  // Stop.
-    });
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          if (update.state == GRPC_CHANNEL_CONNECTING) {
+            EXPECT_TRUE(update.status.ok())
+                << update.status << " at " << location.file() << ":"
+                << location.line();
+            ExpectPickQueued(update.picker.get(), location);
+            return true;  // Keep going.
+          }
+          EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
+              << ConnectivityStateName(update.state) << " at "
+              << location.file() << ":" << location.line();
+          final_picker = std::move(update.picker);
+          return false;  // Stop.
+        },
+        location);
     return final_picker;
   }
 
@@ -642,6 +649,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                            std::forward_as_tuple(address))
                   .first;
     return &it->second;
+  }
+
+  void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
+    helper_->ExpectQueueEmpty(location);
   }
 
   std::shared_ptr<WorkSerializer> work_serializer_;
