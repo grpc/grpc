@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/cpp/server/load_reporter/load_reporter.h"
 

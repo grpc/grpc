@@ -19,7 +19,7 @@
 #ifndef GRPCPP_GENERIC_ASYNC_GENERIC_SERVICE_H
 #define GRPCPP_GENERIC_ASYNC_GENERIC_SERVICE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/support/async_stream.h>
