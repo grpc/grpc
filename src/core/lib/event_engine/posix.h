@@ -64,7 +64,7 @@ class PosixEngine : public EventEngine {
   /// \a config - Additional configuration to applied to the endpoint.
   /// \a memory_allocator - The endpoint may use the provided memory allocator
   /// to track memory allocations.
-  virtual std::unique_ptr<PosixEventEngineEndpoint> CreateEndpointFromFd(
+  virtual std::unique_ptr<PosixEventEngineEndpoint> CreatePosixEndpointFromFd(
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) = 0;
 
