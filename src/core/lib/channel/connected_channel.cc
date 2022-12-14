@@ -912,28 +912,30 @@ class ServerStream final : public ConnectedChannelStream {
       PollRecvMessage(p->incoming_messages, false);
       auto poll = p->promise();
       if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
-        client_initial_metadata_state_.emplace<Uninitialized>();
-        return std::move(*r);
+        auto& completing = client_initial_metadata_state_.emplace<Completing>();
+        completing.server_trailing_metadata = std::move(*r);
+        completing.on_complete =
+            MakeMemberClosure<ServerStream,
+                              &ServerStream::SendTrailingMetadataDone>(this);
+        completing.waker = Activity::current()->MakeOwningWaker();
+        auto& op = completing.send_trailing_metadata;
+        memset(&op, 0, sizeof(op));
+        op.payload = batch_payload();
+        op.on_complete = &completing.on_complete;
+        op.send_trailing_metadata = true;
+        batch_payload()->send_trailing_metadata.send_trailing_metadata =
+            completing.server_trailing_metadata.get();
+        batch_payload()->send_trailing_metadata.sent = &completing.sent;
+        SchedulePush(&op);
       }
+    }
+    if (auto* p = absl::get_if<Complete>(&client_initial_metadata_state_)) {
+      return std::move(p->result);
     }
     return Pending{};
   }
 
  private:
-  void RecvInitialMetadataReady(absl::Status status) {
-    MutexLock lock(mu());
-    auto& getting =
-        absl::get<GettingInitialMetadata>(client_initial_metadata_state_);
-    gpr_log(GPR_DEBUG, "GOT INITIAL METADATA: err=%s %s",
-            status.ToString().c_str(),
-            getting.client_initial_metadata->DebugString().c_str());
-    GotInitialMetadata got{std::move(getting.client_initial_metadata),
-                           std::move(getting.next_promise_factory)};
-    auto waker = std::move(getting.recv_initial_metadata_ready_waker);
-    client_initial_metadata_state_.emplace<GotInitialMetadata>(std::move(got));
-    waker.Wakeup();
-  }
-
   struct Uninitialized {};
 
   struct GettingInitialMetadata {
@@ -962,6 +964,47 @@ class ServerStream final : public ConnectedChannelStream {
     ArenaPromise<ServerMetadataHandle> promise;
   };
 
+  struct Completing {
+    ServerMetadataHandle server_trailing_metadata;
+    grpc_transport_stream_op_batch send_trailing_metadata;
+    grpc_closure on_complete;
+    bool sent = false;
+    Waker waker;
+  };
+
+  struct Complete {
+    ServerMetadataHandle result;
+  };
+
+  void RecvInitialMetadataReady(absl::Status status) {
+    MutexLock lock(mu());
+    auto& getting =
+        absl::get<GettingInitialMetadata>(client_initial_metadata_state_);
+    auto waker = std::move(getting.recv_initial_metadata_ready_waker);
+    gpr_log(GPR_DEBUG, "%sGOT INITIAL METADATA: err=%s %s",
+            waker.ActivityDebugTag().c_str(), status.ToString().c_str(),
+            getting.client_initial_metadata->DebugString().c_str());
+    GotInitialMetadata got{std::move(getting.client_initial_metadata),
+                           std::move(getting.next_promise_factory)};
+    client_initial_metadata_state_.emplace<GotInitialMetadata>(std::move(got));
+    waker.Wakeup();
+  }
+
+  void SendTrailingMetadataDone(absl::Status result) {
+    MutexLock lock(mu());
+    auto& completing = absl::get<Completing>(client_initial_metadata_state_);
+    auto md = std::move(completing.server_trailing_metadata);
+    auto waker = std::move(completing.waker);
+    gpr_log(GPR_DEBUG, "%sSEND TRAILING METADATA DONE: err=%s sent=%s %s",
+            waker.ActivityDebugTag().c_str(), result.ToString().c_str(),
+            completing.sent ? "true" : "false", md->DebugString().c_str());
+    if (!result.ok() || !completing.sent) {
+      md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
+    }
+    client_initial_metadata_state_.emplace<Complete>(Complete{std::move(md)});
+    waker.Wakeup();
+  }
+
   std::string ActiveOpsString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     std::vector<std::string> ops;
     Match(
@@ -969,7 +1012,9 @@ class ServerStream final : public ConnectedChannelStream {
         [&](const Uninitialized&) { ops.push_back("UNINITIALIZED"); },
         [&](const GettingInitialMetadata&) { ops.push_back("GETTING"); },
         [&](const GotInitialMetadata&) { ops.push_back("GOT"); },
-        [&](const Running&) { ops.push_back("RUNNING"); });
+        [&](const Running&) { ops.push_back("RUNNING"); },
+        [&](const Completing&) { ops.push_back("COMPLETING"); },
+        [&](const Complete&) { ops.push_back("COMPLETE"); });
     // Send message
     std::string send_message_state = SendMessageString();
     if (send_message_state != "WAITING") {
@@ -985,7 +1030,7 @@ class ServerStream final : public ConnectedChannelStream {
 
   using ClientInitialMetadataState =
       absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,
-                    Running>;
+                    Running, Completing, Complete>;
   ClientInitialMetadataState client_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = Uninitialized{};
 

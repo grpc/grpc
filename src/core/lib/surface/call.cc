@@ -3022,6 +3022,17 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
       }
     }
 
+    bool is_waiting() const {
+      switch (state_) {
+        case kUnset:
+        case kFinishedWithFailure:
+        case kFinishedWithSuccess:
+          return false;
+        default:
+          return true;
+      }
+    }
+
    private:
     static constexpr uintptr_t kUnset = 0;
     static constexpr uintptr_t kFinishedWithFailure = 1;
@@ -3104,6 +3115,15 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 }
 
 void ServerPromiseBasedCall::UpdateOnce() {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(
+        GPR_INFO, "%sUpdateOnce: %s%shas_promise=%s", DebugTag().c_str(),
+        PresentAndCompletionText("recv_close", !recv_close_state_.is_waiting(),
+                                 recv_close_completion_)
+            .c_str(),
+        PollStateDebugString().c_str(),
+        promise_.has_value() ? "true" : "false");
+  }
   if (promise_.has_value()) {
     auto r = promise_();
     if (grpc_call_trace.enabled()) {
@@ -3119,6 +3139,10 @@ void ServerPromiseBasedCall::UpdateOnce() {
                                          GRPC_STATUS_OK)) {
         FinishOpOnCompletion(&recv_close_completion_,
                              PendingOp::kReceiveCloseOnServer);
+      }
+      if (send_status_from_server_completion_.has_value()) {
+        FinishOpOnCompletion(&send_status_from_server_completion_,
+                             PendingOp::kSendStatusFromServer);
       }
       promise_ = ArenaPromise<ServerMetadataHandle>();
     }
