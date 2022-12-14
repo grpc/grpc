@@ -43,6 +43,7 @@
 #include <grpc/impl/codegen/sync_generic.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/impl/slice_type.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>

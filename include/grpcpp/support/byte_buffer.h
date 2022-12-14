@@ -226,7 +226,7 @@ class SerializationTraits<ByteBuffer, void> {
                           bool* own_buffer) {
     *buffer = source;
     *own_buffer = true;
-    return g_core_codegen_interface->ok();
+    return grpc::Status::OK;
   }
 };
 

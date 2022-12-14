@@ -23,8 +23,9 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
@@ -75,7 +76,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     if (backup_count_ > 0) {
       *data = GRPC_SLICE_START_PTR(*slice_) + GRPC_SLICE_LENGTH(*slice_) -
               backup_count_;
-      GPR_CODEGEN_ASSERT(backup_count_ <= INT_MAX);
+      GPR_ASSERT(backup_count_ <= INT_MAX);
       *size = static_cast<int>(backup_count_);
       backup_count_ = 0;
       return true;
@@ -86,7 +87,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     }
     *data = GRPC_SLICE_START_PTR(*slice_);
     // On win x64, int is only 32bit
-    GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(*slice_) <= INT_MAX);
+    GPR_ASSERT(GRPC_SLICE_LENGTH(*slice_) <= INT_MAX);
     byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(*slice_));
     return true;
   }
@@ -98,7 +99,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   /// bytes that have already been returned by the last call of Next.
   /// So do the backup and have that ready for a later Next.
   void BackUp(int count) override {
-    GPR_CODEGEN_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(*slice_)));
+    GPR_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(*slice_)));
     backup_count_ = count;
   }
 
