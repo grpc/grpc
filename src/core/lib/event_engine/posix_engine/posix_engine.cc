@@ -559,8 +559,9 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 }
 
 std::unique_ptr<PosixEngine::PosixEventEngineEndpoint>
-PosixEventEngine::CreateEndpointFromFd(int fd, const EndpointConfig& config,
-                                       MemoryAllocator memory_allocator) {
+PosixEventEngine::CreatePosixEndpointFromFd(int fd,
+                                            const EndpointConfig& config,
+                                            MemoryAllocator memory_allocator) {
   if (fd < 0) {
     return nullptr;
   }

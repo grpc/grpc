@@ -164,7 +164,7 @@ class PosixEventEngine final : public PosixEngine,
 
   ~PosixEventEngine() override;
 
-  std::unique_ptr<PosixEventEngineEndpoint> CreateEndpointFromFd(
+  std::unique_ptr<PosixEventEngineEndpoint> CreatePosixEndpointFromFd(
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) override;
 
