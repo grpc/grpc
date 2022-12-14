@@ -102,7 +102,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "lock_free_event_test",
     srcs = ["lock_free_event_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "benchmark",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_windows",
