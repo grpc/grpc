@@ -31,7 +31,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_request.h>
@@ -594,7 +593,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
-  absl::ReleasableMutexLock lock(&read_mu_);
+  grpc_core::ReleasableMutexLock lock(&read_mu_);
   GPR_ASSERT(read_cb_ == nullptr);
   read_cb_ = std::move(on_read);
   incoming_buffer_ = buffer;
