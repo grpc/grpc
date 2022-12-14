@@ -22,7 +22,7 @@
 #include <type_traits>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>

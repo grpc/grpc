@@ -23,7 +23,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
