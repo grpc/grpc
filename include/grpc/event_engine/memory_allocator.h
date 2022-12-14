@@ -14,7 +14,7 @@
 #ifndef GRPC_EVENT_ENGINE_MEMORY_ALLOCATOR_H
 #define GRPC_EVENT_ENGINE_MEMORY_ALLOCATOR_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <stdlib.h>  // for abort()
 
