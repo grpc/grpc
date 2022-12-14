@@ -108,7 +108,7 @@ class PosixEngine : public EventEngine {
     /// \a addr - The address to listen for incoming connections.
     /// \a on_bind_new_fd The callback is invoked once for each newly bound
     /// listener fd that may be created by this Bind operation.
-    virtual absl::StatusOr<int> Bind(
+    virtual absl::StatusOr<int> BindFd(
         const ResolvedAddress& addr,
         OnPosixBindNewFdCallback on_bind_new_fd) = 0;
 
@@ -144,7 +144,7 @@ class PosixEngine : public EventEngine {
   /// The provided \a MemoryAllocatorFactory is used to create \a
   /// MemoryAllocators for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<PosixEventEngineListener>>
-  CreateListener(
+  CreatePosixListener(
       PosixEventEngineListener::PosixAcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,

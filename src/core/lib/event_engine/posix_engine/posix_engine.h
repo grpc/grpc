@@ -176,7 +176,7 @@ class PosixEventEngine final : public PosixEngine,
       override;
 
   absl::StatusOr<std::unique_ptr<PosixEngine::PosixEventEngineListener>>
-  CreateListener(PosixEventEngineListener::PosixAcceptCallback on_accept,
+  CreatePosixListener(PosixEventEngineListener::PosixAcceptCallback on_accept,
                  absl::AnyInvocable<void(absl::Status)> on_shutdown,
                  const EndpointConfig& config,
                  std::unique_ptr<MemoryAllocatorFactory>

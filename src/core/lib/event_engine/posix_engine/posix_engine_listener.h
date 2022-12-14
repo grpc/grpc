@@ -212,7 +212,7 @@ class PosixEngineListener : public PosixEngine::PosixEventEngineListener {
       override {
     return impl_->Bind(addr, nullptr);
   }
-  absl::StatusOr<int> Bind(
+  absl::StatusOr<int> BindFd(
       const EventEngine::ResolvedAddress& addr,
       PosixEngine::PosixEventEngineListener::OnPosixBindNewFdCallback
           on_bind_new_fd) override {
@@ -241,12 +241,12 @@ class PosixEngineListener
                "PosixEventEngineListener::Bind not supported on this "
                "platform");
   }
-  absl::StatusOr<int> Bind(
+  absl::StatusOr<int> BindFd(
       const EventEngine::ResolvedAddress& /*addr*/,
       PosixEngine::PosixEventEngineListener::OnPosixBindNewFdCallback
       /*on_bind_new_fd*/) override {
     GPR_ASSERT(false &&
-               "PosixEventEngineListener::Bind not supported on this "
+               "PosixEventEngineListener::BindFd not supported on this "
                "platform");
   }
   absl::Status HandleExternalConnection(
