@@ -16678,7 +16678,9 @@ target_include_directories(promise_endpoint_test
 )
 
 target_link_libraries(promise_endpoint_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
