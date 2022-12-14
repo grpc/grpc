@@ -31,6 +31,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_request.h>
@@ -593,7 +594,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
-  read_mu_.Lock();
+  absl::ReleasableMutexLock lock(&read_mu_);
   GPR_ASSERT(read_cb_ == nullptr);
   read_cb_ = std::move(on_read);
   incoming_buffer_ = buffer;
@@ -610,16 +611,16 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     // Endpoint read called for the very first time. Register read callback
     // with the polling engine.
     is_first_read_ = false;
-    read_mu_.Unlock();
+    lock.Release();
     handle_->NotifyOnRead(on_read_);
   } else if (inq_ == 0) {
     UpdateRcvLowat();
-    read_mu_.Unlock();
+    lock.Release();
     // Upper layer asked to read more but we know there is no pending data to
     // read from previous reads. So, wait for POLLIN.
     handle_->NotifyOnRead(on_read_);
   } else {
-    read_mu_.Unlock();
+    lock.Release();
     on_read_->SetStatus(absl::OkStatus());
     engine_->Run(on_read_);
   }
