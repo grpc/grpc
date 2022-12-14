@@ -31,8 +31,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-#ifdef GRPC_EVENT_ENGINE_POSIX
-
 /// This defines an EventEngine interface that posix specific event engines
 /// may implement to support additional functionality.
 class PosixEngine : public EventEngine {
@@ -150,8 +148,6 @@ class PosixEngine : public EventEngine {
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
 };
-
-#endif  // GRPC_EVENT_ENGINE_POSIX
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
