@@ -108,6 +108,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
+        "no_mac",
         "no_windows",
     ],
     uses_event_engine = True,

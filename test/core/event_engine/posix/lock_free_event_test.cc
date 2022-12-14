@@ -155,7 +155,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
 
 namespace {
 
-// A dummy callback sceduler which inherits from the Scheduler interface but
+// A trivial callback sceduler which inherits from the Scheduler interface but
 // immediatey runs the callback/closure.
 class BechmarkCallbackScheduler : public Scheduler {
  public:
@@ -183,6 +183,7 @@ void BM_LockFreeEvent(benchmark::State& state) {
   }
   event.SetShutdown(absl::CancelledError("Shutting down"));
   delete notify_on_closure;
+  event.DestroyEvent();
 }
 BENCHMARK(BM_LockFreeEvent)->ThreadRange(1, 64);
 
@@ -191,16 +192,22 @@ BENCHMARK(BM_LockFreeEvent)->ThreadRange(1, 64);
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  ::benchmark::Initialize(&argc, argv);
+  benchmark::Initialize(&argc, argv);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();
   g_scheduler = new TestScheduler(
       grpc_event_engine::experimental::GetDefaultEventEngine());
   int r = RUN_ALL_TESTS();
-  ::benchmark::RunSpecifiedBenchmarks();
+  benchmark::RunTheBenchmarksNamespaced();
   grpc_shutdown();
   return r;
 }

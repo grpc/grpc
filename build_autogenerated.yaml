@@ -8854,11 +8854,13 @@ targets:
   src:
   - test/core/event_engine/posix/lock_free_event_test.cc
   deps:
+  - benchmark
   - grpc_test_util
+  benchmark: true
+  defaults: benchmark
   platforms:
   - linux
   - posix
-  - mac
   uses_polling: false
 - name: log_test
   gtest: true
