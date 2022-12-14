@@ -221,7 +221,7 @@ void test_connect_cancellation_succeeds(void) {
   grpc_core::ExecCtx exec_ctx;
   bool tried_ipv4 = false;
   ASSERT_TRUE(grpc_parse_uri(target_ipv6_addr_uri, &resolved_addr));
-  auto try_bind = [&](int sock) -> bool {
+  auto try_bind = [&](int sock) {
     if (sock < 0 || bind(sock, reinterpret_cast<sockaddr*>(resolved_addr.addr),
                          resolved_addr.len) != 0) {
       return false;
