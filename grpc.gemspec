@@ -992,6 +992,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
   s.files += %w( src/core/lib/event_engine/memory_allocator.cc )
   s.files += %w( src/core/lib/event_engine/poller.h )
+  s.files += %w( src/core/lib/event_engine/posix.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_poll_posix.cc )

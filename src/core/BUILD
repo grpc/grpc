@@ -1679,6 +1679,7 @@ grpc_cc_library(
         "iomgr_port",
         "load_file",
         "memory_quota",
+        "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_internal_errqueue",
@@ -1794,6 +1795,7 @@ grpc_cc_library(
     deps = [
         "event_engine_tcp_socket_utils",
         "iomgr_port",
+        "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
@@ -1831,6 +1833,7 @@ grpc_cc_library(
         "experiments",
         "init_internally",
         "iomgr_port",
+        "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
