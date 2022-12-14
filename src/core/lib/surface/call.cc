@@ -2025,6 +2025,7 @@ class PromiseBasedCall : public Call,
     kSendMessage,
     kReceiveMessage,
     kReceiveCloseOnServer,
+    kSendStatusFromServer,
   };
 
   static constexpr const char* PendingOpString(PendingOp reason) {
@@ -2041,6 +2042,8 @@ class PromiseBasedCall : public Call,
         return "ReceiveMessage";
       case PendingOp::kReceiveCloseOnServer:
         return "ReceiveCloseOnServer";
+      case PendingOp::kSendStatusFromServer:
+        return "SendStatusFromServer";
     }
     return "Unknown";
   }
@@ -3043,10 +3046,12 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   Latch<ServerMetadata*>* send_initial_metadata_latch_ ABSL_GUARDED_BY(mu()) =
       nullptr;
   ServerMetadata send_initial_metadata_ ABSL_GUARDED_BY(mu());
+  ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
   RecvCloseState recv_close_state_ ABSL_GUARDED_BY(mu());
   Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
+  Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
 };
 
 ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
@@ -3084,15 +3089,18 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%sPollTopOfCall: %shas_promise=%s", DebugTag().c_str(),
-            PollStateDebugString().c_str(),
-            promise_.has_value() ? "true" : "false");
+    gpr_log(GPR_INFO, "%sPollTopOfCall: %s", DebugTag().c_str(),
+            PollStateDebugString().c_str());
   }
 
   PollSendMessage();
   PollRecvMessage(incoming_compression_algorithm_);
 
-  return Pending{};  // TODO
+  if (send_trailing_metadata_ != nullptr) {
+    return std::move(send_trailing_metadata_);
+  }
+
+  return Pending{};
 }
 
 void ServerPromiseBasedCall::UpdateOnce() {
@@ -3105,7 +3113,14 @@ void ServerPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
-      abort();
+      if (recv_close_state_.CompleteCall((*result)
+                                             ->get(GrpcStatusMetadata())
+                                             .value_or(GRPC_STATUS_UNKNOWN) ==
+                                         GRPC_STATUS_OK)) {
+        FinishOpOnCompletion(&recv_close_completion_,
+                             PendingOp::kReceiveCloseOnServer);
+      }
+      promise_ = ArenaPromise<ServerMetadataHandle>();
     }
   }
 }
@@ -3168,12 +3183,20 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_MESSAGE:
         StartRecvMessage(op, completion, client_to_server_messages_);
         break;
-      case GRPC_OP_RECV_STATUS_ON_CLIENT:
-      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-      case GRPC_OP_RECV_INITIAL_METADATA:
-        abort();  // unreachable
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        abort();  // unreachable
+        send_trailing_metadata_ = arena()->MakePooled<ServerMetadata>(arena());
+        CToMetadata(op.data.send_status_from_server.trailing_metadata,
+                    op.data.send_status_from_server.trailing_metadata_count,
+                    send_trailing_metadata_.get());
+        send_trailing_metadata_->Set(GrpcStatusMetadata(),
+                                     op.data.send_status_from_server.status);
+        if (auto* details = op.data.send_status_from_server.status_details) {
+          send_trailing_metadata_->Set(GrpcMessageMetadata(),
+                                       Slice(CSliceRef(*details)));
+        }
+        send_status_from_server_completion_ =
+            AddOpToCompletion(completion, PendingOp::kSendStatusFromServer);
+        break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         if (!recv_close_state_.RequestReceiveCloseOnServer(
                 op.data.recv_close_on_server.cancelled)) {
@@ -3181,6 +3204,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
               AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
         }
         break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        abort();  // unreachable
     }
   }
 }
