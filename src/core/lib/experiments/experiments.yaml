@@ -94,8 +94,8 @@
 - name: new_hpack_huffman_decoder
   description:
     New HPACK huffman decoder - should be much faster than the existing implementation.
-  default: debug
-  expiry: 2023/01/01
+  default: true
+  expiry: 2023/03/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_tests", "hpack_test"]
 - name: event_engine_client
