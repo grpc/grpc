@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_EVENT_ENGINE_POSIX_H
-#define GRPC_EVENT_ENGINE_POSIX_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,8 +33,8 @@ namespace experimental {
 
 #ifdef GRPC_EVENT_ENGINE_POSIX
 
-/// This defines an EventEngine interface that all posix specific event engines
-/// may implement.
+/// This defines an EventEngine interface that posix specific event engines
+/// may implement to support additional functionality.
 class PosixEventEngine : public EventEngine {
   class PosixEventEngineEndpoint : public EventEngine::Endpoint {
    public:
@@ -157,4 +157,4 @@ class PosixEventEngine : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_EVENT_ENGINE_POSIX_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_H
