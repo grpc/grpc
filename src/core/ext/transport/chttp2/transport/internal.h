@@ -585,6 +585,9 @@ struct grpc_chttp2_stream {
   bool traced = false;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
+
+  // time this stream was created
+  gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
 };
 
 /** Transport writing call flow:

@@ -97,6 +97,7 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
                                grpc_transport_stream_stats* to) {
   grpc_transport_move_one_way_stats(&from->incoming, &to->incoming);
   grpc_transport_move_one_way_stats(&from->outgoing, &to->outgoing);
+  to->latency = std::exchange(from->latency, gpr_inf_future(GPR_TIMESPAN));
 }
 
 size_t grpc_transport_stream_size(grpc_transport* transport) {
