@@ -213,18 +213,17 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderParallelRequests) {
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder =
       grpc::experimental::binder::GetEndpointBinder("example.service");
-  std::unique_ptr<grpc_binder::Binder> endpoint_binder =
-      std::make_unique<grpc_binder::end2end_testing::FakeBinder>(
-          static_cast<grpc_binder::end2end_testing::FakeEndpoint*>(
-              raw_endpoint_binder));
-  std::shared_ptr<grpc::Channel> channel =
-      grpc::testing::CreateBinderChannel(std::move(endpoint_binder));
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
-      grpc::testing::EchoTestService::NewStub(channel);
-
   constexpr size_t kNumRequests = 10;
 
   auto thread_fn = [&](size_t id) {
+    std::unique_ptr<grpc_binder::Binder> endpoint_binder =
+        std::make_unique<grpc_binder::end2end_testing::FakeBinder>(
+            static_cast<grpc_binder::end2end_testing::FakeEndpoint*>(
+                raw_endpoint_binder));
+    std::shared_ptr<grpc::Channel> channel =
+        grpc::testing::CreateBinderChannel(std::move(endpoint_binder));
+    std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
+        grpc::testing::EchoTestService::NewStub(channel);
     grpc::testing::EchoRequest request;
     std::string msg = absl::StrFormat("BinderServerBuilder-%d", id);
     request.set_message(msg);
