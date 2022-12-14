@@ -216,30 +216,34 @@ void test_connect_cancellation_succeeds(void) {
   auto target_ipv4_addr_uri = *grpc_core::URI::Parse(absl::StrCat(
       "ipv4:127.0.0.1:", std::to_string(grpc_pick_unused_port_or_die())));
   grpc_resolved_address resolved_addr;
-  ASSERT_TRUE(grpc_parse_uri(target_ipv6_addr_uri, &resolved_addr));
   int svr_fd;
   grpc_closure done;
   grpc_core::ExecCtx exec_ctx;
   bool tried_ipv4 = false;
+  ASSERT_TRUE(grpc_parse_uri(target_ipv6_addr_uri, &resolved_addr));
+  auto try_bind = [&](int sock) -> bool {
+    if (sock < 0 || bind(sock, reinterpret_cast<sockaddr*>(resolved_addr.addr),
+                         resolved_addr.len) != 0) {
+      return false;
+    }
+    return true;
+  };
   /* create a phony server */
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  if (svr_fd < 0 ||
-      bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
-           resolved_addr.len) != 0) {
-    // Try ipv4
+  // Try ipv6
+  if (!try_bind(svr_fd)) {
+    // Failed to bind ipv6. Try ipv4
     ASSERT_TRUE(grpc_parse_uri(target_ipv4_addr_uri, &resolved_addr));
     svr_fd = socket(AF_INET, SOCK_STREAM, 0);
     tried_ipv4 = true;
-    if (svr_fd < 0 ||
-        bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
-             resolved_addr.len) != 0) {
+    if (!try_bind(svr_fd)) {
       gpr_log(GPR_ERROR,
               "Skipping test. Failed to create a phony server bound to ipv6 or "
               "ipv4 address");
       return;
     }
   }
-
+  
   ASSERT_EQ(listen(svr_fd, 1), 0);
 
   std::vector<int> client_sockets;
