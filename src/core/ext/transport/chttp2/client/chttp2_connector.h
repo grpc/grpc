@@ -72,7 +72,9 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_receive_settings_;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(mu_);
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
+  // a raw pointer will suffice since args_ holds a copy of ChannelArgs which
+  // holds a shared_ptr.
+  grpc_event_engine::experimental::EventEngine* event_engine_
       ABSL_GUARDED_BY(mu_);
   absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
