@@ -216,7 +216,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
                          {"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:442"}));
 }
 
-TEST_F(XdsOverrideHostTest, SubchannelFailure) {
+TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
   const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
                                                        "ipv4:127.0.0.1:442"};
   EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
@@ -254,7 +254,82 @@ TEST_F(XdsOverrideHostTest, SubchannelFailure) {
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
 }
 
-TEST_F(XdsOverrideHostTest, DISABLED_SubchannelIdle) {}
+TEST_F(XdsOverrideHostTest, SubchannelConnectingIsQueued) {
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
+                                    MakeXdsOverrideHostConfig("round_robin")),
+                        policy_.get()),
+            absl::OkStatus());
+  ExpectConnectingUpdate();
+  EXPECT_NE(ExpectState(GRPC_CHANNEL_CONNECTING), nullptr);
+  EXPECT_NE(ExpectState(GRPC_CHANNEL_CONNECTING), nullptr);
+  // Ready up both subchannels
+  for (auto address : kAddresses) {
+    auto subchannel = FindSubchannel({address});
+    ASSERT_NE(subchannel, nullptr);
+    ASSERT_TRUE(subchannel->ConnectionRequested());
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  }
+  ASSERT_NE(WaitForConnected(), nullptr);
+  ASSERT_NE(ExpectState(GRPC_CHANNEL_READY), nullptr);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure child policy works
+  EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
+  // Check that the host is overridden
+  std::map<UniqueTypeName, std::string> pick_arg{
+      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  auto subchannel = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel, nullptr);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
+  ExpectPickQueued(picker.get(), pick_arg);
+}
+
+TEST_F(XdsOverrideHostTest, AttemptsConnectingIdleSubchannel) {
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
+                                    MakeXdsOverrideHostConfig("pick_first")),
+                        policy_.get()),
+            absl::OkStatus());
+  ExpectConnectingUpdate();
+  // Ready up both subchannels
+  auto subchannel = FindSubchannel(
+      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_NE(subchannel, nullptr);
+  ASSERT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = WaitForConnected();
+  // Make sure child policy works
+  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
+  subchannel = FindSubchannel(
+      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_FALSE(subchannel->ConnectionRequested());
+  // Check that the host is overridden
+  std::map<UniqueTypeName, std::string> pick_arg{
+      {XdsHostOverrideTypeName(), std::string(kAddresses[1])}};
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  ExpectPickQueued(picker.get(), pick_arg);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectReresolutionRequest();
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_IDLE);
+  // ExpectState(GRPC_CHANNEL_CONNECTING);
+  // picker = ExpectState(GRPC_CHANNEL_READY);
+  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[1]);
+}
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

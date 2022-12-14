@@ -220,15 +220,15 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void MaybeUpdatePickerLocked();
 
-  RefCountedPtr<SubchannelInterface> LookupSubchannel(
-      absl::string_view address);
-
   void UpdateAddressMap(const absl::StatusOr<ServerAddressList>& addresses);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
       ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel);
 
   void ResetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
+
+  absl::optional<LoadBalancingPolicy::PickResult> PickOverridenHost(
+      absl::string_view override_host);
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -261,6 +261,42 @@ XdsOverrideHostLb::Picker::Picker(
   }
 }
 
+/*
+    // No READY subchannel found.  If we found an IDLE subchannel,
+    // trigger a connection attempt and queue the pick until that attempt
+    // completes.
+    if idle_subchannel is not None:
+      hop into control plane to trigger connection attempt for idle_subchannel
+      return queue as pick result
+*/
+
+absl::optional<LoadBalancingPolicy::PickResult>
+XdsOverrideHostLb::PickOverridenHost(absl::string_view address) {
+  if (address.length() == 0) {
+    return absl::nullopt;
+  }
+  MutexLock lock(&subchannel_map_mu_);
+  auto it = subchannel_map_.find(address);
+  if (it == subchannel_map_.end()) {
+    return absl::nullopt;
+  }
+  auto subchannel = it->second->GetSubchannel();
+  if (subchannel == nullptr) {
+    return absl::nullopt;
+  }
+  auto connectivity_state = subchannel->connectivity_state();
+  if (connectivity_state == GRPC_CHANNEL_READY) {
+    return PickResult::Complete(subchannel->wrapped_subchannel());
+  } else if (connectivity_state == GRPC_CHANNEL_CONNECTING) {
+    return PickResult::Queue();
+  } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
+    std::cout << "\n\n\n Connected! \n\n\n";
+    subchannel->RequestConnection();
+    return PickResult::Queue();
+  }
+  return absl::nullopt;
+}
+
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   if (picker_ == nullptr) {  // Should never happen.
@@ -270,14 +306,9 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
   auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
       args.call_state);
   auto override_host = call_state->GetCallAttribute(XdsHostOverrideTypeName());
-  RefCountedPtr<SubchannelInterface> subchannel = nullptr;
-  if (override_host.length() > 0) {
-    subchannel = policy_->LookupSubchannel(override_host);
-  }
-  if (subchannel != nullptr) {
-    return PickResult::Complete(
-        static_cast<SubchannelWrapper*>(subchannel.get())
-            ->wrapped_subchannel());
+  auto overridden_host_pick = policy_->PickOverridenHost(override_host);
+  if (overridden_host_pick.has_value()) {
+    return std::move(*overridden_host_pick);
   }
   auto result = picker_->Pick(args);
   auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);
@@ -398,16 +429,6 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
-}
-
-RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannel(
-    absl::string_view address) {
-  absl::MutexLock lock(&subchannel_map_mu_);
-  auto it = subchannel_map_.find(address);
-  if (it != subchannel_map_.end()) {
-    return it->second->GetSubchannel();
-  }
-  return nullptr;
 }
 
 void XdsOverrideHostLb::UpdateAddressMap(
@@ -541,7 +562,12 @@ void XdsOverrideHostLb::SubchannelWrapper::WatchConnectivityState(
 
 void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  wrapped_subchannel()->CancelConnectivityStateWatch(watchers_[watcher]);
+  auto original_watcher = watchers_.find(watcher);
+  if (original_watcher != watchers_.end()) {
+    wrapped_subchannel()->CancelConnectivityStateWatch(
+        original_watcher->second);
+    watchers_.erase(original_watcher);
+  }
 }
 
 //
