@@ -2024,6 +2024,7 @@ class PromiseBasedCall : public Call,
     kReceiveStatusOnClient,
     kSendMessage,
     kReceiveMessage,
+    kReceiveCloseOnServer,
   };
 
   static constexpr const char* PendingOpString(PendingOp reason) {
@@ -2038,6 +2039,8 @@ class PromiseBasedCall : public Call,
         return "SendMessage";
       case PendingOp::kReceiveMessage:
         return "ReceiveMessage";
+      case PendingOp::kReceiveCloseOnServer:
+        return "ReceiveCloseOnServer";
     }
     return "Unknown";
   }
@@ -2978,6 +2981,53 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerCallContext* server_call_context() override { return &call_context_; }
 
  private:
+  class RecvCloseState {
+   public:
+    // Request that receiver be filled in per grpc_op_recv_close_on_server.
+    // Returns true if the request can be fulfilled immediately.
+    // Returns false if the request will be fulfilled later.
+    bool RequestReceiveCloseOnServer(int* receiver) {
+      switch (state_) {
+        case kUnset:
+          state_ = reinterpret_cast<uintptr_t>(receiver);
+          return false;
+        case kFinishedWithFailure:
+          *receiver = 1;
+          return true;
+        case kFinishedWithSuccess:
+          *receiver = 0;
+          return true;
+        default:
+          abort();  // unreachable
+      }
+    }
+
+    // Mark the call as having completed.
+    // Returns true if this finishes a previous RequestReceiveCloseOnServer.
+    bool CompleteCall(bool success) {
+      switch (state_) {
+        case kUnset:
+          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
+          return false;
+        case kFinishedWithFailure:
+        case kFinishedWithSuccess:
+          abort();  // unreachable
+        default:
+          *reinterpret_cast<int*>(state_) = success ? 0 : 1;
+          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
+          return true;
+      }
+    }
+
+   private:
+    static constexpr uintptr_t kUnset = 0;
+    static constexpr uintptr_t kFinishedWithFailure = 1;
+    static constexpr uintptr_t kFinishedWithSuccess = 2;
+    // Holds one of kUnset, kFinishedWithFailure, or kFinishedWithSuccess
+    // OR an int* that wants to receive the final status.
+    uintptr_t state_ = kUnset;
+  };
+
   grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops) const;
   void CommitBatch(const grpc_op* ops, size_t nops,
                    const Completion& completion)
@@ -2995,6 +3045,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerMetadata send_initial_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
+  RecvCloseState recv_close_state_ ABSL_GUARDED_BY(mu());
+  Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
 };
 
 ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
@@ -3121,8 +3173,14 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_INITIAL_METADATA:
         abort();  // unreachable
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
-      case GRPC_OP_RECV_CLOSE_ON_SERVER:
         abort();  // unreachable
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (!recv_close_state_.RequestReceiveCloseOnServer(
+                op.data.recv_close_on_server.cancelled)) {
+          recv_close_completion_ =
+              AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
+        }
+        break;
     }
   }
 }
