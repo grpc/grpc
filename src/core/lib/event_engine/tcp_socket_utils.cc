@@ -15,6 +15,8 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -70,6 +72,45 @@ absl::StatusOr<std::string> GetScheme(
           "Unknown scheme: %d", resolved_address.address()->sa_family));
   }
 }
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
+    EventEngine::ResolvedAddress* resolved_addr) {
+  const sockaddr* addr = resolved_addr->address();
+  if (addr->sa_family != AF_UNIX) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
+  }
+  const sockaddr_un* unix_addr = reinterpret_cast<const sockaddr_un*>(addr);
+  bool abstract =
+      resolved_addr->size() < sizeof(unix_addr->sun_family) + 1 ||
+      (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0');
+  std::string scheme;
+  std::string path;
+  if (abstract) {
+    scheme = "unix-abstract";
+    if (resolved_addr->size() >= sizeof(unix_addr->sun_family) + 1) {
+      path = std::string(
+          unix_addr->sun_path + 1,
+          resolved_addr->size() - sizeof(unix_addr->sun_family) - 1);
+    }
+  } else {
+    scheme = "unix";
+    path = unix_addr->sun_path;
+  }
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      std::move(scheme), /*authority=*/"", std::move(path),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  if (!uri.ok()) return uri.status();
+  return uri->ToString();
+}
+#else
+absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+  return absl::InvalidArgumentError("Unix socket is not supported.");
+}
+#endif
+
 }  // namespace
 
 bool ResolvedAddressIsV4Mapped(
@@ -88,7 +129,7 @@ bool ResolvedAddressIsV4Mapped(
                sizeof(kV4MappedPrefix)) == 0) {
       if (resolved_addr4_out != nullptr) {
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
-        memset(addr4_out, 0, sizeof(sockaddr_in));
+        memset(addr4_out, 0, EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
         addr4_out->sin_family = AF_INET;
         // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
@@ -301,9 +342,17 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
   if (resolved_address.size() == 0) {
     return absl::InvalidArgumentError("Empty address");
   }
-  auto scheme = GetScheme(resolved_address);
+  EventEngine::ResolvedAddress addr = resolved_address;
+  EventEngine::ResolvedAddress addr_normalized;
+  if (ResolvedAddressIsV4Mapped(addr, &addr_normalized)) {
+    addr = addr_normalized;
+  }
+  auto scheme = GetScheme(addr);
   GRPC_RETURN_IF_ERROR(scheme.status());
-  auto path = ResolvedAddressToString(resolved_address);
+  if (*scheme == "unix") {
+    return ResolvedAddrToUriUnixIfPossible(&addr);
+  }
+  auto path = ResolvedAddressToString(addr);
   GRPC_RETURN_IF_ERROR(path.status());
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Create(*scheme, /*authority=*/"", std::move(path.value()),

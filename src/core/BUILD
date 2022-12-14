@@ -1557,9 +1557,11 @@ grpc_cc_library(
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "status_helper",
         "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1589,10 +1591,12 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "status_helper",
         "strerror",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1670,6 +1674,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_common",
+        "event_engine_tcp_socket_utils",
         "experiments",
         "iomgr_port",
         "load_file",
@@ -1682,11 +1687,13 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "slice",
+        "status_helper",
         "strerror",
         "time",
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )

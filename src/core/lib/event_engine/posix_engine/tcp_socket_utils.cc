@@ -632,7 +632,7 @@ PosixSocketWrapper::LocalAddress() {
     return absl::InternalError(
         absl::StrCat("getsockname:", grpc_core::StrError(errno)));
   }
-  return addr;
+  return EventEngine::ResolvedAddress(addr.address(), len);
 }
 
 absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
@@ -642,7 +642,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
     return absl::InternalError(
         absl::StrCat("getpeername:", grpc_core::StrError(errno)));
   }
-  return addr;
+  return EventEngine::ResolvedAddress(addr.address(), len);
 }
 
 absl::StatusOr<std::string> PosixSocketWrapper::LocalAddressString() {
