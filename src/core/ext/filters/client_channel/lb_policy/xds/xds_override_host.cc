@@ -158,19 +158,16 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   class SubchannelEntry : public RefCounted<SubchannelEntry> {
    public:
     void SetSubchannel(SubchannelWrapper* subchannel) {
-      absl::MutexLock lock(&mu_);
       subchannel_ = subchannel;
     }
 
     void ResetSubchannel(SubchannelWrapper* expected) {
-      absl::MutexLock lock(&mu_);
       if (subchannel_ == expected) {
         subchannel_ = nullptr;
       }
     }
 
     RefCountedPtr<SubchannelWrapper> GetSubchannel() {
-      absl::MutexLock lock(&mu_);
       if (subchannel_ == nullptr) {
         return RefCountedPtr<SubchannelWrapper>(nullptr);
       }
@@ -178,8 +175,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
    private:
-    absl::Mutex mu_;
-    SubchannelWrapper* subchannel_ ABSL_GUARDED_BY(mu_) = nullptr;
+    SubchannelWrapper* subchannel_ = nullptr;
   };
 
   ~XdsOverrideHostLb() override;
@@ -375,10 +371,10 @@ RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannel(
     absl::string_view address) {
   absl::MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
-  if (it == subchannel_map_.end()) {
-    return nullptr;
+  if (it != subchannel_map_.end()) {
+    return it->second->GetSubchannel();
   }
-  return it->second->GetSubchannel();
+  return nullptr;
 }
 
 void XdsOverrideHostLb::UpdateAddressMap(
