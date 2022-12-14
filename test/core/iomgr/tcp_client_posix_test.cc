@@ -243,7 +243,7 @@ void test_connect_cancellation_succeeds(void) {
       return;
     }
   }
-  
+
   ASSERT_EQ(listen(svr_fd, 1), 0);
 
   std::vector<int> client_sockets;
