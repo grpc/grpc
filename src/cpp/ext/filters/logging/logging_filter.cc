@@ -359,7 +359,7 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
                                           message->payload());
                   return message;
                 }))
-            .Push(grpc_core::Seq(
+            .NecessaryPush(grpc_core::Seq(
                 outgoing_mapper.TakeAndRun(
                     [calld](grpc_core::MessageHandle message)
                         -> absl::StatusOr<grpc_core::MessageHandle> {
@@ -368,8 +368,6 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
                       return message;
                     }),
                 [calld]() mutable -> grpc_core::ArenaPromise<absl::Status> {
-                  // TODO(ctiller): We do not hit half-close for some reason
-                  GPR_ASSERT(0);
                   calld->LogClientHalfClose(/*is_client=*/true);
                   return grpc_core::ImmediateOkStatus();
                 })),
@@ -441,7 +439,7 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
                                           message->payload());
                   return message;
                 }))
-            .Pull(grpc_core::Seq(
+            .NecessaryPull(grpc_core::Seq(
                 incoming_mapper.TakeAndRun(
                     [calld](grpc_core::MessageHandle message)
                         -> absl::StatusOr<grpc_core::MessageHandle> {
@@ -450,8 +448,6 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
                       return message;
                     }),
                 [calld]() mutable -> grpc_core::ArenaPromise<absl::Status> {
-                  // TODO(ctiller): We do not hit half-close for some reason
-                  GPR_ASSERT(0);
                   calld->LogClientHalfClose(/*is_client=*/false);
                   return grpc_core::ImmediateOkStatus();
                 })),
