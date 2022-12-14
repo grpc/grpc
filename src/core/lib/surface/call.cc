@@ -2142,6 +2142,9 @@ class PromiseBasedCall : public Call,
     return completed_;
   }
   void set_completed() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { completed_ = true; }
+  bool is_sending() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return outstanding_send_.has_value();
+  }
 
  private:
   union CompletionInfo {
@@ -3107,7 +3110,7 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   PollSendMessage();
   PollRecvMessage(incoming_compression_algorithm_);
 
-  if (send_trailing_metadata_ != nullptr) {
+  if (!is_sending() && send_trailing_metadata_ != nullptr) {
     return std::move(send_trailing_metadata_);
   }
 
