@@ -178,7 +178,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
                                           args->read_buffer,
                                           &self->on_receive_settings_, nullptr);
       RefCountedPtr<Chttp2Connector> cc = self->Ref();
-      self->event_engine_ = args->args.GetObject<EventEngine>();
+      self->event_engine_ = self->args_.channel_args.GetObject<EventEngine>();
       self->timer_handle_ = self->event_engine_->RunAfter(
           self->args_.deadline - Timestamp::Now(), [self = std::move(cc)] {
             ApplicationCallbackExecCtx callback_exec_ctx;
