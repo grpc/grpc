@@ -16,7 +16,7 @@
 set -eo pipefail
 
 # Constants
-readonly PYTHON_VERSION="${PYTHON_VERSION:-3.7}"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.8}"
 # Test driver
 readonly TEST_DRIVER_REPO_NAME="grpc"
 readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
@@ -100,7 +100,7 @@ activate_secondary_gke_cluster() {
 #   Writes the output of given command to stdout, stderr
 #######################################
 run_ignore_exit_code() {
-  local exit_code=-1
+  local exit_code=0
   "$@" || exit_code=$?
   echo "Exit code: ${exit_code}"
 }
@@ -308,18 +308,16 @@ test_driver_install() {
 }
 
 #######################################
-# Outputs Kokoro image version and Ubuntu's lsb_release
+# Outputs Ubuntu's lsb_release and python/pip versions
 # Arguments:
 #   None
 # Outputs:
 #   Writes the output to stdout
 #######################################
 kokoro_print_version() {
-  echo "Kokoro VM version:"
-  if [[ -f /VERSION ]]; then
-    cat /VERSION
-  fi
   run_ignore_exit_code lsb_release -a
+  run_ignore_exit_code "python${PYTHON_VERSION}" --version
+  run_ignore_exit_code "python${PYTHON_VERSION}" -m pip --version
 }
 
 #######################################
@@ -349,31 +347,6 @@ GIT_COMMIT_SHORT,${GIT_COMMIT_SHORT:?GIT_COMMIT_SHORT must be set}
 EOF
   echo "Sponge properties:"
   cat "${KOKORO_ARTIFACTS_DIR}/custom_sponge_config.csv"
-}
-
-#######################################
-# Configure Python virtual environment on Kokoro VM.
-# Arguments:
-#   None
-# Outputs:
-#   Writes the output of `pyenv` commands to stdout
-#######################################
-kokoro_setup_python_virtual_environment() {
-  # Kokoro provides pyenv, so use it instead of `python -m venv`
-  echo "Setup pyenv environment"
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
-  py_latest_patch="$(pyenv versions --bare --skip-aliases | grep -E "^${PYTHON_VERSION}\.[0-9]{1,2}$" | sort --version-sort | tail -n 1)"
-  echo "Activating python ${py_latest_patch} virtual environment"
-  pyenv virtualenv --no-pip "${py_latest_patch}" k8s_xds_test_runner
-  pyenv local k8s_xds_test_runner
-  pyenv activate k8s_xds_test_runner
-  python3 -m ensurepip
-  # pip is fixed to 21.0.1 due to issue https://github.com/pypa/pip/pull/9835
-  # internal details: b/186411224
-  # TODO(sergiitk): revert https://github.com/grpc/grpc/pull/26087 when 21.1.1 released
-  python3 -m pip install -U pip==21.0.1
-  python3 -m pip --version
 }
 
 #######################################
@@ -419,10 +392,8 @@ kokoro_setup_test_driver() {
   test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
   parse_src_repo_git_info SRC_DIR
   kokoro_write_sponge_properties
-  kokoro_setup_python_virtual_environment
 
-  # gcloud requires python, so this should be executed after pyenv setup
-  gcloud_update
+  #  gcloud_update
   gcloud_get_cluster_credentials
   test_driver_install "${test_driver_repo_dir}"
   # shellcheck disable=SC2034  # Used in the main script
