@@ -293,6 +293,8 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
+  - include/grpc/impl/connectivity_state.h
+  - include/grpc/impl/grpc_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -704,6 +706,7 @@ libs:
   - src/core/ext/xds/xds_cluster_specifier_plugin.h
   - src/core/ext/xds/xds_common_types.h
   - src/core/ext/xds/xds_endpoint.h
+  - src/core/ext/xds/xds_health_status.h
   - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
   - src/core/ext/xds/xds_http_rbac_filter.h
@@ -1459,6 +1462,7 @@ libs:
   - src/core/ext/xds/xds_cluster_specifier_plugin.cc
   - src/core/ext/xds/xds_common_types.cc
   - src/core/ext/xds/xds_endpoint.cc
+  - src/core/ext/xds/xds_health_status.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
   - src/core/ext/xds/xds_http_rbac_filter.cc
@@ -1887,6 +1891,8 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
+  - include/grpc/impl/connectivity_state.h
+  - include/grpc/impl/grpc_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -3424,6 +3430,8 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
+  - include/grpc/impl/connectivity_state.h
+  - include/grpc/impl/grpc_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -12485,6 +12493,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/util/status.cc
   - test/core/xds/xds_client_test.cc
   - test/core/xds/xds_transport_fake.cc
   deps:
@@ -12516,6 +12525,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12559,6 +12569,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
@@ -12567,6 +12578,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/tls.proto
   - src/proto/grpc/testing/xds/v3/typed_struct.proto
   - src/proto/grpc/testing/xds/v3/wrr_locality.proto
+  - src/cpp/util/status.cc
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - grpc_test_util
@@ -12598,6 +12610,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12685,6 +12698,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12789,6 +12803,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12846,6 +12861,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12880,12 +12896,15 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/util/status.cc
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - grpc_test_util
@@ -12917,6 +12936,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13057,6 +13077,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/ring_hash.proto
@@ -13148,6 +13169,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13222,6 +13244,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13279,6 +13302,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13377,6 +13401,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto

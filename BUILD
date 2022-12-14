@@ -214,6 +214,8 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/status.h",
     "include/grpc/impl/codegen/slice.h",
     "include/grpc/impl/compression_types.h",
+    "include/grpc/impl/connectivity_state.h",
+    "include/grpc/impl/grpc_types.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
@@ -260,7 +262,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
-    "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
     "src/cpp/codegen/codegen_init.cc",
@@ -1765,6 +1766,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpcpp_call_metric_recorder",
+        "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:arena",
@@ -1830,6 +1832,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_unsecure",
         "grpcpp_call_metric_recorder",
+        "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:arena",
@@ -1869,6 +1872,7 @@ grpc_cc_library(
     deps = [
         "grpc++_config_proto",
         "grpc++_public_hdrs",
+        "grpcpp_status",
     ],
 )
 
@@ -3560,6 +3564,25 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:transport_fwd",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_status",
+    srcs = [
+        "src/cpp/util/status.cc",
+    ],
+    public_hdrs = [
+        "include/grpc++/support/status.h",
+        "include/grpcpp/impl/status.h",
+        "include/grpcpp/support/status.h",
+        "include/grpc++/impl/codegen/status.h",
+        "include/grpcpp/impl/codegen/status.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
     ],
 )
 

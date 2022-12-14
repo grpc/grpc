@@ -40,8 +40,8 @@
 #include "absl/types/variant.h"
 #include "http_trace.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>

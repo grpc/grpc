@@ -69,6 +69,8 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/compression_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
@@ -885,6 +887,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_health_status.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_health_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
