@@ -180,6 +180,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
    private:
     absl::Mutex mu_;
     SubchannelWrapper* subchannel_ ABSL_GUARDED_BY(mu_) = nullptr;
+    grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   };
 
   ~XdsOverrideHostLb() override;
