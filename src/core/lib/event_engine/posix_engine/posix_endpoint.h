@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -488,7 +489,11 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  void MaybeShutdown(absl::Status why);
+  int GetWrappedFd() { return fd_; }
+
+  void MaybeShutdown(
+      absl::Status why,
+      absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd);
 
  private:
   void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
@@ -562,9 +567,11 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
 
   void* outgoing_buffer_arg_ = nullptr;
 
-  // A counter which starts at 0. It is initialized the first time the socket
-  // options for collecting timestamps are set, and is incremented with each
-  // byte sent.
+  absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
+
+  // A counter which starts at 0. It is initialized the first time the
+  // socket options for collecting timestamps are set, and is incremented
+  // with each byte sent.
   int bytes_counter_ = -1;
   // True if timestamping options are set on the socket.
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -586,8 +593,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
-class PosixEndpoint
-    : public grpc_event_engine::experimental::EventEngine::Endpoint {
+class PosixEndpoint : public PosixEngine::PosixEventEngineEndpoint {
  public:
   PosixEndpoint(
       EventHandle* handle, PosixEngineClosure* on_shutdown,
@@ -622,18 +628,30 @@ class PosixEndpoint
     return impl_->GetLocalAddress();
   }
 
+  int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override {
+    if (!is_shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      impl_->MaybeShutdown(absl::InternalError("Endpoint closing"),
+                           std::move(on_release_fd));
+    }
+  }
+
   ~PosixEndpoint() override {
-    impl_->MaybeShutdown(absl::InternalError("Endpoint closing"));
+    if (!is_shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      impl_->MaybeShutdown(absl::InternalError("Endpoint closing"), nullptr);
+    }
   }
 
  private:
   PosixEndpointImpl* impl_;
+  std::atomic<bool> is_shutdown_{false};
 };
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class PosixEndpoint
-    : public grpc_event_engine::experimental::EventEngine::Endpoint {
+class PosixEndpoint : public PosixEngine::PosixEventEngineEndpoint {
  public:
   PosixEndpoint() = default;
 
@@ -660,6 +678,17 @@ class PosixEndpoint
   GetLocalAddress() const override {
     GPR_ASSERT(false &&
                "PosixEndpoint::GetLocalAddress not supported on this platform");
+  }
+
+  int GetWrappedFd() override {
+    GPR_ASSERT(false &&
+               "PosixEndpoint::GetWrappedFd not supported on this platform");
+  }
+
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override {
+    GPR_ASSERT(false &&
+               "PosixEndpoint::Shutdown not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;

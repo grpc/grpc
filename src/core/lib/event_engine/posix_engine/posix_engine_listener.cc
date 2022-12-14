@@ -46,7 +46,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 PosixEngineListenerImpl::PosixEngineListenerImpl(
-    EventEngine::Listener::AcceptCallback on_accept,
+    PosixEngine::PosixEventEngineListener::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const grpc_event_engine::experimental::EndpointConfig& config,
     std::unique_ptr<grpc_event_engine::experimental::MemoryAllocatorFactory>
@@ -61,7 +61,9 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
       memory_allocator_factory_(std::move(memory_allocator_factory)) {}
 
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
-    const EventEngine::ResolvedAddress& addr) {
+    const EventEngine::ResolvedAddress& addr,
+    PosixEngine::PosixEventEngineListener::OnPosixBindNewFdCallback
+        on_bind_new_fd) {
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
@@ -89,6 +91,9 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   }
 
   auto used_port = ResolvedAddressIsWildcard(res_addr);
+  // Update the callback. Any subsequent new sockets created and added to
+  // acceptors_ in this function will invoke the new callback.
+  acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
   if (used_port.has_value()) {
     requested_port = *used_port;
     return ListenerContainerAddWildcardAddresses(acceptors_, options_,
@@ -183,11 +188,45 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // Call on_accept_ and then resume accepting new connections by continuing
     // the parent for-loop.
     listener_->on_accept_(
-        std::move(endpoint),
+        /*listener_fd=*/handle_->WrappedFd(), /*endpoint=*/std::move(endpoint),
+        /*is_external=*/false,
+        /*memory_allocator=*/
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            absl::StrCat("on-accept-tcp-server-connection: ", peer_name)));
+            absl::StrCat("on-accept-tcp-server-connection: ", peer_name)),
+        /*pending_data=*/nullptr);
   }
   GPR_UNREACHABLE_CODE(return);
+}
+
+absl::Status PosixEngineListenerImpl::HandleExternalConnection(
+    int listener_fd, int fd, SliceBuffer* pending_data) {
+  if (listener_fd < 0) {
+    return absl::UnknownError(absl::StrCat(
+        "HandleExternalConnection: Invalid listener socket: ", listener_fd));
+  }
+  if (fd < 0) {
+    return absl::UnknownError(
+        absl::StrCat("HandleExternalConnection: Invalid peer socket: ", fd));
+  }
+  PosixSocketWrapper sock(fd);
+  (void)sock.SetSocketNoSigpipeIfPossible();
+  std::string peer_name = *sock.PeerAddressString();
+  auto endpoint = CreatePosixEndpoint(
+      /*handle=*/poller_->CreateHandle(fd, peer_name,
+                                       poller_->CanTrackErrors()),
+      /*on_shutdown=*/nullptr, /*engine=*/engine_,
+      /*allocator=*/
+      memory_allocator_factory_->CreateMemoryAllocator(
+          absl::StrCat("external:endpoint-tcp-server-connection: ", peer_name)),
+      /*options=*/options_);
+  on_accept_(
+      /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
+      /*is_external=*/true,
+      /*memory_allocator=*/
+      memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+          "external:on-accept-tcp-server-connection: ", peer_name)),
+      /*pending_data=*/pending_data);
+  return absl::OkStatus();
 }
 
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {

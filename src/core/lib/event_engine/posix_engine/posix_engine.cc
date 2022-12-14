@@ -36,6 +36,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -557,9 +558,47 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
+std::unique_ptr<PosixEngine::PosixEventEngineEndpoint>
+PosixEventEngine::CreateEndpointFromFd(int fd, const EndpointConfig& config,
+                                       MemoryAllocator memory_allocator) {
+  if (fd < 0) {
+    return nullptr;
+  }
+  PosixEventPoller* poller = poller_manager_->Poller();
+  EventHandle* handle =
+      poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
+  return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
+                             std::move(memory_allocator),
+                             TcpOptionsFromEndpointConfig(config));
+}
+
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 PosixEventEngine::CreateListener(
     Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
+    const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+#ifdef GRPC_POSIX_SOCKET_TCP
+  PosixEngine::PosixEventEngineListener::PosixAcceptCallback posix_on_accept =
+      [on_accept_cb = std::move(on_accept)](
+          int /*listener_fd*/, std::unique_ptr<EventEngine::Endpoint> ep,
+          bool /*is_external*/, MemoryAllocator allocator,
+          SliceBuffer* /*pending_data*/) mutable {
+        on_accept_cb(std::move(ep), std::move(allocator));
+      };
+  return std::make_unique<PosixEngineListener>(
+      std::move(posix_on_accept), std::move(on_shutdown), config,
+      std::move(memory_allocator_factory), poller_manager_->Poller(),
+      shared_from_this());
+#else   // GRPC_POSIX_SOCKET_TCP
+  GPR_ASSERT(false &&
+             "EventEngine::CreateListener is not supported on this platform");
+#endif  // GRPC_POSIX_SOCKET_TCP
+}
+
+absl::StatusOr<std::unique_ptr<PosixEngine::PosixEventEngineListener>>
+PosixEventEngine::CreateListener(
+    PosixEventEngineListener::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
