@@ -30,7 +30,6 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/fork.h>
-#include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/log.h>
@@ -43,6 +42,10 @@
 #include <grpc/impl/codegen/sync_custom.h>
 #include <grpc/impl/codegen/sync_generic.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/impl/slice_type.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>

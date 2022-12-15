@@ -29,6 +29,7 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
 // TODO(yihuazhang): remove the forward declaration here and include

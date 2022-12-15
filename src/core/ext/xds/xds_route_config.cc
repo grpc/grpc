@@ -68,6 +68,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -619,8 +620,8 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       continue;
     }
     absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(std::move(*extension_to_use),
-                                                  context.arena, errors);
+        filter_impl->GenerateFilterConfigOverride(
+            context, std::move(*extension_to_use), errors);
     if (filter_config.has_value()) {
       typed_per_filter_config[std::string(key)] = std::move(*filter_config);
     }

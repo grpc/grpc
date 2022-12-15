@@ -33,7 +33,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/atm.h>
@@ -239,6 +239,7 @@ struct grpc_transport_one_way_stats {
 struct grpc_transport_stream_stats {
   grpc_transport_one_way_stats incoming;
   grpc_transport_one_way_stats outgoing;
+  gpr_timespec latency = gpr_inf_future(GPR_TIMESPAN);
 };
 
 void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,

@@ -542,15 +542,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(
-          int port,
-          ::envoy::config::endpoint::v3::HealthStatus health_status =
-              ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
-          int lb_weight = 1)
+      explicit Endpoint(int port,
+                        ::envoy::config::core::v3::HealthStatus health_status =
+                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        int lb_weight = 1)
           : port(port), health_status(health_status), lb_weight(lb_weight) {}
 
       int port;
-      ::envoy::config::endpoint::v3::HealthStatus health_status;
+      ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
     };
 
@@ -584,8 +583,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // constructing an EDS resource.
   EdsResourceArgs::Endpoint CreateEndpoint(
       size_t backend_idx,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1) {
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
                                      health_status, lb_weight);
@@ -595,8 +594,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // for use in constructing an EDS resource.
   std::vector<EdsResourceArgs::Endpoint> CreateEndpointsForBackends(
       size_t start_index = 0, size_t stop_index = 0,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1);
 
   // Returns an endpoint for an unused port, for use in constructing an

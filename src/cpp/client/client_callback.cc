@@ -19,7 +19,7 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/status.h>
 

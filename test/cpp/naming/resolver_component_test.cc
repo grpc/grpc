@@ -34,7 +34,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -47,6 +47,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -77,6 +78,7 @@
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using std::vector;
 using testing::UnorderedElementsAreArray;
 
@@ -629,6 +631,7 @@ void RunResolvesRelevantRecordsTest(
     gpr_log(GPR_DEBUG, "Invalid value for --enable_txt_queries.");
     abort();
   }
+  resolver_args = resolver_args.SetObject(GetDefaultEventEngine());
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(

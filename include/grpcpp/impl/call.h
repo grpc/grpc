@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CALL_H
 #define GRPCPP_IMPL_CALL_H
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpcpp/impl/call_hook.h>
 
 namespace grpc {

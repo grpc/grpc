@@ -36,7 +36,7 @@
 #include "src/core/lib/gprpp/strerror.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_LINUX_EVENTFD
 
@@ -122,5 +122,5 @@ EventFdWakeupFd::CreateEventFdWakeupFd() {
 
 #endif  // GRPC_LINUX_EVENTFD
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

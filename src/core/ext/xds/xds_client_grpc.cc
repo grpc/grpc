@@ -57,6 +57,24 @@
 
 namespace grpc_core {
 
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
+// will be appended to the user agent name reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING ""
+#endif
+
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="...", that string
+// will be appended to the user agent version reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING ""
+#endif
+
 //
 // GrpcXdsClient
 //
@@ -157,6 +175,11 @@ GrpcXdsClient::GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
           grpc_event_engine::experimental::GetDefaultEventEngine(),
+          absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
+                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING),
+          absl::StrCat("C-core ", grpc_version_string(),
+                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
