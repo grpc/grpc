@@ -22,6 +22,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -38,12 +39,12 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -196,7 +197,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
    private:
     static void OnClose(void* arg, grpc_error_handle error);
-    void OnDrainGraceTimeExpiry();
+    void OnDrainGraceTimeExpiry() ABSL_LOCKS_EXCLUDED(&mu_);
 
     RefCountedPtr<Chttp2ServerListener> listener_;
     Mutex mu_ ABSL_ACQUIRED_AFTER(&listener_->mu_);
@@ -210,10 +211,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     absl::optional<EventEngine::TaskHandle> drain_grace_timer_handle_
         ABSL_GUARDED_BY(&mu_);
     EventEngine* event_engine_ ABSL_GUARDED_BY(&mu_);
-    // grpc_timer drain_grace_timer_;
-    // grpc_closure on_drain_grace_time_expiry_;
-    // bool drain_grace_timer_expiry_callback_pending_ ABSL_GUARDED_BY(&mu_) =
-    //     false;
     bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
