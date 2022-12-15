@@ -71,7 +71,7 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
 
   std::vector<uint16_t> weights;
   weights.reserve(n);
-  for (int i = 0; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     weights.push_back(float_weights[i] == 0
                           ? mean
                           : std::lround(float_weights[i] * scaling_factor));
