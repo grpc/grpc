@@ -43,7 +43,7 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
   // TODO(b/190488683): should we normalize negative weights to 0?
 
   const size_t n = float_weights.size();
-  int num_zero_weight_channels = 0;
+  size_t num_zero_weight_channels = 0;
   double sum = 0;
   float max = 0;
   for (const float weight : float_weights) {
