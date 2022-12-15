@@ -28,11 +28,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/transport/error_utils.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
@@ -298,7 +299,13 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   if (peer_addr.ok()) {
     eeep_->peer_address = *peer_addr;
   }
-  fd_ = DefaultEventEngineEndpointWrappedFd(endpoint_.get());
+#ifdef GRPC_POSIX_SOCKET_TCP
+  fd_ =
+      reinterpret_cast<PosixEngine::PosixEventEngineEndpoint*>(endpoint_.get())
+          ->GetWrappedFd();
+#else   // GRPC_POSIX_SOCKET_TCP
+  fd_ = -1;
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 }  // namespace

@@ -43,8 +43,6 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine();
 void RegisterEventEngineChannelArgPreconditioning(
     grpc_core::CoreConfiguration::Builder* builder);
 
-int DefaultEventEngineEndpointWrappedFd(EventEngine::Endpoint* endpoint);
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

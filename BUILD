@@ -1436,6 +1436,7 @@ grpc_cc_library(
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:pollset_set",
+        "//src/core:posix_event_engine_base_hdrs",
         "//src/core:promise_status",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
