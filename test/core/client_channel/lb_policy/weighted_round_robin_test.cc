@@ -66,8 +66,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     Json::Object json_;
   };
 
-  WeightedRoundRobinTest()
-      : lb_policy_(MakeLbPolicy("weighted_round_robin")) {}
+  WeightedRoundRobinTest() : lb_policy_(MakeLbPolicy("weighted_round_robin")) {}
 
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };

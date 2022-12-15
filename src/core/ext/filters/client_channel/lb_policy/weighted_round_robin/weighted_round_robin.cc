@@ -147,8 +147,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     WeightedRoundRobinSubchannelData(
         SubchannelList<WeightedRoundRobinSubchannelList,
                        WeightedRoundRobinSubchannelData>* subchannel_list,
-        const ServerAddress& address,
-        RefCountedPtr<SubchannelInterface> sc);
+        const ServerAddress& address, RefCountedPtr<SubchannelInterface> sc);
 
     absl::optional<grpc_connectivity_state> connectivity_state() const {
       return logical_connectivity_state_;
