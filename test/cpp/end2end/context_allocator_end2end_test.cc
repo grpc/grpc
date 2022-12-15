@@ -27,7 +27,7 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/impl/codegen/log.h>
+#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>

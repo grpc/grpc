@@ -26,7 +26,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -48,9 +48,7 @@
 #endif /* ifdef GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EventEngine;
+namespace experimental {
 
 struct PosixTcpOptions {
   static constexpr int kDefaultReadChunkSize = 8192;
@@ -312,7 +310,7 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
   EventEngine::ResolvedAddress mapped_target_addr;
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

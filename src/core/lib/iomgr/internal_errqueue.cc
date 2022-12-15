@@ -16,7 +16,7 @@
 
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-#include <grpc/impl/codegen/log.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
 

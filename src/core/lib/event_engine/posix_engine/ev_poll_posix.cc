@@ -30,7 +30,6 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -71,12 +70,8 @@ static const int kPollinCheck = POLLIN | POLLHUP | POLLERR;
 static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
-using ::grpc_event_engine::experimental::AnyInvocableClosure;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::posix_engine::WakeupFd;
 using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
 class PollEventHandle : public EventHandle {
@@ -336,7 +331,7 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 bool InitPollPollerPosix() {
-  if (!grpc_event_engine::posix_engine::SupportsWakeupFd()) {
+  if (!grpc_event_engine::experimental::SupportsWakeupFd()) {
     return false;
   }
   if (grpc_core::Fork::Enabled()) {
@@ -852,16 +847,13 @@ PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
   return nullptr;
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #else /* GRPC_POSIX_SOCKET_EV_POLL */
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
+namespace experimental {
 
 PollPoller::PollPoller(Scheduler* /* engine */) {
   GPR_ASSERT(false && "unimplemented");
@@ -903,7 +895,7 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_POSIX_SOCKET_EV_POLL */

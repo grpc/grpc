@@ -216,44 +216,56 @@ void test_connect_cancellation_succeeds(void) {
   auto target_ipv4_addr_uri = *grpc_core::URI::Parse(absl::StrCat(
       "ipv4:127.0.0.1:", std::to_string(grpc_pick_unused_port_or_die())));
   grpc_resolved_address resolved_addr;
-  ASSERT_TRUE(grpc_parse_uri(target_ipv6_addr_uri, &resolved_addr));
   int svr_fd;
   grpc_closure done;
   grpc_core::ExecCtx exec_ctx;
-  int one = 1;
   bool tried_ipv4 = false;
+  ASSERT_TRUE(grpc_parse_uri(target_ipv6_addr_uri, &resolved_addr));
+  auto try_bind = [&](int sock) {
+    return (sock >= 0 &&
+            bind(sock, reinterpret_cast<sockaddr*>(resolved_addr.addr),
+                 resolved_addr.len) == 0);
+  };
   /* create a phony server */
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  while (svr_fd < 0 ||
-         bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
-              resolved_addr.len) != 0) {
-    if (tried_ipv4) {
+  // Try ipv6
+  if (!try_bind(svr_fd)) {
+    if (svr_fd >= 0) {
+      close(svr_fd);
+    }
+    // Failed to bind ipv6. Try ipv4
+    ASSERT_TRUE(grpc_parse_uri(target_ipv4_addr_uri, &resolved_addr));
+    svr_fd = socket(AF_INET, SOCK_STREAM, 0);
+    tried_ipv4 = true;
+    if (!try_bind(svr_fd)) {
+      if (svr_fd >= 0) {
+        close(svr_fd);
+      }
       gpr_log(GPR_ERROR,
               "Skipping test. Failed to create a phony server bound to ipv6 or "
               "ipv4 address");
       return;
     }
-    // Try ipv4
-    ASSERT_TRUE(grpc_parse_uri(target_ipv4_addr_uri, &resolved_addr));
-    svr_fd = socket(AF_INET, SOCK_STREAM, 0);
-    tried_ipv4 = true;
   }
 
   ASSERT_EQ(listen(svr_fd, 1), 0);
 
   std::vector<int> client_sockets;
+  bool create_more_client_connections = true;
   // Create and connect client sockets until the connection attempt times out.
   // Even if the backlog specified to listen is 1, the kernel continues to
   // accept a certain number of SYN packets before dropping them. This loop
   // attempts to identify the number of new connection attempts that will
   // be allowed by the kernel before any subsequent connection attempts
   // become pending indefinitely.
-  while (true) {
+  while (create_more_client_connections) {
+    const int kOne = 1;
     int client_socket = socket(tried_ipv4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
-    setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+    ASSERT_GE(client_socket, 0);
+    setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &kOne, sizeof(kOne));
     // Make fd non-blocking.
     int flags = fcntl(client_socket, F_GETFL, 0);
-    EXPECT_EQ(fcntl(client_socket, F_SETFL, flags | O_NONBLOCK), 0);
+    ASSERT_EQ(fcntl(client_socket, F_SETFL, flags | O_NONBLOCK), 0);
 
     if (connect(client_socket, reinterpret_cast<sockaddr*>(resolved_addr.addr),
                 resolved_addr.len) == -1) {
@@ -264,18 +276,15 @@ void test_connect_cancellation_succeeds(void) {
         pfd.revents = 0;
         int ret = poll(&pfd, 1, 1000);
         if (ret == -1) {
-          gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
-          abort();
+          FAIL() << "poll() failed during connect; errno=" << errno;
         } else if (ret == 0) {
           // current connection attempt timed out. It indicates that the
           // kernel will cause any subsequent connection attempts to
           // become pending indefinitely.
-          client_sockets.push_back(client_socket);
-          break;
+          create_more_client_connections = false;
         }
       } else {
-        gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-        abort();
+        FAIL() << "Failed to connect to the server. errno=%d" << errno;
       }
     }
     client_sockets.push_back(client_socket);

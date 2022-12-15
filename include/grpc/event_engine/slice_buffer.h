@@ -27,7 +27,6 @@
 #include "absl/utility/utility.h"
 
 #include <grpc/event_engine/slice.h>
-#include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>

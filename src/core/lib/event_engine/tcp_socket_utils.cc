@@ -26,11 +26,8 @@
 #include <linux/tcp.h>
 #else
 #include <netinet/in.h>  // IWYU pragma: keep
-#include <netinet/tcp.h>
 #endif
-#include <fcntl.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -53,7 +50,6 @@
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_event_engine {

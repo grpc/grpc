@@ -39,9 +39,8 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -476,9 +475,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                            grpc_endpoint_get_peer(ep), ":client_transport"))),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
-      combiner(grpc_combiner_create(
-          channel_args
-              .GetObjectRef<grpc_event_engine::experimental::EventEngine>())),
+      combiner(grpc_combiner_create()),
       state_tracker(is_client ? "client_transport" : "server_transport",
                     GRPC_CHANNEL_READY),
       is_client(is_client),
@@ -2093,6 +2090,8 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     grpc_chttp2_maybe_complete_recv_message(t, s);
   }
   if (became_closed) {
+    s->stats.latency =
+        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), s->creation_time);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }

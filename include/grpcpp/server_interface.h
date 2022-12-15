@@ -21,10 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_hook.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_service_method.h>
@@ -40,8 +42,6 @@ class GenericServerContext;
 class ServerCompletionQueue;
 class ServerCredentials;
 class Service;
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// Models a gRPC server.
 ///
@@ -102,10 +102,7 @@ class ServerInterface : public internal::CallHook {
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
   /// See \a ServerBuilder::AddCompletionQueue for details.
-  void Shutdown() {
-    ShutdownInternal(
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
-  }
+  void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
   /// Block waiting for all work to complete.
   ///
@@ -272,9 +269,9 @@ class ServerInterface : public internal::CallHook {
           // a new instance of ourselves to request another call.  We then
           // return false, which prevents the call from being returned to
           // the application.
-          g_core_codegen_interface->grpc_call_cancel_with_status(
-              call_, GRPC_STATUS_INTERNAL, "Unable to parse request", nullptr);
-          g_core_codegen_interface->grpc_call_unref(call_);
+          grpc_call_cancel_with_status(call_, GRPC_STATUS_INTERNAL,
+                                       "Unable to parse request", nullptr);
+          grpc_call_unref(call_);
           new PayloadAsyncRequest(registered_method_, server_, context_,
                                   stream_, call_cq_, notification_cq_, tag_,
                                   request_);
@@ -316,7 +313,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    GPR_CODEGEN_ASSERT(method);
+    GPR_ASSERT(method);
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);
   }
@@ -327,7 +324,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq,
                         void* tag) {
-    GPR_CODEGEN_ASSERT(method);
+    GPR_ASSERT(method);
     new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
                               notification_cq, tag);
   }

@@ -62,14 +62,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-using ::grpc_event_engine::experimental::ResolvedAddressToURI;
-using ::grpc_event_engine::posix_engine::EventHandle;
-using ::grpc_event_engine::posix_engine::PosixEngineClosure;
-using ::grpc_event_engine::posix_engine::PosixEngineListener;
-using ::grpc_event_engine::posix_engine::PosixEventPoller;
-using ::grpc_event_engine::posix_engine::PosixSocketWrapper;
-using ::grpc_event_engine::posix_engine::PosixTcpOptions;
-using ::grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig;
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(
@@ -291,7 +283,7 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<ThreadPool> executor)
-    : poller_(grpc_event_engine::posix_engine::MakeDefaultPoller(this)),
+    : poller_(grpc_event_engine::experimental::MakeDefaultPoller(this)),
       executor_(std::move(executor)) {}
 
 PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
@@ -389,7 +381,7 @@ void PosixEventEngine::PollerWorkInternal(
 
 struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
-  posix_engine::Timer timer;
+  Timer timer;
   PosixEventEngine* engine;
   EventEngine::TaskHandle handle;
 

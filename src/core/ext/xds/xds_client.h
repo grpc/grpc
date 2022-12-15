@@ -71,9 +71,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
-  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-            OrphanablePtr<XdsTransportFactory> transport_factory,
-            Duration resource_request_timeout = Duration::Seconds(15));
+  XdsClient(
+      std::unique_ptr<XdsBootstrap> bootstrap,
+      OrphanablePtr<XdsTransportFactory> transport_factory,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+      std::string user_agent_name, std::string user_agent_version,
+      Duration resource_request_timeout = Duration::Seconds(15));
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:7.2-stretch
+FROM php:7.4-buster
 
 RUN apt-get -qq update && apt-get -qq install -y \
   autoconf automake cmake curl git libtool \

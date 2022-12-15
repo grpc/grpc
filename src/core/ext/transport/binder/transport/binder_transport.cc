@@ -35,7 +35,6 @@
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -565,7 +564,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->on_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
                             absl_status_to_grpc_error(status));
-    gpr_log(GPR_INFO, "on_complete closure schuduled");
+    gpr_log(GPR_INFO, "on_complete closure scheduled");
   }
   GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
 }
@@ -710,8 +709,7 @@ grpc_binder_transport::grpc_binder_transport(
     std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
     : is_client(is_client),
-      combiner(grpc_combiner_create(
-          grpc_event_engine::experimental::GetDefaultEventEngine())),
+      combiner(grpc_combiner_create()),
       state_tracker(
           is_client ? "binder_transport_client" : "binder_transport_server",
           GRPC_CHANNEL_READY),

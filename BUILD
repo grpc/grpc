@@ -180,7 +180,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/atm_gcc_sync.h",
     "include/grpc/impl/codegen/atm_windows.h",
     "include/grpc/impl/codegen/fork.h",
-    "include/grpc/impl/codegen/gpr_slice.h",
     "include/grpc/impl/codegen/gpr_types.h",
     "include/grpc/impl/codegen/log.h",
     "include/grpc/impl/codegen/port_platform.h",
@@ -215,6 +214,10 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/status.h",
     "include/grpc/impl/codegen/slice.h",
     "include/grpc/impl/compression_types.h",
+    "include/grpc/impl/connectivity_state.h",
+    "include/grpc/impl/grpc_types.h",
+    "include/grpc/impl/propagation_bits.h",
+    "include/grpc/impl/slice_type.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
@@ -241,7 +244,6 @@ GRPCXX_SRCS = [
     "src/cpp/common/channel_arguments.cc",
     "src/cpp/common/channel_filter.cc",
     "src/cpp/common/completion_queue_cc.cc",
-    "src/cpp/common/core_codegen.cc",
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
@@ -261,10 +263,8 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
-    "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
-    "src/cpp/codegen/codegen_init.cc",
 ]
 
 GRPCXX_HDRS = [
@@ -292,7 +292,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/call.h",
     "include/grpc++/impl/channel_argument_option.h",
     "include/grpc++/impl/client_unary_call.h",
-    "include/grpc++/impl/codegen/core_codegen.h",
     "include/grpc++/impl/grpc_library.h",
     "include/grpc++/impl/method_handler_impl.h",
     "include/grpc++/impl/rpc_method.h",
@@ -341,7 +340,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/channel_argument_option.h",
     "include/grpcpp/impl/channel_interface.h",
     "include/grpcpp/impl/client_unary_call.h",
-    "include/grpcpp/impl/codegen/core_codegen.h",
     "include/grpcpp/impl/completion_queue_tag.h",
     "include/grpcpp/impl/create_auth_context.h",
     "include/grpcpp/impl/delegating_channel.h",
@@ -409,7 +407,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/codegen/completion_queue_tag.h",
     "include/grpc++/impl/codegen/completion_queue.h",
     "include/grpc++/impl/codegen/config.h",
-    "include/grpc++/impl/codegen/core_codegen_interface.h",
     "include/grpc++/impl/codegen/create_auth_context.h",
     "include/grpc++/impl/codegen/metadata_map.h",
     "include/grpc++/impl/codegen/method_handler_impl.h",
@@ -444,7 +441,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/completion_queue_tag.h",
     "include/grpcpp/impl/codegen/completion_queue.h",
     "include/grpcpp/impl/codegen/config.h",
-    "include/grpcpp/impl/codegen/core_codegen_interface.h",
     "include/grpcpp/impl/codegen/create_auth_context.h",
     "include/grpcpp/impl/codegen/delegating_channel.h",
     "include/grpcpp/impl/codegen/intercepted_channel.h",
@@ -523,10 +519,12 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_lb_policy_xds_cluster_impl",
     "//src/core:grpc_lb_policy_xds_cluster_manager",
     "//src/core:grpc_lb_policy_xds_cluster_resolver",
+    "//src/core:grpc_lb_policy_xds_override_host",
     "//src/core:grpc_lb_policy_xds_wrr_locality",
     "//src/core:grpc_resolver_xds",
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
+    "//src/core:grpc_stateful_session_filter",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -847,6 +845,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
@@ -999,7 +998,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
-        "//src/core:default_event_engine",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:slice",
@@ -1778,6 +1776,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpcpp_call_metric_recorder",
+        "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:arena",
@@ -1843,6 +1842,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_unsecure",
         "grpcpp_call_metric_recorder",
+        "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:arena",
@@ -1875,12 +1875,14 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/proto_buffer_reader.h",
         "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
+        "include/grpcpp/impl/proto_utils.h",
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
         "grpc++_config_proto",
         "grpc++_public_hdrs",
+        "grpcpp_status",
     ],
 )
 
@@ -2681,6 +2683,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:cord",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
@@ -3113,12 +3116,14 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/ssl_utils_config.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
+        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:lib/security/security_connector/ssl_utils.h",
         "//src/core:lib/security/security_connector/ssl_utils_config.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
+        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3572,6 +3577,25 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpcpp_status",
+    srcs = [
+        "src/cpp/util/status.cc",
+    ],
+    public_hdrs = [
+        "include/grpc++/support/status.h",
+        "include/grpcpp/impl/status.h",
+        "include/grpcpp/support/status.h",
+        "include/grpc++/impl/codegen/status.h",
+        "include/grpcpp/impl/codegen/status.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+    ],
+)
+
 # TODO(yashykt): Remove the UPB definitions from here once they are no longer needed
 ### UPB Targets
 
@@ -3673,6 +3697,31 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_stateful_session_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_stateful_session_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upb",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_type_http_upb",
+    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(
