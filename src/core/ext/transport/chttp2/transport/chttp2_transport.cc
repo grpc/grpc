@@ -1828,9 +1828,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       &s->flow_control);
   grpc_error_handle error;
 
-  gpr_log(GPR_INFO, "maybe_complete_recv_message %p %p frame_storage=%" PRIdPTR,
-          t, s, s->frame_storage.length);
-
   // Lambda is immediately invoked as a big scoped section that can be
   // exited out of at any point by returning.
   [&]() {
