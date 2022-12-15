@@ -95,8 +95,8 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
 
  private:
   bool enable_oob_load_report_ = false;
-  Duration blackout_period_;
-  Duration weight_update_period_;
+  Duration blackout_period_ = Duration::Seconds(10);
+  Duration weight_update_period_ = Duration::Seconds(1);
 };
 
 // WRR LB policy.
