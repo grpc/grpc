@@ -654,7 +654,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     for (auto address : actual) {
       auto it = std::find(expected.begin(), expected.end(), address);
       if (it == expected.end()) return false;
-      auto index = it - expected.begin();
+      size_t index = it - expected.begin();
       if (expected_index.has_value() && index != *expected_index) return false;
       expected_index = (index + 1) % expected.size();
     }
