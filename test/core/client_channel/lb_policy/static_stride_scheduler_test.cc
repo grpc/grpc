@@ -41,12 +41,7 @@
 namespace grpc_core {
 namespace {
 
-using ::testing::AnyOf;
-using ::testing::Each;
 using ::testing::ElementsAre;
-using ::testing::Eq;
-using ::testing::Le;
-using ::testing::SizeIs;
 using ::testing::UnorderedElementsAre;
 
 TEST(StaticStrideSchedulerTest, EmptyWeightsIsNullopt) {
