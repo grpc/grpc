@@ -216,6 +216,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/impl/compression_types.h",
     "include/grpc/impl/connectivity_state.h",
     "include/grpc/impl/grpc_types.h",
+    "include/grpc/impl/propagation_bits.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [

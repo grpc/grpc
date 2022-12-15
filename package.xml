@@ -71,6 +71,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/grpc_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/propagation_bits.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
