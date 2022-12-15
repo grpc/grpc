@@ -281,6 +281,8 @@ XdsOverrideHostLb::PickOverridenHost(absl::string_view address) {
     return absl::nullopt;
   }
   auto subchannel = it->second->GetSubchannel();
+  std::cout << __FILE__ ":" << __LINE__ << " " << this << " " << address << " "
+            << subchannel.get() << std::endl;
   if (subchannel == nullptr) {
     return absl::nullopt;
   }
@@ -290,8 +292,8 @@ XdsOverrideHostLb::PickOverridenHost(absl::string_view address) {
   } else if (connectivity_state == GRPC_CHANNEL_CONNECTING) {
     return PickResult::Queue();
   } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
-    std::cout << "\n\n\n Connected! \n\n\n";
-    subchannel->RequestConnection();
+    work_serializer()->Run([&]() { subchannel->RequestConnection(); },
+                           DEBUG_LOCATION);
     return PickResult::Queue();
   }
   return absl::nullopt;
@@ -466,6 +468,8 @@ XdsOverrideHostLb::AdoptSubchannel(
   if (subchannel_key.ok()) {
     key = *subchannel_key;
   }
+  std::cout << __FILE__ ":" << __LINE__ << " " << this << " " << *key << " "
+            << subchannel.get() << std::endl;
   auto wrapper =
       MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(), key);
 
@@ -482,6 +486,8 @@ XdsOverrideHostLb::AdoptSubchannel(
 void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
                                         SubchannelWrapper* subchannel) {
   absl::MutexLock lock(&subchannel_map_mu_);
+  std::cout << __FILE__ ":" << __LINE__ << " reset!!! " << this << " " << key
+            << " " << subchannel << std::endl;
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
     it->second->ResetSubchannel(subchannel);

@@ -319,9 +319,9 @@ TEST_F(XdsOverrideHostTest, AttemptsConnectingIdleSubchannel) {
   EXPECT_FALSE(subchannel->ConnectionRequested());
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsHostOverrideTypeName(), std::string(kAddresses[1])}};
-  EXPECT_TRUE(subchannel->ConnectionRequested());
+      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
   ExpectPickQueued(picker.get(), pick_arg);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectReresolutionRequest();
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
