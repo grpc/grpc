@@ -155,7 +155,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsOverrideHostLb> policy_;
   };
 
-  class SubchannelEntry : public RefCounted<SubchannelEntry> {
+  class SubchannelEntry {
    public:
     void SetSubchannel(SubchannelWrapper* subchannel) {
       subchannel_ = subchannel;
@@ -169,7 +169,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelWrapper> GetSubchannel() {
       if (subchannel_ == nullptr) {
-        return RefCountedPtr<SubchannelWrapper>(nullptr);
+        return nullptr;
       }
       return subchannel_->Ref();
     }
@@ -187,8 +187,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void MaybeUpdatePickerLocked();
 
-  RefCountedPtr<SubchannelInterface> LookupSubchannel(
-      absl::string_view address);
+  RefCountedPtr<SubchannelWrapper> LookupSubchannel(absl::string_view address);
 
   void UpdateAddressMap(const absl::StatusOr<ServerAddressList>& addresses);
 
@@ -210,8 +209,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
   absl::Mutex subchannel_map_mu_;
-  std::map<std::string, RefCountedPtr<SubchannelEntry>, std::less<>>
-      subchannel_map_ ABSL_GUARDED_BY(subchannel_map_mu_);
+  std::map<std::string, SubchannelEntry, std::less<>> subchannel_map_
+      ABSL_GUARDED_BY(subchannel_map_mu_);
 };
 
 //
@@ -237,14 +236,11 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
   auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
       args.call_state);
   auto override_host = call_state->GetCallAttribute(XdsHostOverrideTypeName());
-  RefCountedPtr<SubchannelInterface> subchannel = nullptr;
-  if (override_host.length() > 0) {
-    subchannel = policy_->LookupSubchannel(override_host);
-  }
-  if (subchannel != nullptr) {
-    return PickResult::Complete(
-        static_cast<SubchannelWrapper*>(subchannel.get())
-            ->wrapped_subchannel());
+  if (!override_host.empty()) {
+    auto subchannel = policy_->LookupSubchannel(override_host);
+    if (subchannel != nullptr) {
+      return PickResult::Complete(subchannel->wrapped_subchannel());
+    }
   }
   auto result = picker_->Pick(args);
   auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);
@@ -367,12 +363,12 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannel(
-    absl::string_view address) {
+RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
+XdsOverrideHostLb::LookupSubchannel(absl::string_view address) {
   absl::MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
   if (it != subchannel_map_.end()) {
-    return it->second->GetSubchannel();
+    return it->second.GetSubchannel();
   }
   return nullptr;
 }
@@ -396,9 +392,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
       ++it;
     }
   }
-  for (const auto& it : keys) {
-    if (subchannel_map_.find(it) == subchannel_map_.end()) {
-      subchannel_map_.emplace(it, MakeRefCounted<SubchannelEntry>());
+  for (const auto& key : keys) {
+    if (subchannel_map_.find(key) == subchannel_map_.end()) {
+      subchannel_map_.emplace(key, SubchannelEntry());
     }
   }
 }
@@ -406,20 +402,18 @@ void XdsOverrideHostLb::UpdateAddressMap(
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
     ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel) {
-  absl::optional<RefCountedPtr<SubchannelEntry>> maybe_entry;
   auto subchannel_key = grpc_sockaddr_to_string(&address.address(), false);
   absl::optional<std::string> key;
   if (subchannel_key.ok()) {
-    key = *subchannel_key;
+    key = std::move(*subchannel_key);
   }
   auto wrapper =
       MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(), key);
-
   if (key.has_value()) {
     absl::MutexLock lock(&subchannel_map_mu_);
     auto it = subchannel_map_.find(*key);
     if (it != subchannel_map_.end()) {
-      it->second->SetSubchannel(wrapper.get());
+      it->second.SetSubchannel(wrapper.get());
     }
   }
   return wrapper;
@@ -430,7 +424,7 @@ void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
   absl::MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
-    it->second->ResetSubchannel(subchannel);
+    it->second.ResetSubchannel(subchannel);
   }
 }
 
@@ -488,7 +482,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     RefCountedPtr<XdsOverrideHostLb> policy,
     absl::optional<const std::string> key)
     : DelegatingSubchannel(std::move(subchannel)),
-      key_(key),
+      key_(std::move(key)),
       policy_(std::move(policy)) {}
 
 XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
