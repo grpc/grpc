@@ -50,6 +50,7 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
       "  \"loadBalancingConfig\":[{\n"
       "    \"weighted_round_robin\":{\n"
       "      \"enableOobLoadReport\": 5,\n"
+      "      \"oobReportingPeriod\": true,\n"
       "      \"blackoutPeriod\": [],\n"
       "      \"weightUpdatePeriod\": {}\n"
       "    }\n"
@@ -64,6 +65,7 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
                 "error:errors validating priority LB policy config: ["
                 "field:blackoutPeriod error:is not a string; "
                 "field:enableOobLoadReport error:is not a boolean; "
+                "field:oobReportingPeriod error:is not a string; "
                 "field:weightUpdatePeriod error:is not a string]]"));
 }
 

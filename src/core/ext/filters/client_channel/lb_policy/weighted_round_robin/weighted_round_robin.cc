@@ -77,6 +77,7 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   absl::string_view name() const override { return kWeightedRoundRobin; }
 
   bool enable_oob_load_report() const { return enable_oob_load_report_; }
+  Duration oob_reporting_period() const { return oob_reporting_period_; }
   Duration blackout_period() const { return blackout_period_; }
   Duration weight_update_period() const { return weight_update_period_; }
 
@@ -85,6 +86,8 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
         JsonObjectLoader<WeightedRoundRobinConfig>()
             .OptionalField("enableOobLoadReport",
                            &WeightedRoundRobinConfig::enable_oob_load_report_)
+            .OptionalField("oobReportingPeriod",
+                           &WeightedRoundRobinConfig::oob_reporting_period_)
             .OptionalField("blackoutPeriod",
                            &WeightedRoundRobinConfig::blackout_period_)
             .OptionalField("weightUpdatePeriod",
@@ -95,6 +98,7 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
 
  private:
   bool enable_oob_load_report_ = false;
+  Duration oob_reporting_period_ = Duration::Seconds(10);
   Duration blackout_period_ = Duration::Seconds(10);
   Duration weight_update_period_ = Duration::Seconds(1);
 };
@@ -738,8 +742,7 @@ WeightedRoundRobin::WeightedRoundRobinSubchannelData::
       static_cast<WeightedRoundRobin*>(subchannel_list->policy());
   if (p->config_->enable_oob_load_report()) {
     subchannel()->AddDataWatcher(MakeOobBackendMetricWatcher(
-        // FIXME: make reporting interval configurable
-        Duration::Seconds(10),
+        p->config_->oob_reporting_period(),
         std::make_unique<OobWatcher>(weight_, p->config_->blackout_period())));
   }
 }

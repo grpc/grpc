@@ -12147,6 +12147,27 @@ targets:
   - linux
   - posix
   - mac
+- name: weighted_round_robin_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: weighted_round_robin_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: win_socket_test
   gtest: true
   build: test

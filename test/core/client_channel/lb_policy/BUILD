@@ -124,3 +124,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "weighted_round_robin_test",
+    srcs = ["weighted_round_robin_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:grpc_lb_policy_weighted_round_robin",
+        "//test/core/util:grpc_test_util",
+    ],
+)
