@@ -524,22 +524,24 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::function<void(const absl::Status&)> check_status,
       SourceLocation location = SourceLocation()) {
     bool retval = false;
-    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
-      if (update.state == GRPC_CHANNEL_CONNECTING) {
-        EXPECT_TRUE(update.status.ok())
-            << update.status << " at " << location.file() << ":"
-            << location.line();
-        ExpectPickQueued(update.picker.get(), location);
-        return true;  // Keep going.
-      }
-      EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
-          << ConnectivityStateName(update.state) << " at " << location.file()
-          << ":" << location.line();
-      check_status(update.status);
-      ExpectPickFail(update.picker.get(), check_status, location);
-      retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
-      return false;  // Stop.
-    });
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          if (update.state == GRPC_CHANNEL_CONNECTING) {
+            EXPECT_TRUE(update.status.ok())
+                << update.status << " at " << location.file() << ":"
+                << location.line();
+            ExpectPickQueued(update.picker.get(), location);
+            return true;  // Keep going.
+          }
+          EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
+              << ConnectivityStateName(update.state) << " at "
+              << location.file() << ":" << location.line();
+          check_status(update.status);
+          ExpectPickFail(update.picker.get(), check_status, location);
+          retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+          return false;  // Stop.
+        },
+        location);
     return retval;
   }
 
@@ -552,29 +554,31 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> new_addresses,
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
     bool retval = false;
-    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
-      EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
-          << location.file() << ":" << location.line();
-      if (update.state != GRPC_CHANNEL_READY) return false;
-      // Get enough picks to round-robin num_iterations times across all
-      // expected addresses.
-      auto picks = GetCompletePicks(update.picker.get(),
-                                    new_addresses.size() * num_iterations);
-      EXPECT_TRUE(picks.has_value())
-          << location.file() << ":" << location.line();
-      if (!picks.has_value()) return false;
-      std::vector<absl::string_view> pick_addresses(picks->begin(),
-                                                    picks->end());
-      // If the picks still match the old list, then keep going.
-      if (PicksAreRoundRobin(old_addresses, pick_addresses)) return true;
-      // Otherwise, the picks should match the new list.
-      retval = PicksAreRoundRobin(new_addresses, pick_addresses);
-      EXPECT_TRUE(retval) << "Expected: " << absl::StrJoin(new_addresses, ", ")
-                          << "\nActual: " << absl::StrJoin(pick_addresses, ", ")
-                          << "\nat " << location.file() << ":"
-                          << location.line();
-      return false;  // Stop.
-    });
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
+              << location.file() << ":" << location.line();
+          if (update.state != GRPC_CHANNEL_READY) return false;
+          // Get enough picks to round-robin num_iterations times across all
+          // expected addresses.
+          auto picks = GetCompletePicks(update.picker.get(),
+                                        new_addresses.size() * num_iterations);
+          EXPECT_TRUE(picks.has_value())
+              << location.file() << ":" << location.line();
+          if (!picks.has_value()) return false;
+          std::vector<absl::string_view> pick_addresses(picks->begin(),
+                                                        picks->end());
+          // If the picks still match the old list, then keep going.
+          if (PicksAreRoundRobin(old_addresses, pick_addresses)) return true;
+          // Otherwise, the picks should match the new list.
+          retval = PicksAreRoundRobin(new_addresses, pick_addresses);
+          EXPECT_TRUE(retval)
+              << "Expected: " << absl::StrJoin(new_addresses, ", ")
+              << "\nActual: " << absl::StrJoin(pick_addresses, ", ") << "\nat "
+              << location.file() << ":" << location.line();
+          return false;  // Stop.
+        },
+        location);
     return retval;
   }
 
