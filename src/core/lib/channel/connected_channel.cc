@@ -1019,7 +1019,11 @@ class ServerStream final : public ConnectedChannelStream {
             completing.sent ? "true" : "false", md->DebugString().c_str());
     md->Set(GrpcStatusFromWire(), completing.sent);
     if (!result.ok()) {
-      md = StatusCast<ServerMetadataHandle>(result);
+      md->Clear();
+      md->Set(GrpcStatusMetadata(),
+              static_cast<grpc_status_code>(result.code()));
+      md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(result.message()));
+      md->Set(GrpcStatusFromWire(), false);
     }
     client_initial_metadata_state_.emplace<Complete>(Complete{std::move(md)});
     waker.Wakeup();
