@@ -99,7 +99,7 @@ class PosixEngine : public EventEngine {
     /// address.
     using OnPosixBindNewFdCallback =
         absl::AnyInvocable<void(absl::StatusOr<int> listener_fd)>;
-
+    using EventEngine::Listener::Bind;
     /// Bind an address/port to this Listener.
     ///
     /// It is expected that multiple addresses/ports can be bound to this
@@ -108,7 +108,7 @@ class PosixEngine : public EventEngine {
     /// \a addr - The address to listen for incoming connections.
     /// \a on_bind_new_fd The callback is invoked once for each newly bound
     /// listener fd that may be created by this Bind operation.
-    virtual absl::StatusOr<int> BindFd(
+    virtual absl::StatusOr<int> Bind(
         const ResolvedAddress& addr,
         OnPosixBindNewFdCallback on_bind_new_fd) = 0;
 
