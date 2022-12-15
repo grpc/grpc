@@ -59,11 +59,11 @@ constexpr char kGoogleStackdriverStatsAddress[] = "monitoring.googleapis.com";
 
 void RegisterOpenCensusViewsForGcpObservability() {
   // Register client default views for GCP observability
-  ClientStartedRpcsCumulative().RegisterForExport();
-  ClientCompletedRpcsCumulative().RegisterForExport();
+  ClientStartedRpcs().RegisterForExport();
+  ClientCompletedRpcs().RegisterForExport();
   // Register server default views for GCP observability
-  ServerStartedRpcsCumulative().RegisterForExport();
-  ServerCompletedRpcsCumulative().RegisterForExport();
+  ServerStartedRpcs().RegisterForExport();
+  ServerCompletedRpcs().RegisterForExport();
 }
 
 }  // namespace
