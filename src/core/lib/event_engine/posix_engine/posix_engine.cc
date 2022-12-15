@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 #include <algorithm>
@@ -558,14 +559,12 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
-std::unique_ptr<PosixEngine::PosixEventEngineEndpoint>
+std::unique_ptr<EventEngine::Endpoint>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-  if (fd < 0) {
-    return nullptr;
-  }
+  GPR_DEBUG_ASSERT(fd > 0);
   PosixEventPoller* poller = poller_manager_->Poller();
   EventHandle* handle =
       poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
@@ -586,7 +585,7 @@ PosixEventEngine::CreateListener(
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-  PosixEngine::PosixEventEngineListener::PosixAcceptCallback posix_on_accept =
+  PosixEventEngineFdSupport::PosixAcceptCallback posix_on_accept =
       [on_accept_cb = std::move(on_accept)](
           int /*listener_fd*/, std::unique_ptr<EventEngine::Endpoint> ep,
           bool /*is_external*/, MemoryAllocator allocator,
@@ -603,9 +602,9 @@ PosixEventEngine::CreateListener(
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
-absl::StatusOr<std::unique_ptr<PosixEngine::PosixEventEngineListener>>
+absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 PosixEventEngine::CreatePosixListener(
-    PosixEventEngineListener::PosixAcceptCallback on_accept,
+    PosixEventEngineFdSupport::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
