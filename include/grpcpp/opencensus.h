@@ -172,6 +172,11 @@ class CensusContext {
     span_.AddAttribute(key, attribute);
   }
 
+  void AddSpanAnnotation(absl::string_view description,
+                         opencensus::trace::AttributesRef attributes) {
+    span_.AddAnnotation(description, attributes);
+  }
+
   const ::opencensus::trace::Span& Span() const { return span_; }
   const ::opencensus::tags::TagMap& tags() const { return tags_; }
 
