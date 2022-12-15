@@ -266,6 +266,34 @@ class ConnectedChannelStream : public Orphanable {
 #endif
   }
 
+  void Orphan() final {
+    bool finished;
+    {
+      MutexLock lock(mu());
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%sDropStream: %s",
+                Activity::current()->DebugTag().c_str(),
+                ActiveOpsString().c_str());
+      }
+      finished = finished_;
+    }
+    // If we hadn't already observed the stream to be finished, we need to
+    // cancel it at the transport.
+    if (!finished) {
+      IncrementRefCount("shutdown client stream");
+      auto* cancel_op =
+          GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
+      cancel_op->cancel_stream = true;
+      cancel_op->payload = batch_payload();
+      auto* s = stream();
+      cancel_op->on_complete = NewClosure(
+          [this](grpc_error_handle) { Unref("shutdown client stream"); });
+      batch_payload()->cancel_stream.cancel_error = absl::CancelledError();
+      grpc_transport_perform_stream_op(transport(), s, cancel_op);
+    }
+    Unref("orphan client stream");
+  }
+
  protected:
   explicit ConnectedChannelStream(grpc_transport* transport)
       : transport_(transport), stream_(nullptr, StreamDeleter(this)) {
@@ -285,6 +313,10 @@ class ConnectedChannelStream : public Orphanable {
   grpc_transport_stream_op_batch_payload* batch_payload() {
     return &batch_payload_;
   }
+  bool finished() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return finished_; }
+  void set_finished() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { finished_ = true; }
+  virtual std::string ActiveOpsString() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 
   void SchedulePush(grpc_transport_stream_op_batch* batch)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -346,8 +378,8 @@ class ConnectedChannelStream : public Orphanable {
     }
   }
 
-  void PollRecvMessage(PipeSender<MessageHandle>*& incoming_messages,
-                       bool finished) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  void PollRecvMessage(PipeSender<MessageHandle>*& incoming_messages)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (auto* pending =
             absl::get_if<PendingReceiveMessage>(&recv_message_state_)) {
       if (pending->received) {
@@ -384,7 +416,7 @@ class ConnectedChannelStream : public Orphanable {
       auto r = (*push)();
       if (bool* result = absl::get_if<bool>(&r)) {
         if (*result) {
-          if (!finished) {
+          if (!finished_) {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
                       "%sPollConnectedChannel: pushed message; requesting next",
@@ -607,6 +639,7 @@ class ConnectedChannelStream : public Orphanable {
 
   Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
   Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
+  bool finished_ ABSL_GUARDED_BY(mu_) = false;
 
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
@@ -627,37 +660,9 @@ class ClientStream : public ConnectedChannelStream {
     }
   }
 
-  void Orphan() override {
-    bool finished;
-    {
-      MutexLock lock(mu());
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sDropStream: %s",
-                Activity::current()->DebugTag().c_str(),
-                ActiveOpsString().c_str());
-      }
-      finished = finished_;
-    }
-    // If we hadn't already observed the stream to be finished, we need to
-    // cancel it at the transport.
-    if (!finished) {
-      IncrementRefCount("shutdown client stream");
-      auto* cancel_op =
-          GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
-      cancel_op->cancel_stream = true;
-      cancel_op->payload = batch_payload();
-      auto* s = stream();
-      cancel_op->on_complete = NewClosure(
-          [this](grpc_error_handle) { Unref("shutdown client stream"); });
-      batch_payload()->cancel_stream.cancel_error = absl::CancelledError();
-      grpc_transport_perform_stream_op(transport(), s, cancel_op);
-    }
-    Unref("orphan client stream");
-  }
-
   Poll<ServerMetadataHandle> PollOnce() {
     MutexLock lock(mu());
-    GPR_ASSERT(!finished_);
+    GPR_ASSERT(!finished());
 
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO, "%sPollConnectedChannel: %s",
@@ -711,7 +716,7 @@ class ClientStream : public ConnectedChannelStream {
       SchedulePush(&metadata_);
     }
     PollSendMessage(client_to_server_messages_, &client_trailing_metadata_);
-    PollRecvMessage(server_to_client_messages_, finished_);
+    PollRecvMessage(server_to_client_messages_);
     if (server_initial_metadata_state_ ==
         ServerInitialMetadataState::kReceivedButNotSet) {
       server_initial_metadata_state_ = ServerInitialMetadataState::kSet;
@@ -728,7 +733,7 @@ class ClientStream : public ConnectedChannelStream {
                 server_trailing_metadata_->DebugString().c_str(),
                 ActiveOpsString().c_str());
       }
-      finished_ = true;
+      set_finished();
       return ServerMetadataHandle(std::move(server_trailing_metadata_));
     }
     return Pending{};
@@ -772,9 +777,10 @@ class ClientStream : public ConnectedChannelStream {
     kSet,
   };
 
-  std::string ActiveOpsString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+  std::string ActiveOpsString() const override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     std::vector<std::string> ops;
-    if (finished_) ops.push_back("FINISHED");
+    if (finished()) ops.push_back("FINISHED");
     // Results from transport
     std::vector<std::string> queued;
     if (server_initial_metadata_state_ ==
@@ -802,7 +808,6 @@ class ClientStream : public ConnectedChannelStream {
   ServerInitialMetadataState server_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = ServerInitialMetadataState::kNotReceived;
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu()) = false;
-  bool finished_ ABSL_GUARDED_BY(mu()) = false;
   Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu());
   Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu());
   Latch<ServerMetadata*>* server_initial_metadata_latch_;
@@ -883,8 +888,6 @@ class ServerStream final : public ConnectedChannelStream {
     SchedulePush(&gim.recv_initial_metadata);
   }
 
-  void Orphan() override { abort(); }
-
   Poll<ServerMetadataHandle> Poll() {
     absl::MutexLock lock(mu());
 
@@ -923,7 +926,7 @@ class ServerStream final : public ConnectedChannelStream {
         }
       }
       PollSendMessage(p->outgoing_messages, nullptr);
-      PollRecvMessage(p->incoming_messages, false);
+      PollRecvMessage(p->incoming_messages);
       auto poll = p->promise();
       if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
         auto& completing = client_initial_metadata_state_.emplace<Completing>();
@@ -944,6 +947,7 @@ class ServerStream final : public ConnectedChannelStream {
       }
     }
     if (auto* p = absl::get_if<Complete>(&client_initial_metadata_state_)) {
+      set_finished();
       return std::move(p->result);
     }
     return Pending{};
@@ -1020,7 +1024,8 @@ class ServerStream final : public ConnectedChannelStream {
     waker.Wakeup();
   }
 
-  std::string ActiveOpsString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+  std::string ActiveOpsString() const override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     std::vector<std::string> ops;
     Match(
         client_initial_metadata_state_,
