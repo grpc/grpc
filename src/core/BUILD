@@ -146,10 +146,6 @@ grpc_cc_library(
         "//:include/grpc/support/atm_gcc_atomic.h",
         "//:include/grpc/support/atm_gcc_sync.h",
         "//:include/grpc/support/atm_windows.h",
-        "//:include/grpc/impl/codegen/atm.h",
-        "//:include/grpc/impl/codegen/atm_gcc_atomic.h",
-        "//:include/grpc/impl/codegen/atm_gcc_sync.h",
-        "//:include/grpc/impl/codegen/atm_windows.h",
     ],
     deps = [
         "useful",

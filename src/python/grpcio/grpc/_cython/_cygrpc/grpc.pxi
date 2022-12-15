@@ -72,7 +72,7 @@ cdef extern from "grpc/byte_buffer_reader.h":
     pass
 
 
-cdef extern from "grpc/impl/codegen/grpc_types.h":
+cdef extern from "grpc/impl/grpc_types.h":
     ctypedef struct grpc_completion_queue_functor:
         void (*functor_run)(grpc_completion_queue_functor*, int);
 
@@ -667,7 +667,7 @@ cdef extern from "grpc/grpc_security.h":
   ctypedef struct grpc_alts_credentials_options:
     # We don't care about the internals (and in fact don't know them)
     pass
- 
+
   grpc_channel_credentials *grpc_alts_credentials_create(
     const grpc_alts_credentials_options *options)
   grpc_server_credentials *grpc_alts_server_credentials_create(
@@ -716,7 +716,7 @@ cdef extern from "grpc/compression.h":
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
 
-cdef extern from "grpc/impl/codegen/compression_types.h":
+cdef extern from "grpc/impl/compression_types.h":
 
   const char *_GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
     "GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY"

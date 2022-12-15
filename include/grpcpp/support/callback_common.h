@@ -25,7 +25,7 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/channel_interface.h>
+#include <grpcpp/impl/channel_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>

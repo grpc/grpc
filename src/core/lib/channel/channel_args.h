@@ -47,8 +47,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 
 // TODO(hork): When we're ready to allow setting via a channel arg from the
-// application, replace this with a macro in
-// include/grpc/impl/codegen/grpc_types.h.
+// application, replace this with a macro in include/grpc/impl/grpc_types.h.
 #define GRPC_INTERNAL_ARG_EVENT_ENGINE "grpc.internal.event_engine"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
