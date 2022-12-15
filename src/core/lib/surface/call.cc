@@ -3048,6 +3048,20 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
       }
     }
 
+    std::string ToString() const {
+      switch (state_) {
+        case kUnset:
+          return "Unset";
+        case kFinishedWithFailure:
+          return "FinishedWithFailure";
+        case kFinishedWithSuccess:
+          return "FinishedWithSuccess";
+        default:
+          return absl::StrFormat("WaitingForReceiver(%p)",
+                                 reinterpret_cast<void*>(state_));
+      }
+    }
+
    private:
     static constexpr uintptr_t kUnset = 0;
     static constexpr uintptr_t kFinishedWithFailure = 1;
@@ -3148,10 +3162,13 @@ void ServerPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
-      if (recv_close_state_.CompleteCall((*result)
-                                             ->get(GrpcStatusMetadata())
-                                             .value_or(GRPC_STATUS_UNKNOWN) ==
-                                         GRPC_STATUS_OK)) {
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%sUpdateOnce: GotResult %s result:%s",
+                DebugTag().c_str(), recv_close_state_.ToString().c_str(),
+                (*result)->DebugString().c_str());
+      }
+      if (recv_close_state_.CompleteCall(
+              (*result)->get(GrpcStatusFromWire()).value_or(false))) {
         FinishOpOnCompletion(&recv_close_completion_,
                              PendingOp::kReceiveCloseOnServer);
       }
@@ -3238,6 +3255,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             AddOpToCompletion(completion, PendingOp::kSendStatusFromServer);
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sStartBatch: RecvClose %s", DebugTag().c_str(),
+                  recv_close_state_.ToString().c_str());
+        }
         if (!recv_close_state_.RequestReceiveCloseOnServer(
                 op.data.recv_close_on_server.cancelled)) {
           recv_close_completion_ =

@@ -1017,8 +1017,9 @@ class ServerStream final : public ConnectedChannelStream {
     gpr_log(GPR_DEBUG, "%sSEND TRAILING METADATA DONE: err=%s sent=%s %s",
             waker.ActivityDebugTag().c_str(), result.ToString().c_str(),
             completing.sent ? "true" : "false", md->DebugString().c_str());
-    if (!result.ok() || !completing.sent) {
-      md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
+    md->Set(GrpcStatusFromWire(), completing.sent);
+    if (!result.ok()) {
+      md = StatusCast<ServerMetadataHandle>(result);
     }
     client_initial_metadata_state_.emplace<Complete>(Complete{std::move(md)});
     waker.Wakeup();

@@ -135,6 +135,13 @@ struct StatusCastImpl<ServerMetadataHandle, const absl::Status&> {
   }
 };
 
+template <>
+struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
+  static ServerMetadataHandle Cast(const absl::Status& m) {
+    return ServerMetadataFromStatus(m);
+  }
+};
+
 struct CallArgs {
   // Initial metadata from the client to the server.
   // During promise setup this can be manipulated by filters (and then
