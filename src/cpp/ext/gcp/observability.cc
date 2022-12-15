@@ -61,9 +61,13 @@ void RegisterOpenCensusViewsForGcpObservability() {
   // Register client default views for GCP observability
   ClientStartedRpcs().RegisterForExport();
   ClientCompletedRpcs().RegisterForExport();
+  ClientSentCompressedMessageBytesPerRpc().RegisterForExport();
+  ClientReceivedCompressedMessageBytesPerRpc().RegisterForExport();
   // Register server default views for GCP observability
   ServerStartedRpcs().RegisterForExport();
   ServerCompletedRpcs().RegisterForExport();
+  ServerSentCompressedMessageBytesPerRpc().RegisterForExport();
+  ServerReceivedCompressedMessageBytesPerRpc().RegisterForExport();
 }
 
 }  // namespace
