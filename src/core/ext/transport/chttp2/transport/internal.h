@@ -30,7 +30,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -585,6 +585,9 @@ struct grpc_chttp2_stream {
   bool traced = false;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
+
+  // time this stream was created
+  gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
 };
 
 /** Transport writing call flow:

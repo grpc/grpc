@@ -1,0 +1,3 @@
+RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar && ${'\\'}
+  mv phpunit-9.5.9.phar /usr/local/bin/phpunit && ${'\\'}
+  chmod +x /usr/local/bin/phpunit

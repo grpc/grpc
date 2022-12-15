@@ -31,7 +31,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpc/support/time.h>
 
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
@@ -127,8 +127,7 @@ class CondVar {
   void SignalAll() { gpr_cv_broadcast(&cv_); }
 
   void Wait(Mutex* mu) {
-    gpr_cv_wait(&cv_, &mu->mu_,
-                g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&cv_, &mu->mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
 
  private:
