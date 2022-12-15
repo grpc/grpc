@@ -454,7 +454,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kCancelled:
       break;
     case State::kCancelledButNotYetPolled:
-      pipe_.sender.Close();
+      interceptor()->Push()->Close();
       state_ = State::kCancelled;
       break;
     case State::kGotBatch: {
