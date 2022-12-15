@@ -4233,6 +4233,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "static_stride_scheduler",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/types:optional",
+        "absl/types:span",
+    ],
+    language = "c++",
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
     name = "grpc_outlier_detection_header",
     hdrs = [
         "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
