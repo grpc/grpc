@@ -141,6 +141,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.h )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.cc )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_call_state_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h )

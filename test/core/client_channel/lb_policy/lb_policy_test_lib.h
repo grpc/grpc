@@ -47,6 +47,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -357,7 +358,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake CallState implementation, for use in PickArgs.
-  class FakeCallState : public ClientChannel::LbCallStateInternal {
+  class FakeCallState : public LbCallStateInternal {
    public:
     explicit FakeCallState(std::map<UniqueTypeName, std::string> attributes)
         : attributes_(attributes) {}

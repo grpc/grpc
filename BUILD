@@ -2649,6 +2649,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/global_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/health/health_check_client.h",
         "//src/core:ext/filters/client_channel/http_proxy.h",
+        "//src/core:ext/filters/client_channel/lb_call_state_internal.h",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.h",
