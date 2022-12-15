@@ -2474,8 +2474,8 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
 bool PromiseBasedCall::PollSendMessage() {
   if (!outstanding_send_.has_value()) return true;
   Poll<bool> r = (*outstanding_send_)();
-  FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
   if (const bool* result = absl::get_if<bool>(&r)) {
+    FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
     outstanding_send_.reset();
     if (!*result) {
       FailCompletion(send_message_completion_);

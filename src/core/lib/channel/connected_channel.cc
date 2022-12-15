@@ -314,12 +314,12 @@ class ConnectedChannelStream : public Orphanable {
         send_message_.on_complete = &send_message_batch_done_;
         // No value => half close from above.
         if (p->has_value()) {
-          message_to_send_ = std::move(**p);
+          message_to_send_ = std::move(*p);
           send_message_state_ = SendMessageToTransport{};
           send_message_.send_message = true;
           batch_payload()->send_message.send_message =
-              message_to_send_->payload();
-          batch_payload()->send_message.flags = message_to_send_->flags();
+              (*message_to_send_)->payload();
+          batch_payload()->send_message.flags = (*message_to_send_)->flags();
         } else {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO, "%sPollConnectedChannel: half close",
@@ -581,7 +581,7 @@ class ConnectedChannelStream : public Orphanable {
       MakeMemberClosure<ConnectedChannelStream, &ConnectedChannelStream::Push>(
           this, DEBUG_LOCATION);
 
-  MessageHandle message_to_send_ ABSL_GUARDED_BY(mu_);
+  NextResult<MessageHandle> message_to_send_ ABSL_GUARDED_BY(mu_);
   absl::variant<Idle, Closed, PipeReceiver<MessageHandle>::NextType,
                 SendMessageToTransport>
       send_message_state_ ABSL_GUARDED_BY(mu_);
