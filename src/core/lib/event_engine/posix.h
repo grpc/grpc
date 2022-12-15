@@ -33,7 +33,7 @@ namespace experimental {
 
 /// This defines an interface that posix specific event engines endpoints
 /// may implement to support additional file descriptor related functionality.
-class EndpointFdSupport {
+class PosixEndpointFdSupport {
  public:
   /// Returns the file descriptor associated with the posix endpoint.
   virtual int GetWrappedFd() = 0;
@@ -55,7 +55,7 @@ class EndpointFdSupport {
 
 /// Defines an interface that posix event engine listeners may implement to
 /// support additional file descriptor related functionality.
-class ListenerFdSupport {
+class PosixListenerFdSupport {
  public:
   /// Called when a posix listener bind operation completes. A single bind
   /// operation may trigger creation of multiple listener fds. This callback
@@ -98,7 +98,7 @@ class ListenerFdSupport {
 
 /// Defines an interface that posix event engines may implement to
 /// support additional file descriptor related functionality.
-class EventEngineFdSupport {
+class PosixEventEngineFdSupport {
  public:
   /// Creates a posix specific EventEngine::Endpoint from an fd which is already
   /// assumed to be connected to a remote peer. \a fd - The connected socket
@@ -127,7 +127,8 @@ class EventEngineFdSupport {
       bool is_external, MemoryAllocator memory_allocator,
       SliceBuffer* pending_data)>;
 
-  /// Factory method to create a network listener / server with fd support.
+  /// Factory method to create a posix specific network listener / server with
+  /// fd support.
   ///
   /// Once a \a Listener is created and started, the \a on_accept callback will
   /// be called once asynchronously for each established connection. This method
