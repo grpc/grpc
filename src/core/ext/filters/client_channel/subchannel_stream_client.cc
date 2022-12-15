@@ -127,8 +127,7 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   if (event_handler_ != nullptr) {
     event_handler_->OnRetryTimerStartLocked(this);
   }
-  const Timestamp next_try = retry_backoff_.NextAttemptTime();
-  const Duration timeout = next_try - Timestamp::Now();
+  const Duration timeout = retry_backoff_.NextAttemptTime() - Timestamp::Now();
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient health check call lost...",
             tracer_, this);
