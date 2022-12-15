@@ -4242,14 +4242,11 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/strings",
         "absl/types:optional",
         "absl/types:span",
     ],
     language = "c++",
-    deps = [
-        "//:gpr",
-    ],
+    deps = ["//:gpr"],
 )
 
 grpc_cc_library(
