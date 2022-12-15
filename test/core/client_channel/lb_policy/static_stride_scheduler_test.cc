@@ -20,7 +20,6 @@
 #include <atomic>
 #include <cstdint>
 #include <limits>
-#include <optional>
 #include <vector>
 
 #include <benchmark/benchmark.h>
