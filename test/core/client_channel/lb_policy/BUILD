@@ -74,3 +74,18 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "static_stride_scheduler_test",
+    srcs = ["static_stride_scheduler_test.cc"],
+    external_deps = [
+        "absl/algorithm:container",
+        "benchmark",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:no_destruct",
+        "//src/core:static_stride_scheduler",
+    ],
+)
