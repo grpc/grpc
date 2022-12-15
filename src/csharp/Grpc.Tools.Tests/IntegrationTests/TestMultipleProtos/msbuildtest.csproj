@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
    <!--
-     Note: common properties and targetes for tests are imported from the 
+     Note: common properties and targets for tests are imported from the
      Directory.Build.props and Directory.Build.targets files in the parent directoty
   -->
 
