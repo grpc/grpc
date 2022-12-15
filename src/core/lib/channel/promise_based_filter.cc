@@ -299,6 +299,8 @@ const char* BaseCallData::SendMessage::StateString(State state) {
       return "BATCH_COMPLETED";
     case State::kCancelled:
       return "CANCELLED";
+    case State::kCancelledButNotYetPolled:
+      return "CANCELLED_BUT_NOT_YET_POLLED";
   }
   return "UNKNOWN";
 }
@@ -323,6 +325,7 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
       gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kCancelled:
+    case State::kCancelledButNotYetPolled:
       return;
   }
   batch_ = batch;
@@ -353,6 +356,7 @@ void BaseCallData::SendMessage::GotPipe(T* pipe_end) {
       gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kCancelled:
+    case State::kCancelledButNotYetPolled:
       return;
   }
   interceptor_->GotPipe(pipe_end);
@@ -364,6 +368,7 @@ bool BaseCallData::SendMessage::IsIdle() const {
     case State::kIdle:
     case State::kForwardedBatch:
     case State::kCancelled:
+    case State::kCancelledButNotYetPolled:
       return true;
     case State::kGotBatchNoPipe:
     case State::kGotBatch:
@@ -392,6 +397,7 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
       abort();
       break;
     case State::kCancelled:
+    case State::kCancelledButNotYetPolled:
       flusher.AddClosure(intercepted_on_complete_, status,
                          "forward after cancel");
       break;
@@ -411,11 +417,12 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
   }
   switch (state_) {
     case State::kCancelled:
+    case State::kCancelledButNotYetPolled:
       break;
     case State::kInitial:
     case State::kIdle:
     case State::kForwardedBatch:
-      state_ = State::kCancelled;
+      state_ = State::kCancelledButNotYetPolled;
       break;
     case State::kGotBatchNoPipe:
     case State::kGotBatch:
@@ -426,7 +433,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
-      state_ = State::kCancelled;
+      state_ = State::kCancelledButNotYetPolled;
       break;
   }
 }
@@ -445,6 +452,10 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kGotBatchNoPipe:
     case State::kForwardedBatch:
     case State::kCancelled:
+      break;
+    case State::kCancelledButNotYetPolled:
+      pipe_.sender.Close();
+      state_ = State::kCancelled;
       break;
     case State::kGotBatch: {
       state_ = State::kPushedToPipe;
@@ -1652,6 +1663,9 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   if (receive_message() != nullptr) {
     receive_message()->Done(*recv_trailing_metadata_, &flusher);
   }
+  if (send_message() != nullptr) {
+    send_message()->Done(*recv_trailing_metadata_);
+  }
   // Repoll the promise.
   ScopedContext context(this);
   WakeInsideCombiner(&flusher);
@@ -1933,6 +1947,11 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     switch (send_trailing_state_) {
       case SendTrailingState::kInitial:
         send_trailing_metadata_batch_ = batch;
+        if (receive_message() != nullptr) {
+          receive_message()->Done(
+              *batch->payload->send_trailing_metadata.send_trailing_metadata,
+              &flusher);
+        }
         if (send_message() != nullptr && !send_message()->IsIdle()) {
           send_trailing_state_ = SendTrailingState::kQueuedBehindSendMessage;
         } else {

@@ -18,12 +18,6 @@
 
 EXPERIMENTS = {
     "dbg": {
-        "core_end2end_tests": [
-            "new_hpack_huffman_decoder",
-        ],
-        "hpack_test": [
-            "new_hpack_huffman_decoder",
-        ],
     },
     "off": {
         "core_end2end_test": [
@@ -52,6 +46,9 @@ EXPERIMENTS = {
         ],
     },
     "on": {
+        "core_end2end_tests": [
+            "new_hpack_huffman_decoder",
+        ],
         "endpoint_test": [
             "tcp_read_chunks",
         ],
@@ -61,6 +58,9 @@ EXPERIMENTS = {
         "flow_control_test": [
             "flow_control_fixes",
             "tcp_read_chunks",
+        ],
+        "hpack_test": [
+            "new_hpack_huffman_decoder",
         ],
     },
     "opt": {
