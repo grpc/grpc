@@ -59,9 +59,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["no_test_ios"],
     deps = [
         "//:grpc",
         "//src/core:channel_args",
@@ -91,9 +91,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["no_test_ios"],
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -121,9 +121,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["no_test_ios"],
     deps = [
         "//:grpc",
         "//src/core:channel_args",
