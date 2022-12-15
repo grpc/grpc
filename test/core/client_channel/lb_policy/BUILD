@@ -108,3 +108,19 @@ grpc_cc_test(
         "//src/core:static_stride_scheduler",
     ],
 )
+
+grpc_cc_test(
+    name = "weighted_round_robin_config_test",
+    srcs = ["weighted_round_robin_config_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    tags = ["no_test_ios"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

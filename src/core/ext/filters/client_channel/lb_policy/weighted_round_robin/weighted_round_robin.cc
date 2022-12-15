@@ -83,12 +83,12 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<WeightedRoundRobinConfig>()
-            .Field("enableOobLoadReport",
-                   &WeightedRoundRobinConfig::enable_oob_load_report_)
-            .Field("blackoutPeriod",
-                   &WeightedRoundRobinConfig::blackout_period_)
-            .Field("weightUpdatePeriod",
-                   &WeightedRoundRobinConfig::weight_update_period_)
+            .OptionalField("enableOobLoadReport",
+                           &WeightedRoundRobinConfig::enable_oob_load_report_)
+            .OptionalField("blackoutPeriod",
+                           &WeightedRoundRobinConfig::blackout_period_)
+            .OptionalField("weightUpdatePeriod",
+                           &WeightedRoundRobinConfig::weight_update_period_)
             .Finish();
     return loader;
   }
