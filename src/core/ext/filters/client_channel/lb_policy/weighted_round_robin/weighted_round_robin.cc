@@ -144,7 +144,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
         SubchannelList<WeightedRoundRobinSubchannelList,
                        WeightedRoundRobinSubchannelData>* subchannel_list,
         const ServerAddress& address,
-        RefCountedPtr<SubchannelInterface> subchannel);
+        RefCountedPtr<SubchannelInterface> sc);
 
     absl::optional<grpc_connectivity_state> connectivity_state() const {
       return logical_connectivity_state_;
@@ -294,7 +294,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     size_t PickIndex();
 
     // Builds a new scheduler and swaps it into place.
-    void BuildSchedulerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void BuildScheduler();
 
     RefCountedPtr<WeightedRoundRobin> wrr_;
     const bool use_per_rpc_utilization_;
@@ -406,8 +406,7 @@ WeightedRoundRobin::Picker::Timer::Timer(RefCountedPtr<Picker> picker)
         if (self->done_.compare_exchange_strong(done, true,
                                                 std::memory_order_relaxed,
                                                 std::memory_order_relaxed)) {
-          MutexLock lock(&self->picker_->mu_);
-          self->picker_->BuildSchedulerLocked();
+          self->picker_->BuildScheduler();
           // Restart timer.
           self->picker_->timer_ =
               MakeOrphanable<Timer>(std::move(self->picker_));
@@ -448,7 +447,7 @@ WeightedRoundRobin::Picker::Picker(
     if (is_ready) found_ready = true;
   }
   GPR_ASSERT(found_ready);
-  BuildSchedulerLocked();
+  BuildScheduler();
   timer_ = MakeOrphanable<Timer>(Ref());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
@@ -494,11 +493,13 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
   return last_picked_index_;
 }
 
-void WeightedRoundRobin::Picker::BuildSchedulerLocked() {
+void WeightedRoundRobin::Picker::BuildScheduler() {
   std::vector<float> weights;
+  weights.reserve(subchannels_.size());
   for (const auto& subchannel : subchannels_) {
     weights.push_back(subchannel.weight->GetWeight());
   }
+  MutexLock lock(&mu_);
   scheduler_ = StaticStrideScheduler::Make(
       weights,
       // This requires holding mu_, but we don't have a way to plumb the
