@@ -1625,20 +1625,6 @@ if(_gRPC_PLATFORM_ANDROID)
 endif()
 
 foreach(_hdr
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
@@ -2468,28 +2454,6 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -3077,28 +3041,6 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -3351,36 +3293,7 @@ foreach(_hdr
   include/grpc++/impl/call.h
   include/grpc++/impl/channel_argument_option.h
   include/grpc++/impl/client_unary_call.h
-  include/grpc++/impl/codegen/async_stream.h
-  include/grpc++/impl/codegen/async_unary_call.h
-  include/grpc++/impl/codegen/byte_buffer.h
-  include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
-  include/grpc++/impl/codegen/channel_interface.h
-  include/grpc++/impl/codegen/client_context.h
-  include/grpc++/impl/codegen/client_unary_call.h
-  include/grpc++/impl/codegen/completion_queue.h
-  include/grpc++/impl/codegen/completion_queue_tag.h
-  include/grpc++/impl/codegen/config.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/metadata_map.h
-  include/grpc++/impl/codegen/method_handler_impl.h
-  include/grpc++/impl/codegen/proto_utils.h
-  include/grpc++/impl/codegen/rpc_method.h
-  include/grpc++/impl/codegen/rpc_service_method.h
-  include/grpc++/impl/codegen/security/auth_context.h
-  include/grpc++/impl/codegen/serialization_traits.h
-  include/grpc++/impl/codegen/server_context.h
-  include/grpc++/impl/codegen/server_interface.h
-  include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
-  include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/string_ref.h
-  include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync_stream.h
-  include/grpc++/impl/codegen/time.h
   include/grpc++/impl/grpc_library.h
   include/grpc++/impl/method_handler_impl.h
   include/grpc++/impl/rpc_method.h
@@ -3431,54 +3344,7 @@ foreach(_hdr
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/channel_interface.h
   include/grpcpp/impl/client_unary_call.h
-  include/grpcpp/impl/codegen/async_generic_service.h
-  include/grpcpp/impl/codegen/async_stream.h
-  include/grpcpp/impl/codegen/async_unary_call.h
-  include/grpcpp/impl/codegen/byte_buffer.h
-  include/grpcpp/impl/codegen/call.h
-  include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_op_set.h
-  include/grpcpp/impl/codegen/call_op_set_interface.h
-  include/grpcpp/impl/codegen/callback_common.h
-  include/grpcpp/impl/codegen/channel_interface.h
-  include/grpcpp/impl/codegen/client_callback.h
-  include/grpcpp/impl/codegen/client_context.h
-  include/grpcpp/impl/codegen/client_interceptor.h
-  include/grpcpp/impl/codegen/client_unary_call.h
-  include/grpcpp/impl/codegen/completion_queue.h
-  include/grpcpp/impl/codegen/completion_queue_tag.h
-  include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
-  include/grpcpp/impl/codegen/create_auth_context.h
-  include/grpcpp/impl/codegen/delegating_channel.h
-  include/grpcpp/impl/codegen/intercepted_channel.h
-  include/grpcpp/impl/codegen/interceptor.h
-  include/grpcpp/impl/codegen/interceptor_common.h
-  include/grpcpp/impl/codegen/message_allocator.h
-  include/grpcpp/impl/codegen/metadata_map.h
-  include/grpcpp/impl/codegen/method_handler.h
-  include/grpcpp/impl/codegen/method_handler_impl.h
-  include/grpcpp/impl/codegen/proto_buffer_reader.h
-  include/grpcpp/impl/codegen/proto_buffer_writer.h
-  include/grpcpp/impl/codegen/proto_utils.h
-  include/grpcpp/impl/codegen/rpc_method.h
-  include/grpcpp/impl/codegen/rpc_service_method.h
-  include/grpcpp/impl/codegen/security/auth_context.h
-  include/grpcpp/impl/codegen/serialization_traits.h
-  include/grpcpp/impl/codegen/server_callback.h
-  include/grpcpp/impl/codegen/server_callback_handlers.h
-  include/grpcpp/impl/codegen/server_context.h
-  include/grpcpp/impl/codegen/server_interceptor.h
-  include/grpcpp/impl/codegen/server_interface.h
-  include/grpcpp/impl/codegen/service_type.h
-  include/grpcpp/impl/codegen/slice.h
-  include/grpcpp/impl/codegen/status.h
-  include/grpcpp/impl/codegen/status_code_enum.h
-  include/grpcpp/impl/codegen/string_ref.h
-  include/grpcpp/impl/codegen/stub_options.h
-  include/grpcpp/impl/codegen/sync.h
-  include/grpcpp/impl/codegen/sync_stream.h
-  include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/completion_queue_tag.h
   include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
@@ -4042,36 +3908,7 @@ foreach(_hdr
   include/grpc++/impl/call.h
   include/grpc++/impl/channel_argument_option.h
   include/grpc++/impl/client_unary_call.h
-  include/grpc++/impl/codegen/async_stream.h
-  include/grpc++/impl/codegen/async_unary_call.h
-  include/grpc++/impl/codegen/byte_buffer.h
-  include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
-  include/grpc++/impl/codegen/channel_interface.h
-  include/grpc++/impl/codegen/client_context.h
-  include/grpc++/impl/codegen/client_unary_call.h
-  include/grpc++/impl/codegen/completion_queue.h
-  include/grpc++/impl/codegen/completion_queue_tag.h
-  include/grpc++/impl/codegen/config.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/metadata_map.h
-  include/grpc++/impl/codegen/method_handler_impl.h
-  include/grpc++/impl/codegen/proto_utils.h
-  include/grpc++/impl/codegen/rpc_method.h
-  include/grpc++/impl/codegen/rpc_service_method.h
-  include/grpc++/impl/codegen/security/auth_context.h
-  include/grpc++/impl/codegen/serialization_traits.h
-  include/grpc++/impl/codegen/server_context.h
-  include/grpc++/impl/codegen/server_interface.h
-  include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
-  include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/string_ref.h
-  include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync_stream.h
-  include/grpc++/impl/codegen/time.h
   include/grpc++/impl/grpc_library.h
   include/grpc++/impl/method_handler_impl.h
   include/grpc++/impl/rpc_method.h
@@ -4121,54 +3958,7 @@ foreach(_hdr
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/channel_interface.h
   include/grpcpp/impl/client_unary_call.h
-  include/grpcpp/impl/codegen/async_generic_service.h
-  include/grpcpp/impl/codegen/async_stream.h
-  include/grpcpp/impl/codegen/async_unary_call.h
-  include/grpcpp/impl/codegen/byte_buffer.h
-  include/grpcpp/impl/codegen/call.h
-  include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_op_set.h
-  include/grpcpp/impl/codegen/call_op_set_interface.h
-  include/grpcpp/impl/codegen/callback_common.h
-  include/grpcpp/impl/codegen/channel_interface.h
-  include/grpcpp/impl/codegen/client_callback.h
-  include/grpcpp/impl/codegen/client_context.h
-  include/grpcpp/impl/codegen/client_interceptor.h
-  include/grpcpp/impl/codegen/client_unary_call.h
-  include/grpcpp/impl/codegen/completion_queue.h
-  include/grpcpp/impl/codegen/completion_queue_tag.h
-  include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
-  include/grpcpp/impl/codegen/create_auth_context.h
-  include/grpcpp/impl/codegen/delegating_channel.h
-  include/grpcpp/impl/codegen/intercepted_channel.h
-  include/grpcpp/impl/codegen/interceptor.h
-  include/grpcpp/impl/codegen/interceptor_common.h
-  include/grpcpp/impl/codegen/message_allocator.h
-  include/grpcpp/impl/codegen/metadata_map.h
-  include/grpcpp/impl/codegen/method_handler.h
-  include/grpcpp/impl/codegen/method_handler_impl.h
-  include/grpcpp/impl/codegen/proto_buffer_reader.h
-  include/grpcpp/impl/codegen/proto_buffer_writer.h
-  include/grpcpp/impl/codegen/proto_utils.h
-  include/grpcpp/impl/codegen/rpc_method.h
-  include/grpcpp/impl/codegen/rpc_service_method.h
-  include/grpcpp/impl/codegen/security/auth_context.h
-  include/grpcpp/impl/codegen/serialization_traits.h
-  include/grpcpp/impl/codegen/server_callback.h
-  include/grpcpp/impl/codegen/server_callback_handlers.h
-  include/grpcpp/impl/codegen/server_context.h
-  include/grpcpp/impl/codegen/server_interceptor.h
-  include/grpcpp/impl/codegen/server_interface.h
-  include/grpcpp/impl/codegen/service_type.h
-  include/grpcpp/impl/codegen/slice.h
-  include/grpcpp/impl/codegen/status.h
-  include/grpcpp/impl/codegen/status_code_enum.h
-  include/grpcpp/impl/codegen/string_ref.h
-  include/grpcpp/impl/codegen/stub_options.h
-  include/grpcpp/impl/codegen/sync.h
-  include/grpcpp/impl/codegen/sync_stream.h
-  include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/completion_queue_tag.h
   include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
@@ -4546,28 +4336,6 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
