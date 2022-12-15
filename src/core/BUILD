@@ -4791,6 +4791,7 @@ grpc_cc_library(
         "ext/transport/chttp2/client/chttp2_connector.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
@@ -4808,6 +4809,7 @@ grpc_cc_library(
         "resolved_address",
         "status_helper",
         "tcp_connect_handshaker",
+        "time",
         "transport_fwd",
         "unique_type_name",
         "//:config",
@@ -4822,7 +4824,6 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:grpc_transport_chttp2",
         "//:handshaker",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
