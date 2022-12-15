@@ -22,20 +22,11 @@
 #include <limits>
 #include <vector>
 
-#include <benchmark/benchmark.h>
-
-#include "absl/algorithm/container.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/random/random.h"
-#include "absl/strings/str_format.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_core {
 namespace {
@@ -200,72 +191,6 @@ TEST(StaticStrideSchedulerTest, LargestIsPickedEveryGeneration) {
   }
   EXPECT_EQ(largest_weight_pick_count, kMaxWeight);
 }
-
-const int kNumWeightsLow = 10;
-const int kNumWeightsHigh = 10000;
-const int kRangeMultiplier = 10;
-
-// Returns a randomly ordered list of weights equally distributed between 0.6
-// and 1.0.
-const std::vector<float>& Weights() {
-  static const NoDestruct<std::vector<float>> kWeights([] {
-    static NoDestruct<absl::BitGen> bit_gen;
-    std::vector<float> weights;
-    weights.reserve(kNumWeightsHigh);
-    for (int i = 0; i < 40; ++i) {
-      for (int j = 0; j < kNumWeightsHigh / 40; ++j) {
-        weights.push_back(0.6 + (0.01 * i));
-      }
-    }
-    absl::c_shuffle(weights, *bit_gen);
-    return weights;
-  }());
-  return *kWeights;
-}
-
-void BM_StaticStrideSchedulerPickNonAtomic(benchmark::State& state) {
-  uint32_t sequence = 0;
-  const absl::optional<StaticStrideScheduler> scheduler =
-      StaticStrideScheduler::Make(
-          absl::MakeSpan(Weights()).subspan(0, state.range(0)),
-          [&] { return sequence++; });
-  GPR_ASSERT(scheduler.has_value());
-  for (auto s : state) {
-    benchmark::DoNotOptimize(scheduler->Pick());
-  }
-}
-BENCHMARK(BM_StaticStrideSchedulerPickNonAtomic)
-    ->RangeMultiplier(kRangeMultiplier)
-    ->Range(kNumWeightsLow, kNumWeightsHigh);
-
-void BM_StaticStrideSchedulerPickAtomic(benchmark::State& state) {
-  std::atomic<uint32_t> sequence{0};
-  const absl::optional<StaticStrideScheduler> scheduler =
-      StaticStrideScheduler::Make(
-          absl::MakeSpan(Weights()).subspan(0, state.range(0)),
-          [&] { return sequence.fetch_add(1, std::memory_order_relaxed); });
-  GPR_ASSERT(scheduler.has_value());
-  for (auto s : state) {
-    benchmark::DoNotOptimize(scheduler->Pick());
-  }
-}
-BENCHMARK(BM_StaticStrideSchedulerPickAtomic)
-    ->RangeMultiplier(kRangeMultiplier)
-    ->Range(kNumWeightsLow, kNumWeightsHigh);
-
-void BM_StaticStrideSchedulerMake(benchmark::State& state) {
-  uint32_t sequence = 0;
-  for (auto s : state) {
-    const absl::optional<StaticStrideScheduler> scheduler =
-        StaticStrideScheduler::Make(
-            absl::MakeSpan(Weights()).subspan(0, state.range(0)),
-            [&] { return sequence++; });
-    GPR_ASSERT(scheduler.has_value());
-  }
-}
-BENCHMARK(BM_StaticStrideSchedulerMake)
-    ->RangeMultiplier(kRangeMultiplier)
-    ->Range(kNumWeightsLow, kNumWeightsHigh);
 
 }  // namespace
 }  // namespace grpc_core
