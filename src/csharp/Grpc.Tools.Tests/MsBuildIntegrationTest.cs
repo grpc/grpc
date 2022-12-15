@@ -71,7 +71,6 @@ namespace Grpc.Tools.Tests
 
         private string testId;
         private string fakeProtoc;
-        private string grpcToolsDir;
         private string grpcToolsBuildDir;
         private string tasksAssembly;
         private string testDataDir;
@@ -176,7 +175,6 @@ namespace Grpc.Tools.Tests
         {
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var parentDir = System.IO.Directory.GetParent(assemblyDir).FullName;
-
             testDataDir = Path.GetFullPath(parentDir + "/../../IntegrationTests/");
 
             // Path for fake proto.
@@ -186,11 +184,16 @@ namespace Grpc.Tools.Tests
             var fakeProtocScript = Platform.IsWindows ? "fakeprotoc.bat" : "fakeprotoc.py";
             fakeProtoc = Path.GetFullPath($"{parentDir}/../../scripts/{fakeProtocScript}");
 
-            // Paths for Grpc.Tools files
-            grpcToolsDir = Path.GetFullPath($"{parentDir}/../../../Grpc.Tools");
+            // Path for Grpc.Tools/build files
+            var grpcToolsDir = Path.GetFullPath($"{parentDir}/../../../Grpc.Tools");
             grpcToolsBuildDir = Path.GetFullPath($"{grpcToolsDir}/build");
+
             // Task assembly is needed to run the extension tasks
-            tasksAssembly = Path.GetFullPath($"{grpcToolsDir}/bin/Debug/netstandard1.3/{TASKS_ASSEMBLY_DLL}");
+            // We use the assembly that was copied next to Grpc.Tools.Tests.dll
+            // as a Grpc.Tools.Tests dependency since we know it's the correct one
+            // and we don't have to figure out its original path (which is different
+            // for debug/release builds etc).
+            tasksAssembly = Path.Combine(assemblyDir, TASKS_ASSEMBLY_DLL);
 
             // output directory
             tempDir = Path.GetFullPath(System.IO.Path.GetTempPath()).Replace('\\','/');
