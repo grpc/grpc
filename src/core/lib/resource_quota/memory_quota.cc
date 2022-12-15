@@ -168,10 +168,10 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_);
-  memory_quota_->RemoveAllocator(this);
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
+  memory_quota_->RemoveAllocator(this);
   std::shared_ptr<BasicMemoryQuota> memory_quota;
   OrphanablePtr<ReclaimerQueue::Handle>
       reclamation_handles[kNumReclamationPasses];
@@ -411,19 +411,18 @@ void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
     auto& shard = big_allocators_.shards[allocator->IncrementShardIndex() %
                                          big_allocators_.shards.size()];
 
+    size_t ret = 0;
     if (shard.shard_mu.TryLock()) {
       if (!shard.allocators.empty()) {
         chosen_allocator = *shard.allocators.begin();
+        ret = chosen_allocator->ReturnFree();
       }
       shard.shard_mu.Unlock();
     }
 
     if (chosen_allocator != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-        gpr_log(GPR_INFO, "Returning bytes from big allocator %p",
-                chosen_allocator);
-      }
-      chosen_allocator->ReturnFree();
+      MaybeMoveAllocator(chosen_allocator, /*old_free_bytes=*/ret,
+                         /*new_free_bytes=*/0);
     }
   }
 }
