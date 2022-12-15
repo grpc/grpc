@@ -562,6 +562,7 @@ std::unique_ptr<PosixEngine::PosixEventEngineEndpoint>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
+#ifdef GRPC_POSIX_SOCKET_TCP
   if (fd < 0) {
     return nullptr;
   }
@@ -571,6 +572,11 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
                              std::move(memory_allocator),
                              TcpOptionsFromEndpointConfig(config));
+#else   // GRPC_POSIX_SOCKET_TCP
+  GPR_ASSERT(false &&
+             "PosixEventEngine::CreatePosixEndpointFromFd is not supported on "
+             "this platform");
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
