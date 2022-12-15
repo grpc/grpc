@@ -130,3 +130,37 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "static_stride_scheduler_test",
+    srcs = ["static_stride_scheduler_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:static_stride_scheduler",
+    ],
+)
+
+grpc_cc_test(
+    name = "static_stride_scheduler_benchmark",
+    srcs = ["static_stride_scheduler_benchmark.cc"],
+    external_deps = [
+        "absl/algorithm:container",
+        "benchmark",
+    ],
+    language = "C++",
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:no_destruct",
+        "//src/core:static_stride_scheduler",
+    ],
+)
