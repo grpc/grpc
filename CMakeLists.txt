@@ -15413,7 +15413,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(outlier_detection_lb_config_parser_test
-  test/core/client_channel/outlier_detection_lb_config_parser_test.cc
+  test/core/client_channel/lb_policy/outlier_detection_lb_config_parser_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -17245,7 +17245,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(rls_lb_config_parser_test
-  test/core/client_channel/rls_lb_config_parser_test.cc
+  test/core/client_channel/lb_policy/rls_lb_config_parser_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -24265,7 +24265,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_override_host_lb_config_parser_test
-  test/core/client_channel/xds_override_host_lb_config_parser_test.cc
+  test/core/client_channel/lb_policy/xds_override_host_lb_config_parser_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
