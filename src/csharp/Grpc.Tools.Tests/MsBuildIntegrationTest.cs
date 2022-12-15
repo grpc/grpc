@@ -189,12 +189,8 @@ namespace Grpc.Tools.Tests
             // Paths for Grpc.Tools files
             grpcToolsDir = Path.GetFullPath($"{parentDir}/../../../Grpc.Tools");
             grpcToolsBuildDir = Path.GetFullPath($"{grpcToolsDir}/build");
-
-            // Task assembly is needed to run the extension tasks.
-            // In development environments you can use this one:
-            //tasksAssembly = Path.GetFullPath($"{grpcToolsDir}/bin/Debug/netstandard1.3/{TASKS_ASSEMBLY_DLL}");
-            // This one is provided for CI environments.
-            tasksAssembly = Path.GetFullPath($"{testDataDir}/TasksAssembly/netstandard1.3/{TASKS_ASSEMBLY_DLL}");
+            // Task assembly is needed to run the extension tasks
+            tasksAssembly = Path.GetFullPath($"{grpcToolsDir}/bin/Debug/netstandard1.3/{TASKS_ASSEMBLY_DLL}");
 
             // output directory
             tempDir = Path.GetFullPath(System.IO.Path.GetTempPath()).Replace('\\','/');
