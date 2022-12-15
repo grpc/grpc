@@ -593,7 +593,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
-  read_mu_.Lock();
+  grpc_core::ReleasableMutexLock lock(&read_mu_);
   GPR_ASSERT(read_cb_ == nullptr);
   read_cb_ = std::move(on_read);
   incoming_buffer_ = buffer;
@@ -610,16 +610,16 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     // Endpoint read called for the very first time. Register read callback
     // with the polling engine.
     is_first_read_ = false;
-    read_mu_.Unlock();
+    lock.Release();
     handle_->NotifyOnRead(on_read_);
   } else if (inq_ == 0) {
     UpdateRcvLowat();
-    read_mu_.Unlock();
+    lock.Release();
     // Upper layer asked to read more but we know there is no pending data to
     // read from previous reads. So, wait for POLLIN.
     handle_->NotifyOnRead(on_read_);
   } else {
-    read_mu_.Unlock();
+    lock.Release();
     on_read_->SetStatus(absl::OkStatus());
     engine_->Run(on_read_);
   }
@@ -1168,12 +1168,15 @@ void PosixEndpointImpl::Write(
   }
 }
 
-void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
+void PosixEndpointImpl::MaybeShutdown(
+    absl::Status why,
+    absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
   if (poller_->CanTrackErrors()) {
     ZerocopyDisableAndWaitForRemaining();
     stop_error_notification_.store(true, std::memory_order_release);
     handle_->SetHasError();
   }
+  on_release_fd_ = std::move(on_release_fd);
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
@@ -1181,7 +1184,13 @@ void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  handle_->OrphanHandle(on_done_, nullptr, "");
+  int release_fd = -1;
+  handle_->OrphanHandle(on_done_,
+                        on_release_fd_ == nullptr ? nullptr : &release_fd, "");
+  if (on_release_fd_ != nullptr) {
+    engine_->Run([on_release_fd = std::move(on_release_fd_),
+                  release_fd]() mutable { on_release_fd(release_fd); });
+  }
   delete on_read_;
   delete on_write_;
   delete on_error_;
@@ -1208,14 +1217,10 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   auto local_address = sock.LocalAddress();
   if (local_address.ok()) {
     local_address_ = *local_address;
-  } else {
-    local_address_ = EventEngine::ResolvedAddress{};
   }
   auto peer_address = sock.PeerAddress();
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
-  } else {
-    peer_address_ = EventEngine::ResolvedAddress{};
   }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;

@@ -128,12 +128,12 @@ class SliceBuffer {
   /// index. The returned buffer is mutable.
   std::tuple<uint8_t*, size_t> MutableData(size_t index) {
     return std::make_tuple<uint8_t*, size_t>(
-        GPR_SLICE_START_PTR(slice_buffer_.slices[index]),
-        GPR_SLICE_LENGTH(slice_buffer_.slices[index]));
+        GRPC_SLICE_START_PTR(slice_buffer_.slices[index]),
+        GRPC_SLICE_LENGTH(slice_buffer_.slices[index]));
   }
 
   /// The total number of bytes held by the SliceBuffer
-  size_t Length() { return slice_buffer_.length; }
+  size_t Length() const { return slice_buffer_.length; }
 
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }

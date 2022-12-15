@@ -35,6 +35,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/thread_pool.h"
@@ -131,7 +132,7 @@ class PosixEnginePollerManager
 // All methods require an ExecCtx to already exist on the thread's stack.
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
 // event engine is shut down before we shut down iomgr.
-class PosixEventEngine final : public EventEngine,
+class PosixEventEngine final : public PosixEngine,
                                public grpc_core::KeepsGrpcInitialized {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
@@ -163,12 +164,23 @@ class PosixEventEngine final : public EventEngine,
 
   ~PosixEventEngine() override;
 
+  std::unique_ptr<PosixEventEngineEndpoint> CreatePosixEndpointFromFd(
+      int fd, const EndpointConfig& config,
+      MemoryAllocator memory_allocator) override;
+
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
+
+  absl::StatusOr<std::unique_ptr<PosixEngine::PosixEventEngineListener>>
+  CreatePosixListener(PosixEventEngineListener::PosixAcceptCallback on_accept,
+                 absl::AnyInvocable<void(absl::Status)> on_shutdown,
+                 const EndpointConfig& config,
+                 std::unique_ptr<MemoryAllocatorFactory>
+                     memory_allocator_factory) override;
 
   ConnectionHandle Connect(OnConnectCallback on_connect,
                            const ResolvedAddress& addr,
