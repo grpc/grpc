@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: garum
   protobuf_version: 3.19.5
-  version: 1.48.2
+  version: 1.48.3
 targets:
 - name: gen_hpack_tables
   build: tool
