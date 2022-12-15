@@ -4276,6 +4276,7 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_client_channel",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
