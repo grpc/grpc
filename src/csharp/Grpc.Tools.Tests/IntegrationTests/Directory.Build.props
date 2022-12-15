@@ -5,12 +5,10 @@
 <Project>
 
   <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <LangVersion>8.0</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
 
   <!-- These would normally be imported from the Grpc.Tools NuGet package -->
@@ -23,7 +21,6 @@
   -->
   <PropertyGroup>
     <Protobuf_Generator>CSharp</Protobuf_Generator>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <Protobuf_IntermediatePath>$(BaseIntermediateOutputPath)Debug/netstandard2.0</Protobuf_IntermediatePath>
   </PropertyGroup>
 
