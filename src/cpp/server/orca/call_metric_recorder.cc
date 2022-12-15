@@ -57,6 +57,12 @@ CallMetricRecorder& CallMetricRecorder::RecordMemoryUtilizationMetric(
   return *this;
 }
 
+CallMetricRecorder& CallMetricRecorder::RecordQpsMetric(double value) {
+  internal::MutexLock lock(&mu_);
+  backend_metric_data_->qps = value;
+  return *this;
+}
+
 CallMetricRecorder& CallMetricRecorder::RecordUtilizationMetric(
     grpc::string_ref name, double value) {
   internal::MutexLock lock(&mu_);
@@ -92,6 +98,10 @@ absl::optional<std::string> CallMetricRecorder::CreateSerializedReport() {
   if (backend_metric_data_->mem_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(
         response, backend_metric_data_->mem_utilization);
+  }
+  if (backend_metric_data_->qps != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_qps(response,
+                                            backend_metric_data_->qps);
   }
   for (const auto& p : backend_metric_data_->request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(

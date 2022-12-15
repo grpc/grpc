@@ -62,6 +62,10 @@ class CallMetricRecorder {
   /// Multiple calls to this method will override the stored value.
   CallMetricRecorder& RecordMemoryUtilizationMetric(double value);
 
+  /// Records a call metric measurement for QPS.
+  /// Multiple calls to this method will override the stored value.
+  CallMetricRecorder& RecordQpsMetric(double value);
+
   /// Records a call metric measurement for utilization.
   /// Multiple calls to this method with the same name will
   /// override the corresponding stored value. The lifetime of the
