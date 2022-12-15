@@ -1714,7 +1714,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/compression_types.h \
     include/grpc/impl/connectivity_state.h \
     include/grpc/impl/grpc_types.h \
-    include/grpc/impl/slice_type.h \
+    include/grpc/impl/propagation_bits.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -2182,7 +2182,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/compression_types.h \
     include/grpc/impl/connectivity_state.h \
     include/grpc/impl/grpc_types.h \
-    include/grpc/impl/slice_type.h \
+    include/grpc/impl/propagation_bits.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \

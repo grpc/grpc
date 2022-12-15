@@ -2493,7 +2493,7 @@ foreach(_hdr
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
-  include/grpc/impl/slice_type.h
+  include/grpc/impl/propagation_bits.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3101,7 +3101,7 @@ foreach(_hdr
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
-  include/grpc/impl/slice_type.h
+  include/grpc/impl/propagation_bits.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3257,13 +3257,11 @@ add_library(grpc++
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/client/xds_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -3363,8 +3361,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/completion_queue_tag.h
   include/grpc++/impl/codegen/config.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
   include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
@@ -3451,8 +3447,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
-  include/grpcpp/impl/codegen/core_codegen.h
-  include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/delegating_channel.h
   include/grpcpp/impl/codegen/intercepted_channel.h
@@ -3962,12 +3956,10 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/insecure_create_auth_context.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
@@ -4060,8 +4052,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/completion_queue_tag.h
   include/grpc++/impl/codegen/config.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
   include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
@@ -4147,8 +4137,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
-  include/grpcpp/impl/codegen/core_codegen.h
-  include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/delegating_channel.h
   include/grpcpp/impl/codegen/intercepted_channel.h
@@ -4581,7 +4569,7 @@ foreach(_hdr
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
-  include/grpc/impl/slice_type.h
+  include/grpc/impl/propagation_bits.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -6985,13 +6973,11 @@ add_executable(binder_transport_test
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -9827,13 +9813,11 @@ add_executable(endpoint_binder_pool_test
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -10479,13 +10463,11 @@ add_executable(fake_binder_test
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -21091,13 +21073,11 @@ add_executable(transport_stream_receiver_test
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -21767,13 +21747,11 @@ add_executable(wire_reader_test
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -21871,13 +21849,11 @@ add_executable(wire_writer_test
   src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
