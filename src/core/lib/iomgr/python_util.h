@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/slice.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/iomgr/error.h"
