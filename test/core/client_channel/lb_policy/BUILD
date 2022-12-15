@@ -96,11 +96,11 @@ grpc_cc_test(
         "absl/algorithm:container",
         "benchmark",
     ],
+    language = "C++",
     tags = [
         "no_mac",
         "no_windows",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

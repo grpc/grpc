@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h"
-
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -30,6 +28,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_core {

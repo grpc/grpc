@@ -793,6 +793,9 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_c public_headers_must_be_c89)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c static_stride_scheduler_benchmark)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c tcp_posix_test)
   endif()
   add_dependencies(buildtests_c test_core_iomgr_timer_list_test)
@@ -5259,6 +5262,42 @@ target_link_libraries(public_headers_must_be_c89
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(static_stride_scheduler_benchmark
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+    test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
+  )
+
+  target_include_directories(static_stride_scheduler_benchmark
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(static_stride_scheduler_benchmark
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::algorithm_container
+    absl::any_invocable
+    absl::span
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    gpr
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -18955,10 +18994,8 @@ target_link_libraries(static_stride_scheduler_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::algorithm_container
   absl::any_invocable
   absl::span
-  ${_gRPC_BENCHMARK_LIBRARIES}
   gpr
 )
 
