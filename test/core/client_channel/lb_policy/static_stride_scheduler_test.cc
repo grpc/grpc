@@ -41,12 +41,7 @@
 namespace grpc_core {
 namespace {
 
-using ::testing::AnyOf;
-using ::testing::Each;
 using ::testing::ElementsAre;
-using ::testing::Eq;
-using ::testing::Le;
-using ::testing::SizeIs;
 using ::testing::UnorderedElementsAre;
 
 TEST(StaticStrideSchedulerTest, EmptyWeightsIsNullopt) {
@@ -278,5 +273,5 @@ BENCHMARK(BM_StaticStrideSchedulerMake)
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS(); 
+  return RUN_ALL_TESTS();
 }

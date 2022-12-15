@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h"
 
 #include <algorithm>
@@ -41,7 +43,7 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
   // TODO(b/190488683): should we normalize negative weights to 0?
 
   const size_t n = float_weights.size();
-  int num_zero_weight_channels = 0;
+  size_t num_zero_weight_channels = 0;
   double sum = 0;
   float max = 0;
   for (const float weight : float_weights) {
@@ -69,11 +71,10 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
 
   std::vector<uint16_t> weights;
   weights.reserve(n);
-  for (int i = 0; i < n; ++i) {
-    weights.push_back(
-        float_weights[i] == 0
-            ? mean
-            : std::lround(float_weights[i] * scaling_factor));
+  for (size_t i = 0; i < n; ++i) {
+    weights.push_back(float_weights[i] == 0
+                          ? mean
+                          : std::lround(float_weights[i] * scaling_factor));
   }
 
   GPR_ASSERT(weights.size() == float_weights.size());
@@ -124,4 +125,4 @@ size_t StaticStrideScheduler::Pick() const {
   }
 }
 
-}  // grpc_core
+}  // namespace grpc_core

@@ -10866,6 +10866,23 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: static_stride_scheduler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
+  deps:
+  - absl/algorithm:container
+  - absl/functional:any_invocable
+  - absl/types:span
+  - benchmark
+  - gpr
+  benchmark: true
+  defaults: benchmark
 - name: stats_test
   gtest: true
   build: test
