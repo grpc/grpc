@@ -1836,6 +1836,23 @@ class PromiseBasedCall : public Call,
   void SetCompletionQueue(grpc_completion_queue* cq) override;
   void SetCompletionQueueLocked(grpc_completion_queue* cq)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void CancelWithError(absl::Status error) final ABSL_LOCKS_EXCLUDED(mu_) {
+    MutexLock lock(&mu_);
+    CancelWithErrorLocked(std::move(error));
+  }
+  virtual void CancelWithErrorLocked(absl::Status error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
+  bool Completed() final ABSL_LOCKS_EXCLUDED(mu_) {
+    MutexLock lock(&mu_);
+    return completed_;
+  }
+
+  void Orphan() final {
+    MutexLock lock(&mu_);
+    if (!completed_) {
+      CancelWithErrorLocked(absl::CancelledError("Call orphaned"));
+    }
+  }
 
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
@@ -2618,13 +2635,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
   absl::string_view GetServerAuthority() const override { abort(); }
-  void CancelWithError(grpc_error_handle error) override;
-  bool Completed() override;
-  void Orphan() override {
-    MutexLock lock(mu());
-    ScopedContext ctx(this);
-    if (!completed()) Finish(ServerMetadataFromStatus(absl::CancelledError()));
-  }
+  void CancelWithErrorLocked(grpc_error_handle error) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
   bool is_trailers_only() const override {
     MutexLock lock(mu());
     return is_trailers_only_;
@@ -2695,8 +2707,7 @@ void ClientPromiseBasedCall::StartPromise(
   });
 }
 
-void ClientPromiseBasedCall::CancelWithError(grpc_error_handle error) {
-  MutexLock lock(mu());
+void ClientPromiseBasedCall::CancelWithErrorLocked(grpc_error_handle error) {
   ScopedContext context(this);
   Finish(ServerMetadataFromStatus(grpc_error_to_absl_status(error)));
 }
@@ -2954,11 +2965,6 @@ void ClientPromiseBasedCall::PublishStatus(
                        PendingOp::kReceiveStatusOnClient);
 }
 
-bool ClientPromiseBasedCall::Completed() {
-  MutexLock lock(mu());
-  return completed();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // ServerPromiseBasedCall
 
@@ -2966,10 +2972,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
   ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args);
 
-  void Orphan() override { abort(); }
-
-  void CancelWithError(grpc_error_handle error) override { abort(); }
-  bool Completed() override { abort(); }
+  void CancelWithErrorLocked(grpc_error_handle error) override { abort(); }
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
   bool failed_before_recv_message() const override { abort(); }
@@ -3147,6 +3150,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
         FinishOpOnCompletion(&send_status_from_server_completion_,
                              PendingOp::kSendStatusFromServer);
       }
+      set_completed();
       promise_ = ArenaPromise<ServerMetadataHandle>();
     }
   }
