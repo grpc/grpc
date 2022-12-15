@@ -4253,6 +4253,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_weighted_round_robin",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc",
+    ],
+    external_deps = [
+        "absl/random",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "grpc_lb_subchannel_list",
+        "json",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "subchannel_interface",
+        "static_stride_scheduler",
+        "//:config",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:server_address",
+        "//:sockaddr_utils",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_outlier_detection_header",
     hdrs = [
         "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
