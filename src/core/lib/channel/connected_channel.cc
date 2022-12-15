@@ -872,13 +872,13 @@ class ServerStream final : public ConnectedChannelStream {
     gim.recv_initial_metadata_ready_waker =
         Activity::current()->MakeOwningWaker();
     memset(&gim.recv_initial_metadata, 0, sizeof(gim.recv_initial_metadata));
-    gim.recv_initial_metadata.payload = &batch_payload_;
+    gim.recv_initial_metadata.payload = batch_payload();
     gim.recv_initial_metadata.on_complete = nullptr;
     gim.recv_initial_metadata.recv_initial_metadata = true;
     gim.next_promise_factory = std::move(next_promise_factory);
-    batch_payload_.recv_initial_metadata.recv_initial_metadata =
+    batch_payload()->recv_initial_metadata.recv_initial_metadata =
         gim.client_initial_metadata.get();
-    batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
+    batch_payload()->recv_initial_metadata.recv_initial_metadata_ready =
         &gim.recv_initial_metadata_ready;
     SchedulePush(&gim.recv_initial_metadata);
   }
@@ -908,6 +908,20 @@ class ServerStream final : public ConnectedChannelStream {
                   &server_to_client->receiver, std::move(promise)});
     }
     if (auto* p = absl::get_if<Running>(&client_initial_metadata_state_)) {
+      if (p->server_initial_metadata != nullptr) {
+        auto r = p->server_initial_metadata->Wait()();
+        if (ServerMetadata*** md = absl::get_if<ServerMetadata**>(&r)) {
+          p->server_initial_metadata = nullptr;
+          memset(&p->send_initial_metadata, 0,
+                 sizeof(p->send_initial_metadata));
+          p->send_initial_metadata.send_initial_metadata = true;
+          p->send_initial_metadata.payload = batch_payload();
+          p->send_initial_metadata.on_complete = &send_initial_metadata_done_;
+          batch_payload()->send_initial_metadata.send_initial_metadata = **md;
+          batch_payload()->send_initial_metadata.peer_string = nullptr;
+          SchedulePush(&p->send_initial_metadata);
+        }
+      }
       PollSendMessage(p->outgoing_messages, nullptr);
       PollRecvMessage(p->incoming_messages, false);
       auto poll = p->promise();
@@ -962,6 +976,7 @@ class ServerStream final : public ConnectedChannelStream {
     PipeSender<MessageHandle>* incoming_messages;
     PipeReceiver<MessageHandle>* outgoing_messages;
     ArenaPromise<ServerMetadataHandle> promise;
+    grpc_transport_stream_op_batch send_initial_metadata;
   };
 
   struct Completing {
@@ -1028,14 +1043,16 @@ class ServerStream final : public ConnectedChannelStream {
     return absl::StrJoin(ops, " ");
   }
 
+  void SendInitialMetadataDone() {}
+
   using ClientInitialMetadataState =
       absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,
                     Running, Completing, Complete>;
   ClientInitialMetadataState client_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = Uninitialized{};
-
-  grpc_transport_stream_op_batch_payload batch_payload_{
-      GetContext<grpc_call_context_element>()};
+  grpc_closure send_initial_metadata_done_ =
+      MakeMemberClosure<ServerStream, &ServerStream::SendInitialMetadataDone>(
+          this);
 };
 
 class ServerConnectedCallPromise {
