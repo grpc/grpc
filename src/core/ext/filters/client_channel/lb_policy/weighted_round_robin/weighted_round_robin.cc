@@ -142,8 +142,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
    public:
     WeightedRoundRobinSubchannelData(
         SubchannelList<WeightedRoundRobinSubchannelList,
-                       WeightedRoundRobinSubchannelData>*
-            subchannel_list,
+                       WeightedRoundRobinSubchannelData>* subchannel_list,
         const ServerAddress& address,
         RefCountedPtr<SubchannelInterface> subchannel);
 
@@ -159,8 +158,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       OobWatcher(RefCountedPtr<AddressWeight> weight, Duration blackout_period)
           : weight_(std::move(weight)), blackout_period_(blackout_period) {}
 
-      void OnBackendMetricReport(const BackendMetricData& backend_metric_data)
-          override;
+      void OnBackendMetricReport(
+          const BackendMetricData& backend_metric_data) override;
 
      private:
       RefCountedPtr<AddressWeight> weight_;
@@ -281,8 +280,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     // Info stored about each subchannel.
     struct SubchannelInfo {
       SubchannelInfo(RefCountedPtr<SubchannelInterface> subchannel,
-                     bool is_ready,
-                     RefCountedPtr<AddressWeight> weight)
+                     bool is_ready, RefCountedPtr<AddressWeight> weight)
           : subchannel(std::move(subchannel)),
             is_ready(is_ready),
             weight(std::move(weight)) {}
@@ -421,8 +419,8 @@ WeightedRoundRobin::Picker::Timer::Timer(RefCountedPtr<Picker> picker)
 
 void WeightedRoundRobin::Picker::Timer::Orphan() {
   bool done = false;
-  if (done_.compare_exchange_strong(
-          done, true, std::memory_order_relaxed, std::memory_order_relaxed)) {
+  if (done_.compare_exchange_strong(done, true, std::memory_order_relaxed,
+                                    std::memory_order_relaxed)) {
     picker_->wrr_->channel_control_helper()->GetEventEngine()->Cancel(
         timer_handle_);
   }
@@ -505,9 +503,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerLocked() {
       weights,
       // This requires holding mu_, but we don't have a way to plumb the
       // annotation through absl::AnyInvocable<>.
-      [this]() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-        return scheduler_state_++;
-      });
+      [this]() ABSL_NO_THREAD_SAFETY_ANALYSIS { return scheduler_state_++; });
 }
 
 //
@@ -612,8 +608,8 @@ WeightedRoundRobin::GetOrCreateWeight(const grpc_resolved_address& address) {
     auto weight = it->second->RefIfNonZero();
     if (weight != nullptr) return weight;
   }
-  auto weight = MakeRefCounted<AddressWeight>(
-      Ref(DEBUG_LOCATION, "AddressWeight"), *key);
+  auto weight =
+      MakeRefCounted<AddressWeight>(Ref(DEBUG_LOCATION, "AddressWeight"), *key);
   address_weight_map_.emplace(*key, weight.get());
   return weight;
 }
@@ -623,9 +619,8 @@ WeightedRoundRobin::GetOrCreateWeight(const grpc_resolved_address& address) {
 //
 
 void WeightedRoundRobin::WeightedRoundRobinSubchannelList::
-    UpdateStateCountersLocked(
-        absl::optional<grpc_connectivity_state> old_state,
-        grpc_connectivity_state new_state) {
+    UpdateStateCountersLocked(absl::optional<grpc_connectivity_state> old_state,
+                              grpc_connectivity_state new_state) {
   if (old_state.has_value()) {
     GPR_ASSERT(*old_state != GRPC_CHANNEL_SHUTDOWN);
     if (*old_state == GRPC_CHANNEL_READY) {
@@ -700,8 +695,8 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelList::
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(
           GPR_INFO,
-          "[WRR %p] reporting TRANSIENT_FAILURE with subchannel list %p: %s",
-          p, this, status_for_tf.ToString().c_str());
+          "[WRR %p] reporting TRANSIENT_FAILURE with subchannel list %p: %s", p,
+          this, status_for_tf.ToString().c_str());
     }
     if (!status_for_tf.ok()) {
       last_failure_ = absl::UnavailableError(
@@ -719,8 +714,7 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelList::
 //
 
 void WeightedRoundRobin::WeightedRoundRobinSubchannelData::OobWatcher::
-    OnBackendMetricReport(
-        const BackendMetricData& backend_metric_data) {
+    OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
   weight_->MaybeUpdateWeight(backend_metric_data.qps,
                              backend_metric_data.cpu_utilization,
                              blackout_period_);
@@ -733,13 +727,10 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelData::OobWatcher::
 WeightedRoundRobin::WeightedRoundRobinSubchannelData::
     WeightedRoundRobinSubchannelData(
         SubchannelList<WeightedRoundRobinSubchannelList,
-                       WeightedRoundRobinSubchannelData>*
-            subchannel_list,
-        const ServerAddress& address,
-        RefCountedPtr<SubchannelInterface> sc)
-        : SubchannelData(subchannel_list, address, std::move(sc)),
-          weight_(
-              static_cast<WeightedRoundRobin*>(subchannel_list->policy())
+                       WeightedRoundRobinSubchannelData>* subchannel_list,
+        const ServerAddress& address, RefCountedPtr<SubchannelInterface> sc)
+    : SubchannelData(subchannel_list, address, std::move(sc)),
+      weight_(static_cast<WeightedRoundRobin*>(subchannel_list->policy())
                   ->GetOrCreateWeight(address.address())) {
   // Start OOB watch if configured.
   WeightedRoundRobin* p =
