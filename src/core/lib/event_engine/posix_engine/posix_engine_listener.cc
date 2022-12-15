@@ -14,6 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -46,7 +47,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 PosixEngineListenerImpl::PosixEngineListenerImpl(
-    PosixEngine::PosixEventEngineListener::PosixAcceptCallback on_accept,
+    PosixEventEngineFdSupport::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const grpc_event_engine::experimental::EndpointConfig& config,
     std::unique_ptr<grpc_event_engine::experimental::MemoryAllocatorFactory>
@@ -62,8 +63,7 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
 
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
-    PosixEngine::PosixEventEngineListener::OnPosixBindNewFdCallback
-        on_bind_new_fd) {
+    PosixListenerFdSupport::OnPosixBindNewFdCallback on_bind_new_fd) {
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
