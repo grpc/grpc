@@ -212,7 +212,7 @@ class PosixEngineListener : public PosixEngine::PosixEventEngineListener {
       override {
     return impl_->Bind(addr, nullptr);
   }
-  absl::StatusOr<int> BindFd(
+  absl::StatusOr<int> Bind(
       const EventEngine::ResolvedAddress& addr,
       PosixEngine::PosixEventEngineListener::OnPosixBindNewFdCallback
           on_bind_new_fd) override {
