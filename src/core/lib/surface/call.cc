@@ -2424,6 +2424,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     if (auto* channelz_channel = channel()->channelz_node()) {
       channelz_channel->RecordCallStarted();
     }
+    if (args->send_deadline != Timestamp::InfFuture()) {
+      UpdateDeadline(args->send_deadline);
+    }
   }
 
   ~ClientPromiseBasedCall() override {
