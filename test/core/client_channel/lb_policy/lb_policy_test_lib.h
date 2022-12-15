@@ -369,15 +369,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
     }
 
-    absl::string_view GetCallAttribute(UniqueTypeName type) override {
-      return attributes_[type];
-    }
-
    private:
     void* Alloc(size_t size) override {
       void* allocation = gpr_malloc(size);
       allocations_.push_back(allocation);
       return allocation;
+    }
+
+    absl::string_view GetCallAttribute(UniqueTypeName type) override {
+      return attributes_[type];
     }
 
     std::vector<void*> allocations_;
