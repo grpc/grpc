@@ -6,7 +6,7 @@ PointerAlignment: Left
 IncludeBlocks: Regroup
 IncludeCategories:
   # port_platform.h is before almost everything
-  - Regex: '^<grpc/(support|impl/codegen)/port_platform.h>'
+  - Regex: '^<grpc/support/port_platform.h>'
     Priority: -100
   # ruby.h is even more first if it's included
   - Regex: '^<ruby/ruby.h>'

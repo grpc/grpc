@@ -66,7 +66,7 @@ The following aspects can be configured at channel-creation time via channel arg
 
 Use the channel argument key
 `GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET` (from
-[`grpc/impl/codegen/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h)),
+[`grpc/impl/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/compression_types.h)),
 takes a 32 bit bitset value. A set bit means the algorithm with that enum value
 according to `grpc_compression_algorithm` is _enabled_.
 For example, `GRPC_COMPRESS_GZIP` currently has a numeric value of 2. To
@@ -82,14 +82,14 @@ in the call being closed with `GRPC_STATUS_UNIMPLEMENTED`.
 **(currently, Q2 2016, only applicable for server side channels. It's ignored
 for clients.)**
 Use the channel argument key `GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL` (from
-[`grpc/impl/codegen/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h)),
+[`grpc/impl/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/compression_types.h)),
 valued by an integer corresponding to a value from the `grpc_compression_level`
 enum.
 
 #### Default Compression _Algorithm_
 
 Use the channel argument key `GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM` (from
-[`grpc/impl/codegen/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h)),
+[`grpc/impl/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/compression_types.h)),
 valued by an integer corresponding to a value from the `grpc_compression_level`
 enum.
 
@@ -117,7 +117,7 @@ specific algorithms (benchmarking, testing).
 Selection of concrete compression algorithms is performed by adding a
 `(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, <algorithm-name>)` key-value pair to the
 initial metadata, where `GRPC_COMPRESS_REQUEST_ALGORITHM_KEY` is defined in
-[`grpc/impl/codegen/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h)),
+[`grpc/impl/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/compression_types.h)),
 and `<algorithm-name>` is the human readable name of the algorithm as given in
 [the HTTP2 spec](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md)
 for `Message-Encoding` (e.g. gzip, identity, etc.). See
@@ -130,4 +130,4 @@ textual representation.
 To disable compression for a specific message, the `flags` field of `grpc_op`
 instances of type `GRPC_OP_SEND_MESSAGE` must have its `GRPC_WRITE_NO_COMPRESS`
 bit set. Refer to
-[`grpc/impl/codegen/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h)),
+[`grpc/impl/compression_types.h`](https://github.com/grpc/grpc/blob/master/include/grpc/impl/compression_types.h)),

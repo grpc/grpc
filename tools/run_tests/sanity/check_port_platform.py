@@ -63,7 +63,6 @@ all_bad_files += check_port_platform_inclusion(os.path.join('src', 'core'), [
 all_bad_files += check_port_platform_inclusion(os.path.join(
     'include', 'grpc'), [
         '#include <grpc/support/port_platform.h>\n',
-        '#include <grpc/impl/codegen/port_platform.h>\n',
     ])
 
 if sys.argv[1:] == ['--fix']:

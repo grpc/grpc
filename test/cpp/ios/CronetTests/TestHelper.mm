@@ -18,8 +18,8 @@
 
 #import "TestHelper.h"
 #import <Cronet/Cronet.h>
-#import <grpcpp/impl/codegen/string_ref.h>
 #import <grpcpp/support/config.h>
+#import <grpcpp/support/string_ref.h>
 
 using grpc::ServerContext;
 using grpc::Status;
