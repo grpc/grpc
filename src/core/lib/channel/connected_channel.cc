@@ -386,8 +386,7 @@ class ConnectedChannelStream : public Orphanable {
         if (pending->payload.has_value()) {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO,
-                    "%sRecvMessageBatchDone: received payload of %" PRIdPTR
-                    " bytes",
+                    "%sPollRecvMessage: received payload of %" PRIdPTR " bytes",
                     recv_message_waker_.ActivityDebugTag().c_str(),
                     pending->payload->Length());
           }
@@ -396,7 +395,7 @@ class ConnectedChannelStream : public Orphanable {
                   std::move(*pending->payload), pending->flags));
         } else {
           if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",
+            gpr_log(GPR_INFO, "%sPollRecvMessage: received no payload",
                     recv_message_waker_.ActivityDebugTag().c_str());
           }
           recv_message_state_ = Closed{};
@@ -406,7 +405,7 @@ class ConnectedChannelStream : public Orphanable {
     }
     if (absl::holds_alternative<Idle>(recv_message_state_)) {
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting message",
+        gpr_log(GPR_INFO, "%sPollRecvMessage: requesting message",
                 Activity::current()->DebugTag().c_str());
       }
       PushRecvMessage();
@@ -419,27 +418,29 @@ class ConnectedChannelStream : public Orphanable {
           if (!finished_) {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
-                      "%sPollConnectedChannel: pushed message; requesting next",
+                      "%sPollRecvMessage: pushed message; requesting next",
                       Activity::current()->DebugTag().c_str());
             }
             PushRecvMessage();
           } else {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
-                      "%sPollConnectedChannel: pushed message and finished; "
+                      "%sPollRecvMessage: pushed message and finished; "
                       "marking closed",
                       Activity::current()->DebugTag().c_str());
             }
             recv_message_state_ = Closed{};
+            std::exchange(incoming_messages, nullptr)->Close();
           }
         } else {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO,
-                    "%sPollConnectedChannel: failed to push message; marking "
+                    "%sPollRecvMessage: failed to push message; marking "
                     "closed",
                     Activity::current()->DebugTag().c_str());
           }
           recv_message_state_ = Closed{};
+          std::exchange(incoming_messages, nullptr)->Close();
         }
       }
     }
@@ -897,36 +898,40 @@ class ServerStream final : public ConnectedChannelStream {
               ActiveOpsString().c_str());
     }
 
+    if (server_initial_metadata_ != nullptr) {
+      auto r = server_initial_metadata_->Wait()();
+      if (ServerMetadata*** md = absl::get_if<ServerMetadata**>(&r)) {
+        gpr_log(GPR_INFO, "ConnectedChannel: got initial metadata %s",
+                (**md)->DebugString().c_str());
+        server_initial_metadata_ = nullptr;
+        memset(&send_initial_metadata_, 0, sizeof(send_initial_metadata_));
+        send_initial_metadata_.send_initial_metadata = true;
+        send_initial_metadata_.payload = batch_payload();
+        send_initial_metadata_.on_complete = &send_initial_metadata_done_;
+        batch_payload()->send_initial_metadata.send_initial_metadata = **md;
+        batch_payload()->send_initial_metadata.peer_string = nullptr;
+        SchedulePush(&send_initial_metadata_);
+      }
+    }
+
     if (auto* p =
             absl::get_if<GotInitialMetadata>(&client_initial_metadata_state_)) {
       auto* server_to_client = GetContext<Arena>()->New<Pipe<MessageHandle>>();
       auto* client_to_server = GetContext<Arena>()->New<Pipe<MessageHandle>>();
-      auto* server_initial_metadata =
+      server_initial_metadata_ =
           GetContext<Arena>()->New<Latch<ServerMetadata*>>();
+      incoming_messages_ = &client_to_server->sender;
       auto promise = p->next_promise_factory(CallArgs{
-          std::move(p->client_initial_metadata), server_initial_metadata,
+          std::move(p->client_initial_metadata), server_initial_metadata_,
           &client_to_server->receiver, &server_to_client->sender});
       client_initial_metadata_state_.emplace<Running>(
-          Running{server_initial_metadata, &client_to_server->sender,
-                  &server_to_client->receiver, std::move(promise)});
+          Running{&server_to_client->receiver, std::move(promise)});
+    }
+    if (incoming_messages_ != nullptr) {
+      PollRecvMessage(incoming_messages_);
     }
     if (auto* p = absl::get_if<Running>(&client_initial_metadata_state_)) {
-      if (p->server_initial_metadata != nullptr) {
-        auto r = p->server_initial_metadata->Wait()();
-        if (ServerMetadata*** md = absl::get_if<ServerMetadata**>(&r)) {
-          p->server_initial_metadata = nullptr;
-          memset(&p->send_initial_metadata, 0,
-                 sizeof(p->send_initial_metadata));
-          p->send_initial_metadata.send_initial_metadata = true;
-          p->send_initial_metadata.payload = batch_payload();
-          p->send_initial_metadata.on_complete = &send_initial_metadata_done_;
-          batch_payload()->send_initial_metadata.send_initial_metadata = **md;
-          batch_payload()->send_initial_metadata.peer_string = nullptr;
-          SchedulePush(&p->send_initial_metadata);
-        }
-      }
       PollSendMessage(p->outgoing_messages, nullptr);
-      PollRecvMessage(p->incoming_messages);
       auto poll = p->promise();
       if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
         auto& completing = client_initial_metadata_state_.emplace<Completing>();
@@ -947,8 +952,10 @@ class ServerStream final : public ConnectedChannelStream {
       }
     }
     if (auto* p = absl::get_if<Complete>(&client_initial_metadata_state_)) {
-      set_finished();
-      return std::move(p->result);
+      if (server_initial_metadata_ == nullptr) {
+        set_finished();
+        return std::move(p->result);
+      }
     }
     return Pending{};
   }
@@ -976,11 +983,8 @@ class ServerStream final : public ConnectedChannelStream {
   };
 
   struct Running {
-    Latch<ServerMetadata*>* server_initial_metadata;
-    PipeSender<MessageHandle>* incoming_messages;
     PipeReceiver<MessageHandle>* outgoing_messages;
     ArenaPromise<ServerMetadataHandle> promise;
-    grpc_transport_stream_op_batch send_initial_metadata;
   };
 
   struct Completing {
@@ -1060,6 +1064,10 @@ class ServerStream final : public ConnectedChannelStream {
                     Running, Completing, Complete>;
   ClientInitialMetadataState client_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = Uninitialized{};
+  Latch<ServerMetadata*>* server_initial_metadata_ ABSL_GUARDED_BY(mu()) =
+      nullptr;
+  PipeSender<MessageHandle>* incoming_messages_;
+  grpc_transport_stream_op_batch send_initial_metadata_;
   grpc_closure send_initial_metadata_done_ =
       MakeMemberClosure<ServerStream, &ServerStream::SendInitialMetadataDone>(
           this);

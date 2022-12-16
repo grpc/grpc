@@ -77,15 +77,15 @@ TEST(TryConcurrentlyTest, Immediate) {
   auto a = TryConcurrently(pf.OkPromise("1"));
   EXPECT_EQ(a(), Poll<absl::Status>(absl::OkStatus()));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1"}));
-  auto b = TryConcurrently(pf.OkPromise("1")).NecessaryPush(pf.OkPromise("2"));
+  auto b = TryConcurrently(pf.OkPromise("1")).Push(pf.OkPromise("2"));
   EXPECT_EQ(b(), Poll<absl::Status>(absl::OkStatus()));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"2", "1"}));
-  auto c = TryConcurrently(pf.OkPromise("1")).NecessaryPull(pf.OkPromise("2"));
+  auto c = TryConcurrently(pf.OkPromise("1")).Pull(pf.OkPromise("2"));
   EXPECT_EQ(c(), Poll<absl::Status>(absl::OkStatus()));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "2"}));
   auto d = TryConcurrently(pf.OkPromise("1"))
-               .NecessaryPull(pf.OkPromise("2"))
-               .NecessaryPush(pf.OkPromise("3"));
+               .Pull(pf.OkPromise("2"))
+               .Push(pf.OkPromise("3"));
   EXPECT_EQ(d(), Poll<absl::Status>(absl::OkStatus()));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"3", "1", "2"}));
   auto e = TryConcurrently(pf.OkPromise("1")).Push(pf.NeverPromise("2"));
@@ -101,12 +101,10 @@ TEST(TryConcurrentlyTest, Paused) {
   auto a = TryConcurrently(pf.NeverPromise("1"));
   EXPECT_EQ(a(), Poll<absl::Status>(Pending{}));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1"}));
-  auto b =
-      TryConcurrently(pf.OkPromise("1")).NecessaryPush(pf.NeverPromise("2"));
+  auto b = TryConcurrently(pf.OkPromise("1")).Push(pf.NeverPromise("2"));
   EXPECT_EQ(b(), Poll<absl::Status>(Pending{}));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"2", "1"}));
-  auto c =
-      TryConcurrently(pf.OkPromise("1")).NecessaryPull(pf.NeverPromise("2"));
+  auto c = TryConcurrently(pf.OkPromise("1")).Pull(pf.NeverPromise("2"));
   EXPECT_EQ(c(), Poll<absl::Status>(Pending{}));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "2"}));
 }
@@ -116,12 +114,10 @@ TEST(TryConcurrentlyTest, OneFailed) {
   auto a = TryConcurrently(pf.FailPromise("bah"));
   EXPECT_EQ(a(), Poll<absl::Status>(absl::UnknownError("bah")));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"bah"}));
-  auto b = TryConcurrently(pf.NeverPromise("1"))
-               .NecessaryPush(pf.FailPromise("humbug"));
+  auto b = TryConcurrently(pf.NeverPromise("1")).Push(pf.FailPromise("humbug"));
   EXPECT_EQ(b(), Poll<absl::Status>(absl::UnknownError("humbug")));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"humbug"}));
-  auto c = TryConcurrently(pf.NeverPromise("1"))
-               .NecessaryPull(pf.FailPromise("wha"));
+  auto c = TryConcurrently(pf.NeverPromise("1")).Pull(pf.FailPromise("wha"));
   EXPECT_EQ(c(), Poll<absl::Status>(absl::UnknownError("wha")));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "wha"}));
 }
@@ -129,13 +125,13 @@ TEST(TryConcurrentlyTest, OneFailed) {
 TEST(TryConcurrently, MuchPush) {
   PromiseFactory pf;
   auto p = TryConcurrently(pf.OkPromise("1"))
-               .NecessaryPush(pf.OkPromise("2"))
-               .NecessaryPush(pf.OkPromise("3"))
-               .NecessaryPush(pf.OkPromise("4"))
-               .NecessaryPush(pf.OkPromise("5"))
-               .NecessaryPush(pf.OkPromise("6"))
-               .NecessaryPush(pf.OkPromise("7"))
-               .NecessaryPush(pf.OkPromise("8"));
+               .Push(pf.OkPromise("2"))
+               .Push(pf.OkPromise("3"))
+               .Push(pf.OkPromise("4"))
+               .Push(pf.OkPromise("5"))
+               .Push(pf.OkPromise("6"))
+               .Push(pf.OkPromise("7"))
+               .Push(pf.OkPromise("8"));
   EXPECT_EQ(p(), Poll<absl::Status>(absl::OkStatus()));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>(
                              {"8", "7", "6", "5", "4", "3", "2", "1"}));
@@ -144,13 +140,13 @@ TEST(TryConcurrently, MuchPush) {
 TEST(TryConcurrently, SoPull) {
   PromiseFactory pf;
   auto p = TryConcurrently(pf.OkPromise("1"))
-               .NecessaryPull(pf.OkPromise("2"))
-               .NecessaryPull(pf.OkPromise("3"))
-               .NecessaryPull(pf.OkPromise("4"))
-               .NecessaryPull(pf.OkPromise("5"))
-               .NecessaryPull(pf.OkPromise("6"))
-               .NecessaryPull(pf.OkPromise("7"))
-               .NecessaryPull(pf.OkPromise("8"));
+               .Pull(pf.OkPromise("2"))
+               .Pull(pf.OkPromise("3"))
+               .Pull(pf.OkPromise("4"))
+               .Pull(pf.OkPromise("5"))
+               .Pull(pf.OkPromise("6"))
+               .Pull(pf.OkPromise("7"))
+               .Pull(pf.OkPromise("8"));
   EXPECT_EQ(p(), Poll<absl::Status>(absl::OkStatus()));
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>(
                              {"1", "8", "7", "6", "5", "4", "3", "2"}));
@@ -175,10 +171,8 @@ class ProblematicPointer {
 TEST(TryConcurrentlyTest, MoveItMoveIt) {
   auto a =
       TryConcurrently([x = ProblematicPointer()]() { return absl::OkStatus(); })
-          .NecessaryPull(
-              [x = ProblematicPointer()]() { return absl::OkStatus(); })
-          .NecessaryPush(
-              [x = ProblematicPointer()]() { return absl::OkStatus(); })
+          .Pull([x = ProblematicPointer()]() { return absl::OkStatus(); })
+          .Push([x = ProblematicPointer()]() { return absl::OkStatus(); })
           .Push([x = ProblematicPointer()]() { return absl::OkStatus(); })
           .Pull([x = ProblematicPointer()]() { return absl::OkStatus(); });
   auto b = std::move(a);

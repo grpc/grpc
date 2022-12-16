@@ -35,18 +35,6 @@ namespace grpc_core {
 
 namespace promise_detail {
 
-template <typename Promise>
-struct Necessary {
-  PromiseLike<Promise> promise;
-  static constexpr bool must_complete() { return true; }
-};
-
-template <typename Promise>
-struct Helper {
-  PromiseLike<Promise> promise;
-  static constexpr bool must_complete() { return false; }
-};
-
 // A set of promises that can be polled concurrently.
 // Fuses them when completed (that is, destroys the promise and records it
 // completed).
@@ -62,11 +50,11 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
  public:
   explicit FusedSet(T&& x, Ts&&... xs)
       : FusedSet<Ts...>(std::forward<T>(xs)...) {
-    Construct(&wrapper_, std::forward<T>(x));
+    Construct(&promise_, std::forward<T>(x));
   }
   explicit FusedSet(T&& x, FusedSet<Ts...>&& xs)
       : FusedSet<Ts...>(std::forward<FusedSet<Ts...>>(xs)) {
-    Construct(&wrapper_, std::forward<T>(x));
+    Construct(&promise_, std::forward<T>(x));
   }
   // Empty destructor: consumers must call Destroy() to ensure cleanup occurs
   ~FusedSet() {}
@@ -76,21 +64,16 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
 
   // Assumes all 'done_bits' for other are 0 and will be set to 1
   FusedSet(FusedSet&& other) noexcept : FusedSet<Ts...>(std::move(other)) {
-    Construct(&wrapper_, std::move(other.wrapper_));
-    Destruct(&other.wrapper_);
+    Construct(&promise_, std::move(other.promise_));
+    Destruct(&other.promise_);
   }
 
   static constexpr size_t Size() { return 1 + sizeof...(Ts); }
 
-  static constexpr uint8_t NecessaryBits() {
-    return (T::must_complete() ? 1 : 0) |
-           (FusedSet<Ts...>::NecessaryBits() << 1);
-  }
-
   template <int kDoneBit>
   void Destroy(uint8_t done_bits) {
     if ((done_bits & (1 << kDoneBit)) == 0) {
-      Destruct(&wrapper_);
+      Destruct(&promise_);
     }
     FusedSet<Ts...>::template Destroy<kDoneBit + 1>(done_bits);
   }
@@ -98,10 +81,10 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
   template <typename Result, int kDoneBit>
   Poll<Result> Run(uint8_t& done_bits) {
     if ((done_bits & (1 << kDoneBit)) == 0) {
-      auto p = wrapper_.promise();
+      auto p = promise_();
       if (auto* status = absl::get_if<kPollReadyIdx>(&p)) {
         done_bits |= (1 << kDoneBit);
-        Destruct(&wrapper_);
+        Destruct(&promise_);
         if (!IsStatusOk(*status)) {
           return StatusCast<Result>(std::move(*status));
         }
@@ -117,7 +100,7 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
 
  private:
   union {
-    T wrapper_;
+    T promise_;
   };
 };
 
@@ -125,7 +108,6 @@ template <>
 class FusedSet<> {
  public:
   static constexpr size_t Size() { return 0; }
-  static constexpr uint8_t NecessaryBits() { return 0; }
 
   template <typename Result, int kDoneBit>
   Poll<Result> Run(uint8_t) {
@@ -202,28 +184,18 @@ class TryConcurrently {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
     }
-    if ((done_bits_ & NecessaryBits()) == NecessaryBits()) {
+    if ((done_bits_ & AllBits()) == AllBits()) {
       return std::move(result_);
     }
     return Pending{};
   }
 
   template <typename P>
-  auto NecessaryPush(P p);
-  template <typename P>
-  auto NecessaryPull(P p);
-  template <typename P>
   auto Push(P p);
   template <typename P>
   auto Pull(P p);
 
  private:
-  // Bitmask for done_bits_ specifying which promises must be completed prior to
-  // returning ok.
-  constexpr uint8_t NecessaryBits() {
-    return 1 | (PreMain::NecessaryBits() << 1) |
-           (PostMain::NecessaryBits() << (1 + PreMain::Size()));
-  }
   // Bitmask for done_bits_ specifying what all of the promises being complete
   // would look like.
   constexpr uint8_t AllBits() {
@@ -260,30 +232,10 @@ auto MakeTryConcurrently(Main&& main, PreMain&& pre_main,
 
 template <typename Main, typename PreMain, typename PostMain>
 template <typename P>
-auto TryConcurrently<Main, PreMain, PostMain>::NecessaryPush(P p) {
-  GPR_DEBUG_ASSERT(done_bits_ == 0);
-  done_bits_ = HelperBits();
-  return MakeTryConcurrently(std::move(main_),
-                             pre_main_.With(Necessary<P>{std::move(p)}),
-                             std::move(post_main_));
-}
-
-template <typename Main, typename PreMain, typename PostMain>
-template <typename P>
-auto TryConcurrently<Main, PreMain, PostMain>::NecessaryPull(P p) {
-  GPR_DEBUG_ASSERT(done_bits_ == 0);
-  done_bits_ = HelperBits();
-  return MakeTryConcurrently(std::move(main_), std::move(pre_main_),
-                             post_main_.With(Necessary<P>{std::move(p)}));
-}
-
-template <typename Main, typename PreMain, typename PostMain>
-template <typename P>
 auto TryConcurrently<Main, PreMain, PostMain>::Push(P p) {
   GPR_DEBUG_ASSERT(done_bits_ == 0);
   done_bits_ = HelperBits();
-  return MakeTryConcurrently(std::move(main_),
-                             pre_main_.With(Helper<P>{std::move(p)}),
+  return MakeTryConcurrently(std::move(main_), pre_main_.With(std::move(p)),
                              std::move(post_main_));
 }
 
@@ -293,7 +245,7 @@ auto TryConcurrently<Main, PreMain, PostMain>::Pull(P p) {
   GPR_DEBUG_ASSERT(done_bits_ == 0);
   done_bits_ = HelperBits();
   return MakeTryConcurrently(std::move(main_), std::move(pre_main_),
-                             post_main_.With(Helper<P>{std::move(p)}));
+                             post_main_.With(std::move(p)));
 }
 
 }  // namespace promise_detail
@@ -310,10 +262,7 @@ auto TryConcurrently<Main, PreMain, PostMain>::Pull(P p) {
 //    promise - then as the main promise is polled and it calls into things
 //    lower in the stack they'll already see things there (this reasoning holds
 //    for receiving things and the pull promises too!).
-//  - Each push and pull promise is either necessary or optional.
-//    Necessary promises must complete successfully before the overall promise
-//    completes. Optional promises will just be cancelled once the main promise
-//    completes and any necessary helpers.
+//  - All promises must complete before the overall promise completes.
 //  - If any of the promises fail, the overall promise fails immediately.
 // API:
 //  This function, TryConcurrently, is used to create a TryConcurrently promise.
@@ -322,9 +271,8 @@ auto TryConcurrently<Main, PreMain, PostMain>::Pull(P p) {
 //  returns a new TryConcurrently promise with previous contained promises moved
 //  out.
 //  The methods exposed:
-//  - Push, NecessaryPush: attach a push promise (with the first variant being
-//                         optional, the second necessary).
-//  - Pull, NecessaryPull: attach a pull promise, with variants as above.
+//  - Push: attach a push promise
+//  - Pull: attach a pull promise.
 // Example:
 //  TryConcurrently(call_next_filter(std::move(call_args)))
 //     .Push(send_messages_promise)

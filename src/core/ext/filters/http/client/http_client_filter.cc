@@ -129,13 +129,13 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
                    if (!r.ok()) return ServerMetadataFromStatus(r);
                    return md;
                  }))
-      .NecessaryPull(Seq(read_latch->Wait(),
-                         [write_latch](ServerMetadata** md) -> absl::Status {
-                           auto r = *md == nullptr ? absl::OkStatus()
-                                                   : CheckServerMetadata(*md);
-                           write_latch->Set(*md);
-                           return r;
-                         }));
+      .Pull(Seq(read_latch->Wait(),
+                [write_latch](ServerMetadata** md) -> absl::Status {
+                  auto r = *md == nullptr ? absl::OkStatus()
+                                          : CheckServerMetadata(*md);
+                  write_latch->Set(*md);
+                  return r;
+                }));
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,

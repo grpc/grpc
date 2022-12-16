@@ -140,6 +140,7 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
                    return md;
                  }))
       .Push(Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
+        gpr_log(GPR_INFO, "HTTP server filter: writing metadata");
         FilterOutgoingMetadata(*md);
         (*md)->Set(HttpStatusMetadata(), 200);
         (*md)->Set(ContentTypeMetadata(),

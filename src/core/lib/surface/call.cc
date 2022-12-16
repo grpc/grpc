@@ -3092,6 +3092,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   RecvCloseState recv_close_state_ ABSL_GUARDED_BY(mu());
   Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
   Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
+  ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
 
 ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
@@ -3106,8 +3107,10 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
   call_->incoming_compression_algorithm_ =
       call_args.client_initial_metadata->get(GrpcEncodingMetadata())
           .value_or(GRPC_COMPRESS_NONE);
+  call_->client_initial_metadata_ =
+      std::move(call_args.client_initial_metadata);
   PublishMetadataArray(publish_initial_metadata,
-                       call_args.client_initial_metadata.get());
+                       call_->client_initial_metadata_.get());
   publish(call_->c_ptr());
   return [this]() {
     call_->mu()->AssertHeld();
@@ -3137,6 +3140,7 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   PollRecvMessage(incoming_compression_algorithm_);
 
   if (!is_sending() && send_trailing_metadata_ != nullptr) {
+    server_to_client_messages_->Close();
     return std::move(send_trailing_metadata_);
   }
 
@@ -3231,6 +3235,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           CToMetadata(op.data.send_initial_metadata.metadata,
                       op.data.send_initial_metadata.count,
                       &send_initial_metadata_);
+          gpr_log(GPR_INFO, "ServerPromiseBasedCall: Send initial metadata");
           send_initial_metadata_latch_->Set(&send_initial_metadata_);
         }
       } break;
