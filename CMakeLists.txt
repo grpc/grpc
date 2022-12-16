@@ -22,7 +22,7 @@
 
 
 
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.53.0-dev")
