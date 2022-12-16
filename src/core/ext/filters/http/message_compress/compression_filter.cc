@@ -270,18 +270,18 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
   // - wait for initial metadata from the server and then commence decompression
   // - compress outgoing messages
   return TryConcurrently(next_promise_factory(std::move(call_args)))
-      .Pull(Seq(server_initial_metadata->Wait(),
-                [decompress_loop = std::move(decompress_loop)](
-                    ServerMetadata** server_initial_metadata) mutable
-                -> ArenaPromise<absl::Status> {
-                  if (*server_initial_metadata == nullptr) {
-                    return ImmediateOkStatus();
-                  }
-                  return decompress_loop.TakeAndRun(
-                      (*server_initial_metadata)
-                          ->get(GrpcEncodingMetadata())
-                          .value_or(GRPC_COMPRESS_NONE));
-                }))
+      .NecessaryPull(Seq(server_initial_metadata->Wait(),
+                         [decompress_loop = std::move(decompress_loop)](
+                             ServerMetadata** server_initial_metadata) mutable
+                         -> ArenaPromise<absl::Status> {
+                           if (*server_initial_metadata == nullptr) {
+                             return ImmediateOkStatus();
+                           }
+                           return decompress_loop.TakeAndRun(
+                               (*server_initial_metadata)
+                                   ->get(GrpcEncodingMetadata())
+                                   .value_or(GRPC_COMPRESS_NONE));
+                         }))
       .Push(std::move(compress_loop));
 }
 
@@ -302,16 +302,17 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
   // - wait for initial metadata to be sent, and then commence compression of
   //   outgoing messages
   return TryConcurrently(next_promise_factory(std::move(call_args)))
-      .Pull(std::move(decompress_loop))
-      .Push(Seq(read_latch->Wait(),
-                [write_latch, compress_loop = std::move(compress_loop)](
-                    ServerMetadata** md) mutable {
-                  gpr_log(GPR_INFO, "ServerCompressionFilter: write metadata");
-                  // Find the compression algorithm.
-                  auto loop = compress_loop.TakeAndRun(**md);
-                  write_latch->Set(*md);
-                  return loop;
-                }));
+      .NecessaryPull(std::move(decompress_loop))
+      .NecessaryPush(
+          Seq(read_latch->Wait(),
+              [write_latch, compress_loop = std::move(compress_loop)](
+                  ServerMetadata** md) mutable {
+                gpr_log(GPR_INFO, "ServerCompressionFilter: write metadata");
+                // Find the compression algorithm.
+                auto loop = compress_loop.TakeAndRun(**md);
+                write_latch->Set(*md);
+                return loop;
+              }));
 }
 
 }  // namespace grpc_core

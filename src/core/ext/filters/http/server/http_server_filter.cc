@@ -139,15 +139,16 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
                    FilterOutgoingMetadata(md.get());
                    return md;
                  }))
-      .Push(Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
-        gpr_log(GPR_INFO, "HTTP server filter: writing metadata");
-        FilterOutgoingMetadata(*md);
-        (*md)->Set(HttpStatusMetadata(), 200);
-        (*md)->Set(ContentTypeMetadata(),
-                   ContentTypeMetadata::kApplicationGrpc);
-        write_latch->Set(*md);
-        return absl::OkStatus();
-      }));
+      .NecessaryPush(
+          Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
+            gpr_log(GPR_INFO, "HTTP server filter: writing metadata");
+            FilterOutgoingMetadata(*md);
+            (*md)->Set(HttpStatusMetadata(), 200);
+            (*md)->Set(ContentTypeMetadata(),
+                       ContentTypeMetadata::kApplicationGrpc);
+            write_latch->Set(*md);
+            return absl::OkStatus();
+          }));
 }
 
 absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(

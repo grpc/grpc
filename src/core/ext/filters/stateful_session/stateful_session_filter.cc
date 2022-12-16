@@ -180,17 +180,17 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
                    }
                    return md;
                  }))
-      .Pull(Seq(read_latch->Wait(),
-                [write_latch, cookie_config,
-                 cookie_value](ServerMetadata** md) -> absl::Status {
-                  if (*md != nullptr) {
-                    // Add cookie to server initial metadata if needed.
-                    MaybeUpdateServerInitialMetadata(cookie_config,
-                                                     cookie_value, *md);
-                  }
-                  write_latch->Set(*md);
-                  return absl::OkStatus();
-                }));
+      .NecessaryPull(Seq(read_latch->Wait(),
+                         [write_latch, cookie_config,
+                          cookie_value](ServerMetadata** md) -> absl::Status {
+                           if (*md != nullptr) {
+                             // Add cookie to server initial metadata if needed.
+                             MaybeUpdateServerInitialMetadata(
+                                 cookie_config, cookie_value, *md);
+                           }
+                           write_latch->Set(*md);
+                           return absl::OkStatus();
+                         }));
 }
 
 absl::optional<absl::string_view>
