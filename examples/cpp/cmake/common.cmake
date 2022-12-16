@@ -19,10 +19,6 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-if (NOT DEFINED CMAKE_CXX_STANDARD)
-  set (CMAKE_CXX_STANDARD 14)
-endif()
-
 if(MSVC)
   add_definitions(-D_WIN32_WINNT=0x600)
 endif()

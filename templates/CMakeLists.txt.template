@@ -264,26 +264,6 @@
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
 
-   # Use C11 standard
-  if (NOT DEFINED CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 11)
-  endif()
-
-  # Add c++14 flags
-  if (NOT DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 14)
-  else()
-    if (CMAKE_CXX_STANDARD LESS 14)
-      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
-    endif()
-  endif()
-  if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  endif()
-  if (NOT DEFINED CMAKE_CXX_EXTENSIONS)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-  endif()
-
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -660,6 +640,8 @@
   % endfor
   )
 
+  target_compile_features(${lib.name} PUBLIC cxx_std_14)
+
   set_target_properties(${lib.name} PROPERTIES
   % if lib.language == 'c++':
     VERSION <%text>${gRPC_CPP_VERSION}</%text>
@@ -764,7 +746,7 @@
     third_party/googletest/googlemock/src/gmock-all.cc
   % endif
   )
-
+  target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
