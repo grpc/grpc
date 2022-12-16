@@ -65,7 +65,7 @@ class EventEngineEndpointWrapper {
 
   int Fd() { return fd_; }
 
-  void Ref() { refs_.fetch_add(1, std::memory_order_acq_rel); }
+  void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
     if (refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       delete this;
