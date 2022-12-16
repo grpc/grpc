@@ -13,7 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 #include <algorithm>
@@ -37,6 +36,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
