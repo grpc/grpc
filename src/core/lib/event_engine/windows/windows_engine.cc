@@ -54,15 +54,15 @@ WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(Executor* executor,
 
 void WindowsEventEngine::IOCPWorkClosure::Run() {
   auto result = iocp_->Work(std::chrono::seconds(60), [this] {
-    workers_++;
+    workers_.fetch_add(1);
     executor_->Run(this);
   });
   if (result == Poller::WorkResult::kDeadlineExceeded) {
     // iocp received no messages. restart the worker
-    workers_++;
+    workers_.fetch_add(1);
     executor_->Run(this);
   }
-  if (--workers_ == 0) done_signal_.Notify();
+  if (workers_.fetch_sub(1) == 1) done_signal_.Notify();
 }
 
 void WindowsEventEngine::IOCPWorkClosure::WaitForShutdown() {
