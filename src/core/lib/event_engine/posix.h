@@ -33,7 +33,7 @@ namespace experimental {
 
 /// This defines an interface that posix specific event engines endpoints
 /// may implement to support additional file descriptor related functionality.
-class PosixEndpointFdSupport {
+class PosixEndpointWithFdSupport : public EventEngine::Endpoint {
  public:
   /// Returns the file descriptor associated with the posix endpoint.
   virtual int GetWrappedFd() = 0;
@@ -55,7 +55,7 @@ class PosixEndpointFdSupport {
 
 /// Defines an interface that posix event engine listeners may implement to
 /// support additional file descriptor related functionality.
-class PosixListenerFdSupport {
+class PosixListenerWithFdSupport : public EventEngine::Listener {
  public:
   /// Called when a posix listener bind operation completes. A single bind
   /// operation may trigger creation of multiple listener fds. This callback
@@ -98,14 +98,14 @@ class PosixListenerFdSupport {
 
 /// Defines an interface that posix event engines may implement to
 /// support additional file descriptor related functionality.
-class PosixEventEngineFdSupport {
+class PosixEventEngineWithFdSupport : public EventEngine {
  public:
   /// Creates a posix specific EventEngine::Endpoint from an fd which is already
   /// assumed to be connected to a remote peer. \a fd - The connected socket
   /// file descriptor. \a config - Additional configuration to applied to the
   /// endpoint. \a memory_allocator - The endpoint may use the provided memory
   /// allocator to track memory allocations.
-  virtual std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
+  virtual std::unique_ptr<PosixEndpointWithFdSupport> CreatePosixEndpointFromFd(
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) = 0;
 
@@ -142,7 +142,7 @@ class PosixEventEngineFdSupport {
   ///
   /// The provided \a MemoryAllocatorFactory is used to create \a
   /// MemoryAllocators for Endpoint construction.
-  virtual absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
+  virtual absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
   CreatePosixListener(
       PosixAcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
