@@ -6099,6 +6099,20 @@ targets:
   deps:
   - grpc
   uses_polling: false
+- name: cpp20_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/cpp20_test.cc
+  deps:
+  - absl/meta:type_traits
+  - absl/types:variant
+  uses_polling: false
 - name: cpp_impl_of_test
   gtest: true
   build: test
