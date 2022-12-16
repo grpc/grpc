@@ -559,11 +559,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // There can be any number of READY updates where the picker is still using
   // the old list followed by one READY update where the picker is using the
   // new list.  Returns true if the reported states match expectations.
-  bool WaitForRoundRobinListChange(
-      absl::Span<const absl::string_view> old_addresses,
-      absl::Span<const absl::string_view> new_addresses,
-      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
-    bool retval = false;
+  absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
+  WaitForRoundRobinListChange(absl::Span<const absl::string_view> old_addresses,
+                              absl::Span<const absl::string_view> new_addresses,
+                              size_t num_iterations = 3,
+                              SourceLocation location = SourceLocation()) {
+    absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> retval;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -581,11 +582,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           // If the picks still match the old list, then keep going.
           if (PicksAreRoundRobin(old_addresses, pick_addresses)) return true;
           // Otherwise, the picks should match the new list.
-          retval = PicksAreRoundRobin(new_addresses, pick_addresses);
-          EXPECT_TRUE(retval)
+          auto matches = PicksAreRoundRobin(new_addresses, pick_addresses);
+          EXPECT_TRUE(matches)
               << "Expected: " << absl::StrJoin(new_addresses, ", ")
               << "\nActual: " << absl::StrJoin(pick_addresses, ", ") << "\nat "
               << location.file() << ":" << location.line();
+          if (matches) {
+            retval = std::move(update.picker);
+          }
           return false;  // Stop.
         },
         location);

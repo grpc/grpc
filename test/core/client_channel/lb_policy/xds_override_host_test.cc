@@ -92,30 +92,32 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
 }
 
 TEST_F(XdsOverrideHostTest, OverrideHost) {
-  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
-                                                       "ipv4:127.0.0.1:442"};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
-                                    MakeXdsOverrideHostConfig("round_robin")),
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig()),
                         policy_.get()),
             absl::OkStatus());
   ExpectConnectingUpdate();
-  // Ready up both subchannels
-  for (auto address : kAddresses) {
-    auto subchannel = FindSubchannel({address});
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+  for (size_t i = 0; i < kAddresses.size(); ++i) {
+    auto* subchannel = FindSubchannel(kAddresses[i]);
     ASSERT_NE(subchannel, nullptr);
-    ASSERT_TRUE(subchannel->ConnectionRequested());
+    EXPECT_TRUE(subchannel->ConnectionRequested());
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    if (i == 0) {
+      auto picker = WaitForConnected();
+      ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});
+    } else {
+      auto maybe_picker = WaitForRoundRobinListChange(
+          absl::MakeSpan(kAddresses).subspan(0, i),
+          absl::MakeSpan(kAddresses).subspan(0, i + 1));
+      ASSERT_TRUE(maybe_picker.has_value());
+      picker = std::move(*maybe_picker);
+    }
   }
-  WaitForConnected();
-  ExpectState(GRPC_CHANNEL_READY);
-  auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
-  std::unordered_set<absl::optional<std::string>> picks{
-      ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get())};
-  ASSERT_THAT(picks, UnorderedElementsAreArray(kAddresses));
-  // Make sure child policy works
-  EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> call_attributes{
       {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
