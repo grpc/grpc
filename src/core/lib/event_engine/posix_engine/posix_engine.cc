@@ -559,7 +559,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
-std::unique_ptr<PosixEndpointWithFdSupport>
+std::unique_ptr<EventEngine::Endpoint>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
@@ -602,7 +602,7 @@ PosixEventEngine::CreateListener(
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
-absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
+absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 PosixEventEngine::CreatePosixListener(
     PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,

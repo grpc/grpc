@@ -191,7 +191,8 @@ class PosixEngineListenerImpl
       memory_allocator_factory_;
 };
 
-class PosixEngineListener : public PosixListenerWithFdSupport {
+class PosixEngineListener : public EventEngine::Listener,
+                            public PosixListenerWithFdSupport {
  public:
   PosixEngineListener(
       PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
@@ -227,7 +228,8 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class PosixEngineListener : PosixListenerWithFdSupport {
+class PosixEngineListener : public EventEngine::Listener,
+                            public PosixListenerWithFdSupport {
  public:
   PosixEngineListener() = default;
   ~PosixEngineListener() override = default;
