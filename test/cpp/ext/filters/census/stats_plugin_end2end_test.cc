@@ -685,6 +685,15 @@ TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
   EXPECT_TRUE(status.ok());
 }
 
+std::vector<opencensus::trace::exporter::SpanData>::const_iterator
+GetSpanByName(
+    const std::vector<::opencensus::trace::exporter::SpanData>& recorded_spans,
+    absl::string_view name) {
+  return std::find_if(
+      recorded_spans.begin(), recorded_spans.end(),
+      [name](auto const& span_data) { return span_data.name() == name; });
+}
+
 TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
@@ -715,27 +724,83 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
-  auto GetSpanByName = [&recorded_spans](absl::string_view name) {
-    return std::find_if(
-        recorded_spans.begin(), recorded_spans.end(),
-        [name](auto const& span_data) { return span_data.name() == name; });
-  };
   // We never ended the two spans created in the scope above, so we don't
   // expect them to be exported.
   ASSERT_EQ(3, recorded_spans.size());
   auto sent_span_data =
-      GetSpanByName(absl::StrCat("Sent.", client_method_name_));
+      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
-  auto attempt_span_data =
-      GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
+  auto attempt_span_data = GetSpanByName(
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_NE(attempt_span_data, recorded_spans.end());
   EXPECT_EQ(sent_span_data->context().span_id(),
             attempt_span_data->parent_span_id());
   auto recv_span_data =
-      GetSpanByName(absl::StrCat("Recv.", server_method_name_));
+      GetSpanByName(recorded_spans, absl::StrCat("Recv.", server_method_name_));
   ASSERT_NE(recv_span_data, recorded_spans.end());
   EXPECT_EQ(attempt_span_data->context().span_id(),
             recv_span_data->parent_span_id());
+}
+
+bool IsAnnotationPresent(
+    std::vector<opencensus::trace::exporter::SpanData>::const_iterator span,
+    absl::string_view annotation) {
+  for (const auto& event : span->annotations().events()) {
+    if (event.event().description() == annotation) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Tests that the trace annotations for when a call is removed from pending
+// resolver result queue, and for when a call is removed from pending lb pick
+// queue, are recorded.
+TEST_F(StatsPluginEnd2EndTest,
+       TestRemovePendingResolverResultAndPendingLbPickQueueAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+    ResetStub(channel);
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // Check presence of trace annotation for removal from channel's pending
+  // resolver result queue.
+  auto sent_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  ASSERT_NE(sent_span_data, recorded_spans.end());
+  EXPECT_TRUE(
+      IsAnnotationPresent(sent_span_data, "Delayed name resolution complete."));
+  // Check presence of trace annotation for removal from channel's pending
+  // lb pick queue.
+  auto attempt_span_data = GetSpanByName(
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Delayed LB pick complete."));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
@@ -770,21 +835,15 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
-  auto GetSpanByName = [&recorded_spans](absl::string_view name) {
-    return std::find_if(
-        recorded_spans.begin(), recorded_spans.end(),
-        [name](auto const& span_data) { return span_data.name() == name; });
-  };
-
   // The size might be 0 or 1, depending on whether the server-side ends up
   // getting sampled or not.
   ASSERT_LE(recorded_spans.size(), 1);
   // Make sure that the client-side traces are not collected.
   auto sent_span_data =
-      GetSpanByName(absl::StrCat("Sent.", client_method_name_));
+      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
   ASSERT_EQ(sent_span_data, recorded_spans.end());
-  auto attempt_span_data =
-      GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
+  auto attempt_span_data = GetSpanByName(
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_EQ(attempt_span_data, recorded_spans.end());
 }
 
