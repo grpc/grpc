@@ -103,13 +103,15 @@ struct grpc_tcp_server {
    grpc_tcp_server. */
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
+                                           grpc_tcp_server_cb on_accept_cb,
+                                           void* on_accept_cb_arg,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
-  s->on_accept_cb = NULL;
-  s->on_accept_cb_arg = NULL;
+  s->on_accept_cb = on_accept_cb;
+  s->on_accept_cb_arg = on_accept_cb_arg;
   s->head = NULL;
   s->tail = NULL;
   s->shutdown_starting.head = NULL;
@@ -522,16 +524,12 @@ done:
 }
 
 static void tcp_server_start(grpc_tcp_server* s,
-                             const std::vector<grpc_pollset*>* /*pollsets*/,
-                             grpc_tcp_server_cb on_accept_cb,
-                             void* on_accept_cb_arg) {
+                             const std::vector<grpc_pollset*>* /*pollsets*/) {
   grpc_tcp_listener* sp;
   GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->on_accept_cb);
+  GPR_ASSERT(s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
-  s->on_accept_cb = on_accept_cb;
-  s->on_accept_cb_arg = on_accept_cb_arg;
   for (sp = s->head; sp; sp = sp->next) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
     s->active_ports++;
