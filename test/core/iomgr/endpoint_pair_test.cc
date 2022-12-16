@@ -146,7 +146,7 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
 #endif
   f.client_ep = p.client;
   f.server_ep = p.server;
-  grpc_endpoint_add_to_pollset(f.client_gep, g_pollset);
+  grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
 
   return f;

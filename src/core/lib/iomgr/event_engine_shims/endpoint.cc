@@ -89,7 +89,7 @@ class EventEngineEndpointWrapper {
         return false;
       }
       if (shutdown_ref_.compare_exchange_strong(curr, curr + 1,
-                                                std::memory_order_acquire,
+                                                std::memory_order_acq_rel,
                                                 std::memory_order_relaxed)) {
         return true;
       }
@@ -120,7 +120,7 @@ class EventEngineEndpointWrapper {
         return;
       }
       if (shutdown_ref_.compare_exchange_strong(curr, curr | kShutdownBit,
-                                                std::memory_order_acquire,
+                                                std::memory_order_acq_rel,
                                                 std::memory_order_relaxed)) {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
@@ -300,9 +300,8 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
     eeep_->peer_address = *peer_addr;
   }
 #ifdef GRPC_POSIX_SOCKET_TCP
-  fd_ =
-      reinterpret_cast<PosixEngine::PosixEventEngineEndpoint*>(endpoint_.get())
-          ->GetWrappedFd();
+  fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+            ->GetWrappedFd();
 #else   // GRPC_POSIX_SOCKET_TCP
   fd_ = -1;
 #endif  // GRPC_POSIX_SOCKET_TCP

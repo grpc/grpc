@@ -33,7 +33,7 @@ namespace experimental {
 
 /// This defines an interface that posix specific event engines endpoints
 /// may implement to support additional file descriptor related functionality.
-class PosixEndpointFdSupport {
+class PosixEndpointWithFdSupport : public EventEngine::Endpoint {
  public:
   /// Returns the file descriptor associated with the posix endpoint.
   virtual int GetWrappedFd() = 0;
