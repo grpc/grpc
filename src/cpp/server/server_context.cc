@@ -61,8 +61,6 @@
 
 namespace grpc {
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
-
 // CompletionOp
 
 class ServerContextBase::CompletionOp final
@@ -259,9 +257,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 // ServerContextBase body
 
 ServerContextBase::ServerContextBase()
-    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
-  g_gli_initializer.summon();
-}
+    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
                                      grpc_metadata_array* arr)
