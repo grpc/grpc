@@ -19,6 +19,16 @@
 /* FIXME: "posix" files shouldn't be depending on _GNU_SOURCE */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include <memory>
+
+#include "grpc/byte_buffer.h"
+#include "grpc/event_engine/event_engine.h"
+#include "grpc/event_engine/memory_allocator.h"
+#include "grpc/event_engine/slice_buffer.h"
+#include "grpc/slice_buffer.h"
+#include <grpc/grpc.h>
+
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/experiments/experiments.h"
 #endif
 
@@ -67,6 +77,10 @@
 static std::atomic<int64_t> num_dropped_connections{0};
 
 using ::grpc_event_engine::experimental::EndpointConfig;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::MemoryAllocator;
+using ::grpc_event_engine::experimental::PosixEventEngineWithFdSupport;
+using ::grpc_event_engine::experimental::SliceBuffer;
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
@@ -103,6 +117,37 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   GPR_ASSERT(s->on_accept_cb);
   s->memory_quota = s->options.resource_quota->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
+  new (&s->listener_fd_map) absl::flat_hash_map<int, std::tuple<int, int>>();
+  PosixEventEngineWithFdSupport::PosixAcceptCallback accept_cb =
+      [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
+          bool is_external, MemoryAllocator allocator,
+          SliceBuffer* pending_data) {
+        grpc_core::ApplicationCallbackExecCtx app_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        grpc_tcp_server_acceptor* acceptor =
+            static_cast<grpc_tcp_server_acceptor*>(
+                gpr_malloc(sizeof(*acceptor)));
+        acceptor->from_server = s;
+        acceptor->port_index = -1;
+        acceptor->fd_index = -1;
+        if (!is_external) {
+          auto it = s->listener_fd_map.find(listener_fd);
+          if (it != s->listener_fd_map.end()) {
+            acceptor->port_index = std::get<0>(it->second);
+            acceptor->fd_index = std::get<1>(it->second);
+          }
+        }
+        acceptor->external_connection = is_external;
+        acceptor->listener_fd = listener_fd;
+        grpc_byte_buffer* buf = nullptr;
+        if (pending_data != nullptr) {
+          buf = grpc_raw_byte_buffer_create(nullptr, 0);
+          grpc_slice_buffer_swap(&buf->data.raw.slice_buffer,
+                                 pending_data->c_slice_buffer());
+          pending_data->Clear();
+        }
+        acceptor->pending_data = buf;
+      };
   *server = s;
   return absl::OkStatus();
 }

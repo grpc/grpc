@@ -23,6 +23,8 @@
 
 #include <memory>
 
+#include "absl/container/flat_hash_map.h"
+
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -103,6 +105,7 @@ struct grpc_tcp_server {
   grpc_core::MemoryQuotaRefPtr memory_quota;
 
   /* used when event engine based servers are enabled */
+  absl::flat_hash_map<int, std::tuple<int, int>> listener_fd_map;
   std::unique_ptr<grpc_event_engine::experimental::PosixListenerWithFdSupport>
       ee_listener = nullptr;
 };
