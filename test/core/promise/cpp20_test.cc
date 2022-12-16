@@ -31,14 +31,15 @@ class Async {
  public:
   struct promise_type {
     using Handle = std::coroutine_handle<promise_type>;
-    std::optional<T> value;
-    Async<T> get_return_object() {
-      return Async<T>{Handle::from_promise(*this)};
-    }
+    Poll<T>* returned_value;
+
+    Async<T> get_return_object() { return Async<T>{my_handle()}; }
     std::suspend_always initial_suspend() noexcept { return {}; }
     std::suspend_always final_suspend() noexcept { return {}; }
     void unhandled_exception() {}
-    void return_value(T value) { value = std::move(value); }
+    void return_value(T value) { *returned_value = std::move(value); }
+
+    Handle my_handle() { return Handle::from_promise(*this); }
   };
 
   explicit Async(typename promise_type::Handle coroutine)
@@ -58,12 +59,11 @@ class Async {
   }
 
   Poll<T> operator()() {
+    Poll<T> returned = Pending{};
+    coroutine_.promise().returned_value = &returned;
     coroutine_.resume();
-    if (coroutine_.done()) {
-      return std::move(*coroutine_.promise().value);
-    } else {
-      return Pending{};
-    }
+    coroutine_.promise().returned_value = nullptr;
+    return returned;
   }
 
  private:
