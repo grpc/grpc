@@ -2,20 +2,20 @@
     "Files": {
         "@protos/file.proto": {
             "--csharp_out": [
-                "${TEMP}grpctoolstest/${TESTID}/obj/Debug/netstandard2.0/@protos"
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/@protos"
             ],
             "--plugin": [
                 "protoc-gen-grpc=dummy-plugin-not-used"
             ],
             "--grpc_out": [
-                "${TEMP}grpctoolstest/${TESTID}/obj/Debug/netstandard2.0/@protos"
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/@protos"
             ],
             "--proto_path": [
                 "../../../Grpc.Tools/build/native/include",
                 "."
             ],
             "--dependency_out": [
-                "REGEX:${TEMP}grpctoolstest/${TESTID}/obj/Debug/netstandard2.0/.*_file.protodep"
+                "REGEX:${TEST_OUT_DIR}/obj/Debug/netstandard2.0/.*_file.protodep"
             ],
             "--error_format": [
                 "msvs"
