@@ -68,8 +68,32 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
   WeightedRoundRobinTest() : lb_policy_(MakeLbPolicy("weighted_round_robin")) {}
 
+  static BackendMetricData MakeBackendMetricData(double qps,
+                                                 double cpu_utilization) {
+    BackendMetricData backend_metric_data;
+    backend_metric_data.qps = qps;
+    backend_metric_data.cpu_utilization = cpu_utilization;
+    return backend_metric_data;
+  }
+
+  bool PicksAreWeightedRoundRobin(
+      std::map<absl::string_view, size_t> expected,
+      absl::Span<const absl::string_view> actual) {
+    std::map<absl::string_view, size_t> actual;
+    for (auto address : actual) {
+      ++actual.emplace(address, 0).first->second;
+    }
+    EXPECT_EQ(expected, actual);
+    return expected == actual;
+  }
+
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
+
+// Test cases:
+// - addr 0: qps=2 cpu_util=0.5 => weight=4
+// - addr 1: qps=3 cpu_util=0.5 => weight=6
+// - addr 2: qps=1 cpu_util=0.5 => weight=2
 
 TEST_F(WeightedRoundRobinTest, DevolvesToRoundRobinWithoutWeights) {
   // Send address list to LB policy.

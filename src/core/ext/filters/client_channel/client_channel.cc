@@ -2943,6 +2943,7 @@ void ClientChannel::LoadBalancedCall::RecordCallCompletion(
     Metadata trailing_metadata(recv_trailing_metadata_);
     BackendMetricAccessor backend_metric_accessor(this);
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+        "",  // FIXME: use peer_string_
         status, &trailing_metadata, &backend_metric_accessor};
     lb_subchannel_call_tracker_->Finish(args);
     lb_subchannel_call_tracker_.reset();

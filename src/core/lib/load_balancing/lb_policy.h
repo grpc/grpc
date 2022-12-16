@@ -176,6 +176,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// implementation does not take ownership, so any data that needs to be
     /// used after returning must be copied.
     struct FinishArgs {
+      absl::string_view peer_address;
       absl::Status status;
       MetadataInterface* trailing_metadata;
       BackendMetricAccessor* backend_metric_accessor;
