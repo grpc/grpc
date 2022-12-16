@@ -271,7 +271,7 @@ class ConnectedChannelStream : public Orphanable {
     {
       MutexLock lock(mu());
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sDropStream: %s",
+        gpr_log(GPR_INFO, "%s[connected] DropStream: %s",
                 Activity::current()->DebugTag().c_str(),
                 ActiveOpsString().c_str());
       }
@@ -354,7 +354,7 @@ class ConnectedChannelStream : public Orphanable {
           batch_payload()->send_message.flags = (*message_to_send_)->flags();
         } else {
           if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%sPollConnectedChannel: half close",
+            gpr_log(GPR_INFO, "%s[connected] PollConnectedChannel: half close",
                     Activity::current()->DebugTag().c_str());
           }
           GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
@@ -386,7 +386,8 @@ class ConnectedChannelStream : public Orphanable {
         if (pending->payload.has_value()) {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO,
-                    "%sPollRecvMessage: received payload of %" PRIdPTR " bytes",
+                    "%s[connected] PollRecvMessage: received payload of "
+                    "%" PRIdPTR " bytes",
                     recv_message_waker_.ActivityDebugTag().c_str(),
                     pending->payload->Length());
           }
@@ -395,7 +396,8 @@ class ConnectedChannelStream : public Orphanable {
                   std::move(*pending->payload), pending->flags));
         } else {
           if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%sPollRecvMessage: received no payload",
+            gpr_log(GPR_INFO,
+                    "%s[connected] PollRecvMessage: received no payload",
                     recv_message_waker_.ActivityDebugTag().c_str());
           }
           recv_message_state_ = Closed{};
@@ -405,7 +407,7 @@ class ConnectedChannelStream : public Orphanable {
     }
     if (absl::holds_alternative<Idle>(recv_message_state_)) {
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sPollRecvMessage: requesting message",
+        gpr_log(GPR_INFO, "%s[connected] PollRecvMessage: requesting message",
                 Activity::current()->DebugTag().c_str());
       }
       PushRecvMessage();
@@ -418,14 +420,16 @@ class ConnectedChannelStream : public Orphanable {
           if (!finished_) {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
-                      "%sPollRecvMessage: pushed message; requesting next",
+                      "%s[connected] PollRecvMessage: pushed message; "
+                      "requesting next",
                       Activity::current()->DebugTag().c_str());
             }
             PushRecvMessage();
           } else {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
-                      "%sPollRecvMessage: pushed message and finished; "
+                      "%s[connected] PollRecvMessage: pushed message "
+                      "and finished; "
                       "marking closed",
                       Activity::current()->DebugTag().c_str());
             }
@@ -435,7 +439,8 @@ class ConnectedChannelStream : public Orphanable {
         } else {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO,
-                    "%sPollRecvMessage: failed to push message; marking "
+                    "%s[connected] PollRecvMessage: failed to push "
+                    "message; marking "
                     "closed",
                     Activity::current()->DebugTag().c_str());
           }
@@ -556,18 +561,21 @@ class ConnectedChannelStream : public Orphanable {
       MutexLock lock(mu());
       if (error != absl::OkStatus()) {
         if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
+          gpr_log(GPR_INFO, "%s[connected] RecvMessageBatchDone: error=%s",
                   recv_message_waker_.ActivityDebugTag().c_str(),
                   StatusToString(error).c_str());
         }
       } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
         if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: already closed, ignoring",
+          gpr_log(GPR_INFO,
+                  "%s[connected] RecvMessageBatchDone: already closed, "
+                  "ignoring",
                   recv_message_waker_.ActivityDebugTag().c_str());
         }
       } else {
         if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received message",
+          gpr_log(GPR_INFO,
+                  "%s[connected] RecvMessageBatchDone: received message",
                   recv_message_waker_.ActivityDebugTag().c_str());
         }
         auto pending =
@@ -655,7 +663,7 @@ class ClientStream : public ConnectedChannelStream {
         server_to_client_messages_(call_args.server_to_client_messages),
         client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
     if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "%sInitImpl: intitial_metadata=%s",
+      gpr_log(GPR_INFO, "%s[connected] InitImpl: intitial_metadata=%s",
               Activity::current()->DebugTag().c_str(),
               client_initial_metadata_->DebugString().c_str());
     }
@@ -666,14 +674,15 @@ class ClientStream : public ConnectedChannelStream {
     GPR_ASSERT(!finished());
 
     if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "%sPollConnectedChannel: %s",
+      gpr_log(GPR_INFO, "%s[connected] PollConnectedChannel: %s",
               Activity::current()->DebugTag().c_str(),
               ActiveOpsString().c_str());
     }
 
     if (!std::exchange(requested_metadata_, true)) {
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting metadata",
+        gpr_log(GPR_INFO,
+                "%s[connected] PollConnectedChannel: requesting metadata",
                 Activity::current()->DebugTag().c_str());
       }
       SetStream(static_cast<grpc_stream*>(
@@ -728,7 +737,8 @@ class ClientStream : public ConnectedChannelStream {
         std::exchange(queued_trailing_metadata_, false)) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%sPollConnectedChannel: finished request, returning: {%s}; "
+                "%s[connected] PollConnectedChannel: finished request, "
+                "returning: {%s}; "
                 "active_ops: %s",
                 Activity::current()->DebugTag().c_str(),
                 server_trailing_metadata_->DebugString().c_str(),
@@ -758,7 +768,8 @@ class ClientStream : public ConnectedChannelStream {
       queued_trailing_metadata_ = true;
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_DEBUG,
-                "%sRecvTrailingMetadataReady: queued_trailing_metadata_ "
+                "%s[connected] RecvTrailingMetadataReady: "
+                "queued_trailing_metadata_ "
                 "set to true; active_ops: %s",
                 trailing_metadata_waker_.ActivityDebugTag().c_str(),
                 ActiveOpsString().c_str());
@@ -789,6 +800,17 @@ class ClientStream : public ConnectedChannelStream {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     std::vector<std::string> ops;
     if (finished()) ops.push_back("FINISHED");
+    // Outstanding Operations on Transport
+    std::vector<std::string> waiting;
+    if (initial_metadata_waker_ != Waker()) {
+      waiting.push_back("initial_metadata");
+    }
+    if (trailing_metadata_waker_ != Waker()) {
+      waiting.push_back("trailing_metadata");
+    }
+    if (!waiting.empty()) {
+      ops.push_back(absl::StrCat("waiting:", absl::StrJoin(waiting, ",")));
+    }
     // Results from transport
     std::vector<std::string> queued;
     if (server_initial_metadata_state_ ==
@@ -900,7 +922,7 @@ class ServerStream final : public ConnectedChannelStream {
     absl::MutexLock lock(mu());
 
     if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "%sPollConnectedChannel: %s",
+      gpr_log(GPR_INFO, "%s[connected] PollConnectedChannel: %s",
               Activity::current()->DebugTag().c_str(),
               ActiveOpsString().c_str());
     }
@@ -908,7 +930,8 @@ class ServerStream final : public ConnectedChannelStream {
     if (server_initial_metadata_ != nullptr) {
       auto r = server_initial_metadata_->Wait()();
       if (ServerMetadata*** md = absl::get_if<ServerMetadata**>(&r)) {
-        gpr_log(GPR_INFO, "ConnectedChannel: got initial metadata %s",
+        gpr_log(GPR_INFO, "%s[connected] got initial metadata %s",
+                Activity::current()->DebugTag().c_str(),
                 (**md)->DebugString().c_str());
         server_initial_metadata_ = nullptr;
         memset(&send_initial_metadata_, 0, sizeof(send_initial_metadata_));

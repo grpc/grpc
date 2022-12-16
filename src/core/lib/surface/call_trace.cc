@@ -54,22 +54,22 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                     static_cast<const DerivedFilter*>(elem->filter)->filter;
                 gpr_log(
                     GPR_DEBUG,
-                    "%sCreateCallPromise[%s]: client_initial_metadata=%s",
+                    "%s[%s] CreateCallPromise: client_initial_metadata=%s",
                     Activity::current()->DebugTag().c_str(),
                     source_filter->name,
                     call_args.client_initial_metadata->DebugString().c_str());
                 return [source_filter, child = next_promise_factory(
                                            std::move(call_args))]() mutable {
-                  gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: begin",
+                  gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: begin",
                           Activity::current()->DebugTag().c_str(),
                           source_filter->name);
                   auto r = child();
                   if (auto* p = absl::get_if<ServerMetadataHandle>(&r)) {
-                    gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: done: %s",
+                    gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: done: %s",
                             Activity::current()->DebugTag().c_str(),
                             source_filter->name, (*p)->DebugString().c_str());
                   } else {
-                    gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: <<pending>>",
+                    gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: <<pending>>",
                             Activity::current()->DebugTag().c_str(),
                             source_filter->name);
                   }
