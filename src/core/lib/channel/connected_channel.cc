@@ -756,6 +756,13 @@ class ClientStream : public ConnectedChannelStream {
     {
       MutexLock lock(mu());
       queued_trailing_metadata_ = true;
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "%sRecvTrailingMetadataReady: queued_trailing_metadata_ "
+                "set to true; active_ops: %s",
+                trailing_metadata_waker_.ActivityDebugTag().c_str(),
+                ActiveOpsString().c_str());
+      }
       trailing_metadata_waker_.Wakeup();
     }
     Unref("trailing_metadata_ready");
