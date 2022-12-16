@@ -37,8 +37,6 @@
 namespace grpc {
 namespace experimental {
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
-
 TlsCustomVerificationCheckRequest::TlsCustomVerificationCheckRequest(
     grpc_tls_custom_verification_check_request* request)
     : c_request_(request) {
@@ -106,9 +104,7 @@ std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::ip_names()
 }
 
 CertificateVerifier::CertificateVerifier(grpc_tls_certificate_verifier* v)
-    : verifier_(v) {
-  g_gli_initializer.summon();
-}
+    : verifier_(v) {}
 
 CertificateVerifier::~CertificateVerifier() {
   grpc_tls_certificate_verifier_release(verifier_);
