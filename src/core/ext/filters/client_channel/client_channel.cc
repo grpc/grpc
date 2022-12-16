@@ -2148,8 +2148,7 @@ void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
   auto* call_tracer =
       static_cast<CallTracer*>(call_context_[GRPC_CONTEXT_CALL_TRACER].value);
   if (call_tracer != nullptr) {
-    call_tracer->RecordAnnotation(
-        "Removed call from channel's pending resolver result queue.");
+    call_tracer->RecordAnnotation("Delayed name resolution complete.");
   }
 }
 
@@ -3040,8 +3039,7 @@ void ClientChannel::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
   lb_call_canceller_ = nullptr;
   // Add trace annotation
   if (call_attempt_tracer_ != nullptr) {
-    call_attempt_tracer_->RecordAnnotation(
-        "Removed call attempt from channel's pending LB pick queue.");
+    call_attempt_tracer_->RecordAnnotation("Delayed LB pick complete.");
   }
 }
 

@@ -792,17 +792,15 @@ TEST_F(StatsPluginEnd2EndTest,
   auto sent_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
-  EXPECT_TRUE(IsAnnotationPresent(
-      sent_span_data,
-      "Removed call from channel's pending resolver result queue."));
+  EXPECT_TRUE(
+      IsAnnotationPresent(sent_span_data, "Delayed name resolution complete."));
   // Check presence of trace annotation for removal from channel's pending
   // lb pick queue.
   auto attempt_span_data = GetSpanByName(
       recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_NE(attempt_span_data, recorded_spans.end());
-  EXPECT_TRUE(IsAnnotationPresent(
-      attempt_span_data,
-      "Removed call attempt from channel's pending LB pick queue."));
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Delayed LB pick complete."));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
