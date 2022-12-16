@@ -742,7 +742,22 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
             recv_span_data->parent_span_id());
 }
 
-TEST_F(StatsPluginEnd2EndTest, TestRemovePendingLbPickQueueAnnotation) {
+bool IsAnnotationPresent(
+    std::vector<opencensus::trace::exporter::SpanData>::const_iterator span,
+    absl::string_view annotation) {
+  for (const auto& event : span->annotations().events()) {
+    if (event.event().description() == annotation) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Tests that the trace annotations for when a call is removed from pending
+// resolver result queue, and for when a call is removed from pending lb pick
+// queue, are recorded.
+TEST_F(StatsPluginEnd2EndTest,
+       TestRemovePendingResolverResultAndPendingLbPickQueueAnnotations) {
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
     auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
@@ -772,17 +787,22 @@ TEST_F(StatsPluginEnd2EndTest, TestRemovePendingLbPickQueueAnnotation) {
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // Check presence of trace annotation for removal from channel's pending
+  // resolver result queue.
+  auto sent_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  ASSERT_NE(sent_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(
+      sent_span_data,
+      "Removed call from channel's pending resolver result queue."));
+  // Check presence of trace annotation for removal from channel's pending
+  // lb pick queue.
   auto attempt_span_data = GetSpanByName(
       recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_NE(attempt_span_data, recorded_spans.end());
-  bool found_annotation = false;
-  for (const auto& event : attempt_span_data->annotations().events()) {
-    if (event.event().description() ==
-        "Removed call attempt from channel's pending LB pick queue.") {
-      found_annotation = true;
-    }
-  }
-  EXPECT_TRUE(found_annotation);
+  EXPECT_TRUE(IsAnnotationPresent(
+      attempt_span_data,
+      "Removed call attempt from channel's pending LB pick queue."));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
