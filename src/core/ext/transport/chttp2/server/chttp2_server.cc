@@ -680,7 +680,7 @@ grpc_error_handle Chttp2ServerListener::Create(
     error = grpc_tcp_server_create(
         &listener->tcp_server_shutdown_complete_,
         grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-        &listener->tcp_server_);
+        OnAccept, listener, &listener->tcp_server_);
     if (!error.ok()) return error;
     if (server->config_fetcher() != nullptr) {
       listener->resolved_address_ = *addr;
@@ -727,7 +727,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-      &listener->tcp_server_);
+      OnAccept, listener, &listener->tcp_server_);
   if (!error.ok()) {
     delete listener;
     return error;
@@ -780,7 +780,7 @@ void Chttp2ServerListener::Start(
 }
 
 void Chttp2ServerListener::StartListening() {
-  grpc_tcp_server_start(tcp_server_, &server_->pollsets(), OnAccept, this);
+  grpc_tcp_server_start(tcp_server_, &server_->pollsets());
 }
 
 void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
