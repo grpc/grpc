@@ -68,6 +68,7 @@ void RegisterOpenCensusViewsForGcpObservability() {
   ServerCompletedRpcs().RegisterForExport();
   ServerSentCompressedMessageBytesPerRpc().RegisterForExport();
   ServerReceivedCompressedMessageBytesPerRpc().RegisterForExport();
+  ServerServerLatency().RegisterForExport();
 }
 
 }  // namespace

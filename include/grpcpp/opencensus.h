@@ -87,6 +87,7 @@ const ::opencensus::stats::ViewDescriptor&
 ServerSentCompressedMessageBytesPerRpc();
 const ::opencensus::stats::ViewDescriptor&
 ServerReceivedCompressedMessageBytesPerRpc();
+const ::opencensus::stats::ViewDescriptor& ServerServerLatency();
 
 const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientSentBytesPerRpcCumulative();
