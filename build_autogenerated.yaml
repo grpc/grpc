@@ -7660,14 +7660,14 @@ targets:
   headers:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
-  - test/core/event_engine/test_utils.cc
   deps:
   - grpc_test_util
   platforms:
@@ -9325,7 +9325,6 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
-  - test/core/event_engine/test_utils.h
   src:
   - test/core/event_engine/test_suite/client_test.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
@@ -9333,7 +9332,6 @@ targets:
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
   - test/core/event_engine/test_suite/server_test.cc
-  - test/core/event_engine/test_utils.cc
   deps:
   - grpc_test_util
   platforms:
@@ -9709,14 +9707,12 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
-  - test/core/event_engine/test_utils.h
   src:
   - test/core/event_engine/posix/posix_endpoint_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
-  - test/core/event_engine/test_utils.cc
   deps:
   - grpc_test_util
   platforms:
@@ -9744,13 +9740,11 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
-  - test/core/event_engine/test_utils.h
   src:
   - test/core/event_engine/posix/posix_event_engine_connect_test.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
-  - test/core/event_engine/test_utils.cc
   deps:
   - grpc_test_util
   platforms:
@@ -9765,7 +9759,6 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
-  - test/core/event_engine/test_utils.h
   src:
   - test/core/event_engine/test_suite/client_test.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
@@ -9774,7 +9767,6 @@ targets:
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
   - test/core/event_engine/test_suite/server_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
-  - test/core/event_engine/test_utils.cc
   deps:
   - grpc_test_util
   platforms:
