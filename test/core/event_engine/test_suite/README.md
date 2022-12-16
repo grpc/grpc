@@ -1,7 +1,5 @@
 A reusable test suite for EventEngine implementations.
 
-# Customizing tests for your EventEngine implementation
-
 To exercise a custom EventEngine, create a new bazel test target that links
 against the `//test/core/event_engine/test_suite:complete` library, and provide
 a testing `main` function that sets a custom EventEngine factory.
@@ -39,33 +37,3 @@ you could depend on any subset of the following:
 * `//test/core/event_engine/test_suite:dns`
 * `//test/core/event_engine/test_suite:client`
 * `//test/core/event_engine/test_suite:server`
-
-# Useful testing tools
-
-The suite also provides [tools](tools/) that let you exercise your custom EventEngine. 
-For example, the `echo_client` library allows you to prop up a TCP client based on your EventEngine::Connect and ::Endpoint implementations, and communicate with a remote TCP listener of your choosing.
-
-You'll need to provide the following code
-
-```
-# tools/BUILD:
-grpc_cc_binary(
-    name = "my_event_engine_echo_client",
-    srcs = ["my_event_engine_factory.cc"],
-    deps = ["echo_client"],
-)
-
-# tools/my_event_engine_factory.cc: an implementation of CustomEventEngineFactory
-absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
-CustomEventEngineFactory() {
-  return []() {
-    return std::make_unique<
-        grpc_event_engine::experimental::WindowsEventEngine>();
-  };
-}
-```
-
-To exercise the echo client, run `bazel run //test/core/event_engine/test_suite/tools:my_event_engine_echo_client`, and in a separate terminal, open something like netcat to run a TCP listener and communicate with the client.
-
-Each tool is documented more fully in its source file.

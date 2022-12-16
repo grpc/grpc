@@ -44,7 +44,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
-#include "test/core/event_engine/test_utils.h"
 #include "test/core/util/port.h"
 
 class EventEngineClientTest : public EventEngineTest {};
@@ -59,7 +58,6 @@ using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
-using ::grpc_event_engine::experimental::NotifyOnDelete;
 using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
@@ -79,10 +77,10 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   // listener.
   ChannelArgsEndpointConfig config;
   test_ee->Connect(
-      [_ = NotifyOnDelete(&signal)](
-          absl::StatusOr<std::unique_ptr<Endpoint>> status) {
+      [&signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
         // Connect should fail.
-        EXPECT_FALSE(status.ok());
+        ASSERT_FALSE(status.ok());
+        signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 24h);

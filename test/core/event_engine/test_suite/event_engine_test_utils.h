@@ -27,6 +27,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -37,6 +38,15 @@ using EventEngineFactory = std::function<
 
 namespace grpc_event_engine {
 namespace experimental {
+
+void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data);
+
+std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
+
+EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str);
+
+// Returns a random message with bounded length.
+std::string GetNextSendMessage();
 
 // Waits until the use_count of the event engine shared_ptr has reached 1
 // and returns.
