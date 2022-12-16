@@ -2144,6 +2144,13 @@ void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
   queued_pending_resolver_result_ = false;
   // Lame the call combiner canceller.
   resolver_call_canceller_ = nullptr;
+  // Add trace annotation
+  auto* call_tracer =
+      static_cast<CallTracer*>(call_context_[GRPC_CONTEXT_CALL_TRACER].value);
+  if (call_tracer != nullptr) {
+    call_tracer->RecordAnnotation(
+        "Removed call from channel's pending resolver result queue.");
+  }
 }
 
 void ClientChannel::CallData::MaybeAddCallToResolverQueuedCallsLocked(
@@ -3031,6 +3038,11 @@ void ClientChannel::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
   queued_pending_lb_pick_ = false;
   // Lame the call combiner canceller.
   lb_call_canceller_ = nullptr;
+  // Add trace annotation
+  if (call_attempt_tracer_ != nullptr) {
+    call_attempt_tracer_->RecordAnnotation(
+        "Removed call attempt from channel's pending LB pick queue.");
+  }
 }
 
 void ClientChannel::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {

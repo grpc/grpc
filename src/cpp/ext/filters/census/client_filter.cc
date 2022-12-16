@@ -248,6 +248,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
     absl::string_view annotation) {
+  // If tracing is disabled, the following will be a no-op.
   context_.AddSpanAnnotation(annotation, {});
 }
 
