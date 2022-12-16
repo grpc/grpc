@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:10
 
 # gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config && apt-get clean
