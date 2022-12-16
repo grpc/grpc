@@ -14,9 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS
-
 #include "absl/functional/any_invocable.h"
+
+#ifdef GPR_WINDOWS
 
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 
@@ -28,4 +28,13 @@ CustomEventEngineFactory() {
         grpc_event_engine::experimental::WindowsEventEngine>();
   };
 }
+
+#else
+
+absl::AnyInvocable<
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+CustomEventEngineFactory() {
+  GPR_ASSERT(false && "This tool was not built for Windows.");
+}
+
 #endif
