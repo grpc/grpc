@@ -315,7 +315,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     absl::string_view GetAuthority() override { return "server.example.com"; }
 
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-      return grpc_event_engine::experimental::GetDefaultEventEngine().get();
+      return event_engine_.get();
     }
 
     void AddTraceEvent(TraceSeverity, absl::string_view) override {}
@@ -324,6 +324,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     std::shared_ptr<WorkSerializer> work_serializer_;
     Mutex mu_;
     std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine_ =
+            grpc_event_engine::experimental::GetDefaultEventEngine();
   };
 
   // A fake MetadataInterface implementation, for use in PickArgs.

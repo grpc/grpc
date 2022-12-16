@@ -410,9 +410,9 @@ WeightedRoundRobin::Picker::Timer::Timer(RefCountedPtr<Picker> picker)
                                                 std::memory_order_relaxed,
                                                 std::memory_order_relaxed)) {
           self->picker_->BuildScheduler();
-          // Restart timer.
-          self->picker_->timer_ =
-              MakeOrphanable<Timer>(std::move(self->picker_));
+          // Restart timer, reusing our ref to the picker.
+          auto* picker = self->picker_.get();
+          picker->timer_ = MakeOrphanable<Timer>(std::move(self->picker_));
         }
         // Release ref before ExecCtx goes out of scope.
         self.reset();
