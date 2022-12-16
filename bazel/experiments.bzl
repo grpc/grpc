@@ -21,6 +21,9 @@ EXPERIMENTS = {
         "event_engine_client_test": [
             "event_engine_client",
         ],
+        "event_engine_server_test": [
+            "event_engine_server",
+        ],
     },
     "off": {
         "core_end2end_test": [

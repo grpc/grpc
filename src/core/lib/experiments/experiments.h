@@ -46,6 +46,7 @@ inline bool IsPosixEventEngineEnablePollingEnabled() {
   return IsExperimentEnabled(11);
 }
 inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(12); }
+inline bool IsEventEngineServerEnabled() { return IsExperimentEnabled(13); }
 
 struct ExperimentMetadata {
   const char* name;
@@ -53,7 +54,7 @@ struct ExperimentMetadata {
   bool default_value;
 };
 
-constexpr const size_t kNumExperiments = 13;
+constexpr const size_t kNumExperiments = 14;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core

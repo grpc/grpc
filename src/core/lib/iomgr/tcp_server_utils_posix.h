@@ -21,6 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -98,6 +101,10 @@ struct grpc_tcp_server {
 
   /* used to create slice allocators for endpoints, owned */
   grpc_core::MemoryQuotaRefPtr memory_quota;
+
+  /* used when event engine based servers are enabled */
+  std::unique_ptr<grpc_event_engine::experimental::PosixListenerWithFdSupport>
+      ee_listener = nullptr;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the

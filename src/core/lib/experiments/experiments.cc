@@ -53,6 +53,8 @@ const char* const description_posix_event_engine_enable_polling =
     "If set, enables polling on the default posix event engine.";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
+const char* const description_event_engine_server =
+    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -80,6 +82,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"posix_event_engine_enable_polling",
      description_posix_event_engine_enable_polling, true},
     {"free_large_allocator", description_free_large_allocator, false},
+    {"event_engine_server", description_event_engine_server,
+     kDefaultForDebugOnly},
 };
 
 }  // namespace grpc_core

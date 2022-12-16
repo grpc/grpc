@@ -134,4 +134,11 @@
   expiry: 2023/04/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: event_engine_server
+  description:
+    Use EventEngine listeners instead of iomgr's grpc_tcp_server
+  default: debug
+  expiry: 2023/02/13
+  owner: vigneshbabu@google.com
+  test_tags: ["event_engine_server_test"]
 

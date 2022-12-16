@@ -19,6 +19,7 @@
 /* FIXME: "posix" files shouldn't be depending on _GNU_SOURCE */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include "src/core/lib/experiments/experiments.h"
 #endif
 
 #include <grpc/support/port_platform.h>
