@@ -559,7 +559,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
-std::unique_ptr<EventEngine::Endpoint>
+std::unique_ptr<PosixEndpointWithFdSupport>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
@@ -585,7 +585,7 @@ PosixEventEngine::CreateListener(
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-  PosixEventEngineFdSupport::PosixAcceptCallback posix_on_accept =
+  PosixEventEngineWithFdSupport::PosixAcceptCallback posix_on_accept =
       [on_accept_cb = std::move(on_accept)](
           int /*listener_fd*/, std::unique_ptr<EventEngine::Endpoint> ep,
           bool /*is_external*/, MemoryAllocator allocator,
@@ -602,9 +602,9 @@ PosixEventEngine::CreateListener(
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
-absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
+absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
 PosixEventEngine::CreatePosixListener(
-    PosixEventEngineFdSupport::PosixAcceptCallback on_accept,
+    PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
