@@ -56,19 +56,6 @@ namespace Grpc.Tools.Tests
 
         private const string MSBUILD_LOG_VERBOSITY = "diagnostic"; // "diagnostic" or "detailed"
 
-        // The tests create files in the TEMP directory.
-
-        // Whether or not to delete files created in the tests. When developing a test
-        // or diagnosing a problem it may be useful to disable deleting the files so
-        // that the output can be examined.
-        private readonly bool doCleanup = true;
-
-        // We try and delete old test output directories that may not have been deleted because
-        // the test terminated before the cleanup code ran. We only delete these directories
-        // if they are older than the age specified here. This prevents deleting directories
-        // still in use if tests are run an parallel.
-        private const int CLEANUP_DIR_AGE_MINUTES = 15;
-
         private string testId;
         private string fakeProtoc;
         private string grpcToolsBuildDir;
@@ -77,19 +64,6 @@ namespace Grpc.Tools.Tests
         private string testProjectDir;
         private string testOutBaseDir;
         private string testOutDir;
-        private string tempDir;
-
-        [OneTimeSetUp]
-        public void InitOnce()
-        {
-            SetUpCommonPaths();
-            if (doCleanup)
-            {
-                // Delete old test directories than may have been left around
-                // by a previous run.
-                CleanupOldResults(testOutBaseDir);
-            }
-        }
 
         [SetUp]
         public void InitTest()
@@ -101,26 +75,12 @@ namespace Grpc.Tools.Tests
             // the runtime of this class actually is.
             Assert.Ignore("Skipping test when NET45");
 #endif
-            testId = Guid.NewGuid().ToString();
-            Console.WriteLine($"TestID for test: {testId}");
-        }
-
-        [TearDown]
-        public void AfterTest()
-        {
-            if (doCleanup)
-            {
-                if (Directory.Exists(testOutDir))
-                {
-                    DeleteDirectoryWithRetry(testOutDir);
-                }
-            }
         }
 
         [Test]
         public void TestSingleProto()
         {
-            SetUpSpecificPaths("TestSingleProto");
+            SetUpForTest(nameof(TestSingleProto));
 
             var expectedFiles = new ExpectedFilesBuilder();
             expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs");
@@ -131,7 +91,7 @@ namespace Grpc.Tools.Tests
         [Test]
         public void TestMultipleProtos()
         {
-            SetUpSpecificPaths("TestMultipleProtos");
+            SetUpForTest(nameof(TestMultipleProtos));
 
             var expectedFiles = new ExpectedFilesBuilder();
             expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs")
@@ -144,7 +104,7 @@ namespace Grpc.Tools.Tests
         [Test]
         public void TestAtInPath()
         {
-            SetUpSpecificPaths("TestAtInPath");
+            SetUpForTest(nameof(TestAtInPath));
 
             var expectedFiles = new ExpectedFilesBuilder();
             expectedFiles.Add("@protos/file.proto", "File.cs", "FileGrpc.cs");
@@ -155,12 +115,7 @@ namespace Grpc.Tools.Tests
         [Test]
         public void TestProtoOutsideProject()
         {
-            SetUpSpecificPaths("TestProtoOutsideProject/project");
-
-            // The "out" directory is outside the project folder in this test case
-            var outDir = Path.GetFullPath(testOutDir + "/");
-            Console.WriteLine($"out = {outDir}");
-            CleanupOldResults(outDir);
+            SetUpForTest(nameof(TestProtoOutsideProject), "TestProtoOutsideProject/project");
 
             var expectedFiles = new ExpectedFilesBuilder();
             expectedFiles.Add("../api/greet.proto", "Greet.cs", "GreetGrpc.cs");
@@ -193,19 +148,29 @@ namespace Grpc.Tools.Tests
             // for debug/release builds etc).
             tasksAssembly = Path.Combine(assemblyDir, TASKS_ASSEMBLY_DLL);
 
-            // output directory
-            tempDir = Path.GetFullPath(System.IO.Path.GetTempPath());
-            testOutBaseDir = Path.Combine(tempDir, "grpctoolstest");
+            // put test ouptput directory outside of Grpc.Tools.Tests to avoid problems with
+            // repetited builds.
+            testOutBaseDir = Path.GetFullPath($"{assemblyDir}/../../../../test-out/grpc_tools_integration_tests");
         }
 
         /// <summary>
         /// Set up test specific paths
         /// </summary>
         /// <param name="testName">Name of the test</param>
-        private void SetUpSpecificPaths(string testName)
+        /// <param name="testPath">Optional path to the test project</param>
+        private void SetUpForTest(string testName, string testPath = null)
         {
+            if (testPath == null) {
+                testPath = testName;
+            }
+
+            SetUpCommonPaths();
+
+            testId = $"{testName}_run{Guid.NewGuid().ToString()}";
+            Console.WriteLine($"TestID for test: {testId}");
+
             // Paths for test data
-            testProjectDir = Path.Combine(testDataDir, testName);
+            testProjectDir = Path.Combine(testDataDir, testPath);
             testOutDir = Path.Combine(testOutBaseDir, testId);
         }
 
@@ -292,7 +257,7 @@ namespace Grpc.Tools.Tests
                 process.BeginOutputReadLine();
 
                 process.WaitForExit();
-                Assert.AreEqual(0, process.ExitCode);
+                Assert.AreEqual(0, process.ExitCode, "The dotnet/msbuild subprocess invocation exited with non-zero exitcode.");
             }
         }
 
@@ -322,9 +287,8 @@ namespace Grpc.Tools.Tests
                 // - IGNORE: - will not be compared but must exist
                 // - REGEX: - compare using a regular expression
                 // - anything else is an exact match
-                // Expected results can also have tokens that are replace before comparing:
-                // - ${TESTID} - the testID
-                // - ${TEMP} - the path of te temporary directory
+                // Expected results can also have tokens that are replaced before comparing:
+                // - ${TEST_OUT_DIR} - the test output directory
                 foreach (string argname in expectedArgs)
                 {
                     SortedSet<string> expectedValues = expected.GetArgumentValues(protofile, argname);
@@ -370,86 +334,7 @@ namespace Grpc.Tools.Tests
         private string ReplaceTokens(string original)
         {
             return original
-                .Replace("${TESTID}", testId)
-                .Replace("${TEMP}", tempDir);
-        }
-
-        /// <summary>
-        /// Delete directory with retry
-        /// </summary>
-        /// <remarks>
-        /// Sometimes on Windows if the file explorer is open then a directory
-        /// may not get completely deleted on one try.
-        /// </remarks>
-        /// <param name="path"></param>
-        public static void DeleteDirectoryWithRetry(string path)
-        {
-            try
-            {
-                Directory.Delete(path, true);
-            }
-            catch (IOException)
-            {
-                System.Threading.Thread.Sleep(200);
-                Directory.Delete(path, true);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                System.Threading.Thread.Sleep(200);
-                Directory.Delete(path, true);
-            }
-        }
-
-        /// <summary>
-        /// Get directories that match a UUID
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private  string[] SafeGetTestDirectories(string path)
-        {
-            try
-            {
-                // Matching directory names against a possible UUID format rather
-                // than getting all directories - this is to be safe so we don't
-                // accidently do a "rm *" if there is a coding error in the tests.
-                return Directory.GetDirectories(path, "*-*-*-*-*");
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine($"Unable to get test directories: {e}");
-                return new string[0];
-            }
-        }
-
-        /// <summary>
-        /// Delete old directories under the given directory.
-        /// The directory names must look like a UUID and must be older
-        /// that CLEANUP_DIR_AGE_MINUTES minutes.
-        /// </summary>
-        /// <param name="baseDir"></param>
-        private void CleanupOldResults(string baseDir)
-        {
-            if (Directory.Exists(baseDir))
-            {
-                DateTime newestTime = DateTime.Now.AddMinutes(-CLEANUP_DIR_AGE_MINUTES);
-
-                string[] dirs = SafeGetTestDirectories(baseDir);
-                foreach (string dir in dirs)
-                {
-                    try
-                    {
-                        DateTime creationTime = Directory.GetCreationTime(dir);
-                        if (creationTime < newestTime)
-                        {
-                            DeleteDirectoryWithRetry(dir);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"Unable to delete test directory: {dir}: {e}");
-                    }
-                }
-            }
+                .Replace("${TEST_OUT_DIR}", testOutDir);
         }
 
         /// <summary>
