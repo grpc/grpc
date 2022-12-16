@@ -521,6 +521,9 @@ class RlsLb : public LoadBalancingPolicy {
     void Shutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
    private:
+    // Shared logic for starting the cleanup timer
+    void StartCleanupTimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+
     void OnCleanupTimer();
 
     // Returns the entry size for a given key.
@@ -531,9 +534,6 @@ class RlsLb : public LoadBalancingPolicy {
     void MaybeShrinkSize(size_t bytes)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
-    // Shared logic for starting the cleanup timer
-    void StartCleanupTimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-
     RlsLb* lb_policy_;
 
     size_t size_limit_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
@@ -542,8 +542,7 @@ class RlsLb : public LoadBalancingPolicy {
     std::list<RequestKey> lru_list_ ABSL_GUARDED_BY(&RlsLb::mu_);
     std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
         map_ ABSL_GUARDED_BY(&RlsLb::mu_);
-    absl::optional<EventEngine::TaskHandle> cleanup_timer_handle_
-        ABSL_GUARDED_BY(&RlsLb::mu_);
+    absl::optional<EventEngine::TaskHandle> cleanup_timer_handle_;
   };
 
   // Channel for communicating with the RLS server.
