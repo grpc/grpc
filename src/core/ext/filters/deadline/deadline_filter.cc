@@ -23,7 +23,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -360,7 +361,16 @@ const grpc_channel_filter grpc_client_deadline_filter = {
 
 const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_server_start_transport_stream_op_batch,
-    nullptr,
+    [](grpc_channel_element*, grpc_core::CallArgs call_args,
+       grpc_core::NextPromiseFactory next_promise_factory) {
+      auto deadline = call_args.client_initial_metadata->get(
+          grpc_core::GrpcTimeoutMetadata());
+      if (deadline.has_value()) {
+        grpc_core::GetContext<grpc_core::CallContext>()->UpdateDeadline(
+            *deadline);
+      }
+      return next_promise_factory(std::move(call_args));
+    },
     grpc_channel_next_op,
     sizeof(server_call_data),
     deadline_init_call_elem,

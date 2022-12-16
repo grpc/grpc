@@ -31,7 +31,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -188,7 +188,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
         watchers_;
   };
 
-  class SubchannelEntry : public RefCounted<SubchannelEntry> {
+  class SubchannelEntry {
    public:
     void SetSubchannel(SubchannelWrapper* subchannel) {
       subchannel_ = subchannel;
@@ -202,7 +202,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelWrapper> GetSubchannel() {
       if (subchannel_ == nullptr) {
-        return RefCountedPtr<SubchannelWrapper>(nullptr);
+        return nullptr;
       }
       return subchannel_->Ref();
     }
@@ -243,8 +243,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
   absl::Mutex subchannel_map_mu_;
-  std::map<std::string, RefCountedPtr<SubchannelEntry>, std::less<>>
-      subchannel_map_ ABSL_GUARDED_BY(subchannel_map_mu_);
+  std::map<std::string, SubchannelEntry, std::less<>> subchannel_map_
+      ABSL_GUARDED_BY(subchannel_map_mu_);
 };
 
 //
@@ -280,9 +280,7 @@ XdsOverrideHostLb::PickOverridenHost(absl::string_view address) {
   if (it == subchannel_map_.end()) {
     return absl::nullopt;
   }
-  auto subchannel = it->second->GetSubchannel();
-  std::cout << __FILE__ ":" << __LINE__ << " " << this << " " << address << " "
-            << subchannel.get() << std::endl;
+  auto subchannel = it->second.GetSubchannel();
   if (subchannel == nullptr) {
     return absl::nullopt;
   }
@@ -452,9 +450,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
       ++it;
     }
   }
-  for (const auto& it : keys) {
-    if (subchannel_map_.find(it) == subchannel_map_.end()) {
-      subchannel_map_.emplace(it, MakeRefCounted<SubchannelEntry>());
+  for (const auto& key : keys) {
+    if (subchannel_map_.find(key) == subchannel_map_.end()) {
+      subchannel_map_.emplace(key, SubchannelEntry());
     }
   }
 }
@@ -462,22 +460,18 @@ void XdsOverrideHostLb::UpdateAddressMap(
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
     ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel) {
-  absl::optional<RefCountedPtr<SubchannelEntry>> maybe_entry;
   auto subchannel_key = grpc_sockaddr_to_string(&address.address(), false);
   absl::optional<std::string> key;
   if (subchannel_key.ok()) {
-    key = *subchannel_key;
+    key = std::move(*subchannel_key);
   }
-  std::cout << __FILE__ ":" << __LINE__ << " " << this << " " << *key << " "
-            << subchannel.get() << std::endl;
   auto wrapper =
       MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(), key);
-
   if (key.has_value()) {
     absl::MutexLock lock(&subchannel_map_mu_);
     auto it = subchannel_map_.find(*key);
     if (it != subchannel_map_.end()) {
-      it->second->SetSubchannel(wrapper.get());
+      it->second.SetSubchannel(wrapper.get());
     }
   }
   return wrapper;
@@ -486,11 +480,9 @@ XdsOverrideHostLb::AdoptSubchannel(
 void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
                                         SubchannelWrapper* subchannel) {
   absl::MutexLock lock(&subchannel_map_mu_);
-  std::cout << __FILE__ ":" << __LINE__ << " reset!!! " << this << " " << key
-            << " " << subchannel << std::endl;
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
-    it->second->ResetSubchannel(subchannel);
+    it->second.ResetSubchannel(subchannel);
   }
 }
 
@@ -548,7 +540,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     RefCountedPtr<XdsOverrideHostLb> policy,
     absl::optional<const std::string> key)
     : DelegatingSubchannel(std::move(subchannel)),
-      key_(key),
+      key_(std::move(key)),
       policy_(std::move(policy)) {}
 
 XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {

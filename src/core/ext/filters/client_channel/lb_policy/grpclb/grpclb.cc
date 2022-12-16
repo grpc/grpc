@@ -83,9 +83,9 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -1911,12 +1911,7 @@ void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
       [](ChannelStackBuilder* builder) {
         if (builder->channel_args().GetString(GRPC_ARG_LB_POLICY_NAME) ==
             "grpclb") {
-          // TODO(roth): When we get around to re-attempting
-          // https://github.com/grpc/grpc/pull/16214, we should try to keep
-          // this filter at the very top of the subchannel stack, since that
-          // will minimize the number of metadata elements that the filter
-          // needs to iterate through to find the ClientStats object.
-          builder->PrependFilter(&grpc_client_load_reporting_filter);
+          builder->PrependFilter(&ClientLoadReportingFilter::kFilter);
         }
         return true;
       });

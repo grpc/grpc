@@ -19,7 +19,7 @@
 #ifndef GRPCPP_SERVER_BUILDER_H
 #define GRPCPP_SERVER_BUILDER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <climits>
 #include <map>

@@ -33,13 +33,14 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
+#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -108,7 +109,6 @@ class ClientChannel {
  public:
   static const grpc_channel_filter kFilterVtable;
 
-  class LbCallStateInternal;
   class LoadBalancedCall;
 
   // Flag that this object gets stored in channel args as a raw pointer.
@@ -383,15 +383,6 @@ class ClientChannel {
 };
 
 //
-// ClientChannel::LbCallStateInternal
-//
-class ClientChannel::LbCallStateInternal
-    : public LoadBalancingPolicy::CallState {
- public:
-  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
-};
-
-//
 // ClientChannel::LoadBalancedCall
 //
 
@@ -400,7 +391,7 @@ class ClientChannel::LbCallStateInternal
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
-  class LbCallState : public ClientChannel::LbCallStateInternal {
+  class LbCallState : public LbCallStateInternal {
    public:
     explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
 
