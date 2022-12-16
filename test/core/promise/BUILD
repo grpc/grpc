@@ -36,6 +36,21 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
+    name = "cpp20_test",
+    srcs = ["cpp20_test.cc"],
+    copts = ["-std=c++20"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:construct_destruct",
+        "//src/core:poll",
+        "//src/core:promise_like",
+    ],
+)
+
+grpc_cc_test(
     name = "poll_test",
     srcs = ["poll_test.cc"],
     external_deps = ["gtest"],
