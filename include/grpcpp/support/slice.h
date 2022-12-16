@@ -20,7 +20,6 @@
 #define GRPCPP_SUPPORT_SLICE_H
 
 #include <grpc/slice.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/string_ref.h>
 

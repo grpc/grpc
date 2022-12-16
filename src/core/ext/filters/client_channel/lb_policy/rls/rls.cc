@@ -55,9 +55,9 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/grpc_types.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
