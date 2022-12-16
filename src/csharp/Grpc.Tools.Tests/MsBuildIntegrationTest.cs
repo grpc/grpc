@@ -174,19 +174,17 @@ namespace Grpc.Tools.Tests
         private void SetUpCommonPaths()
         {
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var parentDir = System.IO.Directory.GetParent(assemblyDir).FullName;
-            testDataDir = Path.GetFullPath(parentDir + "/../../IntegrationTests/");
+            testDataDir = Path.GetFullPath($"{assemblyDir}/../../../IntegrationTests");
 
             // Path for fake proto.
             // On Windows we have to wrap the python script in a BAT script since we can only
             // pass one executable name without parameters to the MSBuild
             // - e.g. we can't give "python fakeprotoc.py"
             var fakeProtocScript = Platform.IsWindows ? "fakeprotoc.bat" : "fakeprotoc.py";
-            fakeProtoc = Path.GetFullPath($"{parentDir}/../../scripts/{fakeProtocScript}");
+            fakeProtoc = Path.GetFullPath($"{assemblyDir}/../../../scripts/{fakeProtocScript}");
 
-            // Path for Grpc.Tools/build files
-            var grpcToolsDir = Path.GetFullPath($"{parentDir}/../../../Grpc.Tools");
-            grpcToolsBuildDir = Path.GetFullPath($"{grpcToolsDir}/build");
+            // Path for "build" directory under Grpc.Tools
+            grpcToolsBuildDir = Path.GetFullPath($"{assemblyDir}/../../../../Grpc.Tools/build");
 
             // Task assembly is needed to run the extension tasks
             // We use the assembly that was copied next to Grpc.Tools.Tests.dll
@@ -196,12 +194,8 @@ namespace Grpc.Tools.Tests
             tasksAssembly = Path.Combine(assemblyDir, TASKS_ASSEMBLY_DLL);
 
             // output directory
-            tempDir = Path.GetFullPath(System.IO.Path.GetTempPath()).Replace('\\','/');
-            if (!tempDir.EndsWith("/"))
-            {
-                tempDir += "/";
-            }
-            testOutBaseDir = Path.GetFullPath(tempDir + "grpctoolstest/");
+            tempDir = Path.GetFullPath(System.IO.Path.GetTempPath());
+            testOutBaseDir = Path.Combine(tempDir, "grpctoolstest");
         }
 
         /// <summary>
@@ -211,8 +205,8 @@ namespace Grpc.Tools.Tests
         private void SetUpSpecificPaths(string testName)
         {
             // Paths for test data
-            testProjectDir = Path.GetFullPath(testDataDir + testName);
-            testOutDir = Path.GetFullPath(testOutBaseDir + testId);
+            testProjectDir = Path.Combine(testDataDir, testName);
+            testOutDir = Path.Combine(testOutBaseDir, testId);
         }
 
         /// <summary>
