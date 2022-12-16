@@ -47,7 +47,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 PosixEngineListenerImpl::PosixEngineListenerImpl(
-    PosixEventEngineFdSupport::PosixAcceptCallback on_accept,
+    PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const grpc_event_engine::experimental::EndpointConfig& config,
     std::unique_ptr<grpc_event_engine::experimental::MemoryAllocatorFactory>
@@ -63,7 +63,7 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
 
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
-    PosixListenerFdSupport::OnPosixBindNewFdCallback on_bind_new_fd) {
+    PosixListenerWithFdSupport::OnPosixBindNewFdCallback on_bind_new_fd) {
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
