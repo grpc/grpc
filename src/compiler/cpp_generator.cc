@@ -2147,6 +2147,7 @@ std::string GetMockPrologue(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
 
     vars["filename"] = file->filename();
+    vars["filename_identifier"] = FilenameIdentifier(file->filename());
     vars["filename_base"] = file->filename_without_ext();
     vars["message_header_ext"] = params.message_header_extension.empty()
                                      ? kCppGeneratorMessageHeaderExt
