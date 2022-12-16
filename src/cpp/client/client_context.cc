@@ -26,9 +26,8 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -54,7 +53,6 @@ class DefaultGlobalClientCallbacks final
   void Destructor(ClientContext* /*context*/) override {}
 };
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks* g_default_client_callbacks =
     new DefaultGlobalClientCallbacks();
 static ClientContext::GlobalCallbacks* g_client_callbacks =
@@ -71,7 +69,6 @@ ClientContext::ClientContext()
       propagate_from_call_(nullptr),
       compression_algorithm_(GRPC_COMPRESS_NONE),
       initial_metadata_corked_(false) {
-  g_gli_initializer.summon();
   g_client_callbacks->DefaultConstructor(this);
 }
 

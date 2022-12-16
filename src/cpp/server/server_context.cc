@@ -31,9 +31,8 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/load_reporting.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -61,8 +60,6 @@
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
-
-static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // CompletionOp
 
@@ -260,9 +257,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 // ServerContextBase body
 
 ServerContextBase::ServerContextBase()
-    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
-  g_gli_initializer.summon();
-}
+    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
                                      grpc_metadata_array* arr)
