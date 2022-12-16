@@ -30,8 +30,6 @@
 
 namespace grpc {
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
-
 Status ByteBuffer::TrySingleSlice(Slice* slice) const {
   if (!buffer_) {
     return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");

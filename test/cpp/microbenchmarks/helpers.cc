@@ -20,14 +20,11 @@
 
 #include <string.h>
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 static LibraryInitializer* g_libraryInitializer;
 
 LibraryInitializer::LibraryInitializer() {
   GPR_ASSERT(g_libraryInitializer == nullptr);
   g_libraryInitializer = this;
-
-  g_gli_initializer.summon();
 }
 
 LibraryInitializer::~LibraryInitializer() { g_libraryInitializer = nullptr; }

@@ -68,9 +68,6 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 /// \see https://grpc.io/docs/guides/auth.html
 class ChannelCredentials : private grpc::internal::GrpcLibrary {
  public:
-  ChannelCredentials();
-  ~ChannelCredentials() override;
-
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
@@ -125,9 +122,6 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
 /// \see https://grpc.io/docs/guides/auth.html
 class CallCredentials : private grpc::internal::GrpcLibrary {
  public:
-  CallCredentials();
-  ~CallCredentials() override;
-
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
   virtual grpc::string DebugString() {

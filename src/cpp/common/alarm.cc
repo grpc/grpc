@@ -133,11 +133,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
 };
 }  // namespace internal
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
-
-Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
-  g_gli_initializer.summon();
-}
+Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {}
 
 void Alarm::SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline,
                         void* tag) {
