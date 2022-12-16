@@ -176,6 +176,17 @@ const ViewDescriptor& ServerReceivedCompressedMessageBytesPerRpc() {
   return descriptor;
 }
 
+const ViewDescriptor& ServerServerLatency() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/server/server_latency")
+          .set_measure(kRpcServerServerLatencyMeasureName)
+          .set_aggregation(MillisDistributionAggregation())
+          .add_column(ServerMethodTagKey())
+          .add_column(ServerStatusTagKey());
+  return descriptor;
+}
+
 // client cumulative
 const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
