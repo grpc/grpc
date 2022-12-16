@@ -425,7 +425,6 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
 
   GPR_ASSERT(port >= 0);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
   sp = (grpc_tcp_listener*)gpr_malloc(sizeof(grpc_tcp_listener));
   sp->next = NULL;
   if (s->head == NULL) {
@@ -526,7 +525,6 @@ done:
 static void tcp_server_start(grpc_tcp_server* s,
                              const std::vector<grpc_pollset*>* /*pollsets*/) {
   grpc_tcp_listener* sp;
-  GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
