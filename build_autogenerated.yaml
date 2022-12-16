@@ -296,6 +296,7 @@ libs:
   - include/grpc/impl/connectivity_state.h
   - include/grpc/impl/grpc_types.h
   - include/grpc/impl/propagation_bits.h
+  - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1894,6 +1895,7 @@ libs:
   - include/grpc/impl/connectivity_state.h
   - include/grpc/impl/grpc_types.h
   - include/grpc/impl/propagation_bits.h
+  - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -3417,6 +3419,7 @@ libs:
   - include/grpc/impl/connectivity_state.h
   - include/grpc/impl/grpc_types.h
   - include/grpc/impl/propagation_bits.h
+  - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -4225,6 +4228,26 @@ targets:
   deps:
   - grpc_authorization_provider
   - grpc_test_util
+- name: static_stride_scheduler_benchmark
+  build: test
+  language: c
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
+  deps:
+  - absl/algorithm:container
+  - absl/functional:any_invocable
+  - absl/types:span
+  - benchmark
+  - gpr
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: tcp_posix_test
   build: test
   language: c
@@ -10858,6 +10881,20 @@ targets:
   - test/core/gprpp/stat_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: static_stride_scheduler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
+  deps:
+  - absl/functional:any_invocable
+  - absl/types:span
+  - gpr
   uses_polling: false
 - name: stats_test
   gtest: true

@@ -88,6 +88,94 @@ void RegisterOpenCensusViewsForExport() {
 
 namespace experimental {
 
+// client
+const ViewDescriptor& ClientStartedRpcs() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/client/started_rpcs")
+          .set_measure(kRpcClientStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ClientMethodTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ClientCompletedRpcs() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/client/completed_rpcs")
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ClientMethodTagKey())
+          .add_column(ClientStatusTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ClientSentCompressedMessageBytesPerRpc() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/client/sent_compressed_message_bytes_per_rpc")
+          .set_measure(kRpcClientSentBytesPerRpcMeasureName)
+          .set_aggregation(BytesDistributionAggregation())
+          .add_column(ClientMethodTagKey())
+          .add_column(ClientStatusTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ClientReceivedCompressedMessageBytesPerRpc() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/client/received_compressed_message_bytes_per_rpc")
+          .set_measure(kRpcClientReceivedBytesPerRpcMeasureName)
+          .set_aggregation(BytesDistributionAggregation())
+          .add_column(ClientMethodTagKey())
+          .add_column(ClientStatusTagKey());
+  return descriptor;
+}
+
+// server
+const ViewDescriptor& ServerStartedRpcs() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/server/started_rpcs")
+          .set_measure(kRpcServerStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ServerMethodTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ServerCompletedRpcs() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/server/completed_rpcs")
+          .set_measure(kRpcServerServerLatencyMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ServerMethodTagKey())
+          .add_column(ServerStatusTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ServerSentCompressedMessageBytesPerRpc() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/server/sent_compressed_message_bytes_per_rpc")
+          .set_measure(kRpcServerSentBytesPerRpcMeasureName)
+          .set_aggregation(BytesDistributionAggregation())
+          .add_column(ServerMethodTagKey())
+          .add_column(ServerStatusTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ServerReceivedCompressedMessageBytesPerRpc() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/server/received_compressed_message_bytes_per_rpc")
+          .set_measure(kRpcServerReceivedBytesPerRpcMeasureName)
+          .set_aggregation(BytesDistributionAggregation())
+          .add_column(ServerMethodTagKey())
+          .add_column(ServerStatusTagKey());
+  return descriptor;
+}
+
 // client cumulative
 const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
