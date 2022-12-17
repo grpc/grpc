@@ -56,6 +56,7 @@ struct Pipe;
 template <typename T>
 class NextResult final {
  public:
+  NextResult() : center_(nullptr) {}
   explicit NextResult(pipe_detail::Center<T>* center) : center_(center) {}
   ~NextResult();
   NextResult(const NextResult&) = delete;
@@ -339,6 +340,8 @@ class PipeReceiver {
   }
 
   void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
+
+  bool Closed() const;
 
   // Receive a single message from the pipe.
   // Returns a promise that will resolve to an optional<T> - with a value if a

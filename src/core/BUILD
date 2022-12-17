@@ -4986,6 +4986,24 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "chaotic_good_client_transport",
+    srcs = [
+        "ext/transport/chaotic_good/client_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/client_transport.h",
+    ],
+    deps = [
+        "chaotic_good_frame",
+        "for_each",
+        "match",
+        "try_concurrently",
+        "//:grpc_base",
+        "//:promise",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
