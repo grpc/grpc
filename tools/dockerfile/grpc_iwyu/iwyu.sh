@@ -102,7 +102,8 @@ ${IWYU_ROOT}/iwyu/fix_includes.py \
   --nocomments                    \
   --nosafe_headers                \
   --ignore_re='^(include/.*|src/core/lib/security/credentials/tls/grpc_tls_credentials_options\.h)' \
-  < iwyu.out
+  < iwyu.out                      \
+  | grep 'IWYU edited 0 files on your behalf'
 
 if [ $? -ne 0 ] 
 then

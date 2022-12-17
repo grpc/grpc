@@ -16,8 +16,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h"
 
-#include <algorithm>
-#include <atomic>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -25,8 +23,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 namespace grpc_core {
 namespace {
