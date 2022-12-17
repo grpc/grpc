@@ -4999,6 +4999,7 @@ grpc_cc_library(
         "for_each",
         "match",
         "try_concurrently",
+        "//:gpr_platform",
         "//:grpc_base",
         "//:promise",
     ],
