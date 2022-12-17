@@ -105,9 +105,9 @@ ENV ANDROID_SDK_PATH /opt/android-sdk
 ENV ANDROID_HOME /opt/android-sdk
 RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
 
-# Install ndk-bundle using sdkmanager
+# Install ndk-bundle and cmake using sdkmanager
 RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
-RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle
+RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.6.4111459'
 
 # Install Android NDK
 RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip && \
