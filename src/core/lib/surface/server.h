@@ -522,4 +522,4 @@ struct grpc_server_config_fetcher {
   virtual grpc_pollset_set* interested_parties() = 0;
 };
 
-#endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */
+#endif  // GRPC_CORE_LIB_SURFACE_SERVER_H

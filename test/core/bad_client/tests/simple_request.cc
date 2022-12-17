@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 
@@ -27,12 +27,12 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-#define PFX_STR                                                            \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
-  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
-                                            simple_request.headers in this \
-                                            directory */                   \
+#define PFX_STR                                                \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                           \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"  /* settings frame */ \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01"  // headers: generated from        \
+                                         // simple_request.headers in this \
+                                         // directory                    \
   "\x10\x05:path\x08/foo/bar"                                              \
   "\x10\x07:scheme\x04http"                                                \
   "\x10\x07:method\x04POST"                                                \
@@ -45,12 +45,12 @@
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
-#define PFX_STR_UNUSUAL                                                    \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
-  "\x00\x00\xf4\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
-                                            simple_request_unusual.headers \
-                                            in this directory */           \
+#define PFX_STR_UNUSUAL                                        \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                           \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"  /* settings frame */ \
+  "\x00\x00\xf4\x01\x04\x00\x00\x00\x01"  // headers: generated from        \
+                                         // simple_request_unusual.headers \
+                                         // in this directory            \
   "\x10\x05:path\x08/foo/bar"                                              \
   "\x10\x07:scheme\x04http"                                                \
   "\x10\x07:method\x04POST"                                                \
@@ -66,12 +66,12 @@
   "\x10\x0cgrpc-timeout\x02"                                               \
   "5S"
 
-#define PFX_STR_UNUSUAL2                                                    \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                        \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */               \
-  "\x00\x00\xf4\x01\x04\x00\x00\x00\x01" /* headers: generated from         \
-                                            simple_request_unusual2.headers \
-                                            in this directory */            \
+#define PFX_STR_UNUSUAL2                                       \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                           \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"  /* settings frame */ \
+  "\x00\x00\xf4\x01\x04\x00\x00\x00\x01"  // headers: generated from         \
+                                         // simple_request_unusual2.headers \
+                                         // in this directory             \
   "\x10\x05:path\x08/foo/bar"                                               \
   "\x10\x07:scheme\x04http"                                                 \
   "\x10\x07:method\x04POST"                                                 \
@@ -127,45 +127,45 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
-  /* basic request: check that things are working */
+  // basic request: check that things are working
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR, 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR_UNUSUAL, 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR_UNUSUAL2, 0);
 
-  /* push an illegal data frame */
+  // push an illegal data frame
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
                            "\x34\x00\x00\x00\x00",
                            0);
 
-  /* push a data frame with bad flags */
+  // push a data frame with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
-  /* push a window update with a bad length */
+  // push a window update with a bad length
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x01\x08\x00\x00\x00\x00\x01", 0);
-  /* push a window update with bad flags */
+  // push a window update with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x08\x10\x00\x00\x00\x01", 0);
-  /* push a window update with bad data (0 is not legal window size increment)
-   */
+  // push a window update with bad data (0 is not legal window size increment)
+  //
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x00",
                            0);
-  /* push a short goaway */
+  // push a short goaway
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x04\x07\x00\x00\x00\x00\x00", 0);
-  /* disconnect before sending goaway */
+  // disconnect before sending goaway
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x01\x12\x07\x00\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  /* push a rst_stream with a bad length */
+  // push a rst_stream with a bad length
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x01\x03\x00\x00\x00\x00\x01", 0);
-  /* push a rst_stream with bad flags */
+  // push a rst_stream with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x03\x10\x00\x00\x00\x01", 0);
 

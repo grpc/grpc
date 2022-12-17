@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -85,11 +85,11 @@ static void finish_write_cb(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   if (grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
-    /* no ping needed: wait */
+    // no ping needed: wait
     return;
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
-    /* ping already in-flight: wait */
+    // ping already in-flight: wait
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -100,7 +100,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   }
   if (t->is_client && t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
-    /* need to receive something of substance before sending a ping again */
+    // need to receive something of substance before sending a ping again
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -123,8 +123,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         (t->keepalive_permit_without_calls == 0 &&
          grpc_chttp2_stream_map_size(&t->stream_map) == 0)
             ? grpc_core::Duration::Hours(2)
-            : grpc_core::Duration::Seconds(1); /* A second is added to deal with
-                         network delays and timing imprecision */
+            : grpc_core::Duration::Seconds(
+                  1);  // A second is added to deal with
+                       // network delays and timing imprecision
   } else if (t->sent_goaway_state != GRPC_CHTTP2_GRACEFUL_GOAWAY) {
     // The gRPC keepalive spec doesn't call for any throttling on the server
     // side, but we are adding some throttling for protection anyway, unless
@@ -138,7 +139,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
 
   if (next_allowed_ping > now) {
-    /* not enough elapsed time between successive pings */
+    // not enough elapsed time between successive pings
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -231,7 +232,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
 }
 
-/* How many bytes would we like to put on the wire during a single syscall */
+// How many bytes would we like to put on the wire during a single syscall
 static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
   return 1024 * 1024;
 }
@@ -285,7 +286,7 @@ class WriteContext {
   }
 
   void FlushQueuedBuffers() {
-    /* simple writes are queued to qbuf, and flushed here */
+    // simple writes are queued to qbuf, and flushed here
     grpc_slice_buffer_move_into(&t_->qbuf, &t_->outbuf);
     t_->num_pending_induced_frames = 0;
     GPR_ASSERT(t_->qbuf.count == 0);
@@ -360,8 +361,8 @@ class WriteContext {
  private:
   grpc_chttp2_transport* const t_;
 
-  /* stats histogram counters: we increment these throughout this function,
-     and at the end publish to the central stats histograms */
+  // stats histogram counters: we increment these throughout this function,
+  // and at the end publish to the central stats histograms
   int flow_control_writes_ = 0;
   int initial_metadata_writes_ = 0;
   int trailing_metadata_writes_ = 0;
@@ -443,7 +444,7 @@ class StreamWriteContext {
   }
 
   void FlushInitialMetadata() {
-    /* send initial metadata if it's available */
+    // send initial metadata if it's available
     if (s_->sent_initial_metadata) return;
     if (s_->send_initial_metadata == nullptr) return;
 
@@ -486,7 +487,7 @@ class StreamWriteContext {
   void FlushWindowUpdates() {
     if (s_->read_closed) return;
 
-    /* send any window updates */
+    // send any window updates
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
 
@@ -631,8 +632,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     ctx.UpdateStreamsNoLongerStalled();
   }
 
-  /* for each grpc_chttp2_stream that's become writable, frame it's data
-     (according to available window sizes) and add to the output buffer */
+  // for each grpc_chttp2_stream that's become writable, frame it's data
+  // (according to available window sizes) and add to the output buffer
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.length;
@@ -641,7 +642,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     stream_ctx.FlushData();
     stream_ctx.FlushTrailingMetadata();
     if (t->outbuf.length > orig_len) {
-      /* Add this stream to the list of the contexts to be traced at TCP */
+      // Add this stream to the list of the contexts to be traced at TCP
       s->byte_counter += t->outbuf.length - orig_len;
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
         grpc_core::ContextList::Append(&t->cl, s);
@@ -649,10 +650,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
     if (stream_ctx.stream_became_writable()) {
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {
-        /* already in writing list: drop ref */
+        // already in writing list: drop ref
         GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:already_writing");
       } else {
-        /* ref will be dropped at end of write */
+        // ref will be dropped at end of write
       }
     } else {
       GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:no_write");

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <stdio.h>
@@ -89,8 +89,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a grpc_slice containing random alphanumeric characters.
- */
+// Creates and returns a grpc_slice containing random alphanumeric characters.
+//
 static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
@@ -108,9 +108,9 @@ static grpc_slice generate_random_slice() {
 
 static void request_response_with_payload(grpc_end2end_test_config /*config*/,
                                           grpc_end2end_test_fixture f) {
-  /* Create large request and response bodies. These are big enough to require
-   * multiple round trips to deliver to the peer, and their exact contents of
-   * will be verified on completion. */
+  // Create large request and response bodies. These are big enough to require
+  // multiple round trips to deliver to the peer, and their exact contents of
+  // will be verified on completion.
   grpc_slice request_payload_slice = generate_random_slice();
   grpc_slice response_payload_slice = generate_random_slice();
 
@@ -259,8 +259,8 @@ static void request_response_with_payload(grpc_end2end_test_config /*config*/,
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-/* Client sends a request with payload, server reads then returns a response
-   payload and status. */
+// Client sends a request with payload, server reads then returns a response
+// payload and status.
 static void test_invoke_request_response_with_payload(
     grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = begin_test(

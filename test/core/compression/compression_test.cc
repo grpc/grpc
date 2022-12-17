@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ TEST(CompressionTest, CompressionAlgorithmParse) {
     success = grpc_compression_algorithm_parse(
         grpc_slice_from_static_string(invalid_name), &algorithm);
     ASSERT_EQ(success, 0);
-    /* the value of "algorithm" is undefined upon failure */
+    // the value of "algorithm" is undefined upon failure
   }
 }
 
@@ -82,16 +82,16 @@ TEST(CompressionTest, CompressionAlgorithmName) {
   success =
       grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT, &name);
   ASSERT_EQ(success, 0);
-  /* the value of "name" is undefined upon failure */
+  // the value of "name" is undefined upon failure
 }
 
 TEST(CompressionTest, CompressionAlgorithmForLevel) {
   gpr_log(GPR_DEBUG, "test_compression_algorithm_for_level");
 
   {
-    /* accept only identity (aka none) */
+    // accept only identity (aka none)
     uint32_t accepted_encodings = 0;
-    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE);  // always
 
     ASSERT_EQ(GRPC_COMPRESS_NONE,
               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_NONE,
@@ -111,9 +111,9 @@ TEST(CompressionTest, CompressionAlgorithmForLevel) {
   }
 
   {
-    /* accept only gzip */
+    // accept only gzip
     uint32_t accepted_encodings = 0;
-    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE);  // always
     grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_GZIP);
 
     ASSERT_EQ(GRPC_COMPRESS_NONE,
@@ -134,9 +134,9 @@ TEST(CompressionTest, CompressionAlgorithmForLevel) {
   }
 
   {
-    /* accept only deflate */
+    // accept only deflate
     uint32_t accepted_encodings = 0;
-    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE);  // always
     grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_DEFLATE);
 
     ASSERT_EQ(GRPC_COMPRESS_NONE,
@@ -157,9 +157,9 @@ TEST(CompressionTest, CompressionAlgorithmForLevel) {
   }
 
   {
-    /* accept gzip and deflate */
+    // accept gzip and deflate
     uint32_t accepted_encodings = 0;
-    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE);  // always
     grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_GZIP);
     grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_DEFLATE);
 
@@ -181,9 +181,9 @@ TEST(CompressionTest, CompressionAlgorithmForLevel) {
   }
 
   {
-    /* accept all algorithms */
+    // accept all algorithms
     uint32_t accepted_encodings = 0;
-    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_NONE);  // always
     grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_GZIP);
     grpc_core::SetBit(&accepted_encodings, GRPC_COMPRESS_DEFLATE);
 
@@ -216,11 +216,11 @@ TEST(CompressionTest, CompressionEnableDisableAlgorithm) {
        algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT;
        algorithm = static_cast<grpc_compression_algorithm>(
            static_cast<int>(algorithm) + 1)) {
-    /* all algorithms are enabled by default */
+    // all algorithms are enabled by default
     ASSERT_NE(
         grpc_compression_options_is_algorithm_enabled(&options, algorithm), 0);
   }
-  /* disable one by one */
+  // disable one by one
   for (algorithm = GRPC_COMPRESS_NONE;
        algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT;
        algorithm = static_cast<grpc_compression_algorithm>(
@@ -229,7 +229,7 @@ TEST(CompressionTest, CompressionEnableDisableAlgorithm) {
     ASSERT_EQ(
         grpc_compression_options_is_algorithm_enabled(&options, algorithm), 0);
   }
-  /* re-enable one by one */
+  // re-enable one by one
   for (algorithm = GRPC_COMPRESS_NONE;
        algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT;
        algorithm = static_cast<grpc_compression_algorithm>(

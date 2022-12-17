@@ -24,10 +24,10 @@
 namespace grpc_binder {
 namespace ndk_util {
 
-/**
- * Represents one strong pointer to an AIBinder object.
- * Copied from binder/ndk/include_cpp/android/binder_auto_utils.h
- */
+///
+/// Represents one strong pointer to an AIBinder object.
+/// Copied from binder/ndk/include_cpp/android/binder_auto_utils.h
+///
 class SpAIBinder {
  public:
   SpAIBinder() : mBinder(nullptr) {}

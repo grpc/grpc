@@ -100,5 +100,5 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H \
-        */
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H \
+       //

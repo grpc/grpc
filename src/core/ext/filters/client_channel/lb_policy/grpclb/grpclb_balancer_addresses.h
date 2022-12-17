@@ -36,6 +36,6 @@ const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
 
 }  // namespace grpc_core
 
-#endif /*                                                                         \
-GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H \
-        */
+#endif  //                                                                         \
+//GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H \
+       //

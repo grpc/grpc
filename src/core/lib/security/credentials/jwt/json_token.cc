@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -45,9 +45,9 @@
 
 using grpc_core::Json;
 
-/* --- Constants. --- */
+// --- Constants. ---
 
-/* 1 hour max. */
+// 1 hour max.
 gpr_timespec grpc_max_auth_token_lifetime() {
   gpr_timespec out;
   out.tv_sec = 3600;
@@ -59,12 +59,12 @@ gpr_timespec grpc_max_auth_token_lifetime() {
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
 
-/* --- Override for testing. --- */
+// --- Override for testing. ---
 
 static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
     nullptr;
 
-/* --- grpc_auth_json_key. --- */
+// --- grpc_auth_json_key. ---
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
   return (json_key != nullptr) &&
@@ -160,7 +160,7 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
   }
 }
 
-/* --- jwt encoding and signature. --- */
+// --- jwt encoding and signature. ---
 
 static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
   Json json = Json::Object{
@@ -191,7 +191,7 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   if (scope != nullptr) {
     object["scope"] = scope;
   } else {
-    /* Unscoped JWTs need a sub field. */
+    // Unscoped JWTs need a sub field.
     object["sub"] = json_key->client_email;
   }
 

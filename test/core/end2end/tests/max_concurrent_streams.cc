@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -234,14 +234,14 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&trailing_metadata_recv2);
   grpc_call_details_init(&call_details);
 
-  /* perform a ping-pong to ensure that settings have had a chance to round
-     trip */
+  // perform a ping-pong to ensure that settings have had a chance to round
+  // trip
   simple_request_body(config, f);
-  /* perform another one to make sure that the one stream case still works */
+  // perform another one to make sure that the one stream case still works
   simple_request_body(config, f);
 
-  /* start two requests - ensuring that the second is not accepted until
-     the first completes */
+  // start two requests - ensuring that the second is not accepted until
+  // the first completes
   deadline = n_seconds_from_now(1000);
   c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
                                 f.cq, grpc_slice_from_static_string("/alpha"),
@@ -338,10 +338,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
     } else {
       GPR_ASSERT(!got_client_start);
       GPR_ASSERT(ev.tag == tag(301) || ev.tag == tag(401));
-      /* The /alpha or /beta calls started above could be invoked (but NOT
-       * both);
-       * check this here */
-      /* We'll get tag 303 or 403, we want 300, 400 */
+      // The /alpha or /beta calls started above could be invoked (but NOT
+      // both);
+      // check this here
+      // We'll get tag 303 or 403, we want 300, 400
       live_call = (static_cast<int>(reinterpret_cast<intptr_t>(ev.tag))) - 1;
       got_client_start = 1;
     }
@@ -374,7 +374,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(live_call + 2), true);
-  /* first request is finished, we should be able to start the second */
+  // first request is finished, we should be able to start the second
   live_call = (live_call == 300) ? 400 : 300;
   cqv.Expect(tag(live_call + 1), true);
   cqv.Verify();
@@ -474,14 +474,14 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   grpc_metadata_array_init(&trailing_metadata_recv2);
   grpc_call_details_init(&call_details);
 
-  /* perform a ping-pong to ensure that settings have had a chance to round
-     trip */
+  // perform a ping-pong to ensure that settings have had a chance to round
+  // trip
   simple_request_body(config, f);
-  /* perform another one to make sure that the one stream case still works */
+  // perform another one to make sure that the one stream case still works
   simple_request_body(config, f);
 
-  /* start two requests - ensuring that the second is not accepted until
-     the first completes */
+  // start two requests - ensuring that the second is not accepted until
+  // the first completes
   c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
                                 f.cq, grpc_slice_from_static_string("/alpha"),
                                 nullptr, n_seconds_from_now(3), nullptr);
@@ -574,7 +574,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));
 
   cqv.Expect(tag(302), true);
-  /* first request is finished, we should be able to start the second */
+  // first request is finished, we should be able to start the second
   cqv.Expect(tag(401), true);
   cqv.Expect(tag(201), true);
   cqv.Verify();
@@ -666,15 +666,15 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   grpc_metadata_array_init(&trailing_metadata_recv2);
   grpc_call_details_init(&call_details);
 
-  /* perform a ping-pong to ensure that settings have had a chance to round
-     trip */
+  // perform a ping-pong to ensure that settings have had a chance to round
+  // trip
   simple_request_body(config, f);
-  /* perform another one to make sure that the one stream case still works */
+  // perform another one to make sure that the one stream case still works
   simple_request_body(config, f);
 
-  /* start two requests - ensuring that the second is not accepted until
-     the first completes , and the second request will timeout in the
-     concurrent_list */
+  // start two requests - ensuring that the second is not accepted until
+  // the first completes , and the second request will timeout in the
+  // concurrent_list
   c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
                                 f.cq, grpc_slice_from_static_string("/alpha"),
                                 nullptr, n_seconds_from_now(1000), nullptr);
@@ -760,16 +760,16 @@ static void test_max_concurrent_streams_with_timeout_on_second(
                                 tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  /* the second request is time out*/
+  // the second request is time out
   cqv.Expect(tag(401), false);
   cqv.Expect(tag(402), true);
   cqv.Verify();
 
-  /* second request is finished because of time out, so destroy the second call
-   */
+  // second request is finished because of time out, so destroy the second call
+  //
   grpc_call_unref(c2);
 
-  /* now reply the first call */
+  // now reply the first call
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

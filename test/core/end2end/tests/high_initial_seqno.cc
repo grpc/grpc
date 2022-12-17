@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -192,10 +192,10 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   grpc_call_unref(c);
   grpc_call_unref(s);
 
-  /* TODO(ctiller): this rate limits the test, and it should be removed when
-                    retry has been implemented; until then cross-thread chatter
-                    may result in some requests needing to be cancelled due to
-                    seqno exhaustion. */
+  // TODO(ctiller): this rate limits the test, and it should be removed when
+  //                retry has been implemented; until then cross-thread chatter
+  //                may result in some requests needing to be cancelled due to
+  //                seqno exhaustion.
   cqv.VerifyEmpty();
 }
 
