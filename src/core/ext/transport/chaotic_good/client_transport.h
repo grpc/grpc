@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CHAOTIC_GOOD_TRANSPORT_H
-#define CHAOTIC_GOOD_TRANSPORT_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
+#define GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/transport/transport.h"
@@ -36,4 +38,4 @@ class ClientTransport {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
