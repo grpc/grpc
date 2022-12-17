@@ -140,6 +140,10 @@ EXTERNAL_DEPS = {
         'googleapis_trace_grpc_service',
     'google/logging/v2/logging.grpc.pb.h':
         'googleapis_logging_grpc_service',
+    'google/logging/v2/logging.pb.h':
+        'googleapis_logging_grpc_service',
+    'google/logging/v2/log_entry.pb.h':
+        'googleapis_logging_grpc_service',
     'google/monitoring/v3/metric_service.grpc.pb.h':
         'googleapis_monitoring_grpc_service',
     'gmock/gmock.h':
