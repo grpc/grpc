@@ -24,5 +24,6 @@ RUN apt-get update && apt-get install -y git && apt-get clean
 RUN apt-get update && apt-get install -y g++-8-aarch64-linux-gnu
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
 
 CMD ["bash"]
