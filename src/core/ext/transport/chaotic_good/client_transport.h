@@ -15,6 +15,7 @@
 #ifndef CHAOTIC_GOOD_TRANSPORT_H
 #define CHAOTIC_GOOD_TRANSPORT_H
 
+#include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
