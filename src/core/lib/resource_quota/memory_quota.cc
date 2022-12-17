@@ -411,18 +411,15 @@ void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
     auto& shard = big_allocators_.shards[allocator->IncrementShardIndex() %
                                          big_allocators_.shards.size()];
 
-    size_t ret = 0;
     if (shard.shard_mu.TryLock()) {
       if (!shard.allocators.empty()) {
         chosen_allocator = *shard.allocators.begin();
-        ret = chosen_allocator->ReturnFree();
       }
       shard.shard_mu.Unlock();
     }
 
     if (chosen_allocator != nullptr) {
-      MaybeMoveAllocator(chosen_allocator, /*old_free_bytes=*/ret,
-                         /*new_free_bytes=*/0);
+      chosen_allocator->ReturnFree();
     }
   }
 }
