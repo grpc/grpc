@@ -39,5 +39,4 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_fake_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
-#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H \
-       //
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H

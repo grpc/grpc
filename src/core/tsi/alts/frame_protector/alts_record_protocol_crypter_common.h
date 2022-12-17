@@ -110,5 +110,4 @@ size_t alts_record_protocol_crypter_num_overhead_bytes(const alts_crypter* c);
 
 void alts_record_protocol_crypter_destruct(alts_crypter* c);
 
-#endif  // GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_RECORD_PROTOCOL_CRYPTER_COMMON_H \
-       //
+#endif  // GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_RECORD_PROTOCOL_CRYPTER_COMMON_H

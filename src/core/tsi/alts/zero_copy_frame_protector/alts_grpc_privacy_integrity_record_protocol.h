@@ -45,5 +45,4 @@ tsi_result alts_grpc_privacy_integrity_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
     bool is_protect, alts_grpc_record_protocol** rp);
 
-#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_PRIVACY_INTEGRITY_RECORD_PROTOCOL_H \
-       //
+#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_PRIVACY_INTEGRITY_RECORD_PROTOCOL_H

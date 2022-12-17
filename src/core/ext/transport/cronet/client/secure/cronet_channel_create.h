@@ -35,5 +35,4 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
 }
 #endif
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CRONET_CLIENT_SECURE_CRONET_CHANNEL_CREATE_H \
-       //
+#endif  // GRPC_CORE_EXT_TRANSPORT_CRONET_CLIENT_SECURE_CRONET_CHANNEL_CREATE_H

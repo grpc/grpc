@@ -87,5 +87,4 @@ size_t alts_grpc_record_protocol_max_unprotected_data_size(
 ///
 void alts_grpc_record_protocol_destroy(alts_grpc_record_protocol* self);
 
-#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_RECORD_PROTOCOL_H \
-       //
+#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_RECORD_PROTOCOL_H

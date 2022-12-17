@@ -128,5 +128,4 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   CallCredentialsList inner_;
 };
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H \
-       //
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H

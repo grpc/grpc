@@ -79,5 +79,4 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials);
 
-#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_SSL_SECURITY_CONNECTOR_H \
-       //
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_SSL_SECURITY_CONNECTOR_H

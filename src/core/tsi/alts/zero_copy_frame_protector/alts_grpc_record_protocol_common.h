@@ -95,5 +95,4 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
                                           bool is_integrity_only,
                                           bool is_protect);
 
-#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_RECORD_PROTOCOL_COMMON_H \
-       //
+#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_RECORD_PROTOCOL_COMMON_H

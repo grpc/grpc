@@ -75,5 +75,4 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
 }  // namespace internal
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_ALTS_ALTS_SECURITY_CONNECTOR_H \
-       //
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_ALTS_ALTS_SECURITY_CONNECTOR_H

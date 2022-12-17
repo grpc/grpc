@@ -42,5 +42,4 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
 }  // namespace grpc_core
 
 #endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
-#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_SUPPORTED_H \
-       //
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_SUPPORTED_H

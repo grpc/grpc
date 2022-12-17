@@ -69,5 +69,4 @@ void grpc_alts_shared_resource_dedicated_init();
 void grpc_alts_shared_resource_dedicated_start(
     const char* handshaker_service_url);
 
-#endif  // GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H \
-       //
+#endif  // GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H

@@ -53,5 +53,4 @@ tsi_result alts_zero_copy_grpc_protector_create(
     bool is_integrity_only, bool enable_extra_copy,
     size_t* max_protected_frame_size, tsi_zero_copy_grpc_protector** protector);
 
-#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_ZERO_COPY_GRPC_PROTECTOR_H \
-       //
+#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_ZERO_COPY_GRPC_PROTECTOR_H

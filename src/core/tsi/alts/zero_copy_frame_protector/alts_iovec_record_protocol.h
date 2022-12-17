@@ -195,5 +195,4 @@ grpc_status_code alts_iovec_record_protocol_create(
 ///
 void alts_iovec_record_protocol_destroy(alts_iovec_record_protocol* rp);
 
-#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_IOVEC_RECORD_PROTOCOL_H \
-       //
+#endif  // GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_IOVEC_RECORD_PROTOCOL_H

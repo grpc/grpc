@@ -71,5 +71,4 @@ typedef struct grpc_alts_credentials_server_options {
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H \
-       //
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H

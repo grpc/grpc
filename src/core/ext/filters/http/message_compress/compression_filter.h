@@ -129,5 +129,4 @@ class ServerCompressionFilter final : public CompressionFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H \
-       //
+#endif  // GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
