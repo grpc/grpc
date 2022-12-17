@@ -34,7 +34,7 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
@@ -229,18 +229,17 @@ XdsOverrideHostLb::Picker::Picker(
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
-  if (picker_ == nullptr) {  // Should never happen.
-    return PickResult::Fail(absl::InternalError(
-        "xds_override_host picker not given any child picker"));
-  }
-  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
-      args.call_state);
+  auto* call_state = static_cast<LbCallStateInternal*>(args.call_state);
   auto override_host = call_state->GetCallAttribute(XdsHostOverrideTypeName());
   if (!override_host.empty()) {
     auto subchannel = policy_->LookupSubchannel(override_host);
     if (subchannel != nullptr) {
       return PickResult::Complete(subchannel->wrapped_subchannel());
     }
+  }
+  if (picker_ == nullptr) {  // Should never happen.
+    return PickResult::Fail(absl::InternalError(
+        "xds_override_host picker not given any child picker"));
   }
   auto result = picker_->Pick(args);
   auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);

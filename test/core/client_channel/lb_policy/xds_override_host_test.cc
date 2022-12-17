@@ -42,7 +42,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   }
 
   absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
-  InitRoundRobin(absl::Span<const absl::string_view> addresses) {
+  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
     absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
         maybe_picker;
     EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
@@ -125,53 +125,42 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto maybe_picker = InitRoundRobin(kAddresses);
+  auto maybe_picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_TRUE(maybe_picker.has_value());
-  auto picker = *maybe_picker;
-  ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> call_attributes{
       {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
+            kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
+            kAddresses[1]);
   call_attributes[XdsHostOverrideTypeName()] = std::string("127.0.0.1:441");
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
+            kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
+            kAddresses[0]);
 }
 
 TEST_F(XdsOverrideHostTest, OverrideHostSubchannelNotFound) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto maybe_picker = InitRoundRobin(kAddresses);
+  auto maybe_picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_TRUE(maybe_picker.has_value());
-  auto picker = *maybe_picker;
-  ASSERT_NE(picker, nullptr);
   std::map<UniqueTypeName, std::string> call_attributes{
       {XdsHostOverrideTypeName(), "no such host"}};
-  std::unordered_set<std::string> picks;
-  for (size_t i = 0; i < kAddresses.size(); ++i) {
-    auto pick = ExpectPickComplete(picker.get(), call_attributes);
-    ASSERT_TRUE(pick.has_value());
-    picks.emplace(*pick);
-  }
-  ASSERT_THAT(picks, UnorderedElementsAreArray(kAddresses));
+  ExpectRoundRobinPicks(maybe_picker->get(), kAddresses, call_attributes);
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto maybe_picker = InitRoundRobin(kAddresses);
+  auto maybe_picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_TRUE(maybe_picker.has_value());
-  auto picker = *maybe_picker;
-  ASSERT_NE(picker, nullptr);
-  // Make sure child policy works
-  EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> call_attributes{
       {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
+  ExpectRoundRobinPicks(maybe_picker->get(), {kAddresses[1]}, call_attributes);
   // Some other address is gone
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"},
@@ -179,25 +168,19 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
                   policy_.get()),
       absl::OkStatus());
   ExpectState(GRPC_CHANNEL_READY);
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
-  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
-  // "Our" address is gone
+  WaitForRoundRobinListChange(
+      {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"},
+      {"ipv4:127.0.0.1:442"}, call_attributes);
+  // "Our" address is gone so others get returned in round-robin order
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
                               MakeXdsOverrideHostConfig("round_robin")),
                   policy_.get()),
       absl::OkStatus());
   ExpectState(GRPC_CHANNEL_READY);
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ExpectQueueEmpty();
-  ASSERT_NE(picker, nullptr);
-  std::array<absl::optional<std::string>, 2> picks = {
-      ExpectPickComplete(picker.get(), call_attributes),
-      ExpectPickComplete(picker.get(), call_attributes)};
-  EXPECT_THAT(picks, UnorderedElementsAreArray(
-                         {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"}));
+  WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"},
+                              {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
+                              call_attributes);
   // And now it is back
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"},
@@ -205,12 +188,8 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
                   policy_.get()),
       absl::OkStatus());
   ExpectState(GRPC_CHANNEL_READY);
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
-  picks = {ExpectPickComplete(picker.get(), call_attributes),
-           ExpectPickComplete(picker.get(), call_attributes)};
-  EXPECT_THAT(picks, UnorderedElementsAreArray(
-                         {"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:442"}));
+  WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
+                              {"ipv4:127.0.0.1:442"}, call_attributes);
 }
 }  // namespace
 }  // namespace testing

@@ -47,7 +47,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -558,12 +557,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Waits for the round_robin policy to start using an updated address list.
   // There can be any number of READY updates where the picker is still using
   // the old list followed by one READY update where the picker is using the
-  // new list.  Returns true if the reported states match expectations.
+  // new list.  Returns a picker if the reported states match expectations.
   absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
-  WaitForRoundRobinListChange(absl::Span<const absl::string_view> old_addresses,
-                              absl::Span<const absl::string_view> new_addresses,
-                              size_t num_iterations = 3,
-                              SourceLocation location = SourceLocation()) {
+  WaitForRoundRobinListChange(
+      absl::Span<const absl::string_view> old_addresses,
+      absl::Span<const absl::string_view> new_addresses,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
     absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> retval;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
@@ -572,8 +572,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           if (update.state != GRPC_CHANNEL_READY) return false;
           // Get enough picks to round-robin num_iterations times across all
           // expected addresses.
-          auto picks = GetCompletePicks(update.picker.get(),
-                                        new_addresses.size() * num_iterations);
+          auto picks =
+              GetCompletePicks(update.picker.get(), call_attributes,
+                               new_addresses.size() * num_iterations, location);
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
@@ -582,7 +583,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           // If the picks still match the old list, then keep going.
           if (PicksAreRoundRobin(old_addresses, pick_addresses)) return true;
           // Otherwise, the picks should match the new list.
-          auto matches = PicksAreRoundRobin(new_addresses, pick_addresses);
+          bool matches = PicksAreRoundRobin(new_addresses, pick_addresses);
           EXPECT_TRUE(matches)
               << "Expected: " << absl::StrJoin(new_addresses, ", ")
               << "\nActual: " << absl::StrJoin(pick_addresses, ", ") << "\nat "
@@ -658,11 +659,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Gets num_picks complete picks from picker and returns the resulting
   // list of addresses, or nullopt if a non-complete pick was returned.
   absl::optional<std::vector<std::string>> GetCompletePicks(
-      LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
-      SourceLocation location = SourceLocation()) {
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      size_t num_picks = 3, SourceLocation location = SourceLocation()) {
+    EXPECT_NE(picker, nullptr);
+    if (picker == nullptr) {
+      return absl::nullopt;
+    }
     std::vector<std::string> results;
     for (size_t i = 0; i < num_picks; ++i) {
-      auto address = ExpectPickComplete(picker, {}, location);
+      auto address = ExpectPickComplete(picker, call_attributes, location);
       if (!address.has_value()) return absl::nullopt;
       results.emplace_back(std::move(*address));
     }
@@ -688,18 +694,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Checks that the picker has round-robin behavior over the specified
   // set of addresses.
-  void ExpectRoundRobinPicks(LoadBalancingPolicy::SubchannelPicker* picker,
-                             absl::Span<const absl::string_view> addresses,
-                             size_t num_iterations = 3,
-                             SourceLocation location = SourceLocation()) {
-    auto picks =
-        GetCompletePicks(picker, num_iterations * addresses.size(), location);
+  void ExpectRoundRobinPicks(
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      absl::Span<const absl::string_view> addresses,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+    auto picks = GetCompletePicks(picker, call_attributes,
+                                  num_iterations * addresses.size(), location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
     std::vector<absl::string_view> pick_addresses(picks->begin(), picks->end());
     EXPECT_TRUE(PicksAreRoundRobin(addresses, pick_addresses))
-        << "Expected: " << absl::StrJoin(addresses, ", ")
-        << "Actual: " << absl::StrJoin(pick_addresses, ", ") << location.file()
-        << ":" << location.line();
+        << "  Actual: " << absl::StrJoin(pick_addresses, ", ")
+        << "\n  Expected: " << absl::StrJoin(addresses, ", ") << "\n"
+        << location.file() << ":" << location.line();
   }
 
   // Requests a picker on picker and expects a Fail result.
