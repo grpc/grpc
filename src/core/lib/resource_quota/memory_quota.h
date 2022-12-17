@@ -568,10 +568,10 @@ class MemoryQuota final
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
-  // Return true if the instantaneous memory pressure is high.
+  // Return true if the controlled memory pressure is high.
   bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 1.0;
-    return memory_quota_->GetPressureInfo().instantaneous_pressure >
+    static constexpr double kMemoryPressureHighThreshold = 0.99;
+    return memory_quota_->GetPressureInfo().pressure_control_value >
            kMemoryPressureHighThreshold;
   }
 
