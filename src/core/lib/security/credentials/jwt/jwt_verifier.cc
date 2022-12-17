@@ -402,7 +402,7 @@ void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
   }
-  // TODO: see what to do with claims...
+  // TODO(unknown): see what to do with claims...
   delete ctx;
 }
 

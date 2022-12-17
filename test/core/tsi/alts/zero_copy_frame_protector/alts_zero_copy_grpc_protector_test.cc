@@ -32,7 +32,7 @@
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/util/test_config.h"
 
-// TODO: tests zero_copy_grpc_protector under TSI test library, which
+// TODO(unknown): tests zero_copy_grpc_protector under TSI test library, which
 // has more comprehensive tests.
 
 constexpr size_t kSealRepeatTimes = 50;

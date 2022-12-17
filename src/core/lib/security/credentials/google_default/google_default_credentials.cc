@@ -386,7 +386,7 @@ static void update_tenancy() {
   if (!g_metadata_server_available) {
     g_metadata_server_available = g_gce_tenancy_checker();
   }
-  // TODO: Add a platform-provided hint for GAE.
+  // TODO(unknown): Add a platform-provided hint for GAE.
 
   // Do a network test for metadata server.
   if (!g_metadata_server_available) {

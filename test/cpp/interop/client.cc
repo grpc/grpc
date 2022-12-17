@@ -54,7 +54,7 @@ ABSL_FLAG(
     //"cancel_after_begin : cancel stream after starting it;\n"
     //"cancel_after_first_response: cancel on first response;\n"
     //"channel_soak: sends 'soak_iterations' rpcs, rebuilds channel each
-    //time;\n" "client_compressed_streaming : compressed request streaming with
+    // time;\n" "client_compressed_streaming : compressed request streaming with
     //" "client_compressed_unary : single compressed request;\n"
     //"client_streaming : request streaming with single response;\n"
     //"compute_engine_creds: large_unary with compute engine auth;\n"
@@ -77,7 +77,7 @@ ABSL_FLAG(
     //"slow_consumer : single request with response streaming with "
     //"slow client consumer;\n"
     //"special_status_message: verify Unicode and whitespace in status
-    //message;\n" "status_code_and_message: verify status code & message;\n"
+    // message;\n" "status_code_and_message: verify status code & message;\n"
     //"timeout_on_sleeping_server: deadline exceeds on stream;\n"
     //"unimplemented_method: client calls an unimplemented method;\n"
     //"unimplemented_service: client calls an unimplemented service;\n"

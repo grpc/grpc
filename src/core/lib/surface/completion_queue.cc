@@ -305,7 +305,7 @@ struct cq_pluck_data {
   std::atomic<intptr_t> things_queued_ever{0};
 
   /// 0 initially. 1 once we completed shutting
-  // TODO: (sreek) This is not needed since (shutdown == 1) if and only if
+  // TODO(sreek): This is not needed since (shutdown == 1) if and only if
   // (pending_events == 0). So consider removing this in future and use
   // pending_events
   std::atomic<bool> shutdown{false};

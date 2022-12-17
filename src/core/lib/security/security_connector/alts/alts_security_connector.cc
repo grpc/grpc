@@ -229,7 +229,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return nullptr;
   }
-  // TODO: Pass highest common rpc protocol version to grpc caller.
+  // TODO(unknown): Pass highest common rpc protocol version to grpc caller.
   bool check_result = grpc_gcp_rpc_protocol_versions_check(
       &local_versions, &peer_versions, nullptr);
   if (!check_result) {
