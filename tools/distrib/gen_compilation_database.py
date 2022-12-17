@@ -125,6 +125,8 @@ def fixCompilationDatabase(args, db):
 
 
 if __name__ == "__main__":
+    for k, v in os.environ.items():
+        print("ENV: %s=%s" % (k, v))
     parser = argparse.ArgumentParser(
         description='Generate JSON compilation database')
     parser.add_argument('--include_external', action='store_true')
