@@ -14,11 +14,12 @@
 // limitations under the License.
 //
 
-#include <grpc/grpc.h>
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H
 
 #include <grpc/support/port_platform.h>
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resolver/server_address.h"
