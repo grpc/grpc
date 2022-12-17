@@ -24,6 +24,21 @@ CPU_COUNT=`nproc`
 
 rm -rf iwyu || true
 git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
+
+###############################################################################
+#
+#   BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!
+#
+#   Changing the version of iwyu can bring along subtle changes.
+#   You *must* test the new version of iwyu:
+#   1. run it on the entire codebase before submitting
+#   2. UPLOAD A CHANGE THAT SHOULD BE BROKEN AFTER SUBMISSION OF THIS CHANGE
+#   ensure that the broken change is caught by the new version of iwyu
+#
+#   BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!
+#
+###############################################################################
+
 # latest commit on the clang 15 branch
 cd ${IWYU_ROOT}/iwyu
 git checkout 7f0b6c304acf69c42bb7f6e03c63f836924cb7e0
