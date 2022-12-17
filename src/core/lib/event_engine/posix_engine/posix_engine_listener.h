@@ -191,8 +191,7 @@ class PosixEngineListenerImpl
       memory_allocator_factory_;
 };
 
-class PosixEngineListener : public EventEngine::Listener,
-                            public PosixListenerWithFdSupport {
+class PosixEngineListener : public PosixListenerWithFdSupport {
  public:
   PosixEngineListener(
       PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,

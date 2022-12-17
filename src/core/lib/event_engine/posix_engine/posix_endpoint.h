@@ -593,8 +593,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
-class PosixEndpoint : public EventEngine::Endpoint,
-                      public PosixEndpointWithFdSupport {
+class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint(
       EventHandle* handle, PosixEngineClosure* on_shutdown,
