@@ -33,6 +33,7 @@ function download_buildozer() {
     platform="$(uname -sm)"
     case "${platform}" in
         "Linux x86_64")     download_link="https://github.com/bazelbuild/buildtools/releases/download/${BUILDOZER_VERSION}/buildozer-linux-amd64";;
+        "Linux aarch64")    download_link="https://github.com/bazelbuild/buildtools/releases/download/${BUILDOZER_VERSION}/buildozer-linux-arm64";;
         "Darwin x86_64")    download_link="https://github.com/bazelbuild/buildtools/releases/download/${BUILDOZER_VERSION}/buildozer-darwin-amd64";;
         "Darwin arm64")     download_link="https://github.com/bazelbuild/buildtools/releases/download/${BUILDOZER_VERSION}/buildozer-darwin-arm64";;
         *)                  error_handling "Unsupported platform: ${platform}";;
