@@ -25,14 +25,31 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/wait_set.h"
 
+// Multi producer single consumer inter-activity comms.
+
 namespace grpc_core {
 
 namespace mpscpipe_detail {
 
+// "Center" of the communication pipe.
+// Contains sent but not received messages, and open/close state.
 template <typename T>
 class Center : public RefCounted<Center<T>> {
  public:
+  // Construct the center with a maximum queue size.
   explicit Center(size_t max_queued) : max_queued_(max_queued) {}
+
+  // Poll for new items.
+  // - Returns true if new items were obtained, in which case they are contained
+  //   in dest in the order they were added. Wakes up all pending senders since
+  //   there will now be space to send.
+  // - If no new items are available, returns
+  //   false and sets up a waker to be awoken when more items are available.
+  // TODO(ctiller): consider the problem of thundering herds here. There may be
+  // more senders than there are queue spots, and so the strategy of waking up
+  // all senders is ill-advised.
+  // That said, some senders may have been cancelled by the time we wake them,
+  // and so waking a subset could cause starvation.
   bool PollReceiveBatch(std::vector<T>& dest) {
     ReleasableMutexLock lock(&mu_);
     if (queue_.empty()) {
@@ -47,6 +64,10 @@ class Center : public RefCounted<Center<T>> {
     return true;
   }
 
+  // Poll to send one item.
+  // Returns pending if no send slot was available.
+  // Returns true if the item was sent.
+  // Returns false if the receiver has been closed.
   Poll<bool> PollSend(T& t) {
     ReleasableMutexLock lock(&mu_);
     if (receiver_closed_) return Poll<bool>(false);
@@ -61,6 +82,7 @@ class Center : public RefCounted<Center<T>> {
     return Pending{};
   }
 
+  // Mark that the receiver is closed.
   void ReceiverClosed() {
     MutexLock lock(&mu_);
     receiver_closed_ = true;
@@ -80,6 +102,7 @@ class Center : public RefCounted<Center<T>> {
 template <typename T>
 class MpscReceiver;
 
+// Send half of an mpsc pipe.
 template <typename T>
 class MpscSender {
  public:
@@ -88,6 +111,9 @@ class MpscSender {
   MpscSender(MpscSender&&) noexcept = default;
   MpscSender& operator=(MpscSender&&) noexcept = default;
 
+  // Return a promise that will send one item.
+  // Resolves to true if sent, false if the receiver was closed (and the value
+  // will never be successfully sent).
   auto Send(T t) {
     return [this, t = std::move(t)]() mutable { return center_->PollSend(t); };
   }
@@ -99,6 +125,7 @@ class MpscSender {
   RefCountedPtr<mpscpipe_detail::Center<T>> center_;
 };
 
+// Receive half of an mpsc pipe.
 template <typename T>
 class MpscReceiver {
  public:
@@ -110,6 +137,8 @@ class MpscReceiver {
   }
   MpscReceiver(const MpscReceiver&) = delete;
   MpscReceiver& operator=(const MpscReceiver&) = delete;
+  // Only movable until it's first polled, and so we don't need to contend with
+  // a non-empty buffer during a legal move!
   MpscReceiver(MpscReceiver&& other) noexcept
       : center_(std::move(other.center_)) {
     GPR_DEBUG_ASSERT(other.buffer_.empty());
@@ -119,8 +148,11 @@ class MpscReceiver {
     center_ = std::move(other.center_);
     return *this;
   }
+
+  // Construct a new sender for this receiver.
   MpscSender<T> MakeSender() { return MpscSender<T>(center_); }
 
+  // Return a promise that will resolve to the next item (and remove said item).
   auto Next() {
     return [this]() -> Poll<T> {
       if (buffer_it_ != buffer_.end()) {
@@ -135,6 +167,11 @@ class MpscReceiver {
   }
 
  private:
+  // Received items. We move out of here one by one, but don't resize the
+  // vector. Instead, when we run out of items, we poll the center for more -
+  // which swaps this buffer in for the new receive queue and clears it.
+  // In this way, upon hitting a steady state the queue ought to be allocation
+  // free.
   std::vector<T> buffer_;
   typename std::vector<T>::iterator buffer_it_ = buffer_.end();
   RefCountedPtr<mpscpipe_detail::Center<T>> center_;
