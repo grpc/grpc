@@ -21,6 +21,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_event_engine {
@@ -55,17 +56,27 @@ void RunClosure(grpc_closure* closure, grpc_error_handle error) {
 absl::AnyInvocable<void(absl::Status)> GrpcClosureToStatusCallback(
     grpc_closure* closure) {
   return [closure](absl::Status status) {
+    grpc_core::ApplicationCallbackExecCtx app_ctx;
+    grpc_core::ExecCtx exec_ctx;
     RunClosure(closure, absl_status_to_grpc_error(status));
   };
 }
 
 absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure) {
-  return [closure]() { RunClosure(closure, absl::OkStatus()); };
+  return [closure]() {
+    grpc_core::ApplicationCallbackExecCtx app_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    RunClosure(closure, absl::OkStatus());
+  };
 }
 
 absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure,
                                                  grpc_error_handle error) {
-  return [closure, error]() { RunClosure(closure, error); };
+  return [closure, error]() {
+    grpc_core::ApplicationCallbackExecCtx app_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    RunClosure(closure, error);
+  };
 }
 
 }  // namespace experimental
