@@ -21,7 +21,6 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test_wakeup_schedulers.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log.h>
