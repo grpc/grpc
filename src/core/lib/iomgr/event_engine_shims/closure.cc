@@ -29,7 +29,9 @@ namespace experimental {
 namespace {
 
 void RunClosure(grpc_closure* closure, grpc_error_handle error) {
-  GPR_ASSERT(closure != nullptr);
+  if (closure == nullptr) {
+    return;
+  }
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {

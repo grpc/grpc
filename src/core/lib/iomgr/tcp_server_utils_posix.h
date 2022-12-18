@@ -105,7 +105,8 @@ struct grpc_tcp_server {
   grpc_core::MemoryQuotaRefPtr memory_quota;
 
   /* used when event engine based servers are enabled */
-  absl::flat_hash_map<int, std::tuple<int, int>> listener_fd_map;
+  int n_bind_ports = 0;
+  absl::flat_hash_map<int, std::tuple<int, int>> listen_fd_to_index_map;
   std::unique_ptr<grpc_event_engine::experimental::PosixListenerWithFdSupport>
       ee_listener = nullptr;
 };
