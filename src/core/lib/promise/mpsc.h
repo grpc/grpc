@@ -105,6 +105,20 @@ class MpscReceiver {
   explicit MpscReceiver(size_t max_buffer_hint)
       : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
             std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
+  ~MpscReceiver() {
+    if (center_ != nullptr) center_->ReceiverClosed();
+  }
+  MpscReceiver(const MpscReceiver&) = delete;
+  MpscReceiver& operator=(const MpscReceiver&) = delete;
+  MpscReceiver(MpscReceiver&& other) noexcept
+      : center_(std::move(other.center_)) {
+    GPR_DEBUG_ASSERT(other.buffer_.empty());
+  }
+  MpscReceiver& operator=(MpscReceiver&& other) noexcept {
+    GPR_DEBUG_ASSERT(other.buffer_.empty());
+    center_ = std::move(other.center_);
+    return *this;
+  }
   MpscSender<T> MakeSender() { return MpscSender<T>(center_); }
 
   auto Next() {
@@ -116,13 +130,13 @@ class MpscReceiver {
         buffer_it_ = buffer_.begin();
         return Poll<T>(std::move(*buffer_it_++));
       }
-      return Poll<T>::Pending();
+      return Pending{};
     };
   }
 
  private:
   std::vector<T> buffer_;
-  typename std::vector<T>::const_iterator buffer_it_ = buffer_.end();
+  typename std::vector<T>::iterator buffer_it_ = buffer_.end();
   RefCountedPtr<mpscpipe_detail::Center<T>> center_;
 };
 
