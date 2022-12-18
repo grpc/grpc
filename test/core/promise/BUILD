@@ -437,6 +437,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "event_engine_wakeup_scheduler_test",
+    srcs = ["event_engine_wakeup_scheduler_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:activity",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:notification",
+        "//src/core:poll",
+    ],
+)
+
+grpc_cc_test(
     name = "sleep_test",
     srcs = ["sleep_test.cc"],
     external_deps = ["gtest"],
