@@ -729,6 +729,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr_platform",
     ],
 )

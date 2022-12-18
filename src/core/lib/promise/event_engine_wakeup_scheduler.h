@@ -21,6 +21,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 namespace grpc_core {
 
 // A callback scheduler for activities that works by scheduling callbacks on the
@@ -41,7 +43,11 @@ class EventEngineWakeupScheduler {
     BoundScheduler(const BoundScheduler&) = delete;
     BoundScheduler& operator=(const BoundScheduler&) = delete;
     void ScheduleWakeup() { event_engine_->Run(this); }
-    void Run() final { static_cast<ActivityType*>(this)->RunScheduledWakeup(); }
+    void Run() final {
+      ApplicationCallbackExecCtx app_exec_ctx;
+      ExecCtx exec_ctx;
+      static_cast<ActivityType*>(this)->RunScheduledWakeup();
+    }
 
    private:
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
