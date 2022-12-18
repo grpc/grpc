@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
-#define GRPC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
+#ifndef GRPC_CORE_LIB_PROMISE_EVENT_ENGINE_WAKEUP_SCHEDULER_H
+#define GRPC_CORE_LIB_PROMISE_EVENT_ENGINE_WAKEUP_SCHEDULER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -59,4 +59,4 @@ class EventEngineWakeupScheduler {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
+#endif  // GRPC_CORE_LIB_PROMISE_EVENT_ENGINE_WAKEUP_SCHEDULER_H
