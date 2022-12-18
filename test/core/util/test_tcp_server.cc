@@ -127,7 +127,7 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   while (!server->shutdown &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
     gpr_mu_unlock(server->mu);
-    g(server, 1000);
+    test_tcp_server_poll(server, 1000);
     gpr_mu_lock(server->mu);
   }
   gpr_mu_unlock(server->mu);
