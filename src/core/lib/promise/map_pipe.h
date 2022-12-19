@@ -39,14 +39,21 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
       [filter_factory = promise_detail::RepeatedPromiseFactory<T, Filter>(
            std::move(filter_factory)),
        dst = std::move(dst)](T t) mutable {
-        return TrySeq(filter_factory.Make(std::move(t)), [&dst](T t) {
-          return Map(dst.Push(std::move(t)), [](bool successful_push) {
-            if (successful_push) {
-              return absl::OkStatus();
-            }
-            return absl::CancelledError();
-          });
-        });
+        return TrySeq(
+            [] {
+              gpr_log(GPR_DEBUG, "MapPipe: start map");
+              return Empty{};
+            },
+            filter_factory.Make(std::move(t)),
+            [&dst](T t) {
+              gpr_log(GPR_DEBUG, "MapPipe: start push");
+              return Map(dst.Push(std::move(t)), [](bool successful_push) {
+                if (successful_push) {
+                  return absl::OkStatus();
+                }
+                return absl::CancelledError();
+              });
+            });
       });
 }
 

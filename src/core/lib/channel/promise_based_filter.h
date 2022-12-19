@@ -362,6 +362,8 @@ class BaseCallData : public Activity, private Wakeable {
     bool HaveCapturedBatch() const { return batch_.is_captured(); }
     // Return true if we're not actively sending a message.
     bool IsIdle() const;
+    // Return true if we've released the message for forwarding down the stack.
+    bool IsForwarded() const { return state_ == State::kForwardedBatch; }
 
    private:
     enum class State : uint8_t {
@@ -399,7 +401,6 @@ class BaseCallData : public Activity, private Wakeable {
     Interceptor* const interceptor_;
     absl::optional<PipeSender<MessageHandle>::PushType> push_;
     absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
-    absl::optional<NextResult<MessageHandle>> next_result_;
     CapturedBatch batch_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =

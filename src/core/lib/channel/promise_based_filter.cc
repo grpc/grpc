@@ -198,7 +198,14 @@ void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
   auto* batch = std::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
-  if (refcnt == 0) return;  // refcnt==0 ==> cancelled
+  if (refcnt == 0) {
+    // refcnt==0 ==> cancelled
+    if (grpc_trace_channel.enabled()) {
+      gpr_log(GPR_INFO, "%sRESUME BATCH REQUEST CANCELLED",
+              Activity::current()->DebugTag().c_str());
+    }
+    return;
+  }
   if (--refcnt == 0) {
     releaser->Resume(batch);
   }
@@ -221,6 +228,10 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
+    if (grpc_trace_channel.enabled()) {
+      gpr_log(GPR_INFO, "%sCANCEL BATCH REQUEST ALREADY CANCELLED",
+              Activity::current()->DebugTag().c_str());
+    }
     return;
   }
   refcnt = 0;
@@ -495,25 +506,17 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
         batch_->payload->send_message.flags = (**p)->flags();
         state_ = State::kForwardedBatch;
         batch_.ResumeWith(flusher);
-        next_result_ = std::move(*p);
         next_.reset();
+        push_.reset();
       }
     } break;
     case State::kBatchCompleted:
-      next_result_.reset();
-      // We've cleared out the NextResult on the pipe from promise to us, but
-      // there's also the pipe from us to the promise (so that the promise can
-      // intercept the sent messages). The push promise here is pushing into the
-      // latter pipe, and so we need to keep polling it until it's done, which
-      // depending on what happens inside the promise may take some time.
-      if (absl::holds_alternative<Pending>((*push_)())) break;
       if (completed_status_.ok()) {
         state_ = State::kIdle;
         Activity::current()->ForceImmediateRepoll();
       } else {
         state_ = State::kCancelled;
       }
-      push_.reset();
       flusher->AddClosure(intercepted_on_complete_, completed_status_,
                           "batch_completed");
       break;
@@ -2202,9 +2205,22 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   poll_ctx.ClearRepoll();
   if (send_message() != nullptr) {
     send_message()->WakeInsideCombiner(flusher);
+    if (grpc_trace_channel.enabled()) {
+      gpr_log(GPR_DEBUG,
+              "%s: After send_message WakeInsideCombiner %s is_idle=%s "
+              "is_forwarded=%s",
+              LogTag().c_str(), DebugString().c_str(),
+              send_message()->IsIdle() ? "true" : "false",
+              send_message()->IsForwarded() ? "true" : "false");
+    }
     if (send_trailing_state_ == SendTrailingState::kQueuedBehindSendMessage &&
-        send_message()->IsIdle()) {
+        (send_message()->IsIdle() ||
+         (send_trailing_metadata_batch_->send_message &&
+          send_message()->IsForwarded()))) {
       send_trailing_state_ = SendTrailingState::kQueued;
+      send_message()->Done(
+          *send_trailing_metadata_batch_->payload->send_trailing_metadata
+               .send_trailing_metadata);
     }
   }
   if (receive_message() != nullptr) {
