@@ -42,6 +42,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -141,7 +142,10 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
                  }))
       .NecessaryPush(
           Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
-            gpr_log(GPR_INFO, "HTTP server filter: writing metadata");
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO, "%s[http-server] Write metadata",
+                      Activity::current()->DebugTag().c_str());
+            }
             FilterOutgoingMetadata(*md);
             (*md)->Set(HttpStatusMetadata(), 200);
             (*md)->Set(ContentTypeMetadata(),

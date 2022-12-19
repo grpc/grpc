@@ -53,6 +53,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -302,12 +303,15 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
   // - wait for initial metadata to be sent, and then commence compression of
   //   outgoing messages
   return TryConcurrently(next_promise_factory(std::move(call_args)))
-      .NecessaryPull(std::move(decompress_loop))
+      .Pull(std::move(decompress_loop))
       .NecessaryPush(
           Seq(read_latch->Wait(),
               [write_latch, compress_loop = std::move(compress_loop)](
                   ServerMetadata** md) mutable {
-                gpr_log(GPR_INFO, "ServerCompressionFilter: write metadata");
+                if (grpc_call_trace.enabled()) {
+                  gpr_log(GPR_INFO, "%s[compression] Write metadata",
+                          Activity::current()->DebugTag().c_str());
+                }
                 // Find the compression algorithm.
                 auto loop = compress_loop.TakeAndRun(**md);
                 write_latch->Set(*md);
