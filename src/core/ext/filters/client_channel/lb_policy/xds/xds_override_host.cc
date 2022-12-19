@@ -16,25 +16,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <inttypes.h>
-#include <string.h>
-
-#include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/grpc_types.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
@@ -42,16 +37,17 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -299,16 +295,15 @@ XdsOverrideHostLb::PickOverridenHost(absl::string_view address) {
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
-  if (picker_ == nullptr) {  // Should never happen.
-    return PickResult::Fail(absl::InternalError(
-        "xds_override_host picker not given any child picker"));
-  }
-  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
-      args.call_state);
+  auto* call_state = static_cast<LbCallStateInternal*>(args.call_state);
   auto override_host = call_state->GetCallAttribute(XdsHostOverrideTypeName());
   auto overridden_host_pick = policy_->PickOverridenHost(override_host);
   if (overridden_host_pick.has_value()) {
     return std::move(*overridden_host_pick);
+  }
+  if (picker_ == nullptr) {  // Should never happen.
+    return PickResult::Fail(absl::InternalError(
+        "xds_override_host picker not given any child picker"));
   }
   auto result = picker_->Pick(args);
   auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);
