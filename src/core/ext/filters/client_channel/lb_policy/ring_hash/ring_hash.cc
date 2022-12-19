@@ -39,6 +39,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 

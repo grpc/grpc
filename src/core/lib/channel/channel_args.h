@@ -35,7 +35,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
