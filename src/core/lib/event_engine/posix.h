@@ -94,6 +94,9 @@ class PosixListenerWithFdSupport : public EventEngine::Listener {
   /// connection.
   virtual absl::Status HandleExternalConnection(int listener_fd, int fd,
                                                 SliceBuffer* pending_data) = 0;
+
+  /// Shutdown/stop listening on all bind Fds.
+  virtual void ShutdownListeningFds() = 0;
 };
 
 /// Defines an interface that posix event engines may implement to
