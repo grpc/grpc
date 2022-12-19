@@ -76,9 +76,18 @@ extern const absl::string_view kRpcServerStartedRpcsMeasureName;
 // Canonical gRPC view definitions.
 const ::opencensus::stats::ViewDescriptor& ClientStartedRpcs();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcs();
+const ::opencensus::stats::ViewDescriptor&
+ClientSentCompressedMessageBytesPerRpc();
+const ::opencensus::stats::ViewDescriptor&
+ClientReceivedCompressedMessageBytesPerRpc();
 
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcs();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcs();
+const ::opencensus::stats::ViewDescriptor&
+ServerSentCompressedMessageBytesPerRpc();
+const ::opencensus::stats::ViewDescriptor&
+ServerReceivedCompressedMessageBytesPerRpc();
+const ::opencensus::stats::ViewDescriptor& ServerServerLatency();
 
 const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientSentBytesPerRpcCumulative();
@@ -176,6 +185,11 @@ class CensusContext {
   void AddSpanAttribute(absl::string_view key,
                         opencensus::trace::AttributeValueRef attribute) {
     span_.AddAttribute(key, attribute);
+  }
+
+  void AddSpanAnnotation(absl::string_view description,
+                         opencensus::trace::AttributesRef attributes) {
+    span_.AddAnnotation(description, attributes);
   }
 
   const ::opencensus::trace::Span& Span() const { return span_; }

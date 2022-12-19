@@ -39,8 +39,8 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
