@@ -2885,6 +2885,8 @@ void ClientPromiseBasedCall::PublishStatus(
         gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
   }
   PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
+  // Clear state saying we have a RECV_STATUS_ON_CLIENT outstanding
+  // (so we don't call through twice)
   recv_status_on_client_ = absl::monostate();
   FinishOpOnCompletion(&recv_status_on_client_completion_,
                        PendingOp::kReceiveStatusOnClient);
