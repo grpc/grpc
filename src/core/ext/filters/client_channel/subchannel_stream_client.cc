@@ -72,7 +72,8 @@ SubchannelStreamClient::SubchannelStreamClient(
               .set_multiplier(SUBCHANNEL_STREAM_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(SUBCHANNEL_STREAM_RECONNECT_JITTER)
               .set_max_backoff(Duration::Seconds(
-                  SUBCHANNEL_STREAM_RECONNECT_MAX_BACKOFF_SECONDS))) {
+                  SUBCHANNEL_STREAM_RECONNECT_MAX_BACKOFF_SECONDS))),
+      event_engine_(connected_subchannel_->args().GetObject<EventEngine>()) {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: created SubchannelStreamClient", tracer_, this);
   }
@@ -96,8 +97,7 @@ void SubchannelStreamClient::Orphan() {
     event_handler_.reset();
     call_state_.reset();
     if (retry_timer_handle_.has_value()) {
-      connected_subchannel_->args().GetObject<EventEngine>()->Cancel(
-          *retry_timer_handle_);
+      event_engine_->Cancel(*retry_timer_handle_);
       retry_timer_handle_.reset();
     }
   }
@@ -138,13 +138,12 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
       gpr_log(GPR_INFO, "%s %p: ... retrying immediately.", tracer_, this);
     }
   }
-  retry_timer_handle_ =
-      connected_subchannel_->args().GetObject<EventEngine>()->RunAfter(
-          timeout, [self = Ref(DEBUG_LOCATION, "health_retry_timer")] {
-            ApplicationCallbackExecCtx callback_exec_ctx;
-            ExecCtx exec_ctx;
-            self->OnRetryTimer();
-          });
+  retry_timer_handle_ = event_engine_->RunAfter(
+      timeout, [self = Ref(DEBUG_LOCATION, "health_retry_timer")] {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        self->OnRetryTimer();
+      });
 }
 
 void SubchannelStreamClient::OnRetryTimer() {

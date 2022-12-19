@@ -214,6 +214,10 @@ class SubchannelStreamClient
   BackOff retry_backoff_ ABSL_GUARDED_BY(mu_);
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       retry_timer_handle_ ABSL_GUARDED_BY(mu_);
+  // A raw pointer will suffice since connected_subchannel_ holds a copy of the
+  // ChannelArgs which holds an std::shared_ptr of the EventEngine.
+  grpc_event_engine::experimental::EventEngine* event_engine_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
