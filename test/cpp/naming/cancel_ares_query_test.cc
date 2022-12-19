@@ -38,6 +38,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -63,6 +64,8 @@
 #endif
 
 namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 void* Tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -166,8 +169,9 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
-          client_target.c_str(), grpc_core::ChannelArgs(), args->pollset_set,
-          args->lock,
+          client_target.c_str(),
+          grpc_core::ChannelArgs().SetObject(GetDefaultEventEngine()),
+          args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();
@@ -181,7 +185,7 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
 
 class CancelDuringAresQuery : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
     // Sanity check the time that it takes to run the test
     // including the teardown time (the teardown
@@ -191,7 +195,7 @@ class CancelDuringAresQuery : public ::testing::Test {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
       gpr_log(GPR_ERROR, "Test took too long");

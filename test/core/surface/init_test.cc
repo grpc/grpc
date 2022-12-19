@@ -18,8 +18,11 @@
 
 #include "src/core/lib/surface/init.h"
 
+#include <stdint.h>
+
 #include <chrono>
 #include <memory>
+#include <ratio>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -66,7 +69,7 @@ TEST(Init, blocking) {
   test_blocking(3);
 }
 
-TEST(Init, shutdown_with_thread) {
+TEST(Init, ShutdownWithThread) {
   grpc_init();
   {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
@@ -87,7 +90,7 @@ TEST(Init, mixed) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, mixed_with_thread) {
+TEST(Init, MixedWithThread) {
   grpc_init();
   {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
@@ -102,7 +105,7 @@ TEST(Init, mixed_with_thread) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, repeatedly) {
+TEST(Init, Repeatedly) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
     {
@@ -115,7 +118,7 @@ TEST(Init, repeatedly) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, repeatedly_blocking) {
+TEST(Init, RepeatedlyBlocking) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
     {

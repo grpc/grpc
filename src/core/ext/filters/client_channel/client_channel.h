@@ -33,8 +33,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
@@ -260,7 +260,7 @@ class ClientChannel {
   void UpdateStateAndPickerLocked(
       grpc_connectivity_state state, const absl::Status& status,
       const char* reason,
-      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker)
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateServiceConfigInControlPlaneLocked(
@@ -332,7 +332,7 @@ class ClientChannel {
   // Fields used in the data plane.  Guarded by data_plane_mu_.
   //
   mutable Mutex data_plane_mu_;
-  std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
       ABSL_GUARDED_BY(data_plane_mu_);
   // Linked list of calls queued waiting for LB pick.
   LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(data_plane_mu_) = nullptr;

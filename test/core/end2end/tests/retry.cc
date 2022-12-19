@@ -21,11 +21,12 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -274,6 +275,12 @@ static void test_retry(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
@@ -282,11 +289,12 @@ static void test_retry(grpc_end2end_test_config config) {
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(203),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(202), true);
+  cqv.Expect(tag(203), true);
   cqv.Expect(tag(1), true);
   cqv.Verify();
 

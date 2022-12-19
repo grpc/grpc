@@ -28,7 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -36,6 +35,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/util/port.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -225,7 +226,7 @@ void FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::
       0x00,                   // flags
       0x00, 0x00, 0x00, 0x00  // stream identifier
   };
-  if (total_bytes_sent_ < int(kEmptyHttp2SettingsFrame.size())) {
+  if (total_bytes_sent_ < static_cast<int>(kEmptyHttp2SettingsFrame.size())) {
     int bytes_to_send = kEmptyHttp2SettingsFrame.size() - total_bytes_sent_;
     int bytes_sent =
         send(fd_, kEmptyHttp2SettingsFrame.data() + total_bytes_sent_,

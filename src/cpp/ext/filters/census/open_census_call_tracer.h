@@ -28,8 +28,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
@@ -81,6 +81,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
         const grpc_transport_stream_stats* transport_stream_stats) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
+    void RecordAnnotation(absl::string_view annotation) override;
 
     experimental::CensusContext* context() { return &context_; }
 
@@ -108,6 +109,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   void GenerateContext();
   OpenCensusCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
+  void RecordAnnotation(absl::string_view annotation) override;
 
  private:
   experimental::CensusContext CreateCensusContextForCallAttempt();

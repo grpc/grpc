@@ -31,7 +31,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
-#include <grpcpp/impl/codegen/proto_utils.h>
+#include <grpcpp/impl/proto_utils.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
@@ -170,7 +170,7 @@ class ClientCallbackEnd2endTest
   }
 
   void SendRpcs(int num_rpcs, bool with_binary_metadata) {
-    std::string test_string("");
+    std::string test_string;
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       EchoResponse response;
@@ -220,7 +220,7 @@ class ClientCallbackEnd2endTest
   void SendRpcsGeneric(int num_rpcs, bool maybe_except,
                        const char* suffix_for_stats) {
     const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
-    std::string test_string("");
+    std::string test_string;
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       std::unique_ptr<ByteBuffer> send_buf;
@@ -264,7 +264,7 @@ class ClientCallbackEnd2endTest
   void SendGenericEchoAsBidi(int num_rpcs, int reuses, bool do_writes_done,
                              const char* suffix_for_stats) {
     const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
-    std::string test_string("");
+    std::string test_string;
     for (int i = 0; i < num_rpcs; i++) {
       test_string += "Hello world. ";
       class Client : public grpc::ClientBidiReactor<ByteBuffer, ByteBuffer> {
@@ -423,7 +423,7 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
                            rpc_state[index].done = true;
                            rpc_state[index].cv.notify_all();
                            // Call the next level of nesting if possible
-                           if (index + 1 < int(rpc_state.size())) {
+                           if (index + 1 < static_cast<int>(rpc_state.size())) {
                              nested_call(index + 1);
                            }
                          });

@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -80,6 +79,8 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
   };
 
   struct DownstreamTlsContext {
+    DownstreamTlsContext() {}
+
     CommonTlsContext common_tls_context;
     bool require_client_certificate = false;
 

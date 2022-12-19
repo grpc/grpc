@@ -26,7 +26,7 @@
 
 #include <string>
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
 
 /* String utility functions */
 

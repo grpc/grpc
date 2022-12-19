@@ -30,21 +30,19 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/lib/compression/compression_internal.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
-
-extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
@@ -76,18 +74,23 @@ class HPackCompressor {
   template <typename HeaderSet>
   void EncodeHeaders(const EncodeHeaderOptions& options,
                      const HeaderSet& headers, grpc_slice_buffer* output) {
-    Framer framer(options, this, output);
-    headers.Encode(&framer);
+    SliceBuffer raw;
+    Encoder encoder(this, options.use_true_binary_metadata, raw);
+    headers.Encode(&encoder);
+    Frame(options, raw, output);
   }
 
-  class Framer {
-   public:
-    Framer(const EncodeHeaderOptions& options, HPackCompressor* compressor,
-           grpc_slice_buffer* output);
-    ~Framer() { FinishFrame(true); }
+  template <typename HeaderSet>
+  void EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
+    Encoder encoder(this, true, output);
+    headers.Encode(&encoder);
+  }
 
-    Framer(const Framer&) = delete;
-    Framer& operator=(const Framer&) = delete;
+ private:
+  class Encoder {
+   public:
+    Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,
+            SliceBuffer& output);
 
     void Encode(const Slice& key, const Slice& value);
     void Encode(HttpPathMetadata, const Slice& value);
@@ -124,18 +127,6 @@ class HPackCompressor {
    private:
     friend class SliceIndex;
 
-    struct FramePrefix {
-      // index (in output_) of the header for the frame
-      size_t header_idx;
-      // number of bytes in 'output' when we started the frame - used to
-      // calculate frame length
-      size_t output_length_at_start_of_frame;
-    };
-
-    FramePrefix BeginFrame();
-    void FinishFrame(bool is_header_boundary);
-    void EnsureSpace(size_t need_bytes);
-
     void AdvertiseTableSizeChange();
     void EmitIndexed(uint32_t index);
     void EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
@@ -158,26 +149,16 @@ class HPackCompressor {
                                    const Slice& slice, uint32_t* index,
                                    size_t max_compression_size);
 
-    size_t CurrentFrameSize() const;
-    void Add(Slice slice);
-    uint8_t* AddTiny(size_t len);
-
-    // maximum size of a frame
-    const size_t max_frame_size_;
-    bool is_first_frame_ = true;
     const bool use_true_binary_metadata_;
-    const bool is_end_of_stream_;
-    // output stream id
-    const uint32_t stream_id_;
-    grpc_slice_buffer* const output_;
-    grpc_transport_one_way_stats* const stats_;
     HPackCompressor* const compressor_;
-    FramePrefix prefix_;
+    SliceBuffer& output_;
   };
 
- private:
   static constexpr size_t kNumFilterValues = 64;
   static constexpr uint32_t kNumCachedGrpcStatusValues = 16;
+
+  void Frame(const EncodeHeaderOptions& options, SliceBuffer& raw,
+             grpc_slice_buffer* output);
 
   // maximum number of bytes we'll use for the decode table (to guard against
   // peers ooming us by setting decode table size high)
@@ -189,7 +170,7 @@ class HPackCompressor {
 
   class SliceIndex {
    public:
-    void EmitTo(absl::string_view key, const Slice& value, Framer* framer);
+    void EmitTo(absl::string_view key, const Slice& value, Encoder* encoder);
 
    private:
     struct ValueIndex {

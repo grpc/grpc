@@ -27,7 +27,6 @@
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -51,7 +50,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 
@@ -119,7 +117,7 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
 static void do_basic_init(void) {
   grpc_core::InitInternally = grpc_init;
   grpc_core::ShutdownInternally = grpc_shutdown;
-  grpc_core::IsInitializedInternally = [] {
+  grpc_core::IsInitializedInternally = []() {
     return grpc_is_initialized() != 0;
   };
   gpr_log_verbosity_init();
@@ -183,7 +181,7 @@ void grpc_shutdown(void) {
     grpc_core::ApplicationCallbackExecCtx* acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
-        !grpc_event_engine::posix_engine::TimerManager::
+        !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
         (acec == nullptr ||
          (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==

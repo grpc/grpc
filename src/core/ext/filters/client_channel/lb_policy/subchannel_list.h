@@ -30,7 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -324,6 +324,7 @@ void SubchannelData<SubchannelListType,
   pending_watcher_ =
       new Watcher(this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
+      // NOLINTNEXTLINE(google-readability-casting)
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
           pending_watcher_));
 }

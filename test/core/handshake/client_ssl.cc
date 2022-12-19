@@ -27,10 +27,13 @@
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP

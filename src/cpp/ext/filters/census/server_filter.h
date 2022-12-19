@@ -30,10 +30,9 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/opencensus.h>
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

@@ -28,13 +28,11 @@
 #include <vector>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/completion_queue.h>
-#include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/impl/service_type.h>
@@ -44,8 +42,8 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/server_interface.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/server_interceptor.h>
 
 #include "src/core/lib/gpr/string.h"

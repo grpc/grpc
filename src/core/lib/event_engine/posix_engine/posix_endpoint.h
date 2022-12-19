@@ -61,7 +61,7 @@ typedef size_t msg_iovlen_type;
 #endif  //  GRPC_POSIX_SOCKET_TCP
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -521,7 +521,6 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
-  grpc_core::Mutex traced_buffer_mu_;
   PosixSocketWrapper sock_;
   int fd_;
   bool is_first_read_ = true;
@@ -579,7 +578,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
   int min_progress_size_ = 1;
-  TracedBufferList traced_buffers_ ABSL_GUARDED_BY(traced_buffer_mu_);
+  TracedBufferList traced_buffers_;
   // The handle is owned by the PosixEndpointImpl object.
   EventHandle* handle_;
   PosixEventPoller* poller_;
@@ -677,7 +676,7 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     grpc_event_engine::experimental::MemoryAllocator&& allocator,
     const PosixTcpOptions& options);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

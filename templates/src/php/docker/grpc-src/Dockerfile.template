@@ -42,4 +42,4 @@
     make install
 
 
-  CMD ["/github/grpc/src/php/bin/run_tests.sh"]
+  CMD ["/github/grpc/src/php/bin/run_tests.sh", "--ignore-valgrind-undef-errors"]

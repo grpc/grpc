@@ -24,7 +24,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -32,6 +31,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EPOLL
@@ -41,7 +41,7 @@
 #define MAX_EPOLL_EVENTS 100
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class Epoll1EventHandle;
 
@@ -110,7 +110,7 @@ class Epoll1Poller : public PosixEventPoller {
 #else
   struct EpollSet {};
 #endif
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   Scheduler* scheduler_;
   // A singleton epoll set
   EpollSet g_epoll_set_;
@@ -123,7 +123,7 @@ class Epoll1Poller : public PosixEventPoller {
 // engine.
 Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H

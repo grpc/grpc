@@ -37,8 +37,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 /// Opaque representation of an error.
-/// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
-/// full write up of this object.
 
 typedef absl::Status grpc_error_handle;
 
@@ -86,7 +84,7 @@ inline absl::Status grpc_assert_never_ok(absl::Status error) {
   grpc_assert_never_ok(grpc_os_error(DEBUG_LOCATION, err, call_name))
 
 absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
-                            const char* call_name) GRPC_MUST_USE_RESULT;
+                            absl::string_view call_name) GRPC_MUST_USE_RESULT;
 
 /// windows only: create an error associated with WSAGetLastError()!=0
 #define GRPC_WSA_ERROR(err, call_name) \

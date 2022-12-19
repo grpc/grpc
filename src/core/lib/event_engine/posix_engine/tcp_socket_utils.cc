@@ -42,30 +42,26 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#endif
+#endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #include <atomic>
 #include <cstring>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/stat.h>  // IWYU pragma: keep
 #include <sys/un.h>
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
+namespace experimental {
 
 namespace {
 
@@ -102,8 +98,6 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
   return socket_factory != nullptr ? socket_factory(family, type, protocol)
                                    : socket(family, type, protocol);
 }
-
-const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
 
 absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
                                     const EventEngine::ResolvedAddress& addr,
@@ -195,7 +189,7 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec) {
   int fd, flags;
-  socklen_t len = addr.size();
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   fd = accept(sockfd, const_cast<sockaddr*>(addr.address()), &len);
   if (fd >= 0) {
     if (nonblock) {
@@ -224,7 +218,7 @@ int Accept4(int sockfd,
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
-  socklen_t len = addr.size();
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   return accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
 }
 
@@ -232,126 +226,27 @@ int Accept4(int sockfd,
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
-bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
-                        EventEngine::ResolvedAddress* resolved_addr4_out) {
-  const sockaddr* addr = resolved_addr->address();
-  if (addr->sa_family == AF_INET6) {
-    const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(addr);
-    sockaddr_in* addr4_out =
-        resolved_addr4_out == nullptr
-            ? nullptr
-            : reinterpret_cast<sockaddr_in*>(
-                  const_cast<sockaddr*>(resolved_addr4_out->address()));
-
-    if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
-               sizeof(kV4MappedPrefix)) == 0) {
-      if (resolved_addr4_out != nullptr) {
-        // Normalize ::ffff:0.0.0.0/96 to IPv4.
-        memset(addr4_out, 0, sizeof(sockaddr_in));
-        addr4_out->sin_family = AF_INET;
-        // s6_addr32 would be nice, but it's non-standard.
-        memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
-        addr4_out->sin_port = addr6->sin6_port;
-        *resolved_addr4_out = EventEngine::ResolvedAddress(
-            reinterpret_cast<sockaddr*>(addr4_out),
-            static_cast<socklen_t>(sizeof(sockaddr_in)));
-      }
-      return true;
-    }
-  }
-  return false;
-}
-
-bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
-                        EventEngine::ResolvedAddress* resolved_addr6_out) {
-  GPR_ASSERT(resolved_addr != resolved_addr6_out);
-  const sockaddr* addr = resolved_addr->address();
-  sockaddr_in6* addr6_out = const_cast<sockaddr_in6*>(
-      reinterpret_cast<const sockaddr_in6*>(resolved_addr6_out->address()));
-  if (addr->sa_family == AF_INET) {
-    const sockaddr_in* addr4 = reinterpret_cast<const sockaddr_in*>(addr);
-    memset(resolved_addr6_out, 0, sizeof(*resolved_addr6_out));
-    addr6_out->sin6_family = AF_INET6;
-    memcpy(&addr6_out->sin6_addr.s6_addr[0], kV4MappedPrefix, 12);
-    memcpy(&addr6_out->sin6_addr.s6_addr[12], &addr4->sin_addr, 4);
-    addr6_out->sin6_port = addr4->sin_port;
-    *resolved_addr6_out = EventEngine::ResolvedAddress(
-        reinterpret_cast<sockaddr*>(addr6_out),
-        static_cast<socklen_t>(sizeof(sockaddr_in6)));
-    return true;
-  }
-  return false;
-}
-
-absl::StatusOr<std::string> SockaddrToString(
-    const EventEngine::ResolvedAddress* resolved_addr, bool normalize) {
-  const int save_errno = errno;
-  EventEngine::ResolvedAddress addr_normalized;
-  if (normalize && SockaddrIsV4Mapped(resolved_addr, &addr_normalized)) {
-    resolved_addr = &addr_normalized;
-  }
-  const sockaddr* addr =
-      reinterpret_cast<const sockaddr*>(resolved_addr->address());
-  std::string out;
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr) {
 #ifdef GRPC_HAVE_UNIX_SOCKET
-  if (addr->sa_family == AF_UNIX) {
-    const sockaddr_un* addr_un = reinterpret_cast<const sockaddr_un*>(addr);
-    bool abstract = addr_un->sun_path[0] == '\0';
-    if (abstract) {
-#ifdef GPR_APPLE
-      int len = resolved_addr->size() - sizeof(addr_un->sun_family) -
-                sizeof(addr_un->sun_len);
-#else
-      int len = resolved_addr->size() - sizeof(addr_un->sun_family);
-#endif
-      if (len <= 0) {
-        return absl::InvalidArgumentError("Empty UDS abstract path");
-      }
-      out = std::string(addr_un->sun_path, len);
-    } else {
-      size_t maxlen = sizeof(addr_un->sun_path);
-      if (strnlen(addr_un->sun_path, maxlen) == maxlen) {
-        return absl::InvalidArgumentError("UDS path is not null-terminated");
-      }
-      out = std::string(addr_un->sun_path);
-    }
-    return out;
+  if (resolved_addr.address()->sa_family != AF_UNIX) {
+    return;
   }
-#endif
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
+      const_cast<sockaddr*>(resolved_addr.address()));
 
-  const void* ip = nullptr;
-  int port = 0;
-  uint32_t sin6_scope_id = 0;
-  if (addr->sa_family == AF_INET) {
-    const sockaddr_in* addr4 = reinterpret_cast<const sockaddr_in*>(addr);
-    ip = &addr4->sin_addr;
-    port = ntohs(addr4->sin_port);
-  } else if (addr->sa_family == AF_INET6) {
-    const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(addr);
-    ip = &addr6->sin6_addr;
-    port = ntohs(addr6->sin6_port);
-    sin6_scope_id = addr6->sin6_scope_id;
+  // There is nothing to unlink for an abstract unix socket
+  if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
+    return;
   }
-  char ntop_buf[INET6_ADDRSTRLEN];
-  if (ip != nullptr &&
-      inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != nullptr) {
-    if (sin6_scope_id != 0) {
-      // Enclose sin6_scope_id with the format defined in RFC 6874
-      // section 2.
-      std::string host_with_scope =
-          absl::StrFormat("%s%%%" PRIu32, ntop_buf, sin6_scope_id);
-      out = grpc_core::JoinHostPort(host_with_scope, port);
-    } else {
-      out = grpc_core::JoinHostPort(ntop_buf, port);
-    }
-  } else {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Unknown sockaddr family: ", addr->sa_family));
+
+  struct stat st;
+  if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
+    unlink(un->sun_path);
   }
-  // This is probably redundant, but we wouldn't want to log the wrong
-  // error.
-  errno = save_errno;
-  return out;
+#else
+  (void)resolved_addr;
+#endif
 }
 
 // Instruct the kernel to wait for specified number of bytes to be received on
@@ -754,7 +649,7 @@ absl::StatusOr<std::string> PosixSocketWrapper::LocalAddressString() {
   if (!status.ok()) {
     return status.status();
   }
-  return SockaddrToString(&(*status), true);
+  return ResolvedAddressToNormalizedString((*status));
 }
 
 absl::StatusOr<std::string> PosixSocketWrapper::PeerAddressString() {
@@ -762,7 +657,7 @@ absl::StatusOr<std::string> PosixSocketWrapper::PeerAddressString() {
   if (!status.ok()) {
     return status.status();
   }
-  return SockaddrToString(&(*status), true);
+  return ResolvedAddressToNormalizedString((*status));
 }
 
 absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
@@ -789,7 +684,7 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
       return sock;
     }
     // If this isn't an IPv4 address, then return whatever we've got.
-    if (!SockaddrIsV4Mapped(&addr, nullptr)) {
+    if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
       dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;
       return sock;
     }
@@ -817,7 +712,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
   // v6.
-  if (!SockaddrToV4Mapped(&target_addr, &mapped_target_addr)) {
+  if (!ResolvedAddressToV4Mapped(target_addr, &mapped_target_addr)) {
     // addr is v4 mapped to v6 or just v6.
     mapped_target_addr = target_addr;
   }
@@ -830,7 +725,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
     // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
-    if (!SockaddrIsV4Mapped(&target_addr, &mapped_target_addr)) {
+    if (!ResolvedAddressIsV4Mapped(target_addr, &mapped_target_addr)) {
       mapped_target_addr = target_addr;
     }
   }
@@ -845,21 +740,6 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 }
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
-
-bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* /*resolved_addr*/,
-                        EventEngine::ResolvedAddress* /*resolved_addr4_out*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* /*resolved_addr*/,
-                        EventEngine::ResolvedAddress* /*resolved_addr6_out*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-absl::StatusOr<std::string> SockaddrToString(
-    const EventEngine::ResolvedAddress* /*resolved_addr*/, bool /*normalize*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
 
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   GPR_ASSERT(false && "unimplemented");
@@ -957,5 +837,5 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

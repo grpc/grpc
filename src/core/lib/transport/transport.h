@@ -33,11 +33,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
@@ -59,8 +60,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
-
-struct grpc_transport_stream_op_batch_payload;
 
 /* Minimum and maximum protocol accepted versions. */
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
@@ -241,6 +240,7 @@ struct grpc_transport_one_way_stats {
 struct grpc_transport_stream_stats {
   grpc_transport_one_way_stats incoming;
   grpc_transport_one_way_stats outgoing;
+  gpr_timespec latency = gpr_inf_future(GPR_TIMESPAN);
 };
 
 void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,

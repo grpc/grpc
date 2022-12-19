@@ -30,8 +30,9 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -460,6 +461,10 @@ struct grpc_chttp2_transport
    * thereby reducing the number of induced frames. */
   uint32_t num_pending_induced_frames = 0;
   bool reading_paused_on_pending_induced_frames = false;
+  /** Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
+   * the peer
+   */
+  bool enable_preferred_rx_crypto_frame_advertisement = false;
 };
 
 typedef enum {
@@ -514,6 +519,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
+  bool parsed_trailers_only = false;
   absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   uint32_t* recv_message_flags = nullptr;
   bool* call_failed_before_recv_message = nullptr;
@@ -580,6 +586,9 @@ struct grpc_chttp2_stream {
   bool traced = false;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
+
+  // time this stream was created
+  gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
 };
 
 /** Transport writing call flow:
@@ -692,7 +701,6 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-// extern grpc_core::TraceFlag grpc_http_trace;
 // extern grpc_core::TraceFlag grpc_flowctl_trace;
 
 #define GRPC_CHTTP2_IF_TRACING(stmt)                \

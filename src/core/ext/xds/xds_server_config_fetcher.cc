@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <array>
 #include <map>
 #include <memory>
 #include <set>
@@ -43,7 +42,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -58,7 +56,6 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -72,11 +69,9 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -321,7 +316,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           http_filters);
   ~XdsServerConfigSelector() override = default;
 
-  CallConfig GetCallConfig(grpc_metadata_batch* metadata) override;
+  absl::StatusOr<CallConfig> GetCallConfig(
+      grpc_metadata_batch* metadata) override;
 
  private:
   struct VirtualHost {
@@ -561,9 +557,15 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
             this, xds_client_.get(), listener.ToString().c_str());
   }
-  auto& tcp_listener =
-      absl::get<XdsListenerResource::TcpListener>(listener.listener);
-  if (tcp_listener.address != listening_address_) {
+  auto* tcp_listener =
+      absl::get_if<XdsListenerResource::TcpListener>(&listener.listener);
+  if (tcp_listener == nullptr) {
+    MutexLock lock(&mu_);
+    OnFatalError(
+        absl::FailedPreconditionError("LDS resource is not a TCP listener"));
+    return;
+  }
+  if (tcp_listener->address != listening_address_) {
     MutexLock lock(&mu_);
     OnFatalError(absl::FailedPreconditionError(
         "Address in LDS update does not match listening address"));
@@ -571,8 +573,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
   }
   auto new_filter_chain_match_manager = MakeRefCounted<FilterChainMatchManager>(
       xds_client_->Ref(DEBUG_LOCATION, "FilterChainMatchManager"),
-      std::move(tcp_listener.filter_chain_map),
-      std::move(tcp_listener.default_filter_chain));
+      std::move(tcp_listener->filter_chain_map),
+      std::move(tcp_listener->default_filter_chain));
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ == nullptr ||
       !(new_filter_chain_match_manager->filter_chain_map() ==
@@ -1184,30 +1186,26 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   return config_selector;
 }
 
-ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
-    FilterChainMatchManager::XdsServerConfigSelector::GetCallConfig(
-        grpc_metadata_batch* metadata) {
+absl::StatusOr<ServerConfigSelector::CallConfig>
+XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    XdsServerConfigSelector::GetCallConfig(grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
-    call_config.error = GRPC_ERROR_CREATE("No path found");
-    return call_config;
+    return absl::InternalError("no path found");
   }
   absl::string_view path =
       metadata->get_pointer(HttpPathMetadata())->as_string_view();
   if (metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    call_config.error = GRPC_ERROR_CREATE("No authority found");
-    return call_config;
+    return absl::InternalError("no authority found");
   }
   absl::string_view authority =
       metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
       VirtualHostListIterator(&virtual_hosts_), authority);
   if (!vhost_index.has_value()) {
-    call_config.error = grpc_error_set_int(
-        GRPC_ERROR_CREATE(absl::StrCat("could not find VirtualHost for ",
-                                       authority, " in RouteConfiguration")),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
-    return call_config;
+    return absl::UnavailableError(
+        absl::StrCat("could not find VirtualHost for ", authority,
+                     " in RouteConfiguration"));
   }
   auto& virtual_host = virtual_hosts_[vhost_index.value()];
   auto route_index = XdsRouting::GetRouteForRequest(
@@ -1216,10 +1214,7 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     auto& route = virtual_host.routes[route_index.value()];
     // Found the matching route
     if (route.unsupported_action) {
-      call_config.error = grpc_error_set_int(
-          GRPC_ERROR_CREATE("Matching route has unsupported action"),
-          StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
-      return call_config;
+      return absl::UnavailableError("matching route has unsupported action");
     }
     if (route.method_config != nullptr) {
       call_config.method_configs =
@@ -1228,10 +1223,7 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     }
     return call_config;
   }
-  call_config.error = grpc_error_set_int(GRPC_ERROR_CREATE("No route matched"),
-                                         StatusIntProperty::kRpcStatus,
-                                         GRPC_STATUS_UNAVAILABLE);
-  return call_config;
+  return absl::UnavailableError("no route matched");
 }
 
 //

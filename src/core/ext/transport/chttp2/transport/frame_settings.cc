@@ -34,7 +34,7 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
@@ -232,7 +232,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                     sp->name, parser->value);
           }
         } else if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-          gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",
+          gpr_log(GPR_DEBUG, "CHTTP2: Ignoring unknown setting %d (value %d)",
                   parser->id, parser->value);
         }
         break;

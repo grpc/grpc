@@ -32,8 +32,6 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -45,23 +43,21 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
-#include <grpcpp/impl/codegen/interceptor_common.h>
-#include <grpcpp/impl/codegen/metadata_map.h>
-#include <grpcpp/impl/codegen/server_callback_handlers.h>
-#include <grpcpp/impl/codegen/server_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/interceptor_common.h>
+#include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/impl/service_type.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/server_interface.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/method_handler.h>
 #include <grpcpp/support/server_interceptor.h>
@@ -870,7 +866,6 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(
     grpc::ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
@@ -893,7 +888,6 @@ Server::Server(
       server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
       health_check_service_disabled_(false) {
-  g_gli_initializer.summon();
   gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
   global_callbacks_ = grpc::g_callbacks;
   global_callbacks_->UpdateArguments(args);

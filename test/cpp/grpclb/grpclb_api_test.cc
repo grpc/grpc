@@ -38,9 +38,9 @@ using grpc::lb::v1::LoadBalanceResponse;
 
 class GrpclbTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 std::string Ip4ToPackedString(const char* ip_str) {

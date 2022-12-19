@@ -24,10 +24,11 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -83,8 +84,8 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
   shutdown_client(f);
+  shutdown_server(f);
 
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);

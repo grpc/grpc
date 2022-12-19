@@ -40,7 +40,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
@@ -319,6 +319,8 @@ class BaseCallData : public Activity, private Wakeable {
       // We've got the completion callback, we'll close things out during poll
       // and then forward completion callbacks up and transition back to idle.
       kBatchCompleted,
+      // We're almost done, but need to poll first.
+      kCancelledButNotYetPolled,
       // We're done.
       kCancelled,
     };
@@ -393,6 +395,9 @@ class BaseCallData : public Activity, private Wakeable {
       kPulledFromPipe,
       // We're done.
       kCancelled,
+      // Call got terminated whilst we were idle: we need to close the sender
+      // pipe next poll.
+      kCancelledWhilstIdle,
       // Call got terminated whilst we had forwarded a recv_message down the
       // stack: we need to keep track of that until we get the completion so
       // that we do the right thing in OnComplete.
@@ -402,6 +407,9 @@ class BaseCallData : public Activity, private Wakeable {
       // On the next poll we'll close things out and forward on completions,
       // then transition to cancelled.
       kBatchCompletedButCancelled,
+      // Completed successfully while we're processing a recv message.
+      kCompletedWhilePushedToPipe,
+      kCompletedWhilePulledFromPipe,
     };
     static const char* StateString(State);
 

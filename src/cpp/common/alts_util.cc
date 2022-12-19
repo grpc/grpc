@@ -28,7 +28,6 @@
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 #include <grpcpp/security/auth_context.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 

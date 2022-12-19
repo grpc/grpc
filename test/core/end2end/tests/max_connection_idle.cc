@@ -19,10 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <memory>
-
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>

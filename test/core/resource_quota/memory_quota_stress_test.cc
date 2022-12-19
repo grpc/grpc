@@ -113,7 +113,7 @@ class StressTest {
           quotas_distribution_(0, test_->quotas_.size() - 1),
           allocators_distribution_(0, test_->allocators_.size() - 1),
           size_distribution_(1, 4 * 1024 * 1024),
-          quota_size_distribution_(1024 * 1024, size_t(8) * 1024 * 1024 * 1024),
+          quota_size_distribution_(1024 * 1024, size_t{8} * 1024 * 1024 * 1024),
           choose_variable_size_(1, 100) {}
 
     // Choose a random quota, and return an owned pointer to it.

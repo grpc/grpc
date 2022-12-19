@@ -35,7 +35,6 @@ grpc_cc_test(
     deps = [
         "//:exec_ctx",
         "//:gpr",
-        "//:grpc_unsecure",
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:resource_quota",

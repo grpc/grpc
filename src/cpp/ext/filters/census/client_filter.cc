@@ -41,11 +41,10 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
@@ -234,8 +233,9 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   }
   if (OpenCensusTracingEnabled() && parent_->tracing_enabled_) {
     if (status_code_ != absl::StatusCode::kOk) {
-      context_.Span().SetStatus(opencensus::trace::StatusCode(status_code_),
-                                StatusCodeToString(status_code_));
+      context_.Span().SetStatus(
+          static_cast<opencensus::trace::StatusCode>(status_code_),
+          StatusCodeToString(status_code_));
     }
     context_.EndSpan();
   }
@@ -244,6 +244,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   } else {
     delete this;
   }
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
+    absl::string_view annotation) {
+  // If tracing is disabled, the following will be a no-op.
+  context_.AddSpanAnnotation(annotation, {});
 }
 
 //
@@ -310,6 +316,11 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   }
   return new OpenCensusCallAttemptTracer(
       this, attempt_num, is_transparent_retry, false /* arena_allocated */);
+}
+
+void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
+  // If tracing is disabled, the following will be a no-op.
+  context_.AddSpanAnnotation(annotation, {});
 }
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {

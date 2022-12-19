@@ -18,11 +18,10 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/byte_buffer.h>
 #include <grpc/slice.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/proto_utils.h>
 
 #include "test/core/util/test_config.h"
 
@@ -54,15 +53,13 @@ class GrpcByteBufferPeer {
 
 class ProtoUtilsTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Ensure the ProtoBufferWriter internals are initialized.
-    grpc::internal::GrpcLibraryInitializer init;
-    init.summon();
-    grpc::GrpcLibraryCodegen lib;
+    grpc::internal::GrpcLibrary lib;
     grpc_init();
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 // Regression test for a memory corruption bug where a series of
@@ -152,15 +149,13 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
 
 class WriterTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
-    grpc::internal::GrpcLibraryInitializer init;
-    init.summon();
-    grpc::GrpcLibraryCodegen lib;
+  static void SetUpTestSuite() {
+    grpc::internal::GrpcLibrary lib;
     // Ensure the ProtoBufferWriter internals are initialized.
     grpc_init();
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 TEST_F(WriterTest, TinyBlockTinyBackup) {

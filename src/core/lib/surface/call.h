@@ -28,8 +28,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
@@ -79,6 +79,9 @@ class PromiseBasedCall;
 class CallContext {
  public:
   explicit CallContext(PromiseBasedCall* call) : call_(call) {}
+
+  // Update the deadline (if deadline < the current deadline).
+  void UpdateDeadline(Timestamp deadline);
 
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion

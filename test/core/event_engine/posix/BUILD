@@ -63,7 +63,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:grpc",
+        "//:gpr",
         "//src/core:event_engine_interface",
         "//src/core:posix_event_engine_timer",
         "//src/core:time",
@@ -138,11 +138,14 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = [
+        "no_windows",
+    ],
     uses_event_engine = True,
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//:grpc_unsecure",
+        "//:grpc",
         "//src/core:default_event_engine",
         "//src/core:event_engine_interface",
         "//src/core:posix_event_engine_closure",
@@ -182,10 +185,13 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:grpc_unsecure",
+        "//:exec_ctx",
+        "//:gpr",
+        "//src/core:gpr_atm",
         "//src/core:iomgr_port",
         "//src/core:posix_event_engine_traced_buffer_list",
-        "//test/core/util:grpc_test_util",
+        "//src/core:time",
+        "//src/core:useful",
     ],
 )
 
@@ -194,8 +200,6 @@ grpc_cc_test(
     srcs = ["tcp_posix_socket_utils_test.cc"],
     external_deps = [
         "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
         "gtest",
     ],
     language = "C++",
@@ -206,8 +210,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//:grpc_unsecure",
-        "//src/core:event_engine_interface",
+        "//:grpc",
         "//src/core:iomgr_port",
         "//src/core:posix_event_engine_tcp_socket_utils",
         "//src/core:socket_mutator",
@@ -247,6 +250,62 @@ grpc_cc_test(
         "//src/core:resource_quota",
         "//test/core/event_engine/test_suite:conformance_test_base_lib",
         "//test/core/event_engine/test_suite:oracle_event_engine_posix",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "posix_engine_listener_utils_test",
+    srcs = ["posix_engine_listener_utils_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:iomgr_port",
+        "//src/core:posix_event_engine_listener_utils",
+        "//src/core:posix_event_engine_tcp_socket_utils",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "posix_event_engine_connect_test",
+    srcs = ["posix_event_engine_connect_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
+        "//src/core:memory_quota",
+        "//src/core:notification",
+        "//src/core:posix_event_engine",
+        "//src/core:resource_quota",
+        "//test/core/event_engine/test_suite:conformance_test_base_lib",
         "//test/core/util:grpc_test_util",
     ],
 )

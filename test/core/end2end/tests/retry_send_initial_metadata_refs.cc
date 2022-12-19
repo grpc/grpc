@@ -23,11 +23,12 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -301,11 +302,17 @@ static void test_retry_send_initial_metadata_refs(
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
+  op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
@@ -318,11 +325,12 @@ static void test_retry_send_initial_metadata_refs(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(203),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(202), true);
+  cqv.Expect(tag(203), true);
   cqv.Expect(tag(2), true);
   cqv.Verify();
 

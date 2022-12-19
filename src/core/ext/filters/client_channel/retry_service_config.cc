@@ -18,7 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 
-#include <cstdint>
 #include <map>
 #include <string>
 #include <utility>
@@ -28,7 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 

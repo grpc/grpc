@@ -28,7 +28,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/create_channel_posix.h>
 #include <grpcpp/generic/generic_stub.h>
-#include <grpcpp/impl/codegen/proto_utils.h>
+#include <grpcpp/impl/proto_utils.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
@@ -87,7 +87,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
+      ASSERT_EQ(map->size(), 1);
       auto iterator = map->begin();
       EXPECT_EQ("testkey", iterator->first);
       EXPECT_EQ("testvalue", iterator->second);
@@ -111,7 +111,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
@@ -140,7 +140,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
@@ -153,7 +153,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
       map->insert(std::make_pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
@@ -193,7 +193,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
+      ASSERT_EQ(map->size(), 1);
       auto iterator = map->begin();
       EXPECT_EQ("testkey", iterator->first);
       EXPECT_EQ("testvalue", iterator->second);
@@ -233,7 +233,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
@@ -261,7 +261,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
@@ -274,7 +274,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
       map->insert(std::make_pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
@@ -355,7 +355,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
       map->insert(std::make_pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
@@ -447,7 +447,7 @@ class ServerStreamingRpcHijackingInterceptor
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
+      ASSERT_EQ(map->size(), 1);
       auto iterator = map->begin();
       EXPECT_EQ("testkey", iterator->first);
       EXPECT_EQ("testvalue", iterator->second);
@@ -500,7 +500,7 @@ class ServerStreamingRpcHijackingInterceptor
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
       map->insert(std::make_pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
@@ -560,7 +560,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
+      ASSERT_EQ(map->size(), 1);
       auto iterator = map->begin();
       EXPECT_EQ("testkey", iterator->first);
       EXPECT_EQ("testvalue", iterator->second);
@@ -603,7 +603,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
       post_recv_initial_metadata_ = true;
     }
     if (methods->QueryInterceptionHookPoint(
@@ -1094,7 +1094,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
   EchoResponse resp;
   req.mutable_param()->set_echo_metadata(true);
   req.set_message("Hello");
-  string expected_resp = "";
+  string expected_resp;
   auto writer = stub->RequestStream(&ctx, &resp);
   for (int i = 0; i < 10; i++) {
     EXPECT_TRUE(writer->Write(req));

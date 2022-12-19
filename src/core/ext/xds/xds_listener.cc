@@ -58,7 +58,6 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
@@ -80,6 +79,7 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
                                   http_max_stream_duration.ToString()));
   if (!http_filters.empty()) {
     std::vector<std::string> filter_strings;
+    filter_strings.reserve(http_filters.size());
     for (const auto& http_filter : http_filters) {
       filter_strings.push_back(http_filter.ToString());
     }
@@ -164,6 +164,7 @@ std::string FilterChain::FilterChainMatch::ToString() const {
   }
   if (!prefix_ranges.empty()) {
     std::vector<std::string> prefix_ranges_content;
+    prefix_ranges_content.reserve(prefix_ranges.size());
     for (const auto& range : prefix_ranges) {
       prefix_ranges_content.push_back(range.ToString());
     }
@@ -179,6 +180,7 @@ std::string FilterChain::FilterChainMatch::ToString() const {
   }
   if (!source_prefix_ranges.empty()) {
     std::vector<std::string> source_prefix_ranges_content;
+    source_prefix_ranges_content.reserve(source_prefix_ranges.size());
     for (const auto& range : source_prefix_ranges) {
       source_prefix_ranges_content.push_back(range.ToString());
     }
@@ -392,15 +394,10 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         const google_protobuf_Any* typed_config =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
                 http_filter);
-        if (typed_config == nullptr) {
-          if (!is_optional) errors->AddError("field not present");
-          continue;
-        }
         auto extension = ExtractXdsExtension(context, typed_config, errors);
-        const XdsHttpFilterImpl* filter_impl = nullptr;
-        if (extension.has_value()) {
-          filter_impl = http_filter_registry.GetFilterForType(extension->type);
-        }
+        if (!extension.has_value()) continue;
+        const XdsHttpFilterImpl* filter_impl =
+            http_filter_registry.GetFilterForType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
@@ -414,8 +411,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
         absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(std::move(*extension),
-                                              context.arena, errors);
+            filter_impl->GenerateFilterConfig(context, std::move(*extension),
+                                              errors);
         if (filter_config.has_value()) {
           http_connection_manager.http_filters.emplace_back(
               XdsListenerResource::HttpConnectionManager::HttpFilter{
@@ -460,13 +457,9 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     const envoy_config_route_v3_RouteConfiguration* route_config =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager_proto);
-    auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
-    if (!rds_update.ok()) {
-      ValidationErrors::ScopedField field(errors, ".route_config");
-      errors->AddError(rds_update.status().message());
-    } else {
-      http_connection_manager.route_config = std::move(*rds_update);
-    }
+    ValidationErrors::ScopedField field(errors, ".route_config");
+    http_connection_manager.route_config =
+        XdsRouteConfigResource::Parse(context, route_config, errors);
   } else {
     // Validate that RDS must be used to get the route_config dynamically.
     const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
@@ -503,14 +496,10 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
   ValidationErrors::ScopedField field(&errors, "api_listener.api_listener");
   auto* api_listener_field =
       envoy_config_listener_v3_ApiListener_api_listener(api_listener);
-  if (api_listener_field == nullptr) {
-    errors.AddError("field not present");
-  } else {
-    auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
-    if (extension.has_value()) {
-      lds_update.listener = HttpConnectionManagerParse(
-          /*is_client=*/true, context, std::move(*extension), &errors);
-    }
+  auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
+  if (extension.has_value()) {
+    lds_update.listener = HttpConnectionManagerParse(
+        /*is_client=*/true, context, std::move(*extension), &errors);
   }
   if (!errors.ok()) return errors.status("errors validating ApiListener");
   return std::move(lds_update);
@@ -625,8 +614,8 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
         google_protobuf_UInt32Value_value(prefix_len_proto),
         (reinterpret_cast<const grpc_sockaddr*>(cidr_range.address.addr))
                     ->sa_family == GRPC_AF_INET
-            ? uint32_t(32)
-            : uint32_t(128));
+            ? uint32_t{32}
+            : uint32_t{128});
   }
   // Normalize the network address by masking it with prefix_len
   grpc_sockaddr_mask_bits(&cidr_range.address, cidr_range.prefix_len);

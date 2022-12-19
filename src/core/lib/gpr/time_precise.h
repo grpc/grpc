@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
 // Depending on the platform gpr_get_cycle_counter() can have a resolution as

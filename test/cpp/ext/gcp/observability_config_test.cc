@@ -55,7 +55,12 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
       "cloud_trace": {
         "sampling_rate": 0.05
       },
-      "project_id": "project"
+      "project_id": "project",
+      "labels": {
+        "SOURCE_VERSION": "v1",
+        "SERVICE_NAME": "payment-service",
+        "DATA_CENTER": "us-west1-a"
+      }
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
@@ -88,6 +93,11 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   EXPECT_TRUE(config.cloud_trace.has_value());
   EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
   EXPECT_EQ(config.project_id, "project");
+  EXPECT_THAT(config.labels,
+              ::testing::UnorderedElementsAre(
+                  ::testing::Pair("SOURCE_VERSION", "v1"),
+                  ::testing::Pair("SERVICE_NAME", "payment-service"),
+                  ::testing::Pair("DATA_CENTER", "us-west1-a")));
 }
 
 TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
@@ -103,6 +113,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
   EXPECT_FALSE(config.cloud_monitoring.has_value());
   EXPECT_FALSE(config.cloud_trace.has_value());
   EXPECT_TRUE(config.project_id.empty());
+  EXPECT_TRUE(config.labels.empty());
 }
 
 TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigMethodIllegalSlashes) {
@@ -158,6 +169,11 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigWildcardEntries) {
           {
             "methods": ["*", "service/*"]
           }
+        ],
+        "server_rpc_events": [
+          {
+            "methods": ["*", "service/*"]
+          }
         ]
       }
     })json";
@@ -170,6 +186,9 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigWildcardEntries) {
   ASSERT_TRUE(config.cloud_logging.has_value());
   ASSERT_EQ(config.cloud_logging->client_rpc_events.size(), 1);
   EXPECT_THAT(config.cloud_logging->client_rpc_events[0].qualified_methods,
+              ::testing::ElementsAre("*", "service/*"));
+  ASSERT_EQ(config.cloud_logging->server_rpc_events.size(), 1);
+  EXPECT_THAT(config.cloud_logging->server_rpc_events[0].qualified_methods,
               ::testing::ElementsAre("*", "service/*"));
 }
 

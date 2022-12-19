@@ -26,7 +26,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstdint>
 #include <memory>
 #include <new>
 #include <string>
@@ -35,7 +34,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -48,8 +46,7 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
@@ -57,6 +54,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -1364,6 +1362,15 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     seen_ops |= (1u << ops[i].op);
   }
 
+  if (!is_client() &&
+      (seen_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER)) != 0 &&
+      (seen_ops & (1u << GRPC_OP_RECV_MESSAGE)) != 0) {
+    gpr_log(GPR_ERROR,
+            "******************* SEND_STATUS WITH RECV_MESSAGE "
+            "*******************");
+    return GRPC_CALL_ERROR;
+  }
+
   GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
 
   if (nops == 0) {
@@ -1812,7 +1819,11 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class PromiseBasedCall : public Call, public Activity, public Wakeable {
+class PromiseBasedCall : public Call,
+                         public Activity,
+                         public Wakeable,
+                         public grpc_event_engine::experimental::EventEngine::
+                             Closure /* for deadlines */ {
  public:
   PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
 
@@ -1938,6 +1949,11 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
+
+  void UpdateDeadline(Timestamp deadline);
+  void ResetDeadline();
+  // Implementation of EventEngine::Closure, called when deadline expires
+  void Run() override;
 
  protected:
   class ScopedContext
@@ -2179,6 +2195,9 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
   CallFinalization finalization_;
+  // Current deadline.
+  Timestamp deadline_ = Timestamp::InfFuture();
+  grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
 };
 
 template <typename T>
@@ -2345,6 +2364,30 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
       grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
 }
 
+void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
+  if (deadline >= deadline_) return;
+  auto* const event_engine = channel()->event_engine();
+  if (deadline_ != Timestamp::InfFuture()) {
+    if (!event_engine->Cancel(deadline_task_)) return;
+  } else {
+    InternalRef("deadline");
+  }
+  event_engine->RunAfter(deadline - Timestamp::Now(), this);
+}
+
+void PromiseBasedCall::ResetDeadline() {
+  if (deadline_ == Timestamp::InfFuture()) return;
+  auto* const event_engine = channel()->event_engine();
+  if (!event_engine->Cancel(deadline_task_)) return;
+  deadline_ = Timestamp::InfFuture();
+  InternalUnref("deadline");
+}
+
+void PromiseBasedCall::Run() {
+  CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
+  InternalUnref("deadline");
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // CallContext
 
@@ -2357,6 +2400,10 @@ void CallContext::IncrementRefCount(const char* reason) {
 }
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
+
+void CallContext::UpdateDeadline(Timestamp deadline) {
+  call_->UpdateDeadline(deadline);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
@@ -2456,7 +2503,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_GUARDED_BY(mu());
   absl::optional<PipeReceiver<MessageHandle>::NextType> outstanding_recv_
       ABSL_GUARDED_BY(mu());
-  absl::optional<Latch<ServerMetadata*>::WaitPromise>
+  absl::optional<LatchWaitPromise<ServerMetadata*>>
       server_initial_metadata_ready_;
   absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
@@ -2539,7 +2586,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =
             op.data.recv_initial_metadata.recv_initial_metadata;
-        server_initial_metadata_ready_ = server_initial_metadata_.Wait();
+        server_initial_metadata_ready_.emplace(server_initial_metadata_.Wait());
         recv_initial_metadata_completion_ =
             AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata);
       } break;
@@ -2750,6 +2797,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
             trailing_metadata->DebugString().c_str());
   }
   promise_ = ArenaPromise<ServerMetadataHandle>();
+  ResetDeadline();
   completed_ = true;
   if (recv_initial_metadata_ != nullptr) {
     ForceImmediateRepoll();

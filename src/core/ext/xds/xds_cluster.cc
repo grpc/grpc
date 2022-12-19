@@ -35,6 +35,7 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
+#include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
@@ -57,6 +58,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -73,41 +76,61 @@ bool XdsCustomLbPolicyEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(eostroukhov): Remove once this feature is no longer experimental.
+bool XdsHostOverrideEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsClusterResource
 //
 
 std::string XdsClusterResource::ToString() const {
   std::vector<std::string> contents;
-  switch (cluster_type) {
-    case EDS:
-      contents.push_back("cluster_type=EDS");
-      if (!eds_service_name.empty()) {
-        contents.push_back(absl::StrCat("eds_service_name=", eds_service_name));
-      }
-      break;
-    case LOGICAL_DNS:
-      contents.push_back("cluster_type=LOGICAL_DNS");
-      contents.push_back(absl::StrCat("dns_hostname=", dns_hostname));
-      break;
-    case AGGREGATE:
-      contents.push_back("cluster_type=AGGREGATE");
-      contents.push_back(
-          absl::StrCat("prioritized_cluster_names=[",
-                       absl::StrJoin(prioritized_cluster_names, ", "), "]"));
+  Match(
+      type,
+      [&](const Eds& eds) {
+        contents.push_back("type=EDS");
+        if (!eds.eds_service_name.empty()) {
+          contents.push_back(
+              absl::StrCat("eds_service_name=", eds.eds_service_name));
+        }
+      },
+      [&](const LogicalDns& logical_dns) {
+        contents.push_back("type=LOGICAL_DNS");
+        contents.push_back(absl::StrCat("dns_hostname=", logical_dns.hostname));
+      },
+      [&](const Aggregate& aggregate) {
+        contents.push_back("type=AGGREGATE");
+        contents.push_back(absl::StrCat(
+            "prioritized_cluster_names=[",
+            absl::StrJoin(aggregate.prioritized_cluster_names, ", "), "]"));
+      });
+  contents.push_back(
+      absl::StrCat("lb_policy_config=", Json{lb_policy_config}.Dump()));
+  if (lrs_load_reporting_server.has_value()) {
+    contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
+                                    lrs_load_reporting_server->server_uri()));
   }
   if (!common_tls_context.Empty()) {
     contents.push_back(
         absl::StrCat("common_tls_context=", common_tls_context.ToString()));
   }
-  if (lrs_load_reporting_server.has_value()) {
-    contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
-                                    lrs_load_reporting_server->server_uri()));
-  }
-  contents.push_back(
-      absl::StrCat("lb_policy_config=", Json{lb_policy_config}.Dump()));
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
+  if (!host_override_statuses.empty()) {
+    std::vector<const char*> statuses;
+    statuses.reserve(host_override_statuses.size());
+    for (const auto& status : host_override_statuses) {
+      statuses.push_back(status.ToString());
+    }
+    contents.push_back(absl::StrCat("override_host_statuses={",
+                                    absl::StrJoin(statuses, ", "), "}"));
+  }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -162,8 +185,9 @@ CommonTlsContext UpstreamTlsContextParse(
   return common_tls_context;
 }
 
-void EdsConfigParse(const envoy_config_cluster_v3_Cluster* cluster,
-                    XdsClusterResource* cds_update, ValidationErrors* errors) {
+XdsClusterResource::Eds EdsConfigParse(
+    const envoy_config_cluster_v3_Cluster* cluster, ValidationErrors* errors) {
+  XdsClusterResource::Eds eds;
   ValidationErrors::ScopedField field(errors, ".eds_cluster_config");
   const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
       envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
@@ -186,20 +210,22 @@ void EdsConfigParse(const envoy_config_cluster_v3_Cluster* cluster,
           envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
               eds_cluster_config);
       if (service_name.size != 0) {
-        cds_update->eds_service_name = UpbStringToStdString(service_name);
+        eds.eds_service_name = UpbStringToStdString(service_name);
       }
     }
   }
+  return eds;
 }
 
-void LogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
-                     XdsClusterResource* cds_update, ValidationErrors* errors) {
+XdsClusterResource::LogicalDns LogicalDnsParse(
+    const envoy_config_cluster_v3_Cluster* cluster, ValidationErrors* errors) {
+  XdsClusterResource::LogicalDns logical_dns;
   ValidationErrors::ScopedField field(errors, ".load_assignment");
   const auto* load_assignment =
       envoy_config_cluster_v3_Cluster_load_assignment(cluster);
   if (load_assignment == nullptr) {
     errors->AddError("field not present for LOGICAL_DNS cluster");
-    return;
+    return logical_dns;
   }
   ValidationErrors::ScopedField field2(errors, ".endpoints");
   size_t num_localities;
@@ -210,7 +236,7 @@ void LogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
     errors->AddError(absl::StrCat(
         "must contain exactly one locality for LOGICAL_DNS cluster, found ",
         num_localities));
-    return;
+    return logical_dns;
   }
   ValidationErrors::ScopedField field3(errors, "[0].lb_endpoints");
   size_t num_endpoints;
@@ -221,27 +247,27 @@ void LogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
     errors->AddError(absl::StrCat(
         "must contain exactly one endpoint for LOGICAL_DNS cluster, found ",
         num_endpoints));
-    return;
+    return logical_dns;
   }
   ValidationErrors::ScopedField field4(errors, "[0].endpoint");
   const auto* endpoint =
       envoy_config_endpoint_v3_LbEndpoint_endpoint(endpoints[0]);
   if (endpoint == nullptr) {
     errors->AddError("field not present");
-    return;
+    return logical_dns;
   }
   ValidationErrors::ScopedField field5(errors, ".address");
   const auto* address = envoy_config_endpoint_v3_Endpoint_address(endpoint);
   if (address == nullptr) {
     errors->AddError("field not present");
-    return;
+    return logical_dns;
   }
   ValidationErrors::ScopedField field6(errors, ".socket_address");
   const auto* socket_address =
       envoy_config_core_v3_Address_socket_address(address);
   if (socket_address == nullptr) {
     errors->AddError("field not present");
-    return;
+    return logical_dns;
   }
   if (envoy_config_core_v3_SocketAddress_resolver_name(socket_address).size !=
       0) {
@@ -259,30 +285,32 @@ void LogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
     ValidationErrors::ScopedField field(errors, ".port_value");
     errors->AddError("field not present");
   }
-  cds_update->dns_hostname = JoinHostPort(
+  logical_dns.hostname = JoinHostPort(
       address_str,
       envoy_config_core_v3_SocketAddress_port_value(socket_address));
+  return logical_dns;
 }
 
-void AggregateClusterParse(const XdsResourceType::DecodeContext& context,
-                           absl::string_view serialized_config,
-                           XdsClusterResource* cds_update,
-                           ValidationErrors* errors) {
+XdsClusterResource::Aggregate AggregateClusterParse(
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_config, ValidationErrors* errors) {
+  XdsClusterResource::Aggregate aggregate;
   const auto* aggregate_cluster_config =
       envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
           serialized_config.data(), serialized_config.size(), context.arena);
   if (aggregate_cluster_config == nullptr) {
     errors->AddError("can't parse aggregate cluster config");
-    return;
+    return aggregate;
   }
   size_t size;
   const upb_StringView* clusters =
       envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
           aggregate_cluster_config, &size);
   for (size_t i = 0; i < size; ++i) {
-    cds_update->prioritized_cluster_names.emplace_back(
+    aggregate.prioritized_cluster_names.emplace_back(
         UpbStringToStdString(clusters[i]));
   }
+  return aggregate;
 }
 
 void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
@@ -392,12 +420,10 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
   // Check the cluster discovery type.
   if (envoy_config_cluster_v3_Cluster_type(cluster) ==
       envoy_config_cluster_v3_Cluster_EDS) {
-    cds_update.cluster_type = XdsClusterResource::ClusterType::EDS;
-    EdsConfigParse(cluster, &cds_update, &errors);
+    cds_update.type = EdsConfigParse(cluster, &errors);
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
-    cds_update.cluster_type = XdsClusterResource::ClusterType::LOGICAL_DNS;
-    LogicalDnsParse(cluster, &cds_update, &errors);
+    cds_update.type = LogicalDnsParse(cluster, &errors);
   } else if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
     ValidationErrors::ScopedField field(&errors, ".cluster_type");
     const auto* custom_cluster_type =
@@ -418,14 +444,14 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
         errors.AddError(
             absl::StrCat("unknown cluster_type extension: ", type_url));
       } else {
-        cds_update.cluster_type = XdsClusterResource::ClusterType::AGGREGATE;
         // Retrieve aggregate clusters.
         ValidationErrors::ScopedField field(
             &errors,
             ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
         absl::string_view serialized_config =
             UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-        AggregateClusterParse(context, serialized_config, &cds_update, &errors);
+        cds_update.type =
+            AggregateClusterParse(context, serialized_config, &errors);
       }
     }
   } else {
@@ -600,6 +626,29 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       }
     }
     cds_update.outlier_detection = outlier_detection_update;
+  }
+  // Validate override host status.
+  if (XdsHostOverrideEnabled()) {
+    const auto* common_lb_config =
+        envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
+    if (common_lb_config != nullptr) {
+      ValidationErrors::ScopedField field(&errors, ".common_lb_config");
+      const auto* override_host_status =
+          envoy_config_cluster_v3_Cluster_CommonLbConfig_override_host_status(
+              common_lb_config);
+      if (override_host_status != nullptr) {
+        ValidationErrors::ScopedField field(&errors, ".override_host_status");
+        size_t size;
+        const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
+            override_host_status, &size);
+        for (size_t i = 0; i < size; ++i) {
+          auto status = XdsHealthStatus::FromUpb(statuses[i]);
+          if (status.has_value()) {
+            cds_update.host_override_statuses.insert(*status);
+          }
+        }
+      }
+    }
   }
   // Return result.
   if (!errors.ok()) return errors.status("errors validating Cluster resource");

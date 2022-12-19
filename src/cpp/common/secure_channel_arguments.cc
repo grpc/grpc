@@ -16,13 +16,11 @@
  *
  */
 
-#include <memory>
 #include <string>
 #include <vector>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 

@@ -18,13 +18,12 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
-#include <cstdint>
 #include <new>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 

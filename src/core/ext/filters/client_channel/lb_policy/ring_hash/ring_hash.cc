@@ -39,10 +39,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -63,7 +65,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -129,6 +130,8 @@ class RingHashLbConfig : public LoadBalancingPolicy::Config {
 //
 // ring_hash LB policy
 //
+
+constexpr size_t kRingSizeCapDefault = 4096;
 
 class RingHash : public LoadBalancingPolicy {
  public:
@@ -519,8 +522,12 @@ RingHash::RingHashSubchannelList::RingHashSubchannelList(
   // weights aren't provided, all hosts should get an equal number of hashes. In
   // the case where this number exceeds the max_ring_size, it's scaled back down
   // to fit.
-  const size_t min_ring_size = policy->config_->min_ring_size();
-  const size_t max_ring_size = policy->config_->max_ring_size();
+  const size_t ring_size_cap = args.GetInt(GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP)
+                                   .value_or(kRingSizeCapDefault);
+  const size_t min_ring_size =
+      std::min(policy->config_->min_ring_size(), ring_size_cap);
+  const size_t max_ring_size =
+      std::min(policy->config_->max_ring_size(), ring_size_cap);
   const double scale = std::min(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
@@ -660,7 +667,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
       state, status,
-      std::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
+      MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
@@ -847,7 +854,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
               : args.addresses.status();
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-          std::make_unique<TransientFailurePicker>(status));
+          MakeRefCounted<TransientFailurePicker>(status));
       return status;
     }
     // Otherwise, report IDLE.

@@ -34,7 +34,6 @@ grpc_cc_library(
     deps = [
         "fuzzing_event_engine_proto",
         "//:gpr",
-        "//:grpc_unsecure",
         "//src/core:event_engine_interface",
         "//src/core:event_engine_memory_allocator",
         "//src/core:time",

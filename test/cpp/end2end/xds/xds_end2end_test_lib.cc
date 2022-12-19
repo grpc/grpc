@@ -51,8 +51,8 @@
 namespace grpc {
 namespace testing {
 
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
-using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
@@ -793,7 +793,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
     // same thing for the response generator to use for the xDS
     // channel and the xDS resource-does-not-exist timeout value.
     args->SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-                    bootstrap_.c_str());
+                    bootstrap_);
     args->SetPointerWithVtable(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
         &xds_channel_args_, &kChannelArgsArgVtable);
@@ -860,7 +860,7 @@ void XdsEnd2endTest::CheckRpcSendOk(
     const RpcOptions& rpc_options) {
   SendRpcsUntil(
       debug_location,
-      [debug_location, times, n = size_t(0)](const RpcResult& result) mutable {
+      [debug_location, times, n = size_t{0}](const RpcResult& result) mutable {
         EXPECT_TRUE(result.status.ok())
             << "code=" << result.status.error_code()
             << " message=" << result.status.error_message() << " at "
@@ -891,7 +891,7 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
   size_t num_failed = 0;
   SendRpcsUntil(
       debug_location,
-      [&, n = size_t(0)](const RpcResult& result) mutable {
+      [&, n = size_t{0}](const RpcResult& result) mutable {
         if (!result.status.ok()) {
           EXPECT_EQ(result.status.error_code(), expected_status)
               << debug_location.file() << ":" << debug_location.line();

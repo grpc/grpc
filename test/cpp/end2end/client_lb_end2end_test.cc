@@ -42,7 +42,7 @@
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -75,9 +75,6 @@
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
@@ -236,7 +233,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
@@ -2187,7 +2184,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
     current_test_instance_ = this;
   }
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
@@ -2197,7 +2194,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     grpc_core::CoreConfiguration::Reset();
   }
@@ -2292,7 +2289,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     current_test_instance_ = this;
   }
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
@@ -2302,7 +2299,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     grpc_core::CoreConfiguration::Reset();
   }
@@ -2573,7 +2570,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
     current_test_instance_ = this;
   }
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
@@ -2583,7 +2580,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     grpc_core::CoreConfiguration::Reset();
   }
@@ -2646,7 +2643,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
     current_test_instance_ = this;
   }
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
@@ -2656,7 +2653,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     grpc_core::CoreConfiguration::Reset();
   }
@@ -2749,7 +2746,7 @@ TEST_F(OobBackendMetricTest, Basic) {
 
 class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
@@ -2759,7 +2756,7 @@ class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     grpc_core::CoreConfiguration::Reset();
   }
@@ -2801,10 +2798,9 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    CallConfig GetCallConfig(GetCallConfigArgs /*args*/) override {
-      CallConfig config;
-      config.status = status_;
-      return config;
+    absl::StatusOr<CallConfig> GetCallConfig(
+        GetCallConfigArgs /*args*/) override {
+      return status_;
     }
 
    private:

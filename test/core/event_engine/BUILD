@@ -31,7 +31,6 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
-        "//src/core:event_engine_interface",
         "//src/core:notification",
     ],
 )
@@ -90,7 +89,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:gpr",
-        "//:grpc_unsecure",
+        "//:grpc",
         "//src/core:default_event_engine",
         "//src/core:event_engine_interface",
         "//src/core:event_engine_memory_allocator",
@@ -104,7 +103,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     deps = [
         "//:gpr_platform",
-        "//:grpc_unsecure",
+        "//:grpc",
         "//src/core:event_engine_interface",
         "//test/core/util:grpc_test_util_unsecure",
     ],
@@ -177,5 +176,25 @@ grpc_cc_library(
     deps = [
         "//src/core:event_engine_interface",
         "//src/core:event_engine_memory_allocator",
+    ],
+)
+
+grpc_cc_test(
+    name = "tcp_socket_utils_test",
+    srcs = ["tcp_socket_utils_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:iomgr_port",
     ],
 )

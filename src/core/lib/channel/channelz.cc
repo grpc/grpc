@@ -22,13 +22,11 @@
 
 #include <algorithm>
 #include <atomic>
-#include <memory>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -40,6 +38,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 

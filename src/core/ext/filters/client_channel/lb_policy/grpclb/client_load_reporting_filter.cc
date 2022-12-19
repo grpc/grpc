@@ -20,130 +20,58 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 
-#include <new>
+#include <functional>
+#include <memory>
+#include <utility>
 
-#include "absl/status/status.h"
+#include "absl/meta/type_traits.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-static grpc_error_handle clr_init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return absl::OkStatus();
+namespace grpc_core {
+const grpc_channel_filter ClientLoadReportingFilter::kFilter =
+    MakePromiseBasedFilter<ClientLoadReportingFilter, FilterEndpoint::kClient,
+                           kFilterExaminesServerInitialMetadata>(
+        "client_load_reporting");
+
+absl::StatusOr<ClientLoadReportingFilter> ClientLoadReportingFilter::Create(
+    const ChannelArgs&, ChannelFilter::Args) {
+  return ClientLoadReportingFilter();
 }
 
-static void clr_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
-
-namespace {
-
-struct call_data {
+ArenaPromise<ServerMetadataHandle> ClientLoadReportingFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   // Stats object to update.
-  grpc_core::RefCountedPtr<grpc_core::GrpcLbClientStats> client_stats;
-  // State for intercepting send_initial_metadata.
-  grpc_closure on_complete_for_send;
-  grpc_closure* original_on_complete_for_send;
-  bool send_initial_metadata_succeeded = false;
-  // State for intercepting recv_initial_metadata.
-  grpc_closure recv_initial_metadata_ready;
-  grpc_closure* original_recv_initial_metadata_ready;
-  bool recv_initial_metadata_succeeded = false;
-};
+  RefCountedPtr<GrpcLbClientStats> client_stats;
 
-}  // namespace
-
-static void on_complete_for_send(void* arg, grpc_error_handle error) {
-  call_data* calld = static_cast<call_data*>(arg);
-  if (error.ok()) {
-    calld->send_initial_metadata_succeeded = true;
+  // Handle client initial metadata.
+  // Grab client stats object from metadata.
+  auto client_stats_md =
+      call_args.client_initial_metadata->Take(GrpcLbClientStatsMetadata());
+  if (client_stats_md.has_value()) {
+    client_stats.reset(*client_stats_md);
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_on_complete_for_send,
-                          error);
-}
 
-static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
-  call_data* calld = static_cast<call_data*>(arg);
-  if (error.ok()) {
-    calld->recv_initial_metadata_succeeded = true;
-  }
-  grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_recv_initial_metadata_ready, error);
-}
+  auto* server_initial_metadata = call_args.server_initial_metadata;
 
-static grpc_error_handle clr_init_call_elem(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
-  GPR_ASSERT(args->context != nullptr);
-  new (elem->call_data) call_data();
-  return absl::OkStatus();
+  return Seq(next_promise_factory(std::move(call_args)),
+             [server_initial_metadata, client_stats = std::move(client_stats)](
+                 ServerMetadataHandle trailing_metadata) {
+               if (client_stats != nullptr) {
+                 client_stats->AddCallFinished(
+                     trailing_metadata->get(GrpcStreamNetworkState()) ==
+                         GrpcStreamNetworkState::kNotSentOnWire,
+                     NowOrNever(server_initial_metadata->Wait()).has_value());
+               }
+               return trailing_metadata;
+             });
 }
-
-static void clr_destroy_call_elem(grpc_call_element* elem,
-                                  const grpc_call_final_info* /*final_info*/,
-                                  grpc_closure* /*ignored*/) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->client_stats != nullptr) {
-    // Record call finished, optionally setting client_failed_to_send and
-    // received.
-    calld->client_stats->AddCallFinished(
-        !calld->send_initial_metadata_succeeded /* client_failed_to_send */,
-        calld->recv_initial_metadata_succeeded /* known_received */);
-  }
-  calld->~call_data();
-}
-
-static void clr_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Handle send_initial_metadata.
-  if (batch->send_initial_metadata) {
-    // Grab client stats object from metadata.
-    auto client_stats_md =
-        batch->payload->send_initial_metadata.send_initial_metadata->Take(
-            grpc_core::GrpcLbClientStatsMetadata());
-    if (client_stats_md.has_value()) {
-      grpc_core::GrpcLbClientStats* client_stats = *client_stats_md;
-      if (client_stats != nullptr) {
-        calld->client_stats.reset(client_stats);
-        // Intercept completion.
-        calld->original_on_complete_for_send = batch->on_complete;
-        GRPC_CLOSURE_INIT(&calld->on_complete_for_send, on_complete_for_send,
-                          calld, grpc_schedule_on_exec_ctx);
-        batch->on_complete = &calld->on_complete_for_send;
-      }
-    }
-  }
-  // Intercept completion of recv_initial_metadata.
-  if (batch->recv_initial_metadata) {
-    calld->original_recv_initial_metadata_ready =
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                      recv_initial_metadata_ready, calld,
-                      grpc_schedule_on_exec_ctx);
-    batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->recv_initial_metadata_ready;
-  }
-  // Chain to next filter.
-  grpc_call_next_op(elem, batch);
-}
-
-const grpc_channel_filter grpc_client_load_reporting_filter = {
-    clr_start_transport_stream_op_batch,
-    nullptr,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    clr_init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    clr_destroy_call_elem,
-    0,  // sizeof(channel_data)
-    clr_init_channel_elem,
-    grpc_channel_stack_no_post_init,
-    clr_destroy_channel_elem,
-    grpc_channel_next_get_info,
-    "client_load_reporting"};
+}  // namespace grpc_core

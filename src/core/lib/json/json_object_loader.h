@@ -214,6 +214,16 @@ class LoadUnprocessedJsonObject : public LoaderInterface {
   ~LoadUnprocessedJsonObject() = default;
 };
 
+// Loads an unprocessed JSON array value.
+class LoadUnprocessedJsonArray : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
+                ValidationErrors* errors) const override;
+
+ protected:
+  ~LoadUnprocessedJsonArray() = default;
+};
+
 // Load a vector of some type.
 class LoadVector : public LoaderInterface {
  public:
@@ -328,6 +338,11 @@ class AutoLoader<Json::Object> final : public LoadUnprocessedJsonObject {
  private:
   ~AutoLoader() = default;
 };
+template <>
+class AutoLoader<Json::Array> final : public LoadUnprocessedJsonArray {
+ private:
+  ~AutoLoader() = default;
+};
 
 // Specializations of AutoLoader for vectors.
 template <typename T>
@@ -371,7 +386,6 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
     return LoaderForType<T>();
   }
 
- private:
   ~AutoLoader() = default;
 };
 

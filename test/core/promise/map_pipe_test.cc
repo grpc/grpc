@@ -26,6 +26,7 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/join.h"
@@ -45,9 +46,6 @@ using testing::StrictMock;
 
 namespace grpc_core {
 
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-
 template <typename T>
 class Delayed {
  public:
@@ -65,7 +63,13 @@ class Delayed {
   T x_;
 };
 
-TEST(MapPipeTest, SendThriceWithPipeInterceptingReceive) {
+class MapPipeTest : public ::testing::Test {
+ protected:
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+};
+
+TEST_F(MapPipeTest, SendThriceWithPipeInterceptingReceive) {
   int num_received = 0;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -100,12 +104,12 @@ TEST(MapPipeTest, SendThriceWithPipeInterceptingReceive) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      MakeScopedArena(1024, &memory_allocator_));
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 3);
 }
 
-TEST(MapPipeTest, SendThriceWithPipeInterceptingSend) {
+TEST_F(MapPipeTest, SendThriceWithPipeInterceptingSend) {
   int num_received = 0;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -140,7 +144,7 @@ TEST(MapPipeTest, SendThriceWithPipeInterceptingSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      MakeScopedArena(1024, &memory_allocator_));
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 3);
 }

@@ -34,9 +34,9 @@
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
 // Make sure any change to this file is also reflected in
-// include/grpcpp/impl/codegen/sync.h.
+// include/grpcpp/impl/sync.h.
 //
-// Whenever possible, prefer using this file over <grpcpp/impl/codegen/sync.h>
+// Whenever possible, prefer using this file over <grpcpp/impl/sync.h>
 // since this file doesn't rely on g_core_codegen_interface and hence does not
 // pay the costs of virtual function calls.
 

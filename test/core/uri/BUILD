@@ -46,7 +46,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:grpc_unsecure",
+        "//:grpc",
         "//:uri_parser",
         "//test/core/util:grpc_test_util_unsecure",
     ],

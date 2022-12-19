@@ -25,7 +25,7 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -66,11 +66,8 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 /// for all the calls on that channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class ChannelCredentials : private grpc::GrpcLibraryCodegen {
+class ChannelCredentials : private grpc::internal::GrpcLibrary {
  public:
-  ChannelCredentials();
-  ~ChannelCredentials() override;
-
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
@@ -123,11 +120,8 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class CallCredentials : private grpc::GrpcLibraryCodegen {
+class CallCredentials : private grpc::internal::GrpcLibrary {
  public:
-  CallCredentials();
-  ~CallCredentials() override;
-
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
   virtual grpc::string DebugString() {
