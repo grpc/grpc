@@ -26,6 +26,9 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+/// Runs a grpc_closure inline with the specified error handle.
+void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error);
+
 /// Creates a callback that takes an error status argument.
 absl::AnyInvocable<void(absl::Status)> GrpcClosureToStatusCallback(
     grpc_closure* closure);

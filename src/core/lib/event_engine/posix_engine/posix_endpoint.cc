@@ -1276,12 +1276,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   inq_capable_ = false;
 #endif  // GRPC_HAVE_TCP_INQ
 
-  on_read_ = PosixEngineClosure::ToPermanentClosure(
-      [this](absl::Status status) {
+  on_read_ =
+      PosixEngineClosure::ToPermanentClosure([this](absl::Status status) {
         // TODO(vigneshbabu): Remove this exec_ctx.
         // We are forced to temporarily include an exec_ctx here. This is
         // because, memory_allocator.MakeSlice may schedule a reclamation on the
-        // ExecCtxWakeupScheduler which requires an active exec_ctx. 
+        // ExecCtxWakeupScheduler which requires an active exec_ctx.
         grpc_core::ExecCtx exec_ctx;
         HandleRead(std::move(status));
       });

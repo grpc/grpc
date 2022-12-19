@@ -44,11 +44,9 @@
 
 static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);
-  gpr_log(GPR_ERROR, "on_server_destroyed");
   gpr_mu_lock(server->mu);
   server->shutdown = true;
   gpr_mu_unlock(server->mu);
-  gpr_log(GPR_ERROR, "on_server_destroyed finished");
 }
 
 void test_tcp_server_init(test_tcp_server* server,
@@ -99,12 +97,10 @@ void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_milliseconds_to_deadline(milliseconds));
-  gpr_log(GPR_ERROR, "server_poll");
   gpr_mu_lock(server->mu);
   GRPC_LOG_IF_ERROR("pollset_work",
                     grpc_pollset_work(server->pollset[0], &worker, deadline));
   gpr_mu_unlock(server->mu);
-  gpr_log(GPR_ERROR, "server_poll - finished");
 }
 
 static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
@@ -116,7 +112,6 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   grpc_core::ExecCtx exec_ctx;
   gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;
-  gpr_log(GPR_ERROR, "server_destroy enter");
   grpc_tcp_server_unref(server->tcp_server);
   GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
@@ -127,11 +122,10 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   while (!server->shutdown &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
     gpr_mu_unlock(server->mu);
-    test_tcp_server_poll(server, 1000);
+    test_tcp_server_poll(server, 100);
     gpr_mu_lock(server->mu);
   }
   gpr_mu_unlock(server->mu);
-  gpr_log(GPR_ERROR, "server_destroy continue");
   grpc_pollset_shutdown(server->pollset[0],
                         GRPC_CLOSURE_CREATE(finish_pollset, server->pollset[0],
                                             grpc_schedule_on_exec_ctx));

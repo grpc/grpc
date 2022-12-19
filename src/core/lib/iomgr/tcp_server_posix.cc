@@ -82,6 +82,7 @@
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/transport/error_utils.h"
 
 static std::atomic<int64_t> num_dropped_connections{0};
 
@@ -203,7 +204,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
           acceptor->external_connection = is_external;
           acceptor->listener_fd = listener_fd;
           grpc_byte_buffer* buf = nullptr;
-          if (pending_data != nullptr) {
+          if (pending_data != nullptr && pending_data->Length() > 0) {
             buf = grpc_raw_byte_buffer_create(nullptr, 0);
             grpc_slice_buffer_swap(&buf->data.raw.slice_buffer,
                                    pending_data->c_slice_buffer());
@@ -215,13 +216,20 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                               grpc_event_engine_endpoint_create(std::move(ep)),
                           read_notifier_pollset, acceptor);
         };
+    auto on_shutdown_complete_cb =
+        grpc_event_engine::experimental::GrpcClosureToStatusCallback(
+            shutdown_complete);
     auto listener =
         reinterpret_cast<PosixEventEngineWithFdSupport*>(
             grpc_event_engine::experimental::GetDefaultEventEngine().get())
             ->CreatePosixListener(
                 std::move(accept_cb),
-                grpc_event_engine::experimental::GrpcClosureToStatusCallback(
-                    shutdown_complete),
+                [s, shutdown_complete](absl::Status status) {
+                  grpc_event_engine::experimental::RunEventEngineClosure(
+                      shutdown_complete, absl_status_to_grpc_error(status));
+                  delete s->fd_handler;
+                  delete s;
+                },
                 config,
                 std::make_unique<MemoryAllocatorFactoryWrapper>(
                     s->memory_quota));
@@ -251,10 +259,13 @@ static void finish_shutdown(grpc_tcp_server* s) {
     gpr_free(sp);
   }
   if (grpc_core::IsEventEngineServerEnabled()) {
+    // This will trigger asynchronous execution of the on_shutdown_complete
+    // callback when appropriate. That callback will delete the server
     s->ee_listener.reset();
+  } else {
+    delete s->fd_handler;
+    delete s;
   }
-  delete s->fd_handler;
-  delete s;
 }
 
 static void destroyed_port(void* server, grpc_error_handle /*error*/) {

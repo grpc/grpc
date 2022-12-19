@@ -219,21 +219,28 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
   }
   PosixSocketWrapper sock(fd);
   (void)sock.SetSocketNoSigpipeIfPossible();
-  std::string peer_name = *sock.PeerAddressString();
+  auto peer_name = sock.PeerAddressString();
+  if (!peer_name.ok()) {
+    gpr_log(GPR_ERROR, "HandleExternalConnection(ERROR) fd = %d, error = %s",
+            fd, peer_name.status().ToString().c_str());
+    return absl::UnknownError(
+        absl::StrCat("HandleExternalConnection: Invalid peer address: ",
+                     peer_name.status().ToString()));
+  }
   auto endpoint = CreatePosixEndpoint(
-      /*handle=*/poller_->CreateHandle(fd, peer_name,
+      /*handle=*/poller_->CreateHandle(fd, *peer_name,
                                        poller_->CanTrackErrors()),
       /*on_shutdown=*/nullptr, /*engine=*/engine_,
       /*allocator=*/
-      memory_allocator_factory_->CreateMemoryAllocator(
-          absl::StrCat("external:endpoint-tcp-server-connection: ", peer_name)),
+      memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+          "external:endpoint-tcp-server-connection: ", *peer_name)),
       /*options=*/options_);
   on_accept_(
       /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
       /*is_external=*/true,
       /*memory_allocator=*/
       memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
-          "external:on-accept-tcp-server-connection: ", peer_name)),
+          "external:on-accept-tcp-server-connection: ", *peer_name)),
       /*pending_data=*/pending_data);
   return absl::OkStatus();
 }

@@ -377,12 +377,12 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
       grpc_core::StatusSetInt(&shutdown_error_,
                               grpc_core::StatusIntProperty::kRpcStatus,
                               GRPC_STATUS_UNAVAILABLE);
-      // signal read/write closed to OS so that future operations fail.
-      if (!released_) {
-        shutdown(fd_, SHUT_RDWR);
-      }
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
+    }
+    // signal read/write closed to OS so that future operations fail.
+    if (!released_) {
+      shutdown(fd_, SHUT_RDWR);
     }
     if (!IsWatched()) {
       CloseFd();
@@ -455,8 +455,6 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
       grpc_core::StatusSetInt(&shutdown_error_,
                               grpc_core::StatusIntProperty::kRpcStatus,
                               GRPC_STATUS_UNAVAILABLE);
-      // signal read/write closed to OS so that future operations fail.
-      shutdown(fd_, SHUT_RDWR);
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }

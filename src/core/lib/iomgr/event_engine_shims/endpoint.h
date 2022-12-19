@@ -25,6 +25,9 @@ namespace experimental {
 grpc_endpoint* grpc_event_engine_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint);
 
+void grpc_event_engine_endpoint_destroy_and_release_fd(
+    grpc_endpoint* ep, int* fd, grpc_closure* on_release_fd);
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

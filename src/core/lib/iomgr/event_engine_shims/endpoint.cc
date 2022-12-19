@@ -18,7 +18,9 @@
 #include <atomic>
 #include <memory>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -33,6 +35,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -103,6 +106,12 @@ class EventEngineEndpointWrapper {
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
+#ifdef GRPC_POSIX_SOCKET_TCP
+      if (on_release_fd_ != nullptr) {
+        reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+            ->Shutdown(std::move(on_release_fd_));
+      }
+#endif  // GRPC_POSIX_SOCKET_TCP
       endpoint_.reset();
       // For the Ref taken in TriggerShutdown
       Unref();
@@ -113,7 +122,14 @@ class EventEngineEndpointWrapper {
   // and decrements the shutdown ref. If trigger shutdown has been called
   // before or in parallel, only one of them would win the race. The other
   // invocation would simply return.
-  void TriggerShutdown() {
+#ifdef GRPC_POSIX_SOCKET_TCP
+  void TriggerShutdown(
+      absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
+    on_release_fd_ = std::move(on_release_fd);
+#else
+  void TriggerShutdown(
+      absl::AnyInvocable<void(absl::StatusOr<int>)> /*on_release_fd*/) {
+#endif  // GRPC_POSIX_SOCKET_TCP
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {
       if (curr & kShutdownBit) {
@@ -125,6 +141,12 @@ class EventEngineEndpointWrapper {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
+#ifdef GRPC_POSIX_SOCKET_TCP
+          if (on_release_fd_ != nullptr) {
+            reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+                ->Shutdown(std::move(on_release_fd_));
+          }
+#endif  // GRPC_POSIX_SOCKET_TCP
           endpoint_.reset();
           Unref();
         }
@@ -137,6 +159,9 @@ class EventEngineEndpointWrapper {
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
   int fd_{-1};
+#ifdef GRPC_POSIX_SOCKET_TCP
+  absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
+#endif  // GRPC_POSIX_SOCKET_TCP
   std::unique_ptr<EventEngine::Endpoint> endpoint_;
   std::unique_ptr<grpc_event_engine_endpoint> eeep_;
 };
@@ -225,7 +250,7 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s",
             eeep->wrapper->GetEEEndpoint(), why.ToString().c_str());
   }
-  eeep->wrapper->TriggerShutdown();
+  eeep->wrapper->TriggerShutdown(nullptr);
 }
 
 // Attempts to free the underlying data structures.
@@ -314,6 +339,27 @@ grpc_endpoint* grpc_event_engine_endpoint_create(
   GPR_DEBUG_ASSERT(ee_endpoint != nullptr);
   auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
   return wrapper->GetGrpcEndpoint();
+}
+
+void grpc_event_engine_endpoint_destroy_and_release_fd(
+    grpc_endpoint* ep, int* fd, grpc_closure* on_release_fd) {
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  if (fd == nullptr || on_release_fd == nullptr) {
+    eeep->wrapper->TriggerShutdown(nullptr);
+  } else {
+    *fd = -1;
+    eeep->wrapper->TriggerShutdown(
+        [fd, on_release_fd](absl::StatusOr<int> release_fd) {
+          if (release_fd.ok()) {
+            *fd = *release_fd;
+          }
+          RunEventEngineClosure(on_release_fd,
+                                absl_status_to_grpc_error(release_fd.status()));
+        });
+  }
+  eeep->wrapper->Unref();
 }
 
 }  // namespace experimental
