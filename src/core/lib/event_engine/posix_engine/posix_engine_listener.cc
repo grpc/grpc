@@ -251,6 +251,9 @@ void PosixEngineListenerImpl::TriggerShutdown() {
   // This would get invoked from the destructor of the parent
   // PosixEngineListener object.
   absl::MutexLock lock(&this->mu_);
+  if (absl::exchange(shutdown_, true)) {
+    return;
+  }
   for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
     // Trigger shutdown of each asynchronous acceptor. This in-turn calls
     // ShutdownHandle on the associated poller event handle. It may also
