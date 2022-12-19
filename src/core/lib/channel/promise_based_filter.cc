@@ -1808,6 +1808,8 @@ const char* ServerCallData::StateString(SendTrailingState state) {
       return "FORWARDED";
     case SendTrailingState::kQueuedBehindSendMessage:
       return "QUEUED_BEHIND_SEND_MESSAGE";
+    case SendTrailingState::kQueuedButHaventClosedSends:
+      return "QUEUED_BUT_HAVENT_CLOSED_SENDS";
     case SendTrailingState::kQueued:
       return "QUEUED";
     case SendTrailingState::kCancelled:
@@ -1957,6 +1959,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
         }
         if (send_message() != nullptr && !send_message()->IsIdle()) {
           send_trailing_state_ = SendTrailingState::kQueuedBehindSendMessage;
+        } else if (send_message() != nullptr) {
+          send_trailing_state_ = SendTrailingState::kQueuedButHaventClosedSends;
+          wake = true;
         } else {
           send_trailing_state_ = SendTrailingState::kQueued;
           wake = true;
@@ -1964,6 +1969,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
         break;
       case SendTrailingState::kQueued:
       case SendTrailingState::kQueuedBehindSendMessage:
+      case SendTrailingState::kQueuedButHaventClosedSends:
       case SendTrailingState::kForwarded:
         gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
                 StateString(send_trailing_state_));
@@ -2077,9 +2083,14 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
 // All polls: await sending the trailing metadata, then foward it down the
 // stack.
 Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_INFO, "%s PollTrailingMetadata: %s", LogTag().c_str(),
+            StateString(send_trailing_state_));
+  }
   switch (send_trailing_state_) {
     case SendTrailingState::kInitial:
     case SendTrailingState::kQueuedBehindSendMessage:
+    case SendTrailingState::kQueuedButHaventClosedSends:
       return Pending{};
     case SendTrailingState::kQueued:
       return WrapMetadata(send_trailing_metadata_batch_->payload
@@ -2204,6 +2215,13 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   }
   poll_ctx.ClearRepoll();
   if (send_message() != nullptr) {
+    if (send_trailing_state_ ==
+        SendTrailingState::kQueuedButHaventClosedSends) {
+      send_trailing_state_ = SendTrailingState::kQueued;
+      send_message()->Done(
+          *send_trailing_metadata_batch_->payload->send_trailing_metadata
+               .send_trailing_metadata);
+    }
     send_message()->WakeInsideCombiner(flusher);
     if (grpc_trace_channel.enabled()) {
       gpr_log(GPR_DEBUG,
@@ -2262,6 +2280,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
       }
       switch (send_trailing_state_) {
         case SendTrailingState::kQueuedBehindSendMessage:
+        case SendTrailingState::kQueuedButHaventClosedSends:
         case SendTrailingState::kQueued: {
           if (send_trailing_metadata_batch_->payload->send_trailing_metadata
                   .send_trailing_metadata != md) {

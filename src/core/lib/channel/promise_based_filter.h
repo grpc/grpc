@@ -686,6 +686,9 @@ class ServerCallData : public BaseCallData {
     // metadata.
     kQueuedBehindSendMessage,
     // We saw the op, and are waiting for the promise to complete
+    // to forward it. First however we need to close sends.
+    kQueuedButHaventClosedSends,
+    // We saw the op, and are waiting for the promise to complete
     // to forward it.
     kQueued,
     // We've forwarded the op to the next filter.

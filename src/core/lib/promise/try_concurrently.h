@@ -205,6 +205,8 @@ class TryConcurrently {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
     }
+    gpr_log(GPR_DEBUG, "%p: done_bits=%x necessary_bits=%x", this, done_bits_,
+            NecessaryBits());
     if ((done_bits_ & NecessaryBits()) == NecessaryBits()) {
       return std::move(result_);
     }
