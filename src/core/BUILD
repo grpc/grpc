@@ -1693,6 +1693,7 @@ grpc_cc_library(
         "time",
         "useful",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
         "//:ref_counted_ptr",

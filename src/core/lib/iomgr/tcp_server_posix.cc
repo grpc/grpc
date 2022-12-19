@@ -91,10 +91,11 @@ using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::PosixEventEngineWithFdSupport;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
-class MemoryQuotaWrapper
+class MemoryAllocatorFactoryWrapper
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
  public:
-  explicit MemoryQuotaWrapper(grpc_core::MemoryQuotaRefPtr memory_quota)
+  explicit MemoryAllocatorFactoryWrapper(
+      grpc_core::MemoryQuotaRefPtr memory_quota)
       : memory_quota_(std::move(memory_quota)) {}
 
   MemoryAllocator CreateMemoryAllocator(absl::string_view name) override {
@@ -221,7 +222,9 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                 std::move(accept_cb),
                 grpc_event_engine::experimental::GrpcClosureToStatusCallback(
                     shutdown_complete),
-                config, std::make_unique<MemoryQuotaWrapper>(s->memory_quota));
+                config,
+                std::make_unique<MemoryAllocatorFactoryWrapper>(
+                    s->memory_quota));
     if (!listener.ok()) {
       delete s;
       *server = nullptr;
@@ -246,6 +249,9 @@ static void finish_shutdown(grpc_tcp_server* s) {
     grpc_tcp_listener* sp = s->head;
     s->head = sp->next;
     gpr_free(sp);
+  }
+  if (grpc_core::IsEventEngineServerEnabled()) {
+    s->ee_listener.reset();
   }
   delete s->fd_handler;
   delete s;
@@ -751,7 +757,7 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
   if (grpc_core::IsEventEngineServerEnabled()) {
-    s->ee_listener.reset();
+    s->ee_listener->ShutdownListeningFds();
   }
   /* shutdown all fd's */
   if (s->active_ports) {

@@ -50,6 +50,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -1276,7 +1277,14 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 #endif  // GRPC_HAVE_TCP_INQ
 
   on_read_ = PosixEngineClosure::ToPermanentClosure(
-      [this](absl::Status status) { HandleRead(std::move(status)); });
+      [this](absl::Status status) {
+        // TODO(vigneshbabu): Remove this exec_ctx.
+        // We are forced to temporarily include an exec_ctx here. This is
+        // because, memory_allocator.MakeSlice may schedule a reclamation on the
+        // ExecCtxWakeupScheduler which requires an active exec_ctx. 
+        grpc_core::ExecCtx exec_ctx;
+        HandleRead(std::move(status));
+      });
   on_write_ = PosixEngineClosure::ToPermanentClosure(
       [this](absl::Status status) { HandleWrite(std::move(status)); });
   on_error_ = PosixEngineClosure::ToPermanentClosure(

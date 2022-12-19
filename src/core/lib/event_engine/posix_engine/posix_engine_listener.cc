@@ -160,6 +160,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         Unref();
         return;
       }
+      addr = EventEngine::ResolvedAddress(addr.address(), len);
     }
 
     PosixSocketWrapper sock(fd);
@@ -176,14 +177,22 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
 
     // Create an Endpoint here.
-    std::string peer_name = *ResolvedAddressToNormalizedString(addr);
+    auto peer_name = ResolvedAddressToURI(addr);
+    if (!peer_name.ok()) {
+      gpr_log(GPR_ERROR, "Invalid address: %s",
+              peer_name.status().ToString().c_str());
+      // Shutting down the acceptor. Unref the ref grabbed in
+      // AsyncConnectionAcceptor::Start().
+      Unref();
+      return;
+    }
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
-            fd, peer_name, listener_->poller_->CanTrackErrors()),
+            fd, *peer_name, listener_->poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
         /*allocator=*/
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            absl::StrCat("endpoint-tcp-server-connection: ", peer_name)),
+            absl::StrCat("endpoint-tcp-server-connection: ", *peer_name)),
         /*options=*/listener_->options_);
     // Call on_accept_ and then resume accepting new connections by continuing
     // the parent for-loop.
@@ -192,7 +201,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         /*is_external=*/false,
         /*memory_allocator=*/
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            absl::StrCat("on-accept-tcp-server-connection: ", peer_name)),
+            absl::StrCat("on-accept-tcp-server-connection: ", *peer_name)),
         /*pending_data=*/nullptr);
   }
   GPR_UNREACHABLE_CODE(return);

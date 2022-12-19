@@ -190,8 +190,9 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec) {
   int fd, flags;
+  EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  fd = accept(sockfd, const_cast<sockaddr*>(addr.address()), &len);
+  fd = accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
   if (fd >= 0) {
     if (nonblock) {
       flags = fcntl(fd, F_GETFL, 0);
@@ -204,6 +205,7 @@ int Accept4(int sockfd,
       if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
     }
   }
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
   return fd;
 
 close_and_error:
@@ -219,8 +221,12 @@ int Accept4(int sockfd,
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
+  EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  return accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
+  int ret =
+      accept4(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags);
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+  return ret;
 }
 
 #endif /* GRPC_LINUX_SOCKETUTILS */
