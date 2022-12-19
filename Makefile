@@ -2255,32 +2255,29 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_enum.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_int.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_utf8.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/posix_time.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/time_support.c \
     third_party/boringssl-with-bazel/src/crypto/base64/base64.c \
     third_party/boringssl-with-bazel/src/crypto/bio/bio.c \
     third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c \
@@ -2304,27 +2301,30 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/chacha/chacha.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesccm.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.c \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_des.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.c \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.c \
-    third_party/boringssl-with-bazel/src/crypto/cmac/cmac.c \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-fuchsia.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-win.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu-arm.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu-intel.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu-ppc64le.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_freebsd.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_ppc64le.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
+    third_party/boringssl-with-bazel/src/crypto/des/des.c \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/params.c \
     third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
@@ -2337,7 +2337,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/engine/engine.c \
     third_party/boringssl-with-bazel/src/crypto/err/err.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/digestsign.c \
     third_party/boringssl-with-bazel/src/crypto/evp/evp.c \
     third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c \
@@ -2346,6 +2345,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_hkdf.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.c \
@@ -2451,7 +2451,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_cache.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_data.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_lib.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_map.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_node.c \
     third_party/boringssl-with-bazel/src/crypto/x509v3/pcy_tree.c \
