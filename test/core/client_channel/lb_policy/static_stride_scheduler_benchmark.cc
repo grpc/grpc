@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
-#include <limits>
 #include <vector>
 
 #include <benchmark/benchmark.h>
@@ -25,6 +24,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/random/random.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 
 #include <grpc/support/log.h>
 
