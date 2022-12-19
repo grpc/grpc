@@ -529,11 +529,6 @@ class ClientChannel::LoadBalancedCall
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
-  // For intercepting send_initial_metadata on_complete.
-  gpr_atm* peer_string_ = nullptr;
-  grpc_closure send_initial_metadata_on_complete_;
-  grpc_closure* original_send_initial_metadata_on_complete_ = nullptr;
-
   // For intercepting recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;

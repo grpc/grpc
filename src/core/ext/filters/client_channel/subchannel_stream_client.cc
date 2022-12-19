@@ -242,7 +242,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   GPR_ASSERT(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
-  payload_.send_initial_metadata.peer_string = nullptr;
   batch_.send_initial_metadata = true;
   // Add send_message op.
   send_message_.Append(Slice(
@@ -257,7 +256,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   payload_.recv_initial_metadata.recv_initial_metadata =
       &recv_initial_metadata_;
   payload_.recv_initial_metadata.trailing_metadata_available = nullptr;
-  payload_.recv_initial_metadata.peer_string = nullptr;
   // recv_initial_metadata_ready callback takes ref, handled manually.
   call_->Ref(DEBUG_LOCATION, "recv_initial_metadata_ready").release();
   payload_.recv_initial_metadata.recv_initial_metadata_ready =

@@ -368,8 +368,6 @@ class ClientStream : public Orphanable {
       metadata_.on_complete = &metadata_batch_done_;
       batch_payload_.send_initial_metadata.send_initial_metadata =
           client_initial_metadata_.get();
-      batch_payload_.send_initial_metadata.peer_string =
-          GetContext<CallContext>()->peer_string_atm_ptr();
       server_initial_metadata_ =
           GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
       batch_payload_.recv_initial_metadata.recv_initial_metadata =
@@ -378,7 +376,6 @@ class ClientStream : public Orphanable {
           &recv_initial_metadata_ready_;
       batch_payload_.recv_initial_metadata.trailing_metadata_available =
           nullptr;
-      batch_payload_.recv_initial_metadata.peer_string = nullptr;
       server_trailing_metadata_ =
           GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata =

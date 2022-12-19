@@ -92,10 +92,12 @@ void MaybeUpdateServerInitialMetadata(
   auto peer_string = server_initial_metadata->get(PeerString());
   if (!peer_string.has_value()) return;  // Nothing we can do.
   // If there was no cookie or if the address changed, set the cookie.
-  if (!cookie_value.has_value() || *peer_string != *cookie_value) {
+  if (!cookie_value.has_value() ||
+      peer_string->as_string_view() != *cookie_value) {
     std::vector<std::string> parts = {
         absl::StrCat(*cookie_config->name, "=",
-                     absl::Base64Escape(*peer_string), "; HttpOnly")};
+                     absl::Base64Escape(peer_string->as_string_view()),
+                     "; HttpOnly")};
     if (!cookie_config->path.empty()) {
       parts.emplace_back(absl::StrCat("Path=", cookie_config->path));
     }

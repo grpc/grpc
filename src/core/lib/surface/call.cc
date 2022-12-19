@@ -141,8 +141,6 @@ class Call : public CppImplOf<Call, grpc_call> {
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
 
-  gpr_atm* peer_string_atm_ptr() { return &peer_string_; }
-
  protected:
   // The maximum number of concurrent batches possible.
   // Based upon the maximum number of individually queueable ops in the batch
@@ -200,7 +198,17 @@ class Call : public CppImplOf<Call, grpc_call> {
     send_deadline_ = send_deadline;
   }
 
-  void ClearPeerString() { gpr_atm_rel_store(&peer_string_, 0); }
+  Slice PeerString() const {
+    MutexLock lock(&peer_mu_);
+    return peer_string_;
+  }
+
+  void SetPeerString(Slice peer_string) {
+    MutexLock lock(&peer_mu_);
+    peer_string_ = std::move(peer_string);
+  }
+
+  void ClearPeerString() { SetPeerString(EmptySlice()); }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -211,8 +219,11 @@ class Call : public CppImplOf<Call, grpc_call> {
   const bool is_client_;
   // flag indicating that cancellation is inherited
   bool cancellation_is_inherited_ = false;
-  // A char* indicating the peer name.
-  gpr_atm peer_string_ = 0;
+  // Peer name is protected by a mutex because it can be accessed by the
+  // application at the same moment as it is being set by the completion
+  // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
+  Mutex peer_mu_;
+  Slice peer_string_ ABSL_GUARDED_BY(&mu_);
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -334,9 +345,16 @@ void Call::PropagateCancellationToChildren() {
 }
 
 char* Call::GetPeer() {
-  char* peer_string = reinterpret_cast<char*>(gpr_atm_acq_load(&peer_string_));
-  if (peer_string != nullptr) return gpr_strdup(peer_string);
-  peer_string = grpc_channel_get_target(channel_->c_ptr());
+  Slice peer_slice = PeerString();
+  if (!peer_slice.empty()) {
+    absl::string_view peer_string_view = peer_slice.as_string_view();
+    char* peer_string =
+        static_cast<char*>(gpr_malloc(peer_string_.size() + 1));
+    memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
+    peer_string[peer_string_view.size()] = '\0';
+    return peer_string;
+  }
+  char* peer_string = grpc_channel_get_target(channel_->c_ptr());
   if (peer_string != nullptr) return peer_string;
   return gpr_strdup("unknown");
 }
@@ -1015,11 +1033,11 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
       grpc_status_code status_code = *grpc_status;
       grpc_error_handle error;
       if (status_code != GRPC_STATUS_OK) {
-        char* peer = GetPeer();
+        Slice peer = PeerString();
         error = grpc_error_set_int(
-            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ", peer)),
+            GRPC_ERROR_CREATE(absl::StrCat(
+                "Error received from peer ", peer.as_string_view())),
             StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
-        gpr_free(peer);
       }
       auto grpc_message = b->Take(GrpcMessageMetadata());
       if (grpc_message.has_value()) {
@@ -1259,6 +1277,9 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     /* TODO(ctiller): this could be moved into recv_initial_filter now */
     ValidateFilteredMetadata();
 
+    Slice peer_string = md->get(PeerString());
+    if (!peer_string.empty()) SetPeerString(std::move(peer_string));
+
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
       call_->set_send_deadline(*deadline);
@@ -1466,10 +1487,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
-        if (is_client()) {
-          stream_op_payload->send_initial_metadata.peer_string =
-              peer_string_atm_ptr();
-        }
         has_send_ops = true;
         break;
       }
@@ -1618,9 +1635,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         if (is_client()) {
           stream_op_payload->recv_initial_metadata.trailing_metadata_available =
               &is_trailers_only_;
-        } else {
-          stream_op_payload->recv_initial_metadata.peer_string =
-              peer_string_atm_ptr();
         }
         ++num_recv_ops;
         break;
@@ -2659,6 +2673,8 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
   incoming_compression_algorithm_ =
       metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  Slice peer_string = md->get(PeerString());
+  if (!peer_string.empty()) SetPeerString(std::move(peer_string));
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
   PublishMetadataArray(std::exchange(recv_initial_metadata_, nullptr),
@@ -2900,10 +2916,6 @@ void ClientPromiseBasedCall::PublishMetadataArray(grpc_metadata_array* array,
 bool ClientPromiseBasedCall::Completed() {
   MutexLock lock(mu());
   return completed_;
-}
-
-gpr_atm* CallContext::peer_string_atm_ptr() {
-  return call_->peer_string_atm_ptr();
 }
 
 }  // namespace grpc_core

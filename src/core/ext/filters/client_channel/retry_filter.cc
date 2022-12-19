@@ -615,15 +615,6 @@ class RetryFilter::CallData {
   // send_initial_metadata
   bool seen_send_initial_metadata_ = false;
   grpc_metadata_batch send_initial_metadata_{arena_};
-  // TODO(roth): As part of implementing hedging, we'll probably need to
-  // have the LB call set a value in CallAttempt and then propagate it
-  // from CallAttempt to the parent call when we commit.  Otherwise, we
-  // may leave this with a value for a peer other than the one we
-  // actually commit to.  Alternatively, maybe see if there's a way to
-  // change the surface API such that the peer isn't available until
-  // after initial metadata is received?  (Could even change the
-  // transport API to return this with the recv_initial_metadata op.)
-  gpr_atm* peer_string_;
   // send_message
   // When we get a send_message op, we replace the original byte stream
   // with a CachingByteStream that caches the slices to a local buffer for
@@ -1989,7 +1980,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   batch_.send_initial_metadata = true;
   batch_.payload->send_initial_metadata.send_initial_metadata =
       &call_attempt_->send_initial_metadata_;
-  batch_.payload->send_initial_metadata.peer_string = calld->peer_string_;
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::
@@ -2337,7 +2327,6 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
     send_initial_metadata_ = send_initial_metadata->Copy();
-    peer_string_ = batch->payload->send_initial_metadata.peer_string;
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {

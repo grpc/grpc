@@ -335,12 +335,6 @@ struct grpc_transport_stream_op_batch_payload {
       : context(context) {}
   struct {
     grpc_metadata_batch* send_initial_metadata = nullptr;
-    // If non-NULL, will be set by the transport to the peer string (a char*).
-    // The transport retains ownership of the string.
-    // Note: This pointer may be used by the transport after the
-    // send_initial_metadata op is completed.  It must remain valid
-    // until the call is destroyed.
-    gpr_atm* peer_string = nullptr;
   } send_initial_metadata;
 
   struct {
@@ -385,12 +379,6 @@ struct grpc_transport_stream_op_batch_payload {
     // uses this to set the success flag of OnReadInitialMetadataDone()
     // callback.
     bool* trailing_metadata_available = nullptr;
-    // If non-NULL, will be set by the transport to the peer string (a char*).
-    // The transport retains ownership of the string.
-    // Note: This pointer may be used by the transport after the
-    // recv_initial_metadata op is completed.  It must remain valid
-    // until the call is destroyed.
-    gpr_atm* peer_string = nullptr;
   } recv_initial_metadata;
 
   struct {
