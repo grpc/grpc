@@ -17,9 +17,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"

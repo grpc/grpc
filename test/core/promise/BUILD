@@ -397,7 +397,7 @@ grpc_cc_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
-        "absl/status",
+        "absl/types:optional",
         "gtest",
     ],
     language = "c++",
@@ -405,19 +405,10 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "test_wakeup_schedulers",
         "//:gpr",
         "//:promise",
-        "//:ref_counted_ptr",
         "//src/core:activity",
-        "//src/core:basic_join",
-        "//src/core:event_engine_memory_allocator",
-        "//src/core:join",
-        "//src/core:map",
-        "//src/core:memory_quota",
         "//src/core:mpsc",
-        "//src/core:resource_quota",
-        "//src/core:seq",
     ],
 )
 

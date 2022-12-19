@@ -814,6 +814,7 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/mpsc.h",
     ],
+    external_deps = ["absl/base:core_headers"],
     language = "c++",
     deps = [
         "activity",
@@ -821,6 +822,7 @@ grpc_cc_library(
         "ref_counted",
         "wait_set",
         "//:gpr",
+        "//:ref_counted_ptr",
     ],
 )
 
