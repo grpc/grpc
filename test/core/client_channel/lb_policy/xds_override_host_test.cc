@@ -75,43 +75,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
 };
 
 TEST_F(XdsOverrideHostTest, DelegatesToChild) {
-  // Send address list to LB policy.
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig()),
-                        policy_.get()),
-            absl::OkStatus());
-  // Expect the initial CONNECTNG update with a picker that queues.
-  ExpectConnectingUpdate();
-  // RR should have created a subchannel for each address.
-  for (size_t i = 0; i < kAddresses.size(); ++i) {
-    auto* subchannel = FindSubchannel(kAddresses[i]);
-    ASSERT_NE(subchannel, nullptr);
-    // RR should ask each subchannel to connect.
-    EXPECT_TRUE(subchannel->ConnectionRequested());
-    // The subchannel will connect successfully.
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-    // As each subchannel becomes READY, we should get a new picker that
-    // includes the behavior.  Note that there may be any number of
-    // duplicate updates for the previous state in the queue before the
-    // update that we actually want to see.
-    if (i == 0) {
-      // When the first subchannel becomes READY, accept any number of
-      // CONNECTING updates with a picker that queues followed by a READY
-      // update with a picker that repeatedly returns only the first address.
-      auto picker = WaitForConnected();
-      ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});
-    } else {
-      // When each subsequent subchannel becomes READY, we accept any number
-      // of READY updates where the picker returns only the previously
-      // connected subchannel(s) followed by a READY update where the picker
-      // returns the previously connected subchannel(s) *and* the newly
-      // connected subchannel.
-      WaitForRoundRobinListChange(absl::MakeSpan(kAddresses).subspan(0, i),
-                                  absl::MakeSpan(kAddresses).subspan(0, i + 1));
-    }
-  }
+  ExpectStartupWithRoundRobin(
+      {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"});
 }
 
 TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
@@ -167,7 +132,10 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
                               MakeXdsOverrideHostConfig("round_robin")),
                   policy_.get()),
       absl::OkStatus());
-  ExpectState(GRPC_CHANNEL_READY);
+  auto picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
+  ASSERT_TRUE(picks.has_value());
+  std::vector<absl::string_view> pick_addresses(picks->begin(), picks->end());
+  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, pick_addresses));
   WaitForRoundRobinListChange(
       {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"},
       {"ipv4:127.0.0.1:442"}, call_attributes);
@@ -177,7 +145,10 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
                               MakeXdsOverrideHostConfig("round_robin")),
                   policy_.get()),
       absl::OkStatus());
-  ExpectState(GRPC_CHANNEL_READY);
+  picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
+  ASSERT_TRUE(picks.has_value());
+  pick_addresses = {picks->begin(), picks->end()};
+  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, pick_addresses));
   WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"},
                               {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
                               call_attributes);
@@ -187,7 +158,10 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
                               MakeXdsOverrideHostConfig("round_robin")),
                   policy_.get()),
       absl::OkStatus());
-  ExpectState(GRPC_CHANNEL_READY);
+  picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
+  ASSERT_TRUE(picks.has_value());
+  pick_addresses = {picks->begin(), picks->end()};
+  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:442"}, pick_addresses));
   WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
                               {"ipv4:127.0.0.1:442"}, call_attributes);
 }

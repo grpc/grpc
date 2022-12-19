@@ -661,8 +661,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // list of addresses, or nullopt if a non-complete pick was returned.
   absl::optional<std::vector<std::string>> GetCompletePicks(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, std::string> call_attributes = {},
-      size_t num_picks = 3, SourceLocation location = SourceLocation()) {
+      const std::map<UniqueTypeName, std::string> call_attributes,
+      size_t num_picks, SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
       return absl::nullopt;
