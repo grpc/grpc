@@ -101,8 +101,11 @@ class ForEach {
   };
 
   Poll<Result> PollReaderNext() {
+    gpr_log(GPR_DEBUG, "%p PollReaderNext", this);
     auto r = reader_next_();
     if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      gpr_log(GPR_DEBUG, "%p PollReaderNext: got has_value=%s", this,
+              p->has_value() ? "true" : "false");
       if (p->has_value()) {
         Destruct(&reader_next_);
         auto action = action_factory_.Make(std::move(**p));
@@ -117,6 +120,7 @@ class ForEach {
   }
 
   Poll<Result> PollAction() {
+    gpr_log(GPR_DEBUG, "%p PollAction", this);
     auto r = in_action_.promise();
     if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
       if (p->ok()) {

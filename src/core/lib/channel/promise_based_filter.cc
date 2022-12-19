@@ -461,7 +461,6 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kInitial:
     case State::kIdle:
     case State::kGotBatchNoPipe:
-    case State::kForwardedBatch:
     case State::kCancelled:
       break;
     case State::kCancelledButNotYetPolled:
@@ -507,10 +506,18 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
         state_ = State::kForwardedBatch;
         batch_.ResumeWith(flusher);
         next_.reset();
-        push_.reset();
+        if (!absl::holds_alternative<Pending>((*push_)())) push_.reset();
       }
     } break;
+    case State::kForwardedBatch:
+      if (push_.has_value() && !absl::holds_alternative<Pending>((*push_)())) {
+        push_.reset();
+      }
+      break;
     case State::kBatchCompleted:
+      if (push_.has_value() && absl::holds_alternative<Pending>((*push_)())) {
+        break;
+      }
       if (completed_status_.ok()) {
         state_ = State::kIdle;
         Activity::current()->ForceImmediateRepoll();
