@@ -25,7 +25,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/gprpp/time.h"

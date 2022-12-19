@@ -28,7 +28,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
-#include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/unique_type_name.h"

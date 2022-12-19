@@ -20,7 +20,7 @@
 #include <stddef.h>
 
 #include <grpc/event_engine/endpoint_config.h>
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

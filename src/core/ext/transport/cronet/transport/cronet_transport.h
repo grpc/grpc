@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/transport/transport_fwd.h"
 

@@ -23,7 +23,7 @@
 
 #include <string>
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 /* Returns a string describing an event. Must be later freed with gpr_free() */
 std::string grpc_event_string(grpc_event* ev);

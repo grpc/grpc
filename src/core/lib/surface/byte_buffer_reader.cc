@@ -23,7 +23,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 

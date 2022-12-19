@@ -20,7 +20,7 @@
 #include <functional>
 #include <vector>
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
 

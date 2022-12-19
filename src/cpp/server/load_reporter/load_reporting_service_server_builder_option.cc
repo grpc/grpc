@@ -22,7 +22,7 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/channel_arguments.h>

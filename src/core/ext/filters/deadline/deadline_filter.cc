@@ -18,12 +18,15 @@
 
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 
+#include <functional>
+#include <memory>
 #include <new>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -35,6 +38,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"

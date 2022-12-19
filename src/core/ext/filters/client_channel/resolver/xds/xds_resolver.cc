@@ -42,12 +42,13 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/gprpp/unique_type_name.h"
 
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>

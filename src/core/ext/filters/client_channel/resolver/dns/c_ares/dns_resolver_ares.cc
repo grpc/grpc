@@ -34,7 +34,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

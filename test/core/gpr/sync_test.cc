@@ -23,7 +23,6 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>

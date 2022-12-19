@@ -30,9 +30,9 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/debug/trace.h"

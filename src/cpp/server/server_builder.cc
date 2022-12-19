@@ -29,7 +29,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/workaround_list.h>

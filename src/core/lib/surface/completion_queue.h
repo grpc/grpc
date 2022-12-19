@@ -25,7 +25,7 @@
 
 #include <stdint.h>
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"

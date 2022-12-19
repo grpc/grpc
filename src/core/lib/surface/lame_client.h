@@ -27,7 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

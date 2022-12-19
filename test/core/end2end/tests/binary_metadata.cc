@@ -25,6 +25,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"

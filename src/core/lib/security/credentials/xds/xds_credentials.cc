@@ -24,7 +24,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security_constants.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"

@@ -21,6 +21,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <deque>
 #include <functional>
 #include <map>

@@ -28,8 +28,8 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/debug/trace.h"

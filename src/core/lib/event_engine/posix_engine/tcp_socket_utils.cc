@@ -49,7 +49,6 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"

@@ -34,8 +34,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"

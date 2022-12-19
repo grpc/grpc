@@ -52,7 +52,7 @@
 #include <memory>
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>

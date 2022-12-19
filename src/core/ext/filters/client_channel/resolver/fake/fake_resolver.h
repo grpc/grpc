@@ -22,7 +22,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
