@@ -4617,6 +4617,7 @@ grpc_cc_library(
         "ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
