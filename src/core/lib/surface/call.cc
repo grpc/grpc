@@ -2384,6 +2384,8 @@ void PromiseBasedCall::ResetDeadline() {
 }
 
 void PromiseBasedCall::Run() {
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
   CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
   InternalUnref("deadline");
 }
@@ -2423,6 +2425,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     }
     if (auto* channelz_channel = channel()->channelz_node()) {
       channelz_channel->RecordCallStarted();
+    }
+    if (args->send_deadline != Timestamp::InfFuture()) {
+      UpdateDeadline(args->send_deadline);
     }
   }
 
@@ -2880,6 +2885,9 @@ void ClientPromiseBasedCall::PublishStatus(
         gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
   }
   PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
+  // Clear state saying we have a RECV_STATUS_ON_CLIENT outstanding
+  // (so we don't call through twice)
+  recv_status_on_client_ = absl::monostate();
   FinishOpOnCompletion(&recv_status_on_client_completion_,
                        PendingOp::kReceiveStatusOnClient);
 }
