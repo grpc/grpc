@@ -3080,6 +3080,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
 
   friend class ServerCallContext;
   ServerCallContext call_context_;
+  Server* const server_;
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
   PipeSender<MessageHandle>* server_to_client_messages_ ABSL_GUARDED_BY(mu()) =
       nullptr;
@@ -3124,8 +3125,13 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
     : PromiseBasedCall(arena, *args),
       call_context_(this, args->server_transport_data),
+      server_(args->server),
       send_initial_metadata_(arena) {
   global_stats().IncrementServerCallsCreated();
+  channelz::ServerNode* channelz_node = server_->channelz_node();
+  if (channelz_node != nullptr) {
+    channelz_node->RecordCallStarted();
+  }
   MutexLock lock(mu());
   ScopedContext activity_context(this);
   promise_ = channel()->channel_stack()->MakeServerCallPromise(
@@ -3178,6 +3184,16 @@ void ServerPromiseBasedCall::UpdateOnce() {
               (*result)->get(GrpcStatusFromWire()).value_or(false))) {
         FinishOpOnCompletion(&recv_close_completion_,
                              PendingOp::kReceiveCloseOnServer);
+      }
+      channelz::ServerNode* channelz_node = server_->channelz_node();
+      if (channelz_node != nullptr) {
+        if ((*result)
+                ->get(GrpcStatusMetadata())
+                .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
+          channelz_node->RecordCallSucceeded();
+        } else {
+          channelz_node->RecordCallFailed();
+        }
       }
       if (send_status_from_server_completion_.has_value()) {
         FinishOpOnCompletion(&send_status_from_server_completion_,
