@@ -25,7 +25,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -36,7 +35,6 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/client_interceptor.h>
@@ -46,7 +44,6 @@
 
 namespace grpc {
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Channel::Channel(
     const std::string& host, grpc_channel* channel,
     std::vector<
@@ -54,7 +51,6 @@ Channel::Channel(
         interceptor_creators)
     : host_(host), c_channel_(channel) {
   interceptor_creators_ = std::move(interceptor_creators);
-  g_gli_initializer.summon();
 }
 
 Channel::~Channel() {

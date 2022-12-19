@@ -33,7 +33,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/debug_location.h"

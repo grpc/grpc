@@ -893,7 +893,6 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -902,7 +901,6 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -2181,7 +2179,6 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -2190,7 +2187,6 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -2966,7 +2962,6 @@ libs:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/client/xds_credentials.cc
@@ -2999,7 +2994,6 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/server/xds_server_credentials.cc
   - src/cpp/thread_manager/thread_manager.cc
@@ -3343,7 +3337,6 @@ libs:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
@@ -3367,7 +3360,6 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -4232,6 +4224,26 @@ targets:
   deps:
   - grpc_authorization_provider
   - grpc_test_util
+- name: static_stride_scheduler_benchmark
+  build: test
+  language: c
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
+  deps:
+  - absl/algorithm:container
+  - absl/functional:any_invocable
+  - absl/types:span
+  - benchmark
+  - gpr
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: tcp_posix_test
   build: test
   language: c
@@ -4997,7 +5009,6 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -5029,7 +5040,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -6312,7 +6322,6 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -6344,7 +6353,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -6705,7 +6713,6 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -6737,7 +6744,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -9341,9 +9347,10 @@ targets:
   headers:
   - test/core/util/scoped_env_var.h
   src:
-  - test/core/client_channel/outlier_detection_lb_config_parser_test.cc
+  - test/core/client_channel/lb_policy/outlier_detection_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: outlier_detection_test
   gtest: true
   build: test
@@ -9354,6 +9361,7 @@ targets:
   - test/core/client_channel/lb_policy/outlier_detection_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: overload_test
   gtest: true
   build: test
@@ -9507,6 +9515,7 @@ targets:
   - test/core/client_channel/lb_policy/pick_first_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: pid_controller_test
   gtest: true
   build: test
@@ -10212,9 +10221,10 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/rls_lb_config_parser_test.cc
+  - test/core/client_channel/lb_policy/rls_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -10871,6 +10881,20 @@ targets:
   - test/core/gprpp/stat_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: static_stride_scheduler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
+  deps:
+  - absl/functional:any_invocable
+  - absl/types:span
+  - gpr
   uses_polling: false
 - name: stats_test
   gtest: true
@@ -11847,7 +11871,6 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -11879,7 +11902,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -12222,7 +12244,6 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -12254,7 +12275,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -12328,7 +12348,6 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -12360,7 +12379,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -13179,9 +13197,10 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/xds_override_host_lb_config_parser_test.cc
+  - test/core/client_channel/lb_policy/xds_override_host_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_override_host_test
   gtest: true
   build: test
@@ -13192,6 +13211,7 @@ targets:
   - test/core/client_channel/lb_policy/xds_override_host_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
