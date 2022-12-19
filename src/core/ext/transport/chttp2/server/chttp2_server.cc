@@ -374,6 +374,7 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
       acceptor_(acceptor),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()),
       deadline_(GetConnectionDeadline(args)),
+      event_engine_(args.GetObject<EventEngine>()),
       interested_parties_(grpc_pollset_set_create()) {
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
@@ -510,8 +511,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
                                               &self->on_receive_settings_,
                                               on_close);
-          self->event_engine_ =
-              self->connection_->listener_->args_.GetObject<EventEngine>();
           self->timer_handle_ = self->event_engine_->RunAfter(
               self->deadline_ - Timestamp::Now(), [self = self->Ref()] {
                 ApplicationCallbackExecCtx callback_exec_ctx;
@@ -590,7 +589,6 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
     MutexLock lock(&mu_);
     if (transport_ != nullptr && !shutdown_) {
       transport = transport_;
-      event_engine_ = listener_->args_.GetObject<EventEngine>();
       drain_grace_timer_handle_ = event_engine_->RunAfter(
           std::max(Duration::Zero(),
                    listener_->args_
@@ -624,6 +622,7 @@ void Chttp2ServerListener::ActiveConnection::Start(
     // Hold a ref to HandshakingState to allow starting the handshake outside
     // the critical region.
     handshaking_state_ref = handshaking_state_->Ref();
+    event_engine_ = listener_->args_.GetObject<EventEngine>();
   }
   handshaking_state_ref->Start(endpoint, args);
 }
