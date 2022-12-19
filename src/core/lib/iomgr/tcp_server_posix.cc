@@ -21,6 +21,8 @@
 #define _GNU_SOURCE
 #include <memory>
 
+#include "absl/status/status.h"
+
 #include "grpc/byte_buffer.h"
 #include "grpc/event_engine/event_engine.h"
 #include "grpc/event_engine/memory_allocator.h"
@@ -544,6 +546,10 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
                                              int* out_port) {
   if (grpc_core::IsEventEngineServerEnabled()) {
     gpr_mu_lock(&s->mu);
+    if (s->shutdown_listeners) {
+      gpr_mu_unlock(&s->mu);
+      return absl::UnknownError("Server already shutdown");
+    }
     int fd_index = 0;
     auto port = s->ee_listener->BindWithFd(
         grpc_event_engine::experimental::CreateResolvedAddress(*addr),
@@ -685,6 +691,7 @@ static void tcp_server_start(grpc_tcp_server* s,
   GPR_ASSERT(s->active_ports == 0);
   s->pollsets = pollsets;
   if (grpc_core::IsEventEngineServerEnabled()) {
+    GPR_ASSERT(!s->shutdown_listeners);
     (void)s->ee_listener->Start();
     gpr_mu_unlock(&s->mu);
     return;
