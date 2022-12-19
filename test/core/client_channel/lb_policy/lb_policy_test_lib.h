@@ -21,6 +21,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <deque>
 #include <functional>
 #include <map>
@@ -34,6 +35,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
@@ -449,6 +451,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return status;
   }
 
+  void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
+    helper_->ExpectQueueEmpty(location);
+  }
+
   // Keeps reading state updates until continue_predicate() returns false.
   // Returns false if the helper reports no events or if the event is
   // not a state update; otherwise (if continue_predicate() tells us to
@@ -519,22 +525,61 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::function<void(const absl::Status&)> check_status,
       SourceLocation location = SourceLocation()) {
     bool retval = false;
-    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
-      if (update.state == GRPC_CHANNEL_CONNECTING) {
-        EXPECT_TRUE(update.status.ok())
-            << update.status << " at " << location.file() << ":"
-            << location.line();
-        ExpectPickQueued(update.picker.get(), location);
-        return true;  // Keep going.
-      }
-      EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
-          << ConnectivityStateName(update.state) << " at " << location.file()
-          << ":" << location.line();
-      check_status(update.status);
-      ExpectPickFail(update.picker.get(), check_status, location);
-      retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
-      return false;  // Stop.
-    });
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          if (update.state == GRPC_CHANNEL_CONNECTING) {
+            EXPECT_TRUE(update.status.ok())
+                << update.status << " at " << location.file() << ":"
+                << location.line();
+            ExpectPickQueued(update.picker.get(), location);
+            return true;  // Keep going.
+          }
+          EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
+              << ConnectivityStateName(update.state) << " at "
+              << location.file() << ":" << location.line();
+          check_status(update.status);
+          ExpectPickFail(update.picker.get(), check_status, location);
+          retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+          return false;  // Stop.
+        },
+        location);
+    return retval;
+  }
+
+  // Waits for the round_robin policy to start using an updated address list.
+  // There can be any number of READY updates where the picker is still using
+  // the old list followed by one READY update where the picker is using the
+  // new list.  Returns true if the reported states match expectations.
+  bool WaitForRoundRobinListChange(
+      absl::Span<const absl::string_view> old_addresses,
+      absl::Span<const absl::string_view> new_addresses,
+      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+    bool retval = false;
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
+              << location.file() << ":" << location.line();
+          if (update.state != GRPC_CHANNEL_READY) return false;
+          // Get enough picks to round-robin num_iterations times across all
+          // expected addresses.
+          auto picks = GetCompletePicks(update.picker.get(),
+                                        new_addresses.size() * num_iterations);
+          EXPECT_TRUE(picks.has_value())
+              << location.file() << ":" << location.line();
+          if (!picks.has_value()) return false;
+          std::vector<absl::string_view> pick_addresses(picks->begin(),
+                                                        picks->end());
+          // If the picks still match the old list, then keep going.
+          if (PicksAreRoundRobin(old_addresses, pick_addresses)) return true;
+          // Otherwise, the picks should match the new list.
+          retval = PicksAreRoundRobin(new_addresses, pick_addresses);
+          EXPECT_TRUE(retval)
+              << "Expected: " << absl::StrJoin(new_addresses, ", ")
+              << "\nActual: " << absl::StrJoin(pick_addresses, ", ") << "\nat "
+              << location.file() << ":" << location.line();
+          return false;  // Stop.
+        },
+        location);
     return retval;
   }
 
@@ -588,6 +633,53 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
     return subchannel->state()->address();
+  }
+
+  // Gets num_picks complete picks from picker and returns the resulting
+  // list of addresses, or nullopt if a non-complete pick was returned.
+  absl::optional<std::vector<std::string>> GetCompletePicks(
+      LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
+      SourceLocation location = SourceLocation()) {
+    std::vector<std::string> results;
+    for (size_t i = 0; i < num_picks; ++i) {
+      auto address = ExpectPickComplete(picker, location);
+      if (!address.has_value()) return absl::nullopt;
+      results.emplace_back(std::move(*address));
+    }
+    return results;
+  }
+
+  // Returns true if the list of actual pick result addresses matches the
+  // list of expected addresses for round_robin.  Note that the actual
+  // addresses may start anywhere in the list of expected addresses but
+  // must then continue in round-robin fashion, with wrap-around.
+  bool PicksAreRoundRobin(absl::Span<const absl::string_view> expected,
+                          absl::Span<const absl::string_view> actual) {
+    absl::optional<size_t> expected_index;
+    for (auto address : actual) {
+      auto it = std::find(expected.begin(), expected.end(), address);
+      if (it == expected.end()) return false;
+      size_t index = it - expected.begin();
+      if (expected_index.has_value() && index != *expected_index) return false;
+      expected_index = (index + 1) % expected.size();
+    }
+    return true;
+  }
+
+  // Checks that the picker has round-robin behavior over the specified
+  // set of addresses.
+  void ExpectRoundRobinPicks(LoadBalancingPolicy::SubchannelPicker* picker,
+                             absl::Span<const absl::string_view> addresses,
+                             size_t num_iterations = 3,
+                             SourceLocation location = SourceLocation()) {
+    auto picks =
+        GetCompletePicks(picker, num_iterations * addresses.size(), location);
+    ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
+    std::vector<absl::string_view> pick_addresses(picks->begin(), picks->end());
+    EXPECT_TRUE(PicksAreRoundRobin(addresses, pick_addresses))
+        << "Expected: " << absl::StrJoin(addresses, ", ")
+        << "Actual: " << absl::StrJoin(pick_addresses, ", ") << location.file()
+        << ":" << location.line();
   }
 
   // Requests a picker on picker and expects a Fail result.
@@ -649,10 +741,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                            std::forward_as_tuple(address))
                   .first;
     return &it->second;
-  }
-
-  void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
-    helper_->ExpectQueueEmpty(location);
   }
 
   std::shared_ptr<WorkSerializer> work_serializer_;

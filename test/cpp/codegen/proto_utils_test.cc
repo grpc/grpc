@@ -55,8 +55,6 @@ class ProtoUtilsTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     // Ensure the ProtoBufferWriter internals are initialized.
-    grpc::internal::GrpcLibraryInitializer init;
-    init.summon();
     grpc::internal::GrpcLibrary lib;
     grpc_init();
   }
@@ -152,8 +150,6 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
 class WriterTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    grpc::internal::GrpcLibraryInitializer init;
-    init.summon();
     grpc::internal::GrpcLibrary lib;
     // Ensure the ProtoBufferWriter internals are initialized.
     grpc_init();

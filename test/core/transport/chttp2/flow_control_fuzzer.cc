@@ -33,7 +33,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_request.h>
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

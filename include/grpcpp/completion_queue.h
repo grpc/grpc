@@ -38,7 +38,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -96,8 +95,6 @@ class BlockingUnaryCallImpl;
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
 class CallOpSet;
 }  // namespace internal
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).

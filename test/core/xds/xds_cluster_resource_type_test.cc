@@ -25,6 +25,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "upb/def.hpp"
@@ -39,6 +40,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -52,6 +54,7 @@
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
@@ -1285,6 +1288,64 @@ TEST_F(OutlierDetectionTest, InvalidValues) {
             "field:outlier_detection.max_ejection_time.seconds "
             "error:value must be in the range [0, 315576000000]]")
       << decode_result.resource.status();
+}
+
+//
+// host override status tests
+//
+
+using HostOverrideStatusTest = XdsClusterTest;
+
+TEST_F(HostOverrideStatusTest, IgnoredWhenNotEnabled) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* status_set =
+      cluster.mutable_common_lb_config()->mutable_override_host_status();
+  status_set->add_statuses(envoy::config::core::v3::UNKNOWN);
+  status_set->add_statuses(envoy::config::core::v3::HEALTHY);
+  status_set->add_statuses(envoy::config::core::v3::DRAINING);
+  status_set->add_statuses(envoy::config::core::v3::UNHEALTHY);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.host_override_statuses, ::testing::ElementsAre());
+}
+
+TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* status_set =
+      cluster.mutable_common_lb_config()->mutable_override_host_status();
+  status_set->add_statuses(envoy::config::core::v3::UNKNOWN);
+  status_set->add_statuses(envoy::config::core::v3::HEALTHY);
+  status_set->add_statuses(envoy::config::core::v3::DRAINING);
+  status_set->add_statuses(envoy::config::core::v3::UNHEALTHY);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.host_override_statuses,
+              ::testing::UnorderedElementsAre(
+                  XdsHealthStatus(XdsHealthStatus::kUnknown),
+                  XdsHealthStatus(XdsHealthStatus::kHealthy),
+                  XdsHealthStatus(XdsHealthStatus::kDraining)));
 }
 
 }  // namespace

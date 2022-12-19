@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef extern from "grpc/impl/codegen/propagation_bits.h":
+cdef extern from "grpc/impl/propagation_bits.h":
     cdef int _GRPC_PROPAGATE_DEADLINE "GRPC_PROPAGATE_DEADLINE"
     cdef int _GRPC_PROPAGATE_CENSUS_STATS_CONTEXT "GRPC_PROPAGATE_CENSUS_STATS_CONTEXT"
     cdef int _GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT "GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT"

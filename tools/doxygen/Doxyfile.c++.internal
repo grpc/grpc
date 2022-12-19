@@ -827,8 +827,6 @@ include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/config_protobuf.h \
-include/grpc++/impl/codegen/core_codegen.h \
-include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
 include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
@@ -919,6 +917,8 @@ include/grpc/impl/codegen/sync_windows.h \
 include/grpc/impl/compression_types.h \
 include/grpc/impl/connectivity_state.h \
 include/grpc/impl/grpc_types.h \
+include/grpc/impl/propagation_bits.h \
+include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
@@ -980,8 +980,6 @@ include/grpcpp/impl/codegen/completion_queue.h \
 include/grpcpp/impl/codegen/completion_queue_tag.h \
 include/grpcpp/impl/codegen/config.h \
 include/grpcpp/impl/codegen/config_protobuf.h \
-include/grpcpp/impl/codegen/core_codegen.h \
-include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/delegating_channel.h \
 include/grpcpp/impl/codegen/intercepted_channel.h \
@@ -1903,6 +1901,8 @@ src/core/ext/xds/xds_common_types.cc \
 src/core/ext/xds/xds_common_types.h \
 src/core/ext/xds/xds_endpoint.cc \
 src/core/ext/xds/xds_endpoint.h \
+src/core/ext/xds/xds_health_status.cc \
+src/core/ext/xds/xds_health_status.h \
 src/core/ext/xds/xds_http_fault_filter.cc \
 src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \
@@ -2311,7 +2311,6 @@ src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
 src/core/lib/promise/context.h \
-src/core/lib/promise/detail/basic_join.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
@@ -2320,7 +2319,6 @@ src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/for_each.h \
 src/core/lib/promise/intra_activity_waiter.h \
-src/core/lib/promise/join.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
@@ -2631,19 +2629,16 @@ src/cpp/client/create_channel.cc \
 src/cpp/client/create_channel_internal.cc \
 src/cpp/client/create_channel_internal.h \
 src/cpp/client/create_channel_posix.cc \
-src/cpp/client/credentials_cc.cc \
 src/cpp/client/insecure_credentials.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/client/secure_credentials.h \
 src/cpp/client/xds_credentials.cc \
-src/cpp/codegen/codegen_init.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/channel_arguments.cc \
 src/cpp/common/channel_filter.cc \
 src/cpp/common/channel_filter.h \
 src/cpp/common/completion_queue_cc.cc \
-src/cpp/common/core_codegen.cc \
 src/cpp/common/resource_quota_cc.cc \
 src/cpp/common/rpc_method.cc \
 src/cpp/common/secure_auth_context.cc \
@@ -2673,7 +2668,6 @@ src/cpp/server/server_builder.cc \
 src/cpp/server/server_callback.cc \
 src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
-src/cpp/server/server_credentials.cc \
 src/cpp/server/server_posix.cc \
 src/cpp/server/thread_pool_interface.h \
 src/cpp/server/xds_server_credentials.cc \
