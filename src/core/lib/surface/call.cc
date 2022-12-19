@@ -2384,6 +2384,8 @@ void PromiseBasedCall::ResetDeadline() {
 }
 
 void PromiseBasedCall::Run() {
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
   CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
   InternalUnref("deadline");
 }
@@ -2883,6 +2885,7 @@ void ClientPromiseBasedCall::PublishStatus(
         gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
   }
   PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
+  recv_status_on_client_ = absl::monostate();
   FinishOpOnCompletion(&recv_status_on_client_completion_,
                        PendingOp::kReceiveStatusOnClient);
 }
