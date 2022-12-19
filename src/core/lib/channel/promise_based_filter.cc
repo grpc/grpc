@@ -1564,7 +1564,7 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
   if (send_message() != nullptr) {
     send_message()->GotPipe(call_args.client_to_server_messages);
   } else {
-    GPR_ASSERT(call_args.server_to_client_messages == nullptr);
+    GPR_ASSERT(call_args.client_to_server_messages == nullptr);
   }
   if (receive_message() != nullptr) {
     receive_message()->GotPipe(call_args.server_to_client_messages);
