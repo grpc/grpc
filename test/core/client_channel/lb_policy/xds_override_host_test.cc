@@ -26,8 +26,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-using ::testing::UnorderedElementsAreArray;
-
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
   XdsOverrideHostTest()
