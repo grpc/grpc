@@ -29,7 +29,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/status.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/grpc_library.h>

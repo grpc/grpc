@@ -168,10 +168,10 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_);
-  memory_quota_->RemoveAllocator(this);
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
+  memory_quota_->RemoveAllocator(this);
   std::shared_ptr<BasicMemoryQuota> memory_quota;
   OrphanablePtr<ReclaimerQueue::Handle>
       reclamation_handles[kNumReclamationPasses];
@@ -289,37 +289,6 @@ void GrpcMemoryAllocatorImpl::Replenish() {
   taken_bytes_.fetch_add(amount, std::memory_order_relaxed);
   // Add the taken amount to the free pool.
   free_bytes_.fetch_add(amount, std::memory_order_acq_rel);
-  // See if we can add ourselves as a reclaimer.
-  MaybeRegisterReclaimer();
-}
-
-void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
-  // If the reclaimer is already registered, then there's nothing to do.
-  if (registered_reclaimer_.exchange(true, std::memory_order_relaxed)) {
-    return;
-  }
-  MutexLock lock(&reclaimer_mu_);
-  if (shutdown_) return;
-  // Grab references to the things we'll need
-  auto self = shared_from_this();
-  std::weak_ptr<EventEngineMemoryAllocatorImpl> self_weak{self};
-  registered_reclaimer_ = true;
-  InsertReclaimer(0, [self_weak](absl::optional<ReclamationSweep> sweep) {
-    if (!sweep.has_value()) return;
-    auto self = self_weak.lock();
-    if (self == nullptr) return;
-    auto* p = static_cast<GrpcMemoryAllocatorImpl*>(self.get());
-    p->registered_reclaimer_.store(false, std::memory_order_relaxed);
-    // Figure out how many bytes we can return to the quota.
-    size_t return_bytes = p->free_bytes_.exchange(0, std::memory_order_acq_rel);
-    if (return_bytes == 0) return;
-    p->memory_quota_->MaybeMoveAllocator(p, /*old_free_bytes=*/return_bytes,
-                                         /*new_free_bytes=*/0);
-    // Subtract that from our outstanding balance.
-    p->taken_bytes_.fetch_sub(return_bytes);
-    // And return them to the quota.
-    p->memory_quota_->Return(return_bytes);
-  });
 }
 
 //
@@ -371,10 +340,9 @@ void BasicMemoryQuota::Start() {
             return std::make_tuple(name, std::move(f));
           };
         };
-        return Race(Map(self->reclaimers_[0].Next(), annotate("compact")),
-                    Map(self->reclaimers_[1].Next(), annotate("benign")),
-                    Map(self->reclaimers_[2].Next(), annotate("idle")),
-                    Map(self->reclaimers_[3].Next(), annotate("destructive")));
+        return Race(Map(self->reclaimers_[0].Next(), annotate("benign")),
+                    Map(self->reclaimers_[1].Next(), annotate("idle")),
+                    Map(self->reclaimers_[2].Next(), annotate("destructive")));
       },
       [self](
           std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
@@ -451,10 +419,6 @@ void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
     }
 
     if (chosen_allocator != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-        gpr_log(GPR_INFO, "Returning bytes from big allocator %p",
-                chosen_allocator);
-      }
       chosen_allocator->ReturnFree();
     }
   }

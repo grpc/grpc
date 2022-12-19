@@ -38,9 +38,9 @@
 #include <memory>
 #include <string>
 
-#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/compression_types.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/support/log.h>
 #include <grpcpp/impl/create_auth_context.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -246,7 +246,7 @@ class ClientContext {
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
-    GPR_CODEGEN_ASSERT(initial_metadata_received_);
+    GPR_ASSERT(initial_metadata_received_);
     return *recv_initial_metadata_.map();
   }
 

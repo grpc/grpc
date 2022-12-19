@@ -113,7 +113,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//:grpc_unsecure",
         "//src/core:env",
         "//src/core:json",
         "//src/core:time",

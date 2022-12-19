@@ -32,7 +32,6 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/load_reporting.h>
 #include <grpc/status.h>
@@ -45,7 +44,6 @@
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/interceptor_common.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/server_context.h>
@@ -62,8 +60,6 @@
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
-
-static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // CompletionOp
 
@@ -261,9 +257,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 // ServerContextBase body
 
 ServerContextBase::ServerContextBase()
-    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
-  g_gli_initializer.summon();
-}
+    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
                                      grpc_metadata_array* arr)

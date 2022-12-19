@@ -296,6 +296,10 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
+  - include/grpc/impl/connectivity_state.h
+  - include/grpc/impl/grpc_types.h
+  - include/grpc/impl/propagation_bits.h
+  - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -707,6 +711,7 @@ libs:
   - src/core/ext/xds/xds_cluster_specifier_plugin.h
   - src/core/ext/xds/xds_common_types.h
   - src/core/ext/xds/xds_endpoint.h
+  - src/core/ext/xds/xds_health_status.h
   - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
   - src/core/ext/xds/xds_http_rbac_filter.h
@@ -1458,6 +1463,7 @@ libs:
   - src/core/ext/xds/xds_cluster_specifier_plugin.cc
   - src/core/ext/xds/xds_common_types.cc
   - src/core/ext/xds/xds_endpoint.cc
+  - src/core/ext/xds/xds_health_status.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
   - src/core/ext/xds/xds_http_rbac_filter.cc
@@ -1886,6 +1892,10 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
+  - include/grpc/impl/connectivity_state.h
+  - include/grpc/impl/grpc_types.h
+  - include/grpc/impl/propagation_bits.h
+  - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -2720,8 +2730,6 @@ libs:
   - include/grpc++/impl/codegen/completion_queue_tag.h
   - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/config_protobuf.h
-  - include/grpc++/impl/codegen/core_codegen.h
-  - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
   - include/grpc++/impl/codegen/metadata_map.h
   - include/grpc++/impl/codegen/method_handler_impl.h
@@ -2808,8 +2816,6 @@ libs:
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
   - include/grpcpp/impl/codegen/config_protobuf.h
-  - include/grpcpp/impl/codegen/core_codegen.h
-  - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
   - include/grpcpp/impl/codegen/delegating_channel.h
   - include/grpcpp/impl/codegen/intercepted_channel.h
@@ -2957,17 +2963,14 @@ libs:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/client/xds_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
@@ -2992,7 +2995,6 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/server/xds_server_credentials.cc
   - src/cpp/thread_manager/thread_manager.cc
@@ -3148,8 +3150,6 @@ libs:
   - include/grpc++/impl/codegen/completion_queue_tag.h
   - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/config_protobuf.h
-  - include/grpc++/impl/codegen/core_codegen.h
-  - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
   - include/grpc++/impl/codegen/metadata_map.h
   - include/grpc++/impl/codegen/method_handler_impl.h
@@ -3235,8 +3235,6 @@ libs:
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
   - include/grpcpp/impl/codegen/config_protobuf.h
-  - include/grpcpp/impl/codegen/core_codegen.h
-  - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
   - include/grpcpp/impl/codegen/delegating_channel.h
   - include/grpcpp/impl/codegen/intercepted_channel.h
@@ -3340,14 +3338,11 @@ libs:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/insecure_create_auth_context.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -3366,7 +3361,6 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -3419,6 +3413,10 @@ libs:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/compression_types.h
+  - include/grpc/impl/connectivity_state.h
+  - include/grpc/impl/grpc_types.h
+  - include/grpc/impl/propagation_bits.h
+  - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -4226,6 +4224,26 @@ targets:
   deps:
   - grpc_authorization_provider
   - grpc_test_util
+- name: static_stride_scheduler_benchmark
+  build: test
+  language: c
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
+  deps:
+  - absl/algorithm:container
+  - absl/functional:any_invocable
+  - absl/types:span
+  - benchmark
+  - gpr
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: tcp_posix_test
   build: test
   language: c
@@ -4990,16 +5008,13 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
@@ -5024,7 +5039,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -5127,6 +5141,20 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: cancel_callback_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/cancel_callback_test.cc
+  deps:
+  - absl/meta:type_traits
+  - absl/types:variant
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -6292,16 +6320,13 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
@@ -6326,7 +6351,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -6686,16 +6710,13 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
@@ -6720,7 +6741,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -9318,9 +9338,10 @@ targets:
   headers:
   - test/core/util/scoped_env_var.h
   src:
-  - test/core/client_channel/outlier_detection_lb_config_parser_test.cc
+  - test/core/client_channel/lb_policy/outlier_detection_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: outlier_detection_test
   gtest: true
   build: test
@@ -9331,6 +9352,7 @@ targets:
   - test/core/client_channel/lb_policy/outlier_detection_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: overload_test
   gtest: true
   build: test
@@ -9483,6 +9505,7 @@ targets:
   - test/core/client_channel/lb_policy/pick_first_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: pid_controller_test
   gtest: true
   build: test
@@ -10187,9 +10210,10 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/rls_lb_config_parser_test.cc
+  - test/core/client_channel/lb_policy/rls_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -10846,6 +10870,20 @@ targets:
   - test/core/gprpp/stat_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: static_stride_scheduler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
+  deps:
+  - absl/functional:any_invocable
+  - absl/types:span
+  - gpr
   uses_polling: false
 - name: stats_test
   gtest: true
@@ -11821,16 +11859,13 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
@@ -11855,7 +11890,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -12197,16 +12231,13 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
@@ -12231,7 +12262,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -12305,16 +12335,13 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
-  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
@@ -12339,7 +12366,6 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -12447,6 +12473,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/util/status.cc
   - test/core/xds/xds_client_test.cc
   - test/core/xds/xds_transport_fake.cc
   deps:
@@ -12478,6 +12505,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12521,6 +12549,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
@@ -12529,6 +12558,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/tls.proto
   - src/proto/grpc/testing/xds/v3/typed_struct.proto
   - src/proto/grpc/testing/xds/v3/wrr_locality.proto
+  - src/cpp/util/status.cc
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - grpc_test_util
@@ -12560,6 +12590,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12647,6 +12678,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12751,6 +12783,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12808,6 +12841,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -12842,12 +12876,15 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/util/status.cc
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - grpc_test_util
@@ -12879,6 +12916,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13019,6 +13057,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/ring_hash.proto
@@ -13110,6 +13149,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13144,9 +13184,10 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/xds_override_host_lb_config_parser_test.cc
+  - test/core/client_channel/lb_policy/xds_override_host_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_override_host_test
   gtest: true
   build: test
@@ -13157,6 +13198,7 @@ targets:
   - test/core/client_channel/lb_policy/xds_override_host_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
@@ -13184,6 +13226,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13241,6 +13284,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
@@ -13339,6 +13383,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto

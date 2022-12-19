@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -39,6 +40,7 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/json/json.h"
@@ -96,12 +98,15 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   absl::optional<OutlierDetectionConfig> outlier_detection;
 
+  std::set<XdsHealthStatus> host_override_statuses;
+
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
            lrs_load_reporting_server == other.lrs_load_reporting_server &&
            common_tls_context == other.common_tls_context &&
            max_concurrent_requests == other.max_concurrent_requests &&
-           outlier_detection == other.outlier_detection;
+           outlier_detection == other.outlier_detection &&
+           host_override_statuses == other.host_override_statuses;
   }
 
   std::string ToString() const;

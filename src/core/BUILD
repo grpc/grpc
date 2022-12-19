@@ -476,6 +476,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cancel_callback",
+    external_deps = ["absl/types:variant"],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/cancel_callback.h",
+    ],
+    deps = [
+        "poll",
+        "promise_like",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_factory",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
@@ -3183,11 +3197,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "arena_promise",
         "channel_args",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
         "closure",
+        "context",
         "error",
         "status_helper",
         "time",
@@ -3423,6 +3439,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena_promise",
         "channel_args",
         "channel_fwd",
         "channel_init",
@@ -3434,12 +3451,14 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "latch",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
         "ref_counted",
         "resolved_address",
+        "seq",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -3463,6 +3482,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:orphanable",
+        "//:promise",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
         "//:ref_counted_ptr",
@@ -3530,7 +3550,6 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:rls_upb",
@@ -3565,6 +3584,7 @@ grpc_cc_library(
         "ext/xds/xds_cluster_specifier_plugin.cc",
         "ext/xds/xds_common_types.cc",
         "ext/xds/xds_endpoint.cc",
+        "ext/xds/xds_health_status.cc",
         "ext/xds/xds_http_fault_filter.cc",
         "ext/xds/xds_http_filters.cc",
         "ext/xds/xds_http_rbac_filter.cc",
@@ -3586,6 +3606,7 @@ grpc_cc_library(
         "ext/xds/xds_cluster_specifier_plugin.h",
         "ext/xds/xds_common_types.h",
         "ext/xds/xds_endpoint.h",
+        "ext/xds/xds_health_status.h",
         "ext/xds/xds_http_fault_filter.h",
         "ext/xds/xds_http_filters.h",
         "ext/xds/xds_http_rbac_filter.h",
@@ -4219,6 +4240,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "static_stride_scheduler",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/types:optional",
+        "absl/types:span",
+    ],
+    language = "c++",
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
     name = "grpc_outlier_detection_header",
     hdrs = [
         "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
@@ -4776,6 +4814,7 @@ grpc_cc_library(
         "ext/transport/chttp2/client/chttp2_connector.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
@@ -4793,6 +4832,7 @@ grpc_cc_library(
         "resolved_address",
         "status_helper",
         "tcp_connect_handshaker",
+        "time",
         "transport_fwd",
         "unique_type_name",
         "//:config",
@@ -4807,7 +4847,6 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:grpc_transport_chttp2",
         "//:handshaker",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",

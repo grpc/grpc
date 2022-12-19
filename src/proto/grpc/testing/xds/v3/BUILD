@@ -93,6 +93,7 @@ grpc_proto_library(
         "config_source_proto",
         "endpoint_proto",
         "extension_proto",
+        "health_check_proto",
         "outlier_detection_proto",
     ],
 )
@@ -106,7 +107,15 @@ grpc_proto_library(
     deps = [
         "address_proto",
         "base_proto",
+        "health_check_proto",
         "percent_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "health_check_proto",
+    srcs = [
+        "health_check.proto",
     ],
 )
 

@@ -20,7 +20,6 @@
 #include <string>
 #include <vector>
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
