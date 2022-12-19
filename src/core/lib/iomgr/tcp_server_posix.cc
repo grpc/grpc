@@ -151,7 +151,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   if (grpc_core::IsEventEngineServerEnabled()) {
     PosixEventEngineWithFdSupport::PosixAcceptCallback accept_cb =
         [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
-            bool is_external, MemoryAllocator allocator,
+            bool is_external, MemoryAllocator /*allocator*/,
             SliceBuffer* pending_data) {
           grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
@@ -646,7 +646,7 @@ unsigned tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index) {
     // This doesn't need to be very fast. Used in tests.
     for (auto it = s->listen_fd_to_index_map.begin();
          it != s->listen_fd_to_index_map.end(); it++) {
-      if (std::get<0>(it->second) == port_index) {
+      if (std::get<0>(it->second) == static_cast<int>(port_index)) {
         num_fds++;
       }
     }
@@ -668,8 +668,8 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
     // This doesn't need to be very fast. Used in tests.
     for (auto it = s->listen_fd_to_index_map.begin();
          it != s->listen_fd_to_index_map.end(); it++) {
-      if (std::get<0>(it->second) == port_index &&
-          std::get<1>(it->second) == fd_index) {
+      if (std::get<0>(it->second) == static_cast<int>(port_index) &&
+          std::get<1>(it->second) == static_cast<int>(fd_index)) {
         gpr_mu_unlock(&s->mu);
         return it->first;
       }
