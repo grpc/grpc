@@ -88,7 +88,7 @@ namespace Grpc.Core
             if (DebugException != null)
             {
                 return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\"," +
-                    $" DebugException=\"{DebugException.GetType().Name}: {DebugException.Message}\")";
+                    $" DebugException=\"{DebugException.GetType().FullName}: {DebugException.Message}\")";
             }
             return $"Status(StatusCode=\"{StatusCode}\", Detail=\"{Detail}\")";
         }
