@@ -146,7 +146,7 @@ void EncodeMessageToPayload(const grpc_core::SliceBuffer* message,
   auto* sb = message->c_slice_buffer();
   entry->payload.message_length = sb->length;
   // Log the message to a max of the configured message length
-  for (int i = 0; i < sb->count; i++) {
+  for (size_t i = 0; i < sb->count; i++) {
     absl::StrAppend(
         &entry->payload.message,
         absl::string_view(
@@ -297,7 +297,7 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientLoggingFilter> Create(
-      const grpc_core::ChannelArgs& args, ChannelFilter::Args filter_args) {
+      const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
     absl::optional<absl::string_view> default_authority =
         args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
     if (default_authority.has_value()) {
@@ -391,7 +391,8 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerLoggingFilter> Create(
-      const grpc_core::ChannelArgs& args, ChannelFilter::Args filter_args) {
+      const grpc_core::ChannelArgs& /*args*/,
+      ChannelFilter::Args /*filter_args*/) {
     return ServerLoggingFilter();
   }
 
