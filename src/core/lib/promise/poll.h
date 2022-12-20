@@ -32,6 +32,12 @@ struct Pending {
   constexpr bool operator==(Pending) const { return true; }
 };
 
+// A type that contains no value. Useful for simulating 'void' in promises that
+// always need to return some kind of value.
+struct Empty {
+  constexpr bool operator==(Empty) const { return true; }
+};
+
 // The result of polling a Promise once.
 //
 // Can be either pending - the Promise has not yet completed, or ready -

@@ -301,7 +301,6 @@ class BasicMemoryQuota::WaitForSweepPromise {
                       uint64_t token)
       : memory_quota_(std::move(memory_quota)), token_(token) {}
 
-  struct Empty {};
   Poll<Empty> operator()() {
     if (memory_quota_->reclamation_counter_.load(std::memory_order_relaxed) !=
         token_) {
