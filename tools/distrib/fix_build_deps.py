@@ -583,11 +583,11 @@ def make_library(library):
 
         if hdr in canonical_deps:
             deps.add(canonical_deps[hdr], hdr)
-            continue        
+            continue
 
         if 'include/' + hdr in canonical_deps:
             deps.add(canonical_deps['include/' + hdr], hdr)
-            continue        
+            continue
 
         if hdr in vendors:
             deps.add_one_of(vendors[hdr], hdr)

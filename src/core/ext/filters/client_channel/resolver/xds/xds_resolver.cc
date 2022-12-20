@@ -42,7 +42,7 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
 
