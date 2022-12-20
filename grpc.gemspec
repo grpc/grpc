@@ -59,6 +59,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/event_engine/port.h )
   s.files += %w( include/grpc/event_engine/slice.h )
   s.files += %w( include/grpc/event_engine/slice_buffer.h )
+  s.files += %w( include/grpc/event_engine/slice_cast.h )
   s.files += %w( include/grpc/fork.h )
   s.files += %w( include/grpc/grpc.h )
   s.files += %w( include/grpc/grpc_posix.h )
