@@ -27,14 +27,12 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/interceptor_common.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/security/credentials.h>

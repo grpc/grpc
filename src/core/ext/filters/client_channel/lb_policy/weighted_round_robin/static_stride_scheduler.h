@@ -19,7 +19,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
