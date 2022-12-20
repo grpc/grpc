@@ -14,30 +14,22 @@
 
 FROM debian:10
 
-RUN apt-get update && apt-get install -y apt-transport-https dirmngr gnupg libssl-dev ca-certificates && apt-get clean
+RUN apt-get update && apt-get install -y apt-transport-https ca-certificates curl dirmngr gnupg unzip wget && apt-get clean
 
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
-
-RUN apt-get update && apt-get install -y \
-    mono-devel \
-    nuget \
+# Install mono
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
+    && echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
+    && apt-get update && apt-get install -y mono-devel nuget \
     && apt-get clean
 
-RUN apt-get update && apt-get install -y curl && apt-get clean
-
 # Install dotnet SDK
-ENV DOTNET_SDK_VERSION 2.1.500
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz \
-    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
-
-RUN apt-get update && apt-get install -y unzip && apt-get clean
+RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && apt update \
+    && apt install -y dotnet-sdk-3.1 \
+    && apt-get clean
 
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
-RUN apt-get update && apt-get install -y curl && apt-get clean
 RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem
 
 # we have a separate distribtest for netcoreapp3.1
