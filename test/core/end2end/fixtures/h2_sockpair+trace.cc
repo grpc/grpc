@@ -22,6 +22,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/trace.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
