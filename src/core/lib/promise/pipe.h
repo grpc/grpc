@@ -102,66 +102,30 @@ class Center {
   // Initialize with one send ref (held by PipeSender) and one recv ref (held by
   // PipeReceiver)
   Center() {
-    send_refs_ = 1;
-    recv_refs_ = 1;
+    refs_ = 2;
     value_state_ = ValueState::kEmpty;
   }
 
-  // Add one ref to the send side of this object, and return this.
-  Center* RefSend() {
+  // Add one ref to this object, and return this.
+  Center* Ref() {
     if (grpc_trace_promise_pipe.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("RefSend").c_str());
+      gpr_log(GPR_INFO, "%s", DebugOpString("Ref").c_str());
     }
-    send_refs_++;
-    GPR_ASSERT(send_refs_ != 0);
+    refs_++;
+    GPR_ASSERT(refs_ != 0);
     return this;
   }
 
-  // Add one ref to the recv side of this object, and return this.
-  Center* RefRecv() {
-    if (grpc_trace_promise_pipe.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("RefRecv").c_str());
-    }
-    recv_refs_++;
-    GPR_ASSERT(recv_refs_ != 0);
-    return this;
-  }
-
-  // Drop a send side ref
-  // If no send refs remain, wake due to send closure
+  // Drop a ref
   // If no refs remain, destroy this object
-  void UnrefSend() {
+  void Unref() {
     if (grpc_trace_promise_pipe.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("UnrefSend").c_str());
+      gpr_log(GPR_INFO, "%s", DebugOpString("UnRef").c_str());
     }
-    GPR_DEBUG_ASSERT(send_refs_ > 0);
-    send_refs_--;
-    if (0 == send_refs_) {
-      on_full_.Wake();
-      on_empty_.Wake();
-      if (0 == recv_refs_) {
-        this->~Center();
-      }
-    }
-  }
-
-  // Drop a recv side ref
-  // If no recv refs remain, wake due to recv closure
-  // If no refs remain, destroy this object
-  void UnrefRecv() {
-    if (grpc_trace_promise_pipe.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("UnrefRecv").c_str());
-    }
-    GPR_DEBUG_ASSERT(recv_refs_ > 0);
-    recv_refs_--;
-    if (0 == recv_refs_) {
-      on_full_.Wake();
-      on_empty_.Wake();
-      if (0 == send_refs_) {
-        this->~Center();
-      } else if (value_state_ == ValueState::kReady) {
-        ResetValue();
-      }
+    GPR_DEBUG_ASSERT(refs_ > 0);
+    refs_--;
+    if (0 == refs_) {
+      this->~Center();
     }
   }
 
@@ -173,23 +137,40 @@ class Center {
     if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Push").c_str());
     }
-    GPR_DEBUG_ASSERT(send_refs_ != 0);
-    if (recv_refs_ == 0) return false;
-    if (value_state_ != ValueState::kEmpty) return on_empty_.pending();
-    value_state_ = ValueState::kReady;
-    value_ = std::move(*value);
-    on_full_.Wake();
-    return true;
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kClosed:
+      case ValueState::kReadyClosed:
+        return false;
+      case ValueState::kReady:
+      case ValueState::kAcked:
+        return on_empty_.pending();
+      case ValueState::kEmpty:
+        value_state_ = ValueState::kReady;
+        value_ = std::move(*value);
+        on_full_.Wake();
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return false);
   }
 
   Poll<bool> PollAck() {
     if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollAck").c_str());
     }
-    GPR_DEBUG_ASSERT(send_refs_ != 0);
-    if (recv_refs_ == 0) return value_state_ == ValueState::kAcked;
-    if (value_state_ != ValueState::kAcked) return on_empty_.pending();
-    value_state_ = ValueState::kEmpty;
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kClosed:
+      case ValueState::kReadyClosed:
+        return false;
+      case ValueState::kReady:
+      case ValueState::kEmpty:
+        return on_empty_.pending();
+      case ValueState::kAcked:
+        value_state_ = ValueState::kEmpty;
+        on_empty_.Wake();
+        return true;
+    }
     return true;
   }
 
@@ -201,36 +182,76 @@ class Center {
     if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
     }
-    GPR_DEBUG_ASSERT(recv_refs_ != 0);
-    if (value_state_ != ValueState::kReady) {
-      if (send_refs_ == 0) return NextResult<T>(nullptr);
-      return on_full_.pending();
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+        return on_full_.pending();
+      case ValueState::kReadyClosed:
+        value_state_ = ValueState::kClosed;
+        ABSL_FALLTHROUGH_INTENDED;
+      case ValueState::kReady:
+        return NextResult<T>(Ref());
+      case ValueState::kClosed:
+        return NextResult<T>(nullptr);
     }
-    return NextResult<T>(RefRecv());
+    GPR_UNREACHABLE_CODE(return NextResult<T>(nullptr));
   }
 
   void AckNext() {
     if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
     }
-    GPR_DEBUG_ASSERT(value_state_ == ValueState::kReady);
-    value_state_ = ValueState::kAcked;
-    on_empty_.Wake();
-    UnrefRecv();
+    switch (value_state_) {
+      case ValueState::kReady:
+        value_state_ = ValueState::kAcked;
+        on_empty_.Wake();
+        break;
+      case ValueState::kReadyClosed:
+        value_state_ = ValueState::kClosed;
+        break;
+      case ValueState::kClosed:
+        break;
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+        abort();
+    }
+    Unref();
+  }
+
+  void MarkClosed() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
+    }
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+        value_state_ = ValueState::kClosed;
+        on_empty_.Wake();
+        break;
+      case ValueState::kReady:
+        value_state_ = ValueState::kReadyClosed;
+        break;
+      case ValueState::kReadyClosed:
+      case ValueState::kClosed:
+        break;
+    }
   }
 
   T& value() { return value_; }
   const T& value() const { return value_; }
 
- private:
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), "PIPE[0x",
+    return absl::StrCat(Activity::current()->DebugTag(), " PIPE[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
+
+ private:
   std::string DebugOpString(std::string op) {
-    return absl::StrCat(DebugTag(), op, " send_refs=", send_refs_,
-                        " recv_refs=", recv_refs_,
-                        " value_state=", ValueStateName(value_state_));
+    return absl::StrCat(DebugTag(), op, " refs=", refs_,
+                        " value_state=", ValueStateName(value_state_),
+                        " on_empty=", on_empty_.DebugString().c_str(),
+                        " on_full=", on_full_.DebugString().c_str());
   }
   void ResetValue() {
     // Fancy dance to move out of value in the off chance that we reclaim some
@@ -247,29 +268,32 @@ class Center {
     // Value has been received and acked, we can unblock senders and transition
     // to empty.
     kAcked,
+    // Pipe is closed, no more values can be sent
+    kClosed,
+    // Pipe is closed, no more values can be sent
+    // (but one value is queued and ready to be received)
+    kReadyClosed,
   };
   static const char* ValueStateName(ValueState state) {
     switch (state) {
       case ValueState::kEmpty:
-        return "kEmpty";
+        return "Empty";
       case ValueState::kReady:
-        return "kReady";
+        return "Ready";
       case ValueState::kAcked:
-        return "kAcked";
+        return "Acked";
+      case ValueState::kClosed:
+        return "Closed";
+      case ValueState::kReadyClosed:
+        return "ReadyClosed";
     }
     GPR_UNREACHABLE_CODE(return "unknown");
   }
   T value_;
-  // Number of sending objects.
-  // 0 => send is closed.
-  // 1 ref each for PipeSender and Push.
-  uint8_t send_refs_ : 2;
-  // Number of receiving objects.
-  // 0 => recv is closed.
-  // 1 ref each for PipeReceiver, Next, and NextResult.
-  uint8_t recv_refs_ : 2;
+  // Number of refs
+  uint8_t refs_ : 3;
   // Current state of the value.
-  ValueState value_state_ : 2;
+  ValueState value_state_ : 3;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
 };
@@ -289,18 +313,36 @@ class PipeSender {
     other.center_ = nullptr;
   }
   PipeSender& operator=(PipeSender&& other) noexcept {
-    if (center_ != nullptr) center_->UnrefSend();
+    if (center_ != nullptr) {
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sDrop due to move", center_->DebugTag().c_str());
+      }
+      center_->Unref();
+    }
     center_ = other.center_;
     other.center_ = nullptr;
     return *this;
   }
 
   ~PipeSender() {
-    if (center_ != nullptr) center_->UnrefSend();
+    if (center_ != nullptr) {
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sDrop due to destruct",
+                center_->DebugTag().c_str());
+      }
+      center_->MarkClosed();
+      center_->Unref();
+    }
   }
 
   void Close() {
-    if (auto* center = std::exchange(center_, nullptr)) center->UnrefSend();
+    if (auto* center = std::exchange(center_, nullptr)) {
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sClose", center->DebugTag().c_str());
+      }
+      center->MarkClosed();
+      center->Unref();
+    }
   }
 
   void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }
@@ -330,13 +372,16 @@ class PipeReceiver {
     other.center_ = nullptr;
   }
   PipeReceiver& operator=(PipeReceiver&& other) noexcept {
-    if (center_ != nullptr) center_->UnrefRecv();
+    if (center_ != nullptr) center_->Unref();
     center_ = other.center_;
     other.center_ = nullptr;
     return *this;
   }
   ~PipeReceiver() {
-    if (center_ != nullptr) center_->UnrefRecv();
+    if (center_ != nullptr) {
+      center_->MarkClosed();
+      center_->Unref();
+    }
   }
 
   void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
@@ -367,7 +412,13 @@ class Push {
     other.center_ = nullptr;
   }
   Push& operator=(Push&& other) noexcept {
-    if (center_ != nullptr) center_->UnrefSend();
+    if (center_ != nullptr) {
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sStop push due to move",
+                center_->DebugTag().c_str());
+      }
+      center_->Unref();
+    }
     center_ = other.center_;
     other.center_ = nullptr;
     push_ = std::move(other.push_);
@@ -375,7 +426,13 @@ class Push {
   }
 
   ~Push() {
-    if (center_ != nullptr) center_->UnrefSend();
+    if (center_ != nullptr) {
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sStop push due to destruct",
+                center_->DebugTag().c_str());
+      }
+      center_->Unref();
+    }
   }
 
   Poll<bool> operator()() {
@@ -410,20 +467,36 @@ class Next {
     other.center_ = nullptr;
   }
   Next& operator=(Next&& other) noexcept {
-    if (center_ != nullptr) center_->UnrefRecv();
+    if (center_ != nullptr) {
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sStop next due to move",
+                center_->DebugTag().c_str());
+      }
+      center_->Unref();
+    }
     center_ = other.center_;
     other.center_ = nullptr;
     return *this;
   }
 
   ~Next() {
-    if (center_ != nullptr) center_->UnrefRecv();
+    if (center_ != nullptr) {
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sStop next due to destruct",
+                center_->DebugTag().c_str());
+      }
+      center_->Unref();
+    }
   }
 
   Poll<NextResult<T>> operator()() {
     auto r = center_->Next();
     if (!absl::holds_alternative<Pending>(r)) {
-      std::exchange(center_, nullptr)->UnrefRecv();
+      if (grpc_trace_promise_pipe.enabled()) {
+        gpr_log(GPR_DEBUG, "%sStop next due to resolved result",
+                center_->DebugTag().c_str());
+      }
+      std::exchange(center_, nullptr)->Unref();
     }
     return r;
   }
@@ -438,12 +511,12 @@ class Next {
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
-  return pipe_detail::Push<T>(center_->RefSend(), std::move(value));
+  return pipe_detail::Push<T>(center_->Ref(), std::move(value));
 }
 
 template <typename T>
 pipe_detail::Next<T> PipeReceiver<T>::Next() {
-  return pipe_detail::Next<T>(center_->RefRecv());
+  return pipe_detail::Next<T>(center_->Ref());
 }
 
 template <typename T>

@@ -98,6 +98,7 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
   template <typename Result, int kDoneBit>
   Poll<Result> Run(uint8_t& done_bits) {
     if ((done_bits & (1 << kDoneBit)) == 0) {
+      gpr_log(GPR_DEBUG, "poll bit mask %d", 1 << kDoneBit);
       auto p = wrapper_.promise();
       if (auto* status = absl::get_if<kPollReadyIdx>(&p)) {
         done_bits |= (1 << kDoneBit);
@@ -190,6 +191,7 @@ class TryConcurrently {
       return std::move(*status);
     }
     if ((done_bits_ & 1) == 0) {
+      gpr_log(GPR_DEBUG, "%p: polling main", this);
       auto p = main_();
       if (auto* status = absl::get_if<kPollReadyIdx>(&p)) {
         done_bits_ |= 1;

@@ -51,11 +51,11 @@ TEST_F(PipeTest, CanSendAndReceive) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [] {
-        Pipe<int> pipe;
+        auto* pipe = GetContext<Arena>()->New<Pipe<int>>();
         return Seq(
             // Concurrently: send 42 into the pipe, and receive from the pipe.
-            Join(pipe.sender.Push(42),
-                 Map(pipe.receiver.Next(),
+            Join(pipe->sender.Push(42),
+                 Map(pipe->receiver.Next(),
                      [](NextResult<int> r) { return r.value(); })),
             // Once complete, verify successful sending and the received value
             // is 42.
@@ -75,12 +75,12 @@ TEST_F(PipeTest, CanReceiveAndSend) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [] {
-        Pipe<int> pipe;
+        auto* pipe = GetContext<Arena>()->New<Pipe<int>>();
         return Seq(
             // Concurrently: receive from the pipe, and send 42 into the pipe.
-            Join(Map(pipe.receiver.Next(),
+            Join(Map(pipe->receiver.Next(),
                      [](NextResult<int> r) { return r.value(); }),
-                 pipe.sender.Push(42)),
+                 pipe->sender.Push(42)),
             // Once complete, verify the received value is 42 and successful
             // sending.
             [](std::tuple<int, bool> result) {
@@ -166,39 +166,38 @@ TEST_F(PipeTest, CanFlowControlThroughManyStages) {
   // completes.
   MakeActivity(
       [done] {
-        Pipe<int> pipe1;
-        Pipe<int> pipe2;
-        Pipe<int> pipe3;
-        auto sender1 = std::move(pipe1.sender);
-        auto receiver1 = std::move(pipe1.receiver);
-        auto sender2 = std::move(pipe2.sender);
-        auto receiver2 = std::move(pipe2.receiver);
-        auto sender3 = std::move(pipe3.sender);
-        auto receiver3 = std::move(pipe3.receiver);
-        return Seq(
-            Join(Seq(sender1.Push(1),
-                     [done] {
-                       *done = true;
-                       return 1;
-                     }),
-                 Seq(receiver1.Next(),
-                     [sender2 = std::move(sender2)](NextResult<int> r) mutable {
-                       return sender2.Push(r.value());
-                     }),
-                 Seq(receiver2.Next(),
-                     [sender3 = std::move(sender3)](NextResult<int> r) mutable {
-                       return sender3.Push(r.value());
-                     }),
-                 Seq(receiver3.Next(),
-                     [done](NextResult<int> r) {
-                       EXPECT_EQ(r.value(), 1);
-                       EXPECT_FALSE(*done);
-                       return 2;
-                     })),
-            [](std::tuple<int, bool, bool, int> result) {
-              EXPECT_EQ(result, std::make_tuple(1, true, true, 2));
-              return absl::OkStatus();
-            });
+        auto* pipe1 = GetContext<Arena>()->New<Pipe<int>>();
+        auto* pipe2 = GetContext<Arena>()->New<Pipe<int>>();
+        auto* pipe3 = GetContext<Arena>()->New<Pipe<int>>();
+        auto* sender1 = &pipe1->sender;
+        auto* receiver1 = &pipe1->receiver;
+        auto* sender2 = &pipe2->sender;
+        auto* receiver2 = &pipe2->receiver;
+        auto* sender3 = &pipe3->sender;
+        auto* receiver3 = &pipe3->receiver;
+        return Seq(Join(Seq(sender1->Push(1),
+                            [done] {
+                              *done = true;
+                              return 1;
+                            }),
+                        Seq(receiver1->Next(),
+                            [sender2](NextResult<int> r) mutable {
+                              return sender2->Push(r.value());
+                            }),
+                        Seq(receiver2->Next(),
+                            [sender3](NextResult<int> r) mutable {
+                              return sender3->Push(r.value());
+                            }),
+                        Seq(receiver3->Next(),
+                            [done](NextResult<int> r) {
+                              EXPECT_EQ(r.value(), 1);
+                              EXPECT_FALSE(*done);
+                              return 2;
+                            })),
+                   [](std::tuple<int, bool, bool, int> result) {
+                     EXPECT_EQ(result, std::make_tuple(1, true, true, 2));
+                     return absl::OkStatus();
+                   });
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },

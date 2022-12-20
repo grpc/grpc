@@ -40,6 +40,10 @@ class IntraActivityWaiter {
     }
   }
 
+  std::string DebugString() const {
+    return waiting_ ? "WAITING" : "NOT_WAITING";
+  }
+
  private:
   bool waiting_ = false;
 };
