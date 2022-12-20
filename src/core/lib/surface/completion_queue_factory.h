@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
 
 typedef struct grpc_completion_queue_factory_vtable {
   grpc_completion_queue* (*create)(const grpc_completion_queue_factory*,

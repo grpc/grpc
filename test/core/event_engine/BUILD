@@ -193,8 +193,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//:grpc",
+        "//src/core:event_engine_interface",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_sockaddr",
         "//src/core:iomgr_port",
     ],
 )

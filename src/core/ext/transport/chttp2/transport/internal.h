@@ -30,7 +30,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 

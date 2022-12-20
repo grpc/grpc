@@ -1113,7 +1113,10 @@ grpc_cc_library(
     public_hdrs = [
         "//:include/grpc/slice.h",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "//:gpr",
+        "//:grpc_slice_type",
+    ],
 )
 
 grpc_cc_library(
@@ -1136,6 +1139,7 @@ grpc_cc_library(
     deps = [
         "slice_refcount",
         "//:gpr",
+        "//:grpc_slice_type",
     ],
 )
 
@@ -2596,6 +2600,7 @@ grpc_cc_library(
         "//:grpc_credentials_util",
         "//:grpc_security_base",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:iomgr_endpoint",
         "//:promise",
         "//:ref_counted_ptr",
@@ -3256,6 +3261,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_connectivity_state_enum",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
@@ -3294,6 +3300,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:grpc_types",
         "//:iomgr_timer",
     ],
 )
@@ -3323,6 +3330,7 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_types",
     ],
 )
 
@@ -3362,6 +3370,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:grpc_types",
     ],
 )
 
@@ -3563,6 +3572,7 @@ grpc_cc_library(
         "//:grpc_resolver_fake",
         "//:grpc_security_base",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:promise",
         "//:protobuf_duration_upb",
@@ -3634,6 +3644,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:rls_upb",
@@ -3854,6 +3865,7 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_types",
         "//:ref_counted_ptr",
     ],
 )
@@ -4054,6 +4066,7 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:grpc_resolver_fake",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4252,6 +4265,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_connectivity_state_enum",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4297,6 +4311,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_connectivity_state_enum",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4444,6 +4459,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_connectivity_state_enum",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4565,6 +4581,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
+        "//:grpc_types",
         "//:promise",
         "//:uri_parser",
     ],
@@ -4643,6 +4660,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_resolver",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4948,6 +4966,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:grpc_transport_chttp2",
+        "//:grpc_types",
         "//:handshaker",
         "//:iomgr_endpoint",
         "//:orphanable",
@@ -4997,6 +5016,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:grpc_transport_chttp2",
+        "//:grpc_types",
         "//:handshaker",
         "//:iomgr_endpoint",
         "//:iomgr_tcp_server",
@@ -5045,6 +5065,7 @@ grpc_cc_library(
         "//:grpc_connectivity_state_enum",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
+        "//:grpc_types",
         "//:iomgr_endpoint",
         "//:ref_counted_ptr",
     ],

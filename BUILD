@@ -472,6 +472,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/slice_type.h",
     ],
+    tags = ["canonical_dep"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["gpr_platform"],
 )
@@ -481,6 +482,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/status.h",
     ],
+    tags = ["canonical_dep"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["gpr_platform"],
 )
@@ -490,6 +492,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/connectivity_state.h",
     ],
+    tags = ["canonical_dep"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
 )
 
@@ -498,6 +501,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/compression_types.h",
     ],
+    tags = ["canonical_dep"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["gpr_platform"],
 )
@@ -507,6 +511,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/grpc_types.h",
     ],
+    tags = ["canonical_dep"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
@@ -603,6 +608,7 @@ grpc_cc_library(
         },
     ],
     tags = [
+        "grpc_avoid_dep",
         "nofixdeps",
     ],
     visibility = [
@@ -1184,6 +1190,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
     ],
 )
 
@@ -2799,6 +2806,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_service_config_impl",
         "grpc_trace",
+        "grpc_types",
         "http_connect_handshaker",
         "iomgr_timer",
         "orphanable",
@@ -2893,6 +2901,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_service_config_impl",
         "grpc_trace",
+        "grpc_types",
         "iomgr_timer",
         "orphanable",
         "ref_counted_ptr",
@@ -2950,6 +2959,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
+        "grpc_types",
         "handshaker",
         "iomgr_endpoint",
         "orphanable",
@@ -3284,6 +3294,7 @@ grpc_cc_library(
         "grpc_compression_types",
         "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
         "promise",
         "//src/core:arena",
         "//src/core:arena_promise",
@@ -3320,7 +3331,7 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_platform",
-        "grpc_public_hdrs",
+        "grpc_types",
         "server_address",
         "//src/core:channel_args",
         "//src/core:useful",
@@ -3440,8 +3451,8 @@ grpc_cc_library(
         "config",
         "debug_location",
         "gpr",
-        "grpc_public_hdrs",
         "grpc_resolver",
+        "grpc_types",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
@@ -3644,6 +3655,7 @@ grpc_cc_library(
         "grpc_connectivity_state_enum",
         "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
         "hpack_encoder",
         "hpack_parser",
         "hpack_parser_table",

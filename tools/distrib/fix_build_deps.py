@@ -38,6 +38,7 @@ buildozer_commands = []
 original_deps = {}
 original_external_deps = {}
 skip_headers = collections.defaultdict(set)
+canonical_deps = {}
 
 # TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
 # We can likely parse out BUILD files from dependencies to generate this index.
@@ -321,7 +322,11 @@ def grpc_cc_library(name,
         skip_headers[name].add(proto_hdr)
 
     for hdr in hdrs + public_hdrs:
-        vendors[_get_filename(hdr, parsing_path)].append(name)
+        f = _get_filename(hdr, parsing_path)
+        vendors[f].append(name)
+        if 'canonical_dep' in tags:
+            assert f not in canonical_deps
+            canonical_deps[f] = name
     inc = set()
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
@@ -577,6 +582,14 @@ def make_library(library):
                 dep = '//:' + dep
             deps.add(dep, hdr)
             continue
+
+        if hdr in canonical_deps:
+            deps.add(canonical_deps[hdr], hdr)
+            continue        
+
+        if 'include/' + hdr in canonical_deps:
+            deps.add(canonical_deps['include/' + hdr], hdr)
+            continue        
 
         if hdr in vendors:
             deps.add_one_of(vendors[hdr], hdr)

@@ -23,7 +23,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
