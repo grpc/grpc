@@ -30,9 +30,9 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//src/cpp/ext/gcp:observability_logging_sink",
-        "//src/cpp/ext/filters/logging:logging_filter",
         "//:grpc++",
+        "//src/cpp/ext/filters/logging:logging_filter",
+        "//src/cpp/ext/gcp:observability_logging_sink",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",

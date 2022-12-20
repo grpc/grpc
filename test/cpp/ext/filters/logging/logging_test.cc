@@ -104,7 +104,7 @@ class LoggingTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     g_test_logging_sink = new TestLoggingSink;
-    ::grpc::internal::RegisterLoggingFilter(g_test_logging_sink);
+    grpc::internal::RegisterLoggingFilter(g_test_logging_sink);
   }
 
   void SetUp() override {
