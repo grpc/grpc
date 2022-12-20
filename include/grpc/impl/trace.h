@@ -39,4 +39,4 @@ GRPCAPI int grpc_tracer_set_enabled(const char* name, int enabled);
 }
 #endif
 
-#endif
+#endif /* GRPC_IMPL_TRACE_H */
