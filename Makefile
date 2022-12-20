@@ -1362,6 +1362,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
     src/core/ext/xds/xds_common_types.cc \
     src/core/ext/xds/xds_endpoint.cc \
+    src/core/ext/xds/xds_health_status.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_http_rbac_filter.cc \
@@ -1711,6 +1712,10 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/compression_types.h \
+    include/grpc/impl/connectivity_state.h \
+    include/grpc/impl/grpc_types.h \
+    include/grpc/impl/propagation_bits.h \
+    include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -2176,6 +2181,10 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/compression_types.h \
+    include/grpc/impl/connectivity_state.h \
+    include/grpc/impl/grpc_types.h \
+    include/grpc/impl/propagation_bits.h \
+    include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -3201,6 +3210,7 @@ src/core/ext/xds/xds_cluster.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster_specifier_plugin.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_common_types.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_endpoint.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_health_status.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_fault_filter.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_rbac_filter.cc: $(OPENSSL_DEP)

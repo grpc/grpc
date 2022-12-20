@@ -149,26 +149,7 @@ static void cancel_stream_locked(grpc_binder_transport* gbt,
                                  grpc_binder_stream* gbs,
                                  grpc_error_handle error) {
   gpr_log(GPR_INFO, "cancel_stream_locked");
-
   if (!gbs->is_closed) {
-    if (gbt->is_client) {
-      // Always do an out-of-band close to play it safe. Due the design of gRPC,
-      // a bidi-streaming call can be "closed" from the client side, but a
-      // server-streaming call can only be "cancelled". An out-of-band close
-      // effectively "cancels" both bidi-streaming and server-streaming call.
-      //
-      // TODO(littlecvr): Investigate how BinderTransport work in Java and align
-      // with their behavior.
-      auto cancel_tx = std::make_unique<grpc_binder::Transaction>(
-          gbs->GetTxCode(), gbt->is_client);
-      cancel_tx->SetOutOfBandClose();
-      cancel_tx->SetStatus(GRPC_STATUS_CANCELLED);
-      gpr_log(GPR_INFO,
-              "Sending out-of-band close, gbt = %p, gbs = %p, is_client = %d",
-              gbt, gbs, gbt->is_client);
-      gbt->wire_writer->RpcCall(std::move(cancel_tx)).IgnoreError();
-    }
-
     GPR_ASSERT(gbs->cancel_self_error.ok());
     gbs->is_closed = true;
     gbs->cancel_self_error = error;
@@ -583,7 +564,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->on_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
                             absl_status_to_grpc_error(status));
-    gpr_log(GPR_INFO, "on_complete closure schuduled");
+    gpr_log(GPR_INFO, "on_complete closure scheduled");
   }
   GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
 }

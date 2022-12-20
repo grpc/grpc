@@ -39,10 +39,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"

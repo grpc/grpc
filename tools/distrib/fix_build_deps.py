@@ -34,7 +34,6 @@ avoidness = collections.defaultdict(int)
 consumes = {}
 no_update = set()
 buildozer_commands = []
-needs_codegen_base_src = set()
 original_deps = {}
 original_external_deps = {}
 skip_headers = collections.defaultdict(set)
@@ -141,6 +140,10 @@ EXTERNAL_DEPS = {
         'googleapis_trace_grpc_service',
     'google/logging/v2/logging.grpc.pb.h':
         'googleapis_logging_grpc_service',
+    'google/logging/v2/logging.pb.h':
+        'googleapis_logging_proto',
+    'google/logging/v2/log_entry.pb.h':
+        'googleapis_logging_proto',
     'google/monitoring/v3/metric_service.grpc.pb.h':
         'googleapis_monitoring_grpc_service',
     'gmock/gmock.h':
@@ -329,8 +332,6 @@ def grpc_cc_library(name,
             m = re.search(r'^#include "(.*)"', line)
             if m:
                 inc.add(m.group(1))
-            if 'grpc::g_glip' in line or 'grpc::g_core_codegen_interface' in line:
-                needs_codegen_base_src.add(name)
     consumes[name] = list(inc)
 
 

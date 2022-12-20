@@ -41,9 +41,9 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -246,6 +246,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   }
 }
 
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
+    absl::string_view annotation) {
+  // If tracing is disabled, the following will be a no-op.
+  context_.AddSpanAnnotation(annotation, {});
+}
+
 //
 // OpenCensusCallTracer
 //
@@ -310,6 +316,11 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   }
   return new OpenCensusCallAttemptTracer(
       this, attempt_num, is_transparent_retry, false /* arena_allocated */);
+}
+
+void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
+  // If tracing is disabled, the following will be a no-op.
+  context_.AddSpanAnnotation(annotation, {});
 }
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {

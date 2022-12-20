@@ -27,7 +27,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/sockaddr.h"

@@ -22,7 +22,6 @@
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslDurationWithRegularValues) {

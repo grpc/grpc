@@ -46,8 +46,7 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
@@ -55,6 +54,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -1819,7 +1819,11 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class PromiseBasedCall : public Call, public Activity, public Wakeable {
+class PromiseBasedCall : public Call,
+                         public Activity,
+                         public Wakeable,
+                         public grpc_event_engine::experimental::EventEngine::
+                             Closure /* for deadlines */ {
  public:
   PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
 
@@ -1945,6 +1949,11 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
+
+  void UpdateDeadline(Timestamp deadline);
+  void ResetDeadline();
+  // Implementation of EventEngine::Closure, called when deadline expires
+  void Run() override;
 
  protected:
   class ScopedContext
@@ -2186,6 +2195,9 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
   CallFinalization finalization_;
+  // Current deadline.
+  Timestamp deadline_ = Timestamp::InfFuture();
+  grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
 };
 
 template <typename T>
@@ -2352,6 +2364,32 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
       grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
 }
 
+void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
+  if (deadline >= deadline_) return;
+  auto* const event_engine = channel()->event_engine();
+  if (deadline_ != Timestamp::InfFuture()) {
+    if (!event_engine->Cancel(deadline_task_)) return;
+  } else {
+    InternalRef("deadline");
+  }
+  event_engine->RunAfter(deadline - Timestamp::Now(), this);
+}
+
+void PromiseBasedCall::ResetDeadline() {
+  if (deadline_ == Timestamp::InfFuture()) return;
+  auto* const event_engine = channel()->event_engine();
+  if (!event_engine->Cancel(deadline_task_)) return;
+  deadline_ = Timestamp::InfFuture();
+  InternalUnref("deadline");
+}
+
+void PromiseBasedCall::Run() {
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
+  CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
+  InternalUnref("deadline");
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // CallContext
 
@@ -2364,6 +2402,10 @@ void CallContext::IncrementRefCount(const char* reason) {
 }
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
+
+void CallContext::UpdateDeadline(Timestamp deadline) {
+  call_->UpdateDeadline(deadline);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
@@ -2383,6 +2425,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     }
     if (auto* channelz_channel = channel()->channelz_node()) {
       channelz_channel->RecordCallStarted();
+    }
+    if (args->send_deadline != Timestamp::InfFuture()) {
+      UpdateDeadline(args->send_deadline);
     }
   }
 
@@ -2757,6 +2802,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
             trailing_metadata->DebugString().c_str());
   }
   promise_ = ArenaPromise<ServerMetadataHandle>();
+  ResetDeadline();
   completed_ = true;
   if (recv_initial_metadata_ != nullptr) {
     ForceImmediateRepoll();
@@ -2839,6 +2885,9 @@ void ClientPromiseBasedCall::PublishStatus(
         gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
   }
   PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
+  // Clear state saying we have a RECV_STATUS_ON_CLIENT outstanding
+  // (so we don't call through twice)
+  recv_status_on_client_ = absl::monostate();
   FinishOpOnCompletion(&recv_status_on_client_completion_,
                        PendingOp::kReceiveStatusOnClient);
 }

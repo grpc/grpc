@@ -16,7 +16,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
