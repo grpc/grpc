@@ -354,8 +354,7 @@ absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(const PosixTcpOptions& /*options*/,
                                const grpc_event_engine::experimental::
                                    EventEngine::ResolvedAddress& /*addr*/) {
-  GPR_ASSERT(
-      false &&
+  grpc_core::Crash(
       "CreateAndPrepareListenerSocket is not supported on this platform");
 }
 
