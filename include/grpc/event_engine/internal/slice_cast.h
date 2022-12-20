@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_EVENT_ENGINE_SLICE_CAST_H
-#define GRPC_EVENT_ENGINE_SLICE_CAST_H
+#ifndef GRPC_EVENT_ENGINE_INTERNAL_SLICE_CAST_H
+#define GRPC_EVENT_ENGINE_INTERNAL_SLICE_CAST_H
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -52,4 +52,4 @@ const Result& SliceCast(const T& value, ConstRefSliceCastable<Result, T> = {}) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_EVENT_ENGINE_SLICE_CAST_H
+#endif  // GRPC_EVENT_ENGINE_INTERNAL_SLICE_CAST_H
