@@ -83,7 +83,8 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
         absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
   }
   const sockaddr_un* unix_addr = reinterpret_cast<const sockaddr_un*>(addr);
-  bool abstract = unix_addr->sun_path[0] == '\0';
+  bool abstract = (resolved_addr->size() < sizeof(unix_addr->sun_family) + 1 ||
+                   unix_addr->sun_path[0] == '\0');
   std::string scheme;
   std::string path;
   if (abstract) {
