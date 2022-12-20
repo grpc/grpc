@@ -22,7 +22,7 @@ import sys
 
 import yaml
 
-_RE_API = r'(?:GPRAPI|GRPCAPI|CENSUSAPI)([^;]*);'
+_RE_API = r'(?:GPRAPI|GRPCAPI|CENSUSAPI)([^#;]*);'
 
 
 def list_c_apis(filenames):

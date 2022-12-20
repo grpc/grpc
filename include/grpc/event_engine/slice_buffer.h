@@ -25,8 +25,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_cast.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -120,7 +120,7 @@ class SliceBuffer {
   Slice RefSlice(size_t index);
 
   const Slice& operator[](size_t index) const {
-    return SliceCast<Slice>(slice_buffer_.slices[index]);
+    return internal::SliceCast<Slice>(slice_buffer_.slices[index]);
   }
 
   /// The total number of bytes held by the SliceBuffer

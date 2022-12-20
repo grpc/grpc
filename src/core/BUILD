@@ -47,7 +47,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "slice_cast",
     hdrs = [
-        "//:include/grpc/event_engine/slice_cast.h",
+        "//:include/grpc/event_engine/internal/slice_cast.h",
     ],
 )
 

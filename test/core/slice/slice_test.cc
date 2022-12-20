@@ -433,7 +433,7 @@ TEST(SliceTest, LetsGetMutable) {
 }
 
 TEST(SliceTest, SliceCastWorks) {
-  using ::grpc_event_engine::experimental::SliceCast;
+  using ::grpc_event_engine::experimental::internal::SliceCast;
   Slice test = Slice::FromCopiedString("hello world!");
   const grpc_slice& slice = SliceCast<grpc_slice>(test);
   EXPECT_EQ(&slice, &test.c_slice());

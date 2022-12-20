@@ -17,6 +17,7 @@
 
 namespace grpc_event_engine {
 namespace experimental {
+namespace internal {
 
 // Opt-in trait class for slice conversions.
 // Declare a specialization of this class for any types that are compatible
@@ -47,6 +48,7 @@ const Result& SliceCast(const T& value, ConstRefSliceCastable<Result, T> = {}) {
   return reinterpret_cast<const Result&>(value);
 }
 
+}  // namespace internal
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

@@ -109,7 +109,7 @@ class SliceBuffer {
   Slice RefSlice(size_t index) const;
 
   const Slice& operator[](size_t index) const {
-    return grpc_event_engine::experimental::SliceCast<Slice>(
+    return grpc_event_engine::experimental::internal::SliceCast<Slice>(
         slice_buffer_.slices[index]);
   }
 

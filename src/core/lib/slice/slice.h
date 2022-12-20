@@ -25,8 +25,8 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_cast.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -299,8 +299,8 @@ class MutableSlice : public slice_detail::BaseSlice,
 
 class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
     : public slice_detail::BaseSlice,
-              public slice_detail::CopyConstructors<Slice>,
-              public slice_detail::StaticConstructors<Slice> {
+      public slice_detail::CopyConstructors<Slice>,
+      public slice_detail::StaticConstructors<Slice> {
  public:
   Slice() = default;
   ~Slice() { CSliceUnref(c_slice()); }
@@ -408,6 +408,7 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
 
 namespace grpc_event_engine {
 namespace experimental {
+namespace internal {
 template <>
 struct ConstRefSliceCastable<grpc_core::Slice, grpc_slice> {};
 template <>
@@ -416,6 +417,7 @@ template <>
 struct ConstRefSliceCastable<grpc_core::Slice, Slice> {};
 template <>
 struct ConstRefSliceCastable<Slice, grpc_core::Slice> {};
+}  // namespace internal
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
