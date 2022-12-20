@@ -115,7 +115,7 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
 }
 #else
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+    const EventEngine::ResolvedAddress* /*resolved_addr*/, bool /*skip_uri*/) {
   return absl::InvalidArgumentError("Unix socket is not supported.");
 }
 #endif
