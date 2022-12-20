@@ -68,32 +68,94 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
   WeightedRoundRobinTest() : lb_policy_(MakeLbPolicy("weighted_round_robin")) {}
 
-  static BackendMetricData MakeBackendMetricData(double qps,
-                                                 double cpu_utilization) {
-    BackendMetricData backend_metric_data;
-    backend_metric_data.qps = qps;
-    backend_metric_data.cpu_utilization = cpu_utilization;
-    return backend_metric_data;
-  }
-
-  bool PicksAreWeightedRoundRobin(
+  static bool PicksAreWeightedRoundRobin(
       std::map<absl::string_view, size_t> expected,
-      absl::Span<const absl::string_view> actual) {
+      absl::Span<const absl::string_view> picks) {
     std::map<absl::string_view, size_t> actual;
-    for (auto address : actual) {
+    for (auto address : picks) {
       ++actual.emplace(address, 0).first->second;
     }
-    EXPECT_EQ(expected, actual);
+    gpr_log(GPR_INFO, "EXPECTED: %s",
+            absl::StrJoin(expected, ",", absl::PairFormatter("=")).c_str());
+    gpr_log(GPR_INFO, "ACTUAL  : %s",
+            absl::StrJoin(actual, ",", absl::PairFormatter("=")).c_str());
     return expected == actual;
+  }
+
+  bool WaitForWeightedRoundRobinPicks(
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>* picker,
+      std::map<absl::string_view /*address*/,
+               std::pair<double /*qps*/, double /*cpu_utilization*/>>
+          backend_metrics,
+      std::map<absl::string_view /*address*/, size_t /*num_picks*/> expected,
+      Duration timeout = Duration::Seconds(20),
+      SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "==> WaitForWeightedRoundRobinPicks()");
+    size_t num_picks = 0;
+    for (const auto& p : expected) {
+      num_picks += p.second;
+    }
+    Timestamp deadline = Timestamp::Now() + timeout;
+    while (true) {
+      gpr_log(GPR_INFO, "TOP OF LOOP: DOING PICKS");
+      std::vector<std::unique_ptr<
+          LoadBalancingPolicy::SubchannelCallTrackerInterface>>
+          subchannel_call_trackers;
+      auto picks = GetCompletePicks(picker->get(), num_picks,
+                                    &subchannel_call_trackers, location);
+      EXPECT_TRUE(picks.has_value())
+          << location.file() << ":" << location.line();
+      if (!picks.has_value()) return false;
+      gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
+      // Make sure each address is one of the expected addresses, and
+      // return backend metric data for each pick to the LB policy.
+      for (size_t i = 0; i < picks->size(); ++i) {
+        const std::string& address = (*picks)[i];
+        bool found = expected.find(address) != expected.end();
+        EXPECT_TRUE(found)
+            << "unexpected pick address " << address << " at "
+            << location.file() << ":" << location.line();
+        if (!found) return false;
+        auto& subchannel_call_tracker = subchannel_call_trackers[i];
+        if (subchannel_call_tracker != nullptr) {
+          subchannel_call_tracker->Start();
+          BackendMetricData backend_metric_data;
+          auto it = backend_metrics.find(address);
+          if (it != backend_metrics.end()) {
+            backend_metric_data.qps = it->second.first;
+            backend_metric_data.cpu_utilization = it->second.second;
+          }
+          FakeMetadata metadata({});
+          FakeBackendMetricAccessor backend_metric_accessor(
+              backend_metric_data);
+          LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs
+              args = {
+                  address, absl::OkStatus(), &metadata,
+                  &backend_metric_accessor};
+          subchannel_call_tracker->Finish(args);
+        }
+      }
+      // If the picks have the expected weights, we're done.
+      std::vector<absl::string_view> pick_addresses(picks->begin(),
+                                                    picks->end());
+      if (PicksAreWeightedRoundRobin(expected, pick_addresses)) return true;
+      gpr_log(GPR_INFO, "WEIGHTS INCORRECT; TRYING AGAIN");
+      // If we're out of time, give up.
+      Timestamp now = Timestamp::Now();
+      EXPECT_LT(now, deadline) << location.file() << ":" << location.line();
+      if (now >= deadline) return false;
+      // Get a new picker if there is an update.
+      if (!helper_->QueueEmpty()) {
+        *picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus(), location);
+        EXPECT_NE(*picker, nullptr)
+            << location.file() << ":" << location.line();
+        if (*picker == nullptr) return false;
+      }
+    }
   }
 
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
-
-// Test cases:
-// - addr 0: qps=2 cpu_util=0.5 => weight=4
-// - addr 1: qps=3 cpu_util=0.5 => weight=6
-// - addr 2: qps=1 cpu_util=0.5 => weight=2
 
 TEST_F(WeightedRoundRobinTest, DevolvesToRoundRobinWithoutWeights) {
   // Send address list to LB policy.
@@ -134,6 +196,43 @@ TEST_F(WeightedRoundRobinTest, DevolvesToRoundRobinWithoutWeights) {
                                   absl::MakeSpan(kAddresses).subspan(0, i + 1));
     }
   }
+}
+
+TEST_F(WeightedRoundRobinTest, Basic) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  EXPECT_EQ(
+      ApplyUpdate(
+          BuildUpdate(kAddresses, ConfigBuilder().Build()), lb_policy_.get()),
+      absl::OkStatus());
+  // Expect the initial CONNECTNG update with a picker that queues.
+  ExpectConnectingUpdate();
+  // RR should have created a subchannel for each address.
+  for (size_t i = 0; i < kAddresses.size(); ++i) {
+    auto* subchannel = FindSubchannel(kAddresses[i]);
+    ASSERT_NE(subchannel, nullptr);
+    // RR should ask each subchannel to connect.
+    EXPECT_TRUE(subchannel->ConnectionRequested());
+    // The subchannel will connect successfully.
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  }
+  auto picker = WaitForConnected();
+  // Address 0 gets weight 1, address 1 gets weight 3.
+  // No utilization report from backend 2, so it gets the average weight 2.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}}, {kAddresses[1], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Now have backend 2 report utilization the same as backend 1, so its
+  // weight will be the same.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
 }
 
 }  // namespace

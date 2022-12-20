@@ -2942,9 +2942,10 @@ void ClientChannel::LoadBalancedCall::RecordCallCompletion(
   if (lb_subchannel_call_tracker_ != nullptr) {
     Metadata trailing_metadata(recv_trailing_metadata_);
     BackendMetricAccessor backend_metric_accessor(this);
+    char* peer_string =
+        reinterpret_cast<char*>(gpr_atm_acq_load(&peer_string_));
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-        "",  // FIXME: use peer_string_
-        status, &trailing_metadata, &backend_metric_accessor};
+        peer_string, status, &trailing_metadata, &backend_metric_accessor};
     lb_subchannel_call_tracker_->Finish(args);
     lb_subchannel_call_tracker_.reset();
   }

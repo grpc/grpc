@@ -221,6 +221,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                std::shared_ptr<WorkSerializer> work_serializer)
         : test_(test), work_serializer_(std::move(work_serializer)) {}
 
+    bool QueueEmpty() {
+      MutexLock lock(&mu_);
+      return queue_.empty();
+    }
+
     // Called at test tear-down time to ensure that we have not left any
     // unexpected events in the queue.
     void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -376,6 +381,22 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     std::vector<void*> allocations_;
+  };
+
+  // A fake BackendMetricAccessor implementation, for passing to
+  // SubchannelCallTrackerInterface::Finish().
+  class FakeBackendMetricAccessor
+      : public LoadBalancingPolicy::BackendMetricAccessor {
+   public:
+    explicit FakeBackendMetricAccessor(BackendMetricData backend_metric_data)
+        : backend_metric_data_(std::move(backend_metric_data)) {}
+
+    const BackendMetricData* GetBackendMetricData() override {
+      return &backend_metric_data_;
+    }
+
+   private:
+    const BackendMetricData backend_metric_data_;
   };
 
   LoadBalancingPolicyTest()
@@ -565,7 +586,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           // Get enough picks to round-robin num_iterations times across all
           // expected addresses.
           auto picks = GetCompletePicks(update.picker.get(),
-                                        new_addresses.size() * num_iterations);
+                                        new_addresses.size() * num_iterations,
+                                        nullptr, location);
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
@@ -623,8 +645,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Requests a pick on picker and expects a Complete result.
   // The address of the resulting subchannel is returned, or nullopt if
   // the result was something other than Complete.
+  // If the complete pick includes a SubchannelCallTrackerInterface, then if
+  // subchannel_call_tracker is non-null, it will be set to point to the
+  // call tracker; otherwise, the call tracker will be invoked
+  // automatically to represent a complete call with no backend metric data.
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
+          subchannel_call_tracker = nullptr,
       SourceLocation location = SourceLocation()) {
     auto pick_result = DoPick(picker);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
@@ -634,19 +662,46 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (complete == nullptr) return absl::nullopt;
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
-    return subchannel->state()->address();
+    std::string address = subchannel->state()->address();
+    if (complete->subchannel_call_tracker != nullptr) {
+      if (subchannel_call_tracker != nullptr) {
+        *subchannel_call_tracker = std::move(complete->subchannel_call_tracker);
+      } else {
+        complete->subchannel_call_tracker->Start();
+        FakeMetadata metadata({});
+        FakeBackendMetricAccessor backend_metric_accessor({});
+        LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+            address, absl::OkStatus(), &metadata, &backend_metric_accessor};
+        complete->subchannel_call_tracker->Finish(args);
+      }
+    }
+    return address;
   }
 
   // Gets num_picks complete picks from picker and returns the resulting
   // list of addresses, or nullopt if a non-complete pick was returned.
   absl::optional<std::vector<std::string>> GetCompletePicks(
       LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
+      std::vector<
+          std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>>*
+          subchannel_call_trackers = nullptr,
       SourceLocation location = SourceLocation()) {
     std::vector<std::string> results;
     for (size_t i = 0; i < num_picks; ++i) {
-      auto address = ExpectPickComplete(picker, location);
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+          subchannel_call_tracker;
+      auto address = ExpectPickComplete(
+          picker,
+          subchannel_call_trackers == nullptr
+              ? nullptr
+              : &subchannel_call_tracker,
+          location);
       if (!address.has_value()) return absl::nullopt;
       results.emplace_back(std::move(*address));
+      if (subchannel_call_trackers != nullptr) {
+        subchannel_call_trackers->emplace_back(
+            std::move(subchannel_call_tracker));
+      }
     }
     return results;
   }
@@ -674,8 +729,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                              absl::Span<const absl::string_view> addresses,
                              size_t num_iterations = 3,
                              SourceLocation location = SourceLocation()) {
-    auto picks =
-        GetCompletePicks(picker, num_iterations * addresses.size(), location);
+    auto picks = GetCompletePicks(
+        picker, num_iterations * addresses.size(), nullptr, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
     std::vector<absl::string_view> pick_addresses(picks->begin(), picks->end());
     EXPECT_TRUE(PicksAreRoundRobin(addresses, pick_addresses))
