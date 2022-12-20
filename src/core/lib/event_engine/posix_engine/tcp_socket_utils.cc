@@ -741,6 +741,8 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
+#include "src/core/lib/gprpp/crash.h"
+
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   grpc_core::Crash("unimplemented");
 }

@@ -29,7 +29,6 @@
 #import "GRPCWrappedCall.h"
 
 #include <grpc/support/log.h>
-#include "src/core/lib/gprpp/crash.h"
 
 extern const char *kCFStreamVarName;
 

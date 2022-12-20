@@ -349,6 +349,8 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
 
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
+#include "src/core/lib/gprpp/crash.h"
+
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(const PosixTcpOptions& /*options*/,
                                const grpc_event_engine::experimental::
