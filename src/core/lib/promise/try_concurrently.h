@@ -23,13 +23,16 @@
 #include <utility>
 
 #include "absl/types/variant.h"
+#include "trace.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 
@@ -98,7 +101,6 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
   template <typename Result, int kDoneBit>
   Poll<Result> Run(uint8_t& done_bits) {
     if ((done_bits & (1 << kDoneBit)) == 0) {
-      gpr_log(GPR_DEBUG, "poll bit mask %d", 1 << kDoneBit);
       auto p = wrapper_.promise();
       if (auto* status = absl::get_if<kPollReadyIdx>(&p)) {
         done_bits |= (1 << kDoneBit);
@@ -191,7 +193,6 @@ class TryConcurrently {
       return std::move(*status);
     }
     if ((done_bits_ & 1) == 0) {
-      gpr_log(GPR_DEBUG, "%p: polling main", this);
       auto p = main_();
       if (auto* status = absl::get_if<kPollReadyIdx>(&p)) {
         done_bits_ |= 1;
@@ -207,8 +208,10 @@ class TryConcurrently {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
     }
-    gpr_log(GPR_DEBUG, "%p: done_bits=%x necessary_bits=%x", this, done_bits_,
-            NecessaryBits());
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "%s: done_bits=%x necessary_bits=%x",
+              DebugTag().c_str(), done_bits_, NecessaryBits());
+    }
     if ((done_bits_ & NecessaryBits()) == NecessaryBits()) {
       return std::move(result_);
     }
@@ -239,6 +242,11 @@ class TryConcurrently {
   // Bitmask of done_bits_ specifying which bits correspond to helper promises -
   // that is all promises that are not the main one.
   constexpr uint8_t HelperBits() { return AllBits() ^ 1; }
+
+  std::string DebugTag() {
+    return absl::StrCat(Activity::current()->DebugTag(), " TRY_CONCURRENTLY[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
 
   // done_bits signifies which operations have completed.
   // Bit 0 is set if main_ has completed.

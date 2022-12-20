@@ -28,14 +28,12 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
-
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_promise_pipe;
 
 namespace grpc_core {
 
@@ -108,7 +106,7 @@ class Center {
 
   // Add one ref to this object, and return this.
   Center* Ref() {
-    if (grpc_trace_promise_pipe.enabled()) {
+    if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Ref").c_str());
     }
     refs_++;
@@ -119,8 +117,8 @@ class Center {
   // Drop a ref
   // If no refs remain, destroy this object
   void Unref() {
-    if (grpc_trace_promise_pipe.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("UnRef").c_str());
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("Unref").c_str());
     }
     GPR_DEBUG_ASSERT(refs_ > 0);
     refs_--;
@@ -134,7 +132,7 @@ class Center {
   // Return true if the value was pushed.
   // Return false if the recv end is closed.
   Poll<bool> Push(T* value) {
-    if (grpc_trace_promise_pipe.enabled()) {
+    if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Push").c_str());
     }
     GPR_DEBUG_ASSERT(refs_ != 0);
@@ -155,7 +153,7 @@ class Center {
   }
 
   Poll<bool> PollAck() {
-    if (grpc_trace_promise_pipe.enabled()) {
+    if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollAck").c_str());
     }
     GPR_DEBUG_ASSERT(refs_ != 0);
@@ -179,7 +177,7 @@ class Center {
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
   Poll<NextResult<T>> Next() {
-    if (grpc_trace_promise_pipe.enabled()) {
+    if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
     }
     GPR_DEBUG_ASSERT(refs_ != 0);
@@ -199,7 +197,7 @@ class Center {
   }
 
   void AckNext() {
-    if (grpc_trace_promise_pipe.enabled()) {
+    if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
     }
     switch (value_state_) {
@@ -220,7 +218,7 @@ class Center {
   }
 
   void MarkClosed() {
-    if (grpc_trace_promise_pipe.enabled()) {
+    if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
     }
     switch (value_state_) {
@@ -314,7 +312,7 @@ class PipeSender {
   }
   PipeSender& operator=(PipeSender&& other) noexcept {
     if (center_ != nullptr) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sDrop due to move", center_->DebugTag().c_str());
       }
       center_->Unref();
@@ -326,7 +324,7 @@ class PipeSender {
 
   ~PipeSender() {
     if (center_ != nullptr) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sDrop due to destruct",
                 center_->DebugTag().c_str());
       }
@@ -337,7 +335,7 @@ class PipeSender {
 
   void Close() {
     if (auto* center = std::exchange(center_, nullptr)) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sClose", center->DebugTag().c_str());
       }
       center->MarkClosed();
@@ -413,7 +411,7 @@ class Push {
   }
   Push& operator=(Push&& other) noexcept {
     if (center_ != nullptr) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sStop push due to move",
                 center_->DebugTag().c_str());
       }
@@ -427,7 +425,7 @@ class Push {
 
   ~Push() {
     if (center_ != nullptr) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sStop push due to destruct",
                 center_->DebugTag().c_str());
       }
@@ -468,7 +466,7 @@ class Next {
   }
   Next& operator=(Next&& other) noexcept {
     if (center_ != nullptr) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sStop next due to move",
                 center_->DebugTag().c_str());
       }
@@ -481,7 +479,7 @@ class Next {
 
   ~Next() {
     if (center_ != nullptr) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sStop next due to destruct",
                 center_->DebugTag().c_str());
       }
@@ -492,7 +490,7 @@ class Next {
   Poll<NextResult<T>> operator()() {
     auto r = center_->Next();
     if (!absl::holds_alternative<Pending>(r)) {
-      if (grpc_trace_promise_pipe.enabled()) {
+      if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%sStop next due to resolved result",
                 center_->DebugTag().c_str());
       }

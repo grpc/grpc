@@ -376,6 +376,7 @@ grpc_cc_library(
         "lib/promise/map_pipe.h",
     ],
     deps = [
+        "activity",
         "construct_destruct",
         "for_each",
         "map",
@@ -384,6 +385,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_like",
         "promise_status",
+        "promise_trace",
         "//:gpr",
     ],
 )
@@ -786,9 +788,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
-    srcs = [
-        "lib/promise/pipe.cc",
-    ],
     hdrs = [
         "lib/promise/pipe.h",
     ],
@@ -804,7 +803,22 @@ grpc_cc_library(
         "context",
         "intra_activity_waiter",
         "poll",
+        "promise_trace",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise_trace",
+    srcs = [
+        "lib/promise/trace.cc",
+    ],
+    hdrs = [
+        "lib/promise/trace.h",
+    ],
+    language = "c++",
+    deps = [
+        "//:gpr_platform",
         "//:grpc_trace",
     ],
 )
