@@ -36,7 +36,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -94,8 +95,6 @@ class BlockingUnaryCallImpl;
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
 class CallOpSet;
 }  // namespace internal
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
@@ -180,9 +179,8 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
     // TIMEOUT   - we passed infinity time => queue has been shutdown, return
     //             false.
     // GOT_EVENT - we actually got an event, return true.
-    return (AsyncNextInternal(tag, ok,
-                              grpc::g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) == GOT_EVENT);
+    return (AsyncNextInternal(tag, ok, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
+            GOT_EVENT);
   }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
@@ -243,7 +241,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// instance.
   ///
   /// \warning Remember that the returned instance is owned. No transfer of
-  /// owership is performed.
+  /// ownership is performed.
   grpc_completion_queue* cq() { return cq_; }
 
  protected:
@@ -319,14 +317,13 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
+    auto deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
       auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
-        GPR_CODEGEN_ASSERT(ignored == tag);
+        GPR_ASSERT(ignored == tag);
         return ok;
       }
     }
@@ -341,14 +338,13 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
+    auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
     void* ignored = tag;
     // the tag must be swallowed if using TryPluck
-    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Performs a single polling pluck on \a tag. Calls tag->FinalizeResult if
@@ -365,7 +361,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
 
     bool ok = ev.success != 0;
     void* ignored = tag;
-    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Manage state of avalanching operations : completion queue tags that
@@ -373,7 +369,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// queue should not really shutdown until all avalanching operations have
   /// been finalized. Note that we maintain the requirement that an avalanche
   /// registration must take place before CQ shutdown (which must be maintained
-  /// elsehwere)
+  /// elsewhere)
   void InitialAvalanching() {
     gpr_atm_rel_store(&avalanches_in_flight_, gpr_atm{1});
   }

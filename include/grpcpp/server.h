@@ -19,7 +19,7 @@
 #ifndef GRPCPP_SERVER_H
 #define GRPCPP_SERVER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <list>
 #include <memory>

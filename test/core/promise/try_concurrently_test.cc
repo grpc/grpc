@@ -126,6 +126,36 @@ TEST(TryConcurrentlyTest, OneFailed) {
   EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "wha"}));
 }
 
+TEST(TryConcurrently, MuchPush) {
+  PromiseFactory pf;
+  auto p = TryConcurrently(pf.OkPromise("1"))
+               .NecessaryPush(pf.OkPromise("2"))
+               .NecessaryPush(pf.OkPromise("3"))
+               .NecessaryPush(pf.OkPromise("4"))
+               .NecessaryPush(pf.OkPromise("5"))
+               .NecessaryPush(pf.OkPromise("6"))
+               .NecessaryPush(pf.OkPromise("7"))
+               .NecessaryPush(pf.OkPromise("8"));
+  EXPECT_EQ(p(), Poll<absl::Status>(absl::OkStatus()));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>(
+                             {"8", "7", "6", "5", "4", "3", "2", "1"}));
+}
+
+TEST(TryConcurrently, SoPull) {
+  PromiseFactory pf;
+  auto p = TryConcurrently(pf.OkPromise("1"))
+               .NecessaryPull(pf.OkPromise("2"))
+               .NecessaryPull(pf.OkPromise("3"))
+               .NecessaryPull(pf.OkPromise("4"))
+               .NecessaryPull(pf.OkPromise("5"))
+               .NecessaryPull(pf.OkPromise("6"))
+               .NecessaryPull(pf.OkPromise("7"))
+               .NecessaryPull(pf.OkPromise("8"));
+  EXPECT_EQ(p(), Poll<absl::Status>(absl::OkStatus()));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>(
+                             {"1", "8", "7", "6", "5", "4", "3", "2"}));
+}
+
 // A pointer to an int designed to cause a double free if it's double destructed
 // (to flush out bugs)
 class ProblematicPointer {

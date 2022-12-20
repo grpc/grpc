@@ -51,8 +51,8 @@
 namespace grpc {
 namespace testing {
 
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
-using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;

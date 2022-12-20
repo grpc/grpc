@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 
 /** Return the message compression algorithm from \a call.

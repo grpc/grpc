@@ -18,8 +18,11 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
@@ -33,7 +36,7 @@
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 namespace {
 
 constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
@@ -266,12 +269,12 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
   tb_list.Shutdown(nullptr, absl::OkStatus());
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_event_engine::posix_engine::InitGlobals();
+  grpc_event_engine::experimental::InitGlobals();
   return RUN_ALL_TESTS();
 }
 

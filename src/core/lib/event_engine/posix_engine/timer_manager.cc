@@ -26,7 +26,6 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -36,7 +35,7 @@
 static thread_local bool g_timer_thread;
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
 
@@ -179,5 +178,5 @@ void TimerManager::PostforkChild() {
   RestartPostFork();
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

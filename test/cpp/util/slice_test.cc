@@ -27,8 +27,6 @@
 
 namespace grpc {
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
-
 namespace {
 
 const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";

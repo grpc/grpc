@@ -20,8 +20,6 @@
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -36,8 +34,6 @@
 
 namespace grpc {
 namespace {
-
-internal::GrpcLibraryInitializer g_gli_initializer;
 
 gpr_once g_once_init_callback_alternative = GPR_ONCE_INIT;
 grpc_core::Mutex* g_callback_alternative_mu;
@@ -135,7 +131,6 @@ CompletionQueue::CompletionQueue(grpc_completion_queue* take)
 }
 
 void CompletionQueue::Shutdown() {
-  g_gli_initializer.summon();
 #ifndef NDEBUG
   if (!ServerListEmpty()) {
     gpr_log(GPR_ERROR,

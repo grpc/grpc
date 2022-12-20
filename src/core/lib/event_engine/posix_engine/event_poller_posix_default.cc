@@ -29,7 +29,7 @@ GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 namespace {
@@ -70,5 +70,5 @@ PosixEventPoller* MakeDefaultPoller(Scheduler* /*scheduler*/) {
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

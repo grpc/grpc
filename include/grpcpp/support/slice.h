@@ -20,7 +20,6 @@
 #define GRPCPP_SUPPORT_SLICE_H
 
 #include <grpc/slice.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/string_ref.h>
 
@@ -34,48 +33,44 @@ namespace grpc {
 class Slice final {
  public:
   /// Construct an empty slice.
-  Slice() : slice_(g_core_codegen_interface->grpc_empty_slice()) {}
+  Slice() : slice_(grpc_empty_slice()) {}
   /// Destructor - drops one reference.
-  ~Slice() { g_core_codegen_interface->grpc_slice_unref(slice_); }
+  ~Slice() { grpc_slice_unref(slice_); }
 
   enum AddRef { ADD_REF };
   /// Construct a slice from \a slice, adding a reference.
-  Slice(grpc_slice slice, AddRef)
-      : slice_(g_core_codegen_interface->grpc_slice_ref(slice)) {}
+  Slice(grpc_slice slice, AddRef) : slice_(grpc_slice_ref(slice)) {}
 
   enum StealRef { STEAL_REF };
   /// Construct a slice from \a slice, stealing a reference.
   Slice(grpc_slice slice, StealRef) : slice_(slice) {}
 
   /// Allocate a slice of specified size
-  explicit Slice(size_t len)
-      : slice_(g_core_codegen_interface->grpc_slice_malloc(len)) {}
+  explicit Slice(size_t len) : slice_(grpc_slice_malloc(len)) {}
 
   /// Construct a slice from a copied buffer
   Slice(const void* buf, size_t len)
-      : slice_(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-            reinterpret_cast<const char*>(buf), len)) {}
+      : slice_(grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(buf),
+                                             len)) {}
 
   /// Construct a slice from a copied string
   /* NOLINTNEXTLINE(google-explicit-constructor) */
   Slice(const std::string& str)
-      : slice_(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-            str.c_str(), str.length())) {}
+      : slice_(grpc_slice_from_copied_buffer(str.c_str(), str.length())) {}
 
   enum StaticSlice { STATIC_SLICE };
 
   /// Construct a slice from a static buffer
   Slice(const void* buf, size_t len, StaticSlice)
-      : slice_(g_core_codegen_interface->grpc_slice_from_static_buffer(
-            reinterpret_cast<const char*>(buf), len)) {}
+      : slice_(grpc_slice_from_static_buffer(reinterpret_cast<const char*>(buf),
+                                             len)) {}
 
   /// Copy constructor, adds a reference.
-  Slice(const Slice& other)
-      : slice_(g_core_codegen_interface->grpc_slice_ref(other.slice_)) {}
+  Slice(const Slice& other) : slice_(grpc_slice_ref(other.slice_)) {}
 
   /// Move constructor, steals a reference.
   Slice(Slice&& other) noexcept : slice_(other.slice_) {
-    other.slice_ = g_core_codegen_interface->grpc_empty_slice();
+    other.slice_ = grpc_empty_slice();
   }
 
   /// Assignment, reference count is unchanged.
@@ -90,8 +85,7 @@ class Slice final {
   /// different (e.g., if data is part of a larger structure that must be
   /// destroyed when the data is no longer needed)
   Slice(void* buf, size_t len, void (*destroy)(void*), void* user_data)
-      : slice_(g_core_codegen_interface->grpc_slice_new_with_user_data(
-            buf, len, destroy, user_data)) {}
+      : slice_(grpc_slice_new_with_user_data(buf, len, destroy, user_data)) {}
 
   /// Specialization of above for common case where buf == user_data
   Slice(void* buf, size_t len, void (*destroy)(void*))
@@ -99,8 +93,7 @@ class Slice final {
 
   /// Similar to the above but has a destroy that also takes slice length
   Slice(void* buf, size_t len, void (*destroy)(void*, size_t))
-      : slice_(g_core_codegen_interface->grpc_slice_new_with_len(buf, len,
-                                                                 destroy)) {}
+      : slice_(grpc_slice_new_with_len(buf, len, destroy)) {}
 
   /// Byte size.
   size_t size() const { return GRPC_SLICE_LENGTH(slice_); }
@@ -113,14 +106,11 @@ class Slice final {
 
   /// Returns a substring of the `slice` as another slice.
   Slice sub(size_t begin, size_t end) const {
-    return Slice(g_core_codegen_interface->grpc_slice_sub(slice_, begin, end),
-                 STEAL_REF);
+    return Slice(grpc_slice_sub(slice_, begin, end), STEAL_REF);
   }
 
   /// Raw C slice. Caller needs to call grpc_slice_unref when done.
-  grpc_slice c_slice() const {
-    return g_core_codegen_interface->grpc_slice_ref(slice_);
-  }
+  grpc_slice c_slice() const { return grpc_slice_ref(slice_); }
 
  private:
   friend class ByteBuffer;
@@ -140,13 +130,11 @@ inline std::string StringFromCopiedSlice(grpc_slice slice) {
 }
 
 inline grpc_slice SliceReferencingString(const std::string& str) {
-  return g_core_codegen_interface->grpc_slice_from_static_buffer(str.data(),
-                                                                 str.length());
+  return grpc_slice_from_static_buffer(str.data(), str.length());
 }
 
 inline grpc_slice SliceFromCopiedString(const std::string& str) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(str.data(),
-                                                                 str.length());
+  return grpc_slice_from_copied_buffer(str.data(), str.length());
 }
 
 }  // namespace grpc
