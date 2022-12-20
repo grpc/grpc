@@ -761,6 +761,14 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #define __STDC_FORMAT_MACROS
 #endif
 
+#ifndef GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND
+#ifdef GPR_WINDOWS
+#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND __declspec(empty_bases)
+#else
+#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND
+#endif
+#endif
+
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
 
 /* clang 11 with msan miscompiles destruction of [[no_unique_address]] members
