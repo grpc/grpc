@@ -18,6 +18,7 @@
 
 #include "gmock/gmock.h"
 
+#include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
@@ -242,41 +243,32 @@ TEST_F(XdsOverrideHostTest, SubchannelConnectingIsQueued) {
   ExpectPickQueued(picker.get(), pick_arg);
 }
 
-TEST_F(XdsOverrideHostTest, DISABLED_AttemptsConnectingIdleSubchannel) {
-  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
-                                                       "ipv4:127.0.0.1:442"};
+TEST_F(XdsOverrideHostTest, UsingRingHashAsChild) {
+  ExecCtx exec_ctx;
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
-                                    MakeXdsOverrideHostConfig("pick_first")),
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig(
+                                                    "ring_hash_experimental")),
                         policy_.get()),
             absl::OkStatus());
-  ExpectConnectingUpdate();
-  // Ready up both subchannels
-  auto subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  ASSERT_NE(subchannel, nullptr);
-  ASSERT_TRUE(subchannel->ConnectionRequested());
-  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  auto picker = WaitForConnected();
-  // Make sure child policy works
-  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
-  subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  ASSERT_NE(subchannel, nullptr);
-  EXPECT_FALSE(subchannel->ConnectionRequested());
-  // Check that the host is overridden
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
-  ExpectPickQueued(picker.get(), pick_arg);
-  EXPECT_TRUE(subchannel->ConnectionRequested());
-  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectReresolutionRequest();
-  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  ASSERT_NE(picker, nullptr);
+  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "1"}});
+  std::cout << __FILE__ ":" << __LINE__ << " the end" << std::endl;
   picker = ExpectState(GRPC_CHANNEL_IDLE);
-  // ExpectState(GRPC_CHANNEL_CONNECTING);
-  // picker = ExpectState(GRPC_CHANNEL_READY);
-  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[1]);
+  ASSERT_NE(picker, nullptr);
+  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "2"}});
+  std::cout << __FILE__ ":" << __LINE__ << " the end 2" << std::endl;
+  picker = ExpectState(GRPC_CHANNEL_IDLE);
+  ASSERT_NE(picker, nullptr);
+  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "3"}});
+  std::cout << __FILE__ ":" << __LINE__ << " the end" << std::endl;
+  picker = ExpectState(GRPC_CHANNEL_IDLE);
+  ASSERT_NE(picker, nullptr);
+  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "4"}});
+  std::cout << __FILE__ ":" << __LINE__ << " the end" << std::endl;
+  policy_.reset();
 }
 }  // namespace
 }  // namespace testing

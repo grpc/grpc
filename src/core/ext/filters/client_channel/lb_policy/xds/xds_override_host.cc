@@ -159,7 +159,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
      public:
       ConnectivityStateWatcher(
           std::unique_ptr<ConnectivityStateWatcherInterface> delegate,
-          SubchannelWrapper* subchannel)
+          RefCountedPtr<SubchannelWrapper> subchannel)
           : delegate_(std::move(delegate)), subchannel_(subchannel) {}
 
       void OnConnectivityStateChange(grpc_connectivity_state state,
@@ -174,7 +174,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
      private:
       std::unique_ptr<ConnectivityStateWatcherInterface> delegate_;
-      SubchannelWrapper* subchannel_;
+      RefCountedPtr<SubchannelWrapper> subchannel_;
     };
 
     const absl::optional<const std::string> key_;
@@ -548,7 +548,7 @@ void XdsOverrideHostLb::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
   auto watcher_id = watcher.get();
   auto wrapper =
-      std::make_unique<ConnectivityStateWatcher>(std::move(watcher), this);
+      std::make_unique<ConnectivityStateWatcher>(std::move(watcher), Ref());
   watchers_.emplace(watcher_id, wrapper.get());
   wrapped_subchannel()->WatchConnectivityState(std::move(wrapper));
 }
