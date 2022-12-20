@@ -393,6 +393,10 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
     if (handshake_mgr_ != nullptr) {
       handshake_mgr_->Shutdown(GRPC_ERROR_CREATE("Listener stopped serving."));
     }
+    if (timer_handle_.has_value()) {
+      event_engine_->Cancel(*timer_handle_);
+      timer_handle_.reset();
+    }
   }
   Unref();
 }
@@ -414,8 +418,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout() {
   grpc_chttp2_transport* transport = nullptr;
   {
     MutexLock lock(&connection_->mu_);
-    // Note that we may be called when the timer fires or when the timer system
-    // is being shut down.
     if (timer_handle_.has_value()) {
       transport = connection_->transport_;
       timer_handle_.reset();
@@ -512,10 +514,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
                                               &self->on_receive_settings_,
                                               on_close);
           self->timer_handle_ = self->event_engine_->RunAfter(
-              self->deadline_ - Timestamp::Now(), [self = self->Ref()] {
+              self->deadline_ - Timestamp::Now(), [self = self->Ref()]() mutable {
                 ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 self->OnTimeout();
+                // HandshakingState deletion might require an active ExecCtx.
+                self.reset();
               });
         } else {
           // Failed to create channel from transport. Clean up.
