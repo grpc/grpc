@@ -565,7 +565,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> new_addresses,
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
-    gpr_log(GPR_INFO, "Waiting for expected RR list...");
+    gpr_log(GPR_INFO, "Waiting for expected RR addresses...");
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
     size_t num_picks =
         std::max(new_addresses.size(), old_addresses.size()) * num_iterations;

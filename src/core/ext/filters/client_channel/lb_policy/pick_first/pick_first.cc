@@ -129,13 +129,6 @@ class PickFirst : public LoadBalancingPolicy {
     size_t attempting_index() const { return attempting_index_; }
     void set_attempting_index(size_t index) { attempting_index_ = index; }
 
-    bool AllSubchannelsSeenInitialState() {
-      for (size_t i = 0; i < num_subchannels(); ++i) {
-        if (!subchannel(i)->connectivity_state().has_value()) return false;
-      }
-      return true;
-    }
-
    private:
     bool in_transient_failure_ = false;
     size_t attempting_index_ = 0;
