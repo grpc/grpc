@@ -677,8 +677,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
     EXPECT_TRUE(PicksAreRoundRobin(addresses, *picks))
         << "Expected: " << absl::StrJoin(addresses, ", ")
-        << "Actual: " << absl::StrJoin(*picks, ", ") << location.file()
-        << ":" << location.line();
+        << "Actual: " << absl::StrJoin(*picks, ", ") << location.file() << ":"
+        << location.line();
   }
 
   // Requests a picker on picker and expects a Fail result.
