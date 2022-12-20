@@ -283,9 +283,9 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
                                      int* release_fd,
                                      absl::string_view reason) {
   bool is_release_fd = (release_fd != nullptr);
-  bool was_shutdown = true;
+  bool was_shutdown = false;
   if (!read_closure_->IsShutdown()) {
-    was_shutdown = false;
+    was_shutdown = true;
     HandleShutdownInternal(absl::Status(absl::StatusCode::kUnknown, reason),
                            is_release_fd);
   }
