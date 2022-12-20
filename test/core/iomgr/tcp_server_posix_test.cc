@@ -487,7 +487,9 @@ static int pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
   const int enable = 1;
   setsockopt(pre_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 
-  int b = bind(pre_fd, (struct sockaddr*)&address, sizeof(address));
+  int b = bind(pre_fd,
+               reinterpret_cast<struct sockaddr*>(&address),
+               sizeof(address));
   if (b < 0) {
     gpr_log(GPR_ERROR, "Unable to bind inet socket: %m");
     return -1;
@@ -583,7 +585,9 @@ static int pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
     return -1;
   }
 
-  int b = bind(pre_fd, (struct sockaddr*)&address, sizeof(address));
+  int b = bind(pre_fd,
+               reinterpret_cast<struct sockaddr*>(&address),
+               sizeof(address));
   if (b < 0) {
     gpr_log(GPR_ERROR, "Unable to bind unix socket: %m");
     return -1;

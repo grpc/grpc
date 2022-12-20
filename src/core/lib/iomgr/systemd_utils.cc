@@ -33,8 +33,8 @@
 
 #ifdef HAVE_LIBSYSTEMD
 bool set_matching_sd_unix_fd(grpc_tcp_server* s,
-                             const grpc_resolved_address* addr, int fd_start,
-                             int n) {
+                             const grpc_resolved_address* addr, const int fd_start,
+                             const int n) {
   absl::StatusOr<std::string> addr_name = grpc_sockaddr_to_string(addr, true);
   for (int i = fd_start; i < fd_start + n; i++) {
     if (sd_is_socket_unix(i, SOCK_STREAM, 1, addr_name.value().c_str(), 0)) {
@@ -46,8 +46,8 @@ bool set_matching_sd_unix_fd(grpc_tcp_server* s,
 }
 
 bool set_matching_sd_inet_fd(grpc_tcp_server* s,
-                             const grpc_resolved_address* addr, int family,
-                             int port, int fd_start, int n) {
+                             const grpc_resolved_address* addr, const int family,
+                             const int port, const int fd_start, const int n) {
   for (int i = fd_start; i < fd_start + n; i++) {
     int r_inet = sd_is_socket_inet(i, family, SOCK_STREAM, 1, (uint16_t)port);
     int r_addr = sd_is_socket_sockaddr(
