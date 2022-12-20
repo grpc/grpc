@@ -656,7 +656,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool PicksAreRoundRobin(absl::Span<const absl::string_view> expected,
                           absl::Span<const std::string> actual) {
     absl::optional<size_t> expected_index;
-    for (auto address : actual) {
+    for (const auto& address : actual) {
       auto it = std::find(expected.begin(), expected.end(), address);
       if (it == expected.end()) return false;
       size_t index = it - expected.begin();
