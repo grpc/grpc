@@ -265,10 +265,15 @@ absl::optional<int> ResolvedAddressIsWildcard(
 absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
     const EventEngine::ResolvedAddress& resolved_addr) {
   EventEngine::ResolvedAddress addr_normalized;
-  if (ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
-    return ResolvedAddressToString(addr_normalized);
+  if (!ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
+    addr_normalized = resolved_addr;
   }
-  return ResolvedAddressToString(resolved_addr);
+  auto scheme = GetScheme(addr_normalized);
+  GRPC_RETURN_IF_ERROR(scheme.status());
+  if (*scheme == "unix") {
+    return ResolvedAddrToUriUnixIfPossible(&addr_normalized);
+  }
+  return ResolvedAddressToString(addr_normalized);
 }
 
 absl::StatusOr<std::string> ResolvedAddressToString(

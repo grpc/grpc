@@ -26,7 +26,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 
-#include "grpc/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"

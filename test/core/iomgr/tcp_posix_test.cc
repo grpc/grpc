@@ -37,10 +37,13 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -560,14 +563,30 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   a[1].type = GRPC_ARG_POINTER;
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep = grpc_tcp_create(
-      grpc_fd_create(sv[1], "read_test", false),
-      TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-              grpc_core::ChannelArgs::FromC(&args))),
-      "test");
-  GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
+  if (grpc_core::IsEventEngineServerEnabled()) {
+    // Create an event engine wrapped endpoint to test release_fd operations.
+    auto eeep =
+        reinterpret_cast<
+            grpc_event_engine::experimental::PosixEventEngineWithFdSupport*>(
+            grpc_event_engine::experimental::GetDefaultEventEngine().get())
+            ->CreatePosixEndpointFromFd(
+                sv[1],
+                grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                    grpc_core::ChannelArgs::FromC(&args)),
+                memory_quota->CreateMemoryAllocator("test"));
+    ep = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+        std::move(eeep));
+  } else {
+    ep = grpc_tcp_create(
+        grpc_fd_create(sv[1], "read_test", false),
+        TcpOptionsFromEndpointConfig(
+            grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                grpc_core::ChannelArgs::FromC(&args))),
+        "test");
+    GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
+  }
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);

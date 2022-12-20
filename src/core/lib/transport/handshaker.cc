@@ -28,7 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
-#include "grpc/byte_buffer.h"
+#include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice_buffer.h>

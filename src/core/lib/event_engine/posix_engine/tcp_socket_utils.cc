@@ -160,10 +160,13 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   options.expand_wildcard_addrs =
       (AdjustValue(0, 1, INT_MAX,
                    config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS)) != 0);
-  options.allow_reuse_port =
-      (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
-       0);
-
+  options.allow_reuse_port = PosixSocketWrapper::IsSocketReusePortSupported();
+  auto allow_reuse_port_value = config.GetInt(GRPC_ARG_ALLOW_REUSEPORT);
+  if (allow_reuse_port_value.has_value()) {
+    options.allow_reuse_port =
+        (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
+         0);
+  }
   if (options.tcp_min_read_chunk_size > options.tcp_max_read_chunk_size) {
     options.tcp_min_read_chunk_size = options.tcp_max_read_chunk_size;
   }
@@ -460,7 +463,9 @@ bool PosixSocketWrapper::IsSocketReusePortSupported() {
     }
     if (s >= 0) {
       PosixSocketWrapper sock(s);
-      return sock.SetSocketReusePort(1).ok();
+      bool result = sock.SetSocketReusePort(1).ok();
+      close(sock.Fd());
+      return result;
     } else {
       return false;
     }

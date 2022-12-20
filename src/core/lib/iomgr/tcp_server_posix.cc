@@ -19,22 +19,6 @@
 /* FIXME: "posix" files shouldn't be depending on _GNU_SOURCE */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#include <memory>
-
-#include "absl/status/status.h"
-
-#include "grpc/byte_buffer.h"
-#include "grpc/event_engine/event_engine.h"
-#include "grpc/event_engine/memory_allocator.h"
-#include "grpc/event_engine/slice_buffer.h"
-#include "grpc/slice_buffer.h"
-#include <grpc/grpc.h>
-
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/event_engine/posix.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #endif
 
 #include <grpc/support/port_platform.h>
@@ -59,6 +43,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -67,6 +52,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/strerror.h"

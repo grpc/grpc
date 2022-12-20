@@ -293,12 +293,13 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   // If release_fd is not NULL, we should be relinquishing control of the file
   // descriptor fd->fd (but we still own the grpc_fd structure).
   if (is_release_fd) {
-    gpr_log(GPR_ERROR, "Epoll1 orphan handle: releasing fd = %d", fd_);
-    epoll_event phony_event;
-    if (epoll_ctl(poller_->g_epoll_set_.epfd, EPOLL_CTL_DEL, fd_,
-                  &phony_event) != 0) {
-      gpr_log(GPR_ERROR, "OrphanHandle: epoll_ctl failed: %s",
-              grpc_core::StrError(errno).c_str());
+    if (!was_shutdown) {
+      epoll_event phony_event;
+      if (epoll_ctl(poller_->g_epoll_set_.epfd, EPOLL_CTL_DEL, fd_,
+                    &phony_event) != 0) {
+        gpr_log(GPR_ERROR, "OrphanHandle: epoll_ctl failed: %s",
+                grpc_core::StrError(errno).c_str());
+      }
     }
     *release_fd = fd_;
   } else {
