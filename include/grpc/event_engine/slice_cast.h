@@ -40,6 +40,9 @@ struct ConstRefSliceCastable<A, A> {};
 // opted in as compatible via `ConstRefSliceCastable`.
 template <typename Result, typename T>
 const Result& SliceCast(const T& value, ConstRefSliceCastable<Result, T> = {}) {
+  // Insist upon sizes being equal to catch mismatches.
+  // We assume if sizes are opted in and sizes are equal then yes, these two
+  // types are expected to be layout compatible and actually appear to be.
   static_assert(sizeof(Result) == sizeof(T), "size mismatch");
   return reinterpret_cast<const Result&>(value);
 }
