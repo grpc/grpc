@@ -30,6 +30,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -348,8 +349,6 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
 }
 
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
-
-#include "src/core/lib/gprpp/crash.h"
 
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(const PosixTcpOptions& /*options*/,
