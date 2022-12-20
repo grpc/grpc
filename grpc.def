@@ -78,7 +78,6 @@ EXPORTS
     grpc_server_shutdown_and_notify
     grpc_server_cancel_all_calls
     grpc_server_destroy
-    grpc_tracer_set_enabled
     grpc_header_key_is_legal
     grpc_header_nonbin_value_is_legal
     grpc_is_binary_header
@@ -174,6 +173,7 @@ EXPORTS
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
+    grpc_tracer_set_enabled
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy

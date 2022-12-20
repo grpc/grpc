@@ -517,8 +517,8 @@ grpc_cc_library(
         "gpr_platform",
         "gpr_public_hdrs",
         "grpc_compression_types",
-        "grpc_public_hdrs",
         "grpc_slice_type",
+        "grpc_status_enum",
     ],
 )
 
@@ -820,8 +820,10 @@ grpc_cc_library(
         "nofixdeps",
     ],
     deps = [
+        "byte_buffer",
         "gpr_public_hdrs",
         "grpc_connectivity_state_enum",
+        "grpc_trace",
     ],
 )
 
@@ -917,6 +919,7 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
         "ref_counted_ptr",
         "//src/core:error",
@@ -943,11 +946,13 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
+        "byte_buffer",
         "gpr",
         "grpc++",
         "grpc++_public_hdrs",
         "grpc_authorization_provider",
         "grpc_public_hdrs",
+        "grpc_status_enum",
     ],
 )
 
@@ -1087,9 +1092,9 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "grpc_base",
         "grpc_public_hdrs",
         "grpc_security_base",
+        "grpc_status_enum",
     ],
 )
 
@@ -1238,6 +1243,7 @@ grpc_cc_library(
         "iomgr_endpoint",
         "//src/core:closure",
         "//src/core:event_engine_interface",
+        "//src/core:resolved_address",
     ],
 )
 
@@ -1253,11 +1259,11 @@ grpc_cc_library(
         "include/grpc/impl/codegen/byte_buffer.h",
         "include/grpc/impl/codegen/byte_buffer_reader.h",
     ],
+    tags = ["canonical_dep"],
     deps = [
         "exec_ctx",
         "gpr_public_hdrs",
         "grpc_compression_types",
-        "grpc_public_hdrs",
         "grpc_types",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -1476,8 +1482,8 @@ grpc_cc_library(
         "gpr",
         "grpc_compression_types",
         "grpc_connectivity_state_enum",
-        "grpc_public_hdrs",
         "grpc_slice_type",
+        "grpc_status_enum",
         "grpc_trace",
         "grpc_types",
         "iomgr_endpoint",
@@ -1710,6 +1716,7 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
         "grpc_types",
         "handshaker",
@@ -1765,6 +1772,7 @@ grpc_cc_library(
         "gpr",
         "grpc_slice_type",
         "grpc_trace",
+        "//src/core:slice_buffer",
     ],
 )
 
@@ -1793,6 +1801,7 @@ grpc_cc_library(
         "alts_upb",
         "gpr",
         "grpc_public_hdrs",
+        "grpc_status_enum",
     ],
 )
 
@@ -2303,13 +2312,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_trace",
     srcs = ["//src/core:lib/debug/trace.cc"],
-    hdrs = ["//src/core:lib/debug/trace.h"],
+    hdrs = [
+        "include/grpc/impl/trace.h",
+        "//src/core:lib/debug/trace.h",
+    ],
     language = "c++",
     visibility = ["@grpc:trace"],
-    deps = [
-        "gpr",
-        "grpc_public_hdrs",
-    ],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -2805,6 +2814,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_service_config_impl",
+        "grpc_status_enum",
         "grpc_trace",
         "grpc_types",
         "http_connect_handshaker",
@@ -3176,6 +3186,7 @@ grpc_cc_library(
     deps = [
         "alts_upb",
         "alts_util",
+        "byte_buffer",
         "config",
         "exec_ctx",
         "gpr",
@@ -3293,6 +3304,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_compression_types",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
         "grpc_types",
         "promise",
@@ -3388,6 +3400,7 @@ grpc_cc_library(
         "google_rpc_status_upb",
         "gpr",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
         "orphanable",
         "protobuf_any_upb",
@@ -3536,6 +3549,7 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_base",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
         "hpack_parser_table",
         "//src/core:decode_huff",
@@ -3566,6 +3580,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_compression_types",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
         "http_trace",
         "//src/core:hpack_constants",
@@ -3654,6 +3669,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_connectivity_state_enum",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
         "grpc_types",
         "hpack_encoder",
@@ -3708,7 +3724,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "grpc++_public_hdrs",
-        "grpc_public_hdrs",
+        "grpc_status_enum",
     ],
 )
 

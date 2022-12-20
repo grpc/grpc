@@ -2495,6 +2495,7 @@ foreach(_hdr
   include/grpc/impl/grpc_types.h
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
+  include/grpc/impl/trace.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3100,6 +3101,7 @@ foreach(_hdr
   include/grpc/impl/grpc_types.h
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
+  include/grpc/impl/trace.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -4561,9 +4563,11 @@ foreach(_hdr
   include/grpc/impl/grpc_types.h
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
+  include/grpc/impl/trace.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
+  include/grpc/status.h
   include/grpc/support/alloc.h
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
@@ -19764,6 +19768,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tcp_socket_utils_test
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/uri/uri_parser.cc
   test/core/event_engine/tcp_socket_utils_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -19793,7 +19812,12 @@ target_link_libraries(tcp_socket_utils_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
+  absl::any_invocable
+  absl::hash
+  absl::statusor
+  absl::utility
+  gpr
+  upb
 )
 
 

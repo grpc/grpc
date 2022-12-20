@@ -293,6 +293,7 @@ libs:
   - include/grpc/impl/grpc_types.h
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
+  - include/grpc/impl/trace.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1886,6 +1887,7 @@ libs:
   - include/grpc/impl/grpc_types.h
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
+  - include/grpc/impl/trace.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -3404,9 +3406,11 @@ libs:
   - include/grpc/impl/grpc_types.h
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
+  - include/grpc/impl/trace.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
+  - include/grpc/status.h
   - include/grpc/support/alloc.h
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
@@ -11298,11 +11302,49 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/uri/uri_parser.h
   src:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/uri/uri_parser.cc
   - test/core/event_engine/tcp_socket_utils_test.cc
   deps:
-  - grpc
+  - absl/functional:any_invocable
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
+  - upb
   uses_polling: false
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true

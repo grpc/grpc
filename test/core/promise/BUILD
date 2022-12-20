@@ -241,7 +241,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//:grpc_public_hdrs",
+        "//:grpc_status_enum",
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:memory_quota",

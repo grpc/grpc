@@ -113,6 +113,9 @@ def cc_grpc_library(
             hdrs = [":" + codegen_grpc_target],
             deps = deps +
                    extra_deps +
-                   ["@com_github_grpc_grpc//:grpc++_codegen_proto"],
+                   [
+                     "@com_github_grpc_grpc//:grpc++_codegen_proto",
+                     "@com_github_grpc_grpc//:byte_buffer",
+                   ],
             **kwargs
         )

@@ -76,7 +76,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
+        "//:grpc_status_enum",
         "//src/core:env",
         "//src/core:error",
         "//src/core:json",

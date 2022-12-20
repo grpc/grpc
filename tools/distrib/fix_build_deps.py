@@ -233,8 +233,6 @@ INTERNAL_DEPS = {
         'protobuf_timestamp_upb',
     'google/protobuf/wrappers.upb.h':
         'protobuf_wrappers_upb',
-    'grpc/status.h':
-        'grpc_public_hdrs',
     'src/proto/grpc/channelz/channelz.grpc.pb.h':
         '//src/proto/grpc/channelz:channelz_proto',
     'src/proto/grpc/core/stats.pb.h':

@@ -27,6 +27,7 @@
 #include <grpc/impl/connectivity_state.h>  // IWYU pragma: export
 #include <grpc/impl/grpc_types.h>          // IWYU pragma: export
 #include <grpc/impl/propagation_bits.h>
+#include <grpc/impl/trace.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
@@ -489,16 +490,6 @@ GRPCAPI void grpc_server_cancel_all_calls(grpc_server* server);
     grpc_server_shutdown_and_notify must have been received, and at least
     one call to grpc_server_shutdown_and_notify must have been made). */
 GRPCAPI void grpc_server_destroy(grpc_server* server);
-
-/** Enable or disable a tracer.
-
-    Tracers (usually controlled by the environment variable GRPC_TRACE)
-    allow printf-style debugging on GRPC internals, and are useful for
-    tracking down problems in the field.
-
-    Use of this function is not strictly thread-safe, but the
-    thread-safety issues raised by it should not be of concern. */
-GRPCAPI int grpc_tracer_set_enabled(const char* name, int enabled);
 
 /** Check whether a metadata key is legal (will be accepted by core) */
 GRPCAPI int grpc_header_key_is_legal(grpc_slice slice);

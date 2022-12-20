@@ -42,6 +42,7 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/impl/slice_type.h>
+#include <grpc/impl/trace.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -147,7 +148,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_server_shutdown_and_notify);
   printf("%lx", (unsigned long) grpc_server_cancel_all_calls);
   printf("%lx", (unsigned long) grpc_server_destroy);
-  printf("%lx", (unsigned long) grpc_tracer_set_enabled);
   printf("%lx", (unsigned long) grpc_header_key_is_legal);
   printf("%lx", (unsigned long) grpc_header_nonbin_value_is_legal);
   printf("%lx", (unsigned long) grpc_is_binary_header);
@@ -241,6 +241,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_file_watcher_create);
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_release);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_tls_session_key_log_file_path);
+  printf("%lx", (unsigned long) grpc_tracer_set_enabled);
   printf("%lx", (unsigned long) grpc_slice_ref);
   printf("%lx", (unsigned long) grpc_slice_unref);
   printf("%lx", (unsigned long) grpc_slice_copy);

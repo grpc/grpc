@@ -28,6 +28,7 @@
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;

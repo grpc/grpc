@@ -101,7 +101,6 @@ grpc_server_start_type grpc_server_start_import;
 grpc_server_shutdown_and_notify_type grpc_server_shutdown_and_notify_import;
 grpc_server_cancel_all_calls_type grpc_server_cancel_all_calls_import;
 grpc_server_destroy_type grpc_server_destroy_import;
-grpc_tracer_set_enabled_type grpc_tracer_set_enabled_import;
 grpc_header_key_is_legal_type grpc_header_key_is_legal_import;
 grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_import;
 grpc_is_binary_header_type grpc_is_binary_header_import;
@@ -197,6 +196,7 @@ grpc_authorization_policy_provider_static_data_create_type grpc_authorization_po
 grpc_authorization_policy_provider_file_watcher_create_type grpc_authorization_policy_provider_file_watcher_create_import;
 grpc_authorization_policy_provider_release_type grpc_authorization_policy_provider_release_import;
 grpc_tls_credentials_options_set_tls_session_key_log_file_path_type grpc_tls_credentials_options_set_tls_session_key_log_file_path_import;
+grpc_tracer_set_enabled_type grpc_tracer_set_enabled_import;
 grpc_slice_ref_type grpc_slice_ref_import;
 grpc_slice_unref_type grpc_slice_unref_import;
 grpc_slice_copy_type grpc_slice_copy_import;
@@ -386,7 +386,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_shutdown_and_notify_import = (grpc_server_shutdown_and_notify_type) GetProcAddress(library, "grpc_server_shutdown_and_notify");
   grpc_server_cancel_all_calls_import = (grpc_server_cancel_all_calls_type) GetProcAddress(library, "grpc_server_cancel_all_calls");
   grpc_server_destroy_import = (grpc_server_destroy_type) GetProcAddress(library, "grpc_server_destroy");
-  grpc_tracer_set_enabled_import = (grpc_tracer_set_enabled_type) GetProcAddress(library, "grpc_tracer_set_enabled");
   grpc_header_key_is_legal_import = (grpc_header_key_is_legal_type) GetProcAddress(library, "grpc_header_key_is_legal");
   grpc_header_nonbin_value_is_legal_import = (grpc_header_nonbin_value_is_legal_type) GetProcAddress(library, "grpc_header_nonbin_value_is_legal");
   grpc_is_binary_header_import = (grpc_is_binary_header_type) GetProcAddress(library, "grpc_is_binary_header");
@@ -482,6 +481,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_authorization_policy_provider_file_watcher_create_import = (grpc_authorization_policy_provider_file_watcher_create_type) GetProcAddress(library, "grpc_authorization_policy_provider_file_watcher_create");
   grpc_authorization_policy_provider_release_import = (grpc_authorization_policy_provider_release_type) GetProcAddress(library, "grpc_authorization_policy_provider_release");
   grpc_tls_credentials_options_set_tls_session_key_log_file_path_import = (grpc_tls_credentials_options_set_tls_session_key_log_file_path_type) GetProcAddress(library, "grpc_tls_credentials_options_set_tls_session_key_log_file_path");
+  grpc_tracer_set_enabled_import = (grpc_tracer_set_enabled_type) GetProcAddress(library, "grpc_tracer_set_enabled");
   grpc_slice_ref_import = (grpc_slice_ref_type) GetProcAddress(library, "grpc_slice_ref");
   grpc_slice_unref_import = (grpc_slice_unref_type) GetProcAddress(library, "grpc_slice_unref");
   grpc_slice_copy_import = (grpc_slice_copy_type) GetProcAddress(library, "grpc_slice_copy");
