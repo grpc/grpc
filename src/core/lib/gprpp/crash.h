@@ -25,10 +25,10 @@ namespace grpc_core {
 
 // Crash the program after printing `message`.
 // ::grpc_core:: prefix to SourceLocation is required to work around a symbol
- // mismatch bug on MSVC.
+// mismatch bug on MSVC.
 [[noreturn]] void Crash(absl::string_view message,
                         ::grpc_core::SourceLocation location = {});
 
-}
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_GPRPP_CRASH_H
