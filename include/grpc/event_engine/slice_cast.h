@@ -19,12 +19,25 @@ namespace grpc_event_engine {
 namespace experimental {
 
 // Opt-in trait class for slice conversions.
+// Declare a specialization of this class for any types that are compatible
+// with `SliceCast`. Both ways need to be declared (i.e. if
+// ConstRefSliceCastable<A,B> exists, you should declare
+// ConstRefSliceCastable<B,A> too).
+// The type has no members, it's just the existance of the specialization that
+// unlocks SliceCast usage for a type pair.
 template <typename Result, typename T>
 struct ConstRefSliceCastable;
 
+// This is strictly too wide, but consider all types to be SliceCast-able to
+// themselves.
+// Unfortunately this allows `const int& x = SliceCast<int>(x);` which is kind
+// of bogus.
 template <typename A>
 struct ConstRefSliceCastable<A, A> {};
 
+// Cast to `const Result&` from `const T&` without any runtime checks.
+// This is only valid if `sizeof(Result) == sizeof(T)`, and if `Result`, `T` are
+// opted in as compatible via `ConstRefSliceCastable`.
 template <typename Result, typename T>
 const Result& SliceCast(const T& value, ConstRefSliceCastable<Result, T> = {}) {
   static_assert(sizeof(Result) == sizeof(T), "size mismatch");
