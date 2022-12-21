@@ -1682,6 +1682,7 @@ grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["lib/event_engine/utils.cc"],
     hdrs = ["lib/event_engine/utils.h"],
+    external_deps = ["absl/strings"],
     deps = [
         "time",
         "//:event_engine_base_hdrs",
