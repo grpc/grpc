@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
