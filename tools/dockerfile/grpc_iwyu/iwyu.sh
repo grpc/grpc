@@ -15,9 +15,6 @@
 
 set -x
 
-cat compile_commands.json
-exit 1
-
 cd ${IWYU_ROOT}
 
 export PATH=${PATH}:${IWYU_ROOT}/iwyu_build/bin
@@ -130,3 +127,5 @@ then
     # Exit with a non zero error code to ensure sanity checks fail accordingly.
     exit 1
 fi
+
+exit 1
