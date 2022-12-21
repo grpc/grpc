@@ -18,7 +18,6 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>

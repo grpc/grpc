@@ -28,6 +28,7 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"

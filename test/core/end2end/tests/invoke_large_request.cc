@@ -28,6 +28,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/gpr/useful.h"

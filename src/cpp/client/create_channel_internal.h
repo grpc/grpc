@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/support/client_interceptor.h>
 

@@ -29,7 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>

@@ -229,6 +229,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
     "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_buffer.h",
+    "include/grpc/event_engine/internal/slice_cast.h",
 ]
 
 GRPCXX_SRCS = [
@@ -1169,7 +1170,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/compression_internal.cc",
         "//src/core:lib/compression/message_compress.cc",
-        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
         "//src/core:lib/iomgr/buffer_list.cc",
         "//src/core:lib/iomgr/call_combiner.cc",
         "//src/core:lib/iomgr/cfstream_handle.cc",
@@ -1273,7 +1273,6 @@ grpc_cc_library(
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/compression_internal.h",
         "//src/core:lib/compression/message_compress.h",
-        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
         "//src/core:lib/iomgr/block_annotate.h",
         "//src/core:lib/iomgr/buffer_list.h",
         "//src/core:lib/iomgr/call_combiner.h",
@@ -1387,6 +1386,7 @@ grpc_cc_library(
         "//src/core:atomic_utils",
         "//src/core:bitset",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -1424,6 +1424,7 @@ grpc_cc_library(
         "//src/core:resource_quota_trace",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:slice_cast",
         "//src/core:slice_refcount",
         "//src/core:socket_mutator",
         "//src/core:stats_data",

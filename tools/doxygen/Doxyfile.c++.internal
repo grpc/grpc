@@ -882,6 +882,7 @@ include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/internal/memory_allocator_impl.h \
+include/grpc/event_engine/internal/slice_cast.h \
 include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
@@ -2043,6 +2044,8 @@ src/core/lib/event_engine/windows/iocp.cc \
 src/core/lib/event_engine/windows/iocp.h \
 src/core/lib/event_engine/windows/win_socket.cc \
 src/core/lib/event_engine/windows/win_socket.h \
+src/core/lib/event_engine/windows/windows_endpoint.cc \
+src/core/lib/event_engine/windows/windows_endpoint.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/experiments/config.cc \
@@ -2311,7 +2314,6 @@ src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
 src/core/lib/promise/context.h \
-src/core/lib/promise/detail/basic_join.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
@@ -2320,7 +2322,6 @@ src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/for_each.h \
 src/core/lib/promise/intra_activity_waiter.h \
-src/core/lib/promise/join.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \

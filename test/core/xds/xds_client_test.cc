@@ -39,6 +39,7 @@
 #include "gtest/gtest.h"
 #include "upb/def.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 

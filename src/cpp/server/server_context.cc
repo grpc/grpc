@@ -32,7 +32,6 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/load_reporting.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -44,7 +43,6 @@
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/interceptor_common.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/server_context.h>

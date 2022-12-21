@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include <grpc/grpc.h>
+#include <grpc/support/time.h>
 
 #include "test/core/util/test_tcp_server.h"
 

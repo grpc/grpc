@@ -45,6 +45,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "slice_cast",
+    hdrs = [
+        "//:include/grpc/event_engine/internal/slice_cast.h",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "lib/event_engine/resolved_address.cc",
@@ -65,6 +72,7 @@ grpc_cc_library(
     deps = [
         "slice",
         "slice_buffer",
+        "slice_cast",
         "slice_refcount",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -477,6 +485,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "cancel_callback",
+    external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = [
         "lib/promise/cancel_callback.h",
@@ -897,6 +906,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "channel_args_endpoint_config",
         "closure",
         "error",
         "handshaker_factory",
@@ -962,6 +972,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/status",
         "absl/strings",
+        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -1106,6 +1117,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "slice_cast",
         "slice_refcount",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1832,13 +1844,19 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "channel_args_endpoint_config",
+        "common_event_engine_closures",
+        "error",
         "event_engine_common",
+        "event_engine_executor",
+        "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",
         "posix_event_engine_timer_manager",
         "time",
+        "windows_endpoint",
         "windows_iocp",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1956,6 +1974,25 @@ grpc_cc_library(
         "//conditions:default": ["posix_event_engine"],
     }],
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_args_endpoint_config",
+    srcs = [
+        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -3192,11 +3229,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "arena_promise",
         "channel_args",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
         "closure",
+        "context",
         "error",
         "status_helper",
         "time",
@@ -3432,6 +3471,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena_promise",
         "channel_args",
         "channel_fwd",
         "channel_init",
@@ -3440,10 +3480,10 @@ grpc_cc_library(
         "error",
         "gpr_atm",
         "grpc_sockaddr",
-        "join",
         "json",
         "json_args",
         "json_object_loader",
+        "latch",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -3456,7 +3496,6 @@ grpc_cc_library(
         "status_helper",
         "subchannel_interface",
         "time",
-        "try_concurrently",
         "useful",
         "validation_errors",
         "//:backoff",
@@ -3861,6 +3900,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
@@ -4393,19 +4433,19 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "lb_policy_registry",
         "pollset_set",
         "subchannel_interface",
+        "validation_errors",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4816,6 +4856,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "channel_args_endpoint_config",
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
@@ -4865,6 +4906,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "channel_args_endpoint_config",
         "closure",
         "error",
         "grpc_insecure_credentials",
@@ -4961,7 +5003,6 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:hpack_encoder",
         "//:hpack_parser",
     ],

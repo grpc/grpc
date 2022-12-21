@@ -26,7 +26,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/server_credentials.h>
 

@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>

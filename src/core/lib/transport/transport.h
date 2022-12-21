@@ -38,6 +38,7 @@
 #include <grpc/status.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
