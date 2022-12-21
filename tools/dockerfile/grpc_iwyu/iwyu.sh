@@ -15,6 +15,9 @@
 
 set -x
 
+
+exit 1
+
 cd ${IWYU_ROOT}
 
 export PATH=${PATH}:${IWYU_ROOT}/iwyu_build/bin
