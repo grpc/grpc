@@ -510,7 +510,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
                                               &self->on_receive_settings_,
                                               on_close);
           self->timer_handle_ = self->event_engine_->RunAfter(
-              self->deadline_ - Timestamp::Now(), [self = self->Ref()]() mutable {
+              self->deadline_ - Timestamp::Now(),
+              [self = self->Ref()]() mutable {
                 ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 self->OnTimeout();
