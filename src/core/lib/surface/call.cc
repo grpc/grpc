@@ -3273,7 +3273,8 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           CToMetadata(op.data.send_initial_metadata.metadata,
                       op.data.send_initial_metadata.count,
                       &send_initial_metadata_);
-          gpr_log(GPR_INFO, "ServerPromiseBasedCall: Send initial metadata");
+          gpr_log(GPR_INFO, "%s[call] Send initial metadata",
+                  DebugTag().c_str());
           send_initial_metadata_latch_->Set(&send_initial_metadata_);
         }
       } break;

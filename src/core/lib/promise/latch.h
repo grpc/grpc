@@ -23,6 +23,7 @@
 
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 
@@ -57,6 +58,10 @@ class Latch {
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<T*> {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
+                StateString().c_str());
+      }
       if (has_value_) {
         return &value_;
       } else {
@@ -67,6 +72,9 @@ class Latch {
 
   // Set the value of the latch. Can only be called once.
   void Set(T value) {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
+    }
     GPR_DEBUG_ASSERT(!has_value_);
     value_ = std::move(value);
     has_value_ = true;
@@ -74,6 +82,16 @@ class Latch {
   }
 
  private:
+  std::string DebugTag() {
+    return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
+
+  std::string StateString() {
+    return absl::StrCat("has_value:", has_value_ ? "true" : "false",
+                        " waiter:", waiter_.DebugString());
+  }
+
   // The value stored (if has_value_ is true), otherwise some random value, we
   // don't care.
   // Why not absl::optional<>? Writing things this way lets us compress
