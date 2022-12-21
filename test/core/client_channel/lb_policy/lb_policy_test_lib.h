@@ -566,9 +566,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Waiting for expected RR addresses...");
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
-    size_t num_picks =
-        std::max(new_addresses.size(), old_addresses.size()) * num_iterations;
+    absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> retval;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -684,7 +682,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool PicksAreRoundRobin(absl::Span<const absl::string_view> expected,
                           absl::Span<const std::string> actual) {
     absl::optional<size_t> expected_index;
-    for (auto address : actual) {
+    for (const auto& address : actual) {
       auto it = std::find(expected.begin(), expected.end(), address);
       if (it == expected.end()) return false;
       size_t index = it - expected.begin();
