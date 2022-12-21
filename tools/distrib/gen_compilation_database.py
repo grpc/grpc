@@ -39,12 +39,12 @@ def generateCompilationDatabase(args):
         "--remote_download_outputs=all",
     ]
 
-    subprocess.check_call(["tools/bazel", "build"] + bazel_options + [
+    subprocess.check_call(["bazel", "build"] + bazel_options + [
         "--aspects=@bazel_compdb//:aspects.bzl%compilation_database_aspect",
         "--output_groups=compdb_files,header_files"
     ] + args.bazel_targets)
 
-    execroot = subprocess.check_output(["tools/bazel", "info", "execution_root"] +
+    execroot = subprocess.check_output(["bazel", "info", "execution_root"] +
                                        bazel_options).decode().strip()
 
     compdb = []

@@ -36,7 +36,6 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/channel/call_promise.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
@@ -118,15 +117,24 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
   md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
   md->Set(UserAgentMetadata(), user_agent_.Ref());
 
-  return CallPromiseBuilder()
-      .OnServerInitialMetadata(
-          [](ServerMetadataHandle md) { return CheckServerMetadata(md.get()); })
-      .OnServerTrailingMetadata([](ServerMetadataHandle md) {
-        auto r = CheckServerMetadata(md.get());
-        if (!r.ok()) return ServerMetadataFromStatus(r);
-        return md;
-      })
-      .BuildServer(std::move(call_args), std::move(next_promise_factory));
+  auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
+  auto* write_latch =
+      std::exchange(call_args.server_initial_metadata, read_latch);
+
+  return TryConcurrently(
+             Seq(next_promise_factory(std::move(call_args)),
+                 [](ServerMetadataHandle md) -> ServerMetadataHandle {
+                   auto r = CheckServerMetadata(md.get());
+                   if (!r.ok()) return ServerMetadataFromStatus(r);
+                   return md;
+                 }))
+      .NecessaryPull(Seq(read_latch->Wait(),
+                         [write_latch](ServerMetadata** md) -> absl::Status {
+                           auto r = *md == nullptr ? absl::OkStatus()
+                                                   : CheckServerMetadata(*md);
+                           write_latch->Set(*md);
+                           return r;
+                         }));
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,

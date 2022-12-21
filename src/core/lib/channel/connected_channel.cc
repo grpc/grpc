@@ -929,7 +929,7 @@ class ServerStream final : public ConnectedChannelStream {
   }
 
   Poll<ServerMetadataHandle> Poll() {
-    MutexLock lock(mu());
+    absl::MutexLock lock(mu());
 
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO, "%s[connected] PollConnectedChannel: %s",
