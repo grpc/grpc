@@ -31,6 +31,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"
 
+#include "src/core/lib/gprpp/crash.h"
+
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
 #ifdef GRPC_LINUX_TCP_H
@@ -740,8 +742,6 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 }
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
-
-#include "src/core/lib/gprpp/crash.h"
 
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   grpc_core::Crash("unimplemented");
