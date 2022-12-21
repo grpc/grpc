@@ -566,7 +566,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Waiting for expected RR addresses...");
-    absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> retval;
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -574,7 +574,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           if (update.state != GRPC_CHANNEL_READY) return false;
           // Get enough picks to round-robin num_iterations times across all
           // expected addresses.
-          auto picks = GetCompletePicks(update.picker.get(), num_picks,
+          auto picks = GetCompletePicks(update.picker.get(), num_iterations,
                                         call_attributes, location);
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
