@@ -36,6 +36,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/memory_allocator_impl.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/internal/slice_cast.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_allocator.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_request.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />

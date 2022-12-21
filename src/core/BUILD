@@ -45,6 +45,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "slice_cast",
+    hdrs = [
+        "//:include/grpc/event_engine/internal/slice_cast.h",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "lib/event_engine/resolved_address.cc",
@@ -65,6 +72,7 @@ grpc_cc_library(
     deps = [
         "slice",
         "slice_buffer",
+        "slice_cast",
         "slice_refcount",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1109,6 +1117,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "slice_cast",
         "slice_refcount",
         "//:event_engine_base_hdrs",
         "//:gpr",
