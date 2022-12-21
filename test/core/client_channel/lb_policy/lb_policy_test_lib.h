@@ -565,6 +565,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> new_addresses,
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "Waiting for expected RR addresses...");
     absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> retval;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
@@ -579,15 +580,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
-          std::vector<absl::string_view> pick_addresses(picks->begin(),
-                                                        picks->end());
+          gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
           // If the picks still match the old list, then keep going.
-          if (PicksAreRoundRobin(old_addresses, pick_addresses)) return true;
+          if (PicksAreRoundRobin(old_addresses, *picks)) return true;
           // Otherwise, the picks should match the new list.
-          bool matches = PicksAreRoundRobin(new_addresses, pick_addresses);
+          bool matches = PicksAreRoundRobin(new_addresses, *picks);
           EXPECT_TRUE(matches)
               << "Expected: " << absl::StrJoin(new_addresses, ", ")
-              << "\nActual: " << absl::StrJoin(pick_addresses, ", ") << "\nat "
+              << "\nActual: " << absl::StrJoin(*picks, ", ") << "\nat "
               << location.file() << ":" << location.line();
           if (matches) {
             retval = std::move(update.picker);
@@ -681,9 +681,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // addresses may start anywhere in the list of expected addresses but
   // must then continue in round-robin fashion, with wrap-around.
   bool PicksAreRoundRobin(absl::Span<const absl::string_view> expected,
-                          absl::Span<const absl::string_view> actual) {
+                          absl::Span<const std::string> actual) {
     absl::optional<size_t> expected_index;
-    for (auto address : actual) {
+    for (const auto& address : actual) {
       auto it = std::find(expected.begin(), expected.end(), address);
       if (it == expected.end()) return false;
       size_t index = it - expected.begin();
@@ -703,9 +703,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto picks = GetCompletePicks(picker, call_attributes,
                                   num_iterations * addresses.size(), location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
-    std::vector<absl::string_view> pick_addresses(picks->begin(), picks->end());
-    EXPECT_TRUE(PicksAreRoundRobin(addresses, pick_addresses))
-        << "  Actual: " << absl::StrJoin(pick_addresses, ", ")
+    EXPECT_TRUE(PicksAreRoundRobin(addresses, *picks))
+        << "  Actual: " << absl::StrJoin(*picks, ", ")
         << "\n  Expected: " << absl::StrJoin(addresses, ", ") << "\n"
         << location.file() << ":" << location.line();
   }

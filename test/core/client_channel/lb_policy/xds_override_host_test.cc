@@ -132,8 +132,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
       absl::OkStatus());
   auto picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
   ASSERT_TRUE(picks.has_value());
-  std::vector<absl::string_view> pick_addresses(picks->begin(), picks->end());
-  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, pick_addresses));
+  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, *picks));
   WaitForRoundRobinListChange(
       {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"},
       {"ipv4:127.0.0.1:442"}, call_attributes);
@@ -145,8 +144,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
       absl::OkStatus());
   picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
   ASSERT_TRUE(picks.has_value());
-  pick_addresses = {picks->begin(), picks->end()};
-  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, pick_addresses));
+  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, *picks));
   WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"},
                               {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
                               call_attributes);
@@ -158,8 +156,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
       absl::OkStatus());
   picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
   ASSERT_TRUE(picks.has_value());
-  pick_addresses = {picks->begin(), picks->end()};
-  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:442"}, pick_addresses));
+  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:442"}, *picks));
   WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
                               {"ipv4:127.0.0.1:442"}, call_attributes);
 }
