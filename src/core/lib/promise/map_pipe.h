@@ -23,6 +23,7 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
 

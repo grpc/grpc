@@ -3186,7 +3186,6 @@ grpc_cc_library(
         "//src/core:slice_buffer",
         "//src/core:transport_fwd",
         "//src/core:try_concurrently",
-        "//src/core:try_seq",
     ],
 )
 
