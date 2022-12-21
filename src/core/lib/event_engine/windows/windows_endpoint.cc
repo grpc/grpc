@@ -64,8 +64,8 @@ WindowsEndpoint::WindowsEndpoint(
   int addr_len = sizeof(addr);
   if (getsockname(socket_->socket(), reinterpret_cast<sockaddr*>(addr),
                   &addr_len) < 0) {
-    grpc_core::Crash(
-        absl::StrCat("Unrecoverable error: Failed to get local socket name. ",
+    grpc_core::Crash(absl::StrCat(
+        "Unrecoverable error: Failed to get local socket name. ",
         GRPC_WSA_ERROR(WSAGetLastError(), "getsockname").ToString()));
   }
   local_address_ =
