@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -41,6 +42,7 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/latch.h"
