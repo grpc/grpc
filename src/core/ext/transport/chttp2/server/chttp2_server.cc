@@ -393,10 +393,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
     if (handshake_mgr_ != nullptr) {
       handshake_mgr_->Shutdown(GRPC_ERROR_CREATE("Listener stopped serving."));
     }
-    if (timer_handle_.has_value()) {
-      event_engine_->Cancel(*timer_handle_);
-      timer_handle_.reset();
-    }
   }
   Unref();
 }
