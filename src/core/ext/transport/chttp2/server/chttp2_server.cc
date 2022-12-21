@@ -660,8 +660,6 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry() {
   // immediately.
   {
     MutexLock lock(&mu_);
-    // Note that we may be called when the timer fires or when the timer system
-    // is being shut down.
     if (drain_grace_timer_handle_.has_value()) {
       transport = transport_;
       drain_grace_timer_handle_.reset();
