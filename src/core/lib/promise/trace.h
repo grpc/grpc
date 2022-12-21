@@ -15,8 +15,10 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRACE_H
 #define GRPC_CORE_LIB_PROMISE_TRACE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_promise_primitives;
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_TRACE_H

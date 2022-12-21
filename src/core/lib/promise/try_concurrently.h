@@ -20,13 +20,15 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <string>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
-#include "trace.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_like.h"
