@@ -68,6 +68,34 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
   WeightedRoundRobinTest() : lb_policy_(MakeLbPolicy("weighted_round_robin")) {}
 
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+  SendInitialUpdateAndWaitForConnected(
+      absl::Span<const absl::string_view> addresses,
+      SourceLocation location = SourceLocation()) {
+    EXPECT_EQ(
+        ApplyUpdate(
+            BuildUpdate(addresses, ConfigBuilder().Build()), lb_policy_.get()),
+        absl::OkStatus());
+    // Expect the initial CONNECTNG update with a picker that queues.
+    ExpectConnectingUpdate(location);
+    // RR should have created a subchannel for each address.
+    for (size_t i = 0; i < addresses.size(); ++i) {
+      auto* subchannel = FindSubchannel(addresses[i]);
+      EXPECT_NE(subchannel, nullptr)
+          << addresses[i] << " at " << location.file() << ":"
+          << location.line();
+      if (subchannel == nullptr) return nullptr;
+      // RR should ask each subchannel to connect.
+      EXPECT_TRUE(subchannel->ConnectionRequested())
+          << addresses[i] << " at " << location.file() << ":"
+          << location.line();
+      // The subchannel will connect successfully.
+      subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    }
+    return WaitForConnected(location);
+  }
+
   // Returns a map indicating the number of picks for each address.
   static std::map<absl::string_view, size_t> MakePickMap(
       absl::Span<const std::string> picks) {
@@ -251,23 +279,8 @@ TEST_F(WeightedRoundRobinTest, Basic) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  EXPECT_EQ(
-      ApplyUpdate(
-          BuildUpdate(kAddresses, ConfigBuilder().Build()), lb_policy_.get()),
-      absl::OkStatus());
-  // Expect the initial CONNECTNG update with a picker that queues.
-  ExpectConnectingUpdate();
-  // RR should have created a subchannel for each address.
-  for (size_t i = 0; i < kAddresses.size(); ++i) {
-    auto* subchannel = FindSubchannel(kAddresses[i]);
-    ASSERT_NE(subchannel, nullptr);
-    // RR should ask each subchannel to connect.
-    EXPECT_TRUE(subchannel->ConnectionRequested());
-    // The subchannel will connect successfully.
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  }
-  auto picker = WaitForConnected();
+  auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
+  ASSERT_NE(picker, nullptr);
   // Address 0 gets weight 1, address 1 gets weight 3.
   // No utilization report from backend 2, so it gets the average weight 2.
   WaitForWeightedRoundRobinPicks(
@@ -282,6 +295,10 @@ TEST_F(WeightedRoundRobinTest, Basic) {
        {kAddresses[1], {100, 0.3}},
        {kAddresses[2], {100, 0.3}}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Backends stop reporting utilization, so all are weighted the same.
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
 
 }  // namespace
