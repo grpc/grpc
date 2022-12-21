@@ -3164,7 +3164,7 @@ grpc_cc_library(
     ],
     language = "c++",
     visibility = ["@grpc:http"],
-    deps = [
+    deps = ["//src/core:call_promise",
         "channel_stack_builder",
         "config",
         "gpr",

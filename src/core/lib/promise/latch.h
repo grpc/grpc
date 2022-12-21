@@ -89,6 +89,11 @@ class Latch {
     waiter_.Wake();
   }
 
+  const T& Get() const {
+    GPR_DEBUG_ASSERT(has_value_);
+    return value_;
+  }
+
  private:
   std::string DebugTag() {
     return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
