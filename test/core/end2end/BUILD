@@ -58,6 +58,7 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
