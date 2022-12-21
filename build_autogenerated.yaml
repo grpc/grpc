@@ -8829,6 +8829,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
@@ -8848,9 +8849,12 @@ targets:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
+  - src/core/lib/debug/trace.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/trace.cc
   - test/core/promise/latch_test.cc
   deps:
   - absl/meta:type_traits
