@@ -1382,6 +1382,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_base_hdrs",
+    srcs = [],
+    hdrs = [
+        "lib/event_engine/posix.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine_timer_manager",
     srcs = ["lib/event_engine/posix_engine/timer_manager.cc"],
     hdrs = [
@@ -4432,9 +4449,13 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/synchronization",
+        "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [

@@ -16,14 +16,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
@@ -215,6 +222,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
+
+  RefCountedPtr<SubchannelWrapper> LookupSubchannel(absl::string_view address);
 
   void UpdateAddressMap(const absl::StatusOr<ServerAddressList>& addresses);
 
