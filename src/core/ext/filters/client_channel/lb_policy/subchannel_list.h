@@ -200,6 +200,10 @@ class SubchannelList : public DualRefCounted<SubchannelListType> {
   // Resets connection backoff of all subchannels.
   void ResetBackoffLocked();
 
+  // Returns true if all subchannels have seen their initial
+  // connectivity state notifications.
+  bool AllSubchannelsSeenInitialState();
+
   void Orphan() override;
 
  protected:
@@ -433,6 +437,15 @@ void SubchannelList<SubchannelListType,
   for (auto& sd : subchannels_) {
     sd->ResetBackoffLocked();
   }
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+bool SubchannelList<SubchannelListType,
+                    SubchannelDataType>::AllSubchannelsSeenInitialState() {
+  for (size_t i = 0; i < num_subchannels(); ++i) {
+    if (!subchannel(i)->connectivity_state().has_value()) return false;
+  }
+  return true;
 }
 
 }  // namespace grpc_core

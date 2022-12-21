@@ -392,6 +392,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_like",
         "promise_status",
+        "try_seq",
         "//:gpr",
     ],
 )
@@ -408,6 +409,7 @@ grpc_cc_library(
         "map",
         "pipe",
         "promise_factory",
+        "try_seq",
         "//:gpr_platform",
     ],
 )
@@ -1374,6 +1376,22 @@ grpc_cc_library(
         "forkable",
         "time",
         "useful",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_base_hdrs",
+    srcs = [],
+    hdrs = [
+        "lib/event_engine/posix.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+    ],
+    deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
