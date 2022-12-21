@@ -895,6 +895,7 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -913,6 +914,7 @@ libs:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_concurrently.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
@@ -1625,8 +1627,8 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
   - src/core/lib/promise/sleep.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -2185,6 +2187,7 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -2203,6 +2206,7 @@ libs:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_concurrently.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
@@ -2551,8 +2555,8 @@ libs:
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
   - src/core/lib/promise/sleep.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -3633,6 +3637,7 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
@@ -3867,7 +3872,7 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -7024,6 +7029,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -7052,7 +7058,7 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
@@ -7370,6 +7376,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
@@ -7587,7 +7594,7 @@ targets:
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -8970,6 +8977,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -8998,7 +9006,7 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
@@ -9632,6 +9640,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
@@ -9659,7 +9668,7 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
@@ -11993,6 +12002,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_concurrently.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -12018,7 +12028,7 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/pipe.cc
+  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc

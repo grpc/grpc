@@ -19,10 +19,13 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
