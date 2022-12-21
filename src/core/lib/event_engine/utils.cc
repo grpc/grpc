@@ -19,8 +19,6 @@
 
 #include <algorithm>
 
-#include "absl/strings/str_cat.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/time.h"
@@ -28,8 +26,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string HandleToString(EventEngine::TaskHandle handle) {
-  return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
+std::string HandleToStringInternal(uintptr_t a, uintptr_t b) {
+  return absl::StrCat("{", a, ",", b, "}");
 }
 
 grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
