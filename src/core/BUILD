@@ -4455,6 +4455,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_lb_subchannel_list",
+        "grpc_stateful_session_filter",
         "json",
         "json_args",
         "json_object_loader",
@@ -4473,6 +4475,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:sockaddr_utils",
     ],
 )
 
