@@ -108,6 +108,11 @@ class SliceBuffer {
   /// associated slice.
   Slice RefSlice(size_t index) const;
 
+  const Slice& operator[](size_t index) const {
+    return grpc_event_engine::experimental::internal::SliceCast<Slice>(
+        slice_buffer_.slices[index]);
+  }
+
   /// The total number of bytes held by the SliceBuffer
   size_t Length() const { return slice_buffer_.length; }
 
