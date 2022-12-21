@@ -70,6 +70,7 @@ grpc_cc_library(
         "//:httpcli",
         "//:sockaddr_utils",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
         "//src/core:error",

@@ -60,12 +60,16 @@ WindowsEndpoint::WindowsEndpoint(
       handle_read_event_(this),
       handle_write_event_(this),
       executor_(executor) {
-  sockaddr addr;
+  char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
   int addr_len = sizeof(addr);
-  if (getsockname(socket_->socket(), &addr, &addr_len) < 0) {
-    grpc_core::Crash("Unrecoverable error: Failed to get local socket name.");
+  if (getsockname(socket_->socket(), reinterpret_cast<sockaddr*>(addr),
+                  &addr_len) < 0) {
+    grpc_core::Crash(
+        absl::StrCat("Unrecoverable error: Failed to get local socket name. ",
+        GRPC_WSA_ERROR(WSAGetLastError(), "getsockname").ToString());
   }
-  local_address_ = EventEngine::ResolvedAddress(&addr, addr_len);
+  local_address_ =
+      EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(addr), addr_len);
   local_address_string_ = *ResolvedAddressToURI(local_address_);
   peer_address_string_ = *ResolvedAddressToURI(peer_address_);
 }
