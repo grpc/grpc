@@ -32,7 +32,7 @@ RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
 RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem
 
-# we have a separate distribtest for netcoreapp3.1
-ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
+# we have a separate distribtest for netcoreapp2.1
+ENV SKIP_NETCOREAPP21_DISTRIBTEST=1
 # we have a separate distribtest for net5.0
 ENV SKIP_NET50_DISTRIBTEST=1
