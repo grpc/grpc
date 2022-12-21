@@ -559,7 +559,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // There can be any number of READY updates where the picker is still using
   // the old list followed by one READY update where the picker is using the
   // new list.  Returns a picker if the reported states match expectations.
-  absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   WaitForRoundRobinListChange(
       absl::Span<const absl::string_view> old_addresses,
       absl::Span<const absl::string_view> new_addresses,
@@ -574,9 +574,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           if (update.state != GRPC_CHANNEL_READY) return false;
           // Get enough picks to round-robin num_iterations times across all
           // expected addresses.
-          auto picks =
-              GetCompletePicks(update.picker.get(), call_attributes,
-                               new_addresses.size() * num_iterations, location);
+          auto picks = GetCompletePicks(update.picker.get(), num_picks,
+                                        call_attributes, location);
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
@@ -660,9 +659,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Gets num_picks complete picks from picker and returns the resulting
   // list of addresses, or nullopt if a non-complete pick was returned.
   absl::optional<std::vector<std::string>> GetCompletePicks(
-      LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, std::string> call_attributes,
-      size_t num_picks, SourceLocation location = SourceLocation()) {
+      LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
       return absl::nullopt;
@@ -700,8 +699,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> addresses,
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
-    auto picks = GetCompletePicks(picker, call_attributes,
-                                  num_iterations * addresses.size(), location);
+    auto picks = GetCompletePicks(picker, num_iterations * addresses.size(),
+                                  call_attributes, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
     EXPECT_TRUE(PicksAreRoundRobin(addresses, *picks))
         << "  Actual: " << absl::StrJoin(*picks, ", ")
