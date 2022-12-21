@@ -362,7 +362,6 @@ grpc_cc_test(
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
-        "//src/core:try_seq",
     ],
 )
 
