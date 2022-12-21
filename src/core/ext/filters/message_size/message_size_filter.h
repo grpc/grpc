@@ -24,21 +24,22 @@
 
 #include <memory>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/service_config/service_config_parser.h"
-
-extern const grpc_channel_filter grpc_message_size_filter;
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -84,6 +85,43 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
 
 absl::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
 absl::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
+
+struct MessageSizeFilterState {
+  size_t service_config_parser_index;
+  MessageSizeParsedConfig limits;
+};
+
+class ClientMessageSizeFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<ClientMessageSizeFilter> Create(const ChannelArgs& args,
+                                                        ChannelFilter::Args);
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  explicit ClientMessageSizeFilter(const ChannelArgs& args);
+
+  MessageSizeFilterState filter_state_;
+};
+
+class ServerMessageSizeFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<ServerMessageSizeFilter> Create(const ChannelArgs& args,
+                                                        ChannelFilter::Args);
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  explicit ServerMessageSizeFilter(const ChannelArgs& args);
+
+  MessageSizeFilterState filter_state_;
+};
 
 }  // namespace grpc_core
 

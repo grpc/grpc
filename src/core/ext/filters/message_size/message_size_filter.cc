@@ -20,7 +20,6 @@
 
 #include <new>
 
-#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -30,23 +29,26 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/map_pipe.h"
+#include "src/core/lib/promise/try_concurrently.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 
-static void recv_message_ready(void* user_data, grpc_error_handle error);
-static void recv_trailing_metadata_ready(void* user_data,
-                                         grpc_error_handle error);
-
 namespace grpc_core {
+
+const grpc_channel_filter ClientMessageSizeFilter::kFilter =
+    MakePromiseBasedFilter<ClientMessageSizeFilter, FilterEndpoint::kClient,
+                           kFilterExaminesInboundMessages |
+                               kFilterExaminesOutboundMessages>("message_size");
+const grpc_channel_filter ServerMessageSizeFilter::kFilter =
+    MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kServer,
+                           kFilterExaminesInboundMessages |
+                               kFilterExaminesOutboundMessages>("message_size");
 
 //
 // MessageSizeParsedConfig
@@ -123,251 +125,181 @@ size_t MessageSizeParser::ParserIndex() {
       parser_name());
 }
 
-}  // namespace grpc_core
+//
+// ClientMessageSizeFilter
+//
+
+absl::StatusOr<ClientMessageSizeFilter> ClientMessageSizeFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args cfargs) {
+  return ClientMessageSizeFilter(args);
+}
+
+ClientMessageSizeFilter::ClientMessageSizeFilter(const ChannelArgs& args)
+    : filter_state_{MessageSizeParser::ParserIndex(),
+                    MessageSizeParsedConfig::GetFromChannelArgs(args)} {}
+
+void MaybeUpdateLimitsFromCallContext(MessageSizeFilterState& filter_state,
+                                      const MessageSizeParsedConfig* config) {
+  // maybe override channel limits with call limits
+  if (config != nullptr) {
+    absl::optional<uint32_t> max_send_size =
+        filter_state.limits.max_send_size();
+    absl::optional<uint32_t> max_recv_size =
+        filter_state.limits.max_recv_size();
+    if (config->max_send_size().has_value() &&
+        (!max_send_size.has_value() ||
+         *config->max_send_size() < *max_send_size)) {
+      max_send_size = *config->max_send_size();
+    }
+    if (config->max_recv_size().has_value() &&
+        (!max_recv_size.has_value() ||
+         *config->max_recv_size() < *max_recv_size)) {
+      max_recv_size = *config->max_recv_size();
+    }
+    filter_state.limits = MessageSizeParsedConfig(max_send_size, max_recv_size);
+  }
+}
+
+ArenaPromise<ServerMetadataHandle> ClientMessageSizeFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  auto incoming_pipe =
+      PipeMapper<MessageHandle>::Intercept(*call_args.incoming_messages);
+  auto outgoing_pipe =
+      PipeMapper<MessageHandle>::Intercept(*call_args.outgoing_messages);
+
+  MaybeUpdateLimitsFromCallContext(
+      filter_state_, MessageSizeParsedConfig::GetFromCallContext(
+                         GetContext<grpc_call_context_element>(),
+                         filter_state_.service_config_parser_index));
+
+  return TryConcurrently(next_promise_factory(std::move(call_args)))
+      .NecessaryPush(outgoing_pipe.TakeAndRun(
+          [&limits = filter_state_.limits](
+              MessageHandle handle) -> absl::StatusOr<MessageHandle> {
+            if (limits.max_send_size().has_value() &&
+                limits.max_send_size().value() < handle->payload()->Length()) {
+              return absl::ResourceExhaustedError(absl::StrFormat(
+                  "Sent message larger than max (%u vs. %d)",
+                  handle->payload()->Length(), limits.max_send_size().value()));
+            }
+            return handle;
+          }))
+      .Pull(incoming_pipe.TakeAndRun(
+          [&limits = filter_state_.limits](
+              MessageHandle handle) -> absl::StatusOr<MessageHandle> {
+            if (limits.max_recv_size().has_value() &&
+                limits.max_recv_size().value() < handle->payload()->Length()) {
+              return absl::ResourceExhaustedError(absl::StrFormat(
+                  "Received message larger than max (%u vs. %d)",
+                  handle->payload()->Length(), limits.max_send_size().value()));
+            }
+            return handle;
+          }));
+}
+
+//
+// ServerMessageSizeFilter
+//
+
+absl::StatusOr<ServerMessageSizeFilter> ServerMessageSizeFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
+  return ServerMessageSizeFilter(args);
+}
+
+ServerMessageSizeFilter::ServerMessageSizeFilter(const ChannelArgs& args)
+    : filter_state_{MessageSizeParser::ParserIndex(),
+                    MessageSizeParsedConfig::GetFromChannelArgs(args)} {}
+
+ArenaPromise<ServerMetadataHandle> ServerMessageSizeFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  auto incoming_pipe =
+      PipeMapper<MessageHandle>::Intercept(*call_args.incoming_messages);
+  auto outgoing_pipe =
+      PipeMapper<MessageHandle>::Intercept(*call_args.outgoing_messages);
+
+  MaybeUpdateLimitsFromCallContext(
+      filter_state_, MessageSizeParsedConfig::GetFromCallContext(
+                         GetContext<grpc_call_context_element>(),
+                         filter_state_.service_config_parser_index));
+
+  return TryConcurrently(next_promise_factory(std::move(call_args)))
+      .Push(outgoing_pipe.TakeAndRun(
+          [&limits = filter_state_.limits](
+              MessageHandle handle) -> absl::StatusOr<MessageHandle> {
+            if (limits.max_send_size().has_value() &&
+                limits.max_send_size().value() < handle->payload()->Length()) {
+              return absl::ResourceExhaustedError(absl::StrFormat(
+                  "Sent message larger than max (%u vs. %d)",
+                  handle->payload()->Length(), limits.max_send_size().value()));
+            }
+            return handle;
+          }))
+      .NecessaryPull(incoming_pipe.TakeAndRun(
+          [&limits = filter_state_.limits](
+              MessageHandle handle) -> absl::StatusOr<MessageHandle> {
+            if (limits.max_recv_size().has_value() &&
+                limits.max_recv_size().value() < handle->payload()->Length()) {
+              return absl::ResourceExhaustedError(absl::StrFormat(
+                  "Received message larger than max (%u vs. %d)",
+                  handle->payload()->Length(), limits.max_send_size().value()));
+            }
+            return handle;
+          }));
+}
 
 namespace {
-struct channel_data {
-  grpc_core::MessageSizeParsedConfig limits;
-  const size_t service_config_parser_index{
-      grpc_core::MessageSizeParser::ParserIndex()};
-};
-
-struct call_data {
-  call_data(grpc_call_element* elem, const channel_data& chand,
-            const grpc_call_element_args& args)
-      : call_combiner(args.call_combiner), limits(chand.limits) {
-    GRPC_CLOSURE_INIT(&recv_message_ready, ::recv_message_ready, elem,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
-                      ::recv_trailing_metadata_ready, elem,
-                      grpc_schedule_on_exec_ctx);
-    // Get max sizes from channel data, then merge in per-method config values.
-    // Note: Per-method config is only available on the client, so we
-    // apply the max request size to the send limit and the max response
-    // size to the receive limit.
-    const grpc_core::MessageSizeParsedConfig* config_from_call_context =
-        grpc_core::MessageSizeParsedConfig::GetFromCallContext(
-            args.context, chand.service_config_parser_index);
-    if (config_from_call_context != nullptr) {
-      absl::optional<uint32_t> max_send_size = limits.max_send_size();
-      absl::optional<uint32_t> max_recv_size = limits.max_recv_size();
-      if (config_from_call_context->max_send_size().has_value() &&
-          (!max_send_size.has_value() ||
-           *config_from_call_context->max_send_size() < *max_send_size)) {
-        max_send_size = *config_from_call_context->max_send_size();
-      }
-      if (config_from_call_context->max_recv_size().has_value() &&
-          (!max_recv_size.has_value() ||
-           *config_from_call_context->max_recv_size() < *max_recv_size)) {
-        max_recv_size = *config_from_call_context->max_recv_size();
-      }
-      limits = grpc_core::MessageSizeParsedConfig(max_send_size, max_recv_size);
-    }
-  }
-
-  ~call_data() {}
-
-  grpc_core::CallCombiner* call_combiner;
-  grpc_core::MessageSizeParsedConfig limits;
-  // Receive closures are chained: we inject this closure as the
-  // recv_message_ready up-call on transport_stream_op, and remember to
-  // call our next_recv_message_ready member after handling it.
-  grpc_closure recv_message_ready;
-  grpc_closure recv_trailing_metadata_ready;
-  // The error caused by a message that is too large, or absl::OkStatus()
-  grpc_error_handle error;
-  // Used by recv_message_ready.
-  absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
-  // Original recv_message_ready callback, invoked after our own.
-  grpc_closure* next_recv_message_ready = nullptr;
-  // Original recv_trailing_metadata callback, invoked after our own.
-  grpc_closure* original_recv_trailing_metadata_ready;
-  bool seen_recv_trailing_metadata = false;
-  grpc_error_handle recv_trailing_metadata_error;
-};
-
-}  // namespace
-
-// Callback invoked when we receive a message.  Here we check the max
-// receive message size.
-static void recv_message_ready(void* user_data, grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->recv_message->has_value() &&
-      calld->limits.max_recv_size().has_value() &&
-      (*calld->recv_message)->Length() >
-          static_cast<size_t>(*calld->limits.max_recv_size())) {
-    grpc_error_handle new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE(absl::StrFormat(
-            "Received message larger than max (%u vs. %d)",
-            (*calld->recv_message)->Length(), *calld->limits.max_recv_size())),
-        grpc_core::StatusIntProperty::kRpcStatus,
-        GRPC_STATUS_RESOURCE_EXHAUSTED);
-    error = grpc_error_add_child(error, new_error);
-    calld->error = error;
-  }
-  // Invoke the next callback.
-  grpc_closure* closure = calld->next_recv_message_ready;
-  calld->next_recv_message_ready = nullptr;
-  if (calld->seen_recv_trailing_metadata) {
-    /* We might potentially see another RECV_MESSAGE op. In that case, we do not
-     * want to run the recv_trailing_metadata_ready closure again. The newer
-     * RECV_MESSAGE op cannot cause any errors since the transport has already
-     * invoked the recv_trailing_metadata_ready closure and all further
-     * RECV_MESSAGE ops will get null payloads. */
-    calld->seen_recv_trailing_metadata = false;
-    GRPC_CALL_COMBINER_START(calld->call_combiner,
-                             &calld->recv_trailing_metadata_ready,
-                             calld->recv_trailing_metadata_error,
-                             "continue recv_trailing_metadata_ready");
-  }
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
-}
-
-// Callback invoked on completion of recv_trailing_metadata
-// Notifies the recv_trailing_metadata batch of any message size failures
-static void recv_trailing_metadata_ready(void* user_data,
-                                         grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->next_recv_message_ready != nullptr) {
-    calld->seen_recv_trailing_metadata = true;
-    calld->recv_trailing_metadata_error = error;
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
-                            "deferring recv_trailing_metadata_ready until "
-                            "after recv_message_ready");
-    return;
-  }
-  error = grpc_error_add_child(error, calld->error);
-  // Invoke the next callback.
-  grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_recv_trailing_metadata_ready, error);
-}
-
-// Start transport stream op.
-static void message_size_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Check max send message size.
-  if (op->send_message && calld->limits.max_send_size().has_value() &&
-      op->payload->send_message.send_message->Length() >
-          static_cast<size_t>(*calld->limits.max_send_size())) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        op,
-        grpc_error_set_int(GRPC_ERROR_CREATE(absl::StrFormat(
-                               "Sent message larger than max (%u vs. %d)",
-                               op->payload->send_message.send_message->Length(),
-                               *calld->limits.max_send_size())),
-                           grpc_core::StatusIntProperty::kRpcStatus,
-                           GRPC_STATUS_RESOURCE_EXHAUSTED),
-        calld->call_combiner);
-    return;
-  }
-  // Inject callback for receiving a message.
-  if (op->recv_message) {
-    calld->next_recv_message_ready =
-        op->payload->recv_message.recv_message_ready;
-    calld->recv_message = op->payload->recv_message.recv_message;
-    op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
-  }
-  // Inject callback for receiving trailing metadata.
-  if (op->recv_trailing_metadata) {
-    calld->original_recv_trailing_metadata_ready =
-        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &calld->recv_trailing_metadata_ready;
-  }
-  // Chain to the next filter.
-  grpc_call_next_op(elem, op);
-}
-
-// Constructor for call_data.
-static grpc_error_handle message_size_init_call_elem(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  new (elem->call_data) call_data(elem, *chand, *args);
-  return absl::OkStatus();
-}
-
-// Destructor for call_data.
-static void message_size_destroy_call_elem(
-    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
-    grpc_closure* /*ignored*/) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->~call_data();
-}
-
-// Constructor for channel_data.
-static grpc_error_handle message_size_init_channel_elem(
-    grpc_channel_element* elem, grpc_channel_element_args* args) {
-  GPR_ASSERT(!args->is_last);
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  new (chand) channel_data();
-  chand->limits = grpc_core::MessageSizeParsedConfig::GetFromChannelArgs(
-      grpc_core::ChannelArgs::FromC(args->channel_args));
-  return absl::OkStatus();
-}
-
-// Destructor for channel_data.
-static void message_size_destroy_channel_elem(grpc_channel_element* elem) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  chand->~channel_data();
-}
-
-const grpc_channel_filter grpc_message_size_filter = {
-    message_size_start_transport_stream_op_batch,
-    nullptr,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    message_size_init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    message_size_destroy_call_elem,
-    sizeof(channel_data),
-    message_size_init_channel_elem,
-    grpc_channel_stack_no_post_init,
-    message_size_destroy_channel_elem,
-    grpc_channel_next_get_info,
-    "message_size"};
-
-// Used for GRPC_CLIENT_SUBCHANNEL
-static bool maybe_add_message_size_filter_subchannel(
-    grpc_core::ChannelStackBuilder* builder) {
-  if (builder->channel_args().WantMinimalStack()) {
-    return true;
-  }
-  builder->PrependFilter(&grpc_message_size_filter);
-  return true;
-}
-
-// Used for GRPC_CLIENT_DIRECT_CHANNEL and GRPC_SERVER_CHANNEL. Adds the filter
-// only if message size limits or service config is specified.
-static bool maybe_add_message_size_filter(
-    grpc_core::ChannelStackBuilder* builder) {
+bool maybe_add_message_size_filter(ChannelStackBuilder* builder,
+                                   const grpc_channel_filter* filter,
+                                   bool check_limits) {
   auto channel_args = builder->channel_args();
   if (channel_args.WantMinimalStack()) {
     return true;
   }
-  grpc_core::MessageSizeParsedConfig limits =
-      grpc_core::MessageSizeParsedConfig::GetFromChannelArgs(channel_args);
+  if (!check_limits) {
+    builder->PrependFilter(filter);
+    return true;
+  }
+  MessageSizeParsedConfig limits =
+      MessageSizeParsedConfig::GetFromChannelArgs(channel_args);
   const bool enable =
       limits.max_send_size().has_value() ||
       limits.max_recv_size().has_value() ||
       channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value();
-  if (enable) builder->PrependFilter(&grpc_message_size_filter);
+  if (enable) {
+    builder->PrependFilter(filter);
+  }
   return true;
 }
 
-namespace grpc_core {
+bool maybe_add_message_size_filter_client_direct(ChannelStackBuilder* builder) {
+  return maybe_add_message_size_filter(builder,
+                                       &ClientMessageSizeFilter::kFilter,
+                                       /*check_limits=*/true);
+}
+
+bool maybe_add_message_size_filter_subchannel(ChannelStackBuilder* builder) {
+  return maybe_add_message_size_filter(builder,
+                                       &ClientMessageSizeFilter::kFilter,
+                                       /*check_limits=*/false);
+}
+
+bool maybe_add_message_size_filter_server(ChannelStackBuilder* builder) {
+  return maybe_add_message_size_filter(builder,
+                                       &ServerMessageSizeFilter::kFilter,
+                                       /*check_limits=*/true);
+}
+}  // namespace
+
 void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
   MessageSizeParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       maybe_add_message_size_filter_subchannel);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                         GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                         maybe_add_message_size_filter);
+  builder->channel_init()->RegisterStage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_message_size_filter_client_direct);
   builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL,
                                          GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                         maybe_add_message_size_filter);
+                                         maybe_add_message_size_filter_server);
 }
 }  // namespace grpc_core
