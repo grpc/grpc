@@ -42,10 +42,22 @@ git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
 # latest commit on the clang 15 branch
 cd ${IWYU_ROOT}/iwyu
 git checkout 7f0b6c304acf69c42bb7f6e03c63f836924cb7e0
+if [ $? -ne 0 ]; then
+  echo "Failed to checkout iwyu commit"
+  exit 1
+fi
 mkdir -p ${IWYU_ROOT}/iwyu_build
 cd ${IWYU_ROOT}/iwyu_build
 cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-15 ${IWYU_ROOT}/iwyu 
+if [ $? -ne 0 ]; then
+  echo "Failed to cmake iwyu"
+  exit 1
+fi
 make -j $CPU_COUNT
+if [ $? -ne 0 ]; then
+  echo "Failed to make iwyu"
+  exit 1
+fi
 cd ${IWYU_ROOT}
 
 # patch python shebang for our environment (we need python3, not python)
@@ -53,7 +65,7 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwy
 sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
 
 cat compile_commands.json                            \
-  | sed "s/ -DNDEBUG//g"                              \
+  | sed "s/ -DNDEBUG//g"                             \
   | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" \
   > compile_commands_for_iwyu.json
 

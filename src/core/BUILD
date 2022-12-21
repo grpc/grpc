@@ -1390,6 +1390,7 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/status",
+        "absl/status:statusor",
     ],
     deps = [
         "//:event_engine_base_hdrs",
