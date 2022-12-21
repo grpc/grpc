@@ -231,13 +231,6 @@ class RingHash : public LoadBalancingPolicy {
                                                absl::Status status);
 
    private:
-    bool AllSubchannelsSeenInitialState() {
-      for (size_t i = 0; i < num_subchannels(); ++i) {
-        if (!subchannel(i)->connectivity_state().has_value()) return false;
-      }
-      return true;
-    }
-
     size_t num_idle_;
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;

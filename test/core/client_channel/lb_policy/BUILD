@@ -53,6 +53,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "round_robin_test",
+    srcs = ["round_robin_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:channel_args",
+        "//src/core:grpc_lb_policy_round_robin",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "outlier_detection_lb_config_parser_test",
     srcs = ["outlier_detection_lb_config_parser_test.cc"],
     external_deps = [
