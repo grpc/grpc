@@ -767,14 +767,18 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "latch",
+    external_deps = ["absl/strings"],
     language = "c++",
     public_hdrs = [
         "lib/promise/latch.h",
     ],
     deps = [
+        "activity",
         "intra_activity_waiter",
         "poll",
+        "promise_trace",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
