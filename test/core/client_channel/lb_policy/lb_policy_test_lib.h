@@ -576,7 +576,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           if (update.state != GRPC_CHANNEL_READY) return false;
           // Get enough picks to round-robin num_iterations times across all
           // expected addresses.
-          auto picks = GetCompletePicks(update.picker.get(), num_iterations,
+          auto picks = GetCompletePicks(update.picker.get(), num_picks,
                                         call_attributes, location);
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
