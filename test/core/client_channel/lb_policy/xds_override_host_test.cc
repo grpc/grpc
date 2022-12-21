@@ -40,34 +40,30 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
          Json::Object{{"childPolicy", Json::Array{{child_policy_config}}}}}}});
   }
 
-  absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
-    absl::optional<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
-        maybe_picker;
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
                           policy_.get()),
               absl::OkStatus());
     ExpectConnectingUpdate();
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
       EXPECT_NE(subchannel, nullptr);
-      if (subchannel == nullptr) {
-        return absl::nullopt;
-      }
+      if (subchannel == nullptr) return nullptr;
       EXPECT_TRUE(subchannel->ConnectionRequested());
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
       if (i == 0) {
-        auto picker = WaitForConnected();
+        picker = WaitForConnected();
         ExpectRoundRobinPicks(picker.get(), {addresses[0]});
       } else {
-        maybe_picker = WaitForRoundRobinListChange(
+        picker = WaitForRoundRobinListChange(
             absl::MakeSpan(addresses).subspan(0, i),
             absl::MakeSpan(addresses).subspan(0, i + 1));
       }
     }
-    return maybe_picker;
+    return picker;
   }
 
   OrphanablePtr<LoadBalancingPolicy> policy_;
@@ -89,80 +85,72 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto maybe_picker = ExpectStartupWithRoundRobin(kAddresses);
-  ASSERT_TRUE(maybe_picker.has_value());
+  auto picker = ExpectStartupWithRoundRobin(kAddresses);
+  ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> call_attributes{
       {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
-  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
-            kAddresses[1]);
-  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
-            kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
   call_attributes[XdsHostOverrideTypeName()] = std::string("127.0.0.1:441");
-  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
-            kAddresses[0]);
-  EXPECT_EQ(ExpectPickComplete(maybe_picker->get(), call_attributes),
-            kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelNotFound) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto maybe_picker = ExpectStartupWithRoundRobin(kAddresses);
-  ASSERT_TRUE(maybe_picker.has_value());
+  auto picker = ExpectStartupWithRoundRobin(kAddresses);
+  ASSERT_NE(picker, nullptr);
   std::map<UniqueTypeName, std::string> call_attributes{
       {XdsHostOverrideTypeName(), "no such host"}};
-  ExpectRoundRobinPicks(maybe_picker->get(), kAddresses, call_attributes);
+  ExpectRoundRobinPicks(picker.get(), kAddresses, call_attributes);
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto maybe_picker = ExpectStartupWithRoundRobin(kAddresses);
-  ASSERT_TRUE(maybe_picker.has_value());
+  auto picker = ExpectStartupWithRoundRobin(kAddresses);
+  ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> call_attributes{
       {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
-  ExpectRoundRobinPicks(maybe_picker->get(), {kAddresses[1]}, call_attributes);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[1]}, call_attributes);
   // Some other address is gone
-  EXPECT_EQ(
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"},
-                              MakeXdsOverrideHostConfig("round_robin")),
-                  policy_.get()),
-      absl::OkStatus());
-  auto picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
-  ASSERT_TRUE(picks.has_value());
-  std::vector<absl::string_view> pick_addresses(picks->begin(), picks->end());
-  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, pick_addresses));
-  WaitForRoundRobinListChange(
-      {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"},
-      {"ipv4:127.0.0.1:442"}, call_attributes);
+  EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[1]},
+                                    MakeXdsOverrideHostConfig()),
+                        policy_.get()),
+            absl::OkStatus());
+  // Wait for LB policy to return a new picker that uses the updated
+  // addresses.  We can't use the host override for this, because then
+  // we won't know when the new picker is actually using all of the new
+  // addresses.
+  picker =
+      WaitForRoundRobinListChange(kAddresses, {kAddresses[0], kAddresses[1]});
+  // Make sure host override still works.
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[1]}, call_attributes);
   // "Our" address is gone so others get returned in round-robin order
-  EXPECT_EQ(
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
-                              MakeXdsOverrideHostConfig("round_robin")),
-                  policy_.get()),
-      absl::OkStatus());
-  picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
-  ASSERT_TRUE(picks.has_value());
-  pick_addresses = {picks->begin(), picks->end()};
-  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:441"}, pick_addresses));
-  WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"},
-                              {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
-                              call_attributes);
+  EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[2]},
+                                    MakeXdsOverrideHostConfig()),
+                        policy_.get()),
+            absl::OkStatus());
+  // Wait for LB policy to return the new picker.
+  // In this case, we can pass call_attributes while we wait instead of
+  // checking again afterward, because the host override won't actually
+  // be used.
+  WaitForRoundRobinListChange({kAddresses[0], kAddresses[1]},
+                              {kAddresses[0], kAddresses[2]}, call_attributes);
   // And now it is back
-  EXPECT_EQ(
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"},
-                              MakeXdsOverrideHostConfig("round_robin")),
-                  policy_.get()),
-      absl::OkStatus());
-  picks = GetCompletePicks(ExpectState(GRPC_CHANNEL_READY).get(), {}, 2);
-  ASSERT_TRUE(picks.has_value());
-  pick_addresses = {picks->begin(), picks->end()};
-  EXPECT_TRUE(PicksAreRoundRobin({"ipv4:127.0.0.1:442"}, pick_addresses));
-  WaitForRoundRobinListChange({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
-                              {"ipv4:127.0.0.1:442"}, call_attributes);
+  EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[1], kAddresses[2]},
+                                    MakeXdsOverrideHostConfig()),
+                        policy_.get()),
+            absl::OkStatus());
+  // Wait for LB policy to return the new picker.
+  picker = WaitForRoundRobinListChange({kAddresses[0], kAddresses[2]},
+                                       {kAddresses[1], kAddresses[2]});
+  // Make sure host override works.
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[1]}, call_attributes);
 }
 
 TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {

@@ -36,6 +36,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/memory_allocator_impl.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/internal/slice_cast.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_allocator.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_request.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
@@ -1032,6 +1033,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.cc" role="src" />

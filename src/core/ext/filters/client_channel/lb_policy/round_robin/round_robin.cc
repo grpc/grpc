@@ -355,12 +355,14 @@ void RoundRobin::RoundRobinSubchannelList::
   // If this is latest_pending_subchannel_list_, then swap it into
   // subchannel_list_ in the following cases:
   // - subchannel_list_ has no READY subchannels.
-  // - This list has at least one READY subchannel.
+  // - This list has at least one READY subchannel and we have seen the
+  //   initial connectivity state notification for all subchannels.
   // - All of the subchannels in this list are in TRANSIENT_FAILURE.
   //   (This may cause the channel to go from READY to TRANSIENT_FAILURE,
   //   but we're doing what the control plane told us to do.)
   if (p->latest_pending_subchannel_list_.get() == this &&
-      (p->subchannel_list_->num_ready_ == 0 || num_ready_ > 0 ||
+      (p->subchannel_list_->num_ready_ == 0 ||
+       (num_ready_ > 0 && AllSubchannelsSeenInitialState()) ||
        num_transient_failure_ == num_subchannels())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       const std::string old_counters_string =
