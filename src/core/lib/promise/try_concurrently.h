@@ -200,9 +200,6 @@ class TryConcurrently {
         done_bits_ |= 1;
         Destruct(&main_);
         Construct(&result_, std::move(*status));
-        if (!IsStatusOk(result_)) {
-          return std::move(result_);
-        }
       }
     }
     r = post_main_.template Run<Result, 1 + PreMain::Size()>(done_bits_);
