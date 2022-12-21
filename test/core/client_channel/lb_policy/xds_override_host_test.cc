@@ -14,9 +14,15 @@
 // limitations under the License.
 //
 
+#include <array>
+#include <map>
+#include <string>
 #include <unordered_set>
 
-#include "gmock/gmock.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
+#include "gtest/gtest.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
