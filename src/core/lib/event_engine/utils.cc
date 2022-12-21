@@ -19,6 +19,8 @@
 
 #include <algorithm>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/time.h"
