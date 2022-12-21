@@ -11987,6 +11987,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/try_concurrently.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
