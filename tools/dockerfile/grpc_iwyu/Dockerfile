@@ -18,12 +18,7 @@
 FROM silkeh/clang:15-bullseye
 
 # Install prerequisites for the iwyu script
-RUN apt-get update \
-    && apt-get install -y \
-    python3 jq git cmake python zlib1g-dev libtinfo-dev \
-    clang-15 clang-tools-15 clang-15-doc libclang-common-15-dev libclang-15-dev libclang1-15 clang-format-15 \
-    python3-clang-15 clangd-15 clang-tidy-15 \
-    && apt-get clean
+RUN apt-get update && apt-get install -y python3 jq git cmake python zlib1g-dev libtinfo-dev libclang-15-dev && apt-get clean
 ADD iwyu.sh /
 
 # When running locally, we'll be impersonating the current user, so we need
