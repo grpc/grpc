@@ -29,7 +29,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
