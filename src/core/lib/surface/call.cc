@@ -2039,28 +2039,27 @@ class PromiseBasedCall : public Call,
     // The following correspond with the batch operations from above
     kReceiveInitialMetadata,
     kReceiveStatusOnClient,
+    kReceiveCloseOnServer = kReceiveStatusOnClient,
     kSendMessage,
     kReceiveMessage,
-    kReceiveCloseOnServer,
     kSendStatusFromServer,
+    kSendCloseFromClient = kSendStatusFromServer,
   };
 
-  static constexpr const char* PendingOpString(PendingOp reason) {
+  const char* PendingOpString(PendingOp reason) const {
     switch (reason) {
       case PendingOp::kStartingBatch:
         return "StartingBatch";
       case PendingOp::kReceiveInitialMetadata:
         return "ReceiveInitialMetadata";
       case PendingOp::kReceiveStatusOnClient:
-        return "ReceiveStatusOnClient";
+        return is_client() ? "ReceiveStatusOnClient" : "ReceiveCloseOnServer";
       case PendingOp::kSendMessage:
         return "SendMessage";
       case PendingOp::kReceiveMessage:
         return "ReceiveMessage";
-      case PendingOp::kReceiveCloseOnServer:
-        return "ReceiveCloseOnServer";
       case PendingOp::kSendStatusFromServer:
-        return "SendStatusFromServer";
+        return is_client() ? "SendCloseFromClient" : "SendStatusFromServer";
     }
     return "Unknown";
   }
@@ -2083,7 +2082,8 @@ class PromiseBasedCall : public Call,
   void FinishOpOnCompletion(Completion* completion, PendingOp reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Mark the completion as failed. Does not finish it.
-  void FailCompletion(const Completion& completion);
+  void FailCompletion(const Completion& completion,
+                      SourceLocation source_location = {});
   // Run the promise polling loop until it stalls.
   void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Update the promise state once.
@@ -2379,6 +2379,7 @@ PromiseBasedCall::Completion PromiseBasedCall::AddOpToCompletion(
     gpr_log(GPR_INFO, "%s[call] AddOpToCompletion %s %s", DebugTag().c_str(),
             completion.ToString().c_str(), PendingOpString(reason));
   }
+  GPR_ASSERT(completion.has_value());
   auto& pending_op_bits =
       completion_info_[completion.index()].pending.pending_op_bits;
   GPR_ASSERT((pending_op_bits & PendingOpBit(reason)) == 0);
@@ -2386,9 +2387,11 @@ PromiseBasedCall::Completion PromiseBasedCall::AddOpToCompletion(
   return Completion(completion.index());
 }
 
-void PromiseBasedCall::FailCompletion(const Completion& completion) {
+void PromiseBasedCall::FailCompletion(const Completion& completion,
+                                      SourceLocation location) {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] FailCompletion %s", DebugTag().c_str(),
+    gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_ERROR,
+            "%s[call] FailCompletion %s", DebugTag().c_str(),
             completion.ToString().c_str());
   }
   completion_info_[completion.index()].pending.success = false;
@@ -2706,6 +2709,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
+  Completion close_send_completion_ ABSL_GUARDED_BY(mu());
   bool is_trailers_only_ ABSL_GUARDED_BY(mu());
 };
 
@@ -2802,7 +2806,9 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         StartRecvMessage(op, completion, &server_to_client_messages_.receiver);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        client_to_server_messages_.sender.Close();
+        close_send_completion_ =
+            AddOpToCompletion(completion, PendingOp::kSendCloseFromClient);
+        GPR_ASSERT(close_send_completion_.has_value());
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
@@ -2868,6 +2874,11 @@ void ClientPromiseBasedCall::UpdateOnce() {
   if (!PollSendMessage()) {
     Finish(ServerMetadataFromStatus(absl::Status(
         absl::StatusCode::kInternal, "Failed to send message to server")));
+  }
+  if (!is_sending() && close_send_completion_.has_value()) {
+    client_to_server_messages_.sender.Close();
+    FinishOpOnCompletion(&close_send_completion_,
+                         PendingOp::kSendCloseFromClient);
   }
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> r = promise_();
