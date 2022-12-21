@@ -70,9 +70,9 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
   static bool PicksAreWeightedRoundRobin(
       std::map<absl::string_view, size_t> expected,
-      absl::Span<const absl::string_view> picks) {
+      absl::Span<const std::string> picks) {
     std::map<absl::string_view, size_t> actual;
-    for (auto address : picks) {
+    for (const auto& address : picks) {
       ++actual.emplace(address, 0).first->second;
     }
     gpr_log(GPR_INFO, "EXPECTED: %s",
@@ -136,9 +136,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         }
       }
       // If the picks have the expected weights, we're done.
-      std::vector<absl::string_view> pick_addresses(picks->begin(),
-                                                    picks->end());
-      if (PicksAreWeightedRoundRobin(expected, pick_addresses)) return true;
+      if (PicksAreWeightedRoundRobin(expected, *picks)) return true;
       gpr_log(GPR_INFO, "WEIGHTS INCORRECT; TRYING AGAIN");
       // If we're out of time, give up.
       Timestamp now = Timestamp::Now();
