@@ -19,11 +19,13 @@
 
 #include <algorithm>
 #include <map>
+#include <queue>
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -34,11 +36,16 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
+#include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
+
+using ::testing::StrictMock;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::MockEventEngine;
 
 class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
  protected:
@@ -46,6 +53,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
    public:
     ConfigBuilder& SetEnableOobLoadReport(bool value) {
       json_["enableOobLoadReport"] = value;
+      return *this;
+    }
+    ConfigBuilder& SetOobReportingPeriod(Duration duration) {
+      json_["oobReportingPeriod"] = duration.ToJsonString();
       return *this;
     }
     ConfigBuilder& SetBlackoutPeriod(Duration duration) {
@@ -66,7 +77,49 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     Json::Object json_;
   };
 
-  WeightedRoundRobinTest() : lb_policy_(MakeLbPolicy("weighted_round_robin")) {}
+  WeightedRoundRobinTest() {
+    mock_ee_ = std::make_shared<StrictMock<MockEventEngine>>();
+    event_engine_ = mock_ee_;
+    auto capture = [this](absl::AnyInvocable<void()> callback) {
+      timer_callbacks_.push(std::move(callback));
+    };
+    ON_CALL(*mock_ee_,
+            RunAfter(::testing::_, ::testing::A<absl::AnyInvocable<void()>>()))
+        .WillByDefault(::testing::DoAll(
+            ::testing::WithArg<1>(capture),
+            ::testing::Return(EventEngine::TaskHandle{1, 2})));
+    lb_policy_ = MakeLbPolicy("weighted_round_robin");
+  }
+
+  ~WeightedRoundRobinTest() override {
+    EXPECT_TRUE(timer_callbacks_.empty())
+        << "WARNING: Test did not run all timer callbacks; running "
+           "outstanding callbacks to avoid blocking WRR destruction.";
+    while (!timer_callbacks_.empty()) {
+      RunTimerCallback();
+    }
+  }
+
+  void RunTimerCallback() {
+    ASSERT_FALSE(timer_callbacks_.empty());
+    ASSERT_NE(timer_callbacks_.front(), nullptr);
+    std::move(timer_callbacks_.front())();
+    timer_callbacks_.pop();
+  }
+
+  bool WaitForTimerCallback(Duration timeout = Duration::Seconds(10)) {
+    Timestamp deadline = Timestamp::Now() + timeout;
+    bool retval = false;
+    do {
+      if (!timer_callbacks_.empty()) {
+        RunTimerCallback();
+        retval = true;
+        break;
+      }
+      absl::SleepFor(absl::Milliseconds(500));
+    } while (Timestamp::Now() < deadline);
+    return retval;
+  }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   SendInitialUpdateAndWaitForConnected(
@@ -206,7 +259,16 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       ReportBackendMetrics(*picks, subchannel_call_trackers, backend_metrics);
       // If the picks have the expected weights, we're done.
       auto actual = MakePickMap(*picks);
-      if (expected == actual) return true;
+      if (expected == actual) {
+        // Do a couple more passes, just to make sure we're consistently
+        // returning the right weights.
+        for (size_t i = 0; i < 2; ++i) {
+          gpr_log(GPR_INFO, "verifying WRR picks...");
+          ExpectWeightedRoundRobinPicks(picker->get(), backend_metrics,
+                                        expected, location);
+        }
+        return true;
+      }
       gpr_log(GPR_INFO, "Did not get expected picks:\nExpected: %s\nActual: %s",
               PickMapString(expected).c_str(), PickMapString(actual).c_str());
       // Make sure each address is one of the expected addresses.
@@ -221,6 +283,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       Timestamp now = Timestamp::Now();
       EXPECT_LT(now, deadline) << location.file() << ":" << location.line();
       if (now >= deadline) return false;
+      // Wait for weights to be recalculated.
+      EXPECT_TRUE(WaitForTimerCallback());
       // Get a new picker if there is an update.
       if (!helper_->QueueEmpty()) {
         *picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus(), location);
@@ -232,48 +296,9 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   }
 
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
+  std::shared_ptr<StrictMock<MockEventEngine>> mock_ee_;
+  std::queue<absl::AnyInvocable<void()>> timer_callbacks_;
 };
-
-TEST_F(WeightedRoundRobinTest, DevolvesToRoundRobinWithoutWeights) {
-  // Send address list to LB policy.
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  EXPECT_EQ(
-      ApplyUpdate(
-          BuildUpdate(kAddresses, ConfigBuilder().Build()), lb_policy_.get()),
-      absl::OkStatus());
-  // Expect the initial CONNECTNG update with a picker that queues.
-  ExpectConnectingUpdate();
-  // RR should have created a subchannel for each address.
-  for (size_t i = 0; i < kAddresses.size(); ++i) {
-    auto* subchannel = FindSubchannel(kAddresses[i]);
-    ASSERT_NE(subchannel, nullptr);
-    // RR should ask each subchannel to connect.
-    EXPECT_TRUE(subchannel->ConnectionRequested());
-    // The subchannel will connect successfully.
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-    // As each subchannel becomes READY, we should get a new picker that
-    // includes the behavior.  Note that there may be any number of
-    // duplicate updates for the previous state in the queue before the
-    // update that we actually want to see.
-    if (i == 0) {
-      // When the first subchannel becomes READY, accept any number of
-      // CONNECTING updates with a picker that queues followed by a READY
-      // update with a picker that repeatedly returns only the first address.
-      auto picker = WaitForConnected();
-      ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});
-    } else {
-      // When each subsequent subchannel becomes READY, we accept any number
-      // of READY updates where the picker returns only the previously
-      // connected subchannel(s) followed by a READY update where the picker
-      // returns the previously connected subchannel(s) *and* the newly
-      // connected subchannel.
-      WaitForRoundRobinListChange(absl::MakeSpan(kAddresses).subspan(0, i),
-                                  absl::MakeSpan(kAddresses).subspan(0, i + 1));
-    }
-  }
-}
 
 TEST_F(WeightedRoundRobinTest, Basic) {
   // Send address list to LB policy.
@@ -294,7 +319,7 @@ TEST_F(WeightedRoundRobinTest, Basic) {
       {{kAddresses[0], {100, 0.9}},
        {kAddresses[1], {100, 0.3}},
        {kAddresses[2], {100, 0.3}}},
-      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Backends stop reporting utilization, so all are weighted the same.
   WaitForWeightedRoundRobinPicks(
       &picker, {},

@@ -219,8 +219,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     };
 
     FakeHelper(LoadBalancingPolicyTest* test,
-               std::shared_ptr<WorkSerializer> work_serializer)
-        : test_(test), work_serializer_(std::move(work_serializer)) {}
+               std::shared_ptr<WorkSerializer> work_serializer,
+               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                   event_engine)
+        : test_(test),
+          work_serializer_(std::move(work_serializer)),
+          event_engine_(std::move(event_engine)) {}
 
     bool QueueEmpty() {
       MutexLock lock(&mu_);
@@ -328,11 +332,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     LoadBalancingPolicyTest* test_;
     std::shared_ptr<WorkSerializer> work_serializer_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine_;
+
     Mutex mu_;
     std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine_ =
-            grpc_event_engine::experimental::GetDefaultEventEngine();
   };
 
   // A fake MetadataInterface implementation, for use in PickArgs.
@@ -417,7 +421,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Creates a new FakeHelper for the new LB policy, and sets helper_ to
   // point to the FakeHelper.
   OrphanablePtr<LoadBalancingPolicy> MakeLbPolicy(absl::string_view name) {
-    auto helper = std::make_unique<FakeHelper>(this, work_serializer_);
+    auto helper =
+        std::make_unique<FakeHelper>(this, work_serializer_, event_engine_);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
                                       ChannelArgs()};
@@ -801,6 +806,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   std::shared_ptr<WorkSerializer> work_serializer_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
 };
