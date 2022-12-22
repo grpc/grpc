@@ -225,7 +225,7 @@ static grpc_error_handle prepare_socket(SOCKET sock,
 failure:
   GPR_ASSERT(!error.ok());
   auto addr_uri = grpc_sockaddr_to_uri(addr);
-  grpc_error_set_int(
+  std::ignore = grpc_error_set_int(
       grpc_error_set_str(
           GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
                                         &error, 1),
