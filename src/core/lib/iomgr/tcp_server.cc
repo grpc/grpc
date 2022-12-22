@@ -25,14 +25,14 @@ grpc_tcp_server_vtable* grpc_tcp_server_impl;
 grpc_error_handle grpc_tcp_server_create(
     grpc_closure* shutdown_complete,
     const grpc_event_engine::experimental::EndpointConfig& config,
-    grpc_tcp_server** server) {
-  return grpc_tcp_server_impl->create(shutdown_complete, config, server);
+    grpc_tcp_server_cb on_accept_cb, void* cb_arg, grpc_tcp_server** server) {
+  return grpc_tcp_server_impl->create(shutdown_complete, config, on_accept_cb,
+                                      cb_arg, server);
 }
 
 void grpc_tcp_server_start(grpc_tcp_server* server,
-                           const std::vector<grpc_pollset*>* pollsets,
-                           grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
-  grpc_tcp_server_impl->start(server, pollsets, on_accept_cb, cb_arg);
+                           const std::vector<grpc_pollset*>* pollsets) {
+  grpc_tcp_server_impl->start(server, pollsets);
 }
 
 grpc_error_handle grpc_tcp_server_add_port(grpc_tcp_server* s,

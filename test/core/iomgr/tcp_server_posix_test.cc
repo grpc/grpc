@@ -176,7 +176,7 @@ static void test_no_op(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   grpc_tcp_server_unref(s);
 }
 
@@ -191,10 +191,10 @@ static void test_no_op_with_start(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_no_op_with_start");
   std::vector<grpc_pollset*> empty_pollset;
-  grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &empty_pollset);
   grpc_tcp_server_unref(s);
 }
 
@@ -212,7 +212,7 @@ static void test_no_op_with_port(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -240,7 +240,7 @@ static void test_no_op_with_port_and_start(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port = -1;
 
@@ -252,7 +252,7 @@ static void test_no_op_with_port_and_start(void) {
   ASSERT_GT(port, 0);
 
   std::vector<grpc_pollset*> empty_pollset;
-  grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &empty_pollset);
 
   grpc_tcp_server_unref(s);
 }
@@ -344,7 +344,7 @@ static void test_connect(size_t num_connects,
                 nullptr,
                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                     new_channel_args),
-                &s));
+                on_connect, nullptr, &s));
   unsigned port_num;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);
@@ -392,7 +392,7 @@ static void test_connect(size_t num_connects,
 
   std::vector<grpc_pollset*> test_pollset;
   test_pollset.push_back(g_pollset);
-  grpc_tcp_server_start(s, &test_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &test_pollset);
 
   if (dst_addrs != nullptr) {
     int ports[] = {svr_port, svr1_port};

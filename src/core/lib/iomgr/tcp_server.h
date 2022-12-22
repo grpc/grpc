@@ -67,10 +67,9 @@ typedef struct grpc_tcp_server_vtable {
   grpc_error_handle (*create)(
       grpc_closure* shutdown_complete,
       const grpc_event_engine::experimental::EndpointConfig& config,
-      grpc_tcp_server** server);
+      grpc_tcp_server_cb on_accept_cb, void* cb_arg, grpc_tcp_server** server);
   void (*start)(grpc_tcp_server* server,
-                const std::vector<grpc_pollset*>* pollsets,
-                grpc_tcp_server_cb on_accept_cb, void* cb_arg);
+                const std::vector<grpc_pollset*>* pollsets);
   grpc_error_handle (*add_port)(grpc_tcp_server* s,
                                 const grpc_resolved_address* addr,
                                 int* out_port);
@@ -91,12 +90,11 @@ typedef struct grpc_tcp_server_vtable {
 grpc_error_handle grpc_tcp_server_create(
     grpc_closure* shutdown_complete,
     const grpc_event_engine::experimental::EndpointConfig& config,
-    grpc_tcp_server** server);
+    grpc_tcp_server_cb on_accept_cb, void* cb_arg, grpc_tcp_server** server);
 
 // Start listening to bound ports
 void grpc_tcp_server_start(grpc_tcp_server* server,
-                           const std::vector<grpc_pollset*>* pollsets,
-                           grpc_tcp_server_cb on_accept_cb, void* cb_arg);
+                           const std::vector<grpc_pollset*>* pollsets);
 
 // Add a port to the server, returning the newly allocated port on success, or
 // -1 on failure.
