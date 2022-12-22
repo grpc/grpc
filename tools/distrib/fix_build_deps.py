@@ -50,6 +50,8 @@ EXTERNAL_DEPS = {
     # TODO(ctiller) remove this
     'absl/base/internal/endian.h':
         'absl/base',
+    'absl/base/dynamic_annotations.h':
+        'absl/base:dynamic_annotations',
     'absl/base/thread_annotations.h':
         'absl/base:core_headers',
     'absl/container/flat_hash_map.h':
