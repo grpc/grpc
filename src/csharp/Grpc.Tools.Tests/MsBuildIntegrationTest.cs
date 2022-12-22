@@ -176,12 +176,12 @@ namespace Grpc.Tools.Tests
 
             SetUpCommonPaths();
 
-            testId = $"{testName}_run{Guid.NewGuid().ToString()}";
+            testId = $"{testName}_run-{Guid.NewGuid().ToString()}";
             Console.WriteLine($"TestID for test: {testId}");
 
             // Paths for test data
-            testProjectDir = Path.Combine(testDataDir, testPath);
-            testOutDir = Path.Combine(testOutBaseDir, testId);
+            testProjectDir = NormalizePath(Path.Combine(testDataDir, testPath));
+            testOutDir = NormalizePath(Path.Combine(testOutBaseDir, testId));
         }
 
         /// <summary>
@@ -326,6 +326,7 @@ namespace Grpc.Tools.Tests
                                     break;
                                 }
                             }
+                            // TODO(jtattermusch): is the assert error message correct?
                             Assert.IsTrue(anyMatched,
                                  $"Missing value for '{protofile}' with argument '{argname}' expected: '{val}'\n" +
                                  $"  actual: '{actualValues[0]}'");
