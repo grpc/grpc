@@ -185,8 +185,6 @@ class PosixEngineListenerImpl
   // Set to true when the listener has started listening for new connections.
   // Any further bind operations would fail.
   bool started_ ABSL_GUARDED_BY(mu_) = false;
-  // Set to true when the listener has been shutdown.
-  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   // Pointer to a slice allocator factory object which can generate
   // unique slice allocators for each new incoming connection.
   std::unique_ptr<grpc_event_engine::experimental::MemoryAllocatorFactory>
@@ -205,7 +203,7 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
       : impl_(std::make_shared<PosixEngineListenerImpl>(
             std::move(on_accept), std::move(on_shutdown), config,
             std::move(memory_allocator_factory), poller, std::move(engine))) {}
-  ~PosixEngineListener() override { impl_->TriggerShutdown(); };
+  ~PosixEngineListener() override { ShutdownListeningFds(); };
   absl::StatusOr<int> Bind(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr)
       override {
@@ -223,9 +221,15 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
   }
   absl::Status Start() override { return impl_->Start(); }
 
-  void ShutdownListeningFds() override { impl_->TriggerShutdown(); }
+  void ShutdownListeningFds() override {
+    if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      impl_->TriggerShutdown();
+    }
+  }
 
  private:
+  // Set to true when the listener had been explicitly shutdown.
+  std::atomic<bool> shutdown_{false};
   std::shared_ptr<PosixEngineListenerImpl> impl_;
 };
 
