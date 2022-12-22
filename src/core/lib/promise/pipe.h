@@ -222,13 +222,13 @@ class Center {
 
   void MarkClosed() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
+      gpr_log(GPR_INFO, "%s", DebugOpString("MarkClosed").c_str());
     }
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
         value_state_ = ValueState::kClosed;
-        on_empty_.Wake();
+        on_full_.Wake();
         break;
       case ValueState::kReady:
         value_state_ = ValueState::kReadyClosed;

@@ -32,6 +32,7 @@
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 namespace promise_detail {
@@ -335,7 +336,13 @@ class BasicSeq {
   template <char I>
   struct RunStateStruct {
     BasicSeq* s;
-    Poll<Result> operator()() { return s->RunState<I>(); }
+    Poll<Result> operator()() {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_INFO, "%s SEQ[%p]: RunState %d",
+                Activity::current()->DebugTag().c_str(), this, I);
+      }
+      return s->RunState<I>();
+    }
   };
 
   // Similarly placate those compilers for

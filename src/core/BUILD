@@ -650,6 +650,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
+        "promise_trace",
         "switch",
         "//:gpr_platform",
     ],

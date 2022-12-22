@@ -189,9 +189,18 @@ class TryConcurrently {
       typename PollTraits<decltype(std::declval<PromiseLike<Main>>()())>::Type;
 
   Poll<Result> operator()() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "%sBEGIN POLL: done_bits=%x necessary_bits=%x",
+              DebugTag().c_str(), done_bits_, NecessaryBits());
+    }
     auto r = pre_main_.template Run<Result, 1>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "%sFAIL POLL PRE-MAIN: done_bits=%x necessary_bits=%x",
+                DebugTag().c_str(), done_bits_, NecessaryBits());
+      }
       return std::move(*status);
     }
     if ((done_bits_ & 1) == 0) {
@@ -205,11 +214,16 @@ class TryConcurrently {
     r = post_main_.template Run<Result, 1 + PreMain::Size()>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "%sFAIL POLL POST-MAIN: done_bits=%x necessary_bits=%x",
+                DebugTag().c_str(), done_bits_, NecessaryBits());
+      }
       return std::move(*status);
     }
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%sdone_bits=%x necessary_bits=%x", DebugTag().c_str(),
-              done_bits_, NecessaryBits());
+      gpr_log(GPR_DEBUG, "%sEND POLL: done_bits=%x necessary_bits=%x",
+              DebugTag().c_str(), done_bits_, NecessaryBits());
     }
     if ((done_bits_ & NecessaryBits()) == NecessaryBits()) {
       return std::move(result_);
