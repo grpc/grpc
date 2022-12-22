@@ -746,7 +746,7 @@ class SockToPolledFdMap {
           protocol);
       return s;
     }
-    grpc_tcp_set_non_block(s);
+    std::ignore = grpc_tcp_set_non_block(s);
     GrpcPolledFdWindows* polled_fd =
         new GrpcPolledFdWindows(s, map->mu_, af, type);
     GRPC_CARES_TRACE_LOG(
