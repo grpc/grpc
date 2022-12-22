@@ -178,6 +178,13 @@ TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
+                        {kAddresses[0], kAddresses[2]});
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
+                        {kAddresses[0], kAddresses[2]});
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::ResourceExhaustedError("Hmmmm"));
   ExpectReresolutionRequest();

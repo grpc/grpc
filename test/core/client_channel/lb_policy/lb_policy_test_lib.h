@@ -41,6 +41,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -160,10 +161,33 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     const std::string& address() const { return address_; }
 
+    void AssertValidConnectivityStateTransition(
+        grpc_connectivity_state to_state, grpc_connectivity_state from_state,
+        SourceLocation location = SourceLocation()) {
+      const std::map<grpc_connectivity_state,
+                     std::vector<grpc_connectivity_state>>
+          kValidTransitions = {
+              {GRPC_CHANNEL_IDLE, {GRPC_CHANNEL_CONNECTING}},
+              {GRPC_CHANNEL_CONNECTING,
+               {GRPC_CHANNEL_READY, GRPC_CHANNEL_TRANSIENT_FAILURE}},
+              {GRPC_CHANNEL_READY, {GRPC_CHANNEL_IDLE}}};
+      auto from = kValidTransitions.find(from_state);
+      // This is for unlikely event we introduce a completely new state
+      ASSERT_TRUE(from != kValidTransitions.end())
+          << "Unknown initial state " << ConnectivityStateName(from_state)
+          << location.file() << ":" << location.line();
+      EXPECT_TRUE(std::find(from->second.begin(), from->second.end(),
+                            to_state) != from->second.end())
+          << "Unsupported transition: " << ConnectivityStateName(from_state)
+          << " >> " << ConnectivityStateName(to_state) << "\n"
+          << location.file() << ":" << location.line();
+    }
+
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
     void SetConnectivityState(grpc_connectivity_state state,
-                              const absl::Status& status = absl::OkStatus()) {
+                              const absl::Status& status = absl::OkStatus(),
+                              SourceLocation location = SourceLocation()) {
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())
             << "bug in test: TRANSIENT_FAILURE must have non-OK status";
@@ -173,6 +197,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << " must have OK status: " << status;
       }
       MutexLock lock(&mu_);
+      AssertValidConnectivityStateTransition(state, state_tracker_.state(),
+                                             location);
       state_tracker_.SetState(state, status, "set from test");
     }
 
