@@ -112,7 +112,6 @@ grpc_client_security_context* grpc_client_security_context_create(
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
-  grpc_core::ExecCtx exec_ctx;
   grpc_client_security_context* c =
       static_cast<grpc_client_security_context*>(ctx);
   c->~grpc_client_security_context();
