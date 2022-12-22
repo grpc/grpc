@@ -105,6 +105,62 @@ TraceFlag grpc_client_channel_lb_call_trace(false, "client_channel_lb_call");
 //
 
 class ClientChannel::CallData {
+ protected:
+// FIXME: update args (and set chand_)
+  CallData(grpc_call_element* elem, const ClientChannel& chand,
+           const grpc_call_element_args& args);
+  virtual ~CallData();
+
+  Poll<absl::Status> CheckResolutionLocked(ClientChannel* chand);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
+
+  DynamicFilters* dynamic_filters() const {
+    return dynamic_filters_.get();
+  }
+
+ private:
+  virtual void ResetDeadline(Timestamp deadline) = 0;
+
+  // Applies service config to the call.  Must be invoked once we know
+  // that the resolver has returned results to the channel.
+  // If an error is returned, the error indicates the status with which
+  // the call should be failed.
+  grpc_error_handle ApplyServiceConfigToCallLocked(
+      grpc_call_element* elem, grpc_metadata_batch* initial_metadata)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
+  // Invoked when the resolver result is applied to the caller, on both
+  // success or failure.
+  static void ResolutionDone(void* arg, grpc_error_handle error);
+  // Removes the call (if present) from the channel's list of calls queued
+  // for name resolution.
+  void MaybeRemoveCallFromResolverQueuedCallsLocked(grpc_call_element* elem)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
+  // Adds the call (if not already present) to the channel's list of
+  // calls queued for name resolution.
+  void MaybeAddCallToResolverQueuedCallsLocked(grpc_call_element* elem)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
+
+  ClientChannel* chand_;
+
+  grpc_slice path_;  // Request path.
+
+// FIXME: remove?
+  grpc_closure resolution_done_closure_;
+
+  // Accessed while holding ClientChannel::resolution_mu_.
+  bool service_config_applied_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) =
+      false;
+  bool queued_pending_resolver_result_
+      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = false;
+  ClientChannel::ResolverQueuedCall resolver_queued_call_
+      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
+  ResolverQueuedCallCanceller* resolver_call_canceller_
+      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
+
+  RefCountedPtr<DynamicFilters> dynamic_filters_;
+};
+
+class ClientChannel::FilterBasedCallData {
  public:
   static grpc_error_handle Init(grpc_call_element* elem,
                                 const grpc_call_element_args* args);
@@ -166,25 +222,6 @@ class ClientChannel::CallData {
   // Resumes all pending batches on lb_call_.
   void PendingBatchesResume(grpc_call_element* elem);
 
-  // Applies service config to the call.  Must be invoked once we know
-  // that the resolver has returned results to the channel.
-  // If an error is returned, the error indicates the status with which
-  // the call should be failed.
-  grpc_error_handle ApplyServiceConfigToCallLocked(
-      grpc_call_element* elem, grpc_metadata_batch* initial_metadata)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
-  // Invoked when the resolver result is applied to the caller, on both
-  // success or failure.
-  static void ResolutionDone(void* arg, grpc_error_handle error);
-  // Removes the call (if present) from the channel's list of calls queued
-  // for name resolution.
-  void MaybeRemoveCallFromResolverQueuedCallsLocked(grpc_call_element* elem)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
-  // Adds the call (if not already present) to the channel's list of
-  // calls queued for name resolution.
-  void MaybeAddCallToResolverQueuedCallsLocked(grpc_call_element* elem)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
-
   static void RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
       void* arg, grpc_error_handle error);
 
@@ -198,7 +235,6 @@ class ClientChannel::CallData {
   // without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state_;
 
-  grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
   Timestamp deadline_;
   Arena* arena_;
@@ -208,22 +244,12 @@ class ClientChannel::CallData {
 
   grpc_polling_entity* pollent_ = nullptr;
 
+// FIXME: remove if keeping in parent class
   grpc_closure resolution_done_closure_;
-
-  // Accessed while holding ClientChannel::resolution_mu_.
-  bool service_config_applied_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) =
-      false;
-  bool queued_pending_resolver_result_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = false;
-  ClientChannel::ResolverQueuedCall resolver_queued_call_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
-  ResolverQueuedCallCanceller* resolver_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
 
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
 
-  RefCountedPtr<DynamicFilters> dynamic_filters_;
   RefCountedPtr<DynamicFilters::Call> dynamic_call_;
 
   // Batches are added to this list when received from above.
@@ -237,13 +263,23 @@ class ClientChannel::CallData {
   grpc_error_handle cancel_error_;
 };
 
+class ClientChannel::PromiseBasedCallData {
+ public:
+  auto MakeNameResolutionPromise() {
+    return [this]() -> Poll<absl::Status> {
+      MutexLock lock(&mu_);
+      return CheckResolutionLocked();
+    };
+  }
+};
+
 //
 // Filter vtable
 //
 
 const grpc_channel_filter ClientChannel::kFilterVtable = {
     ClientChannel::CallData::StartTransportStreamOpBatch,
-    nullptr,
+    ClientChannel::MakeCallPromise,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::CallData),
     ClientChannel::CallData::Init,
@@ -287,6 +323,14 @@ class DynamicTerminationFilter {
                                grpc_transport_op* /*op*/) {}
   static void GetChannelInfo(grpc_channel_element* /*elem*/,
                              const grpc_channel_info* /*info*/) {}
+
+  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      grpc_channel_element* elem, CallArgs call_args,
+      NextPromiseFactory next_promise_factory) {
+    auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
+    return chand->chand_->CreateLoadBalancedCallPromise(
+        std::move(call_args), /*is_transparent_retry=*/false);
+  }
 
  private:
   explicit DynamicTerminationFilter(const grpc_channel_args* args)
@@ -373,7 +417,7 @@ class DynamicTerminationFilter::CallData {
 
 const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::StartTransportStreamOpBatch,
-    nullptr,
+    DynamicTerminationFilter::MakeCallPromise,
     DynamicTerminationFilter::StartTransportOp,
     sizeof(DynamicTerminationFilter::CallData),
     DynamicTerminationFilter::CallData::Init,
@@ -944,6 +988,22 @@ class ClientChannel::ClientChannelControlHelper
 // ClientChannel implementation
 //
 
+ArenaPromise<ServerMetadataHandle> ClientChannel::MakeCallPromise(
+    grpc_channel_element* elem, CallArgs call_args,
+    NextPromiseFactory next_promise_factory) {
+  auto* self = static_cast<ClientChannel*>(elem->channel_data);
+  // TODO(roth): Is this the right lifetime story for calld?
+  auto* calld = GetContext<Arena>()->ManagedNew<PromiseBasedCallData>(self);
+  return TrySeq(
+      // Name resolution.
+      calld->MakeNameResolutionPromise(),
+      // Dynamic filter stack.
+      [calld, call_args = std::move(call_args)]() mutable {
+        return calld->dynamic_filters()->channel_stack()->MakeClientCallPromise(
+            std::move(call_args));
+      });
+}
+
 ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel->channel_stack());
@@ -1079,6 +1139,14 @@ ClientChannel::CreateLoadBalancedCall(
   return OrphanablePtr<LoadBalancedCall>(args.arena->New<LoadBalancedCall>(
       this, args, pollent, on_call_destruction_complete,
       call_dispatch_controller, is_transparent_retry));
+}
+
+ArenaPromise<ServerMetadataHandle> ClientChannel::CreateLoadBalancedCallPromise(
+    CallArgs call_args, bool is_transparent_retry) {
+  auto* lb_call =
+      GetContext<Arena>()->ManagedNew<PromiseBasedLoadBalancedCall>(
+          this, is_transparent_retry);
+  return lb_call->MakeCallPromise(std::move(call_args));
 }
 
 ChannelArgs ClientChannel::MakeSubchannelArgs(
@@ -3192,6 +3260,42 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           });
+}
+
+//
+// ClientChannel::PromiseBasedLoadBalancedCall
+//
+
+ClientChannel::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
+    ClientChannel* chand, bool is_transparent_retry)
+    : LoadBalancedCall(
+          chand,
+          [&]() {
+            auto* service_config_call_data =
+                static_cast<ClientChannelServiceConfigCallData*>(
+                    GetContext<grpc_call_context_element>()[
+                        GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+            return service_config_call_data->call_dispatch_controller();
+          }(),
+          is_transparent_retry) {}
+
+ClientChannel::PromiseBasedLoadBalancedCall::~PromiseBasedLoadBalancedCall() {
+// FIXME: finish args
+  lb_subchannel_call_tracker()->Finish(...);
+}
+
+ArenaPromise<ServerMetadataHandle>
+ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
+    CallArgs call_args) {
+  return TrySeq(
+      // LB pick.
+      MakeLbPickPromise(),
+      // Start call on subchannel.
+      [this, call_args = std::move(call_args)](
+          RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
+        call_dispatch_controller()->Commit();
+        return connected_subchannel->MakeCallPromise(std::move(call_args));
+      });
 }
 
 }  // namespace grpc_core
