@@ -19,7 +19,6 @@
 
 #include <new>
 #include <type_traits>
-#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
