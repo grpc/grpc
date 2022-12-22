@@ -33,7 +33,6 @@ python3.7 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.8 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.9 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.10 -m pip install -U cython setuptools==65.4.1 wheel --user
-python3.11 -m pip install -U cython setuptools==65.4.1 wheel --user
 
 gem install rubygems-update
 update_rubygems
