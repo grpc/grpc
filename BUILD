@@ -216,6 +216,8 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/impl/compression_types.h",
     "include/grpc/impl/connectivity_state.h",
     "include/grpc/impl/grpc_types.h",
+    "include/grpc/impl/propagation_bits.h",
+    "include/grpc/impl/slice_type.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
@@ -227,6 +229,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
     "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_buffer.h",
+    "include/grpc/event_engine/internal/slice_cast.h",
 ]
 
 GRPCXX_SRCS = [
@@ -237,12 +240,10 @@ GRPCXX_SRCS = [
     "src/cpp/client/create_channel.cc",
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
-    "src/cpp/client/credentials_cc.cc",
     "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
     "src/cpp/common/channel_filter.cc",
     "src/cpp/common/completion_queue_cc.cc",
-    "src/cpp/common/core_codegen.cc",
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
@@ -258,13 +259,11 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
     "src/cpp/server/server_context.cc",
-    "src/cpp/server/server_credentials.cc",
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
-    "src/cpp/codegen/codegen_init.cc",
 ]
 
 GRPCXX_HDRS = [
@@ -292,7 +291,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/call.h",
     "include/grpc++/impl/channel_argument_option.h",
     "include/grpc++/impl/client_unary_call.h",
-    "include/grpc++/impl/codegen/core_codegen.h",
     "include/grpc++/impl/grpc_library.h",
     "include/grpc++/impl/method_handler_impl.h",
     "include/grpc++/impl/rpc_method.h",
@@ -341,7 +339,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/channel_argument_option.h",
     "include/grpcpp/impl/channel_interface.h",
     "include/grpcpp/impl/client_unary_call.h",
-    "include/grpcpp/impl/codegen/core_codegen.h",
     "include/grpcpp/impl/completion_queue_tag.h",
     "include/grpcpp/impl/create_auth_context.h",
     "include/grpcpp/impl/delegating_channel.h",
@@ -409,7 +406,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/codegen/completion_queue_tag.h",
     "include/grpc++/impl/codegen/completion_queue.h",
     "include/grpc++/impl/codegen/config.h",
-    "include/grpc++/impl/codegen/core_codegen_interface.h",
     "include/grpc++/impl/codegen/create_auth_context.h",
     "include/grpc++/impl/codegen/metadata_map.h",
     "include/grpc++/impl/codegen/method_handler_impl.h",
@@ -444,7 +440,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/completion_queue_tag.h",
     "include/grpcpp/impl/codegen/completion_queue.h",
     "include/grpcpp/impl/codegen/config.h",
-    "include/grpcpp/impl/codegen/core_codegen_interface.h",
     "include/grpcpp/impl/codegen/create_auth_context.h",
     "include/grpcpp/impl/codegen/delegating_channel.h",
     "include/grpcpp/impl/codegen/intercepted_channel.h",
@@ -1175,7 +1170,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/compression_internal.cc",
         "//src/core:lib/compression/message_compress.cc",
-        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
         "//src/core:lib/iomgr/buffer_list.cc",
         "//src/core:lib/iomgr/call_combiner.cc",
         "//src/core:lib/iomgr/cfstream_handle.cc",
@@ -1279,7 +1273,6 @@ grpc_cc_library(
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/compression_internal.h",
         "//src/core:lib/compression/message_compress.h",
-        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
         "//src/core:lib/iomgr/block_annotate.h",
         "//src/core:lib/iomgr/buffer_list.h",
         "//src/core:lib/iomgr/call_combiner.h",
@@ -1393,6 +1386,7 @@ grpc_cc_library(
         "//src/core:atomic_utils",
         "//src/core:bitset",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -1430,6 +1424,7 @@ grpc_cc_library(
         "//src/core:resource_quota_trace",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:slice_cast",
         "//src/core:slice_refcount",
         "//src/core:socket_mutator",
         "//src/core:stats_data",
@@ -3191,7 +3186,6 @@ grpc_cc_library(
         "//src/core:slice_buffer",
         "//src/core:transport_fwd",
         "//src/core:try_concurrently",
-        "//src/core:try_seq",
     ],
 )
 

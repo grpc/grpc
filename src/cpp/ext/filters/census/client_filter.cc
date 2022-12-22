@@ -246,6 +246,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   }
 }
 
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
+    absl::string_view annotation) {
+  // If tracing is disabled, the following will be a no-op.
+  context_.AddSpanAnnotation(annotation, {});
+}
+
 //
 // OpenCensusCallTracer
 //
@@ -310,6 +316,11 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   }
   return new OpenCensusCallAttemptTracer(
       this, attempt_num, is_transparent_retry, false /* arena_allocated */);
+}
+
+void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
+  // If tracing is disabled, the following will be a no-op.
+  context_.AddSpanAnnotation(annotation, {});
 }
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {

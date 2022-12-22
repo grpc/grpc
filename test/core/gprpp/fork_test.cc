@@ -22,7 +22,6 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"

@@ -32,7 +32,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -54,6 +53,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -83,6 +83,8 @@
 
 namespace grpc_core {
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 namespace {
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
                           grpc_error_handle error) {
@@ -107,6 +109,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     result_ = result;
     notify_ = notify;
     GPR_ASSERT(endpoint_ == nullptr);
+    event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
   if (!address.ok()) {
@@ -171,13 +174,16 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->Ref().release();  // Ref held by OnReceiveSettings()
       GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
                         grpc_schedule_on_exec_ctx);
-      self->Ref().release();  // Ref held by OnTimeout()
       grpc_chttp2_transport_start_reading(self->result_->transport,
                                           args->read_buffer,
                                           &self->on_receive_settings_, nullptr);
-      GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
-                        grpc_schedule_on_exec_ctx);
-      grpc_timer_init(&self->timer_, self->args_.deadline, &self->on_timeout_);
+      RefCountedPtr<Chttp2Connector> cc = self->Ref();
+      self->timer_handle_ = self->event_engine_->RunAfter(
+          self->args_.deadline - Timestamp::Now(), [self = std::move(cc)] {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+          });
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
@@ -205,7 +211,14 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
         self->result_->Reset();
       }
       self->MaybeNotify(error);
-      grpc_timer_cancel(&self->timer_);
+      if (self->timer_handle_.has_value()) {
+        if (self->event_engine_->Cancel(*self->timer_handle_)) {
+          // If we have cancelled the timer successfully, call Notify() again
+          // since the timer callback will not be called now.
+          self->MaybeNotify(absl::OkStatus());
+        }
+        self->timer_handle_.reset();
+      }
     } else {
       // OnTimeout() was already invoked. Call Notify() again so that notify_
       // can be invoked.
@@ -215,28 +228,24 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
-  {
-    MutexLock lock(&self->mu_);
-    if (!self->notify_error_.has_value()) {
-      // The transport did not receive the settings frame in time. Destroy the
-      // transport.
-      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
-                                            self->args_.interested_parties);
-      // TODO(yashykt): The following two lines should be moved to
-      // SubchannelConnector::Result::Reset()
-      grpc_transport_destroy(self->result_->transport);
-      self->result_->Reset();
-      self->MaybeNotify(GRPC_ERROR_CREATE(
-          "connection attempt timed out before receiving SETTINGS frame"));
-    } else {
-      // OnReceiveSettings() was already invoked. Call Notify() again so that
-      // notify_ can be invoked.
-      self->MaybeNotify(absl::OkStatus());
-    }
+void Chttp2Connector::OnTimeout() {
+  MutexLock lock(&mu_);
+  timer_handle_.reset();
+  if (!notify_error_.has_value()) {
+    // The transport did not receive the settings frame in time. Destroy the
+    // transport.
+    grpc_endpoint_delete_from_pollset_set(endpoint_, args_.interested_parties);
+    // TODO(yashykt): The following two lines should be moved to
+    // SubchannelConnector::Result::Reset()
+    grpc_transport_destroy(result_->transport);
+    result_->Reset();
+    MaybeNotify(GRPC_ERROR_CREATE(
+        "connection attempt timed out before receiving SETTINGS frame"));
+  } else {
+    // OnReceiveSettings() was already invoked. Call Notify() again so that
+    // notify_ can be invoked.
+    MaybeNotify(absl::OkStatus());
   }
-  self->Unref();
 }
 
 void Chttp2Connector::MaybeNotify(grpc_error_handle error) {

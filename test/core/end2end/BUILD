@@ -58,6 +58,7 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -70,6 +71,7 @@ grpc_cc_library(
         "//:httpcli",
         "//:sockaddr_utils",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
         "//src/core:error",

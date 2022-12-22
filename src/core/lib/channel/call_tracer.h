@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
@@ -75,6 +76,10 @@ class CallTracer {
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
+    // Records an annotation on the call attempt.
+    // TODO(yashykt): If needed, extend this to attach attributes with
+    // annotations.
+    virtual void RecordAnnotation(absl::string_view annotation) = 0;
   };
 
   virtual ~CallTracer() {}
@@ -87,6 +92,10 @@ class CallTracer {
   // serves as an indication that the call stack is done with all API calls, and
   // the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
+  // Records an annotation on the call attempt.
+  // TODO(yashykt): If needed, extend this to attach attributes with
+  // annotations.
+  virtual void RecordAnnotation(absl::string_view annotation) = 0;
 };
 
 }  // namespace grpc_core
