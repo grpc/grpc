@@ -21,7 +21,6 @@
 
 #include <cstdint>
 #include <string>
-#include <tuple>
 
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"
