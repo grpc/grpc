@@ -175,8 +175,7 @@ TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
                                    absl::ResourceExhaustedError("Hmmmm"));
   ExpectReresolutionRequest();
   picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
-  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelConnectingIsQueued) {
@@ -213,19 +212,25 @@ TEST_F(XdsOverrideHostTest, UsingRingHashAsChild) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   ASSERT_NE(picker, nullptr);
   ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "1"}});
-  std::cout << __FILE__ ":" << __LINE__ << " the end" << std::endl;
   picker = ExpectState(GRPC_CHANNEL_IDLE);
   ASSERT_NE(picker, nullptr);
+
   ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "2"}});
-  std::cout << __FILE__ ":" << __LINE__ << " the end 2" << std::endl;
   picker = ExpectState(GRPC_CHANNEL_IDLE);
+  auto subchannel = FindSubchannel({"ipv4:127.0.0.1:443"});
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+
   ASSERT_NE(picker, nullptr);
-  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "3"}});
-  std::cout << __FILE__ ":" << __LINE__ << " the end" << std::endl;
+  ExpectPickComplete(picker.get(), {{RequestHashAttributeName(), "3"}});
   picker = ExpectState(GRPC_CHANNEL_IDLE);
   ASSERT_NE(picker, nullptr);
   ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "4"}});
-  std::cout << __FILE__ ":" << __LINE__ << " the end" << std::endl;
+
+  subchannel->SetConnectivityState(GRPC_CHANNEL_SHUTDOWN);
+
   policy_.reset();
 }
 }  // namespace

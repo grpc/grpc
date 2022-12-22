@@ -644,7 +644,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto pick_result = DoPick(picker, call_attributes);
     ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
-        << PickResultString(pick_result) << " at " << location.file() << ":"
+        << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
   }
 
@@ -709,6 +709,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> addresses,
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+    ASSERT_NE(picker, nullptr);
     auto picks = GetCompletePicks(picker, num_iterations * addresses.size(),
                                   call_attributes, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
