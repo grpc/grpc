@@ -98,9 +98,7 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
 }
 
 WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
-    : win_socket_(win_socket), closure_(nullptr) {
-  memset(&overlapped_, 0, sizeof(OVERLAPPED));
-}
+    : win_socket_(win_socket), closure_(nullptr) {}
 
 void WinSocket::OpState::SetReady() {
   GPR_ASSERT(!has_pending_iocp_);

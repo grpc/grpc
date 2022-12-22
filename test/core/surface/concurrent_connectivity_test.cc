@@ -150,7 +150,7 @@ void bad_server_thread(void* vargs) {
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
-      &s);
+      on_connect, args, &s);
   ASSERT_TRUE(error.ok());
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
@@ -159,7 +159,7 @@ void bad_server_thread(void* vargs) {
   ASSERT_GT(port, 0);
   args->addr = absl::StrCat("localhost:", port);
 
-  grpc_tcp_server_start(s, &args->pollset, on_connect, args);
+  grpc_tcp_server_start(s, &args->pollset);
   gpr_event_set(&args->ready, reinterpret_cast<void*>(1));
 
   gpr_mu_lock(args->mu);
