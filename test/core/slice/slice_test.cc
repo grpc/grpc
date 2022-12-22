@@ -441,6 +441,15 @@ TEST(SliceTest, SliceCastWorks) {
   EXPECT_EQ(&other, &test);
 }
 
+TEST(SliceTest, MutableSliceCastWorks) {
+  using ::grpc_event_engine::experimental::internal::SliceCast;
+  Slice test = Slice::FromCopiedString("hello world!");
+  grpc_slice& slice = SliceCast<grpc_slice>(test);
+  EXPECT_EQ(&slice, &test.c_slice());
+  slice = grpc_slice_from_static_string("goodbye world!");
+  EXPECT_EQ(test.as_string_view(), "goodbye world!");
+}
+
 }  // namespace
 }  // namespace grpc_core
 
