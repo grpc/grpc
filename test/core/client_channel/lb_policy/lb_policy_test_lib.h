@@ -641,6 +641,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       LoadBalancingPolicy::SubchannelPicker* picker,
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       SourceLocation location = SourceLocation()) {
+    ASSERT_NE(picker, nullptr);
     auto pick_result = DoPick(picker, call_attributes);
     ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))

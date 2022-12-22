@@ -38,7 +38,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"

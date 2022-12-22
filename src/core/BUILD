@@ -4460,7 +4460,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
         "grpc_stateful_session_filter",
         "json",
         "json_args",

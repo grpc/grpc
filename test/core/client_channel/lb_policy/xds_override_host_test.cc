@@ -182,7 +182,7 @@ TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
                                    absl::ResourceExhaustedError("Hmmmm"));
   ExpectReresolutionRequest();
   picker = ExpectState(GRPC_CHANNEL_READY);
-  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]}, pick_arg);
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelConnectingIsQueued) {
@@ -199,46 +199,11 @@ TEST_F(XdsOverrideHostTest, SubchannelConnectingIsQueued) {
   ASSERT_NE(subchannel, nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   ExpectReresolutionRequest();
-  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
-  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
   ExpectPickQueued(picker.get(), pick_arg);
-}
-
-TEST_F(XdsOverrideHostTest, UsingRingHashAsChild) {
-  ExecCtx exec_ctx;
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig(
-                                                    "ring_hash_experimental")),
-                        policy_.get()),
-            absl::OkStatus());
-  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ASSERT_NE(picker, nullptr);
-  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "1"}});
-  picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ASSERT_NE(picker, nullptr);
-
-  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "2"}});
-  picker = ExpectState(GRPC_CHANNEL_IDLE);
-  auto subchannel = FindSubchannel({"ipv4:127.0.0.1:443"});
-  ASSERT_NE(subchannel, nullptr);
-  EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-
-  ASSERT_NE(picker, nullptr);
-  ExpectPickComplete(picker.get(), {{RequestHashAttributeName(), "3"}});
-  picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ASSERT_NE(picker, nullptr);
-  ExpectPickQueued(picker.get(), {{RequestHashAttributeName(), "4"}});
-
-  subchannel->SetConnectivityState(GRPC_CHANNEL_SHUTDOWN);
-
-  policy_.reset();
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ExpectPickQueued(picker.get(), pick_arg);
 }
 }  // namespace
 }  // namespace testing
