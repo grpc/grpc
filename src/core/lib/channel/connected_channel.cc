@@ -977,7 +977,15 @@ class ServerStream final : public ConnectedChannelStream {
 
     if (auto* p = absl::get_if<GotTrailingMetadata>(
             &client_trailing_metadata_state_)) {
-      abort();
+      if (absl::holds_alternative<Uninitialized>(
+              client_initial_metadata_state_) ||
+          absl::holds_alternative<GotInitialMetadata>(
+              client_initial_metadata_state_) ||
+          absl::holds_alternative<Running>(client_initial_metadata_state_)) {
+        server_initial_metadata_ = nullptr;
+        client_initial_metadata_state_.emplace<Complete>(
+            Complete{ServerMetadataFromStatus(p->result)});
+      }
     }
 
     if (auto* p =
@@ -1074,7 +1082,7 @@ class ServerStream final : public ConnectedChannelStream {
   };
 
   struct GotTrailingMetadata {
-    ClientMetadataHandle result;
+    absl::Status result;
   };
 
   void RecvInitialMetadataReady(absl::Status status) {
@@ -1137,7 +1145,7 @@ class ServerStream final : public ConnectedChannelStream {
               return "WAITING";
             },
             [](const GotTrailingMetadata& got) -> std::string {
-              return absl::StrCat("GOT:", got.result->DebugString());
+              return absl::StrCat("GOT:", got.result.ToString());
             })));
     // Send message
     std::string send_message_state = SendMessageString();
@@ -1166,9 +1174,15 @@ class ServerStream final : public ConnectedChannelStream {
     }
     auto waker = std::move(state.waker);
     ServerMetadataHandle result = std::move(state.result);
-    if (!error.ok()) result = ServerMetadataFromStatus(error);
+    if (error.ok()) {
+      auto* message = result->get_pointer(GrpcMessageMetadata());
+      error = absl::Status(
+          static_cast<absl::StatusCode>(
+              result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN)),
+          message == nullptr ? "" : message->as_string_view());
+    }
     client_trailing_metadata_state_.emplace<GotTrailingMetadata>(
-        GotTrailingMetadata{std::move(result)});
+        GotTrailingMetadata{});
     waker.Wakeup();
   }
 
