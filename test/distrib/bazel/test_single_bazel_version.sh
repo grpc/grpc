@@ -54,7 +54,8 @@ export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 
 ACTION_ENV_FLAG="--action_env=bazel_cache_invalidate=version_${VERSION}"
 
-tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
+tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Build"
+tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS} Build"
 
 for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
