@@ -48,7 +48,7 @@ const Result& SliceCast(const T& value, SliceCastable<Result, T> = {}) {
   return reinterpret_cast<const Result&>(value);
 }
 
-// Cast to `const Result&` from `const T&` without any runtime checks.
+// Cast to `Result&` from `T&` without any runtime checks.
 // This is only valid if `sizeof(Result) == sizeof(T)`, and if `Result`, `T` are
 // opted in as compatible via `SliceCastable`.
 template <typename Result, typename T>
