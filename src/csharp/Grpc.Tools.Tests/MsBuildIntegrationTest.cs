@@ -149,8 +149,18 @@ namespace Grpc.Tools.Tests
             tasksAssembly = Path.Combine(assemblyDir, TASKS_ASSEMBLY_DLL);
 
             // put test ouptput directory outside of Grpc.Tools.Tests to avoid problems with
-            // repetited builds.
-            testOutBaseDir = Path.GetFullPath($"{assemblyDir}/../../../../test-out/grpc_tools_integration_tests");
+            // repeated builds.
+            testOutBaseDir = NormalizePath(Path.GetFullPath($"{assemblyDir}/../../../../test-out/grpc_tools_integration_tests"));
+        }
+
+
+        /// <summary>
+        /// Normalize path string to use just forward slashes. That makes it easier to compare paths
+        /// for equality in the tests.
+        /// </summary>
+        private string NormalizePath(string path)
+        {
+            return path.Replace('\\','/');
         }
 
         /// <summary>
