@@ -335,6 +335,7 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/lb_call_state_internal.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -1938,6 +1939,7 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/lb_call_state_internal.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -10276,6 +10278,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: round_robin_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/round_robin_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -12008,6 +12021,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_concurrently.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
