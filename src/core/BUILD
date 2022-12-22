@@ -4449,13 +4449,18 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/synchronization",
+        "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_stateful_session_filter",
         "json",
         "json_args",
         "json_object_loader",
@@ -4474,6 +4479,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:sockaddr_utils",
     ],
 )
 
