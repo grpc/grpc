@@ -3183,6 +3183,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
+        "//src/core:map",
         "//src/core:map_pipe",
         "//src/core:percent_encoding",
         "//src/core:pipe",

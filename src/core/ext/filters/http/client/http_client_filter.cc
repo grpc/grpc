@@ -41,6 +41,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_concurrently.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -122,7 +123,7 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
       std::exchange(call_args.server_initial_metadata, read_latch);
 
   return TryConcurrently(
-             Seq(next_promise_factory(std::move(call_args)),
+             Map(next_promise_factory(std::move(call_args)),
                  [](ServerMetadataHandle md) -> ServerMetadataHandle {
                    auto r = CheckServerMetadata(md.get());
                    if (!r.ok()) return ServerMetadataFromStatus(r);

@@ -940,9 +940,11 @@ class ServerStream final : public ConnectedChannelStream {
     if (server_initial_metadata_ != nullptr) {
       auto r = server_initial_metadata_->Wait()();
       if (ServerMetadata*** md = absl::get_if<ServerMetadata**>(&r)) {
-        gpr_log(GPR_INFO, "%s[connected] got initial metadata %s",
-                Activity::current()->DebugTag().c_str(),
-                (**md)->DebugString().c_str());
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[connected] got initial metadata %s",
+                  Activity::current()->DebugTag().c_str(),
+                  (**md)->DebugString().c_str());
+        }
         server_initial_metadata_ = nullptr;
         memset(&send_initial_metadata_, 0, sizeof(send_initial_metadata_));
         send_initial_metadata_.send_initial_metadata = true;
@@ -1044,9 +1046,11 @@ class ServerStream final : public ConnectedChannelStream {
     auto& getting =
         absl::get<GettingInitialMetadata>(client_initial_metadata_state_);
     auto waker = std::move(getting.recv_initial_metadata_ready_waker);
-    gpr_log(GPR_DEBUG, "%sGOT INITIAL METADATA: err=%s %s",
-            waker.ActivityDebugTag().c_str(), status.ToString().c_str(),
-            getting.client_initial_metadata->DebugString().c_str());
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%sGOT INITIAL METADATA: err=%s %s",
+              waker.ActivityDebugTag().c_str(), status.ToString().c_str(),
+              getting.client_initial_metadata->DebugString().c_str());
+    }
     GotInitialMetadata got{std::move(getting.client_initial_metadata),
                            std::move(getting.next_promise_factory)};
     client_initial_metadata_state_.emplace<GotInitialMetadata>(std::move(got));
@@ -1058,9 +1062,11 @@ class ServerStream final : public ConnectedChannelStream {
     auto& completing = absl::get<Completing>(client_initial_metadata_state_);
     auto md = std::move(completing.server_trailing_metadata);
     auto waker = std::move(completing.waker);
-    gpr_log(GPR_DEBUG, "%sSEND TRAILING METADATA DONE: err=%s sent=%s %s",
-            waker.ActivityDebugTag().c_str(), result.ToString().c_str(),
-            completing.sent ? "true" : "false", md->DebugString().c_str());
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%sSEND TRAILING METADATA DONE: err=%s sent=%s %s",
+              waker.ActivityDebugTag().c_str(), result.ToString().c_str(),
+              completing.sent ? "true" : "false", md->DebugString().c_str());
+    }
     md->Set(GrpcStatusFromWire(), completing.sent);
     if (!result.ok()) {
       md->Clear();

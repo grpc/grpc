@@ -40,6 +40,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_concurrently.h"
@@ -145,7 +146,7 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
                    return md;
                  }))
       .NecessaryPush(
-          Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
+          Map(read_latch->Wait(), [write_latch](ServerMetadata** md) {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO, "%s[http-server] Write metadata",
                       Activity::current()->DebugTag().c_str());

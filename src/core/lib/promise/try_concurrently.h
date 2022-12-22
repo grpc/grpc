@@ -208,8 +208,8 @@ class TryConcurrently {
       return std::move(*status);
     }
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s: done_bits=%x necessary_bits=%x",
-              DebugTag().c_str(), done_bits_, NecessaryBits());
+      gpr_log(GPR_DEBUG, "%sdone_bits=%x necessary_bits=%x", DebugTag().c_str(),
+              done_bits_, NecessaryBits());
     }
     if ((done_bits_ & NecessaryBits()) == NecessaryBits()) {
       return std::move(result_);

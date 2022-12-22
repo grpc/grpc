@@ -83,10 +83,7 @@ class ServerCallContext {
  public:
   ServerCallContext(ServerPromiseBasedCall* call,
                     const void* server_stream_data)
-      : call_(call), server_stream_data_(server_stream_data) {
-    gpr_log(GPR_DEBUG, "ServerCallContext %p gets server_stream_data %p", this,
-            server_stream_data);
-  }
+      : call_(call), server_stream_data_(server_stream_data) {}
   ArenaPromise<ServerMetadataHandle> CompletePromise(
       CallArgs call_args, grpc_completion_queue* cq,
       grpc_metadata_array* publish_initial_metadata,
@@ -96,11 +93,7 @@ class ServerCallContext {
   // transport stream up with the call again).
   // TODO(ctiller): legacy API - once we move transports to promises we'll
   // create the promise directly and not need to pass around this token.
-  const void* server_stream_data() {
-    gpr_log(GPR_DEBUG, "ServerCallContext %p returns server_stream_data %p",
-            this, server_stream_data_);
-    return server_stream_data_;
-  }
+  const void* server_stream_data() { return server_stream_data_; }
 
  private:
   ServerPromiseBasedCall* const call_;
