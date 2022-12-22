@@ -30,7 +30,6 @@
 # FAKEPROTOC_OUTDIR - output directory for generated files and output file
 # FAKEPROTOC_GENERATE_EXPECTED - list of expected generated files in format:
 #         file1.proto:csfile1.cs;csfile2.cs|file2.proto:csfile3.cs;csfile4.cs|...
-# FAKEPROTOC_TESTID - unique id for the test used as name for JSON results file
 
 import datetime
 import hashlib
@@ -39,183 +38,160 @@ import os
 import sys
 
 # Set to True to write out debug messages from this script
-dbg = True
-dbgfile = None
+_dbg = True
+# file to which write the debug log
+_dbgfile = None
 
-# Env variable: project directory
-FAKEPROTOC_PROJECTDIR = None
-# Env variable: output directory for generated files and output file
-FAKEPROTOC_OUTDIR = None
-# Env variable: list of expected generated files
-FAKEPROTOC_GENERATE_EXPECTED = None
-# Env variable: unique id for the test used as name for JSON results file
-FAKEPROTOC_TESTID = None
 
-log_dir = None
-
-protoc_args = []
-protoc_args_dict = {}
-results_json = {}
-
-dependencyfile = None
-grpcout = None
-protofile = None
-proto_to_generated = {}
-
-def create_debug(filename):
-    """ Create debug file for this script """
-    global dbg
-    global dbgfile
-    if dbg:
+def _open_debug_log(filename):
+    """Create debug file for this script."""
+    global _dbgfile
+    if _dbg:
         # append mode since this script may be called multiple times
         # during one build/test
-        dbgfile = open(filename, "a")
+        _dbgfile = open(filename, "a")
 
-def close_debug():
-    """ Close the debug file """
-    global dbgfile
-    if not dbgfile is None:
-        dbgfile.close()
 
-def write_debug(msg):
-    """ Write to the debug file if debug is enabled """
-    global dbg
-    global dbgfile
-    if dbg and not dbgfile is None:
-        print(msg, file=dbgfile, flush=True)
+def _close_debug_log():
+    """Close the debug log file."""
+    if _dbgfile:
+        _dbgfile.close()
 
-def read_protoc_arguments():
+
+def _write_debug(msg):
+    """Write to the debug log file if debug is enabled."""
+    if _dbg and _dbgfile:
+        print(msg, file=_dbgfile, flush=True)
+
+
+def _read_protoc_arguments():
     """
-    Read the protoc argument from the command line and
+    Get the protoc argument from the command line and
     any response files specified on the command line.
 
-    Arguments are added to protoc_args for later parsing.
+    Returns the list of arguments.
     """
-    write_debug("\nread_protoc_arguments")
-    global protoc_args
-    for i in range(1, len(sys.argv), 1):
-        arg = sys.argv[i]
-        write_debug("  arg: "+arg)
+    _write_debug("\nread_protoc_arguments")
+    result = []
+    for arg in sys.argv[1:]:
+        _write_debug("  arg: "+arg)
         if arg.startswith("@"):
-            protoc_args.append("# RSP file: "+arg)
-            read_rsp_file(arg[1:])
+            # TODO(jtattermusch): inserting a "commented out" argument feels hacky
+            result.append("# RSP file: %s" % arg)
+            rsp_file_name = arg[1:]
+            result.extend(_read_rsp_file(rsp_file_name))
         else:
-            protoc_args(arg)
+            result.append(arg)
+    return result
 
-def read_rsp_file(rspfile):
-    """
-    Read arguments from a response file.
 
-    Arguments are added to protoc_args for later parsing.
+def _read_rsp_file(rspfile):
     """
-    write_debug("\nread_rsp_file: "+rspfile)
-    global protoc_args
+    Returns list of arguments from a response file.
+    """
+    _write_debug("\nread_rsp_file: "+rspfile)
+    result = []
     with open(rspfile, "r") as rsp:
         for line in rsp:
             line = line.strip()
-            write_debug("    line: "+line)
-            protoc_args.append(line)
+            _write_debug("    line: "+line)
+            result.append(line)
+    return result
 
-def parse_protoc_arguments():
-    """
-    Parse the protoc arguments that are in protoc_args
-    """
-    global protoc_args
-    global dependencyfile
-    global grpcout
-    global protofile
 
-    write_debug("\nparse_protoc_arguments")
+def _parse_protoc_arguments(protoc_args, projectdir):
+    """
+    Parse the protoc arguments from the provided list
+    """
+
+    _write_debug("\nparse_protoc_arguments")
+    arg_dict = {}
     for arg in protoc_args:
-        if dbg:
-            write_debug("Parsing: "+arg)
-
+        _write_debug("Parsing: %s" % arg)
+    
         # All arguments containing file or directory paths are
-        # normalised by converting all '\' and changed to '/'
+        # normalized by converting all '\' and changed to '/'
         if arg.startswith("--"):
+            # Assumes that cmdline arguments are always passed in the
+            # "--somearg=argvalue", which happens to be the form that
+            # msbuild integration uses, but it's not the only way.
             (name, value) = arg.split("=",1)
 
-            if name == "--dependency_out":
-                value = absolute_path(value)
-                dependencyfile = value
-            elif name == "--grpc_out":
-                value = absolute_path(value)
-                grpcout = value
-            elif name == "--csharp_out":
-                value = absolute_path(value)
-            elif name == "--proto_path":
-                # for simpliity keep this one as relative path rather than absolute path
-                # since it is an input file that is always be near the project file
-                value = relative_to_project(value)
+            if name == "--dependency_out" or name == "--grpc_out" or name == "--csharp_out":
+                # For args that contain a path, make the path absolute and normalize it
+                # to make it easier to assert equality in tests.
+                value = _normalized_absolute_path(value)
 
-            add_protoc_arg_to_dict(name, value)
+            if name == "--proto_path":
+                # for simplicity keep this one as relative path rather than absolute path
+                # since it is an input file that is always be near the project file
+                value = _normalized_relative_to_projectdir(value, projectdir)
+
+            _add_protoc_arg_to_dict(arg_dict, name, value)
 
         elif arg.startswith("#"):
             pass # ignore
         else:
-            # proto file name
-            protofile = relative_to_project(arg)
-            add_protoc_arg_to_dict("protofile", protofile)
+            # arg represents a proto file name
+            arg = _normalized_relative_to_projectdir(arg, projectdir)
+            _add_protoc_arg_to_dict(arg_dict, "protofile", arg)
+    return arg_dict
 
-def add_protoc_arg_to_dict(name, value):
+
+def _add_protoc_arg_to_dict(arg_dict, name, value):
     """
-    Add the arguments with name/value to protoc_args_dict
-
-    protoc_args_dict is later used from writing out the JSON
-    results file
+    Add the arguments with name/value to a multi-dictionary of arguments
     """
-    global protoc_args_dict
-    if name in protoc_args_dict:
-        values = protoc_args_dict[name]
-        values.append(value)
-    else:
-        protoc_args_dict[name] = [ value ]
+    if not name in arg_dict:
+        arg_dict[name] = []
+    
+    arg_dict[name].append(value)
 
-def relative_to_project(file):
-    """ Convert a file path to one relative to the project directory """
+
+def _normalized_relative_to_projectdir(file, projectdir):
+    """Convert a file path to one relative to the project directory."""
     try:
-        return normalise_slashes(os.path.relpath(os.path.abspath(file), FAKEPROTOC_PROJECTDIR))
+        return _normalize_slashes(os.path.relpath(os.path.abspath(file), projectdir))
     except ValueError:
         # On Windows if the paths are on different drives then we get this error
         # Just return the absolute path
-        return normalise_slashes(os.path.abspath(file))
+        return _normalize_slashes(os.path.abspath(file))
 
-def absolute_path(file):
-    """ Normalise absolute path to file """
-    return normalise_slashes(os.path.abspath(file))
 
-def normalise_slashes(path):
-    """ Change all backslashes to forward slashes """
+def _normalized_absolute_path(file):
+    """Returns normalized absolute path to file."""
+    return _normalize_slashes(os.path.abspath(file))
+
+
+def _normalize_slashes(path):
+    """Change all backslashes to forward slashes to make comparing path strings easier."""
     return path.replace("\\","/")
 
-def write_results_json(pf):
-    """ Write out the results JSON file """
-    global results_json
+
+def _write_or_update_results_json(log_dir, protofile, protoc_arg_dict):
+    """ Write or update the results JSON file """
 
     # Read existing json.
     # Since protoc may be called more than once each build/test if there is
     # more than one protoc file, we read the existing data to add to it.
-    fname = os.path.abspath(log_dir+"/results.json")
+    fname = os.path.abspath("%s/results.json" % log_dir)
     if os.path.isfile(fname):
-        results_json = json.load(open(fname,"r"))
-        protoc_files_dict = results_json.get("Files")
+        # Load the original contents.
+        with open(fname, "r") as forig:
+          results_json = json.load(forig)
     else:
         results_json = {}
-        protoc_files_dict = {}
-        results_json["Files"] = protoc_files_dict
+        results_json['Files'] = {}
+        
     
-    protofiles = protoc_args_dict.get("protofile")
-    if protofiles is None:
-        key = "NONE"
-    else:
-        key = protofiles[0]
+    results_json['Files'][protofile] = protoc_arg_dict
     results_json["Metadata"] = { "timestamp": str(datetime.datetime.now()) }
-    protoc_files_dict[key] = protoc_args_dict
 
-    with open(fname, "w") as out:
-        json.dump(results_json, out, indent=4)
+    with open(fname, "w") as fout:
+        json.dump(results_json, fout, indent=4)
 
-def parse_generated_expected():
+
+def _parse_generate_expected(generate_expected_str):
     """
     Parse FAKEPROTOC_GENERATE_EXPECTED that specifies the proto files
     and the cs files to generate. We rely on the test to say what is
@@ -224,67 +200,73 @@ def parse_generated_expected():
     The format of the input is:
         file1.proto:csfile1.cs;csfile2.cs|file2.proto:csfile3.cs;csfile4.cs|...
     """
-    write_debug("\nparse_generated_expected")
-    global FAKEPROTOC_GENERATE_EXPECTED
-    global proto_to_generated
+    _write_debug("\nparse_generate_expected")
 
-    protos = FAKEPROTOC_GENERATE_EXPECTED.split("|")
-    for s in protos:
-        parts = s.split(":")
-        pfile = normalise_slashes(parts[0])
+    result = {}
+    entries = generate_expected_str.split("|")
+    for entry in entries:
+        parts = entry.split(":")
+        pfile = _normalize_slashes(parts[0])
         csfiles = parts[1].split(";")
-        proto_to_generated[pfile] = csfiles
-        write_debug(pfile + " : " + str(csfiles))
+        result[pfile] = csfiles
+        _write_debug(pfile + " : " + str(csfiles))
+    return result
 
-def generate_cs_files(protoname):
-    """
-    Create expected cs files.
-    """
-    write_debug("\ngenerate_cs_files")
 
-    to_match = normalise_slashes(protoname)
-    to_generate = proto_to_generated.get(to_match)
-    if to_generate is None:
-        print("generate_cs_files: None matching proto file name "+protoname)
-    else:
-        if os.path.isabs(grpcout):
-            dir = grpcout
-        else:
-            dir = os.path.abspath(FAKEPROTOC_PROJECTDIR + "/" + grpcout)
-        timestamp = str(datetime.datetime.now())
-        for csfile in to_generate:
-            if not os.path.isdir(dir):
-                os.makedirs(dir)
-            file = dir + "/" + csfile
-            write_debug("Creating: "+file)
-            with open(file, "w") as out:
-                print("// Generated my fake protoc: "+ timestamp, file=out)
+def _get_cs_files_to_generate(protofile, proto_to_generated):
+    """Returns list of .cs files to generated based on FAKEPROTOC_GENERATE_EXPECTED env."""
+    protoname_normalized = _normalize_slashes(protofile)
+    cs_files_to_generate = proto_to_generated.get(protoname_normalized)
+    return cs_files_to_generate
 
-def create_dependency_file(protoname):
-    """ Create the expected dependecy file """
-    write_debug("\ncreate_dependency_file")
 
-    if dependencyfile is None:
-        write_debug("dependencyfile is None")
+def _generate_cs_files(protofile, cs_files_to_generate, out_dir, projectdir):
+    """Create expected cs files."""
+    _write_debug("\ngenerate_cs_files")
+
+    if not cs_files_to_generate:
+        _write_debug("No .cs files matching proto file name %s" % protofile)
         return
 
-    to_match = normalise_slashes(protoname)
-    to_generate = proto_to_generated.get(to_match)
+    if not os.path.isabs(out_dir):
+        # if not absolute, it is relative to project directory
+        out_dir = os.path.abspath("%s/%s" % (projectdir, out_dir))
     
-    if to_generate is None:
-        write_debug("No matching proto file name "+protoname)
-    else:
-        write_debug("Creating dependency file: "+dependencyfile)
-        with open(dependencyfile, "w") as out:
-            nfiles = len(to_generate)
-            for i in range(0, nfiles):
-                file = os.path.join(grpcout, to_generate[i])
-                if i == nfiles-1:
-                    print(file+": "+protoname, file=out)
-                else:
-                    print(file+" \\", file=out)
+    # Ensure out_dir exists
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    
+    timestamp = str(datetime.datetime.now())
+    for csfile in cs_files_to_generate:    
+        csfile_fullpath = "%s/%s" % (out_dir, csfile)
+        _write_debug("Creating: %s" % csfile_fullpath)
+        with open(csfile_fullpath, "w") as fout:
+            print("// Generated by fake protoc: %s" % timestamp, file=fout)
 
-def getenv(name):
+
+def _create_dependency_file(protofile, cs_files_to_generate, dependencyfile, grpcout):
+    """Create the expected dependency file."""
+    _write_debug("\ncreate_dependency_file")
+
+    if not dependencyfile:
+        _write_debug("dependencyfile is not set.")
+        return
+    
+    if not cs_files_to_generate:
+        _write_debug("No .cs files matching proto file name %s" % protofile)
+        return
+    
+    _write_debug("Creating dependency file: %s" % dependencyfile)
+    with open(dependencyfile, "w") as out:
+        nfiles = len(cs_files_to_generate)
+        for i in range(0, nfiles):
+            cs_filename = os.path.join(grpcout, cs_files_to_generate[i])
+            if i == nfiles-1:
+                print("%s: %s" % (cs_filename, protofile), file=out)
+            else:
+                print("%s \\" % cs_filename, file=out)
+
+def _getenv(name):
     # Note there is a bug in .NET core 3.x that lowercases the environment
     # variable names when they are added via Process.StartInfo, so we need to
     # check both cases here (only an issue on Linux which is case sensitive)
@@ -294,58 +276,67 @@ def getenv(name):
     return value
 
 def main():
-    global FAKEPROTOC_PROJECTDIR
-    global FAKEPROTOC_GENERATE_EXPECTED
-    global FAKEPROTOC_TESTID
-    global dbg
-    global protofile
-    global log_dir
-
     # Check environment variables for the additional arguments used in the tests.
 
-    FAKEPROTOC_PROJECTDIR = getenv('FAKEPROTOC_PROJECTDIR')
-    if FAKEPROTOC_PROJECTDIR is None:
+    projectdir = _getenv('FAKEPROTOC_PROJECTDIR')
+    if not projectdir:
         print("FAKEPROTOC_PROJECTDIR not set")
         sys.exit(1)
-    FAKEPROTOC_PROJECTDIR = os.path.abspath(FAKEPROTOC_PROJECTDIR)
+    projectdir = os.path.abspath(projectdir)
 
-    FAKEPROTOC_OUTDIR = getenv('FAKEPROTOC_OUTDIR')
-    if FAKEPROTOC_OUTDIR is None:
+    # Output directory for generated files and output file
+    protoc_outdir = _getenv('FAKEPROTOC_OUTDIR')
+    if not protoc_outdir:
         print("FAKEPROTOC_OUTDIR not set")
         sys.exit(1)
-    FAKEPROTOC_OUTDIR = os.path.abspath(FAKEPROTOC_OUTDIR)
+    protoc_outdir = os.path.abspath(protoc_outdir)
 
-    FAKEPROTOC_GENERATE_EXPECTED = getenv('FAKEPROTOC_GENERATE_EXPECTED')
-    if FAKEPROTOC_GENERATE_EXPECTED is None:
+    # Get list of expected generated files from env variable
+    generate_expected = _getenv('FAKEPROTOC_GENERATE_EXPECTED')
+    if not generate_expected:
         print("FAKEPROTOC_GENERATE_EXPECTED not set")
         sys.exit(1)
 
-    FAKEPROTOC_TESTID = getenv('FAKEPROTOC_TESTID')
-    if FAKEPROTOC_TESTID is None:
-        print("FAKEPROTOC_TESTID not set")
-        sys.exit(1)
-
-    log_dir = os.path.join(FAKEPROTOC_OUTDIR, "log")
+    # Prepare the debug log
+    log_dir = os.path.join(protoc_outdir, "log")
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
+    _open_debug_log("%s/fakeprotoc_log.txt" % log_dir)
 
-    create_debug(log_dir+"/fakeprotoc-dbg.txt")
-
-    timestamp = str(datetime.datetime.now())
-    if dbg:
-        write_debug("##### fakeprotoc called "+timestamp+"\n"
-            + "FAKEPROTOC_PROJECTDIR = "+FAKEPROTOC_PROJECTDIR+"\n"
-            + "FAKEPROTOC_GENERATE_EXPECTED = "+FAKEPROTOC_GENERATE_EXPECTED+"\n"
-            + "FAKEPROTOC_TESTID = "+FAKEPROTOC_TESTID)
+    _write_debug(("##### fakeprotoc called at %s\n"
+        + "FAKEPROTOC_PROJECTDIR = %s\n"
+        + "FAKEPROTOC_GENERATE_EXPECTED = %s\n") % (datetime.datetime.now(), projectdir, generate_expected))
     
-    parse_generated_expected()
-    read_protoc_arguments()
-    parse_protoc_arguments()
-    create_dependency_file(protofile)
-    generate_cs_files(protofile)
-    write_results_json(protofile)
+    proto_to_generated = _parse_generate_expected(generate_expected)
+    protoc_args = _read_protoc_arguments()
+    protoc_arg_dict = _parse_protoc_arguments(protoc_args, projectdir)
 
-    close_debug()
+    # If argument was passed multiple times, take the last occurence of it.
+    # TODO(jtattermusch): handle multiple occurrences of the same argument
+    dependencyfile = protoc_arg_dict.get('--dependency_out')[-1]
+    grpcout = protoc_arg_dict.get('--grpc_out')[-1]
+    
+    if len(protoc_arg_dict.get('protofile')) != 1:
+        # regular protoc can process multiple .proto files passed at once, but we know
+        # the Grpc.Tools msbuild integration only ever passes one .proto file per invocation.
+        print("Expecting to get exactly one .proto file argument per fakeprotoc invocation.")
+        sys.exit(1)
+    protofile = protoc_arg_dict.get('protofile')[0]
+
+    cs_files_to_generate = _get_cs_files_to_generate(protofile=protofile, proto_to_generated=proto_to_generated)
+
+    _create_dependency_file(protofile=protofile,
+        cs_files_to_generate=cs_files_to_generate,
+        dependencyfile=dependencyfile,
+        grpcout=grpcout)
+    
+    _generate_cs_files(protofile=protofile,
+        cs_files_to_generate=cs_files_to_generate,
+        out_dir=grpcout, projectdir=projectdir)
+
+    _write_or_update_results_json(log_dir=log_dir, protofile=protofile, protoc_arg_dict=protoc_arg_dict)
+
+    _close_debug_log()
 
 if __name__ == "__main__":
     main()
