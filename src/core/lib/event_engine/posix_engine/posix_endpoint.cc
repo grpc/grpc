@@ -33,7 +33,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include "grpc/impl/codegen/slice.h"
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>

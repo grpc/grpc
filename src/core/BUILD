@@ -1463,7 +1463,10 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/posix_engine/lockfree_event.h",
     ],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/base:dynamic_annotations",
+        "absl/status",
+    ],
     deps = [
         "gpr_atm",
         "posix_event_engine_closure",
