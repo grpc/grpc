@@ -375,7 +375,7 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     elif LINUX_AARCH64 == boringssl_asm_platform:
         asm_key = 'crypto_linux_aarch64'
     elif "mac" in boringssl_asm_platform and "x86_64" in boringssl_asm_platform:
-        asm_key = 'crypto_mac_x86_64'
+        asm_key = 'crypto_apple_x86_64'
     else:
         print("ASM Builds for BoringSSL currently not supported on:",
               boringssl_asm_platform)
