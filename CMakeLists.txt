@@ -5395,7 +5395,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/activity_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8148,6 +8150,7 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -10873,6 +10876,7 @@ add_executable(flow_control_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -14408,6 +14412,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/loop_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -14438,10 +14444,9 @@ target_link_libraries(loop_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -15256,7 +15261,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(observable_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/observable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -17507,6 +17514,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/seq_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -17537,8 +17546,8 @@ target_link_libraries(seq_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -21379,6 +21388,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/try_seq_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -21409,10 +21420,9 @@ target_link_libraries(try_seq_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
 )
 
 
