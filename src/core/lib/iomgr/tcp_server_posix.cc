@@ -69,6 +69,8 @@ using ::grpc_event_engine::experimental::EndpointConfig;
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
+                                           grpc_tcp_server_cb on_accept_cb,
+                                           void* on_accept_cb_arg,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = new grpc_tcp_server;
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
@@ -89,14 +91,15 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
   s->shutdown_complete = shutdown_complete;
-  s->on_accept_cb = nullptr;
-  s->on_accept_cb_arg = nullptr;
+  s->on_accept_cb = on_accept_cb;
+  s->on_accept_cb_arg = on_accept_cb_arg;
   s->head = nullptr;
   s->tail = nullptr;
   s->nports = 0;
   s->options = TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
   GPR_ASSERT(s->options.resource_quota != nullptr);
+  GPR_ASSERT(s->on_accept_cb);
   s->memory_quota = s->options.resource_quota->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
@@ -505,17 +508,12 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
 }
 
 static void tcp_server_start(grpc_tcp_server* s,
-                             const std::vector<grpc_pollset*>* pollsets,
-                             grpc_tcp_server_cb on_accept_cb,
-                             void* on_accept_cb_arg) {
+                             const std::vector<grpc_pollset*>* pollsets) {
   size_t i;
   grpc_tcp_listener* sp;
-  GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->on_accept_cb);
+  GPR_ASSERT(s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
-  s->on_accept_cb = on_accept_cb;
-  s->on_accept_cb_arg = on_accept_cb_arg;
   s->pollsets = pollsets;
   sp = s->head;
   while (sp != nullptr) {
