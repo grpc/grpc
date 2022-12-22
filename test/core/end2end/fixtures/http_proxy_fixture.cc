@@ -649,7 +649,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
-      &proxy->server);
+      on_accept, proxy, &proxy->server);
   GPR_ASSERT(error.ok());
   // Bind to port.
   grpc_resolved_address resolved_addr;
@@ -666,7 +666,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &proxy->mu);
   proxy->pollset.push_back(pollset);
-  grpc_tcp_server_start(proxy->server, &proxy->pollset, on_accept, proxy);
+  grpc_tcp_server_start(proxy->server, &proxy->pollset);
 
   // Start proxy thread.
   proxy->thd = grpc_core::Thread("grpc_http_proxy", thread_main, proxy);
