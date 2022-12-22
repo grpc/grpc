@@ -213,8 +213,6 @@ class ClientChannel::CallData {
   // Accessed while holding ClientChannel::resolution_mu_.
   bool service_config_applied_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) =
       false;
-  bool queued_pending_resolver_result_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = false;
   ClientChannel::ResolverQueuedCall resolver_queued_call_
       ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
   ResolverQueuedCallCanceller* resolver_call_canceller_
@@ -1568,28 +1566,30 @@ void ClientChannel::UpdateStateAndPickerLocked(
             channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                 state)));
   }
-  // Grab data plane lock to update the picker.
+  // Grab picker lock to update the picker.
+  // Old picker will be unreffed after releasing the lock.
+  auto picker_to_swap = picker->Ref();
   {
-    MutexLock lock(&data_plane_mu_);
-    // Swap out the picker.
-    // Note: Original value will be destroyed after the lock is released.
-    picker_.swap(picker);
-    // Re-process queued picks.
-    for (LbQueuedCall* call = lb_queued_calls_; call != nullptr;
-         call = call->next) {
-      // If there are a lot of queued calls here, resuming them all may cause us
-      // to stay inside C-core for a long period of time. All of that work would
-      // be done using the same ExecCtx instance and therefore the same cached
-      // value of "now". The longer it takes to finish all of this work and exit
-      // from C-core, the more stale the cached value of "now" may become. This
-      // can cause problems whereby (e.g.) we calculate a timer deadline based
-      // on the stale value, which results in the timer firing too early. To
-      // avoid this, we invalidate the cached value for each call we process.
-      ExecCtx::Get()->InvalidateNow();
-      grpc_error_handle error;
-      if (call->lb_call->PickSubchannelLocked(&error)) {
-        call->lb_call->AsyncPickDone(error);
-      }
+    MutexLock lock(&picker_mu_);
+    picker_.swap(picker_to_swap);
+  }
+  // Use the new picker to re-process queued picks.
+  MutexLock lock(&lb_queue_mu_);
+  for (LbQueuedCall* call = lb_queued_calls_; call != nullptr;
+       call = call->next) {
+    // If there are a lot of queued calls here, resuming them all may cause us
+    // to stay inside C-core for a long period of time. All of that work would
+    // be done using the same ExecCtx instance and therefore the same cached
+    // value of "now". The longer it takes to finish all of this work and exit
+    // from C-core, the more stale the cached value of "now" may become. This
+    // can cause problems whereby (e.g.) we calculate a timer deadline based
+    // on the stale value, which results in the timer firing too early. To
+    // avoid this, we invalidate the cached value for each call we process.
+    ExecCtx::Get()->InvalidateNow();
+    grpc_error_handle error;
+    if (call->lb_call->PickSubchannelImpl(picker.get(), &error)) {
+      call->lb_call->MaybeRemoveCallFromLbQueuedCallsLocked();
+      call->lb_call->AsyncPickDone(error);
     }
   }
 }
@@ -1634,7 +1634,7 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
   }
   LoadBalancingPolicy::PickResult result;
   {
-    MutexLock lock(&data_plane_mu_);
+    MutexLock lock(&picker_mu_);
     result = picker_->Pick(LoadBalancingPolicy::PickArgs());
   }
   return HandlePickResult<grpc_error_handle>(
@@ -2133,7 +2133,7 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
 
 void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
     grpc_call_element* elem) {
-  if (!queued_pending_resolver_result_) return;
+  if (resolver_queued_call_.elem == nullptr) return;
   auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
@@ -2141,7 +2141,7 @@ void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
             chand, this);
   }
   chand->RemoveResolverQueuedCall(&resolver_queued_call_, pollent_);
-  queued_pending_resolver_result_ = false;
+  resolver_queued_call_.elem = nullptr;
   // Lame the call combiner canceller.
   resolver_call_canceller_ = nullptr;
   // Add trace annotation
@@ -2154,13 +2154,12 @@ void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
 
 void ClientChannel::CallData::MaybeAddCallToResolverQueuedCallsLocked(
     grpc_call_element* elem) {
-  if (queued_pending_resolver_result_) return;
+  if (resolver_queued_call_.elem != nullptr) return;
   auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: adding to resolver queued picks list",
             chand, this);
   }
-  queued_pending_resolver_result_ = true;
   resolver_queued_call_.elem = elem;
   chand->AddResolverQueuedCall(&resolver_queued_call_, pollent_);
   // Register call combiner cancellation callback.
@@ -2827,10 +2826,10 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   if (GPR_LIKELY(batch->send_initial_metadata)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
       gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: grabbing data plane mutex to perform pick",
+              "chand=%p lb_call=%p: grabbing picker mutex to perform pick",
               chand_, this);
     }
-    PickSubchannel(this, absl::OkStatus());
+    PickSubchannel();
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3002,7 +3001,7 @@ class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
     auto* lb_call = self->lb_call_.get();
     auto* chand = lb_call->chand_;
     {
-      MutexLock lock(&chand->data_plane_mu_);
+      MutexLock lock(&chand->lb_queue_mu_);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p lb_call=%p: cancelling queued pick: "
@@ -3028,13 +3027,13 @@ class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
 };
 
 void ClientChannel::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
-  if (!queued_pending_lb_pick_) return;
+  if (queued_call_.lb_call == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: removing from queued picks list",
             chand_, this);
   }
   chand_->RemoveLbQueuedCall(&queued_call_, pollent_);
-  queued_pending_lb_pick_ = false;
+  queued_call_.lb_call = nullptr;
   // Lame the call combiner canceller.
   lb_call_canceller_ = nullptr;
   // Add trace annotation
@@ -3044,12 +3043,11 @@ void ClientChannel::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
 }
 
 void ClientChannel::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {
-  if (queued_pending_lb_pick_) return;
+  if (queued_call_.lb_call != nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: adding to queued picks list",
             chand_, this);
   }
-  queued_pending_lb_pick_ = true;
   queued_call_.lb_call = this;
   chand_->AddLbQueuedCall(&queued_call_, pollent_);
   // Register call combiner cancellation callback.
@@ -3078,21 +3076,33 @@ void ClientChannel::LoadBalancedCall::PickDone(void* arg,
   self->CreateSubchannelCall();
 }
 
-void ClientChannel::LoadBalancedCall::PickSubchannel(void* arg,
-                                                     grpc_error_handle error) {
-  auto* self = static_cast<LoadBalancedCall*>(arg);
-  bool pick_complete;
+void ClientChannel::LoadBalancedCall::PickSubchannel() {
+  // Get picker.
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
   {
-    MutexLock lock(&self->chand_->data_plane_mu_);
-    pick_complete = self->PickSubchannelLocked(&error);
+    MutexLock lock(&chand_->picker_mu_);
+    picker = chand_->picker_;
   }
+  // Do pick.
+  grpc_error_handle error;
+  bool pick_complete = PickSubchannelImpl(picker.get(), &error);
+  // Add or remove from queue, as needed.
+  {
+    MutexLock lock(&chand_->lb_queue_mu_);
+    if (pick_complete) {
+      MaybeRemoveCallFromLbQueuedCallsLocked();
+    } else {
+      MaybeAddCallToLbQueuedCallsLocked();
+    }
+  }
+  // If pick is done, handle the error or start the subchannel call.
   if (pick_complete) {
-    PickDone(self, error);
+    PickDone(this, error);
   }
 }
 
-bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
-    grpc_error_handle* error) {
+bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
+    LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
   GPR_ASSERT(connected_subchannel_ == nullptr);
   GPR_ASSERT(subchannel_call_ == nullptr);
   // Grab initial metadata.
@@ -3107,12 +3117,11 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
   pick_args.call_state = &lb_call_state;
   Metadata initial_metadata(initial_metadata_batch);
   pick_args.initial_metadata = &initial_metadata;
-  auto result = chand_->picker_->Pick(pick_args);
+  auto result = picker->Pick(pick_args);
   return HandlePickResult<bool>(
       &result,
       // CompletePick
-      [this](LoadBalancingPolicy::PickResult::Complete* complete_pick)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
+      [this](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
               gpr_log(GPR_INFO,
                       "chand=%p lb_call=%p: LB pick succeeded: subchannel=%p",
@@ -3135,7 +3144,6 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
                         "has no connected subchannel; queueing pick",
                         chand_, this);
               }
-              MaybeAddCallToLbQueuedCallsLocked();
               return false;
             }
             lb_subchannel_call_tracker_ =
@@ -3143,23 +3151,19 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             if (lb_subchannel_call_tracker_ != nullptr) {
               lb_subchannel_call_tracker_->Start();
             }
-            MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           },
       // QueuePick
-      [this](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
+      [this](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick queued", chand_,
                       this);
             }
-            MaybeAddCallToLbQueuedCallsLocked();
             return false;
           },
       // FailPick
       [this, initial_metadata_batch,
-       &error](LoadBalancingPolicy::PickResult::Fail* fail_pick)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
+       &error](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick failed: %s",
                       chand_, this, fail_pick->status.ToString().c_str());
@@ -3170,17 +3174,14 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
                      ->value) {
               *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
                   std::move(fail_pick->status), "LB pick"));
-              MaybeRemoveCallFromLbQueuedCallsLocked();
               return true;
             }
             // If wait_for_ready is true, then queue to retry when we get a new
             // picker.
-            MaybeAddCallToLbQueuedCallsLocked();
             return false;
           },
       // DropPick
-      [this, &error](LoadBalancingPolicy::PickResult::Drop* drop_pick)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
+      [this, &error](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick dropped: %s",
                       chand_, this, drop_pick->status.ToString().c_str());
@@ -3189,7 +3190,6 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
                 absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
                     std::move(drop_pick->status), "LB drop")),
                 StatusIntProperty::kLbPolicyDrop, 1);
-            MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           });
 }
