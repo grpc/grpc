@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <condition_variable>
 
@@ -27,8 +27,8 @@
 
 namespace grpc {
 namespace testing {
-/* This interceptor does nothing. Just keeps a global count on the number of
- * times it was invoked. */
+// This interceptor does nothing. Just keeps a global count on the number of
+// times it was invoked.
 class PhonyInterceptor : public experimental::Interceptor {
  public:
   PhonyInterceptor() {}
@@ -82,7 +82,7 @@ class PhonyInterceptorFactory
   }
 };
 
-/* This interceptor can be used to test the interception mechanism. */
+// This interceptor can be used to test the interception mechanism.
 class TestInterceptor : public experimental::Interceptor {
  public:
   TestInterceptor(const std::string& method, const char* suffix_for_stats,
@@ -118,7 +118,7 @@ class TestInterceptorFactory
   const char* suffix_for_stats_;
 };
 
-/* This interceptor factory returns nullptr on interceptor creation */
+// This interceptor factory returns nullptr on interceptor creation
 class NullInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface,
       public experimental::ServerInterceptorFactoryInterface {

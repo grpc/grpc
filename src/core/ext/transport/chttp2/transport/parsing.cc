@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -264,7 +264,7 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
           t->deframe_state = GRPC_DTS_FH_0;
           return absl::OkStatus();
         }
-        goto dts_fh_0; /* loop */
+        goto dts_fh_0;  // loop
       } else if (t->incoming_frame_size >
                  t->settings[GRPC_ACKED_SETTINGS]
                             [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
@@ -304,7 +304,7 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         }
         cur += t->incoming_frame_size;
         t->incoming_stream = nullptr;
-        goto dts_fh_0; /* loop */
+        goto dts_fh_0;  // loop
       } else {
         err = parse_frame_slice(
             t,
@@ -471,13 +471,13 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
 error_handler:
   if (status.ok()) {
     t->incoming_stream = s;
-    /* t->parser = grpc_chttp2_data_parser_parse;*/
+    // t->parser = grpc_chttp2_data_parser_parse;
     t->parser = grpc_chttp2_data_parser_parse;
     t->parser_data = nullptr;
     t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
     return absl::OkStatus();
   } else if (s != nullptr) {
-    /* handle stream errors by closing the stream */
+    // handle stream errors by closing the stream
     grpc_chttp2_mark_stream_closed(t, s, true, false,
                                    absl_status_to_grpc_error(status));
     grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
@@ -495,7 +495,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0;
   grpc_chttp2_stream* s;
 
-  /* TODO(ctiller): when to increment header_frames_received? */
+  // TODO(ctiller): when to increment header_frames_received?
 
   if (is_eoh) {
     t->expect_continuation_stream_id = 0;
@@ -515,7 +515,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
 
   t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
 
-  /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
+  // could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   if (s == nullptr) {
     if (GPR_UNLIKELY(is_continuation)) {
@@ -527,7 +527,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     if (t->is_client) {
       if (GPR_LIKELY((t->incoming_stream_id & 1) &&
                      t->incoming_stream_id < t->next_stream_id)) {
-        /* this is an old (probably cancelled) grpc_chttp2_stream */
+        // this is an old (probably cancelled) grpc_chttp2_stream
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(
             GPR_ERROR, "ignoring new grpc_chttp2_stream creation on client"));
@@ -766,8 +766,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     return error;
   }
   if (is_last) {
-    /* need to check for null stream: this can occur if we receive an invalid
-       stream id on a header */
+    // need to check for null stream: this can occur if we receive an invalid
+    // stream id on a header
     if (s != nullptr) {
       if (parser->is_boundary()) {
         if (s->header_frames_received == 2) {
@@ -780,10 +780,10 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
       }
       if (parser->is_eof()) {
         if (t->is_client && !s->write_closed) {
-          /* server eof ==> complete closure; we may need to forcefully close
-             the stream. Wait until the combiner lock is ready to be released
-             however -- it might be that we receive a RST_STREAM following this
-             and can avoid the extra write */
+          // server eof ==> complete closure; we may need to forcefully close
+          // the stream. Wait until the combiner lock is ready to be released
+          // however -- it might be that we receive a RST_STREAM following this
+          // and can avoid the extra write
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
           t->combiner->FinallyRun(
               GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),

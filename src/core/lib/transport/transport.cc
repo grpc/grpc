@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -42,13 +42,13 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
 void grpc_stream_destroy(grpc_stream_refcount* refcount) {
   if ((grpc_core::ExecCtx::Get()->flags() &
        GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP)) {
-    /* Ick.
-       The thread we're running on MAY be owned (indirectly) by a call-stack.
-       If that's the case, destroying the call-stack MAY try to destroy the
-       thread, which is a tangled mess that we just don't want to ever have to
-       cope with.
-       Throw this over to the executor (on a core-owned thread) and process it
-       there. */
+    // Ick.
+    // The thread we're running on MAY be owned (indirectly) by a call-stack.
+    // If that's the case, destroying the call-stack MAY try to destroy the
+    // thread, which is a tangled mess that we just don't want to ever have to
+    // cope with.
+    // Throw this over to the executor (on a core-owned thread) and process it
+    // there.
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([refcount] {
       grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
       grpc_core::ExecCtx exec_ctx;

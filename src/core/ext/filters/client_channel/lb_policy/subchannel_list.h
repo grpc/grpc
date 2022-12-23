@@ -47,25 +47,25 @@
 // Code for maintaining a list of subchannels within an LB policy.
 //
 // To use this, callers must create their own subclasses, like so:
-/*
+//
 
-class MySubchannelList;  // Forward declaration.
+// class MySubchannelList;  // Forward declaration.
 
-class MySubchannelData
-    : public SubchannelData<MySubchannelList, MySubchannelData> {
- public:
-  void ProcessConnectivityChangeLocked(
-      absl::optional<grpc_connectivity_state> old_state,
-      grpc_connectivity_state new_state) override {
-    // ...code to handle connectivity changes...
-  }
-};
+// class MySubchannelData
+//   : public SubchannelData<MySubchannelList, MySubchannelData> {
+// public:
+// void ProcessConnectivityChangeLocked(
+//     absl::optional<grpc_connectivity_state> old_state,
+//     grpc_connectivity_state new_state) override {
+//   // ...code to handle connectivity changes...
+// }
+// };
 
-class MySubchannelList
-    : public SubchannelList<MySubchannelList, MySubchannelData> {
-};
+// class MySubchannelList
+//   : public SubchannelList<MySubchannelList, MySubchannelData> {
+// };
 
-*/
+//
 // All methods will be called from within the client_channel work serializer.
 
 namespace grpc_core {

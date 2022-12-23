@@ -56,4 +56,4 @@ class DNSCallbackExecCtxScheduler {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_IMPL_H */
+#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_IMPL_H

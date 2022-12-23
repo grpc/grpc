@@ -240,4 +240,4 @@ extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H */
+#endif  // GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H

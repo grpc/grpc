@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -381,9 +381,9 @@ class grpc_compute_engine_token_fetcher_credentials
     memset(&request, 0, sizeof(grpc_http_request));
     request.hdr_count = 1;
     request.hdrs = &header;
-    /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
-       channel. This would allow us to cancel an authentication query when under
-       extreme memory pressure. */
+    // TODO(ctiller): Carry the memory quota in ctx and share it with the host
+    // channel. This would allow us to cancel an authentication query when under
+    // extreme memory pressure.
     auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
                                       {} /* query params */, "" /* fragment */);
@@ -447,9 +447,9 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   request.hdrs = &header;
   request.body = const_cast<char*>(body.c_str());
   request.body_length = body.size();
-  /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
-     channel. This would allow us to cancel an authentication query when under
-     extreme memory pressure. */
+  // TODO(ctiller): Carry the memory quota in ctx and share it with the host
+  // channel. This would allow us to cancel an authentication query when under
+  // extreme memory pressure.
   auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
@@ -577,9 +577,9 @@ class StsTokenFetcherCredentials
         const_cast<char*>("application/x-www-form-urlencoded")};
     request.hdr_count = 1;
     request.hdrs = &header;
-    /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
-       channel. This would allow us to cancel an authentication query when under
-       extreme memory pressure. */
+    // TODO(ctiller): Carry the memory quota in ctx and share it with the host
+    // channel. This would allow us to cancel an authentication query when under
+    // extreme memory pressure.
     RefCountedPtr<grpc_channel_credentials> http_request_creds;
     if (sts_url_.scheme() == "http") {
       http_request_creds = RefCountedPtr<grpc_channel_credentials>(

@@ -175,4 +175,4 @@ struct Rbac {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H */
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H

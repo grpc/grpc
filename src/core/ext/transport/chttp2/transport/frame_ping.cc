@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -102,9 +102,9 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
 
         if (t->keepalive_permit_without_calls == 0 &&
             grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-          /* According to RFC1122, the interval of TCP Keep-Alive is default to
-             no less than two hours. When there is no outstanding streams, we
-             restrict the number of PINGS equivalent to TCP Keep-Alive. */
+          // According to RFC1122, the interval of TCP Keep-Alive is default to
+          // no less than two hours. When there is no outstanding streams, we
+          // restrict the number of PINGS equivalent to TCP Keep-Alive.
           next_allowed_ping = t->ping_recv_state.last_ping_recv_time +
                               grpc_core::Duration::Hours(2);
         }

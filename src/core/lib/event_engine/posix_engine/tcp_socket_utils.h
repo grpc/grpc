@@ -45,7 +45,7 @@
 #ifndef SO_EE_ORIGIN_ZEROCOPY
 #define SO_EE_ORIGIN_ZEROCOPY 5
 #endif
-#endif /* ifdef GRPC_LINUX_ERRQUEUE */
+#endif  // ifdef GRPC_LINUX_ERRQUEUE
 
 namespace grpc_event_engine {
 namespace experimental {

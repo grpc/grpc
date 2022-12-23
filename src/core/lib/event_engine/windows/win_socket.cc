@@ -24,8 +24,8 @@
 #include "src/core/lib/iomgr/error.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
-/* Nasty workaround for nasty bug when using the 64 bits msys compiler
-   in conjunction with Microsoft Windows headers. */
+// Nasty workaround for nasty bug when using the 64 bits msys compiler
+// in conjunction with Microsoft Windows headers.
 #define GRPC_FIONBIO _IOW('f', 126, uint32_t)
 #else
 #define GRPC_FIONBIO FIONBIO

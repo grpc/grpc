@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
@@ -27,7 +27,7 @@
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
 typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
-/* Test feature flags. */
+// Test feature flags.
 #define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 // Feature mask supports call credentials with a minimum security level of
@@ -52,15 +52,15 @@ struct grpc_end2end_test_fixture {
 };
 
 struct grpc_end2end_test_config {
-  /* A descriptive name for this test fixture. */
+  // A descriptive name for this test fixture.
   const char* name;
 
-  /* Which features are supported by this fixture. See feature flags above. */
+  // Which features are supported by this fixture. See feature flags above.
   uint32_t feature_mask;
 
-  /* If the call host is setup by the fixture (for example, via the
-   * GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg), which value should the test
-   * expect to find in call_details.host */
+  // If the call host is setup by the fixture (for example, via the
+  // GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg), which value should the test
+  // expect to find in call_details.host
   const char* overridden_call_host;
 
   grpc_end2end_test_fixture (*create_fixture)(
@@ -78,12 +78,12 @@ void grpc_end2end_tests(int argc, char** argv, grpc_end2end_test_config config);
 
 const char* get_host_override_string(const char* str,
                                      grpc_end2end_test_config config);
-/* Returns a pointer to a statically allocated slice: future invocations
-   overwrite past invocations, not threadsafe, etc... */
+// Returns a pointer to a statically allocated slice: future invocations
+// overwrite past invocations, not threadsafe, etc...
 const grpc_slice* get_host_override_slice(const char* str,
                                           grpc_end2end_test_config config);
 
 void validate_host_override_string(const char* pattern, grpc_slice str,
                                    grpc_end2end_test_config config);
 
-#endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */
+#endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H

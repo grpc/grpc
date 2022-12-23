@@ -36,4 +36,4 @@ struct grpc_resolved_address {
   socklen_t len;
 };
 
-#endif /* GRPC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H */
+#endif  // GRPC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H

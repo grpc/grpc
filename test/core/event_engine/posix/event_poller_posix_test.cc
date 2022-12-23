@@ -134,9 +134,9 @@ void CreateTestSocket(int port, int* socket_fd, struct sockaddr_in6* sin) {
 
 // An upload server.
 typedef struct {
-  EventHandle* em_fd;       /* listening fd */
-  ssize_t read_bytes_total; /* total number of received bytes */
-  int done;                 /* set to 1 when a server finishes serving */
+  EventHandle* em_fd;        // listening fd
+  ssize_t read_bytes_total;  // total number of received bytes
+  int done;                  // set to 1 when a server finishes serving
   PosixEngineClosure* listen_closure;
 } server;
 
@@ -148,9 +148,9 @@ void ServerInit(server* sv) {
 // An upload session.
 // Created when a new upload request arrives in the server.
 typedef struct {
-  server* sv;              /* not owned by a single session */
-  EventHandle* em_fd;      /* fd to read upload bytes */
-  char read_buf[BUF_SIZE]; /* buffer to store upload bytes */
+  server* sv;               // not owned by a single session
+  EventHandle* em_fd;       // fd to read upload bytes
+  char read_buf[BUF_SIZE];  // buffer to store upload bytes
   PosixEngineClosure* session_read_closure;
 } session;
 
@@ -726,8 +726,8 @@ int main(int argc, char** argv) {
   return r;
 }
 
-#else /* GRPC_POSIX_SOCKET_EV */
+#else  // GRPC_POSIX_SOCKET_EV
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET_EV */
+#endif  // GRPC_POSIX_SOCKET_EV

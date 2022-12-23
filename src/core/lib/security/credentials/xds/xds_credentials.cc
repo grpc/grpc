@@ -99,7 +99,7 @@ bool XdsCertificateVerifier::Verify(
         absl::StatusCode::kUnauthenticated,
         "SANs from certificate did not match SANs from xDS control plane");
   }
-  return true; /* synchronous check */
+  return true;  // synchronous check
 }
 
 void XdsCertificateVerifier::Cancel(

@@ -57,7 +57,7 @@ struct grpc_binder_transport {
     return next_free_tx_code++;
   }
 
-  grpc_transport base; /* must be first */
+  grpc_transport base;  // must be first
 
   std::shared_ptr<grpc_binder::TransportStreamReceiver>
       transport_stream_receiver;

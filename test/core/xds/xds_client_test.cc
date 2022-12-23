@@ -1158,7 +1158,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   CheckRequest(
       *request, XdsFooResourceType::Get()->type_url(),
       /*version_info=*/"", /*response_nonce=*/"A",
-      /*error_detail=*/
+      // error_detail=
       absl::InvalidArgumentError(
           "xDS response validation errors: ["
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
@@ -1305,7 +1305,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/
+               // error_detail=
                absl::InvalidArgumentError(
                    "xDS response validation errors: ["
                    // foo1
@@ -1395,7 +1395,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   CheckRequest(
       *request, XdsFooResourceType::Get()->type_url(),
       /*version_info=*/"1", /*response_nonce=*/"B",
-      /*error_detail=*/
+      // error_detail=
       absl::InvalidArgumentError(
           "xDS response validation errors: ["
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "

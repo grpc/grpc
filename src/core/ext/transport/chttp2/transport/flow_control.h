@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
@@ -291,23 +291,23 @@ class TransportFlowControl final {
 
   MemoryOwner* const memory_owner_;
 
-  /** calculating what we should give for local window:
-      we track the total amount of flow control over initial window size
-      across all streams: this is data that we want to receive right now (it
-      has an outstanding read)
-      and the total amount of flow control under initial window size across all
-      streams: this is data we've read early
-      we want to adjust incoming_window such that:
-      incoming_window = total_over - max(bdp - total_under, 0) */
+  /// calculating what we should give for local window:
+  /// we track the total amount of flow control over initial window size
+  /// across all streams: this is data that we want to receive right now (it
+  /// has an outstanding read)
+  /// and the total amount of flow control under initial window size across all
+  /// streams: this is data we've read early
+  /// we want to adjust incoming_window such that:
+  /// incoming_window = total_over - max(bdp - total_under, 0)
   int64_t announced_stream_total_over_incoming_window_ = 0;
 
-  /** should we probe bdp? */
+  /// should we probe bdp?
   const bool enable_bdp_probe_;
 
-  /* bdp estimation */
+  // bdp estimation
   BdpEstimator bdp_estimator_;
 
-  /* pid controller */
+  // pid controller
   PidController pid_controller_;
   Timestamp last_pid_update_;
 

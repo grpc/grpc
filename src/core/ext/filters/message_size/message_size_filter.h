@@ -87,4 +87,4 @@ absl::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_MESSAGE_SIZE_MESSAGE_SIZE_FILTER_H */
+#endif  // GRPC_CORE_EXT_FILTERS_MESSAGE_SIZE_MESSAGE_SIZE_FILTER_H

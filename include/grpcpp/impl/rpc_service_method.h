@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_IMPL_RPC_SERVICE_METHOD_H
 #define GRPCPP_IMPL_RPC_SERVICE_METHOD_H
@@ -68,11 +68,11 @@ class MethodHandler {
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
 
-  /* Returns a pointer to the deserialized request. \a status reflects the
-     result of deserialization. This pointer and the status should be filled in
-     a HandlerParameter and passed to RunHandler. It is illegal to access the
-     pointer after calling RunHandler. Ownership of the deserialized request is
-     retained by the handler. Returns nullptr if deserialization failed. */
+  // Returns a pointer to the deserialized request. \a status reflects the
+  // result of deserialization. This pointer and the status should be filled in
+  // a HandlerParameter and passed to RunHandler. It is illegal to access the
+  // pointer after calling RunHandler. Ownership of the deserialized request is
+  // retained by the handler. Returns nullptr if deserialization failed.
   virtual void* Deserialize(grpc_call* /*call*/, grpc_byte_buffer* req,
                             Status* /*status*/, void** /*handler_data*/) {
     GPR_ASSERT(req == nullptr);

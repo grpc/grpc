@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -240,16 +240,16 @@ static void request_for_disabled_algorithm(
   cqv.Expect(tag(103), true);
   cqv.Verify();
 
-  /* call was cancelled (closed) ... */
+  // call was cancelled (closed) ...
   GPR_ASSERT(was_cancelled != 0);
-  /* with a certain error */
+  // with a certain error
   GPR_ASSERT(status == expected_error);
 
   const char* algo_name = nullptr;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
   std::string expected_details =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
-  /* and we expect a specific reason for it */
+  // and we expect a specific reason for it
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, expected_details.c_str()));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
 
@@ -642,21 +642,21 @@ static void test_invoke_request_with_compressed_payload_md_override(
   memset(&identity_compression_override.internal_data, 0,
          sizeof(identity_compression_override.internal_data));
 
-  /* Channel default NONE (aka IDENTITY), call override to GZIP */
+  // Channel default NONE (aka IDENTITY), call override to GZIP
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
       /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
-  /* Channel default DEFLATE, call override to GZIP */
+  // Channel default DEFLATE, call override to GZIP
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
       /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
-  /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
+  // Channel default DEFLATE, call override to NONE (aka IDENTITY)
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,

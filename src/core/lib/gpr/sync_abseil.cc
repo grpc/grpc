@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -55,7 +55,7 @@ int gpr_mu_trylock(gpr_mu* mu) {
   return reinterpret_cast<absl::Mutex*>(mu)->TryLock();
 }
 
-/*----------------------------------------*/
+//----------------------------------------
 
 void gpr_cv_init(gpr_cv* cv) {
   static_assert(sizeof(gpr_cv) == sizeof(absl::CondVar),
@@ -89,7 +89,7 @@ void gpr_cv_broadcast(gpr_cv* cv) {
   reinterpret_cast<absl::CondVar*>(cv)->SignalAll();
 }
 
-/*----------------------------------------*/
+//----------------------------------------
 
 void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   static_assert(sizeof(gpr_once) == sizeof(absl::once_flag),
@@ -97,4 +97,4 @@ void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   absl::call_once(*reinterpret_cast<absl::once_flag*>(once), init_function);
 }
 
-#endif /* defined(GPR_ABSEIL_SYNC) && !defined(GPR_CUSTOM_SYNC) */
+#endif  // defined(GPR_ABSEIL_SYNC) && !defined(GPR_CUSTOM_SYNC)

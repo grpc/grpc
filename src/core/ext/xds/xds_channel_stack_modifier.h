@@ -62,4 +62,4 @@ class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H

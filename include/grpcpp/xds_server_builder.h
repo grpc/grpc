@@ -108,4 +108,4 @@ class XdsServerBuilder : public grpc::ServerBuilder {
 
 }  // namespace grpc
 
-#endif /* GRPCPP_XDS_SERVER_BUILDER_H */
+#endif  // GRPCPP_XDS_SERVER_BUILDER_H

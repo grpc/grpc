@@ -21,12 +21,12 @@
 
 #include <cstring>
 
-/** abort() the process if x is zero, with rudimentary logging to prevent
-   circular dependencies with gpr_log.
+/// abort() the process if x is zero, with rudimentary logging to prevent
+/// circular dependencies with gpr_log.
 
-   Intended for internal invariants.  If the error can be recovered from,
-   without the possibility of corruption, or might best be reflected via
-   an exception in a higher-level language, consider returning error code.  */
+/// Intended for internal invariants.  If the error can be recovered from,
+/// without the possibility of corruption, or might best be reflected via
+/// an exception in a higher-level language, consider returning error code.
 #define GPR_ASSERT_INTERNAL(x)                     \
   do {                                             \
     if (GPR_UNLIKELY(!(x))) {                      \

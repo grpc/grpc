@@ -324,4 +324,4 @@ class DualRefCounted : public Orphanable {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H */
+#endif  // GRPC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H

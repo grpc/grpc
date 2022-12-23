@@ -32,24 +32,24 @@
 // a registry to avoid name collisions.
 //
 // Expected usage:
-/*
-// Interface has a virtual method that returns a UniqueTypeName.
-class Interface {
- public:
-  virtual ~Interface() = default;
-  virtual UniqueTypeName type() const = 0;
-};
+//
+//// Interface has a virtual method that returns a UniqueTypeName.
+// class Interface {
+// public:
+// virtual ~Interface() = default;
+// virtual UniqueTypeName type() const = 0;
+// };
 
-// Implementation uses a static factory instance to return the same
-// UniqueTypeName for every instance.
-class FooImplementation : public Interface {
- public:
-  UniqueTypeName type() const override {
-    static UniqueTypeName::Factory kFactory("Foo");
-    return kFactory.Create();
-  }
-};
-*/
+//// Implementation uses a static factory instance to return the same
+//// UniqueTypeName for every instance.
+// class FooImplementation : public Interface {
+// public:
+// UniqueTypeName type() const override {
+//   static UniqueTypeName::Factory kFactory("Foo");
+//   return kFactory.Create();
+// }
+// };
+//
 
 namespace grpc_core {
 

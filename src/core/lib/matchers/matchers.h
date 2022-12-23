@@ -159,4 +159,4 @@ class HeaderMatcher {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_MATCHERS_MATCHERS_H */
+#endif  // GRPC_CORE_LIB_MATCHERS_MATCHERS_H
