@@ -414,8 +414,8 @@ grpc_cc_library(
         "pipe",
         "poll",
         "promise_factory",
-        "//:gpr",
         "try_seq",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
