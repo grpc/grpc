@@ -2010,6 +2010,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "//:event_engine_base_hdrs",
