@@ -67,8 +67,6 @@ std::shared_ptr<ServerCredentials> BinderServerCredentials() {
 
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
-  grpc_init();
-
   return grpc::CreateChannelInternal(
       "",
       grpc::internal::CreateDirectBinderChannelImplForTesting(
