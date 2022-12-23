@@ -111,4 +111,4 @@ bool TestOnlyXdsVerifySubjectAlternativeNames(
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H */
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
