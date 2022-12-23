@@ -819,6 +819,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
+        "arena_promise",
         "arena",
         "context",
         "intra_activity_waiter",

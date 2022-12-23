@@ -32,6 +32,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
@@ -100,6 +101,21 @@ class Next;
 template <typename T>
 class Center {
  public:
+  class MapFactory {
+   public:
+    virtual ArenaPromise<T> MakePromise(T x) = 0;
+
+    void SetNext(MapFactory* next) {
+      GPR_DEBUG_ASSERT(next_ == nullptr);
+      next_ = next;
+    }
+
+    MapFactory* next() const { return next_; }
+
+   private:
+    MapFactory* next_ = nullptr;
+  };
+
   // Initialize with one send ref (held by PipeSender) and one recv ref (held by
   // PipeReceiver)
   Center() {
@@ -179,7 +195,7 @@ class Center {
   // Return Pending if there is no value.
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
-  Poll<NextResult<T>> Next() {
+  Poll<absl::optional<T>> Next() {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
     }
@@ -192,11 +208,11 @@ class Center {
         value_state_ = ValueState::kClosed;
         ABSL_FALLTHROUGH_INTENDED;
       case ValueState::kReady:
-        return NextResult<T>(Ref());
+        return std::move(value_);
       case ValueState::kClosed:
-        return NextResult<T>(nullptr);
+        return absl::nullopt;
     }
-    GPR_UNREACHABLE_CODE(return NextResult<T>(nullptr));
+    GPR_UNREACHABLE_CODE(return absl::nullopt);
   }
 
   void AckNext() {
@@ -241,25 +257,50 @@ class Center {
 
   T& value() { return value_; }
   const T& value() const { return value_; }
+  MapFactory* first_map() { return first_map_; }
 
   std::string DebugTag() {
     return absl::StrCat(Activity::current()->DebugTag(), " PIPE[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
+  template <typename Fn>
+  void AppendMap(Fn fn) {
+    MapFactory* f = GetContext<Arena>()->New<MapFactoryImpl<Fn>>(std::move(fn));
+    if (first_map_ == nullptr) {
+      first_map_ = f;
+      last_map_ = f;
+    } else {
+      last_map_->SetNext(f);
+      last_map_ = f;
+    }
+  }
+
+  template <typename Fn>
+  void PrependMap(Fn fn) {
+    MapFactory* f = GetContext<Arena>()->New<MapFactoryImpl<Fn>>(std::move(fn));
+    if (first_map_ == nullptr) {
+      first_map_ = f;
+      last_map_ = f;
+    } else {
+      f->SetNext(first_map_);
+      first_map_ = f;
+    }
+  }
+
  private:
-  std::string DebugOpString(std::string op) {
-    return absl::StrCat(DebugTag(), op, " refs=", refs_,
-                        " value_state=", ValueStateName(value_state_),
-                        " on_empty=", on_empty_.DebugString().c_str(),
-                        " on_full=", on_full_.DebugString().c_str());
-  }
-  void ResetValue() {
-    // Fancy dance to move out of value in the off chance that we reclaim some
-    // memory earlier.
-    [](T) {}(std::move(value_));
-    value_state_ = ValueState::kEmpty;
-  }
+  template <typename Fn>
+  class MapFactoryImpl final : public MapFactory {
+   public:
+    explicit MapFactoryImpl(Fn fn) : fn_(std::move(fn)) {}
+    virtual ArenaPromise<absl::optional<T>> MakePromise(T x) final {
+      return fn_(x);
+    }
+
+   private:
+    Fn fn_;
+  };
+
   // State of value_.
   enum class ValueState : uint8_t {
     // No value is set, it's possible to send.
@@ -275,6 +316,14 @@ class Center {
     // (but one value is queued and ready to be received)
     kReadyClosed,
   };
+
+  std::string DebugOpString(std::string op) {
+    return absl::StrCat(DebugTag(), op, " refs=", refs_,
+                        " value_state=", ValueStateName(value_state_),
+                        " on_empty=", on_empty_.DebugString().c_str(),
+                        " on_full=", on_full_.DebugString().c_str());
+  }
+
   static const char* ValueStateName(ValueState state) {
     switch (state) {
       case ValueState::kEmpty:
@@ -290,6 +339,9 @@ class Center {
     }
     GPR_UNREACHABLE_CODE(return "unknown");
   }
+
+  MapFactory* first_map_ = nullptr;
+  MapFactory* last_map_ = nullptr;
   T value_;
   // Number of refs
   uint8_t refs_ : 3;
@@ -354,6 +406,11 @@ class PipeSender {
   // receiver is either closed or able to receive another message.
   PushType Push(T value);
 
+  template <typename Fn>
+  void InterceptAndMap(Fn f) {
+    center_->AppendMap(std::move(f));
+  }
+
  private:
   friend struct Pipe<T>;
   explicit PipeSender(pipe_detail::Center<T>* center) : center_(center) {}
@@ -394,6 +451,11 @@ class PipeReceiver {
   // available.
   NextType Next();
 
+  template <typename Fn>
+  void InterceptAndMap(Fn f) {
+    center_->PrependMap(std::move(f));
+  }
+
  private:
   friend struct Pipe<T>;
   explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
@@ -409,7 +471,7 @@ class Push {
   Push(const Push&) = delete;
   Push& operator=(const Push&) = delete;
   Push(Push&& other) noexcept
-      : center_(other.center_), push_(std::move(other.push_)) {
+      : center_(other.center_), state_(std::move(other.state_)) {
     other.center_ = nullptr;
   }
   Push& operator=(Push&& other) noexcept {
@@ -422,7 +484,7 @@ class Push {
     }
     center_ = other.center_;
     other.center_ = nullptr;
-    push_ = std::move(other.push_);
+    state_ = std::move(other.state_);
     return *this;
   }
 
@@ -437,25 +499,28 @@ class Push {
   }
 
   Poll<bool> operator()() {
-    if (push_.has_value()) {
-      auto r = center_->Push(&*push_);
+    if (auto* p = absl::get_if<T>(&state_)) {
+      auto r = center_->Push(p);
       if (auto* ok = absl::get_if<bool>(&r)) {
-        push_.reset();
+        state_.template emplace<AwaitingAck>();
         if (!*ok) return false;
       } else {
         return Pending{};
       }
     }
-    GPR_DEBUG_ASSERT(!push_.has_value());
+    GPR_DEBUG_ASSERT(absl::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 
  private:
+  struct AwaitingAck {};
+
   friend class PipeSender<T>;
   explicit Push(pipe_detail::Center<T>* center, T push)
-      : center_(center), push_(std::move(push)) {}
+      : center_(center), state_(std::move(push)) {}
+
   Center<T>* center_;
-  absl::optional<T> push_;
+  absl::variant<T, AwaitingAck> state_;
 };
 
 // Implementation of PipeReceiver::Next promise.
@@ -491,21 +556,42 @@ class Next {
   }
 
   Poll<NextResult<T>> operator()() {
-    auto r = center_->Next();
-    if (!absl::holds_alternative<Pending>(r)) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sStop next due to resolved result",
-                center_->DebugTag().c_str());
+    if (!current_map_.has_value()) {
+      auto r = center_->Next();
+      if (auto* p = absl::get_if<absl::optional<T>>(&r)) {
+        return NextMap(std::move(*p));
       }
-      std::exchange(center_, nullptr)->Unref();
+      return Pending{};
     }
-    return r;
+    return FinishMap();
   }
 
  private:
   friend class PipeReceiver<T>;
   explicit Next(pipe_detail::Center<T>* center) : center_(center) {}
+
+  Poll<NextResult<T>> FinishMap() {
+    auto r = current_map_();
+    if (auto* p = absl::get_if<absl::optional<T>>(&r)) {
+      return NextMap(std::move(*p));
+    }
+    return Pending{};
+  }
+
+  Poll<NextResult<T>> NextMap(absl::optional<T> r) {
+    if (!r.has_value()) return NextResult<T>(nullptr);
+    if (map_factory_ == nullptr) {
+      center_->value() = std::move(*r);
+      return NextResult<T>(std::exchange(center_, nullptr));
+    }
+    current_map_ = map_factory_->MakePromise(std::move(*r));
+    return FinishMap();
+  }
+
   Center<T>* center_;
+  typename pipe_detail::Center<T>::MapFactory* map_factory_ =
+      center_->first_map();
+  ArenaPromise<absl::optional<T>> current_map_;
 };
 
 }  // namespace pipe_detail
