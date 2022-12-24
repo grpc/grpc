@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "detail/promise_factory.h"
 
 #include <grpc/support/log.h>
 
@@ -103,7 +104,7 @@ class Center {
  public:
   class MapFactory {
    public:
-    virtual ArenaPromise<T> MakePromise(T x) = 0;
+    virtual ArenaPromise<absl::optional<T>> MakePromise(T x) = 0;
 
     void SetNext(MapFactory* next) {
       GPR_DEBUG_ASSERT(next_ == nullptr);
@@ -294,11 +295,11 @@ class Center {
    public:
     explicit MapFactoryImpl(Fn fn) : fn_(std::move(fn)) {}
     virtual ArenaPromise<absl::optional<T>> MakePromise(T x) final {
-      return fn_(x);
+      return fn_.Make(std::move(x));
     }
 
    private:
-    Fn fn_;
+    promise_detail::RepeatedPromiseFactory<T, Fn> fn_;
   };
 
   // State of value_.
@@ -585,6 +586,7 @@ class Next {
       return NextResult<T>(std::exchange(center_, nullptr));
     }
     current_map_ = map_factory_->MakePromise(std::move(*r));
+    map_factory_ = map_factory_->next();
     return FinishMap();
   }
 
