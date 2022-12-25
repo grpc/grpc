@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Win32 code for gpr time support. */
+// Win32 code for gpr time support.
 
 #include <grpc/support/port_platform.h>
 
@@ -86,8 +86,8 @@ void gpr_sleep_until(gpr_timespec until) {
   int64_t sleep_millis;
 
   for (;;) {
-    /* We could simplify by using clock_nanosleep instead, but it might be
-     * slightly less portable. */
+    // We could simplify by using clock_nanosleep instead, but it might be
+    // slightly less portable.
     now = gpr_now(until.clock_type);
     if (gpr_time_cmp(until, now) <= 0) {
       return;
@@ -101,4 +101,4 @@ void gpr_sleep_until(gpr_timespec until) {
   }
 }
 
-#endif /* GPR_WINDOWS_TIME */
+#endif  // GPR_WINDOWS_TIME

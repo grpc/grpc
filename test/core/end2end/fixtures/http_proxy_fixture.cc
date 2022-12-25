@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
@@ -465,11 +465,11 @@ static void on_server_connect_done(void* arg, grpc_error_handle error) {
   conn->proxy->combiner->Run(&conn->on_server_connect_done, error);
 }
 
-/**
- * Parses the proxy auth header value to check if it matches :-
- * Basic <base64_encoded_expected_cred>
- * Returns true if it matches, false otherwise
- */
+///
+/// Parses the proxy auth header value to check if it matches :-
+/// Basic <base64_encoded_expected_cred>
+/// Returns true if it matches, false otherwise
+///
 static bool proxy_auth_header_matches(char* proxy_auth_header_val,
                                       char* expected_cred) {
   GPR_ASSERT(proxy_auth_header_val != nullptr);
@@ -649,7 +649,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
-      &proxy->server);
+      on_accept, proxy, &proxy->server);
   GPR_ASSERT(error.ok());
   // Bind to port.
   grpc_resolved_address resolved_addr;
@@ -666,7 +666,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &proxy->mu);
   proxy->pollset.push_back(pollset);
-  grpc_tcp_server_start(proxy->server, &proxy->pollset, on_accept, proxy);
+  grpc_tcp_server_start(proxy->server, &proxy->pollset);
 
   // Start proxy thread.
   proxy->thd = grpc_core::Thread("grpc_http_proxy", thread_main, proxy);

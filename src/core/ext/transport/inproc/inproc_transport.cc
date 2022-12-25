@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -1093,7 +1093,7 @@ void close_transport_locked(inproc_transport* t) {
                             "close transport");
   if (!t->is_closed) {
     t->is_closed = true;
-    /* Also end all streams on this transport */
+    // Also end all streams on this transport
     while (t->stream_list != nullptr) {
       // cancel_stream_locked also adjusts stream list
       cancel_stream_locked(
@@ -1161,9 +1161,9 @@ void destroy_transport(grpc_transport* gt) {
   t->unref();
 }
 
-/*******************************************************************************
- * INTEGRATION GLUE
- */
+//******************************************************************************
+// INTEGRATION GLUE
+//
 
 void set_pollset(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
                  grpc_pollset* /*pollset*/) {
@@ -1185,9 +1185,9 @@ const grpc_transport_vtable inproc_vtable = {
     destroy_stream,        destroy_transport,
     get_endpoint};
 
-/*******************************************************************************
- * Main inproc transport functions
- */
+//******************************************************************************
+// Main inproc transport functions
+//
 void inproc_transports_create(grpc_transport** server_transport,
                               grpc_transport** client_transport) {
   INPROC_LOG(GPR_INFO, "inproc_transports_create");
