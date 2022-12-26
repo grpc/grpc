@@ -400,7 +400,8 @@ cdef class ALTSChannelCredentials(ChannelCredentials):
     self.c_options = grpc_alts_credentials_client_options_create()
     cdef str account
     for account in service_accounts:
-      grpc_alts_credentials_client_options_add_target_service_account(self.c_options, account)
+      grpc_alts_credentials_client_options_add_target_service_account(
+          self.c_options, str_to_bytes(account))
  
   def __dealloc__(self):
     if self.c_options != NULL:
