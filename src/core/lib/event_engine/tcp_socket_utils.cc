@@ -76,23 +76,26 @@ absl::StatusOr<std::string> GetScheme(
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    EventEngine::ResolvedAddress* resolved_addr, bool skip_uri) {
+    const EventEngine::ResolvedAddress* resolved_addr, bool skip_uri) {
   const sockaddr* addr = resolved_addr->address();
   if (addr->sa_family != AF_UNIX) {
     return absl::InvalidArgumentError(
         absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
   }
   const sockaddr_un* unix_addr = reinterpret_cast<const sockaddr_un*>(addr);
-  bool abstract = (resolved_addr->size() < sizeof(unix_addr->sun_family) + 1 ||
-                   unix_addr->sun_path[0] == '\0');
+#ifdef GPR_APPLE
+  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) -
+            sizeof(unix_addr->sun_len) - 1;
+#else
+  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
+#endif
+  bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
   std::string scheme;
   std::string path;
   if (abstract) {
     scheme = "unix-abstract";
-    if (resolved_addr->size() >= sizeof(unix_addr->sun_family) + 1) {
-      path = std::string(
-          unix_addr->sun_path + 1,
-          resolved_addr->size() - sizeof(unix_addr->sun_family) - 1);
+    if (len >= 0) {
+      path = std::string(unix_addr->sun_path + 1, len);
     }
     if (skip_uri) {
       path = absl::StrCat(std::string(1, '\0'), path);
@@ -293,27 +296,7 @@ absl::StatusOr<std::string> ResolvedAddressToString(
   std::string out;
 #ifdef GRPC_HAVE_UNIX_SOCKET
   if (addr->sa_family == AF_UNIX) {
-    const sockaddr_un* addr_un = reinterpret_cast<const sockaddr_un*>(addr);
-    bool abstract = addr_un->sun_path[0] == '\0';
-    if (abstract) {
-#ifdef GPR_APPLE
-      int len = resolved_addr.size() - sizeof(addr_un->sun_family) -
-                sizeof(addr_un->sun_len);
-#else
-      int len = resolved_addr.size() - sizeof(addr_un->sun_family);
-#endif
-      if (len <= 0) {
-        return absl::InvalidArgumentError("Empty UDS abstract path");
-      }
-      out = std::string(addr_un->sun_path, len);
-    } else {
-      size_t maxlen = sizeof(addr_un->sun_path);
-      if (strnlen(addr_un->sun_path, maxlen) == maxlen) {
-        return absl::InvalidArgumentError("UDS path is not null-terminated");
-      }
-      out = std::string(addr_un->sun_path);
-    }
-    return out;
+    return ResolvedAddrToUriUnixIfPossible(&resolved_addr, true);
   }
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
