@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -87,7 +87,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Client sends a request with payload, server reads then returns status. */
+// Client sends a request with payload, server reads then returns status.
 static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
@@ -145,7 +145,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
-  cqv.Expect(tag(1), true); /* send message is buffered */
+  cqv.Expect(tag(1), true);  // send message is buffered
   cqv.Expect(tag(101), true);
   cqv.Verify();
 
@@ -168,7 +168,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  /* recv message should not succeed yet - it's buffered at the client still */
+  // recv message should not succeed yet - it's buffered at the client still
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -183,7 +183,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   cqv.Expect(tag(102), true);
   cqv.Verify();
 
-  /* send end of stream: should release the buffering */
+  // send end of stream: should release the buffering
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -192,12 +192,12 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  /* now the first send should match up with the first recv */
+  // now the first send should match up with the first recv
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(4), true);
   cqv.Verify();
 
-  /* and the next recv should be ready immediately also (and empty) */
+  // and the next recv should be ready immediately also (and empty)
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;

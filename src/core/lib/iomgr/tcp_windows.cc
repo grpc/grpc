@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -44,8 +44,8 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
-/* Nasty workaround for nasty bug when using the 64 bits msys compiler
-   in conjunction with Microsoft Windows headers. */
+// Nasty workaround for nasty bug when using the 64 bits msys compiler
+// in conjunction with Microsoft Windows headers.
 #define GRPC_FIONBIO _IOW('f', 126, uint32_t)
 #else
 #define GRPC_FIONBIO FIONBIO
@@ -98,11 +98,11 @@ grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock) {
 }
 
 typedef struct grpc_tcp {
-  /* This is our C++ class derivation emulation. */
+  // This is our C++ class derivation emulation.
   grpc_endpoint base;
-  /* The one socket this endpoint is using. */
+  // The one socket this endpoint is using.
   grpc_winsocket* socket;
-  /* Refcounting how many operations are in progress. */
+  // Refcounting how many operations are in progress.
   gpr_refcount refcount;
 
   grpc_closure on_read;
@@ -111,14 +111,14 @@ typedef struct grpc_tcp {
   grpc_closure* read_cb;
   grpc_closure* write_cb;
 
-  /* garbage after the last read */
+  // garbage after the last read
   grpc_slice_buffer last_read_buffer;
 
   grpc_slice_buffer* write_slices;
   grpc_slice_buffer* read_slices;
 
-  /* The IO Completion Port runs from another thread. We need some mechanism
-     to protect ourselves when requesting a shutdown. */
+  // The IO Completion Port runs from another thread. We need some mechanism
+  // to protect ourselves when requesting a shutdown.
   gpr_mu mu;
   int shutting_down;
   grpc_error_handle shutdown_error;
@@ -172,7 +172,7 @@ static void tcp_unref(grpc_tcp* tcp) {
 static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
-/* Asynchronous callback from the IOCP, or the background thread. */
+// Asynchronous callback from the IOCP, or the background thread.
 static void on_read(void* tcpp, grpc_error_handle error) {
   grpc_tcp* tcp = (grpc_tcp*)tcpp;
   grpc_closure* cb = tcp->read_cb;
@@ -280,19 +280,19 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 
   TCP_REF(tcp, "read");
 
-  /* First let's try a synchronous, non-blocking read. */
+  // First let's try a synchronous, non-blocking read.
   status = WSARecv(tcp->socket->socket, buffers, (DWORD)tcp->read_slices->count,
                    &bytes_read, &flags, NULL, NULL);
   info->wsa_error = status == 0 ? 0 : WSAGetLastError();
 
-  /* Did we get data immediately ? Yay. */
+  // Did we get data immediately ? Yay.
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transferred = bytes_read;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &tcp->on_read, absl::OkStatus());
     return;
   }
 
-  /* Otherwise, let's retry, by queuing a read. */
+  // Otherwise, let's retry, by queuing a read.
   memset(&tcp->socket->read_info.overlapped, 0, sizeof(OVERLAPPED));
   status = WSARecv(tcp->socket->socket, buffers, (DWORD)tcp->read_slices->count,
                    &bytes_read, &flags, &info->overlapped, NULL);
@@ -310,7 +310,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   grpc_socket_notify_on_read(tcp->socket, &tcp->on_read);
 }
 
-/* Asynchronous callback from the IOCP, or the background thread. */
+// Asynchronous callback from the IOCP, or the background thread.
 static void on_write(void* tcpp, grpc_error_handle error) {
   grpc_tcp* tcp = (grpc_tcp*)tcpp;
   grpc_winsocket* handle = tcp->socket;
@@ -338,7 +338,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
 }
 
-/* Initiates a write. */
+// Initiates a write.
 static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                       grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
@@ -388,7 +388,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     buffers[i].buf = (char*)GRPC_SLICE_START_PTR(tcp->write_slices->slices[i]);
   }
 
-  /* First, let's try a synchronous, non-blocking write. */
+  // First, let's try a synchronous, non-blocking write.
   status = WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
                    &bytes_sent, 0, NULL, NULL);
 
@@ -401,8 +401,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
       return;
     }
 
-    /* The data was not completely delivered, we should send the rest of
-       them by doing an async write operation. */
+    // The data was not completely delivered, we should send the rest of
+    // them by doing an async write operation.
     for (i = 0; i < tcp->write_slices->count; i++) {
       if (buffers[i].len > bytes_sent) {
         buffers[i].buf += bytes_sent;
@@ -415,9 +415,9 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   } else {
     info->wsa_error = WSAGetLastError();
 
-    /* We would kind of expect to get a WSAEWOULDBLOCK here, especially on a
-       busy connection that has its send queue filled up. But if we don't, then
-       we can avoid doing an async write operation at all. */
+    // We would kind of expect to get a WSAEWOULDBLOCK here, especially on a
+    // busy connection that has its send queue filled up. But if we don't, then
+    // we can avoid doing an async write operation at all.
     if (info->wsa_error != WSAEWOULDBLOCK) {
       grpc_error_handle error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
@@ -428,8 +428,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   TCP_REF(tcp, "write");
 
-  /* If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
-     operation, this time asynchronously. */
+  // If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
+  // operation, this time asynchronously.
   memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
   status = WSASend(socket->socket, buffers + async_buffers_offset,
                    (DWORD)(tcp->write_slices->count - async_buffers_offset),
@@ -446,8 +446,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     }
   }
 
-  /* As all is now setup, we can now ask for the IOCP notification. It may
-     trigger the callback immediately however, but no matter. */
+  // As all is now setup, we can now ask for the IOCP notification. It may
+  // trigger the callback immediately however, but no matter.
   grpc_socket_notify_on_write(socket, &tcp->on_write);
 }
 
@@ -468,17 +468,17 @@ static void win_add_to_pollset_set(grpc_endpoint* ep, grpc_pollset_set* pss) {
 static void win_delete_from_pollset_set(grpc_endpoint* ep,
                                         grpc_pollset_set* pss) {}
 
-/* Initiates a shutdown of the TCP endpoint. This will queue abort callbacks
-   for the potential read and write operations. It is up to the caller to
-   guarantee this isn't called in parallel to a read or write request, so
-   we're not going to protect against these. However the IO Completion Port
-   callback will happen from another thread, so we need to protect against
-   concurrent access of the data structure in that regard. */
+// Initiates a shutdown of the TCP endpoint. This will queue abort callbacks
+// for the potential read and write operations. It is up to the caller to
+// guarantee this isn't called in parallel to a read or write request, so
+// we're not going to protect against these. However the IO Completion Port
+// callback will happen from another thread, so we need to protect against
+// concurrent access of the data structure in that regard.
 static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   gpr_mu_lock(&tcp->mu);
-  /* At that point, what may happen is that we're already inside the IOCP
-     callback. See the comments in on_read and on_write. */
+  // At that point, what may happen is that we're already inside the IOCP
+  // callback. See the comments in on_read and on_write.
   if (!tcp->shutting_down) {
     tcp->shutting_down = 1;
     tcp->shutdown_error = why;
@@ -546,4 +546,4 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   return &tcp->base;
 }
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif  // GRPC_WINSOCK_SOCKET

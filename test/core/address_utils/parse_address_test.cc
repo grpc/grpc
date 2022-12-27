@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/address_utils/parse_address.h"
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -72,13 +72,13 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
   ASSERT_TRUE(absl::StartsWith(addr_un->sun_path + 1, pathname));
 }
 
-#else /* GRPC_HAVE_UNIX_SOCKET */
+#else  // GRPC_HAVE_UNIX_SOCKET
 
 static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {}
 static void test_grpc_parse_unix_abstract(const char* uri_text,
                                           const char* pathname) {}
 
-#endif /* GRPC_HAVE_UNIX_SOCKET */
+#endif  // GRPC_HAVE_UNIX_SOCKET
 
 static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
                                  unsigned short port) {
@@ -120,7 +120,7 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   ASSERT_EQ(addr_in6->sin6_scope_id, scope_id);
 }
 
-/* Test parsing invalid ipv6 addresses (valid uri_text but invalid ipv6 addr) */
+// Test parsing invalid ipv6 addresses (valid uri_text but invalid ipv6 addr)
 static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
@@ -141,7 +141,7 @@ TEST(ParseAddressTest, MainTest) {
   test_grpc_parse_ipv6("ipv6:[2001:db8::1]:12345", "2001:db8::1", 12345, 0);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1%252]:12345", "2001:db8::1", 12345, 2);
 
-  /* Address length greater than GRPC_INET6_ADDRSTRLEN */
+  // Address length greater than GRPC_INET6_ADDRSTRLEN
   test_grpc_parse_ipv6_invalid(
       "ipv6:WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW45%"
       "25v6:45%25x$1*");

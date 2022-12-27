@@ -29,4 +29,4 @@
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <stdio.h>
@@ -89,91 +89,91 @@ const char* hobbits[][2] = {
     {"Isengrim", "Took"},        {"Isengrim", "Took"},
     {"Isumbras", "Took"},        {"Isumbras", "Took"},
     {"Jolly", "Cotton"},
-    /*
-    {"Lalia", "Took"},
-    {"Largo", "Baggins"},
-    {"Laura", "Baggins"},
-    {"Lily", "Goodbody"},
-    {"Lily", "Cotton"},
-    {"Linda", "Proudfoot"},
-    {"Lobelia", "Sackville-Baggins"},
-    {"Longo", "Baggins"},
-    {"Lotho", "Sackville-Baggins"},
-    {"Madoc", "Brandybuck"},
-    {"Malva", "Brandybuck"},
-    {"Marigold", "Cotton"},
-    {"Marmadas", "Brandybuck"},
-    {"Marmadoc", "Brandybuck"},
-    {"Marroc", "Brandybuck"},
-    {"May", "Gamgee"},
-    {"Melilot", "Brandybuck"},
-    {"Menegilda", "Brandybuck"},
-    {"Mentha", "Brandybuck"},
-    {"Meriadoc", "Brandybuck"},
-    {"Merimac", "Brandybuck"},
-    {"Merimas", "Brandybuck"},
-    {"Merry", "Gardner"},
-    {"Milo", "Burrows"},
-    {"Mimosa", "Baggins"},
-    {"Minto", "Burrows"},
-    {"Mirabella", "Brandybuck"},
-    {"Moro", "Burrows"},
-    {"Mosco", "Burrows"},
-    {"Mungo", "Baggins"},
-    {"Myrtle", "Burrows"},
-    {"Odo", "Proudfoot"},
-    {"Odovacar", "Bolger"},
-    {"Olo", "Proudfoot"},
-    {"Orgulas", "Brandybuck"},
-    {"Otho", "Sackville-Baggins"},
-    {"Paladin", "Took"},
-    {"Pansy", "Bolger"},
-    {"Pearl", "Took"},
-    {"Peony", "Burrows"},
-    {"Peregrin", "Took"},
-    {"Pervinca", "Took"},
-    {"Pimpernel", "Took"},
-    {"Pippin", "Gardner"},
-    {"Polo", "Baggins"},
-    {"Ponto", "Baggins"},
-    {"Porto", "Baggins"},
-    {"Posco", "Baggins"},
-    {"Poppy", "Bolger"},
-    {"Primrose", "Gardner"},
-    {"Primula", "Baggins"},
-    {"Prisca", "Bolger"},
-    {"Reginard", "Took"},
-    {"Robin", "Smallburrow"},
-    {"Robin", "Gardner"},
-    {"Rorimac", "Brandybuck"},
-    {"Rosa", "Took"},
-    {"Rosamunda", "Bolger"},
-    {"Rose", "Gardner"},
-    {"Ruby", "Baggins"},
-    {"Ruby", "Gardner"},
-    {"Rudigar", "Bolger"},
-    {"Rufus", "Burrows"},
-    {"Sadoc", "Brandybuck"},
-    {"Salvia", "Bolger"},
-    {"Samwise", "Gamgee"},
-    {"Sancho", "Proudfoot"},
-    {"Saradas", "Brandybuck"},
-    {"Saradoc", "Brandybuck"},
-    {"Seredic", "Brandybuck"},
-    {"Sigismond", "Took"},
-    {"Smeagol", "Gollum"},
-    {"Tanta", "Baggins"},
-    {"Ted", "Sandyman"},
-    {"Tobold", "Hornblower"},
-    {"Togo", "Goodbody"},
-    {"Tolman", "Cotton"},
-    {"Tolman", "Gardner"},
-    {"Widow", "Rumble"},
-    {"Wilcome", "Cotton"},
-    {"Wilcome", "Cotton"},
-    {"Wilibald", "Bolger"},
-    {"Will", "Whitfoot"},
-    {"Wiseman", "Gamwich"}*/
+    //
+    //{"Lalia", "Took"},
+    //{"Largo", "Baggins"},
+    //{"Laura", "Baggins"},
+    //{"Lily", "Goodbody"},
+    //{"Lily", "Cotton"},
+    //{"Linda", "Proudfoot"},
+    //{"Lobelia", "Sackville-Baggins"},
+    //{"Longo", "Baggins"},
+    //{"Lotho", "Sackville-Baggins"},
+    //{"Madoc", "Brandybuck"},
+    //{"Malva", "Brandybuck"},
+    //{"Marigold", "Cotton"},
+    //{"Marmadas", "Brandybuck"},
+    //{"Marmadoc", "Brandybuck"},
+    //{"Marroc", "Brandybuck"},
+    //{"May", "Gamgee"},
+    //{"Melilot", "Brandybuck"},
+    //{"Menegilda", "Brandybuck"},
+    //{"Mentha", "Brandybuck"},
+    //{"Meriadoc", "Brandybuck"},
+    //{"Merimac", "Brandybuck"},
+    //{"Merimas", "Brandybuck"},
+    //{"Merry", "Gardner"},
+    //{"Milo", "Burrows"},
+    //{"Mimosa", "Baggins"},
+    //{"Minto", "Burrows"},
+    //{"Mirabella", "Brandybuck"},
+    //{"Moro", "Burrows"},
+    //{"Mosco", "Burrows"},
+    //{"Mungo", "Baggins"},
+    //{"Myrtle", "Burrows"},
+    //{"Odo", "Proudfoot"},
+    //{"Odovacar", "Bolger"},
+    //{"Olo", "Proudfoot"},
+    //{"Orgulas", "Brandybuck"},
+    //{"Otho", "Sackville-Baggins"},
+    //{"Paladin", "Took"},
+    //{"Pansy", "Bolger"},
+    //{"Pearl", "Took"},
+    //{"Peony", "Burrows"},
+    //{"Peregrin", "Took"},
+    //{"Pervinca", "Took"},
+    //{"Pimpernel", "Took"},
+    //{"Pippin", "Gardner"},
+    //{"Polo", "Baggins"},
+    //{"Ponto", "Baggins"},
+    //{"Porto", "Baggins"},
+    //{"Posco", "Baggins"},
+    //{"Poppy", "Bolger"},
+    //{"Primrose", "Gardner"},
+    //{"Primula", "Baggins"},
+    //{"Prisca", "Bolger"},
+    //{"Reginard", "Took"},
+    //{"Robin", "Smallburrow"},
+    //{"Robin", "Gardner"},
+    //{"Rorimac", "Brandybuck"},
+    //{"Rosa", "Took"},
+    //{"Rosamunda", "Bolger"},
+    //{"Rose", "Gardner"},
+    //{"Ruby", "Baggins"},
+    //{"Ruby", "Gardner"},
+    //{"Rudigar", "Bolger"},
+    //{"Rufus", "Burrows"},
+    //{"Sadoc", "Brandybuck"},
+    //{"Salvia", "Bolger"},
+    //{"Samwise", "Gamgee"},
+    //{"Sancho", "Proudfoot"},
+    //{"Saradas", "Brandybuck"},
+    //{"Saradoc", "Brandybuck"},
+    //{"Seredic", "Brandybuck"},
+    //{"Sigismond", "Took"},
+    //{"Smeagol", "Gollum"},
+    //{"Tanta", "Baggins"},
+    //{"Ted", "Sandyman"},
+    //{"Tobold", "Hornblower"},
+    //{"Togo", "Goodbody"},
+    //{"Tolman", "Cotton"},
+    //{"Tolman", "Gardner"},
+    //{"Widow", "Rumble"},
+    //{"Wilcome", "Cotton"},
+    //{"Wilcome", "Cotton"},
+    //{"Wilibald", "Bolger"},
+    //{"Will", "Whitfoot"},
+    //{"Wiseman", "Gamwich"}
 };
 
 const char* dragons[] = {"Ancalagon", "Glaurung", "Scatha",

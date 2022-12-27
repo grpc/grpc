@@ -559,7 +559,7 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* defined(GRPC_LINUX_EPOLL) */
+#else  // defined(GRPC_LINUX_EPOLL)
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
 namespace grpc_event_engine {
@@ -605,5 +605,5 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif  // defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
+#endif  // !defined(GRPC_LINUX_EPOLL)

@@ -410,13 +410,13 @@ namespace grpc_event_engine {
 namespace experimental {
 namespace internal {
 template <>
-struct ConstRefSliceCastable<grpc_core::Slice, grpc_slice> {};
+struct SliceCastable<grpc_core::Slice, grpc_slice> {};
 template <>
-struct ConstRefSliceCastable<grpc_slice, grpc_core::Slice> {};
+struct SliceCastable<grpc_slice, grpc_core::Slice> {};
 template <>
-struct ConstRefSliceCastable<grpc_core::Slice, Slice> {};
+struct SliceCastable<grpc_core::Slice, Slice> {};
 template <>
-struct ConstRefSliceCastable<Slice, grpc_core::Slice> {};
+struct SliceCastable<Slice, grpc_core::Slice> {};
 }  // namespace internal
 }  // namespace experimental
 }  // namespace grpc_event_engine

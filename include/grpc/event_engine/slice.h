@@ -284,9 +284,9 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
 
 namespace internal {
 template <>
-struct ConstRefSliceCastable<Slice, grpc_slice> {};
+struct SliceCastable<Slice, grpc_slice> {};
 template <>
-struct ConstRefSliceCastable<grpc_slice, Slice> {};
+struct SliceCastable<grpc_slice, Slice> {};
 }  // namespace internal
 
 }  // namespace experimental
