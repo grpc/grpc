@@ -631,5 +631,4 @@ void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<XdsOverrideHostLbFactory>());
 }
-
 }  // namespace grpc_core
