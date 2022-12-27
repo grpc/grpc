@@ -46,6 +46,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "interceptor_list_test",
+    srcs = ["interceptor_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_context",
+        "//src/core:arena",
+        "//src/core:interceptor_list",
+        "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
     external_deps = ["gtest"],

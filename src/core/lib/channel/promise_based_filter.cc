@@ -473,7 +473,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
       message->payload()->Swap(batch_->payload->send_message.send_message);
       message->mutable_flags() = batch_->payload->send_message.flags;
       push_ = interceptor()->Push()->Push(std::move(message));
-      next_ = interceptor()->Pull()->Next();
+      next_.emplace(interceptor()->Pull()->Next());
     }
       ABSL_FALLTHROUGH_INTENDED;
     case State::kPushedToPipe: {
@@ -760,7 +760,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
         message->payload()->Swap(&**intercepted_slice_buffer_);
         message->mutable_flags() = *intercepted_flags_;
         push_ = interceptor()->Push()->Push(std::move(message));
-        next_ = interceptor()->Pull()->Next();
+        next_.emplace(interceptor()->Pull()->Next());
       } else {
         interceptor()->Push()->Close();
         state_ = State::kCancelled;

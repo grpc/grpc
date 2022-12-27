@@ -27,7 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "detail/promise_factory.h"
+#include "interceptor_list.h"
 
 #include <grpc/support/log.h>
 
@@ -35,8 +35,11 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/interceptor_list.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 
@@ -100,23 +103,8 @@ class Next;
 // Center sits between a sender and a receiver to provide a one-deep buffer of
 // Ts
 template <typename T>
-class Center {
+class Center : public InterceptorList<T> {
  public:
-  class MapFactory {
-   public:
-    virtual ArenaPromise<absl::optional<T>> MakePromise(T x) = 0;
-
-    void SetNext(MapFactory* next) {
-      GPR_DEBUG_ASSERT(next_ == nullptr);
-      next_ = next;
-    }
-
-    MapFactory* next() const { return next_; }
-
-   private:
-    MapFactory* next_ = nullptr;
-  };
-
   // Initialize with one send ref (held by PipeSender) and one recv ref (held by
   // PipeReceiver)
   Center() {
@@ -258,50 +246,13 @@ class Center {
 
   T& value() { return value_; }
   const T& value() const { return value_; }
-  MapFactory* first_map() { return first_map_; }
 
   std::string DebugTag() {
     return absl::StrCat(Activity::current()->DebugTag(), " PIPE[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
-  template <typename Fn>
-  void AppendMap(Fn fn) {
-    MapFactory* f = GetContext<Arena>()->New<MapFactoryImpl<Fn>>(std::move(fn));
-    if (first_map_ == nullptr) {
-      first_map_ = f;
-      last_map_ = f;
-    } else {
-      last_map_->SetNext(f);
-      last_map_ = f;
-    }
-  }
-
-  template <typename Fn>
-  void PrependMap(Fn fn) {
-    MapFactory* f = GetContext<Arena>()->New<MapFactoryImpl<Fn>>(std::move(fn));
-    if (first_map_ == nullptr) {
-      first_map_ = f;
-      last_map_ = f;
-    } else {
-      f->SetNext(first_map_);
-      first_map_ = f;
-    }
-  }
-
  private:
-  template <typename Fn>
-  class MapFactoryImpl final : public MapFactory {
-   public:
-    explicit MapFactoryImpl(Fn fn) : fn_(std::move(fn)) {}
-    virtual ArenaPromise<absl::optional<T>> MakePromise(T x) final {
-      return fn_.Make(std::move(x));
-    }
-
-   private:
-    promise_detail::RepeatedPromiseFactory<T, Fn> fn_;
-  };
-
   // State of value_.
   enum class ValueState : uint8_t {
     // No value is set, it's possible to send.
@@ -341,8 +292,6 @@ class Center {
     GPR_UNREACHABLE_CODE(return "unknown");
   }
 
-  MapFactory* first_map_ = nullptr;
-  MapFactory* last_map_ = nullptr;
   T value_;
   // Number of refs
   uint8_t refs_ : 3;
@@ -422,8 +371,6 @@ class PipeSender {
 template <typename T>
 class PipeReceiver {
  public:
-  using NextType = pipe_detail::Next<T>;
-
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
 
@@ -450,7 +397,7 @@ class PipeReceiver {
   // message was received, or no value if the other end of the pipe was closed.
   // Blocks the promise until the receiver is either closed or a message is
   // available.
-  NextType Next();
+  auto Next();
 
   template <typename Fn>
   void InterceptAndMap(Fn f) {
@@ -556,44 +503,13 @@ class Next {
     }
   }
 
-  Poll<NextResult<T>> operator()() {
-    if (!current_map_.has_value()) {
-      auto r = center_->Next();
-      if (auto* p = absl::get_if<absl::optional<T>>(&r)) {
-        return NextMap(std::move(*p));
-      }
-      return Pending{};
-    }
-    return FinishMap();
-  }
+  Poll<absl::optional<T>> operator()() { return center_->Next(); }
 
  private:
   friend class PipeReceiver<T>;
   explicit Next(pipe_detail::Center<T>* center) : center_(center) {}
 
-  Poll<NextResult<T>> FinishMap() {
-    auto r = current_map_();
-    if (auto* p = absl::get_if<absl::optional<T>>(&r)) {
-      return NextMap(std::move(*p));
-    }
-    return Pending{};
-  }
-
-  Poll<NextResult<T>> NextMap(absl::optional<T> r) {
-    if (!r.has_value()) return NextResult<T>(nullptr);
-    if (map_factory_ == nullptr) {
-      center_->value() = std::move(*r);
-      return NextResult<T>(std::exchange(center_, nullptr));
-    }
-    current_map_ = map_factory_->MakePromise(std::move(*r));
-    map_factory_ = map_factory_->next();
-    return FinishMap();
-  }
-
   Center<T>* center_;
-  typename pipe_detail::Center<T>::MapFactory* map_factory_ =
-      center_->first_map();
-  ArenaPromise<absl::optional<T>> current_map_;
 };
 
 }  // namespace pipe_detail
@@ -604,9 +520,24 @@ pipe_detail::Push<T> PipeSender<T>::Push(T value) {
 }
 
 template <typename T>
-pipe_detail::Next<T> PipeReceiver<T>::Next() {
-  return pipe_detail::Next<T>(center_->Ref());
+auto PipeReceiver<T>::Next() {
+  return Seq(
+      pipe_detail::Next<T>(center_->Ref()),
+      [center = center_->Ref()](absl::optional<T> value) {
+        return center->Run(std::move(value));
+      },
+      [center = center_->Ref()](absl::optional<T> value) {
+        if (value.has_value()) {
+          center->value() = std::move(*value);
+          return NextResult<T>(center);
+        } else {
+          return NextResult<T>();
+        }
+      });
 }
+
+template <typename T>
+using PipeReceiverNextType = decltype(std::declval<PipeReceiver<T>>().Next());
 
 template <typename T>
 bool NextResult<T>::has_value() const {

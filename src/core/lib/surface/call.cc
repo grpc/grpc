@@ -2277,7 +2277,7 @@ class PromiseBasedCall : public Call,
   grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
   absl::optional<PipeSender<MessageHandle>::PushType> outstanding_send_
       ABSL_GUARDED_BY(mu_);
-  absl::optional<PipeReceiver<MessageHandle>::NextType> outstanding_recv_
+  absl::optional<PipeReceiverNextType<MessageHandle>> outstanding_recv_
       ABSL_GUARDED_BY(mu_);
   grpc_byte_buffer** recv_message_ ABSL_GUARDED_BY(mu_) = nullptr;
   Completion send_message_completion_ ABSL_GUARDED_BY(mu_);

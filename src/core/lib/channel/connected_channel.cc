@@ -345,9 +345,10 @@ class ConnectedChannelStream : public Orphanable {
     }
     if (absl::holds_alternative<Idle>(send_message_state_)) {
       message_to_send_.reset();
-      send_message_state_ = outgoing_messages->Next();
+      send_message_state_.emplace<PipeReceiverNextType<MessageHandle>>(
+          outgoing_messages->Next());
     }
-    if (auto* next = absl::get_if<PipeReceiver<MessageHandle>::NextType>(
+    if (auto* next = absl::get_if<PipeReceiverNextType<MessageHandle>>(
             &send_message_state_)) {
       auto r = (*next)();
       if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
@@ -465,7 +466,7 @@ class ConnectedChannelStream : public Orphanable {
     return Match(
         send_message_state_, [](Idle) -> std::string { return "IDLE"; },
         [](Closed) -> std::string { return "CLOSED"; },
-        [](const PipeReceiver<MessageHandle>::NextType&) -> std::string {
+        [](const PipeReceiverNextType<MessageHandle>&) -> std::string {
           return "WAITING";
         },
         [](SendMessageToTransport) -> std::string { return "SENDING"; });
@@ -633,7 +634,7 @@ class ConnectedChannelStream : public Orphanable {
           this, DEBUG_LOCATION);
 
   NextResult<MessageHandle> message_to_send_ ABSL_GUARDED_BY(mu_);
-  absl::variant<Idle, Closed, PipeReceiver<MessageHandle>::NextType,
+  absl::variant<Idle, Closed, PipeReceiverNextType<MessageHandle>,
                 SendMessageToTransport>
       send_message_state_ ABSL_GUARDED_BY(mu_);
   grpc_transport_stream_op_batch send_message_;

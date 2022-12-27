@@ -414,8 +414,8 @@ grpc_cc_library(
         "pipe",
         "poll",
         "promise_factory",
-        "//:gpr",
         "try_seq",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -806,6 +806,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "interceptor_list",
+    hdrs = [
+        "lib/promise/interceptor_list.h",
+    ],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "arena",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
     name = "pipe",
     hdrs = [
         "lib/promise/pipe.h",
@@ -819,11 +831,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
-        "arena_promise",
         "arena",
+        "arena_promise",
         "context",
+        "interceptor_list",
         "intra_activity_waiter",
         "poll",
+        "promise_factory",
         "promise_trace",
         "//:gpr",
         "//:grpc_trace",

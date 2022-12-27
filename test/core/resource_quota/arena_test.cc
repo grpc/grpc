@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -197,6 +198,14 @@ TEST_F(ArenaTest, CreateManyObjects) {
   for (int i = 0; i < 1000; i++) {
     objs.emplace_back(arena->MakePooled<TestObj>());
   }
+}
+
+TEST_F(ArenaTest, CreatePoolArray) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto p = arena->MakePooledArray<int>(1024);
+  EXPECT_FALSE(p.get_deleter().has_freelist());
+  p = arena->MakePooledArray<int>(5);
+  EXPECT_TRUE(p.get_deleter().has_freelist());
 }
 
 }  // namespace grpc_core

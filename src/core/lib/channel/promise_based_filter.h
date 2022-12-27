@@ -401,7 +401,7 @@ class BaseCallData : public Activity, private Wakeable {
     State state_ = State::kInitial;
     Interceptor* const interceptor_;
     absl::optional<PipeSender<MessageHandle>::PushType> push_;
-    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    absl::optional<PipeReceiverNextType<MessageHandle>> next_;
     CapturedBatch batch_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
@@ -492,7 +492,7 @@ class BaseCallData : public Activity, private Wakeable {
     absl::optional<SliceBuffer>* intercepted_slice_buffer_;
     uint32_t* intercepted_flags_;
     absl::optional<PipeSender<MessageHandle>::PushType> push_;
-    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    absl::optional<PipeReceiverNextType<MessageHandle>> next_;
     absl::Status completed_status_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
