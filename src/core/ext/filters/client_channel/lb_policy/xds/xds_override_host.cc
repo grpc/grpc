@@ -444,7 +444,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
       }
     }
   }
-  absl::MutexLock lock(&subchannel_map_mu_);
+  MutexLock lock(&subchannel_map_mu_);
   for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
     if (keys.find(it->first) == keys.end()) {
       it = subchannel_map_.erase(it);
@@ -470,7 +470,7 @@ XdsOverrideHostLb::AdoptSubchannel(
   auto wrapper =
       MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(), key);
   if (key.has_value()) {
-    absl::MutexLock lock(&subchannel_map_mu_);
+    MutexLock lock(&subchannel_map_mu_);
     auto it = subchannel_map_.find(*key);
     if (it != subchannel_map_.end()) {
       it->second.SetSubchannel(wrapper.get());
@@ -481,7 +481,7 @@ XdsOverrideHostLb::AdoptSubchannel(
 
 void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
                                         SubchannelWrapper* subchannel) {
-  absl::MutexLock lock(&subchannel_map_mu_);
+  MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
     it->second.ResetSubchannel(subchannel);
