@@ -855,7 +855,7 @@ void grpc_resolver_dns_ares_shutdown() {
   }
 }
 
-#else /* GRPC_ARES == 1 */
+#else  // GRPC_ARES == 1
 
 namespace grpc_core {
 void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
@@ -865,4 +865,4 @@ void grpc_resolver_dns_ares_init() {}
 
 void grpc_resolver_dns_ares_shutdown() {}
 
-#endif /* GRPC_ARES == 1 */
+#endif  // GRPC_ARES == 1

@@ -414,7 +414,7 @@ int PollEventHandle::NotifyOnLocked(PosixEngineClosure** st,
     scheduler_->Run(closure);
     return 1;
   } else {
-    /* upcallptr was set to a different closure.  This is an error! */
+    // upcallptr was set to a different closure.  This is an error!
     gpr_log(GPR_ERROR,
             "User called a notify_on function with a previous callback still "
             "pending");
@@ -850,7 +850,7 @@ PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* GRPC_POSIX_SOCKET_EV_POLL */
+#else  // GRPC_POSIX_SOCKET_EV_POLL
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -898,4 +898,4 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_POSIX_SOCKET_EV_POLL */
+#endif  // GRPC_POSIX_SOCKET_EV_POLL

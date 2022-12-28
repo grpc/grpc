@@ -50,9 +50,9 @@ class JsonReader {
 
  private:
   enum class Status {
-    GRPC_JSON_DONE,          /* The parser finished successfully. */
-    GRPC_JSON_PARSE_ERROR,   /* The parser found an error in the json stream. */
-    GRPC_JSON_INTERNAL_ERROR /* The parser got an internal error. */
+    GRPC_JSON_DONE,           // The parser finished successfully.
+    GRPC_JSON_PARSE_ERROR,    // The parser found an error in the json stream.
+    GRPC_JSON_INTERNAL_ERROR  // The parser got an internal error.
   };
 
   enum class State {
@@ -86,10 +86,10 @@ class JsonReader {
     GRPC_JSON_STATE_END
   };
 
-  /* The first non-unicode value is 0x110000. But let's pick
-   * a value high enough to start our error codes from. These
-   * values are safe to return from the read_char function.
-   */
+  // The first non-unicode value is 0x110000. But let's pick
+  // a value high enough to start our error codes from. These
+  // values are safe to return from the read_char function.
+  //
   static constexpr uint32_t GRPC_JSON_READ_CHAR_EOF = 0x7ffffff0;
 
   explicit JsonReader(absl::string_view input)
@@ -316,21 +316,21 @@ bool JsonReader::IsComplete() {
                              state_ == State::GRPC_JSON_STATE_VALUE_END));
 }
 
-/* Call this function to start parsing the input. It will return the following:
- *    . GRPC_JSON_DONE if the input got eof, and the parsing finished
- *      successfully.
- *    . GRPC_JSON_PARSE_ERROR if the input was somehow invalid.
- *    . GRPC_JSON_INTERNAL_ERROR if the parser somehow ended into an invalid
- *      internal state.
- */
+// Call this function to start parsing the input. It will return the following:
+//    . GRPC_JSON_DONE if the input got eof, and the parsing finished
+//      successfully.
+//    . GRPC_JSON_PARSE_ERROR if the input was somehow invalid.
+//    . GRPC_JSON_INTERNAL_ERROR if the parser somehow ended into an invalid
+//      internal state.
+//
 JsonReader::Status JsonReader::Run() {
   uint32_t c;
 
-  /* This state-machine is a strict implementation of ECMA-404 */
+  // This state-machine is a strict implementation of ECMA-404
   while (true) {
     c = ReadChar();
     switch (c) {
-      /* Let's process the error case first. */
+      // Let's process the error case first.
       case GRPC_JSON_READ_CHAR_EOF:
         switch (state_) {
           case State::GRPC_JSON_STATE_VALUE_NUMBER:
@@ -349,7 +349,7 @@ JsonReader::Status JsonReader::Run() {
         }
         return Status::GRPC_JSON_PARSE_ERROR;
 
-      /* Processing whitespaces. */
+      // Processing whitespaces.
       case ' ':
       case '\t':
       case '\n':
@@ -384,7 +384,7 @@ JsonReader::Status JsonReader::Run() {
         }
         break;
 
-      /* Value, object or array terminations. */
+      // Value, object or array terminations.
       case ',':
       case '}':
       case ']':
@@ -461,7 +461,7 @@ JsonReader::Status JsonReader::Run() {
         }
         break;
 
-      /* In-string escaping. */
+      // In-string escaping.
       case '\\':
         switch (state_) {
           case State::GRPC_JSON_STATE_OBJECT_KEY_STRING:
@@ -474,7 +474,7 @@ JsonReader::Status JsonReader::Run() {
             state_ = State::GRPC_JSON_STATE_STRING_ESCAPE;
             break;
 
-          /* This is the \\ case. */
+          // This is the \\ case.
           case State::GRPC_JSON_STATE_STRING_ESCAPE:
             if (unicode_high_surrogate_ != 0) {
               return Status::GRPC_JSON_PARSE_ERROR;
@@ -662,17 +662,17 @@ JsonReader::Status JsonReader::Run() {
                 state_ = State::GRPC_JSON_STATE_STRING_ESCAPE_U4;
                 break;
               case State::GRPC_JSON_STATE_STRING_ESCAPE_U4:
-                /* See grpc_json_writer_escape_string to have a description
-                 * of what's going on here.
-                 */
+                // See grpc_json_writer_escape_string to have a description
+                // of what's going on here.
+                //
                 if ((unicode_char_ & 0xfc00) == 0xd800) {
-                  /* high surrogate utf-16 */
+                  // high surrogate utf-16
                   if (unicode_high_surrogate_ != 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
                   }
                   unicode_high_surrogate_ = unicode_char_;
                 } else if ((unicode_char_ & 0xfc00) == 0xdc00) {
-                  /* low surrogate utf-16 */
+                  // low surrogate utf-16
                   uint32_t utf32;
                   if (unicode_high_surrogate_ == 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
@@ -686,7 +686,7 @@ JsonReader::Status JsonReader::Run() {
                   }
                   unicode_high_surrogate_ = 0;
                 } else {
-                  /* anything else */
+                  // anything else
                   if (unicode_high_surrogate_ != 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
                   }
@@ -874,8 +874,8 @@ JsonReader::Status JsonReader::Run() {
             state_ = State::GRPC_JSON_STATE_VALUE_END;
             break;
 
-          /* All of the VALUE_END cases are handled in the specialized case
-           * above. */
+          // All of the VALUE_END cases are handled in the specialized case
+          // above.
           case State::GRPC_JSON_STATE_VALUE_END:
             switch (c) {
               case ',':

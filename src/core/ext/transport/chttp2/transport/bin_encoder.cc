@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -59,7 +59,7 @@ grpc_slice grpc_chttp2_base64_encode(const grpc_slice& input) {
   char* out = reinterpret_cast<char*> GRPC_SLICE_START_PTR(output);
   size_t i;
 
-  /* encode full triplets */
+  // encode full triplets
   for (i = 0; i < input_triplets; i++) {
     out[0] = alphabet[in[0] >> 2];
     out[1] = alphabet[((in[0] & 0x3) << 4) | (in[1] >> 4)];
@@ -69,7 +69,7 @@ grpc_slice grpc_chttp2_base64_encode(const grpc_slice& input) {
     in += 3;
   }
 
-  /* encode the remaining bytes */
+  // encode the remaining bytes
   switch (tail_case) {
     case 0:
       break;
@@ -123,10 +123,10 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
   }
 
   if (temp_length) {
-    /* NB: the following integer arithmetic operation needs to be in its
-     * expanded form due to the "integral promotion" performed (see section
-     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
-     * is then required to avoid the compiler warning */
+    // NB: the following integer arithmetic operation needs to be in its
+    // expanded form due to the "integral promotion" performed (see section
+    // 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+    // is then required to avoid the compiler warning
     *out++ =
         static_cast<uint8_t>(static_cast<uint8_t>(temp << (8u - temp_length)) |
                              static_cast<uint8_t>(0xffu >> temp_length));
@@ -184,7 +184,7 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
   out.temp_length = 0;
   out.out = start_out;
 
-  /* encode full triplets */
+  // encode full triplets
   for (i = 0; i < input_triplets; i++) {
     const uint8_t low_to_high = static_cast<uint8_t>((in[0] & 0x3) << 4);
     const uint8_t high_to_low = in[1] >> 4;
@@ -196,7 +196,7 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
     in += 3;
   }
 
-  /* encode the remaining bytes */
+  // encode the remaining bytes
   switch (tail_case) {
     case 0:
       break;
@@ -215,10 +215,10 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
   }
 
   if (out.temp_length) {
-    /* NB: the following integer arithmetic operation needs to be in its
-     * expanded form due to the "integral promotion" performed (see section
-     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
-     * is then required to avoid the compiler warning */
+    // NB: the following integer arithmetic operation needs to be in its
+    // expanded form due to the "integral promotion" performed (see section
+    // 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+    // is then required to avoid the compiler warning
     *out.out++ = static_cast<uint8_t>(
         static_cast<uint8_t>(out.temp << (8u - out.temp_length)) |
         static_cast<uint8_t>(0xffu >> out.temp_length));
