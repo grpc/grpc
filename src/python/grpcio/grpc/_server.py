@@ -23,7 +23,6 @@ import threading
 import time
 from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
                     Sequence, Set, Tuple, Union)
-
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
@@ -64,7 +63,7 @@ _DEALLOCATED_SERVER_CHECK_PERIOD_S = 1.0
 _INF_TIMEOUT = 1e9
 
 
-def _serialized_request(request_event: cygrpc.BaseEvent) -> bytes:
+def _serialized_request(request_event: cygrpc.BaseEvent) -> Optional[bytes]:
     return request_event.batch_operations[0].message()
 
 
@@ -699,7 +698,7 @@ def _select_thread_pool_for_behavior(
 def _handle_unary_unary(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
         method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> futures.Future:
+        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
     unary_request = _unary_request(rpc_event, state,
                                    method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.unary_unary,
@@ -713,7 +712,7 @@ def _handle_unary_unary(
 def _handle_unary_stream(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
         method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> futures.Future:
+        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
     unary_request = _unary_request(rpc_event, state,
                                    method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.unary_stream,
@@ -727,7 +726,7 @@ def _handle_unary_stream(
 def _handle_stream_unary(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
         method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> futures.Future:
+        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
     request_iterator = _RequestIterator(state, rpc_event.call,
                                         method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.stream_unary,
@@ -742,7 +741,7 @@ def _handle_stream_unary(
 def _handle_stream_stream(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
         method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> futures.Future:
+        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
     request_iterator = _RequestIterator(state, rpc_event.call,
                                         method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.stream_stream,
@@ -798,7 +797,7 @@ def _reject_rpc(rpc_event: cygrpc.BaseEvent, status: cygrpc.StatusCode,
 def _handle_with_method_handler(
     rpc_event: cygrpc.BaseEvent, method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor
-) -> Tuple[_RPCState, futures.Future]:
+) -> Tuple[_RPCState, Optional[futures.Future]]:
     state = _RPCState()
     with state.condition:
         rpc_event.call.start_server_batch(

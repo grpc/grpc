@@ -223,7 +223,7 @@ def _event_handler(
 def _consume_request_iterator(request_iterator: Iterator, state: _RPCState,
                               call: Union[cygrpc.IntegratedCall,
                                           cygrpc.SegregatedCall],
-                              request_serializer: SerializingFunction,
+                              request_serializer: Optional[SerializingFunction],
                               event_handler: Optional[UserTag]) -> None:
     """Consume a request supplied by the user."""
 
@@ -883,7 +883,7 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
 
 def _start_unary_request(
     request: Any, timeout: Optional[float],
-    request_serializer: SerializingFunction
+    request_serializer: Optional[SerializingFunction]
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
@@ -944,7 +944,6 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
         return user_deadline
     else:
         return min(parent_deadline, user_deadline)
-
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     _channel: cygrpc.Channel
@@ -1076,8 +1075,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
     # pylint: disable=too-many-arguments
     def __init__(self, channel: cygrpc.Channel, method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction):
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
@@ -1135,8 +1134,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     # pylint: disable=too-many-arguments
     def __init__(self, channel: cygrpc.Channel,
                  managed_call: IntegratedCallFactory, method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction):
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1450,7 +1449,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
 
 class _ChannelConnectivityState(object):
     lock: threading.RLock
-    channel: grpc.Channel
+    channel: cygrpc.Channel
     polling: bool
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
@@ -1459,7 +1458,7 @@ class _ChannelConnectivityState(object):
         [grpc.ChannelConnectivity], None], Optional[grpc.ChannelConnectivity]]]]
     delivering: bool
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: cygrpc.Channel):
         self.lock = threading.RLock()
         self.channel = channel
         self.polling = False

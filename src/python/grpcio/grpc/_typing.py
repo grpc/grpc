@@ -13,7 +13,7 @@
 # limitations under the License.
 """Common types for gRPC Sync API"""
 
-from typing import (TYPE_CHECKING, Any, AsyncIterable, Callable, Iterable,
+from typing import (TYPE_CHECKING, Any, AnyStr, AsyncIterable, Callable, Iterable,
                     Iterator, Optional, Sequence, Tuple, TypeVar, Union)
 
 from grpc._cython import cygrpc
@@ -30,8 +30,8 @@ RequestType = TypeVar('RequestType')
 ResponseType = TypeVar('ResponseType')
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
-MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
-ChannelArgumentType = Tuple[str, Any]
+MetadataType = Sequence[Tuple[AnyStr, AnyStr]]
+ChannelArgumentType = Tuple[AnyStr, Any]
 DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
 RequestIterableType = Iterable[Any]
