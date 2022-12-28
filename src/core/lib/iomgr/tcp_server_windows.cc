@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -52,55 +52,55 @@
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 
-/* one listening port */
+// one listening port
 typedef struct grpc_tcp_listener grpc_tcp_listener;
 struct grpc_tcp_listener {
-  /* This seemingly magic number comes from AcceptEx's documentation. each
-     address buffer needs to have at least 16 more bytes at their end. */
+  // This seemingly magic number comes from AcceptEx's documentation. each
+  // address buffer needs to have at least 16 more bytes at their end.
   uint8_t addresses[(sizeof(grpc_sockaddr_in6) + 16) * 2];
-  /* This will hold the socket for the next accept. */
+  // This will hold the socket for the next accept.
   SOCKET new_socket;
-  /* The listener winsocket. */
+  // The listener winsocket.
   grpc_winsocket* socket;
-  /* The actual TCP port number. */
+  // The actual TCP port number.
   int port;
   unsigned port_index;
   grpc_tcp_server* server;
-  /* The cached AcceptEx for that port. */
+  // The cached AcceptEx for that port.
   LPFN_ACCEPTEX AcceptEx;
   int shutting_down;
   int outstanding_calls;
-  /* closure for socket notification of accept being ready */
+  // closure for socket notification of accept being ready
   grpc_closure on_accept;
-  /* linked list */
+  // linked list
   struct grpc_tcp_listener* next;
 };
 
-/* the overall server */
+// the overall server
 struct grpc_tcp_server {
   gpr_refcount refs;
-  /* Called whenever accept() succeeds on a server port. */
+  // Called whenever accept() succeeds on a server port.
   grpc_tcp_server_cb on_accept_cb;
   void* on_accept_cb_arg;
 
   gpr_mu mu;
 
-  /* active port count: how many ports are actually still listening */
+  // active port count: how many ports are actually still listening
   int active_ports;
 
-  /* linked list of server ports */
+  // linked list of server ports
   grpc_tcp_listener* head;
   grpc_tcp_listener* tail;
 
-  /* List of closures passed to shutdown_starting_add(). */
+  // List of closures passed to shutdown_starting_add().
   grpc_closure_list shutdown_starting;
 
-  /* shutdown callback */
+  // shutdown callback
   grpc_closure* shutdown_complete;
 };
 
-/* Public function. Allocates the proper data structures to hold a
-   grpc_tcp_server. */
+// Public function. Allocates the proper data structures to hold a
+// grpc_tcp_server.
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
                                            grpc_tcp_server_cb on_accept_cb,
@@ -124,9 +124,9 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
 static void destroy_server(void* arg, grpc_error_handle error) {
   grpc_tcp_server* s = (grpc_tcp_server*)arg;
 
-  /* Now that the accepts have been aborted, we can destroy the sockets.
-     The IOCP won't get notified on these, so we can flag them as already
-     closed by the system. */
+  // Now that the accepts have been aborted, we can destroy the sockets.
+  // The IOCP won't get notified on these, so we can flag them as already
+  // closed by the system.
   while (s->head) {
     grpc_tcp_listener* sp = s->head;
     s->head = sp->next;
@@ -166,8 +166,8 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 static void tcp_server_destroy(grpc_tcp_server* s) {
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
-  /* First, shutdown all fd's. This will queue abortion calls for all
-     of the pending accepts due to the normal operation mechanism. */
+  // First, shutdown all fd's. This will queue abortion calls for all
+  // of the pending accepts due to the normal operation mechanism.
   if (s->active_ports == 0) {
     finish_shutdown_locked(s);
   } else {
@@ -189,7 +189,7 @@ static void tcp_server_unref(grpc_tcp_server* s) {
   }
 }
 
-/* Prepare (bind) a recently-created socket for listening. */
+// Prepare (bind) a recently-created socket for listening.
 static grpc_error_handle prepare_socket(SOCKET sock,
                                         const grpc_resolved_address* addr,
                                         int* port) {
@@ -246,8 +246,8 @@ static void decrement_active_ports_and_notify_locked(grpc_tcp_listener* sp) {
   }
 }
 
-/* In order to do an async accept, we need to create a socket first which
-   will be the one assigned to the new incoming connection. */
+// In order to do an async accept, we need to create a socket first which
+// will be the one assigned to the new incoming connection.
 static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
@@ -269,13 +269,13 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   error = grpc_tcp_prepare_socket(sock);
   if (!error.ok()) goto failure;
 
-  /* Start the "accept" asynchronously. */
+  // Start the "accept" asynchronously.
   success = port->AcceptEx(port->socket->socket, sock, port->addresses, 0,
                            addrlen, addrlen, &bytes_received,
                            &port->socket->read_info.overlapped);
 
-  /* It is possible to get an accept immediately without delay. However, we
-     will still get an IOCP notification for it. So let's just ignore it. */
+  // It is possible to get an accept immediately without delay. However, we
+  // will still get an IOCP notification for it. So let's just ignore it.
   if (!success) {
     int last_error = WSAGetLastError();
     if (last_error != ERROR_IO_PENDING) {
@@ -284,8 +284,8 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
     }
   }
 
-  /* We're ready to do the accept. Calling grpc_socket_notify_on_read may
-     immediately process an accept that happened in the meantime. */
+  // We're ready to do the accept. Calling grpc_socket_notify_on_read may
+  // immediately process an accept that happened in the meantime.
   port->new_socket = sock;
   grpc_socket_notify_on_read(port->socket, &port->on_accept);
   port->outstanding_calls++;
@@ -297,7 +297,7 @@ failure:
   return error;
 }
 
-/* Event manager callback when reads are ready. */
+// Event manager callback when reads are ready.
 static void on_accept(void* arg, grpc_error_handle error) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)arg;
   SOCKET sock = sp->new_socket;
@@ -313,9 +313,9 @@ static void on_accept(void* arg, grpc_error_handle error) {
 
   peer_name.len = sizeof(struct sockaddr_storage);
 
-  /* The general mechanism for shutting down is to queue abortion calls. While
-     this is necessary in the read/write case, it's useless for the accept
-     case. We only need to adjust the pending callback count */
+  // The general mechanism for shutting down is to queue abortion calls. While
+  // this is necessary in the read/write case, it's useless for the accept
+  // case. We only need to adjust the pending callback count
   if (!error.ok()) {
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
             grpc_core::StatusToString(error).c_str());
@@ -323,8 +323,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
     gpr_mu_unlock(&sp->server->mu);
     return;
   }
-  /* The IOCP notified us of a completed operation. Let's grab the results,
-     and act accordingly. */
+  // The IOCP notified us of a completed operation. Let's grab the results,
+  // and act accordingly.
   transfered_bytes = 0;
   wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                        &transfered_bytes, FALSE, &flags);
@@ -369,8 +369,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
     }
   }
 
-  /* The only time we should call our callback, is where we successfully
-     managed to accept a connection, and created an endpoint. */
+  // The only time we should call our callback, is where we successfully
+  // managed to accept a connection, and created an endpoint.
   if (ep) {
     // Create acceptor.
     grpc_tcp_server_acceptor* acceptor =
@@ -381,10 +381,10 @@ static void on_accept(void* arg, grpc_error_handle error) {
     acceptor->external_connection = false;
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
   }
-  /* As we were notified from the IOCP of one and exactly one accept,
-     the former socked we created has now either been destroy or assigned
-     to the new connection. We need to create a new one for the next
-     connection. */
+  // As we were notified from the IOCP of one and exactly one accept,
+  // the former socked we created has now either been destroy or assigned
+  // to the new connection. We need to create a new one for the next
+  // connection.
   GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
   if (0 == --sp->outstanding_calls) {
     decrement_active_ports_and_notify_locked(sp);
@@ -404,8 +404,8 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   LPFN_ACCEPTEX AcceptEx;
   grpc_error_handle error;
 
-  /* We need to grab the AcceptEx pointer for that port, as it may be
-     interface-dependent. We'll cache it to avoid doing that again. */
+  // We need to grab the AcceptEx pointer for that port, as it may be
+  // interface-dependent. We'll cache it to avoid doing that again.
   status =
       WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
                &AcceptEx, sizeof(AcceptEx), &ioctl_num_bytes, NULL, NULL);
@@ -465,8 +465,8 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     port_index = s->tail->port_index + 1;
   }
 
-  /* Check if this is a wildcard port, and if so, try to keep the port the same
-     as some previously created listener. */
+  // Check if this is a wildcard port, and if so, try to keep the port the same
+  // as some previously created listener.
   if (grpc_sockaddr_get_port(addr) == 0) {
     for (sp = s->head; sp; sp = sp->next) {
       int sockname_temp_len = sizeof(struct sockaddr_storage);
@@ -491,7 +491,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     addr = &addr6_v4mapped;
   }
 
-  /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
+  // Treat :: or 0.0.0.0 as a family-agnostic wildcard.
   if (grpc_sockaddr_is_wildcard(addr, port)) {
     grpc_sockaddr_make_wildcard6(*port, &wildcard);
 
@@ -526,7 +526,6 @@ static void tcp_server_start(grpc_tcp_server* s,
                              const std::vector<grpc_pollset*>* /*pollsets*/) {
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
   for (sp = s->head; sp; sp = sp->next) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
@@ -558,4 +557,4 @@ grpc_tcp_server_vtable grpc_windows_tcp_server_vtable = {
     tcp_server_port_fd_count, tcp_server_port_fd,
     tcp_server_ref,           tcp_server_shutdown_starting_add,
     tcp_server_unref,         tcp_server_shutdown_listeners};
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif  // GRPC_WINSOCK_SOCKET

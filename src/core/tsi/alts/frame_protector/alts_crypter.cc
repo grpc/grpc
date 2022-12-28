@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -40,7 +40,7 @@ grpc_status_code alts_crypter_process_in_place(
                                              data_size, output_size,
                                              error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   const char error_msg[] =
       "crypter or crypter->vtable has not been initialized properly.";
   maybe_copy_error_msg(error_msg, error_details);
@@ -52,7 +52,7 @@ size_t alts_crypter_num_overhead_bytes(const alts_crypter* crypter) {
       crypter->vtable->num_overhead_bytes != nullptr) {
     return crypter->vtable->num_overhead_bytes(crypter);
   }
-  /* An error occurred. */
+  // An error occurred.
   return 0;
 }
 

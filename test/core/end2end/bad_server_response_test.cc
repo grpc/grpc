@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <inttypes.h>
 #include <limits.h>
@@ -75,9 +75,9 @@
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
 
-/* TODO(zyc) Check the content of incoming data instead of using this length */
-/* The 'bad' server will start sending responses after reading this amount of
- * data from the client. */
+// TODO(zyc) Check the content of incoming data instead of using this length
+// The 'bad' server will start sending responses after reading this amount of
+// data from the client.
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
@@ -335,15 +335,15 @@ static void run_test(bool http2_response, bool send_settings,
   state.response_payload = response_payload;
   state.response_payload_length = response_payload_length;
 
-  /* poll server until sending out the response */
+  // poll server until sending out the response
   std::unique_ptr<grpc_core::Thread> thdptr(
       poll_server_until_read_done(&test_server, &ev));
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   thdptr->Join();
-  /* Proof that the server accepted the TCP connection. */
+  // Proof that the server accepted the TCP connection.
   GPR_ASSERT(state.connection_attempt_made == true);
-  /* clean up */
+  // clean up
   grpc_endpoint_shutdown(state.tcp, GRPC_ERROR_CREATE("Test Shutdown"));
   grpc_endpoint_destroy(state.tcp);
   cleanup_rpc();
@@ -356,7 +356,7 @@ static void run_test(bool http2_response, bool send_settings,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
-  /* status defined in hpack static table */
+  // status defined in hpack static table
   run_test(true, true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(204));
   run_test(true, true, HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1,
@@ -370,7 +370,7 @@ int main(int argc, char** argv) {
   run_test(true, true, HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(500));
 
-  /* status not defined in hpack static table */
+  // status not defined in hpack static table
   run_test(true, true, HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
            GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
   run_test(true, true, HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
@@ -385,19 +385,19 @@ int main(int argc, char** argv) {
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
   run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-  /* unparseable response. RPC should fail immediately due to a connect
-   * failure.
-   */
+  // unparseable response. RPC should fail immediately due to a connect
+  // failure.
+  //
   run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
 
-  /* http1 response. RPC should fail immediately due to a connect failure. */
+  // http1 response. RPC should fail immediately due to a connect failure.
   run_test(false, false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
 
-  /* http2 response without sending a SETTINGs frame. RPC should fail with
-   * DEADLINE_EXCEEDED since the RPC deadline is lower than the connection
-   * attempt deadline. */
+  // http2 response without sending a SETTINGs frame. RPC should fail with
+  // DEADLINE_EXCEEDED since the RPC deadline is lower than the connection
+  // attempt deadline.
   run_test(true, false, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
            GRPC_STATUS_DEADLINE_EXCEEDED, nullptr);
   grpc_shutdown();

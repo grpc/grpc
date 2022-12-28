@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <limits.h>
 #include <stdint.h>
@@ -41,15 +41,15 @@
 
 #define MAX_CONNECTION_AGE_JITTER_MULTIPLIER 1.1
 #define CALL_DEADLINE_S 30
-/* The amount of time we wait for the connection to time out, but after it the
-   connection should not use up its grace period. It should be a number between
-   MAX_CONNECTION_AGE_MS and MAX_CONNECTION_AGE_MS +
-   MAX_CONNECTION_AGE_GRACE_MS */
+// The amount of time we wait for the connection to time out, but after it the
+// connection should not use up its grace period. It should be a number between
+// MAX_CONNECTION_AGE_MS and MAX_CONNECTION_AGE_MS +
+// MAX_CONNECTION_AGE_GRACE_MS
 #define CQ_MAX_CONNECTION_AGE_WAIT_TIME_S 1
-/* The amount of time we wait after the connection reaches its max age, it
-   should be shorter than CALL_DEADLINE_S - CQ_MAX_CONNECTION_AGE_WAIT_TIME_S */
+// The amount of time we wait after the connection reaches its max age, it
+// should be shorter than CALL_DEADLINE_S - CQ_MAX_CONNECTION_AGE_WAIT_TIME_S
 #define CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S 2
-/* The grace period for the test to observe the channel shutdown process */
+// The grace period for the test to observe the channel shutdown process
 #define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 3000
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -165,12 +165,12 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
                        MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
       MAX_CONNECTION_AGE_GRACE_MS + IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
 
-  /* Wait for the channel to reach its max age */
+  // Wait for the channel to reach its max age
   cqv->VerifyEmpty(
       grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
 
-  /* After the channel reaches its max age, we still do nothing here. And wait
-     for it to use up its max age grace period. */
+  // After the channel reaches its max age, we still do nothing here. And wait
+  // for it to use up its max age grace period.
   cqv->Expect(tag(1), true);
   cqv->Verify();
 
@@ -209,8 +209,8 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 
   grpc_call_unref(s);
 
-  /* The connection should be closed immediately after the max age grace period,
-     the in-progress RPC should fail. */
+  // The connection should be closed immediately after the max age grace period,
+  // the in-progress RPC should fail.
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(was_cancelled == 1);
@@ -303,12 +303,12 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   cqv->Expect(tag(101), true);
   cqv->Verify();
 
-  /* Wait for the channel to reach its max age */
+  // Wait for the channel to reach its max age
   cqv->VerifyEmpty(
       grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
 
-  /* The connection is shutting down gracefully. In-progress rpc should not be
-     closed, hence the completion queue should see nothing here. */
+  // The connection is shutting down gracefully. In-progress rpc should not be
+  // closed, hence the completion queue should see nothing here.
   cqv->VerifyEmpty(
       grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S));
 
@@ -346,8 +346,8 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
 
   grpc_call_unref(s);
 
-  /* The connection is closed gracefully with goaway, the rpc should still be
-     completed. */
+  // The connection is closed gracefully with goaway, the rpc should still be
+  // completed.
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));

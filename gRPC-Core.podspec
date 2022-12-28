@@ -111,6 +111,7 @@ Pod::Spec.new do |s|
                       'include/grpc/event_engine/endpoint_config.h',
                       'include/grpc/event_engine/event_engine.h',
                       'include/grpc/event_engine/internal/memory_allocator_impl.h',
+                      'include/grpc/event_engine/internal/slice_cast.h',
                       'include/grpc/event_engine/memory_allocator.h',
                       'include/grpc/event_engine/memory_request.h',
                       'include/grpc/event_engine/port.h',
@@ -179,6 +180,7 @@ Pod::Spec.new do |s|
     ss.dependency 'BoringSSL-GRPC', '0.0.24'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/dynamic_annotations', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
@@ -233,6 +235,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_proxy.cc',
                       'src/core/ext/filters/client_channel/http_proxy.h',
+                      'src/core/ext/filters/client_channel/lb_call_state_internal.h',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.cc',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                       'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
@@ -1413,7 +1416,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/activity.h',
                       'src/core/lib/promise/arena_promise.h',
                       'src/core/lib/promise/context.h',
-                      'src/core/lib/promise/detail/basic_join.h',
                       'src/core/lib/promise/detail/basic_seq.h',
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
@@ -1422,7 +1424,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                       'src/core/lib/promise/for_each.h',
                       'src/core/lib/promise/intra_activity_waiter.h',
-                      'src/core/lib/promise/join.h',
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
@@ -1839,6 +1840,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/health/health_check_client.h',
                               'src/core/ext/filters/client_channel/http_proxy.h',
+                              'src/core/ext/filters/client_channel/lb_call_state_internal.h',
                               'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                               'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                               'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
@@ -2425,7 +2427,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/activity.h',
                               'src/core/lib/promise/arena_promise.h',
                               'src/core/lib/promise/context.h',
-                              'src/core/lib/promise/detail/basic_join.h',
                               'src/core/lib/promise/detail/basic_seq.h',
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
@@ -2434,7 +2435,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                               'src/core/lib/promise/for_each.h',
                               'src/core/lib/promise/intra_activity_waiter.h',
-                              'src/core/lib/promise/join.h',
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',

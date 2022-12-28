@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -262,31 +262,31 @@ static void on_writable(void* acp, grpc_error_handle error) {
       fd = nullptr;
       break;
     case ENOBUFS:
-      /* We will get one of these errors if we have run out of
-         memory in the kernel for the data structures allocated
-         when you connect a socket.  If this happens it is very
-         likely that if we wait a little bit then try again the
-         connection will work (since other programs or this
-         program will close their network connections and free up
-         memory).  This does _not_ indicate that there is anything
-         wrong with the server we are connecting to, this is a
-         local problem.
+      // We will get one of these errors if we have run out of
+      // memory in the kernel for the data structures allocated
+      // when you connect a socket.  If this happens it is very
+      // likely that if we wait a little bit then try again the
+      // connection will work (since other programs or this
+      // program will close their network connections and free up
+      // memory).  This does _not_ indicate that there is anything
+      // wrong with the server we are connecting to, this is a
+      // local problem.
 
-         If you are looking at this code, then chances are that
-         your program or another program on the same computer
-         opened too many network connections.  The "easy" fix:
-         don't do that! */
+      // If you are looking at this code, then chances are that
+      // your program or another program on the same computer
+      // opened too many network connections.  The "easy" fix:
+      // don't do that!
       gpr_log(GPR_ERROR, "kernel out of buffers");
       gpr_mu_unlock(&ac->mu);
       grpc_fd_notify_on_write(fd, &ac->write_closure);
       return;
     case ECONNREFUSED:
-      /* This error shouldn't happen for anything other than connect(). */
+      // This error shouldn't happen for anything other than connect().
       error = GRPC_OS_ERROR(so_error, "connect");
       break;
     default:
-      /* We don't really know which syscall triggered the problem here,
-         so punt by reporting getsockopt(). */
+      // We don't really know which syscall triggered the problem here,
+      // so punt by reporting getsockopt().
       error = GRPC_OS_ERROR(so_error, "getsockopt(SO_ERROR)");
       break;
   }
@@ -340,10 +340,10 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
   grpc_dualstack_mode dsmode;
   grpc_error_handle error;
   *fd = -1;
-  /* Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
-     v6. */
+  // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
+  // v6.
   if (!grpc_sockaddr_to_v4mapped(addr, mapped_addr)) {
-    /* addr is v4 mapped to v6 or v6. */
+    // addr is v4 mapped to v6 or v6.
     memcpy(mapped_addr, addr, sizeof(*mapped_addr));
   }
   error =
@@ -352,7 +352,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
     return error;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
-    /* Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4. */
+    // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
     if (!grpc_sockaddr_is_v4mapped(addr, mapped_addr)) {
       memcpy(mapped_addr, addr, sizeof(*mapped_addr));
     }

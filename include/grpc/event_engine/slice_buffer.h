@@ -21,12 +21,13 @@
 
 #include <cstdint>
 #include <string>
-#include <tuple>
 
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
+#include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -124,12 +125,8 @@ class SliceBuffer {
   /// associated slice.
   Slice RefSlice(size_t index);
 
-  /// Returns pointer to the buffer contained in the slice at the specified
-  /// index. The returned buffer is mutable.
-  std::tuple<uint8_t*, size_t> MutableData(size_t index) {
-    return std::make_tuple<uint8_t*, size_t>(
-        GRPC_SLICE_START_PTR(slice_buffer_.slices[index]),
-        GRPC_SLICE_LENGTH(slice_buffer_.slices[index]));
+  const Slice& operator[](size_t index) const {
+    return internal::SliceCast<Slice>(slice_buffer_.slices[index]);
   }
 
   /// The total number of bytes held by the SliceBuffer

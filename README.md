@@ -27,7 +27,7 @@ For instructions on how to use the language-specific gRPC runtime for a project,
 please refer to these documents
 
 - [C++](src/cpp): follow the instructions under the `src/cpp` directory
-- [C#](src/csharp): NuGet package `Grpc`
+- [C#/.NET](https://github.com/grpc/grpc-dotnet): NuGet packages `Grpc.Net.Client`, `Grpc.AspNetCore.Server`
 - [Dart](https://github.com/grpc/grpc-dart): pub package `grpc`
 - [Go](https://github.com/grpc/grpc-go): `go get google.golang.org/grpc`
 - [Java](https://github.com/grpc/grpc-java): Use JARs from Maven Central

@@ -190,7 +190,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         /*handle=*/listener_->poller_->CreateHandle(
             fd, *peer_name, listener_->poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
-        /*allocator=*/
+        // allocator=
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
             absl::StrCat("endpoint-tcp-server-connection: ", *peer_name)),
         /*options=*/listener_->options_);
