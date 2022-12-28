@@ -23,7 +23,7 @@ import logging
 import sys
 import threading
 import types
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Iterable, Mapping, NoReturn, Optional, Sequence, Tuple
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -34,7 +34,7 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import DoneCallbackType
 from grpc._typing import GeneralIterableType
-from grpc._typing import InterceptorsType
+from grpc._typing import InterceptorType
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestIterableType
@@ -205,7 +205,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_done_callback(self, fn: DoneCallbackType) -> None:
+    def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         """Adds a function to be called at completion of the computation.
 
         The callback will be passed this Future object describing the outcome
@@ -350,10 +350,14 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self) -> None:
+    def cancel(self) -> bool:
         """Cancels the RPC.
 
         Idempotent and has no effect if the RPC has already terminated.
+
+        Returns:
+          bool:
+          False if the RPC is already completed, otherwise True.
         """
         raise NotImplementedError()
 
@@ -385,7 +389,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The initial :term:`metadata`.
+          The initial :term:`metadata`, or None if no initial metadata has been received.
         """
         raise NotImplementedError()
 
@@ -396,7 +400,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The trailing :term:`metadata`.
+          The trailing :term:`metadata`, or None if no trailing metadata has been received.
         """
         raise NotImplementedError()
 
@@ -407,7 +411,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The StatusCode value for the RPC.
+          The StatusCode value for the RPC, or None if the RPC has not been completed.
         """
         raise NotImplementedError()
 
@@ -418,7 +422,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The details string of the RPC.
+          The details string of the RPC, or None if the RPC has not been completed.
         """
         raise NotImplementedError()
 
@@ -445,6 +449,7 @@ class ClientCallDetails(abc.ABC):
 class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
+    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
     @abc.abstractmethod
     def intercept_unary_unary(self, continuation: Callable[
         [ClientCallDetails, RequestType], Any],
@@ -482,6 +487,7 @@ class UnaryUnaryClientInterceptor(abc.ABC):
 class UnaryStreamClientInterceptor(abc.ABC):
     """Affords intercepting unary-stream invocations."""
 
+    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
     @abc.abstractmethod
     def intercept_unary_stream(self, continuation: Callable[
         [ClientCallDetails, RequestType], Any],
@@ -518,6 +524,7 @@ class UnaryStreamClientInterceptor(abc.ABC):
 class StreamUnaryClientInterceptor(abc.ABC):
     """Affords intercepting stream-unary invocations."""
 
+    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
     @abc.abstractmethod
     def intercept_stream_unary(self, continuation: Callable[
         [ClientCallDetails, RequestIterableType], Any],
@@ -554,6 +561,7 @@ class StreamUnaryClientInterceptor(abc.ABC):
 class StreamStreamClientInterceptor(abc.ABC):
     """Affords intercepting stream-stream invocations."""
 
+    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
     @abc.abstractmethod
     def intercept_stream_stream(self, continuation: Callable[
         [ClientCallDetails, RequestIterableType], Any],
@@ -633,7 +641,7 @@ class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
     def __call__(self, metadata: MetadataType,
-                 error: Optional[Type[BaseException]]) -> Any:
+                 error: Optional[BaseException]) -> Any:
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -646,7 +654,7 @@ class AuthMetadataPluginCallback(abc.ABC):
 class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
-    def __call__(self, contex: AuthMetadataContext,
+    def __call__(self, context: AuthMetadataContext,
                  callback: AuthMetadataPluginCallback) -> Any:
         """Implements authentication by passing metadata to a callback.
 
@@ -683,7 +691,7 @@ class ServerCertificateConfiguration(object):
     other functions.
     """
 
-    def __init__(self, certificate_configuration):
+    def __init__(self, certificate_configuration: _cygrpc.ServerCertificateConfig):
         self._certificate_configuration = certificate_configuration
 
 
@@ -739,7 +747,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
 
         Args:
           request: The request value for the RPC.
-          timeout: An optional durating of time in seconds to allow for
+          timeout: An optional duration of time in seconds to allow for
             the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
@@ -796,6 +804,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
 class UnaryStreamMultiCallable(abc.ABC):
     """Affords invoking a unary-stream RPC from client-side."""
 
+    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
     @abc.abstractmethod
     def __call__(self,
                  request: Any,
@@ -833,7 +842,7 @@ class StreamUnaryMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def __call__(self,
-                 request_iterator: Iterable,
+                 request_iterator: RequestIterableType,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[CallCredentials] = None,
@@ -868,7 +877,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
             self,
-            request_iterator: Iterable,
+            request_iterator: RequestIterableType,
             timeout: Optional[float] = None,
             metadata: Optional[MetadataType] = None,
             credentials: Optional[CallCredentials] = None,
@@ -902,7 +911,7 @@ class StreamUnaryMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def future(self,
-               request_iterator: Iterable,
+               request_iterator: RequestIterableType,
                timeout: Optional[float] = None,
                metadata: Optional[MetadataType] = None,
                credentials: Optional[CallCredentials] = None,
@@ -938,7 +947,7 @@ class StreamStreamMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def __call__(self,
-                 request_iterator: Iterable,
+                 request_iterator: RequestIterableType,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[CallCredentials] = None,
@@ -981,7 +990,7 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def subscribe(self,
                   callback: Callable[[ChannelConnectivity], None],
-                  try_to_connect: Optional[bool] = False) -> None:
+                  try_to_connect: bool = False) -> None:
         """Subscribe to this Channel's connectivity state machine.
 
         A Channel may be in any of the states described by ChannelConnectivity.
@@ -1128,7 +1137,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def invocation_metadata(self) -> Optional[MetadataType]:
-        """Accesses the metadata from the sent by the client.
+        """Accesses the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.
@@ -1153,7 +1162,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         servicer_context.auth_context().get(servicer_context.peer_identity_key())
 
         Returns:
-          A sequence of the identities, or None if the call is not
+          A Sequence of the identities, or None if the call is not
           authenticated. Each identity is returned as a raw bytes type.
         """
         raise NotImplementedError()
@@ -1200,7 +1209,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         metadata to add to what the gRPC runtime will transmit.
 
         Args:
-          initial_metadata: The initial :term:`metadata`.
+          initial_metadata: The initial :term:`metadata`. If None, sends HTTP/2
+          status code and headers with no gRPC initial metadata.
         """
         raise NotImplementedError()
 
@@ -1219,7 +1229,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         metadata to add to what the gRPC runtime will transmit.
 
         Args:
-          trailing_metadata: The trailing :term:`metadata`.
+          trailing_metadata: The trailing :term:`metadata`. If None, will send
+          no trailing metadata.
         """
         raise NotImplementedError()
 
@@ -1234,7 +1245,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def abort(self, code: StatusCode, details: str) -> None:
+    def abort(self, code: StatusCode, details: str) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
@@ -1253,7 +1264,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def abort_with_status(self, status: Status) -> None:
+    def abort_with_status(self, status: Status) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The status passed as argument will supercede any existing status code,
@@ -1306,13 +1317,13 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def details(self) -> str:
-        """Accesses the value to be used as detail string upon RPC completion.
+    def details(self) -> bytes:
+        """Accesses the value to be used as detail bytes upon RPC completion.
 
         This is an EXPERIMENTAL API.
 
         Returns:
-          The details string of the RPC.
+          The details bytes of the RPC.
         """
         raise NotImplementedError()
 
@@ -1561,15 +1572,15 @@ class Server(abc.ABC):
 
 
 def unary_unary_rpc_method_handler(
-    behavior: Callable[[Any, Any], Any],
+    behavior: Callable[[Any, ServicerContext], Any],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a unary-unary RPC method.
 
     Args:
-      behavior: The implementation of an RPC that accepts one request, one request context
-        and returns one response.
+      behavior: The implementation of an RPC that accepts one request and a ServicerContext
+      object and returns one response.
       request_deserializer: An optional :term:`deserializer` for request deserialization.
       response_serializer: An optional :term:`serializer` for response serialization.
 
@@ -1583,15 +1594,15 @@ def unary_unary_rpc_method_handler(
 
 
 def unary_stream_rpc_method_handler(
-    behavior: Callable[[Any, Any], GeneralIterableType],
+    behavior: Callable[[Any, ServicerContext], GeneralIterableType],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a unary-stream RPC method.
 
     Args:
-      behavior: The implementation of an RPC that accepts one request, one request context
-        and returns an iterator of response values, depends on synchronous or asynchronous
+      behavior: The implementation of an RPC that accepts one request and a ServicerContext
+      object and returns an iterator of response values, depends on synchronous or asynchronous
         API, the iterator should be an Iterable or AsyncIterable
       request_deserializer: An optional :term:`deserializer` for request deserialization.
       response_serializer: An optional :term:`serializer` for response serialization.
@@ -1606,7 +1617,7 @@ def unary_stream_rpc_method_handler(
 
 
 def stream_unary_rpc_method_handler(
-    behavior: Callable[[GeneralIterableType, Any], Any],
+    behavior: Callable[[GeneralIterableType, ServicerContext], Any],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
@@ -1614,8 +1625,9 @@ def stream_unary_rpc_method_handler(
 
     Args:
       behavior: The implementation of an RPC that accepts an iterator of
-        request values, one request context and returns a single response value, depends on
-        synchronous or asynchronous API, the iterator should be an Iterable or AsyncIterable.
+        request values and a ServicerContext object and returns a single response value,
+        depends on synchronous or asynchronous API, the iterator should be an Iterable or
+        AsyncIterable.
       request_deserializer: An optional :term:`deserializer` for request deserialization.
       response_serializer: An optional :term:`serializer` for response serialization.
 
@@ -1629,7 +1641,7 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior: Callable[[GeneralIterableType, Any], GeneralIterableType],
+    behavior: Callable[[GeneralIterableType, ServicerContext], GeneralIterableType],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
@@ -1659,7 +1671,7 @@ def method_handlers_generic_handler(
     Args:
       service: The name of the service that is implemented by the
         method_handlers.
-      method_handlers: A dictionary that maps method names to corresponding
+      method_handlers: A mapping that maps method names to corresponding
         RpcMethodHandler.
 
     Returns:
@@ -1694,12 +1706,12 @@ def ssl_channel_credentials(
 
 
 def xds_channel_credentials(
-        fallback_credentials: Any = None) -> ChannelCredentials:
+        fallback_credentials: Optional[ChannelCredentials] = None) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
     Args:
-      fallback_credentials: Credentials to use in case it is not possible to
+      fallback_credentials: ServerCredentials to use in case it is not possible to
         establish a secure connection via xDS. If no fallback_credentials
         argument is supplied, a default SSLChannelCredentials is used.
     """
@@ -1813,12 +1825,12 @@ def ssl_server_credentials(
             ], require_client_auth))
 
 
-def xds_server_credentials(fallback_credentials: Any) -> ServerCredentials:
+def xds_server_credentials(fallback_credentials: ServerCredentials) -> ServerCredentials:
     """Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
     Args:
-      fallback_credentials: Credentials to use in case it is not possible to
+      fallback_credentials: ServerCredentials to use in case it is not possible to
         establish a secure connection via xDS. No default value is provided.
     """
     return ServerCredentials(
@@ -1972,7 +1984,7 @@ def local_server_credentials(
 
 
 def alts_channel_credentials(
-        service_accounts: Optional[Sequence] = None) -> ChannelCredentials:
+        service_accounts: Optional[Sequence[str]] = None) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
 
     This is an EXPERIMENTAL API.
@@ -2094,7 +2106,7 @@ def secure_channel(target: str,
 
 
 def intercept_channel(channel: Channel,
-                      *interceptors: InterceptorsType) -> Channel:
+                      *interceptors: InterceptorType) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
     Args:
@@ -2126,7 +2138,7 @@ def server(thread_pool: futures.ThreadPoolExecutor,
            options: Optional[Sequence[ChannelArgumentType]] = None,
            maximum_concurrent_rpcs: Optional[int] = None,
            compression: Optional[Compression] = None,
-           xds: Optional[bool] = False) -> Server:
+           xds: bool = False) -> Server:
     """Creates a Server with which RPCs can be serviced.
 
     Args:

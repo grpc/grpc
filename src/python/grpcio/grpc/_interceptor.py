@@ -348,13 +348,14 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._method = method
         self._interceptor = interceptor
 
+    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
     def __call__(self,
                  request: Any,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None):
+                 compression: Optional[grpc.Compression] = None) -> Any:
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials,
                                                  wait_for_ready, compression)

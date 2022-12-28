@@ -21,8 +21,8 @@ import enum
 import logging
 import threading
 import time
-from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
-                    Sequence, Set, Tuple, Union)
+from typing import (Any, Callable, Iterable, Iterator, List, Mapping, NoReturn,
+                    Optional, Sequence, Set, Tuple, Union)
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
@@ -325,7 +325,7 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.compression_algorithm = compression
 
-    def send_initial_metadata(self, initial_metadata: MetadataType) -> None:
+    def send_initial_metadata(self, initial_metadata: Optional[MetadataType]) -> None:
         with self._state.condition:
             if self._state.client is _CANCELLED:
                 _raise_rpc_error(self._state)
@@ -340,14 +340,14 @@ class _Context(grpc.ServicerContext):
                 else:
                     raise ValueError('Initial metadata no longer allowed!')
 
-    def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
+    def set_trailing_metadata(self, trailing_metadata: Optional[MetadataType]) -> None:
         with self._state.condition:
             self._state.trailing_metadata = trailing_metadata
 
     def trailing_metadata(self) -> Optional[MetadataType]:
         return self._state.trailing_metadata
 
-    def abort(self, code: grpc.StatusCode, details: str) -> None:
+    def abort(self, code: grpc.StatusCode, details: str) -> NoReturn:
         # treat OK like other invalid arguments: fail the RPC
         if code == grpc.StatusCode.OK:
             _LOGGER.error(
@@ -360,7 +360,7 @@ class _Context(grpc.ServicerContext):
             self._state.aborted = True
             raise Exception()
 
-    def abort_with_status(self, status: grpc.Status) -> None:
+    def abort_with_status(self, status: grpc.Status) -> NoReturn:
         self._state.trailing_metadata = status.trailing_metadata
         self.abort(status.code, status.details)
 

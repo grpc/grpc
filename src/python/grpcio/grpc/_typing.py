@@ -61,7 +61,7 @@ ArityAgnosticMethodHandler = Union[
     Callable[[Iterator[RequestType], 'ServicerContext'],
              ResponseType], Callable[[Iterator[RequestType], 'ServicerContext'],
                                      Iterator[ResponseType]]]
-InterceptorsType = Union['UnaryUnaryClientInterceptor',
+InterceptorType = Union['UnaryUnaryClientInterceptor',
                          'UnaryStreamClientInterceptor',
                          'StreamUnaryClientInterceptor',
                          'StreamStreamClientInterceptor']
