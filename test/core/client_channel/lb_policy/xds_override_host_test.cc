@@ -14,10 +14,11 @@
 // limitations under the License.
 //
 
+#include <stddef.h>
+
 #include <array>
 #include <map>
 #include <string>
-#include <unordered_set>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"

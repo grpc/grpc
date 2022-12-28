@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
@@ -45,7 +46,13 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -58,7 +65,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
-
 TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host_lb");
 
 namespace {
