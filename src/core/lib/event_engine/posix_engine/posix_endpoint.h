@@ -651,8 +651,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class PosixEndpoint : public EventEngine::Endpoint,
-                      public PosixEndpointWithFdSupport {
+class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint() = default;
 
