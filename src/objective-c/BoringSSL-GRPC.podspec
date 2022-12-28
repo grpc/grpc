@@ -84,7 +84,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = '10.0'
   s.watchos.deployment_target = '4.0'
 
-  name = 'openssl_grpc'
+  name = 'openssl'
 
   # When creating a dynamic framework, name it openssl.framework instead of BoringSSL.framework.
   # This lets users write their includes like `#include <openssl/ssl.h>` as opposed to `#include
@@ -95,13 +95,13 @@ Pod::Spec.new do |s|
   # the `Headers/` directory of the framework (i.e., not under `Headers/include/openssl`).
   #
   # TODO(jcanizales): Debug why this doesn't work on macOS.
-  s.header_mappings_dir = 'src/include/openssl'
+  s.header_mappings_dir = 'src/include'
 
   # The above has an undesired effect when creating a static library: It forces users to write
   # includes like `#include <BoringSSL/ssl.h>`. `s.header_dir` adds a path prefix to that, and
   # because Cocoapods lets omit the pod name when including headers of static libraries, the
   # following lets users write `#include <openssl/ssl.h>`.
-  s.header_dir = name
+  # s.header_dir = name
 
   # The module map and umbrella header created automatically by Cocoapods don't work for C libraries
   # like this one. The following file, and a correct umbrella header, are created on the fly by the
@@ -110,7 +110,7 @@ Pod::Spec.new do |s|
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
   # want that for some reason.
-  s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w', '-DBORINGSSL_PREFIX=GRPC'
+  s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   s.requires_arc = false
 
   # Like many other C libraries, BoringSSL has its public headers under `include/<libname>/` and its
@@ -121,7 +121,7 @@ Pod::Spec.new do |s|
   # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
   # making the linter happy.
   s.subspec 'Interface' do |ss|
-    ss.header_mappings_dir = 'src/include/openssl'
+    ss.header_mappings_dir = 'src/include'
     ss.source_files = 'src/include/openssl/*.h'
   end
   s.subspec 'Implementation' do |ss|
@@ -153,6 +153,12 @@ Pod::Spec.new do |s|
 
   s.prepare_command = <<-END_OF_COMMAND
     set -e
+
+    rm -rf src/include/openssl/time.h
+    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -exec sed -E -i '' 's;^#include <openssl/time.h>;// #include <openssl/time.h>;g' {} +
+
+    exit 0
+
     # Add a module map and an umbrella header
     mkdir -p src/include/openssl
     cat > src/include/openssl/umbrella.h <<EOF

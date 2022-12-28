@@ -1390,7 +1390,6 @@
 					"COCOAPODS=1",
 					"$(inherited)",
 					"GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1",
-					"BORINGSSL_PREFIX=GRPC",
 				);
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
 				INFOPLIST_FILE = Info.plist;
