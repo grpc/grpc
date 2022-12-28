@@ -33,6 +33,7 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/port.h"
