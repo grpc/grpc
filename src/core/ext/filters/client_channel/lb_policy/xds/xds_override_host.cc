@@ -307,11 +307,11 @@ XdsOverrideHostLb::Picker::Picker(
 }
 
 absl::optional<LoadBalancingPolicy::PickResult>
-XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view address) {
-  if (address.length() == 0) {
+XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
+  if (override_host.length() == 0) {
     return absl::nullopt;
   }
-  auto subchannel = policy_->GetSubchannelByAddress(address);
+  auto subchannel = policy_->GetSubchannelByAddress(override_host);
   if (subchannel == nullptr) {
     return absl::nullopt;
   }
