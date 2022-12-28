@@ -50,6 +50,8 @@ EXTERNAL_DEPS = {
     # TODO(ctiller) remove this
     'absl/base/internal/endian.h':
         'absl/base',
+    'absl/base/dynamic_annotations.h':
+        'absl/base:dynamic_annotations',
     'absl/base/thread_annotations.h':
         'absl/base:core_headers',
     'absl/container/flat_hash_map.h':
@@ -140,6 +142,10 @@ EXTERNAL_DEPS = {
         'googleapis_trace_grpc_service',
     'google/logging/v2/logging.grpc.pb.h':
         'googleapis_logging_grpc_service',
+    'google/logging/v2/logging.pb.h':
+        'googleapis_logging_proto',
+    'google/logging/v2/log_entry.pb.h':
+        'googleapis_logging_proto',
     'google/monitoring/v3/metric_service.grpc.pb.h':
         'googleapis_monitoring_grpc_service',
     'gmock/gmock.h':

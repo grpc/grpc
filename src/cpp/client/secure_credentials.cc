@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/cpp/client/secure_credentials.h"
 
@@ -55,12 +55,9 @@
 
 namespace grpc {
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 SecureChannelCredentials::SecureChannelCredentials(
     grpc_channel_credentials* c_creds)
-    : c_creds_(c_creds) {
-  g_gli_initializer.summon();
-}
+    : c_creds_(c_creds) {}
 
 std::shared_ptr<Channel> SecureChannelCredentials::CreateChannelImpl(
     const std::string& target, const ChannelArguments& args) {
@@ -85,9 +82,7 @@ SecureChannelCredentials::CreateChannelWithInterceptors(
 }
 
 SecureCallCredentials::SecureCallCredentials(grpc_call_credentials* c_creds)
-    : c_creds_(c_creds) {
-  g_gli_initializer.summon();
-}
+    : c_creds_(c_creds) {}
 
 bool SecureCallCredentials::ApplyToCall(grpc_call* call) {
   return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;

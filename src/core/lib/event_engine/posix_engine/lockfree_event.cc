@@ -20,6 +20,7 @@
 #include <atomic>
 #include <cstdint>
 
+#include "absl/base/dynamic_annotations.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/atm.h>

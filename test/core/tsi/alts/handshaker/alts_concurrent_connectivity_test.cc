@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -295,8 +295,8 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   }
 }
 
-/* Run a bunch of concurrent ALTS handshakes on concurrent channels
- * (using the fake, in-process handshake server). */
+// Run a bunch of concurrent ALTS handshakes on concurrent channels
+// (using the fake, in-process handshake server).
 TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   FakeHandshakeServer fake_handshake_server(
       true /* check num concurrent rpcs */);
@@ -325,11 +325,11 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   }
 }
 
-/* This test is intended to make sure that ALTS handshakes we correctly
- * fail fast when the security handshaker gets an error while reading
- * from the remote peer, after having earlier sent the first bytes of the
- * ALTS handshake to the peer, i.e. after getting into the middle of a
- * handshake. */
+// This test is intended to make sure that ALTS handshakes we correctly
+// fail fast when the security handshaker gets an error while reading
+// from the remote peer, after having earlier sent the first bytes of the
+// ALTS handshake to the peer, i.e. after getting into the middle of a
+// handshake.
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenPeerEndpointClosesConnectionAfterAccepting) {
   // Don't enforce the number of concurrent rpcs for the fake handshake
@@ -371,8 +371,8 @@ TEST(AltsConcurrentConnectivityTest,
   }
 }
 
-/* This test is intended to make sure that ALTS handshakes correctly
- * fail fast when the ALTS handshake server fails incoming handshakes fast. */
+// This test is intended to make sure that ALTS handshakes correctly
+// fail fast when the ALTS handshake server fails incoming handshakes fast.
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerClosesConnectionAfterAccepting) {
   // The fake_handshake_server emulates a broken ALTS handshaker, which
@@ -410,9 +410,9 @@ TEST(AltsConcurrentConnectivityTest,
   }
 }
 
-/* This test is intended to make sure that ALTS handshakes correctly
- * fail fast when the ALTS handshake server is non-responsive, in which case
- * the overall connection deadline kicks in. */
+// This test is intended to make sure that ALTS handshakes correctly
+// fail fast when the ALTS handshake server is non-responsive, in which case
+// the overall connection deadline kicks in.
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerHangsAfterAccepting) {
   // fake_handshake_server emulates an insecure server, so send settings first.

@@ -19,7 +19,7 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import AsyncIterable, Optional, Tuple
+from typing import AsyncIterator, Optional, Tuple
 
 import grpc
 from grpc import _common
@@ -294,7 +294,7 @@ class _UnaryResponseMixin(Call):
 
 
 class _StreamResponseMixin(Call):
-    _message_aiter: AsyncIterable[ResponseType]
+    _message_aiter: AsyncIterator[ResponseType]
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
@@ -325,7 +325,7 @@ class _StreamResponseMixin(Call):
         # If the read operation failed, Core should explain why.
         await self._raise_for_status()
 
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         self._update_response_style(_APIStyle.ASYNC_GENERATOR)
         if self._message_aiter is None:
             self._message_aiter = self._fetch_stream_responses()

@@ -215,7 +215,7 @@ class AVL {
 
   static NodePtr RotateLeftRight(K key, V value, const NodePtr& left,
                                  const NodePtr& right) {
-    /* rotate_right(..., rotate_left(left), right) */
+    // rotate_right(..., rotate_left(left), right)
     return MakeNode(
         left->right->kv.first, left->right->kv.second,
         MakeNode(left->kv.first, left->kv.second, left->left,
@@ -225,7 +225,7 @@ class AVL {
 
   static NodePtr RotateRightLeft(K key, V value, const NodePtr& left,
                                  const NodePtr& right) {
-    /* rotate_left(..., left, rotate_right(right)) */
+    // rotate_left(..., left, rotate_right(right))
     return MakeNode(
         right->left->kv.first, right->left->kv.second,
         MakeNode(std::move(key), std::move(value), left, right->left->left),
@@ -390,7 +390,7 @@ class AVL<K, void> {
 
   static NodePtr RotateLeftRight(K key, const NodePtr& left,
                                  const NodePtr& right) {
-    /* rotate_right(..., rotate_left(left), right) */
+    // rotate_right(..., rotate_left(left), right)
     return MakeNode(left->right->key,
                     MakeNode(left->key, left->left, left->right->left),
                     MakeNode(std::move(key), left->right->right, right));
@@ -398,7 +398,7 @@ class AVL<K, void> {
 
   static NodePtr RotateRightLeft(K key, const NodePtr& left,
                                  const NodePtr& right) {
-    /* rotate_left(..., left, rotate_right(right)) */
+    // rotate_left(..., left, rotate_right(right))
     return MakeNode(right->left->key,
                     MakeNode(std::move(key), left, right->left->left),
                     MakeNode(right->key, right->left->right, right->right));

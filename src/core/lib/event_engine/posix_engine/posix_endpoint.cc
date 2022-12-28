@@ -23,7 +23,6 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 #include <memory>
 #include <string>
 
@@ -235,11 +234,9 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
   for (iov_size = 0;
        out_offset_.slice_idx != buf_.Count() && iov_size != MAX_WRITE_IOVEC;
        iov_size++) {
-    auto mutable_data = buf_.MutableData(out_offset_.slice_idx);
-    iov[iov_size].iov_base =
-        std::get<uint8_t*>(mutable_data) + out_offset_.byte_idx;
-    iov[iov_size].iov_len =
-        std::get<size_t>(mutable_data) - out_offset_.byte_idx;
+    const Slice& slice = buf_[out_offset_.slice_idx];
+    iov[iov_size].iov_base = const_cast<uint8_t*>(slice.begin());
+    iov[iov_size].iov_len = slice.length() - out_offset_.byte_idx;
     *sending_length += iov[iov_size].iov_len;
     ++(out_offset_.slice_idx);
     out_offset_.byte_idx = 0;
@@ -307,9 +304,9 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 #endif  // GRPC_LINUX_ERRQUEUE
   char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
-    auto mutable_data = incoming_buffer_->MutableData(i);
-    iov[i].iov_base = std::get<uint8_t*>(mutable_data);
-    iov[i].iov_len = std::get<size_t>(mutable_data);
+    const Slice& slice = (*incoming_buffer_)[i];
+    iov[i].iov_base = const_cast<uint8_t*>(slice.begin());
+    iov[i].iov_len = slice.length();
   }
 
   GPR_ASSERT(incoming_buffer_->Length() != 0);
@@ -1018,11 +1015,10 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     for (iov_size = 0; outgoing_slice_idx != outgoing_buffer_->Count() &&
                        iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
-      auto mutable_data = outgoing_buffer_->MutableData(outgoing_slice_idx);
+      const Slice& slice = (*outgoing_buffer_)[outgoing_slice_idx];
       iov[iov_size].iov_base =
-          std::get<uint8_t*>(mutable_data) + outgoing_byte_idx_;
-      iov[iov_size].iov_len =
-          std::get<size_t>(mutable_data) - outgoing_byte_idx_;
+          const_cast<uint8_t*>(slice.begin()) + outgoing_byte_idx_;
+      iov[iov_size].iov_len = slice.length() - outgoing_byte_idx_;
 
       sending_length += iov[iov_size].iov_len;
       outgoing_slice_idx++;

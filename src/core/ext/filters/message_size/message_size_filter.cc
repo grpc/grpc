@@ -23,7 +23,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -210,11 +210,11 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
   grpc_closure* closure = calld->next_recv_message_ready;
   calld->next_recv_message_ready = nullptr;
   if (calld->seen_recv_trailing_metadata) {
-    /* We might potentially see another RECV_MESSAGE op. In that case, we do not
-     * want to run the recv_trailing_metadata_ready closure again. The newer
-     * RECV_MESSAGE op cannot cause any errors since the transport has already
-     * invoked the recv_trailing_metadata_ready closure and all further
-     * RECV_MESSAGE ops will get null payloads. */
+    // We might potentially see another RECV_MESSAGE op. In that case, we do not
+    // want to run the recv_trailing_metadata_ready closure again. The newer
+    // RECV_MESSAGE op cannot cause any errors since the transport has already
+    // invoked the recv_trailing_metadata_ready closure and all further
+    // RECV_MESSAGE ops will get null payloads.
     calld->seen_recv_trailing_metadata = false;
     GRPC_CALL_COMBINER_START(calld->call_combiner,
                              &calld->recv_trailing_metadata_ready,
