@@ -287,7 +287,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
-  grpc_core::Mutex subchannel_map_mu_;
+  Mutex subchannel_map_mu_;
   std::map<std::string, SubchannelEntry, std::less<>> subchannel_map_
       ABSL_GUARDED_BY(subchannel_map_mu_);
 };
