@@ -151,11 +151,16 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
   end
 
+  s.pod_target_xcconfig = {
+    # Do not let src/include/openssl/time.h override system API
+    'USE_HEADERMAP' => 'NO',
+  }
+
   s.prepare_command = <<-END_OF_COMMAND
     set -e
 
-    rm -rf src/include/openssl/time.h
-    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -exec sed -E -i '' 's;^#include <openssl/time.h>;// #include <openssl/time.h>;g' {} +
+    # rm -rf src/include/openssl/time.h
+    # find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -exec sed -E -i '' 's;^#include <openssl/time.h>;// #include <openssl/time.h>;g' {} +
 
     exit 0
 
