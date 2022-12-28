@@ -236,8 +236,7 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class PosixEngineListener : public EventEngine::Listener,
-                            public PosixListenerWithFdSupport {
+class PosixEngineListener : public PosixListenerWithFdSupport {
  public:
   PosixEngineListener() = default;
   ~PosixEngineListener() override = default;
