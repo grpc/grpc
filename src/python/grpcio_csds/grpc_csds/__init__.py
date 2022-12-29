@@ -27,7 +27,7 @@ class ClientStatusDiscoveryServiceServicer(
     """CSDS Servicer works for both the sync API and asyncio API."""
 
     @staticmethod
-    def FetchClientStatus(request: Any, unused_context: Any) -> Any:
+    def FetchClientStatus(request, unused_context):
         client_config = csds_pb2.ClientConfig.FromString(
             cygrpc.dump_xds_configs())
         response = csds_pb2.ClientStatusResponse()

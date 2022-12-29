@@ -63,7 +63,7 @@ def from_call(call: grpc.Call) -> Optional[status_pb2.Status]:
     return None
 
 
-def to_status(status: status_pb2.Status) -> _Status:
+def to_status(status: status_pb2.Status) -> grpc.Status:
     """Convert a google.rpc.status.Status message to grpc.Status.
 
     This is an EXPERIMENTAL API.

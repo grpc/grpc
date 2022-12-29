@@ -17,7 +17,7 @@ import collections
 from concurrent import futures
 import sys
 import threading
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional, Set
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -31,7 +31,6 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
 SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name['Health'].full_name
 # The entry of overall health for the entire server.
 OVERALL_HEALTH = ''
-
 
 class _Watcher():
     _condition: threading.Condition
@@ -61,7 +60,7 @@ class _Watcher():
     def __next__(self):
         return self._next()
 
-    def add(self, response: Any) -> None:
+    def add(self, response: Any) -> health_pb2.HealthCheckResponse:
         with self._condition:
             self._responses.append(response)
             self._condition.notify()
@@ -73,7 +72,7 @@ class _Watcher():
 
 
 def _watcher_to_send_response_callback_adapter(
-        watcher: _Watcher) -> Callable[[Any], None]:
+        watcher: _Watcher) -> Callable[[Optional[health_pb2.HealthCheckResponse]], None]:
 
     def send_response_callback(response):
         if response is None:
@@ -87,12 +86,12 @@ def _watcher_to_send_response_callback_adapter(
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
     _lock: threading.RLock
-    _server_status: Mapping[str, Any]
-    _send_response_callbacks: Mapping[str, Callable[[Any], None]]
+    _server_status: Mapping[str, int]
+    _send_response_callbacks: Mapping[str, Set[Callable[[health_pb2.HealthCheckResponse], None]]]
     _gracefully_shutting_down: bool
 
     def __init__(self,
-                 experimental_non_blocking: Optional[bool] = True,
+                 experimental_non_blocking: bool = True,
                  experimental_thread_pool: Optional[
                      futures.ThreadPoolExecutor] = None):
         self._lock = threading.RLock()
@@ -102,7 +101,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self.Watch.__func__.experimental_thread_pool = experimental_thread_pool
         self._gracefully_shutting_down = False
 
-    def _on_close_callback(self, send_response_callback: Callable[[Any], None],
+    def _on_close_callback(self, send_response_callback: Callable[[health_pb2.HealthCheckResponse], None],
                            service: str) -> Callable[[], None]:
 
         def callback():
@@ -114,7 +113,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         return callback
 
     def Check(self, request: _health_pb2.HealthCheckRequest,
-              context: Any) -> _health_pb2.HealthCheckResponse:
+              context: grpc.ServicerContext) -> _health_pb2.HealthCheckResponse:
         with self._lock:
             status = self._server_status.get(request.service)
             if status is None:
@@ -127,8 +126,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     def Watch(
         self,
         request: _health_pb2.HealthCheckRequest,
-        context: Any,
-        send_response_callback: Optional[Callable[[Any], None]] = None
+        context: grpc.ServicerContext,
+        send_response_callback: Optional[Callable[[health_pb2.HealthCheckResponse], None]] = None
     ) -> Optional[_Watcher]:
         blocking_watcher = None
         if send_response_callback is None:
@@ -152,8 +151,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 self._on_close_callback(send_response_callback, service))
         return blocking_watcher
 
-    def set(self, service: str,
-            status: _health_pb2.HealthCheckResponse.ServingStatus) -> None:
+    def set(self, service: str, status: int) -> None:
         """Sets the status of a service.
 
         Args:
