@@ -856,16 +856,21 @@ class RubyLanguage(object):
 
     def dockerfile_dir(self):
         d = {
-            'default': 'tools/dockerfile/test/ruby_debian11_%s' % _docker_arch_suffix(
-               self.args.arch),
-            'ruby2.7': 'tools/dockerfile/test/ruby_debian11_%s' % _docker_arch_suffix(
-               self.args.arch),
-            'ruby3.0': 'tools/dockerfile/test/ruby_3_0_debian11_%s' % _docker_arch_suffix(
-               self.args.arch),
-            'ruby3.1': 'tools/dockerfile/test/ruby_3_1_debian11_%s' % _docker_arch_suffix(
-               self.args.arch),
-            'ruby3.2': 'tools/dockerfile/test/ruby_3_2_debian11_%s' % _docker_arch_suffix(
-               self.args.arch),
+            'default':
+                'tools/dockerfile/test/ruby_debian11_%s' %
+                _docker_arch_suffix(self.args.arch),
+            'ruby2.7':
+                'tools/dockerfile/test/ruby_debian11_%s' %
+                _docker_arch_suffix(self.args.arch),
+            'ruby3.0':
+                'tools/dockerfile/test/ruby_3_0_debian11_%s' %
+                _docker_arch_suffix(self.args.arch),
+            'ruby3.1':
+                'tools/dockerfile/test/ruby_3_1_debian11_%s' %
+                _docker_arch_suffix(self.args.arch),
+            'ruby3.2':
+                'tools/dockerfile/test/ruby_3_2_debian11_%s' %
+                _docker_arch_suffix(self.args.arch),
         }.get(self.args.compiler)
         if not d:
             raise Exception('Unsupported --compiler=%s' % self.args.compiler)
