@@ -3493,6 +3493,7 @@ grpc_cc_library(
         "json_args",
         "json_object_loader",
         "latch",
+        "map",
         "seq",
         "service_config_parser",
         "slice",

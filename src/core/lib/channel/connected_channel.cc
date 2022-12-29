@@ -669,7 +669,7 @@ class ClientStream : public ConnectedChannelStream {
  public:
   ClientStream(grpc_transport* transport, CallArgs call_args)
       : ConnectedChannelStream(transport),
-        server_initial_metadata_latch_(call_args.server_initial_metadata),
+        server_initial_metadata_pipe_(call_args.server_initial_metadata),
         client_to_server_messages_(call_args.client_to_server_messages),
         server_to_client_messages_(call_args.server_to_client_messages),
         client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
@@ -741,7 +741,9 @@ class ClientStream : public ConnectedChannelStream {
     if (server_initial_metadata_state_ ==
         ServerInitialMetadataState::kReceivedButNotSet) {
       server_initial_metadata_state_ = ServerInitialMetadataState::kSet;
-      server_initial_metadata_latch_->Set(server_initial_metadata_.get());
+      GPR_ASSERT(
+          !absl::holds_alternative<Pending>(server_initial_metadata_pipe_->Push(
+              std::move(server_initial_metadata_))()));
     }
     if (server_initial_metadata_state_ == ServerInitialMetadataState::kSet &&
         !IsPromiseReceiving() &&
@@ -851,7 +853,7 @@ class ClientStream : public ConnectedChannelStream {
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu()) = false;
   Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu());
   Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu());
-  Latch<ServerMetadata*>* server_initial_metadata_latch_;
+  PipeSender<ServerMetadataHandle>* server_initial_metadata_pipe_;
   PipeReceiver<MessageHandle>* client_to_server_messages_;
   PipeSender<MessageHandle>* server_to_client_messages_;
   grpc_closure recv_initial_metadata_ready_ =
@@ -957,20 +959,25 @@ class ServerStream final : public ConnectedChannelStream {
               ActiveOpsString().c_str());
     }
 
-    if (server_initial_metadata_ != nullptr) {
-      auto r = server_initial_metadata_->Wait()();
-      if (ServerMetadata*** md = absl::get_if<ServerMetadata**>(&r)) {
+    if (auto* promise =
+            absl::get_if<PipeReceiverNextType<ServerMetadataHandle>>(
+                &server_initial_metadata_)) {
+      auto r = (*promise)();
+      if (auto* md = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%s[connected] got initial metadata %s",
                   Activity::current()->DebugTag().c_str(),
-                  (**md)->DebugString().c_str());
+                  (md->has_value() ? (**md)->DebugString() : "<trailers-only>")
+                      .c_str());
         }
-        server_initial_metadata_ = nullptr;
         memset(&send_initial_metadata_, 0, sizeof(send_initial_metadata_));
         send_initial_metadata_.send_initial_metadata = true;
         send_initial_metadata_.payload = batch_payload();
         send_initial_metadata_.on_complete = &send_initial_metadata_done_;
-        batch_payload()->send_initial_metadata.send_initial_metadata = **md;
+        batch_payload()->send_initial_metadata.send_initial_metadata =
+            server_initial_metadata_
+                .emplace<ServerMetadataHandle>(std::move(**md))
+                .get();
         batch_payload()->send_initial_metadata.peer_string = nullptr;
         SchedulePush(&send_initial_metadata_);
       }
@@ -983,7 +990,10 @@ class ServerStream final : public ConnectedChannelStream {
           absl::holds_alternative<GotInitialMetadata>(
               client_initial_metadata_state_) ||
           absl::holds_alternative<Running>(client_initial_metadata_state_)) {
-        server_initial_metadata_ = nullptr;
+        if (!absl::holds_alternative<ServerMetadataHandle>(
+                server_initial_metadata_)) {
+          server_initial_metadata_.emplace<ServerMetadataHandle>();
+        }
         client_initial_metadata_state_.emplace<Complete>(
             Complete{ServerMetadataFromStatus(p->result)});
       }
@@ -993,12 +1003,13 @@ class ServerStream final : public ConnectedChannelStream {
             absl::get_if<GotInitialMetadata>(&client_initial_metadata_state_)) {
       auto* server_to_client = GetContext<Arena>()->New<Pipe<MessageHandle>>();
       auto* client_to_server = GetContext<Arena>()->New<Pipe<MessageHandle>>();
-      server_initial_metadata_ =
-          GetContext<Arena>()->New<Latch<ServerMetadata*>>();
+      auto* server_initial_metadata =
+          GetContext<Arena>()->New<Pipe<ServerMetadataHandle>>();
       incoming_messages_ = &client_to_server->sender;
-      auto promise = p->next_promise_factory(CallArgs{
-          std::move(p->client_initial_metadata), server_initial_metadata_,
-          &client_to_server->receiver, &server_to_client->sender});
+      auto promise = p->next_promise_factory(
+          CallArgs{std::move(p->client_initial_metadata),
+                   &server_initial_metadata->sender,
+                   &client_to_server->receiver, &server_to_client->sender});
       client_initial_metadata_state_.emplace<Running>(
           Running{&server_to_client->receiver, std::move(promise)});
     }
@@ -1006,7 +1017,10 @@ class ServerStream final : public ConnectedChannelStream {
       PollRecvMessage(incoming_messages_);
     }
     if (auto* p = absl::get_if<Running>(&client_initial_metadata_state_)) {
-      PollSendMessage(p->outgoing_messages, nullptr);
+      if (absl::holds_alternative<ServerMetadataHandle>(
+              server_initial_metadata_)) {
+        PollSendMessage(p->outgoing_messages, nullptr);
+      }
       auto poll = p->promise();
       if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
         auto& completing = client_initial_metadata_state_.emplace<Completing>();
@@ -1027,7 +1041,8 @@ class ServerStream final : public ConnectedChannelStream {
       }
     }
     if (auto* p = absl::get_if<Complete>(&client_initial_metadata_state_)) {
-      if (server_initial_metadata_ == nullptr) {
+      if (absl::holds_alternative<ServerMetadataHandle>(
+              server_initial_metadata_)) {
         set_finished();
         return std::move(p->result);
       }
@@ -1197,8 +1212,9 @@ class ServerStream final : public ConnectedChannelStream {
                     GotTrailingMetadata>;
   ClientTrailingMetadataState client_trailing_metadata_state_
       ABSL_GUARDED_BY(mu()) = Uninitialized{};
-  Latch<ServerMetadata*>* server_initial_metadata_ ABSL_GUARDED_BY(mu()) =
-      nullptr;
+  absl::variant<Uninitialized, PipeReceiverNextType<ServerMetadataHandle>,
+                ServerMetadataHandle>
+      ABSL_GUARDED_BY(mu()) server_initial_metadata_ = Uninitialized{};
   PipeSender<MessageHandle>* incoming_messages_;
   grpc_transport_stream_op_batch send_initial_metadata_;
   grpc_closure send_initial_metadata_done_ =
