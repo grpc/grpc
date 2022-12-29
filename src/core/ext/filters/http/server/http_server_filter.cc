@@ -135,29 +135,23 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
     md->Remove(UserAgentMetadata());
   }
 
-  auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
-  auto* write_latch =
-      std::exchange(call_args.server_initial_metadata, read_latch);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [](ServerMetadataHandle md) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[http-server] Write metadata",
+                  Activity::current()->DebugTag().c_str());
+        }
+        FilterOutgoingMetadata(md.get());
+        md->Set(HttpStatusMetadata(), 200);
+        md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
+        return md;
+      });
 
-  return TryConcurrently(
-             Seq(next_promise_factory(std::move(call_args)),
-                 [](ServerMetadataHandle md) -> ServerMetadataHandle {
-                   FilterOutgoingMetadata(md.get());
-                   return md;
-                 }))
-      .NecessaryPush(
-          Map(read_latch->Wait(), [write_latch](ServerMetadata** md) {
-            if (grpc_call_trace.enabled()) {
-              gpr_log(GPR_INFO, "%s[http-server] Write metadata",
-                      Activity::current()->DebugTag().c_str());
-            }
-            FilterOutgoingMetadata(*md);
-            (*md)->Set(HttpStatusMetadata(), 200);
-            (*md)->Set(ContentTypeMetadata(),
-                       ContentTypeMetadata::kApplicationGrpc);
-            write_latch->Set(*md);
-            return absl::OkStatus();
-          }));
+  return Map(next_promise_factory(std::move(call_args)),
+             [](ServerMetadataHandle md) -> ServerMetadataHandle {
+               FilterOutgoingMetadata(md.get());
+               return md;
+             });
 }
 
 absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(

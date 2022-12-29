@@ -50,6 +50,7 @@
 #include "src/core/lib/promise/map_pipe.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_concurrently.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -221,7 +222,8 @@ CompressionFilter::DecompressArgs CompressionFilter::HandleIncomingMetadata(
        *limits->max_recv_size() < *max_recv_message_length)) {
     max_recv_message_length = *limits->max_recv_size();
   }
-  return DecompressArgs{incoming_metadata.get(GrpcEncodingMetadata())
+  return DecompressArgs{true,
+                        incoming_metadata.get(GrpcEncodingMetadata())
                             .value_or(GRPC_COMPRESS_NONE),
                         max_recv_message_length};
 }
@@ -235,39 +237,34 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
        this](MessageHandle message) -> absl::optional<MessageHandle> {
         return CompressMessage(std::move(message), compression_algorithm);
       });
-  auto* decompress_args = GetContext<Arena>()->New<Latch<DecompressArgs>>();
-  auto* decompress_err = GetContext<Arena>()->New<Latch<absl::Status>>();
+  auto* decompress_args =
+      GetContext<Arena>()->New<DecompressArgs>(DecompressArgs{false});
+  auto* decompress_err =
+      GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
   call_args.server_to_client_messages->InterceptAndMap(
-      [decompress_err, decompress_args, this](MessageHandle message) {
-        return Seq(
-            decompress_args->Wait(),
-            [decompress_err, message = std::move(message), this](
-                DecompressArgs* args) mutable -> absl::optional<MessageHandle> {
-              if (args == nullptr) return absl::nullopt;
-              auto r = DecompressMessage(std::move(message), *args);
-              if (!r.ok()) {
-                decompress_err->Set(r.status());
-                return absl::nullopt;
-              }
-              return std::move(*r);
-            });
+      [decompress_err, decompress_args,
+       this](MessageHandle message) -> absl::optional<MessageHandle> {
+        if (!decompress_args->valid) return absl::nullopt;
+        auto r = DecompressMessage(std::move(message), *decompress_args);
+        if (!r.ok()) {
+          decompress_err->Set(ServerMetadataFromStatus(r.status()));
+          return absl::nullopt;
+        }
+        return std::move(*r);
       });
-  auto* server_initial_metadata = call_args.server_initial_metadata;
+  call_args.server_initial_metadata->InterceptAndMap(
+      [decompress_args, this](ServerMetadata* server_initial_metadata)
+          -> absl::optional<ServerMetadata*> {
+        if (server_initial_metadata == nullptr) return absl::nullopt;
+        *decompress_args = HandleIncomingMetadata(*server_initial_metadata);
+        return server_initial_metadata;
+      });
   // Concurrently:
   // - call the next filter
   // - wait for initial metadata from the server and then commence decompression
   // - compress outgoing messages
-  return TryConcurrently(next_promise_factory(std::move(call_args)))
-      .Pull(Map(
-          server_initial_metadata->Wait(),
-          [decompress_args, this](ServerMetadata** server_initial_metadata) {
-            if (*server_initial_metadata == nullptr) {
-              return absl::OkStatus();
-            }
-            decompress_args->Set(
-                HandleIncomingMetadata(**server_initial_metadata));
-            return absl::OkStatus();
-          }));
+  return Race(next_promise_factory(std::move(call_args)),
+              decompress_err->Wait());
 }
 
 ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
@@ -286,37 +283,28 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
         return std::move(*r);
       });
   auto* compression_algorithm =
-      GetContext<Arena>()->New<Latch<grpc_compression_algorithm>>();
+      GetContext<Arena>()->New<grpc_compression_algorithm>();
   call_args.server_to_client_messages->InterceptAndMap(
-      [compression_algorithm, this](MessageHandle message) {
-        return Map(compression_algorithm->Wait(),
-                   [message = std::move(message),
-                    this](grpc_compression_algorithm* algorithm) mutable
-                   -> absl::optional<MessageHandle> {
-                     if (algorithm == nullptr) return absl::nullopt;
-                     return CompressMessage(std::move(message), *algorithm);
-                   });
+      [compression_algorithm,
+       this](MessageHandle message) -> absl::optional<MessageHandle> {
+        return CompressMessage(std::move(message), *compression_algorithm);
       });
-  auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
-  auto* write_latch =
-      std::exchange(call_args.server_initial_metadata, read_latch);
-  // Concurrently:
-  // - call the next filter
-  // - decompress incoming messages
-  // - wait for initial metadata to be sent, and then commence compression of
-  //   outgoing messages
-  return TryConcurrently(next_promise_factory(std::move(call_args)))
-      .Push(Seq(read_latch->Wait(), [write_latch, compression_algorithm,
-                                     this](ServerMetadata** md) mutable {
+  call_args.server_initial_metadata->InterceptAndMap(
+      [this, compression_algorithm](ServerMetadataHandle md) {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%s[compression] Write metadata",
                   Activity::current()->DebugTag().c_str());
         }
         // Find the compression algorithm.
-        compression_algorithm->Set(HandleOutgoingMetadata(**md));
-        write_latch->Set(*md);
-        return absl::OkStatus();
-      }));
+        *compression_algorithm = HandleOutgoingMetadata(*md);
+        return md;
+      });
+  // Concurrently:
+  // - call the next filter
+  // - decompress incoming messages
+  // - wait for initial metadata to be sent, and then commence compression of
+  //   outgoing messages
+  return next_promise_factory(std::move(call_args));
 }
 
 }  // namespace grpc_core

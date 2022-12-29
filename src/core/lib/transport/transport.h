@@ -152,7 +152,7 @@ struct CallArgs {
   // Set once when it's available.
   // During promise setup filters can substitute their own latch for this
   // and consequently intercept the sent value and mutate/observe it.
-  Latch<ServerMetadata*>* server_initial_metadata;
+  PipeSender<ServerMetadataHandle>* server_initial_metadata;
   // Messages travelling from the application to the transport.
   PipeReceiver<MessageHandle>* client_to_server_messages;
   // Messages travelling from the transport to the application.

@@ -64,6 +64,7 @@ namespace grpc_core {
 class CompressionFilter : public ChannelFilter {
  protected:
   struct DecompressArgs {
+    bool valid;
     grpc_compression_algorithm algorithm;
     absl::optional<uint32_t> max_recv_message_length;
   };

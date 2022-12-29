@@ -65,13 +65,13 @@ class Latch {
 #ifndef NDEBUG
     has_had_waiters_ = true;
 #endif
-    return [this]() -> Poll<T*> {
+    return [this]() -> Poll<T> {
       if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
       if (has_value_) {
-        return &value_;
+        return std::move(value_);
       } else {
         return waiter_.pending();
       }

@@ -3189,6 +3189,7 @@ grpc_cc_library(
         "//src/core:percent_encoding",
         "//src/core:pipe",
         "//src/core:promise_like",
+        "//src/core:race",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
