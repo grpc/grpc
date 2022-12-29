@@ -66,10 +66,9 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   });
   gpr_log(GPR_INFO, "prepare fork");
   p.PrepareFork();
-  gpr_log(GPR_INFO, "wait for notification");
-  n.WaitForNotification();
   gpr_log(GPR_INFO, "postfork child");
   p.PostforkChild();
+  n.WaitForNotification();
   grpc_core::Notification n2;
   gpr_log(GPR_INFO, "run callback 3");
   p.Run([&n2] {
@@ -83,21 +82,6 @@ TEST(ThreadPoolTest, CanSurviveFork) {
 
 void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });
-}
-
-TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
-  ASSERT_DEATH_IF_SUPPORTED(
-      [] {
-        gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
-        ThreadPool p;
-        ScheduleSelf(&p);
-        std::thread terminator([] {
-          std::this_thread::sleep_for(std::chrono::seconds(10));
-          abort();
-        });
-        p.PrepareFork();
-      }(),
-      "Waiting for thread pool to idle before forking");
 }
 
 void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
