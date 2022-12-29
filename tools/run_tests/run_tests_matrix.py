@@ -561,8 +561,6 @@ if __name__ == "__main__":
 
     print('Will run these tests:')
     for job in jobs:
-        print('shortname: %s' % job.shortname)
-        print('cmdline: %s' % job.cmdline)
         print('  %s: "%s"' % (job.shortname, ' '.join(job.cmdline)))
     print('')
 
