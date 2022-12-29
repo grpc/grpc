@@ -802,7 +802,7 @@ class RubyLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
-        _check_compiler(self.args.compiler, ['default'])
+        _check_compiler(self.args.compiler, ['default', 'ruby2.7', 'ruby3.0', 'ruby3.1', 'ruby3.2'])
 
     def test_specs(self):
         tests = [
