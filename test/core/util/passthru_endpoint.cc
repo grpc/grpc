@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <string>
 
 #include "absl/status/status.h"
