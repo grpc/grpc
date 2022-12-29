@@ -14,8 +14,6 @@
 
 #include "src/core/lib/event_engine/thread_pool.h"
 
-#include <stdlib.h>
-
 #include <chrono>
 #include <thread>
 
