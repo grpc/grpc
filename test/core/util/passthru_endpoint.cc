@@ -41,6 +41,9 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer.h"
 
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 typedef struct passthru_endpoint passthru_endpoint;
 
 typedef struct {
@@ -51,7 +54,7 @@ typedef struct {
 } pending_op;
 
 typedef struct {
-  grpc_timer timer;
+  absl::optional<EventEngine::TaskHandle> timer_handle;
   uint64_t allowed_write_bytes;
   uint64_t allowed_read_bytes;
   std::vector<grpc_passthru_endpoint_channel_action> actions;
@@ -357,7 +360,10 @@ static void me_destroy(grpc_endpoint* ep) {
     grpc_passthru_endpoint_destroy(p);
   } else {
     if (p->halves == 0 && p->simulate_channel_actions) {
-      grpc_timer_cancel(&p->channel_effects->timer);
+      if (p->channel_effects->timer_handle.has_value()) {
+        GetDefaultEventEngine()->Cancel(*p->channel_effects->timer_handle);
+        p->channel_effects->timer_handle.reset();
+      }
     }
     gpr_mu_unlock(&p->mu);
   }
@@ -483,12 +489,11 @@ static void sched_next_channel_action_locked(half* m) {
     shutdown_locked(m, err);
     return;
   }
-  grpc_timer_init(&m->parent->channel_effects->timer,
-                  grpc_core::Duration::Milliseconds(
-                      m->parent->channel_effects->actions[0].wait_ms) +
-                      grpc_core::Timestamp::Now(),
-                  GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
-                                      grpc_schedule_on_exec_ctx));
+  m->parent->channel_effects->timer_handle = GetDefaultEventEngine()->RunAfter(
+      grpc_core::Duration::Milliseconds(
+          m->parent->channel_effects->actions[0].wait_ms),
+      GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
+                          grpc_schedule_on_exec_ctx));
 }
 
 void start_scheduling_grpc_passthru_endpoint_channel_effects(
