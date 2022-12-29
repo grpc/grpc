@@ -287,6 +287,16 @@ template <>
 struct SliceCastable<Slice, grpc_slice> {};
 template <>
 struct SliceCastable<grpc_slice, Slice> {};
+
+template <>
+struct SliceCastable<MutableSlice, grpc_slice> {};
+template <>
+struct SliceCastable<grpc_slice, MutableSlice> {};
+
+template <>
+struct SliceCastable<MutableSlice, Slice> {};
+template <>
+struct SliceCastable<Slice, MutableSlice> {};
 }  // namespace internal
 
 }  // namespace experimental
