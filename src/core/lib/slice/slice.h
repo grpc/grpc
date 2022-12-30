@@ -259,8 +259,9 @@ class StaticSlice : public slice_detail::BaseSlice,
   }
 };
 
-class MutableSlice : public slice_detail::BaseSlice,
-                     public slice_detail::CopyConstructors<MutableSlice> {
+class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
+    : public slice_detail::BaseSlice,
+      public slice_detail::CopyConstructors<MutableSlice> {
  public:
   MutableSlice() = default;
   explicit MutableSlice(const grpc_slice& slice)
@@ -417,6 +418,16 @@ template <>
 struct SliceCastable<grpc_core::Slice, Slice> {};
 template <>
 struct SliceCastable<Slice, grpc_core::Slice> {};
+
+template <>
+struct SliceCastable<grpc_core::MutableSlice, grpc_slice> {};
+template <>
+struct SliceCastable<grpc_slice, grpc_core::MutableSlice> {};
+
+template <>
+struct SliceCastable<grpc_core::MutableSlice, grpc_core::Slice> {};
+template <>
+struct SliceCastable<grpc_core::Slice, grpc_core::MutableSlice> {};
 }  // namespace internal
 }  // namespace experimental
 }  // namespace grpc_event_engine
