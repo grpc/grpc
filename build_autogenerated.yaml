@@ -5375,6 +5375,27 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
+- name: cf_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  src:
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - test/core/event_engine/test_suite/cf_event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/timer_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: cfstream_test
   gtest: true
   build: test
