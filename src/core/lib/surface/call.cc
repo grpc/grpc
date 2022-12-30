@@ -2693,7 +2693,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
-  Latch<ServerMetadata*> server_initial_metadata_ ABSL_GUARDED_BY(mu());
+  Pipe<ServerMetadataHandle> server_initial_metadata_ ABSL_GUARDED_BY(mu());
   Pipe<MessageHandle> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
   Pipe<MessageHandle> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
 
@@ -2703,7 +2703,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                 grpc_op::grpc_op_data::grpc_op_recv_status_on_client,
                 ServerMetadataHandle>
       recv_status_on_client_ ABSL_GUARDED_BY(mu());
-  absl::optional<LatchWaitPromise<ServerMetadata*>>
+  absl::optional<PipeReceiverNextType<ServerMetadataHandle>>
       server_initial_metadata_ready_;
   absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
@@ -2717,7 +2717,7 @@ void ClientPromiseBasedCall::StartPromise(
   GPR_ASSERT(!promise_.has_value());
   promise_ = channel()->channel_stack()->MakeClientCallPromise(CallArgs{
       std::move(client_initial_metadata),
-      &server_initial_metadata_,
+      &server_initial_metadata_.sender,
       &client_to_server_messages_.receiver,
       &server_to_client_messages_.sender,
   });
@@ -2783,7 +2783,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =
             op.data.recv_initial_metadata.recv_initial_metadata;
-        server_initial_metadata_ready_.emplace(server_initial_metadata_.Wait());
+        server_initial_metadata_ready_.emplace(
+            server_initial_metadata_.receiver.Next());
         recv_initial_metadata_completion_ =
             AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata);
       } break;
@@ -2861,10 +2862,11 @@ void ClientPromiseBasedCall::UpdateOnce() {
             promise_.has_value() ? "true" : "false");
   }
   if (server_initial_metadata_ready_.has_value()) {
-    Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();
-    if (ServerMetadata*** server_initial_metadata =
-            absl::get_if<ServerMetadata**>(&r)) {
-      PublishInitialMetadata(**server_initial_metadata);
+    Poll<NextResult<ServerMetadataHandle>> r =
+        (*server_initial_metadata_ready_)();
+    if (auto* server_initial_metadata =
+            absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+      PublishInitialMetadata(server_initial_metadata->value().get());
     } else if (completed()) {
       ServerMetadata no_metadata{GetContext<Arena>()};
       PublishInitialMetadata(&no_metadata);
@@ -2911,10 +2913,15 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   }
   const bool pending_initial_metadata =
       server_initial_metadata_ready_.has_value();
+  if (!pending_initial_metadata) {
+    server_initial_metadata_ready_.emplace(
+        server_initial_metadata_.receiver.Next());
+  }
+  Poll<NextResult<ServerMetadataHandle>> r =
+      (*server_initial_metadata_ready_)();
   server_initial_metadata_ready_.reset();
-  Poll<ServerMetadata**> r = server_initial_metadata_.Wait()();
-  if (auto* result = absl::get_if<ServerMetadata**>(&r)) {
-    if (pending_initial_metadata) PublishInitialMetadata(**result);
+  if (auto* result = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+    if (pending_initial_metadata) PublishInitialMetadata(result->value().get());
     is_trailers_only_ = false;
   } else {
     if (pending_initial_metadata) {
@@ -3019,6 +3026,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerCallContext* server_call_context() override { return &call_context_; }
 
  private:
+  struct Uninitialized {};
+
   class RecvCloseState {
    public:
     // Request that receiver be filled in per grpc_op_recv_close_on_server.
@@ -3104,9 +3113,11 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
       nullptr;
   PipeReceiver<MessageHandle>* client_to_server_messages_
       ABSL_GUARDED_BY(mu()) = nullptr;
-  Latch<ServerMetadata*>* send_initial_metadata_latch_ ABSL_GUARDED_BY(mu()) =
-      nullptr;
-  ServerMetadata send_initial_metadata_ ABSL_GUARDED_BY(mu());
+  using SendInitialMetadataState =
+      absl::variant<Uninitialized, PipeSender<ServerMetadataHandle>*,
+                    typename PipeSender<ServerMetadataHandle>::PushType>;
+  SendInitialMetadataState send_initial_metadata_state_ ABSL_GUARDED_BY(mu()) =
+      Uninitialized{};
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
@@ -3124,7 +3135,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
   call_->SetCompletionQueueLocked(cq);
   call_->server_to_client_messages_ = call_args.server_to_client_messages;
   call_->client_to_server_messages_ = call_args.client_to_server_messages;
-  call_->send_initial_metadata_latch_ = call_args.server_initial_metadata;
+  call_->send_initial_metadata_state_ = call_args.server_initial_metadata;
   call_->incoming_compression_algorithm_ =
       call_args.client_initial_metadata->get(GrpcEncodingMetadata())
           .value_or(GRPC_COMPRESS_NONE);
@@ -3143,8 +3154,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
     : PromiseBasedCall(arena, *args),
       call_context_(this, args->server_transport_data),
-      server_(args->server),
-      send_initial_metadata_(arena) {
+      server_(args->server) {
   global_stats().IncrementServerCallsCreated();
   channelz::ServerNode* channelz_node = server_->channelz_node();
   if (channelz_node != nullptr) {
@@ -3182,6 +3192,13 @@ void ServerPromiseBasedCall::UpdateOnce() {
             .c_str(),
         PollStateDebugString().c_str(),
         promise_.has_value() ? "true" : "false");
+  }
+  if (auto* p =
+          absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
+              &send_initial_metadata_state_)) {
+    if (!absl::holds_alternative<Pending>((*p)())) {
+      send_initial_metadata_state_ = Uninitialized{};
+    }
   }
   if (promise_.has_value()) {
     auto r = promise_();
@@ -3269,14 +3286,16 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         GPR_ASSERT(
             !op.data.send_initial_metadata.maybe_compression_level.is_set);
         if (!completed()) {
+          auto metadata = arena()->MakePooled<ServerMetadata>(arena());
           CToMetadata(op.data.send_initial_metadata.metadata,
-                      op.data.send_initial_metadata.count,
-                      &send_initial_metadata_);
+                      op.data.send_initial_metadata.count, metadata.get());
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO, "%s[call] Send initial metadata",
                     DebugTag().c_str());
           }
-          send_initial_metadata_latch_->Set(&send_initial_metadata_);
+          auto* pipe = absl::get<PipeSender<ServerMetadataHandle>*>(
+              send_initial_metadata_state_);
+          send_initial_metadata_state_ = pipe->Push(std::move(metadata));
         }
       } break;
       case GRPC_OP_SEND_MESSAGE:
