@@ -140,13 +140,6 @@ Layout/SpaceInsideBlockBraces:
   Exclude:
     - 'stress/stress_client.rb'
 
-# Offense count: 4
-# Cop supports --auto-correct.
-Layout/SpaceInsideBrackets:
-  Exclude:
-    - 'tools/bin/grpc_tools_ruby_protoc'
-    - 'tools/bin/grpc_tools_ruby_protoc_plugin'
-
 # Offense count: 2
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles, EnforcedStyleForEmptyBraces, SupportedStylesForEmptyBraces.
@@ -165,7 +158,7 @@ Layout/SpaceInsidePercentLiteralDelimiters:
 
 # Offense count: 3
 # Cop supports --auto-correct.
-Layout/Tab:
+Layout/IndentationStyle:
   Exclude:
     - 'pb/grpc/health/checker.rb'
     - 'qps/client.rb'
@@ -240,7 +233,7 @@ Metrics/BlockLength:
 # Offense count: 82
 # Configuration parameters: AllowHeredoc, AllowURI, URISchemes, IgnoreCopDirectives, IgnoredPatterns.
 # URISchemes: http, https
-Metrics/LineLength:
+Layout/LineLength:
   Max: 141
 
 # Offense count: 82
@@ -253,30 +246,8 @@ Metrics/MethodLength:
 Metrics/ParameterLists:
   Max: 7
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Performance/RedundantBlockCall:
-  Exclude:
-    - 'spec/generic/client_stub_spec.rb'
-
-# Offense count: 5
-# Cop supports --auto-correct.
-# Configuration parameters: MaxKeyValuePairs.
-Performance/RedundantMerge:
-  Exclude:
-    - 'spec/generic/active_call_spec.rb'
-    - 'spec/generic/client_stub_spec.rb'
-
-# Offense count: 8
-# Cop supports --auto-correct.
-Performance/TimesMap:
-  Exclude:
-    - 'spec/channel_spec.rb'
-    - 'spec/client_server_spec.rb'
-    - 'spec/server_spec.rb'
-
 # Offense count: 7
-Style/AccessorMethodName:
+Naming/AccessorMethodName:
   Exclude:
     - 'qps/server.rb'
     - 'stress/metrics_server.rb'
@@ -353,7 +324,7 @@ Style/EmptyMethod:
 # Offense count: 2
 # Configuration parameters: ExpectMatchingDefinition, Regex, IgnoreExecutableScripts, AllowedAcronyms.
 # AllowedAcronyms: CLI, DSL, ACL, API, ASCII, CPU, CSS, DNS, EOF, GUID, HTML, HTTP, HTTPS, ID, IP, JSON, LHS, QPS, RAM, RHS, RPC, SLA, SMTP, SQL, SSH, TCP, TLS, TTL, UDP, UI, UID, UUID, URI, URL, UTF8, VM, XML, XMPP, XSRF, XSS
-Style/FileName:
+Naming/FileName:
   Exclude:
     - 'qps/src/proto/grpc/testing/proxy-service_pb.rb'
     - 'qps/src/proto/grpc/testing/proxy-service_services_pb.rb'
@@ -552,7 +523,7 @@ Style/TrivialAccessors:
 
 # Offense count: 3
 # Cop supports --auto-correct.
-Style/UnneededInterpolation:
+Style/RedundantInterpolation:
   Exclude:
     - 'pb/grpc/health/checker.rb'
 
