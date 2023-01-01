@@ -25,27 +25,61 @@
 
 namespace grpc_core {
 
-inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
-inline bool IsTcpReadChunksEnabled() { return IsExperimentEnabled(1); }
-inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(2); }
-inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(3); }
-inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(4); }
+enum ExperimentNames {
+  TcpFrameSizeTuning = 0,
+  TcpReadChunks = 1,
+  TcpRcvLowat = 2,
+  PeerStateBasedFraming = 3,
+  FlowControlFixes = 4,
+  MemoryPressureController = 5,
+  UnconstrainedMaxQuotaBufferSize = 6,
+  NewHpackHuffmanDecoder = 7,
+  EventEngineClient = 8,
+  MonitoringExperiment = 9,
+  PromiseBasedClientCall = 10,
+  PosixEventEngineEnablePolling = 11,
+  FreeLargeAllocator = 12,
+};
+
+inline bool IsTcpFrameSizeTuningEnabled() {
+  return IsExperimentEnabled(ExperimentNames::TcpFrameSizeTuning);
+}
+inline bool IsTcpReadChunksEnabled() {
+  return IsExperimentEnabled(ExperimentNames::TcpReadChunks);
+}
+inline bool IsTcpRcvLowatEnabled() {
+  return IsExperimentEnabled(ExperimentNames::TcpRcvLowat);
+}
+inline bool IsPeerStateBasedFramingEnabled() {
+  return IsExperimentEnabled(ExperimentNames::PeerStateBasedFraming);
+}
+inline bool IsFlowControlFixesEnabled() {
+  return IsExperimentEnabled(ExperimentNames::FlowControlFixes);
+}
 inline bool IsMemoryPressureControllerEnabled() {
-  return IsExperimentEnabled(5);
+  return IsExperimentEnabled(ExperimentNames::MemoryPressureController);
 }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
-  return IsExperimentEnabled(6);
+  return IsExperimentEnabled(ExperimentNames::UnconstrainedMaxQuotaBufferSize);
 }
-inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(7); }
-inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(8); }
-inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(9); }
+inline bool IsNewHpackHuffmanDecoderEnabled() {
+  return IsExperimentEnabled(ExperimentNames::NewHpackHuffmanDecoder);
+}
+inline bool IsEventEngineClientEnabled() {
+  return IsExperimentEnabled(ExperimentNames::EventEngineClient);
+}
+inline bool IsMonitoringExperimentEnabled() {
+  return IsExperimentEnabled(ExperimentNames::MonitoringExperiment);
+}
 inline bool IsPromiseBasedClientCallEnabled() {
-  return IsExperimentEnabled(10);
+  return IsExperimentEnabled(ExperimentNames::PromiseBasedClientCall);
 }
 inline bool IsPosixEventEngineEnablePollingEnabled() {
-  return IsExperimentEnabled(11);
+  return IsExperimentEnabled(ExperimentNames::PosixEventEngineEnablePolling);
 }
-inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(12); }
+inline bool IsFreeLargeAllocatorEnabled() {
+  return IsExperimentEnabled(ExperimentNames::FreeLargeAllocator);
+}
 
 struct ExperimentMetadata {
   const char* name;
