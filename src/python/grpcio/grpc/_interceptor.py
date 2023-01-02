@@ -266,7 +266,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request: Any) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -317,7 +318,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request: Any) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -361,7 +363,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request: Any) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -419,7 +422,9 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request_iterator):
+        def continuation(
+                new_details: grpc.ClientCallDetails,
+                request_iterator: RequestIterableType) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -470,7 +475,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request_iterator: RequestIterableType) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -512,7 +518,8 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request_iterator: RequestIterableType) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
