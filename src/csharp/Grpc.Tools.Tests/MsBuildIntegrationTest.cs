@@ -283,14 +283,14 @@ namespace Grpc.Tools.Tests
             CollectionAssert.AreEqual(protofiles, actual.ProtoFiles, "Proto files do not match");
 
             // check protoc arguments
-            // TODO improve this checking as we are comparing two sets - should check actual results
+            // TODO(jtattermusch): improve this checking as we are comparing two sets - should check actual results
             // are a subset of expected results. At the moment there is only one value
             // in each set, but in theory there can be more than one value for repeated arguments.
             foreach (string protofile in protofiles)
             {
                 SortedSet<string> expectedArgs = expected.GetArgumentNames(protofile);
                 SortedSet<string> actualArgs = actual.GetArgumentNames(protofile);
-                CollectionAssert.IsSupersetOf(actualArgs, expectedArgs, "Missing protoc arguments for " + protofile);
+                CollectionAssert.IsSupersetOf(actualArgs, expectedArgs, $"Missing some protoc arguments for {protofile}");
 
                 // Check the values.
                 // Any value with:
@@ -301,22 +301,19 @@ namespace Grpc.Tools.Tests
                 // - ${TEST_OUT_DIR} - the test output directory
                 foreach (string argname in expectedArgs)
                 {
-                    SortedSet<string> expectedValues = expected.GetArgumentValues(protofile, argname);
-                    SortedSet<string> actualValuesSet = actual.GetArgumentValues(protofile, argname);
-
-                    // Copy to array so we can index the array when printing out errors
-                    string[] actualValues = new string[actualValuesSet.Count];
-                    actualValuesSet.CopyTo(actualValues);
+                    var expectedValues = expected.GetArgumentValues(protofile, argname);
+                    var actualValues = actual.GetArgumentValues(protofile, argname);
 
                     foreach (string value in expectedValues)
                     {
                         if (value.StartsWith("IGNORE:"))
                             continue;
 
-                        string val = ReplaceTokens(value);
-                        if (val.StartsWith("REGEX:"))
+                        var val = ReplaceTokens(value);
+                        var regexPrefix = "REGEX:";
+                        if (val.StartsWith(regexPrefix))
                         {
-                            string pattern = val.Substring(6);
+                            string pattern = val.Substring(regexPrefix.Length);
                             bool anyMatched = false;
                             foreach (string s in actualValues)
                             {
@@ -328,14 +325,12 @@ namespace Grpc.Tools.Tests
                             }
                             // TODO(jtattermusch): is the assert error message correct?
                             Assert.IsTrue(anyMatched,
-                                 $"Missing value for '{protofile}' with argument '{argname}' expected: '{val}'\n" +
-                                 $"  actual: '{actualValues[0]}'");
+                                 $"{protofile}: Missing value '{val}' for argument '{argname}'. Actual values: [{string.Join(", ", actualValues)}]'");
                         }
                         else
                         {
-                            Assert.IsTrue(actualValuesSet.Contains(val),
-                                $"Missing value for '{protofile}' with argument '{argname}' expected: '{val}'\n" +
-                                $"  actual: '{actualValues[0]}'");
+                            // Simply check that expected arg value was actually passed.
+                            CollectionAssert.Contains(actualValues, val, $"{protofile}: Missing value '{val}' for argument '{argname}'");
                         }
                     }
                 }
