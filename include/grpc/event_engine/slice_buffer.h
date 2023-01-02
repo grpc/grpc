@@ -126,7 +126,7 @@ class SliceBuffer {
   }
 
   /// Return mutable reference to the slice at the specified index
-  Slice& MutableSliceAt(size_t index) const {
+  Slice& operator[](size_t index) {
     return internal::SliceCast<Slice>(slice_buffer_.slices[index]);
   }
 
