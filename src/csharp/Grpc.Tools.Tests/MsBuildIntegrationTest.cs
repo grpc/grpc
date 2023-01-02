@@ -278,19 +278,16 @@ namespace Grpc.Tools.Tests
         /// <param name="actual"></param>
         private void CompareResults(Results expected, Results actual)
         {
-            // Check proto files
-            SortedSet<string> protofiles = expected.ProtoFiles;
-            CollectionAssert.AreEqual(protofiles, actual.ProtoFiles, "Proto files do not match");
+            // Check set of .proto files processed is the same
+            var protofiles = expected.ProtoFiles;
+            CollectionAssert.AreEquivalent(protofiles, actual.ProtoFiles, "Set of .proto files being processed must match.");
 
             // check protoc arguments
-            // TODO(jtattermusch): improve this checking as we are comparing two sets - should check actual results
-            // are a subset of expected results. At the moment there is only one value
-            // in each set, but in theory there can be more than one value for repeated arguments.
             foreach (string protofile in protofiles)
             {
-                SortedSet<string> expectedArgs = expected.GetArgumentNames(protofile);
-                SortedSet<string> actualArgs = actual.GetArgumentNames(protofile);
-                CollectionAssert.IsSupersetOf(actualArgs, expectedArgs, $"Missing some protoc arguments for {protofile}");
+                var expectedArgs = expected.GetArgumentNames(protofile);
+                var actualArgs = actual.GetArgumentNames(protofile);
+                CollectionAssert.AreEquivalent(expectedArgs, actualArgs, $"Set of protoc arguments used for {protofile} must match.");
 
                 // Check the values.
                 // Any value with:
@@ -304,33 +301,30 @@ namespace Grpc.Tools.Tests
                     var expectedValues = expected.GetArgumentValues(protofile, argname);
                     var actualValues = actual.GetArgumentValues(protofile, argname);
 
-                    foreach (string value in expectedValues)
+                    Assert.AreEqual(expectedValues.Count, actualValues.Count,
+                                 $"{protofile}: Wrong number of occurrences of argument '{argname}'");
+
+                    // Since generally the order of arguments on the commandline is important,
+                    // it is fair to compare arguments with expected values one by one.
+                    // Most arguments are only used at most once by the msbuild integration anyway.
+                    for (int i = 0; i < expectedValues.Count; i++)
                     {
-                        if (value.StartsWith("IGNORE:"))
+                        var expectedValue = ReplaceTokens(expectedValues[i]);
+                        var actualValue = actualValues[i];
+
+                        if (expectedValue.StartsWith("IGNORE:"))
                             continue;
 
-                        var val = ReplaceTokens(value);
                         var regexPrefix = "REGEX:";
-                        if (val.StartsWith(regexPrefix))
+                        if (expectedValue.StartsWith(regexPrefix))
                         {
-                            string pattern = val.Substring(regexPrefix.Length);
-                            bool anyMatched = false;
-                            foreach (string s in actualValues)
-                            {
-                                if (Regex.IsMatch(s, pattern))
-                                {
-                                    anyMatched = true;
-                                    break;
-                                }
-                            }
-                            // TODO(jtattermusch): is the assert error message correct?
-                            Assert.IsTrue(anyMatched,
-                                 $"{protofile}: Missing value '{val}' for argument '{argname}'. Actual values: [{string.Join(", ", actualValues)}]'");
+                            string pattern = expectedValue.Substring(regexPrefix.Length);
+                            Assert.IsTrue(Regex.IsMatch(actualValue, pattern),
+                                 $"{protofile}: Expected value '{expectedValue}' for argument '{argname}'. Actual value: '{actualValue}'");
                         }
                         else
                         {
-                            // Simply check that expected arg value was actually passed.
-                            CollectionAssert.Contains(actualValues, val, $"{protofile}: Missing value '{val}' for argument '{argname}'");
+                            Assert.AreEqual(expectedValue, actualValue, $"{protofile}: Wrong value for argument '{argname}'");
                         }
                     }
                 }
@@ -422,7 +416,7 @@ namespace Grpc.Tools.Tests
             /// <param name="protofile">proto file</param>
             /// <param name="name">argument</param>
             /// <returns></returns>
-            public SortedSet<string> GetArgumentValues(string protofile, string name)
+            public List<string> GetArgumentValues(string protofile, string name)
             {
                 Dictionary<string, List<string>> args;
                 if (Files.TryGetValue(protofile, out args))
@@ -430,10 +424,10 @@ namespace Grpc.Tools.Tests
                     List<string> values;
                     if (args.TryGetValue(name, out values))
                     {
-                        return new SortedSet<string>(values);
+                        return new List<string>(values);
                     }
                 }
-                return new SortedSet<string>();
+                return new List<string>();
             }
         }
     }
