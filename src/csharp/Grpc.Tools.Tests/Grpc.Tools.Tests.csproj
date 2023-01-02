@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <!-- Prevent tests data files from being compiled into this project -->
+    <!-- TODO(jtattermusch): find a better solution for this. -->
     <Compile Remove="IntegrationTests\**" />
     <EmbeddedResource Remove="IntegrationTests\**" />
     <None Remove="IntegrationTests\**" />
