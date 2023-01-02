@@ -945,6 +945,7 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
     else:
         return min(parent_deadline, user_deadline)
 
+
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     _channel: cygrpc.Channel
     _managed_call: IntegratedCallFactory

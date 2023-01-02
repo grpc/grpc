@@ -23,6 +23,7 @@ import threading
 import time
 from typing import (Any, Callable, Iterable, Iterator, List, Mapping, NoReturn,
                     Optional, Sequence, Set, Tuple, Union)
+
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
@@ -303,7 +304,7 @@ class _Context(grpc.ServicerContext):
     def invocation_metadata(self) -> Optional[MetadataType]:
         return self._rpc_event.invocation_metadata
 
-    def peer(self) -> str:
+    def peer(self) -> Optional[str]:
         return _common.decode(self._rpc_event.call.peer())
 
     def peer_identities(self) -> Optional[Sequence[bytes]]:
@@ -313,7 +314,7 @@ class _Context(grpc.ServicerContext):
         id_key = cygrpc.peer_identity_key(self._rpc_event.call)
         return id_key if id_key is None else _common.decode(id_key)
 
-    def auth_context(self) -> Mapping[str, Sequence[bytes]]:
+    def auth_context(self) -> Mapping[Optional[str], Sequence[bytes]]:
         auth_context = cygrpc.auth_context(self._rpc_event.call)
         auth_context_dict = {} if auth_context is None else auth_context
         return {
@@ -325,7 +326,8 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.compression_algorithm = compression
 
-    def send_initial_metadata(self, initial_metadata: Optional[MetadataType]) -> None:
+    def send_initial_metadata(self,
+                              initial_metadata: Optional[MetadataType]) -> None:
         with self._state.condition:
             if self._state.client is _CANCELLED:
                 _raise_rpc_error(self._state)
@@ -340,7 +342,8 @@ class _Context(grpc.ServicerContext):
                 else:
                     raise ValueError('Initial metadata no longer allowed!')
 
-    def set_trailing_metadata(self, trailing_metadata: Optional[MetadataType]) -> None:
+    def set_trailing_metadata(
+            self, trailing_metadata: Optional[MetadataType]) -> None:
         with self._state.condition:
             self._state.trailing_metadata = trailing_metadata
 
@@ -362,7 +365,7 @@ class _Context(grpc.ServicerContext):
 
     def abort_with_status(self, status: grpc.Status) -> NoReturn:
         self._state.trailing_metadata = status.trailing_metadata
-        self.abort(status.code, status.details)
+        self.abort(status.code, status.details) # pytype: disable=bad-return-type
 
     def set_code(self, code: grpc.StatusCode) -> None:
         with self._state.condition:
@@ -696,9 +699,10 @@ def _select_thread_pool_for_behavior(
 
 
 def _handle_unary_unary(
-        rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
+    rpc_event: cygrpc.BaseEvent, state: _RPCState,
+    method_handler: grpc.RpcMethodHandler,
+    default_thread_pool: futures.ThreadPoolExecutor
+) -> Optional[futures.Future]:
     unary_request = _unary_request(rpc_event, state,
                                    method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.unary_unary,
@@ -710,9 +714,10 @@ def _handle_unary_unary(
 
 
 def _handle_unary_stream(
-        rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
+    rpc_event: cygrpc.BaseEvent, state: _RPCState,
+    method_handler: grpc.RpcMethodHandler,
+    default_thread_pool: futures.ThreadPoolExecutor
+) -> Optional[futures.Future]:
     unary_request = _unary_request(rpc_event, state,
                                    method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.unary_stream,
@@ -724,9 +729,10 @@ def _handle_unary_stream(
 
 
 def _handle_stream_unary(
-        rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
+    rpc_event: cygrpc.BaseEvent, state: _RPCState,
+    method_handler: grpc.RpcMethodHandler,
+    default_thread_pool: futures.ThreadPoolExecutor
+) -> Optional[futures.Future]:
     request_iterator = _RequestIterator(state, rpc_event.call,
                                         method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.stream_unary,
@@ -739,9 +745,10 @@ def _handle_stream_unary(
 
 
 def _handle_stream_stream(
-        rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        method_handler: grpc.RpcMethodHandler,
-        default_thread_pool: futures.ThreadPoolExecutor) -> Optional[futures.Future]:
+    rpc_event: cygrpc.BaseEvent, state: _RPCState,
+    method_handler: grpc.RpcMethodHandler,
+    default_thread_pool: futures.ThreadPoolExecutor
+) -> Optional[futures.Future]:
     request_iterator = _RequestIterator(state, rpc_event.call,
                                         method_handler.request_deserializer)
     thread_pool = _select_thread_pool_for_behavior(method_handler.stream_stream,

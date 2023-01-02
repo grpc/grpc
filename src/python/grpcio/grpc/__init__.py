@@ -23,7 +23,8 @@ import logging
 import sys
 import threading
 import types
-from typing import Any, Callable, Iterable, Mapping, NoReturn, Optional, Sequence, Tuple
+from typing import (Any, Callable, Iterable, Mapping, NoReturn, Optional,
+                    Sequence, Tuple)
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -691,7 +692,8 @@ class ServerCertificateConfiguration(object):
     other functions.
     """
 
-    def __init__(self, certificate_configuration: _cygrpc.ServerCertificateConfig):
+    def __init__(self,
+                 certificate_configuration: _cygrpc.ServerCertificateConfig):
         self._certificate_configuration = certificate_configuration
 
 
@@ -1641,7 +1643,8 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior: Callable[[GeneralIterableType, ServicerContext], GeneralIterableType],
+    behavior: Callable[[GeneralIterableType, ServicerContext],
+                       GeneralIterableType],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
@@ -1706,7 +1709,8 @@ def ssl_channel_credentials(
 
 
 def xds_channel_credentials(
-        fallback_credentials: Optional[ChannelCredentials] = None) -> ChannelCredentials:
+    fallback_credentials: Optional[ChannelCredentials] = None
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
@@ -1825,7 +1829,8 @@ def ssl_server_credentials(
             ], require_client_auth))
 
 
-def xds_server_credentials(fallback_credentials: ServerCredentials) -> ServerCredentials:
+def xds_server_credentials(
+        fallback_credentials: ServerCredentials) -> ServerCredentials:
     """Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 

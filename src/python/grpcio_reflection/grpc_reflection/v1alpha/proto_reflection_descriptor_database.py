@@ -21,7 +21,8 @@ import logging
 from typing import Any, Dict, Iterable, List, Set
 
 from google.protobuf.descriptor_database import DescriptorDatabase
-from google.protobuf.descriptor_pb2 import FileDescriptorProto  # pytype: disable=pyi-error
+from google.protobuf.descriptor_pb2 import \
+    FileDescriptorProto  # pytype: disable=pyi-error
 import grpc
 from grpc_reflection.v1alpha.reflection_pb2 import ExtensionNumberResponse
 from grpc_reflection.v1alpha.reflection_pb2 import ExtensionRequest

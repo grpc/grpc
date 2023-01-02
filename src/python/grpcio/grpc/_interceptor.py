@@ -348,7 +348,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._method = method
         self._interceptor = interceptor
 
-    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
+    #TODO(xuanwn) Change `Any` to structural typing.
+    #Issue: https://github.com/grpc/grpc/issues/31990)
     def __call__(self,
                  request: Any,
                  timeout: Optional[float] = None,

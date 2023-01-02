@@ -17,7 +17,8 @@ from typing import Iterable, Optional, Sequence
 
 from google.protobuf import descriptor_pb2  # pytype: disable=pyi-error
 from google.protobuf import descriptor_pool
-from google.protobuf.descriptor_pb2 import FileDescriptorProto  # pytype: disable=pyi-error
+from google.protobuf.descriptor_pb2 import \
+    FileDescriptorProto  # pytype: disable=pyi-error
 import grpc
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc

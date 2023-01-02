@@ -14,7 +14,7 @@
 """Reference implementation for reflection in gRPC Python."""
 
 import sys
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 from google.protobuf import descriptor_pool
 import grpc
@@ -74,7 +74,7 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
 
     def enable_server_reflection(
             service_names: Iterable[str],
-            server: grpc.Server,
+            server: Union[grpc.Server, grpc.aio._server.Server],
             pool: Optional[descriptor_pool.DescriptorPool] = None) -> None:
         if isinstance(server, grpc_aio.Server):
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
