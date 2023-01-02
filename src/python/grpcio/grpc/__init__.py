@@ -450,7 +450,8 @@ class ClientCallDetails(abc.ABC):
 class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
-    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
+    #TODO(xuanwn) Change `Any` to structural typing.
+    #Issue: https://github.com/grpc/grpc/issues/31990
     @abc.abstractmethod
     def intercept_unary_unary(self, continuation: Callable[
         [ClientCallDetails, RequestType], Any],
@@ -488,7 +489,8 @@ class UnaryUnaryClientInterceptor(abc.ABC):
 class UnaryStreamClientInterceptor(abc.ABC):
     """Affords intercepting unary-stream invocations."""
 
-    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
+    #TODO(xuanwn) Change `Any` to structural typing.
+    #Issue: https://github.com/grpc/grpc/issues/31990
     @abc.abstractmethod
     def intercept_unary_stream(self, continuation: Callable[
         [ClientCallDetails, RequestType], Any],
@@ -525,7 +527,8 @@ class UnaryStreamClientInterceptor(abc.ABC):
 class StreamUnaryClientInterceptor(abc.ABC):
     """Affords intercepting stream-unary invocations."""
 
-    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
+    #TODO(xuanwn) Change `Any` to structural typing.
+    #Issue: https://github.com/grpc/grpc/issues/31990
     @abc.abstractmethod
     def intercept_stream_unary(self, continuation: Callable[
         [ClientCallDetails, RequestIterableType], Any],
@@ -562,7 +565,8 @@ class StreamUnaryClientInterceptor(abc.ABC):
 class StreamStreamClientInterceptor(abc.ABC):
     """Affords intercepting stream-stream invocations."""
 
-    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
+    #TODO(xuanwn) Change `Any` to structural typing.
+    #Issue: https://github.com/grpc/grpc/issues/31990
     @abc.abstractmethod
     def intercept_stream_stream(self, continuation: Callable[
         [ClientCallDetails, RequestIterableType], Any],
@@ -806,7 +810,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
 class UnaryStreamMultiCallable(abc.ABC):
     """Affords invoking a unary-stream RPC from client-side."""
 
-    #TODO(xuanwn) Change `Any` to structural typing. (Issue: https://github.com/grpc/grpc/issues/31990)
+    #TODO(xuanwn) Change `Any` to structural typing.
+    #Issue: https://github.com/grpc/grpc/issues/31990
     @abc.abstractmethod
     def __call__(self,
                  request: Any,
