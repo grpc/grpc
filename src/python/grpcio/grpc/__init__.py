@@ -206,7 +206,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
+    def add_done_callback(self, fn: Callable[[Future], None]) -> None:
         """Adds a function to be called at completion of the computation.
 
         The callback will be passed this Future object describing the outcome

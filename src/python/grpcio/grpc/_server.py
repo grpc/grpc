@@ -365,7 +365,7 @@ class _Context(grpc.ServicerContext):
 
     def abort_with_status(self, status: grpc.Status) -> NoReturn:
         self._state.trailing_metadata = status.trailing_metadata
-        self.abort(status.code, status.details) # pytype: disable=bad-return-type
+        self.abort(status.code, status.details)  # pytype: disable=bad-return-type
 
     def set_code(self, code: grpc.StatusCode) -> None:
         with self._state.condition:
