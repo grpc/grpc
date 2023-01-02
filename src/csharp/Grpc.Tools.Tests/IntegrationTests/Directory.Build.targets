@@ -8,12 +8,4 @@
   <!-- These would normally be imported from the Grpc.Tools NuGet package -->
   <Import Project="$(GrpcToolsBuildDir)\_grpc\_Grpc.Tools.targets"/>
   <Import Project="$(GrpcToolsBuildDir)\_protobuf\Google.Protobuf.Tools.targets"/>
-
-  <!-- Needed for the net45 build to work on Unix. See https://github.com/dotnet/designs/pull/33 -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
 </Project>
