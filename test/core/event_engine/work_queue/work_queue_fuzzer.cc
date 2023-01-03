@@ -16,6 +16,7 @@
 #include <stdlib.h>
 
 #include <deque>
+#include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
