@@ -61,16 +61,21 @@ ArenaPromise<ServerMetadataHandle> ClientLoadReportingFilter::MakeCallPromise(
     client_stats.reset(*client_stats_md);
   }
 
-  auto* server_initial_metadata = call_args.server_initial_metadata;
+  auto* saw_initial_metadata = GetContext<Arena>()->New<bool>(false);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [saw_initial_metadata](ServerMetadataHandle md) {
+        *saw_initial_metadata = true;
+        return md;
+      });
 
   return Seq(next_promise_factory(std::move(call_args)),
-             [server_initial_metadata, client_stats = std::move(client_stats)](
+             [saw_initial_metadata, client_stats = std::move(client_stats)](
                  ServerMetadataHandle trailing_metadata) {
                if (client_stats != nullptr) {
                  client_stats->AddCallFinished(
                      trailing_metadata->get(GrpcStreamNetworkState()) ==
                          GrpcStreamNetworkState::kNotSentOnWire,
-                     NowOrNever(server_initial_metadata->Wait()).has_value());
+                     *saw_initial_metadata);
                }
                return trailing_metadata;
              });
