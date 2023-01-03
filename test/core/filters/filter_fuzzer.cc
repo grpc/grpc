@@ -436,8 +436,8 @@ class MainLoop {
           CallArgs call_args, NextPromiseFactory) override {
         Call* call = static_cast<Call*>(Activity::current());
         if (call->server_initial_metadata_) {
-          call_args.server_initial_metadata->Set(
-              call->server_initial_metadata_.get());
+          call_args.server_initial_metadata->Push(ServerMetadataHandle(
+              call->server_initial_metadata_, Arena::PooledDeleter(nullptr)));
         } else {
           call->unset_incoming_server_initial_metadata_latch_ =
               call_args.server_initial_metadata;

@@ -336,13 +336,7 @@ class BasicSeq {
   template <char I>
   struct RunStateStruct {
     BasicSeq* s;
-    Poll<Result> operator()() {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_INFO, "%s SEQ[%p]: RunState %d",
-                Activity::current()->DebugTag().c_str(), this, I);
-      }
-      return s->RunState<I>();
-    }
+    Poll<Result> operator()() { return s->RunState<I>(); }
   };
 
   // Similarly placate those compilers for

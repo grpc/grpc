@@ -254,11 +254,11 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
         return std::move(*r);
       });
   call_args.server_initial_metadata->InterceptAndMap(
-      [decompress_args, this](ServerMetadata* server_initial_metadata)
-          -> absl::optional<ServerMetadata*> {
+      [decompress_args, this](ServerMetadataHandle server_initial_metadata)
+          -> absl::optional<ServerMetadataHandle> {
         if (server_initial_metadata == nullptr) return absl::nullopt;
         *decompress_args = HandleIncomingMetadata(*server_initial_metadata);
-        return server_initial_metadata;
+        return std::move(server_initial_metadata);
       });
   // Concurrently:
   // - call the next filter
