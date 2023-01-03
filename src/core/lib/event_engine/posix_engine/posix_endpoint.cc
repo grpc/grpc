@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"

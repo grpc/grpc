@@ -125,7 +125,7 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   return absl::OkStatus();
 }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace
 
@@ -231,7 +231,7 @@ int Accept4(int sockfd,
   return ret;
 }
 
-#endif /* GRPC_LINUX_SOCKETUTILS */
+#endif  // GRPC_LINUX_SOCKETUTILS
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -750,7 +750,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
                                                      mapped_target_addr};
 }
 
-#else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   GPR_ASSERT(false && "unimplemented");
@@ -846,7 +846,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
   GPR_ASSERT(false && "unimplemented");
 }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

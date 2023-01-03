@@ -75,8 +75,8 @@ absl::StatusOr<std::string> GetScheme(
 }
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    const EventEngine::ResolvedAddress* resolved_addr, bool skip_uri) {
+absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
   const sockaddr* addr = resolved_addr->address();
   if (addr->sa_family != AF_UNIX) {
     return absl::InvalidArgumentError(
@@ -97,8 +97,39 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
     if (len >= 0) {
       path = std::string(unix_addr->sun_path + 1, len);
     }
-    if (skip_uri) {
-      path = absl::StrCat(std::string(1, '\0'), path);
+    path = absl::StrCat(std::string(1, '\0'), path);
+  } else {
+    scheme = "unix";
+    size_t maxlen = sizeof(unix_addr->sun_path);
+    if (strnlen(unix_addr->sun_path, maxlen) == maxlen) {
+      return absl::InvalidArgumentError("UDS path is not null-terminated");
+    }
+    path = unix_addr->sun_path;
+  }
+  return path;
+}
+
+absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
+  const sockaddr* addr = resolved_addr->address();
+  if (addr->sa_family != AF_UNIX) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
+  }
+  const sockaddr_un* unix_addr = reinterpret_cast<const sockaddr_un*>(addr);
+#ifdef GPR_APPLE
+  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) -
+            sizeof(unix_addr->sun_len) - 1;
+#else
+  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
+#endif
+  bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
+  std::string scheme;
+  std::string path;
+  if (abstract) {
+    scheme = "unix-abstract";
+    if (len >= 0) {
+      path = std::string(unix_addr->sun_path + 1, len);
     }
   } else {
     scheme = "unix";
@@ -108,9 +139,6 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
     }
     path = unix_addr->sun_path;
   }
-  if (skip_uri) {
-    return path;
-  }
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
       std::move(scheme), /*authority=*/"", std::move(path),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
@@ -118,8 +146,14 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   return uri->ToString();
 }
 #else
+
+absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+  return absl::InvalidArgumentError("Unix socket is not supported.");
+}
+
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    const EventEngine::ResolvedAddress* /*resolved_addr*/, bool /*skip_uri*/) {
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
   return absl::InvalidArgumentError("Unix socket is not supported.");
 }
 #endif
@@ -284,7 +318,7 @@ absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
   auto scheme = GetScheme(addr_normalized);
   GRPC_RETURN_IF_ERROR(scheme.status());
   if (*scheme == "unix") {
-    return ResolvedAddrToUriUnixIfPossible(&addr_normalized, true);
+    return ResolvedAddrToUnixPathIfPossible(&addr_normalized);
   }
   return ResolvedAddressToString(addr_normalized);
 }
@@ -296,7 +330,7 @@ absl::StatusOr<std::string> ResolvedAddressToString(
   std::string out;
 #ifdef GRPC_HAVE_UNIX_SOCKET
   if (addr->sa_family == AF_UNIX) {
-    return ResolvedAddrToUriUnixIfPossible(&resolved_addr, true);
+    return ResolvedAddrToUnixPathIfPossible(&resolved_addr);
   }
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
@@ -348,7 +382,7 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
   auto scheme = GetScheme(addr);
   GRPC_RETURN_IF_ERROR(scheme.status());
   if (*scheme == "unix") {
-    return ResolvedAddrToUriUnixIfPossible(&addr, false);
+    return ResolvedAddrToUriUnixIfPossible(&addr);
   }
   auto path = ResolvedAddressToString(addr);
   GRPC_RETURN_IF_ERROR(path.status());
