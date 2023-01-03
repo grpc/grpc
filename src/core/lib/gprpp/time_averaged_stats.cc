@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -34,16 +34,16 @@ void TimeAveragedStats::AddSample(double value) {
 }
 
 double TimeAveragedStats::UpdateAverage() {
-  /* Start with the current batch: */
+  // Start with the current batch:
   double weighted_sum = batch_total_value_;
   double total_weight = batch_num_samples_;
   if (regress_weight_ > 0) {
-    /* Add in the regression towards init_avg_: */
+    // Add in the regression towards init_avg_:
     weighted_sum += regress_weight_ * init_avg_;
     total_weight += regress_weight_;
   }
   if (persistence_factor_ > 0) {
-    /* Add in the persistence: */
+    // Add in the persistence:
     const double prev_sample_weight =
         persistence_factor_ * aggregate_total_weight_;
     weighted_sum += prev_sample_weight * aggregate_weighted_avg_;

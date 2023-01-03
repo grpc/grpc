@@ -278,8 +278,8 @@ int main(int argc, char** argv) {
   return RUN_ALL_TESTS();
 }
 
-#else /* GRPC_LINUX_ERRQUEUE */
+#else  // GRPC_LINUX_ERRQUEUE
 
 int main(int /*argc*/, char** /*argv*/) { return 0; }
 
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE

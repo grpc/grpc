@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -166,7 +166,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
                                         grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
-  /* TODO(ZhenLian): Implement support for response_md. */
+  // TODO(ZhenLian): Implement support for response_md.
   if (response_md != nullptr && num_response_md > 0) {
     gpr_log(GPR_ERROR,
             "response_md in auth metadata processing not supported for now. "
@@ -309,14 +309,14 @@ static void server_auth_start_transport_stream_op_batch(
   grpc_call_next_op(elem, batch);
 }
 
-/* Constructor for call_data */
+// Constructor for call_data
 static grpc_error_handle server_auth_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return absl::OkStatus();
 }
 
-/* Destructor for call_data */
+// Destructor for call_data
 static void server_auth_destroy_call_elem(
     grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
     grpc_closure* /*ignored*/) {
@@ -324,7 +324,7 @@ static void server_auth_destroy_call_elem(
   calld->~call_data();
 }
 
-/* Constructor for channel_data */
+// Constructor for channel_data
 static grpc_error_handle server_auth_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
@@ -337,7 +337,7 @@ static grpc_error_handle server_auth_init_channel_elem(
   return absl::OkStatus();
 }
 
-/* Destructor for channel data */
+// Destructor for channel data
 static void server_auth_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->~channel_data();

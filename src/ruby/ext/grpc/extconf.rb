@@ -114,6 +114,7 @@ $CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 
 def have_ruby_abi_version()
+  return true if RUBY_ENGINE == 'truffleruby'
   m = /(\d+)\.(\d+)/.match(RUBY_VERSION)
   if m.nil?
     puts "Failed to parse ruby version: #{RUBY_VERSION}. Assuming ruby_abi_version symbol is NOT present."
