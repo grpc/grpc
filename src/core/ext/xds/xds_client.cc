@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <type_traits>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"

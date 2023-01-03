@@ -20,6 +20,7 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <type_traits>
 #include <utility>
 
 #include "absl/types/variant.h"
