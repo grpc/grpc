@@ -58,4 +58,4 @@ try:
 except:
     pass
 
-print(yaml.safe_dump(out))
+print(yaml.dump(out))

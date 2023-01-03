@@ -76,7 +76,7 @@ def main():
         'proto_transitive_external_deps': deps_external_trans
     }
 
-    print(yaml.safe_dump(json))
+    print(yaml.dump(json))
 
 
 if __name__ == '__main__':

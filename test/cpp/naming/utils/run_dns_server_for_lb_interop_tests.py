@@ -97,7 +97,7 @@ if args.cause_no_error_no_data_for_balancer_a_record:
 # Generate the actual DNS server records config file
 records_config_path = tempfile.mktemp()
 with open(records_config_path, 'w') as records_config_generated:
-    records_config_generated.write(yaml.safe_dump(records_config_yaml))
+    records_config_generated.write(yaml.dump(records_config_yaml))
 
 with open(records_config_path, 'r') as records_config_generated:
     sys.stderr.write('===== DNS server records config: =====\n')

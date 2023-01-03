@@ -27,4 +27,4 @@ for build in builds:
     build['build_system'] = []
     build['language'] = 'c'
     build['secure'] = False
-print(yaml.safe_dump({'libs': builds}))
+print(yaml.dump({'libs': builds}))

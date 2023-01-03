@@ -76,7 +76,7 @@ def main():
             _resolver_test_cases(resolver_component_data),
     }
 
-    print(yaml.safe_dump(json))
+    print(yaml.dump(json))
 
 
 if __name__ == '__main__':

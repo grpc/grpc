@@ -191,7 +191,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             mu.acquire()
             now = time.time()
-            out = yaml.safe_dump({
+            out = yaml.dump({
                 'pool': pool,
                 'in_use': dict((k, now - v) for k, v in list(in_use.items()))
             })

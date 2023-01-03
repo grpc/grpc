@@ -341,6 +341,6 @@ def generate_client_referred_to_backend_multiple_balancers():
 
 all_scenarios += generate_client_referred_to_backend_multiple_balancers()
 
-print((yaml.safe_dump({
+print((yaml.dump({
     'lb_interop_test_scenarios': all_scenarios,
 })))

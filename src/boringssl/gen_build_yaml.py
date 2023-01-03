@@ -71,8 +71,8 @@ class Grpc(object):
                             map_dir(f) for f in files['ssl'] + files['crypto']),
                     'asm_src': {
                         k: [map_dir(f) for f in value
-                            ] for k, value in asm_outputs.items()
-                            },
+                           ] for k, value in asm_outputs.items()
+                    },
                     'headers':
                         sorted(
                             map_dir(f)
@@ -130,4 +130,4 @@ class Grpc(object):
 
 
 grpc_platform = Grpc(sources)
-print(yaml.safe_dump(grpc_platform.yaml))
+print(yaml.dump(grpc_platform.yaml))

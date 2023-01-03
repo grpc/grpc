@@ -76,7 +76,7 @@ def cleaned_build_yaml_dict_as_string(indict):
             continue
         js[grp] = sorted([_clean_elem(x) for x in js[grp]],
                          key=lambda x: (x.get('language', '_'), x['name']))
-    output = yaml.safe_dump(js, indent=2, width=80, default_flow_style=False)
+    output = yaml.dump(js, indent=2, width=80, default_flow_style=False)
     # massage out trailing whitespace
     lines = []
     for line in output.splitlines():
