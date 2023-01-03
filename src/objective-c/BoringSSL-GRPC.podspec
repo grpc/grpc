@@ -151,6 +151,11 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
   end
 
+  s.pod_target_xcconfig = {
+    # Do not let src/include/openssl/time.h override system API
+    'USE_HEADERMAP' => 'NO',
+  }
+
   s.prepare_command = <<-END_OF_COMMAND
     set -e
     # Add a module map and an umbrella header
