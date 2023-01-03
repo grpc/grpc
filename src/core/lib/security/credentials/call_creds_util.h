@@ -40,4 +40,4 @@ grpc_auth_metadata_context MakePluginAuthMetadataContext(
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CALL_CREDS_UTIL_H */
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_CALL_CREDS_UTIL_H

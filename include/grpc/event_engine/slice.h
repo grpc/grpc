@@ -178,8 +178,9 @@ struct CopyConstructors {
 
 }  // namespace slice_detail
 
-class MutableSlice : public slice_detail::BaseSlice,
-                     public slice_detail::CopyConstructors<MutableSlice> {
+class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
+    : public slice_detail::BaseSlice,
+      public slice_detail::CopyConstructors<MutableSlice> {
  public:
   MutableSlice() = default;
   explicit MutableSlice(const grpc_slice& slice);
@@ -284,9 +285,19 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
 
 namespace internal {
 template <>
-struct ConstRefSliceCastable<Slice, grpc_slice> {};
+struct SliceCastable<Slice, grpc_slice> {};
 template <>
-struct ConstRefSliceCastable<grpc_slice, Slice> {};
+struct SliceCastable<grpc_slice, Slice> {};
+
+template <>
+struct SliceCastable<MutableSlice, grpc_slice> {};
+template <>
+struct SliceCastable<grpc_slice, MutableSlice> {};
+
+template <>
+struct SliceCastable<MutableSlice, Slice> {};
+template <>
+struct SliceCastable<Slice, MutableSlice> {};
 }  // namespace internal
 
 }  // namespace experimental

@@ -908,7 +908,6 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "channel_args_endpoint_config",
         "closure",
         "error",
         "handshaker_factory",
@@ -1382,6 +1381,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_base_hdrs",
+    srcs = [],
+    hdrs = [
+        "lib/event_engine/posix.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine_timer_manager",
     srcs = ["lib/event_engine/posix_engine/timer_manager.cc"],
     hdrs = [
@@ -1846,19 +1862,13 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "channel_args_endpoint_config",
-        "common_event_engine_closures",
-        "error",
         "event_engine_common",
-        "event_engine_executor",
-        "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",
         "posix_event_engine_timer_manager",
         "time",
-        "windows_endpoint",
         "windows_iocp",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1976,25 +1986,6 @@ grpc_cc_library(
         "//conditions:default": ["posix_event_engine"],
     }],
     deps = [
-        "//:event_engine_base_hdrs",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "channel_args_endpoint_config",
-    srcs = [
-        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
-    ],
-    hdrs = [
-        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/types:optional",
-    ],
-    deps = [
-        "channel_args",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -4468,13 +4459,18 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/synchronization",
+        "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_stateful_session_filter",
         "json",
         "json_args",
         "json_object_loader",
@@ -4493,6 +4489,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:sockaddr_utils",
     ],
 )
 
@@ -4894,7 +4891,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "channel_args_endpoint_config",
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
@@ -4944,7 +4940,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "channel_args_endpoint_config",
         "closure",
         "error",
         "grpc_insecure_credentials",

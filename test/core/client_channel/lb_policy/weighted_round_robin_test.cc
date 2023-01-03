@@ -220,7 +220,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     std::vector<std::unique_ptr<
         LoadBalancingPolicy::SubchannelCallTrackerInterface>>
         subchannel_call_trackers;
-    auto picks = GetCompletePicks(picker, NumPicksNeeded(expected),
+    auto picks = GetCompletePicks(picker, NumPicksNeeded(expected), {},
                                   &subchannel_call_trackers, location);
     ASSERT_TRUE(picks.has_value())
         << location.file() << ":" << location.line();
@@ -249,7 +249,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       std::vector<std::unique_ptr<
           LoadBalancingPolicy::SubchannelCallTrackerInterface>>
           subchannel_call_trackers;
-      auto picks = GetCompletePicks(picker->get(), num_picks,
+      auto picks = GetCompletePicks(picker->get(), num_picks, {},
                                     &subchannel_call_trackers, location);
       EXPECT_TRUE(picks.has_value())
           << location.file() << ":" << location.line();
