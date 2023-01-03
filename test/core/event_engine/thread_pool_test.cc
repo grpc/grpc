@@ -82,6 +82,24 @@ void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });
 }
 
+// This can be re-enabled if/when the thread pool is changed to quiesce
+// pre-fork. For now, it cannot get stuck because callback execution is
+// effectively paused until after the post-fork reboot.
+TEST(ThreadPoolDeathTest, DISABLED_CanDetectStucknessAtFork) {
+  ASSERT_DEATH_IF_SUPPORTED(
+      [] {
+        gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
+        ThreadPool p;
+        ScheduleSelf(&p);
+        std::thread terminator([] {
+          std::this_thread::sleep_for(std::chrono::seconds(10));
+          abort();
+        });
+        p.PrepareFork();
+      }(),
+      "Waiting for thread pool to idle before forking");
+}
+
 void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
   if (n == 0) return;
   p->Run([p, n] {
