@@ -291,7 +291,7 @@ class RingHash : public LoadBalancingPolicy {
 
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
+        auto* self = static_cast<WorkSerializerRunner*>(arg);
         self->ring_hash_lb()->work_serializer()->Run(
             [self]() {
               self->Run();
