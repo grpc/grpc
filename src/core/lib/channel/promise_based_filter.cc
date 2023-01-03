@@ -847,53 +847,55 @@ struct ClientCallData::RecvInitialMetadata final {
     // Initial state; no op seen
     kInitial,
     // No op seen, but we have a latch that would like to modify it when we do
-    kGotLatch,
+    kGotPipe,
     // Responded to trailing metadata prior to getting a recv_initial_metadata
     kRespondedToTrailingMetadataPriorToHook,
     // Hooked, no latch yet
-    kHookedWaitingForLatch,
+    kHookedWaitingForPipe,
     // Hooked, latch seen
-    kHookedAndGotLatch,
+    kHookedAndGotPipe,
     // Got the callback, haven't set latch yet
-    kCompleteWaitingForLatch,
+    kCompleteWaitingForPipe,
     // Got the callback and got the latch
-    kCompleteAndGotLatch,
+    kCompleteAndGotPipe,
     // Got the callback and set the latch
-    kCompleteAndSetLatch,
+    kCompleteAndPushedToPipe,
     // Called the original callback
     kResponded,
     // Called the original callback with an error: still need to set the latch
-    kRespondedButNeedToSetLatch,
+    kRespondedButNeedToClosePipe,
   };
 
   State state = kInitial;
   grpc_closure* original_on_ready = nullptr;
   grpc_closure on_ready;
   grpc_metadata_batch* metadata = nullptr;
-  Latch<ServerMetadata*>* server_initial_metadata_publisher = nullptr;
+  PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
+  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {
       case kInitial:
         return "INITIAL";
-      case kGotLatch:
-        return "GOT_LATCH";
+      case kGotPipe:
+        return "GOT_PIPE";
       case kRespondedToTrailingMetadataPriorToHook:
         return "RESPONDED_TO_TRAILING_METADATA_PRIOR_TO_HOOK";
-      case kHookedWaitingForLatch:
-        return "HOOKED_WAITING_FOR_LATCH";
-      case kHookedAndGotLatch:
-        return "HOOKED_AND_GOT_LATCH";
-      case kCompleteWaitingForLatch:
-        return "COMPLETE_WAITING_FOR_LATCH";
-      case kCompleteAndGotLatch:
-        return "COMPLETE_AND_GOT_LATCH";
-      case kCompleteAndSetLatch:
-        return "COMPLETE_AND_SET_LATCH";
+      case kHookedWaitingForPipe:
+        return "HOOKED_WAITING_FOR_PIPE";
+      case kHookedAndGotPipe:
+        return "HOOKED_AND_GOT_PIPE";
+      case kCompleteWaitingForPipe:
+        return "COMPLETE_WAITING_FOR_PIPE";
+      case kCompleteAndGotPipe:
+        return "COMPLETE_AND_GOT_PIPE";
+      case kCompleteAndPushedToPipe:
+        return "COMPLETE_AND_PUSHED_TO_PIPE";
       case kResponded:
         return "RESPONDED";
-      case kRespondedButNeedToSetLatch:
-        return "RESPONDED_BUT_NEED_TO_SET_LATCH";
+      case kRespondedButNeedToClosePipe:
+        return "RESPONDED_BUT_NEED_TO_CLOSE_PIPE";
     }
     return "UNKNOWN";
   }
@@ -927,33 +929,50 @@ class ClientCallData::PollContext {
       self_->receive_message()->WakeInsideCombiner(flusher_);
     }
     if (self_->server_initial_metadata_pipe() != nullptr) {
+      if (self_->recv_initial_metadata_->metadata_push_.has_value()) {
+        if (!absl::holds_alternative<Pending>(
+                (*self_->recv_initial_metadata_->metadata_push_)())) {
+          self_->recv_initial_metadata_->metadata_push_.reset();
+        }
+      }
       switch (self_->recv_initial_metadata_->state) {
         case RecvInitialMetadata::kInitial:
-        case RecvInitialMetadata::kGotLatch:
-        case RecvInitialMetadata::kHookedWaitingForLatch:
-        case RecvInitialMetadata::kHookedAndGotLatch:
-        case RecvInitialMetadata::kCompleteWaitingForLatch:
+        case RecvInitialMetadata::kGotPipe:
+        case RecvInitialMetadata::kHookedWaitingForPipe:
+        case RecvInitialMetadata::kHookedAndGotPipe:
+        case RecvInitialMetadata::kCompleteWaitingForPipe:
         case RecvInitialMetadata::kResponded:
         case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
           break;
-        case RecvInitialMetadata::kRespondedButNeedToSetLatch:
-          self_->recv_initial_metadata_->server_initial_metadata_publisher->Set(
-              nullptr);
+        case RecvInitialMetadata::kRespondedButNeedToClosePipe:
+          self_->recv_initial_metadata_->server_initial_metadata_publisher
+              ->Close();
           self_->recv_initial_metadata_->state =
               RecvInitialMetadata::kResponded;
           break;
-        case RecvInitialMetadata::kCompleteAndGotLatch:
+        case RecvInitialMetadata::kCompleteAndGotPipe:
           self_->recv_initial_metadata_->state =
-              RecvInitialMetadata::kCompleteAndSetLatch;
-          self_->recv_initial_metadata_->server_initial_metadata_publisher->Set(
-              self_->recv_initial_metadata_->metadata);
+              RecvInitialMetadata::kCompleteAndPushedToPipe;
+          GPR_ASSERT(
+              !self_->recv_initial_metadata_->metadata_push_.has_value());
+          GPR_ASSERT(
+              !self_->recv_initial_metadata_->metadata_next_.has_value());
+          self_->recv_initial_metadata_->metadata_push_.emplace(
+              self_->recv_initial_metadata_->server_initial_metadata_publisher
+                  ->Push(ServerMetadataHandle(
+                      self_->recv_initial_metadata_->metadata,
+                      Arena::PooledDeleter(nullptr))));
+          self_->recv_initial_metadata_->metadata_next_.emplace(
+              self_->server_initial_metadata_pipe()->receiver.Next());
           ABSL_FALLTHROUGH_INTENDED;
-        case RecvInitialMetadata::kCompleteAndSetLatch: {
-          Poll<ServerMetadata**> p =
-              self_->server_initial_metadata_latch()->Wait()();
-          if (ServerMetadata*** ppp = absl::get_if<ServerMetadata**>(&p)) {
-            ServerMetadata* md = **ppp;
-            if (self_->recv_initial_metadata_->metadata != md) {
+        case RecvInitialMetadata::kCompleteAndPushedToPipe: {
+          GPR_ASSERT(self_->recv_initial_metadata_->metadata_next_.has_value());
+          Poll<NextResult<ServerMetadataHandle>> p =
+              (*self_->recv_initial_metadata_->metadata_next_)();
+          if (NextResult<ServerMetadataHandle>* nr =
+                  absl::get_if<kPollReadyIdx>(&p)) {
+            ServerMetadataHandle md = std::move(nr->value());
+            if (self_->recv_initial_metadata_->metadata != md.get()) {
               *self_->recv_initial_metadata_->metadata = std::move(*md);
             }
             self_->recv_initial_metadata_->state =
@@ -1003,25 +1022,25 @@ class ClientCallData::PollContext {
             if (self_->recv_initial_metadata_ != nullptr) {
               switch (self_->recv_initial_metadata_->state) {
                 case RecvInitialMetadata::kInitial:
-                case RecvInitialMetadata::kGotLatch:
+                case RecvInitialMetadata::kGotPipe:
                   self_->recv_initial_metadata_->state = RecvInitialMetadata::
                       kRespondedToTrailingMetadataPriorToHook;
                   break;
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
-                case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+                case RecvInitialMetadata::kRespondedButNeedToClosePipe:
                   gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
                           RecvInitialMetadata::StateString(
                               self_->recv_initial_metadata_->state));
                   abort();  // not reachable
                   break;
-                case RecvInitialMetadata::kHookedWaitingForLatch:
-                case RecvInitialMetadata::kHookedAndGotLatch:
+                case RecvInitialMetadata::kHookedWaitingForPipe:
+                case RecvInitialMetadata::kHookedAndGotPipe:
                 case RecvInitialMetadata::kResponded:
-                case RecvInitialMetadata::kCompleteAndGotLatch:
-                case RecvInitialMetadata::kCompleteAndSetLatch:
+                case RecvInitialMetadata::kCompleteAndGotPipe:
+                case RecvInitialMetadata::kCompleteAndPushedToPipe:
                   break;
-                case RecvInitialMetadata::kCompleteWaitingForLatch:
+                case RecvInitialMetadata::kCompleteWaitingForPipe:
                   self_->recv_initial_metadata_->state =
                       RecvInitialMetadata::kResponded;
                   flusher_->AddClosure(
@@ -1038,25 +1057,25 @@ class ClientCallData::PollContext {
             if (self_->recv_initial_metadata_ != nullptr) {
               switch (self_->recv_initial_metadata_->state) {
                 case RecvInitialMetadata::kInitial:
-                case RecvInitialMetadata::kGotLatch:
+                case RecvInitialMetadata::kGotPipe:
                   self_->recv_initial_metadata_->state = RecvInitialMetadata::
                       kRespondedToTrailingMetadataPriorToHook;
                   break;
-                case RecvInitialMetadata::kHookedWaitingForLatch:
-                case RecvInitialMetadata::kHookedAndGotLatch:
+                case RecvInitialMetadata::kHookedWaitingForPipe:
+                case RecvInitialMetadata::kHookedAndGotPipe:
                 case RecvInitialMetadata::kResponded:
                   break;
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
-                case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+                case RecvInitialMetadata::kRespondedButNeedToClosePipe:
                   gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
                           RecvInitialMetadata::StateString(
                               self_->recv_initial_metadata_->state));
                   abort();  // not reachable
                   break;
-                case RecvInitialMetadata::kCompleteWaitingForLatch:
-                case RecvInitialMetadata::kCompleteAndGotLatch:
-                case RecvInitialMetadata::kCompleteAndSetLatch:
+                case RecvInitialMetadata::kCompleteWaitingForPipe:
+                case RecvInitialMetadata::kCompleteAndGotPipe:
+                case RecvInitialMetadata::kCompleteAndPushedToPipe:
                   self_->recv_initial_metadata_->state =
                       RecvInitialMetadata::kResponded;
                   flusher_->AddClosure(
@@ -1164,7 +1183,7 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
-  if (server_initial_metadata_latch() != nullptr) {
+  if (server_initial_metadata_pipe() != nullptr) {
     recv_initial_metadata_ = arena()->New<RecvInitialMetadata>();
   }
 }
@@ -1227,7 +1246,7 @@ std::string ClientCallData::DebugString() const {
       " sent_initial_state=", StateString(send_initial_state_),
       " recv_trailing_state=", StateString(recv_trailing_state_), " captured={",
       absl::StrJoin(captured, ","), "}",
-      server_initial_metadata_latch() == nullptr
+      server_initial_metadata_pipe() == nullptr
           ? ""
           : absl::StrCat(" recv_initial_metadata=",
                          RecvInitialMetadata::StateString(
@@ -1269,21 +1288,21 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     switch (recv_initial_metadata_->state) {
       case RecvInitialMetadata::kInitial:
         recv_initial_metadata_->state =
-            RecvInitialMetadata::kHookedWaitingForLatch;
+            RecvInitialMetadata::kHookedWaitingForPipe;
         break;
-      case RecvInitialMetadata::kGotLatch:
-        recv_initial_metadata_->state = RecvInitialMetadata::kHookedAndGotLatch;
+      case RecvInitialMetadata::kGotPipe:
+        recv_initial_metadata_->state = RecvInitialMetadata::kHookedAndGotPipe;
         break;
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
         hook = false;
         break;
-      case RecvInitialMetadata::kHookedWaitingForLatch:
-      case RecvInitialMetadata::kHookedAndGotLatch:
-      case RecvInitialMetadata::kCompleteWaitingForLatch:
-      case RecvInitialMetadata::kCompleteAndGotLatch:
-      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kHookedWaitingForPipe:
+      case RecvInitialMetadata::kHookedAndGotPipe:
+      case RecvInitialMetadata::kCompleteWaitingForPipe:
+      case RecvInitialMetadata::kCompleteAndGotPipe:
+      case RecvInitialMetadata::kCompleteAndPushedToPipe:
       case RecvInitialMetadata::kResponded:
-      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+      case RecvInitialMetadata::kRespondedButNeedToClosePipe:
         gpr_log(
             GPR_ERROR, "ILLEGAL STATE: %s",
             RecvInitialMetadata::StateString(recv_initial_metadata_->state));
@@ -1387,9 +1406,9 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
   }
   if (recv_initial_metadata_ != nullptr) {
     switch (recv_initial_metadata_->state) {
-      case RecvInitialMetadata::kCompleteWaitingForLatch:
-      case RecvInitialMetadata::kCompleteAndGotLatch:
-      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kCompleteWaitingForPipe:
+      case RecvInitialMetadata::kCompleteAndGotPipe:
+      case RecvInitialMetadata::kCompleteAndPushedToPipe:
         recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
         GRPC_CALL_COMBINER_START(
             call_combiner(),
@@ -1397,13 +1416,13 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
             error, "propagate cancellation");
         break;
       case RecvInitialMetadata::kInitial:
-      case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kGotPipe:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-      case RecvInitialMetadata::kHookedWaitingForLatch:
-      case RecvInitialMetadata::kHookedAndGotLatch:
+      case RecvInitialMetadata::kHookedWaitingForPipe:
+      case RecvInitialMetadata::kHookedAndGotPipe:
       case RecvInitialMetadata::kResponded:
         break;
-      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+      case RecvInitialMetadata::kRespondedButNeedToClosePipe:
         gpr_log(
             GPR_ERROR, "ILLEGAL STATE: %s",
             RecvInitialMetadata::StateString(recv_initial_metadata_->state));
@@ -1430,7 +1449,9 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               server_initial_metadata_latch(),
+               server_initial_metadata_pipe() == nullptr
+                   ? nullptr
+                   : &server_initial_metadata_pipe()->sender,
                send_message() == nullptr
                    ? nullptr
                    : send_message()->interceptor()->original_receiver(),
@@ -1452,21 +1473,21 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
   if (!error.ok()) {
     switch (recv_initial_metadata_->state) {
-      case RecvInitialMetadata::kHookedWaitingForLatch:
+      case RecvInitialMetadata::kHookedWaitingForPipe:
         recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
         break;
-      case RecvInitialMetadata::kHookedAndGotLatch:
+      case RecvInitialMetadata::kHookedAndGotPipe:
         recv_initial_metadata_->state =
-            RecvInitialMetadata::kRespondedButNeedToSetLatch;
+            RecvInitialMetadata::kRespondedButNeedToClosePipe;
         break;
       case RecvInitialMetadata::kInitial:
-      case RecvInitialMetadata::kGotLatch:
-      case RecvInitialMetadata::kCompleteWaitingForLatch:
-      case RecvInitialMetadata::kCompleteAndGotLatch:
-      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kGotPipe:
+      case RecvInitialMetadata::kCompleteWaitingForPipe:
+      case RecvInitialMetadata::kCompleteAndGotPipe:
+      case RecvInitialMetadata::kCompleteAndPushedToPipe:
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+      case RecvInitialMetadata::kRespondedButNeedToClosePipe:
         gpr_log(
             GPR_ERROR, "ILLEGAL STATE: %s",
             RecvInitialMetadata::StateString(recv_initial_metadata_->state));
@@ -1483,22 +1504,22 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
         cancelled_error_, "propagate cancellation");
   } else {
     switch (recv_initial_metadata_->state) {
-      case RecvInitialMetadata::kHookedWaitingForLatch:
+      case RecvInitialMetadata::kHookedWaitingForPipe:
         recv_initial_metadata_->state =
-            RecvInitialMetadata::kCompleteWaitingForLatch;
+            RecvInitialMetadata::kCompleteWaitingForPipe;
         break;
-      case RecvInitialMetadata::kHookedAndGotLatch:
+      case RecvInitialMetadata::kHookedAndGotPipe:
         recv_initial_metadata_->state =
-            RecvInitialMetadata::kCompleteAndGotLatch;
+            RecvInitialMetadata::kCompleteAndGotPipe;
         break;
       case RecvInitialMetadata::kInitial:
-      case RecvInitialMetadata::kGotLatch:
-      case RecvInitialMetadata::kCompleteWaitingForLatch:
-      case RecvInitialMetadata::kCompleteAndGotLatch:
-      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kGotPipe:
+      case RecvInitialMetadata::kCompleteWaitingForPipe:
+      case RecvInitialMetadata::kCompleteAndGotPipe:
+      case RecvInitialMetadata::kCompleteAndPushedToPipe:
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+      case RecvInitialMetadata::kRespondedButNeedToClosePipe:
         gpr_log(
             GPR_ERROR, "ILLEGAL STATE: %s",
             RecvInitialMetadata::StateString(recv_initial_metadata_->state));
@@ -1545,24 +1566,24 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
         call_args.server_initial_metadata;
     switch (recv_initial_metadata_->state) {
       case RecvInitialMetadata::kInitial:
-        recv_initial_metadata_->state = RecvInitialMetadata::kGotLatch;
+        recv_initial_metadata_->state = RecvInitialMetadata::kGotPipe;
         break;
-      case RecvInitialMetadata::kHookedWaitingForLatch:
-        recv_initial_metadata_->state = RecvInitialMetadata::kHookedAndGotLatch;
+      case RecvInitialMetadata::kHookedWaitingForPipe:
+        recv_initial_metadata_->state = RecvInitialMetadata::kHookedAndGotPipe;
         poll_ctx_->Repoll();
         break;
-      case RecvInitialMetadata::kCompleteWaitingForLatch:
+      case RecvInitialMetadata::kCompleteWaitingForPipe:
         recv_initial_metadata_->state =
-            RecvInitialMetadata::kCompleteAndGotLatch;
+            RecvInitialMetadata::kCompleteAndGotPipe;
         poll_ctx_->Repoll();
         break;
-      case RecvInitialMetadata::kGotLatch:
-      case RecvInitialMetadata::kHookedAndGotLatch:
-      case RecvInitialMetadata::kCompleteAndGotLatch:
-      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kGotPipe:
+      case RecvInitialMetadata::kHookedAndGotPipe:
+      case RecvInitialMetadata::kCompleteAndGotPipe:
+      case RecvInitialMetadata::kCompleteAndPushedToPipe:
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+      case RecvInitialMetadata::kRespondedButNeedToClosePipe:
         gpr_log(
             GPR_ERROR, "ILLEGAL STATE: %s",
             RecvInitialMetadata::StateString(recv_initial_metadata_->state));
@@ -1711,29 +1732,31 @@ void ClientCallData::OnWakeup() {
 struct ServerCallData::SendInitialMetadata {
   enum State {
     kInitial,
-    kGotLatch,
-    kQueuedWaitingForLatch,
-    kQueuedAndGotLatch,
-    kQueuedAndSetLatch,
+    kGotPipe,
+    kQueuedWaitingForPipe,
+    kQueuedAndGotPipe,
+    kQueuedAndPushedToPipe,
     kForwarded,
     kCancelled,
   };
   State state = kInitial;
   CapturedBatch batch;
-  Latch<ServerMetadata*>* server_initial_metadata_publisher = nullptr;
+  PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
+  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {
       case kInitial:
         return "INITIAL";
-      case kGotLatch:
-        return "GOT_LATCH";
-      case kQueuedWaitingForLatch:
-        return "QUEUED_WAITING_FOR_LATCH";
-      case kQueuedAndGotLatch:
-        return "QUEUED_AND_GOT_LATCH";
-      case kQueuedAndSetLatch:
-        return "QUEUED_AND_SET_LATCH";
+      case kGotPipe:
+        return "GOT_PIPE";
+      case kQueuedWaitingForPipe:
+        return "QUEUED_WAITING_FOR_PIPE";
+      case kQueuedAndGotPipe:
+        return "QUEUED_AND_GOT_PIPE";
+      case kQueuedAndPushedToPipe:
+        return "QUEUED_AND_PUSHED_TO_PIPE";
       case kForwarded:
         return "FORWARDED";
       case kCancelled:
@@ -1834,7 +1857,7 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
           [args]() {
             return args->arena->New<ReceiveInterceptor>(args->arena);
           }) {
-  if (server_initial_metadata_latch() != nullptr) {
+  if (server_initial_metadata_pipe() != nullptr) {
     send_initial_metadata_ = arena()->New<SendInitialMetadata>();
   }
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_,
@@ -1922,19 +1945,19 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     switch (send_initial_metadata_->state) {
       case SendInitialMetadata::kInitial:
         send_initial_metadata_->state =
-            SendInitialMetadata::kQueuedWaitingForLatch;
+            SendInitialMetadata::kQueuedWaitingForPipe;
         break;
-      case SendInitialMetadata::kGotLatch:
-        send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
+      case SendInitialMetadata::kGotPipe:
+        send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotPipe;
         break;
       case SendInitialMetadata::kCancelled:
         batch.CancelWith(
             cancelled_error_.ok() ? absl::CancelledError() : cancelled_error_,
             &flusher);
         break;
-      case SendInitialMetadata::kQueuedAndGotLatch:
-      case SendInitialMetadata::kQueuedWaitingForLatch:
-      case SendInitialMetadata::kQueuedAndSetLatch:
+      case SendInitialMetadata::kQueuedAndGotPipe:
+      case SendInitialMetadata::kQueuedWaitingForPipe:
+      case SendInitialMetadata::kQueuedAndPushedToPipe:
       case SendInitialMetadata::kForwarded:
         gpr_log(
             GPR_ERROR, "ILLEGAL STATE: %s",
@@ -2009,13 +2032,13 @@ void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
   if (send_initial_metadata_ != nullptr) {
     switch (send_initial_metadata_->state) {
       case SendInitialMetadata::kInitial:
-      case SendInitialMetadata::kGotLatch:
+      case SendInitialMetadata::kGotPipe:
       case SendInitialMetadata::kForwarded:
       case SendInitialMetadata::kCancelled:
         break;
-      case SendInitialMetadata::kQueuedWaitingForLatch:
-      case SendInitialMetadata::kQueuedAndGotLatch:
-      case SendInitialMetadata::kQueuedAndSetLatch:
+      case SendInitialMetadata::kQueuedWaitingForPipe:
+      case SendInitialMetadata::kQueuedAndGotPipe:
+      case SendInitialMetadata::kQueuedAndPushedToPipe:
         send_initial_metadata_->batch.CancelWith(error, flusher);
         break;
     }
@@ -2052,19 +2075,19 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
         call_args.server_initial_metadata;
     switch (send_initial_metadata_->state) {
       case SendInitialMetadata::kInitial:
-        send_initial_metadata_->state = SendInitialMetadata::kGotLatch;
+        send_initial_metadata_->state = SendInitialMetadata::kGotPipe;
         break;
-      case SendInitialMetadata::kGotLatch:
-      case SendInitialMetadata::kQueuedAndGotLatch:
-      case SendInitialMetadata::kQueuedAndSetLatch:
+      case SendInitialMetadata::kGotPipe:
+      case SendInitialMetadata::kQueuedAndGotPipe:
+      case SendInitialMetadata::kQueuedAndPushedToPipe:
       case SendInitialMetadata::kForwarded:
         gpr_log(
             GPR_ERROR, "ILLEGAL STATE: %s",
             SendInitialMetadata::StateString(send_initial_metadata_->state));
         abort();  // not reachable
         break;
-      case SendInitialMetadata::kQueuedWaitingForLatch:
-        send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
+      case SendInitialMetadata::kQueuedWaitingForPipe:
+        send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotPipe;
         break;
       case SendInitialMetadata::kCancelled:
         break;
@@ -2164,7 +2187,9 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   FakeActivity().Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),
-                 server_initial_metadata_latch(),
+                 server_initial_metadata_pipe() == nullptr
+                     ? nullptr
+                     : &server_initial_metadata_pipe()->sender,
                  receive_message() == nullptr
                      ? nullptr
                      : receive_message()->interceptor()->original_receiver(),
@@ -2212,15 +2237,30 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     gpr_log(GPR_INFO, "%s: WakeInsideCombiner %s", LogTag().c_str(),
             DebugString().c_str());
   }
-  if (send_initial_metadata_ != nullptr &&
-      send_initial_metadata_->state ==
-          SendInitialMetadata::kQueuedAndGotLatch) {
-    send_initial_metadata_->state = SendInitialMetadata::kQueuedAndSetLatch;
-    send_initial_metadata_->server_initial_metadata_publisher->Set(
-        send_initial_metadata_->batch->payload->send_initial_metadata
-            .send_initial_metadata);
-  }
   poll_ctx.ClearRepoll();
+  if (send_initial_metadata_ != nullptr) {
+    if (send_initial_metadata_->metadata_push_.has_value()) {
+      if (!absl::holds_alternative<Pending>(
+              (*send_initial_metadata_->metadata_push_)())) {
+        send_initial_metadata_->metadata_push_.reset();
+      }
+    }
+    if (send_initial_metadata_->state ==
+        SendInitialMetadata::kQueuedAndGotPipe) {
+      send_initial_metadata_->state =
+          SendInitialMetadata::kQueuedAndPushedToPipe;
+      GPR_ASSERT(!send_initial_metadata_->metadata_push_.has_value());
+      GPR_ASSERT(!send_initial_metadata_->metadata_next_.has_value());
+      send_initial_metadata_->metadata_push_.emplace(
+          send_initial_metadata_->server_initial_metadata_publisher->Push(
+              ServerMetadataHandle(
+                  send_initial_metadata_->batch->payload->send_initial_metadata
+                      .send_initial_metadata,
+                  Arena::PooledDeleter(nullptr))));
+      send_initial_metadata_->metadata_next_.emplace(
+          server_initial_metadata_pipe()->receiver.Next());
+    }
+  }
   if (send_message() != nullptr) {
     if (send_trailing_state_ ==
         SendTrailingState::kQueuedButHaventClosedSends) {
@@ -2262,12 +2302,13 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     }
     if (send_initial_metadata_ != nullptr &&
         send_initial_metadata_->state ==
-            SendInitialMetadata::kQueuedAndSetLatch) {
-      Poll<ServerMetadata**> p = server_initial_metadata_latch()->Wait()();
-      if (ServerMetadata*** ppp = absl::get_if<ServerMetadata**>(&p)) {
-        ServerMetadata* md = **ppp;
+            SendInitialMetadata::kQueuedAndPushedToPipe) {
+      GPR_ASSERT(send_initial_metadata_->metadata_next_.has_value());
+      auto p = (*send_initial_metadata_->metadata_next_)();
+      if (auto* nr = absl::get_if<NextResult<ServerMetadataHandle>>(&p)) {
+        ServerMetadataHandle md = std::move(nr->value());
         if (send_initial_metadata_->batch->payload->send_initial_metadata
-                .send_initial_metadata != md) {
+                .send_initial_metadata != md.get()) {
           *send_initial_metadata_->batch->payload->send_initial_metadata
                .send_initial_metadata = std::move(*md);
         }

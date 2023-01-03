@@ -19,9 +19,6 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
-// TODO(ctiller): When removing this file, also reduce the number of *'s on the
-// server initial metadata latch.
-
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
@@ -61,7 +58,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
