@@ -247,6 +247,8 @@ INTERNAL_DEPS = {
         '//src/proto/grpc/reflection/v1alpha:reflection_proto',
     'src/proto/grpc/gcp/transport_security_common.upb.h':
         'alts_upb',
+    'src/proto/grpc/gcp/handshaker.upb.h':
+        'alts_upb',
     'src/proto/grpc/gcp/altscontext.upb.h':
         'alts_upb',
     'src/proto/grpc/lookup/v1/rls.upb.h':
