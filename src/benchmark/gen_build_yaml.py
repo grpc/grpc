@@ -42,4 +42,4 @@ out['libs'] = [{
             glob.glob('third_party/benchmark/include/benchmark/*.h')),
 }]
 
-print(yaml.dump(out))
+print(yaml.safe_dump(out))

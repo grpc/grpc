@@ -194,7 +194,8 @@ class GcpApiManager:
 
         params_str = ''
         if params:
-            params_str = '&' + ('&'.join(f'{k}={v}' for k, v in params.items()))
+            params_str = '&' + \
+                ('&'.join(f'{k}={v}' for k, v in params.items()))
 
         api = discovery.build(
             api_name,
@@ -364,7 +365,8 @@ class GcpProjectApiResource:
 
     def resource_pretty_format(self, body: dict) -> str:
         """Return a string with pretty-printed resource body."""
-        yaml_out: str = yaml.dump(body, explicit_start=True, explicit_end=True)
+        yaml_out: str = yaml.safe_dump(
+            body, explicit_start=True, explicit_end=True)
         return self._highlighter.highlight(yaml_out)
 
     @staticmethod
@@ -426,7 +428,8 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
             return True
         except _HttpError as error:
             if error.resp and error.resp.status == 404:
-                logger.info('%s not deleted since it does not exist', full_name)
+                logger.info(
+                    '%s not deleted since it does not exist', full_name)
             else:
                 logger.warning('Failed to delete %s, %r', full_name, error)
         return False

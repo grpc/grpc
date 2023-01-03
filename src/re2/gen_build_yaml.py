@@ -45,4 +45,4 @@ out['libs'] = [{
             glob.glob('third_party/re2/util/*.h')),
 }]
 
-print(yaml.dump(out))
+print(yaml.safe_dump(out))

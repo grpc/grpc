@@ -21,6 +21,8 @@
 # See documentation below:
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md#grpc-oss-benchmarks
 
+import scenario_config_exporter
+import scenario_config
 import argparse
 import collections
 import copy
@@ -35,8 +37,6 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Type
 import yaml
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import scenario_config
-import scenario_config_exporter
 
 CONFIGURATION_FILE_HEADER_COMMENT = """
 # Load test configurations generated from a template by loadtest_config.py.
@@ -223,7 +223,8 @@ def gen_loadtest_configs(
             metadata['name'] = name
             if 'labels' not in metadata:
                 metadata['labels'] = dict()
-            metadata['labels']['language'] = safe_name(language_config.language)
+            metadata['labels']['language'] = safe_name(
+                language_config.language)
             metadata['labels']['prefix'] = prefix
             if 'annotations' not in metadata:
                 metadata['annotations'] = dict()
@@ -522,11 +523,11 @@ def main() -> None:
     configs = (config for config in itertools.chain(*config_generators))
 
     with open(args.output, 'w') if args.output else sys.stdout as f:
-        yaml.dump_all(configs,
-                      stream=f,
-                      Dumper=config_dumper(
-                          CONFIGURATION_FILE_HEADER_COMMENT.strip()),
-                      default_flow_style=False)
+        yaml.safe_dump_all(configs,
+                           stream=f,
+                           Dumper=config_dumper(
+                               CONFIGURATION_FILE_HEADER_COMMENT.strip()),
+                           default_flow_style=False)
 
 
 if __name__ == '__main__':

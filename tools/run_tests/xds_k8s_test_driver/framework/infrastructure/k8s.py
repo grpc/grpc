@@ -365,7 +365,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
     def _pretty_format(self, data: dict) -> str:
         """Return a string with pretty-printed yaml data from a python dict."""
-        yaml_out: str = yaml.dump(data, explicit_start=True, explicit_end=True)
+        yaml_out: str = yaml.safe_dump(
+            data, explicit_start=True, explicit_end=True)
         return self._highlighter.highlight(yaml_out)
 
     @classmethod

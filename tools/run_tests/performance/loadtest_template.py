@@ -25,6 +25,7 @@
 # below:
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
 
+import loadtest_config
 import argparse
 import os
 import sys
@@ -33,7 +34,6 @@ from typing import Any, Dict, Iterable, List, Mapping, Type
 import yaml
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import loadtest_config
 
 TEMPLATE_FILE_HEADER_COMMENT = """
 # Template generated from load test configurations by loadtest_template.py.
@@ -54,7 +54,7 @@ def insert_worker(worker: Dict[str, Any], workers: List[Dict[str,
     """Inserts client or server into a list, without inserting duplicates."""
 
     def dump(w):
-        return yaml.dump(w, Dumper=yaml.SafeDumper, default_flow_style=False)
+        return yaml.safe_dump(w, default_flow_style=False)
 
     worker_str = dump(worker)
     if any((worker_str == dump(w) for w in workers)):
@@ -261,10 +261,11 @@ def main() -> None:
         inject_ttl_seconds=args.inject_ttl_seconds)
 
     with open(args.output, 'w') if args.output else sys.stdout as f:
-        yaml.dump(template,
-                  stream=f,
-                  Dumper=template_dumper(TEMPLATE_FILE_HEADER_COMMENT.strip()),
-                  default_flow_style=False)
+        yaml.safe_dump(template,
+                       stream=f,
+                       Dumper=template_dumper(
+                           TEMPLATE_FILE_HEADER_COMMENT.strip()),
+                       default_flow_style=False)
 
 
 if __name__ == '__main__':

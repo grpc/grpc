@@ -46,7 +46,7 @@ def main():
         'core_end2end_tests':
             dict((t, END2END_TESTS[t]['secure']) for t in END2END_TESTS.keys())
     }
-    print(yaml.dump(json))
+    print(yaml.safe_dump(json))
 
 
 if __name__ == '__main__':
