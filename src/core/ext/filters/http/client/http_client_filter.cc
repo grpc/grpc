@@ -1,19 +1,19 @@
-/*
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -59,10 +59,10 @@ const grpc_channel_filter HttpClientFilter::kFilter =
 namespace {
 absl::Status CheckServerMetadata(ServerMetadata* b) {
   if (auto* status = b->get_pointer(HttpStatusMetadata())) {
-    /* If both gRPC status and HTTP status are provided in the response, we
-     * should prefer the gRPC status code, as mentioned in
-     * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
-     */
+    // If both gRPC status and HTTP status are provided in the response, we
+    // should prefer the gRPC status code, as mentioned in
+    // https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
+    //
     const grpc_status_code* grpc_status = b->get_pointer(GrpcStatusMetadata());
     if (grpc_status != nullptr || *status == 200) {
       b->Remove(HttpStatusMetadata());

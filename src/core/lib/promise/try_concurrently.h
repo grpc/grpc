@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/strings/str_cat.h"

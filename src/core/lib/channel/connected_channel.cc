@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -132,9 +132,9 @@ static callback_state* get_state_for_batch(
   GPR_UNREACHABLE_CODE(return nullptr);
 }
 
-/* We perform a small hack to locate transport data alongside the connected
-   channel data in call allocations, to allow everything to be pulled in minimal
-   cache line requests */
+// We perform a small hack to locate transport data alongside the connected
+// channel data in call allocations, to allow everything to be pulled in minimal
+// cache line requests
 #define TRANSPORT_STREAM_FROM_CALL_DATA(calld) \
   ((grpc_stream*)(((char*)(calld)) +           \
                   GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
@@ -142,8 +142,8 @@ static callback_state* get_state_for_batch(
   ((call_data*)(((char*)(transport_stream)) -             \
                 GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
 
-/* Intercept a call operation and either push it directly up or translate it
-   into transport stream operations */
+// Intercept a call operation and either push it directly up or translate it
+// into transport stream operations
 static void connected_channel_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -190,7 +190,7 @@ static void connected_channel_start_transport_op(grpc_channel_element* elem,
   grpc_transport_perform_op(chand->transport, op);
 }
 
-/* Constructor for call_data */
+// Constructor for call_data
 static grpc_error_handle connected_channel_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -211,7 +211,7 @@ static void set_pollset_or_pollset_set(grpc_call_element* elem,
                           TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollent);
 }
 
-/* Destructor for call_data */
+// Destructor for call_data
 static void connected_channel_destroy_call_elem(
     grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
     grpc_closure* then_schedule_closure) {
@@ -222,7 +222,7 @@ static void connected_channel_destroy_call_elem(
                                 then_schedule_closure);
 }
 
-/* Constructor for channel_data */
+// Constructor for channel_data
 static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
@@ -232,7 +232,7 @@ static grpc_error_handle connected_channel_init_channel_elem(
   return absl::OkStatus();
 }
 
-/* Destructor for channel_data */
+// Destructor for channel_data
 static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   if (cd->transport) {
@@ -240,7 +240,7 @@ static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
   }
 }
 
-/* No-op. */
+// No-op.
 static void connected_channel_get_channel_info(
     grpc_channel_element* /*elem*/, const grpc_channel_info* /*channel_info*/) {
 }
@@ -1280,12 +1280,12 @@ grpc_channel_filter MakeConnectedFilter() {
       sizeof(channel_data),
       connected_channel_init_channel_elem,
       +[](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
-        /* HACK(ctiller): increase call stack size for the channel to make space
-           for channel data. We need a cleaner (but performant) way to do this,
-           and I'm not sure what that is yet.
-           This is only "safe" because call stacks place no additional data
-           after the last call element, and the last call element MUST be the
-           connected channel. */
+        // HACK(ctiller): increase call stack size for the channel to make space
+        // for channel data. We need a cleaner (but performant) way to do this,
+        // and I'm not sure what that is yet.
+        // This is only "safe" because call stacks place no additional data
+        // after the last call element, and the last call element MUST be the
+        // connected channel. 
         channel_stack->call_stack_size += grpc_transport_stream_size(
             static_cast<channel_data*>(elem->channel_data)->transport);
       },

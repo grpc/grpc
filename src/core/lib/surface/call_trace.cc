@@ -47,7 +47,7 @@ const grpc_channel_filter* PromiseTracingFilterFor(
     explicit DerivedFilter(const grpc_channel_filter* filter)
         : grpc_channel_filter{
               /* start_transport_stream_op_batch: */ grpc_call_next_op,
-              /* make_call_promise: */
+              // make_call_promise:
               [](grpc_channel_element* elem, CallArgs call_args,
                  NextPromiseFactory next_promise_factory)
                   -> ArenaPromise<ServerMetadataHandle> {
@@ -78,19 +78,19 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                 };
               },
               grpc_channel_next_op, /* sizeof_call_data: */ 0,
-              /* init_call_elem: */
+              // init_call_elem:
               [](grpc_call_element*, const grpc_call_element_args*) {
                 return absl::OkStatus();
               },
               grpc_call_stack_ignore_set_pollset_or_pollset_set,
-              /* destroy_call_elem: */
+              // destroy_call_elem:
               [](grpc_call_element*, const grpc_call_final_info*,
                  grpc_closure*) {},
-              /* sizeof_channel_data: */ 0, /* init_channel_elem: */
+              /* sizeof_channel_data: */ 0,  // init_channel_elem:
               [](grpc_channel_element*, grpc_channel_element_args*) {
                 return absl::OkStatus();
               },
-              /* post_init_channel_elem: */
+              // post_init_channel_elem:
               [](grpc_channel_stack*, grpc_channel_element*) {},
               /* destroy_channel_elem: */ [](grpc_channel_element*) {},
               grpc_channel_next_get_info,

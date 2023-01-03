@@ -39,27 +39,27 @@
 
 namespace grpc_core {
 
-/** Compression filter for messages.
- *
- * See <grpc/compression.h> for the available compression settings.
- *
- * Compression settings may come from:
- *  - Channel configuration, as established at channel creation time.
- *  - The metadata accompanying the outgoing data to be compressed. This is
- *    taken as a request only. We may choose not to honor it. The metadata key
- *    is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
- *
- * Compression can be disabled for concrete messages (for instance in order to
- * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
- * the MessageHandle flags.
- *
- * The attempted compression mechanism is added to the resulting initial
- * metadata under the 'grpc-encoding' key.
- *
- * If compression is actually performed, the MessageHandle's flag is modified to
- * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
- * aforementioned 'grpc-encoding' metadata value, data will pass through
- * uncompressed. */
+/// Compression filter for messages.
+///
+/// See <grpc/compression.h> for the available compression settings.
+///
+/// Compression settings may come from:
+/// - Channel configuration, as established at channel creation time.
+/// - The metadata accompanying the outgoing data to be compressed. This is
+///   taken as a request only. We may choose not to honor it. The metadata key
+///   is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
+///
+/// Compression can be disabled for concrete messages (for instance in order to
+/// prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set
+/// in the MessageHandle flags.
+///
+/// The attempted compression mechanism is added to the resulting initial
+/// metadata under the 'grpc-encoding' key.
+///
+/// If compression is actually performed, the MessageHandle's flag is modified
+/// to incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of
+/// the aforementioned 'grpc-encoding' metadata value, data will pass through
+/// uncompressed.
 
 class CompressionFilter : public ChannelFilter {
  protected:
@@ -137,5 +137,4 @@ class ServerCompressionFilter final : public CompressionFilter {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H \
-        */
+#endif  // GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
