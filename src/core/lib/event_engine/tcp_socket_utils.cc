@@ -111,36 +111,13 @@ absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
 
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
     const EventEngine::ResolvedAddress* resolved_addr) {
-  const sockaddr* addr = resolved_addr->address();
-  if (addr->sa_family != AF_UNIX) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
-  }
-  const sockaddr_un* unix_addr = reinterpret_cast<const sockaddr_un*>(addr);
-#ifdef GPR_APPLE
-  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) -
-            sizeof(unix_addr->sun_len) - 1;
-#else
-  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
-#endif
-  bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
-  std::string scheme;
-  std::string path;
-  if (abstract) {
-    scheme = "unix-abstract";
-    if (len >= 0) {
-      path = std::string(unix_addr->sun_path + 1, len);
-    }
-  } else {
-    scheme = "unix";
-    size_t maxlen = sizeof(unix_addr->sun_path);
-    if (strnlen(unix_addr->sun_path, maxlen) == maxlen) {
-      return absl::InvalidArgumentError("UDS path is not null-terminated");
-    }
-    path = unix_addr->sun_path;
-  }
+  auto path = ResolvedAddrToUnixPathIfPossible(resolved_addr);
+  GRPC_RETURN_IF_ERROR(path.status());
+  std::string scheme = path->rfind('\0', 0) == 0 ? "unix-abstract" : "unix";
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      std::move(scheme), /*authority=*/"", std::move(path),
+      std::move(scheme), /*authority=*/"",
+      scheme == "unix" ? std::move(*path)
+                       : std::move(path->substr(1, std::string::npos)),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
@@ -314,11 +291,6 @@ absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
   EventEngine::ResolvedAddress addr_normalized;
   if (!ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
     addr_normalized = resolved_addr;
-  }
-  auto scheme = GetScheme(addr_normalized);
-  GRPC_RETURN_IF_ERROR(scheme.status());
-  if (*scheme == "unix") {
-    return ResolvedAddrToUnixPathIfPossible(&addr_normalized);
   }
   return ResolvedAddressToString(addr_normalized);
 }
