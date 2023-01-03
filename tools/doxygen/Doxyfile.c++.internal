@@ -1101,6 +1101,7 @@ src/core/ext/filters/client_channel/health/health_check_client.cc \
 src/core/ext/filters/client_channel/health/health_check_client.h \
 src/core/ext/filters/client_channel/http_proxy.cc \
 src/core/ext/filters/client_channel/http_proxy.h \
+src/core/ext/filters/client_channel/lb_call_state_internal.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
 src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
@@ -2044,8 +2045,6 @@ src/core/lib/event_engine/windows/iocp.cc \
 src/core/lib/event_engine/windows/iocp.h \
 src/core/lib/event_engine/windows/win_socket.cc \
 src/core/lib/event_engine/windows/win_socket.h \
-src/core/lib/event_engine/windows/windows_endpoint.cc \
-src/core/lib/event_engine/windows/windows_endpoint.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/experiments/config.cc \
