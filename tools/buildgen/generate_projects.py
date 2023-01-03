@@ -72,7 +72,7 @@ def preprocess_build_files() -> _utils.Bunch:
     for build_file in args.build_files:
         with open(build_file, 'r') as f:
             _utils.merge_json(build_spec,
-                              yaml.load(f.read(), Loader=yaml.FullLoader))
+                              yaml.safe_load(f.read()))
     # Executes plugins. Plugins update the build spec in-place.
     for py_file in sorted(glob.glob('tools/buildgen/plugins/*.py')):
         plugin = _utils.import_python_module(py_file)
