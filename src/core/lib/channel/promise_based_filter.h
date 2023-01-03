@@ -504,8 +504,8 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* call_combiner() const { return call_combiner_; }
   Timestamp deadline() const { return deadline_; }
   grpc_call_stack* call_stack() const { return call_stack_; }
-  Latch<ServerMetadata*>* server_initial_metadata_latch() const {
-    return server_initial_metadata_latch_;
+  Pipe<ServerMetadataHandle>* server_initial_metadata_pipe() const {
+    return server_initial_metadata_pipe_;
   }
   SendMessage* send_message() const { return send_message_; }
   ReceiveMessage* receive_message() const { return receive_message_; }
@@ -535,7 +535,7 @@ class BaseCallData : public Activity, private Wakeable {
   CallFinalization finalization_;
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
-  Latch<ServerMetadata*>* const server_initial_metadata_latch_;
+  Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;
   ReceiveMessage* const receive_message_;
   grpc_event_engine::experimental::EventEngine* event_engine_;

@@ -80,9 +80,9 @@ BaseCallData::BaseCallData(
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
       context_(args->context),
-      server_initial_metadata_latch_(
+      server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
-              ? arena_->New<Latch<ServerMetadata*>>()
+              ? arena_->New<Pipe<ServerMetadataHandle>>()
               : nullptr),
       send_message_(
           flags & kFilterExaminesOutboundMessages
@@ -105,8 +105,8 @@ BaseCallData::~BaseCallData() {
     if (receive_message_ != nullptr) {
       receive_message_->~ReceiveMessage();
     }
-    if (server_initial_metadata_latch_ != nullptr) {
-      server_initial_metadata_latch_->~Latch();
+    if (server_initial_metadata_pipe_ != nullptr) {
+      server_initial_metadata_pipe_->~Pipe();
     }
   });
 }
@@ -926,7 +926,7 @@ class ClientCallData::PollContext {
     if (self_->receive_message() != nullptr) {
       self_->receive_message()->WakeInsideCombiner(flusher_);
     }
-    if (self_->server_initial_metadata_latch() != nullptr) {
+    if (self_->server_initial_metadata_pipe() != nullptr) {
       switch (self_->recv_initial_metadata_->state) {
         case RecvInitialMetadata::kInitial:
         case RecvInitialMetadata::kGotLatch:
