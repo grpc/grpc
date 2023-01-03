@@ -18,7 +18,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/ext/gcp")
+grpc_package(name = "test/cpp/ext/filters/logging")
 
 grpc_cc_test(
     name = "logging_test",
