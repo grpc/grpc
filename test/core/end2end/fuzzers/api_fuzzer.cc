@@ -868,6 +868,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   while (action_index < msg.actions_size() || g_channel != nullptr ||
          g_server != nullptr || pending_channel_watches > 0 ||
          pending_pings > 0 || ActiveCall() != nullptr) {
+    engine->Tick();
 
     if (action_index == msg.actions_size()) {
       engine->FuzzingDone();
@@ -894,13 +895,11 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       }
 
       grpc_timer_manager_tick();
-      engine->Tick();
       GPR_ASSERT(!poll_cq());
       continue;
     }
 
     grpc_timer_manager_tick();
-    engine->Tick();
 
     if (g_channel_force_delete.exchange(false) && g_channel) {
       grpc_channel_destroy(g_channel);
