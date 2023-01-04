@@ -564,6 +564,8 @@ const char* BaseCallData::ReceiveMessage::StateString(State state) {
       return "COMPLETED_WHILE_PULLED_FROM_PIPE";
     case State::kCompletedWhilePushedToPipe:
       return "COMPLETED_WHILE_PUSHED_TO_PIPE";
+    case State::kCompletedWhileBatchCompleted:
+      return "COMPLETED_WHILE_BATCH_COMPLETED";
   }
   return "UNKNOWN";
 }
@@ -586,6 +588,7 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kForwardedBatchNoPipe:
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
+    case State::kCompletedWhileBatchCompleted:
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
     case State::kCompletedWhilePulledFromPipe:
@@ -630,6 +633,7 @@ void BaseCallData::ReceiveMessage::GotPipe(T* pipe_end) {
     case State::kPulledFromPipe:
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
+    case State::kCompletedWhileBatchCompleted:
     case State::kCancelledWhilstForwarding:
     case State::kCancelledWhilstIdle:
     case State::kBatchCompletedButCancelled:
@@ -653,6 +657,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
     case State::kBatchCompleted:
+    case State::kCompletedWhileBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kCancelled:
     case State::kBatchCompletedButCancelled:
@@ -695,8 +700,10 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
     case State::kForwardedBatchNoPipe:
       state_ = State::kCancelledWhilstForwarding;
       break;
+    case State::kCompletedWhileBatchCompleted:
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
+    case State::kBatchCompleted:
     case State::kPulledFromPipe:
     case State::kPushedToPipe: {
       auto status_code =
@@ -705,6 +712,9 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
         if (state_ == State::kCompletedWhilePulledFromPipe ||
             state_ == State::kPulledFromPipe) {
           state_ = State::kCompletedWhilePulledFromPipe;
+        } else if (state_ == State::kBatchCompleted ||
+                   state_ == State::kCompletedWhileBatchCompleted) {
+          state_ = State::kCompletedWhileBatchCompleted;
         } else {
           state_ = State::kCompletedWhilePushedToPipe;
         }
@@ -716,7 +726,6 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
         state_ = State::kCancelled;
       }
     } break;
-    case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
       gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
@@ -755,10 +764,15 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                           completed_status_, "recv_message");
       break;
+    case State::kCompletedWhileBatchCompleted:
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
         if (!allow_push_to_pipe) break;
-        state_ = State::kPushedToPipe;
+        if (state_ == State::kBatchCompleted) {
+          state_ = State::kPushedToPipe;
+        } else {
+          state_ = State::kCompletedWhilePushedToPipe;
+        }
         auto message = GetContext<Arena>()->MakePooled<Message>();
         message->payload()->Swap(&**intercepted_slice_buffer_);
         message->mutable_flags() = *intercepted_flags_;
@@ -771,7 +785,8 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                             completed_status_, "recv_message");
         break;
       }
-      GPR_ASSERT(state_ == State::kPushedToPipe);
+      GPR_ASSERT(state_ == State::kPushedToPipe ||
+                 state_ == State::kCompletedWhilePushedToPipe);
       ABSL_FALLTHROUGH_INTENDED;
     case State::kCompletedWhilePushedToPipe:
     case State::kPushedToPipe: {

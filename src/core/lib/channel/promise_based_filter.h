@@ -477,6 +477,7 @@ class BaseCallData : public Activity, private Wakeable {
       // Completed successfully while we're processing a recv message.
       kCompletedWhilePushedToPipe,
       kCompletedWhilePulledFromPipe,
+      kCompletedWhileBatchCompleted,
     };
     static const char* StateString(State);
 
