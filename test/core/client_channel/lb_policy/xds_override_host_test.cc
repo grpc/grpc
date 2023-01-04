@@ -110,7 +110,7 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
 }
 
-TEST_F(XdsOverrideHostTest, OverrideHostSubchannelNotFound) {
+TEST_F(XdsOverrideHostTest, SubchannelNotFound) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -166,6 +166,53 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   ExpectRoundRobinPicks(picker.get(), {kAddresses[1]}, call_attributes);
 }
 
+TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = ExpectStartupWithRoundRobin(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Check that the host is overridden
+  std::map<UniqueTypeName, std::string> pick_arg{
+      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  auto subchannel = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel, nullptr);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
+                        {kAddresses[0], kAddresses[2]});
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
+                        {kAddresses[0], kAddresses[2]});
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::ResourceExhaustedError("Hmmmm"));
+  ExpectReresolutionRequest();
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]}, pick_arg);
+}
+
+TEST_F(XdsOverrideHostTest, ConnectingSubchannelIsQueued) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = ExpectStartupWithRoundRobin(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Check that the host is overridden
+  std::map<UniqueTypeName, std::string> pick_arg{
+      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  auto subchannel = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel, nullptr);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ExpectPickQueued(picker.get(), pick_arg);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ExpectPickQueued(picker.get(), pick_arg);
+}
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
