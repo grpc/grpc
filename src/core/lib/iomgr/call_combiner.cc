@@ -116,9 +116,9 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO,
             "==> CallCombiner::Start() [%p] closure=%p [" DEBUG_FMT_STR
-            "%s] error=%s",
-            this, closure DEBUG_FMT_ARGS, reason,
-            StatusToString(error).c_str());
+            "%s] error=%s %s:%d",
+            this, closure DEBUG_FMT_ARGS, reason, StatusToString(error).c_str(),
+            closure->file_created, closure->line_created);
   }
   size_t prev_size =
       static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)1));
@@ -175,8 +175,9 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
           internal::StatusMoveFromHeapPtr(closure->error_data.error);
       closure->error_data.error = 0;
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
-                closure, StatusToString(error).c_str());
+        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s %s:%d",
+                closure, StatusToString(error).c_str(), closure->file_created,
+                closure->line_created);
       }
       ScheduleClosure(closure, error);
       break;
