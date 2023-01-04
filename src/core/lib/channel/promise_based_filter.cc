@@ -2239,12 +2239,6 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   }
   poll_ctx.ClearRepoll();
   if (send_initial_metadata_ != nullptr) {
-    if (send_initial_metadata_->metadata_push_.has_value()) {
-      if (!absl::holds_alternative<Pending>(
-              (*send_initial_metadata_->metadata_push_)())) {
-        send_initial_metadata_->metadata_push_.reset();
-      }
-    }
     if (send_initial_metadata_->state ==
         SendInitialMetadata::kQueuedAndGotPipe) {
       send_initial_metadata_->state =
@@ -2259,6 +2253,19 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
                   Arena::PooledDeleter(nullptr))));
       send_initial_metadata_->metadata_next_.emplace(
           server_initial_metadata_pipe()->receiver.Next());
+    }
+    if (send_initial_metadata_->metadata_push_.has_value()) {
+      if (!absl::holds_alternative<Pending>(
+              (*send_initial_metadata_->metadata_push_)())) {
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_INFO, "%s: WakeInsideCombiner: metadata_push done",
+                  LogTag().c_str());
+        }
+        send_initial_metadata_->metadata_push_.reset();
+      } else if (grpc_trace_channel.enabled()) {
+        gpr_log(GPR_INFO, "%s: WakeInsideCombiner: metadata_push pending",
+                LogTag().c_str());
+      }
     }
   }
   if (send_message() != nullptr) {
@@ -2295,16 +2302,31 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
     if (grpc_trace_channel.enabled()) {
-      gpr_log(GPR_INFO, "%s: WakeInsideCombiner poll=%s", LogTag().c_str(),
-              PollToString(poll, [](const ServerMetadataHandle& h) {
-                return h->DebugString();
-              }).c_str());
+      gpr_log(
+          GPR_INFO, "%s: WakeInsideCombiner poll=%s; send_initial_metadata=%s",
+          LogTag().c_str(),
+          PollToString(
+              poll,
+              [](const ServerMetadataHandle& h) { return h->DebugString(); })
+              .c_str(),
+          send_initial_metadata_ == nullptr
+              ? "null"
+              : SendInitialMetadata::StateString(
+                    send_initial_metadata_->state));
     }
     if (send_initial_metadata_ != nullptr &&
         send_initial_metadata_->state ==
             SendInitialMetadata::kQueuedAndPushedToPipe) {
       GPR_ASSERT(send_initial_metadata_->metadata_next_.has_value());
       auto p = (*send_initial_metadata_->metadata_next_)();
+      if (grpc_trace_channel.enabled()) {
+        gpr_log(GPR_INFO,
+                "%s: WakeInsideCombiner send_initial_metadata poll=%s",
+                LogTag().c_str(),
+                PollToString(p, [](const NextResult<ServerMetadataHandle>& h) {
+                  return (*h)->DebugString();
+                }).c_str());
+      }
       if (auto* nr = absl::get_if<NextResult<ServerMetadataHandle>>(&p)) {
         ServerMetadataHandle md = std::move(nr->value());
         if (send_initial_metadata_->batch->payload->send_initial_metadata
