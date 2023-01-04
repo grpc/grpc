@@ -298,6 +298,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_client_channel",

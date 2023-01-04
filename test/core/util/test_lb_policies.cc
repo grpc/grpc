@@ -37,8 +37,10 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
@@ -746,6 +748,173 @@ class FailLbFactory : public LoadBalancingPolicyFactory {
   std::atomic<int>* pick_counter_;
 };
 
+//
+// QueueOnceLoadBalancingPolicy - a load balancing policy that provides a Queue
+// PickResult atleast once, after which it delegates to PickFirst.
+//
+
+constexpr char kQueueOncePolicyName[] = "queue_once";
+
+class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
+ public:
+  QueueOnceLoadBalancingPolicy(Args args)
+      : ForwardingLoadBalancingPolicy(
+            std::make_unique<Helper>(
+                RefCountedPtr<QueueOnceLoadBalancingPolicy>(this)),
+            std::move(args), "pick_first",
+            /*initial_refcount=*/2) {}
+
+  ~QueueOnceLoadBalancingPolicy() override = default;
+
+  absl::string_view name() const override { return kQueueOncePolicyName; }
+
+ private:
+  class Helper;
+
+  // An always queueing picker
+  class QueueingPicker : public SubchannelPicker {
+   public:
+    QueueingPicker(Helper* helper) : helper_(helper) {}
+
+    PickResult Pick(PickArgs args) override;
+
+   private:
+    Helper* helper_;
+  };
+
+  class DelegatingPicker : public SubchannelPicker {
+   public:
+    DelegatingPicker(RefCountedPtr<SubchannelPicker> delegate_picker)
+        : delegate_picker_(std::move(delegate_picker)) {}
+
+    PickResult Pick(PickArgs args) override {
+      return delegate_picker_->Pick(args);
+    }
+
+   private:
+    RefCountedPtr<SubchannelPicker> delegate_picker_;
+  };
+
+  class Helper : public ChannelControlHelper {
+   public:
+    Helper(RefCountedPtr<QueueOnceLoadBalancingPolicy> parent)
+        : parent_(std::move(parent)) {}
+
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        ServerAddress address, const ChannelArgs& args) override {
+      return parent_->channel_control_helper()->CreateSubchannel(
+          std::move(address), args);
+    }
+
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     RefCountedPtr<SubchannelPicker> picker) override {
+      bool pick_queued;
+      {
+        MutexLock lock(&mu_);
+        pick_queued = pick_queued_;
+        // If a pick has not been queued yet, we need to save the update from
+        // PickFirst to propagate later.
+        if (!pick_queued) {
+          state_to_update_ = {state, status, std::move(picker)};
+        }
+      }
+      if (!pick_queued) {
+        return parent_->channel_control_helper()->UpdateState(
+            GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+            MakeRefCounted<QueueingPicker>(this));
+      }
+      parent_->channel_control_helper()->UpdateState(
+          state, status, MakeRefCounted<DelegatingPicker>(std::move(picker)));
+    }
+
+    void RequestReresolution() override {
+      parent_->channel_control_helper()->RequestReresolution();
+    }
+
+    absl::string_view GetAuthority() override {
+      return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
+    }
+
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override {
+      parent_->channel_control_helper()->AddTraceEvent(severity, message);
+    }
+
+    void SetPickQueued() {
+      MutexLock lock(&mu_);
+      pick_queued_ = true;
+      if (state_to_update_.has_value()) {
+        // Propagate the update from PickFirst but do not do it inline to avoid
+        // deadlocks.
+        parent_->work_serializer()->Schedule(
+            [helper = parent_->channel_control_helper(),
+             update_state = std::move(state_to_update_.value())]() {
+              helper->UpdateState(
+                  update_state.state, update_state.status,
+                  MakeRefCounted<DelegatingPicker>(update_state.picker));
+            },
+            DEBUG_LOCATION);
+        // Since we scheduled the update above instead of running inline, we
+        // need to drain the queue for the WorkSerializer.
+        ExecCtx::Run(
+            DEBUG_LOCATION,
+            GRPC_CLOSURE_CREATE(
+                [](void* arg, grpc_error_handle /*error*/) {
+                  auto parent = RefCountedPtr<QueueOnceLoadBalancingPolicy>(
+                      static_cast<QueueOnceLoadBalancingPolicy*>(arg));
+                  parent->work_serializer()->DrainQueue();
+                },
+                parent_->Ref().release(), nullptr),
+            absl::OkStatus());
+        state_to_update_.reset();
+      }
+    }
+
+   private:
+    Mutex mu_;
+    struct StateToUpdate {
+      grpc_connectivity_state state;
+      absl::Status status;
+      RefCountedPtr<SubchannelPicker> picker;
+    };
+    absl::optional<StateToUpdate> state_to_update_ ABSL_GUARDED_BY(mu_);
+    bool pick_queued_ ABSL_GUARDED_BY(mu_) =
+        false;  // Has a pick been queued yet
+    RefCountedPtr<QueueOnceLoadBalancingPolicy> parent_;
+  };
+};
+
+LoadBalancingPolicy::PickResult
+QueueOnceLoadBalancingPolicy::QueueingPicker::Pick(PickArgs args) {
+  helper_->SetPickQueued();
+  return PickResult::Queue();
+}
+
+class QueueOnceLbConfig : public LoadBalancingPolicy::Config {
+ public:
+  absl::string_view name() const override { return kQueueOncePolicyName; }
+};
+
+class QueueOnceLoadBalancingPolicyFactory
+    : public grpc_core::LoadBalancingPolicyFactory {
+ public:
+  grpc_core::OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<QueueOnceLoadBalancingPolicy>(std::move(args));
+  }
+
+  absl::string_view name() const override { return kQueueOncePolicyName; }
+
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+    return MakeRefCounted<QueueOnceLbConfig>();
+  }
+};
+
 }  // namespace
 
 void RegisterTestPickArgsLoadBalancingPolicy(
@@ -786,6 +955,11 @@ void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
                                      std::atomic<int>* pick_counter) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<FailLbFactory>(std::move(status), pick_counter));
+}
+
+void RegisterQueueOnceLoadBalancingPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<QueueOnceLoadBalancingPolicyFactory>());
 }
 
 }  // namespace grpc_core
