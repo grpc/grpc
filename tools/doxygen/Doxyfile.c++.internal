@@ -2045,6 +2045,8 @@ src/core/lib/event_engine/windows/iocp.cc \
 src/core/lib/event_engine/windows/iocp.h \
 src/core/lib/event_engine/windows/win_socket.cc \
 src/core/lib/event_engine/windows/win_socket.h \
+src/core/lib/event_engine/windows/windows_endpoint.cc \
+src/core/lib/event_engine/windows/windows_endpoint.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/experiments/config.cc \

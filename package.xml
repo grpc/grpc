@@ -1033,6 +1033,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.cc" role="src" />
