@@ -15,6 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 #define GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "poll.h"
 
@@ -28,6 +29,7 @@ class InterceptorList {
  public:
   class MapFactory {
    public:
+    explicit MapFactory(SourceLocation from) : from_(from) {}
     virtual void MakePromise(T x, void* memory) = 0;
     virtual void Destroy(void* memory) = 0;
     virtual Poll<absl::optional<T>> PollOnce(void* memory) = 0;
@@ -38,9 +40,12 @@ class InterceptorList {
       next_ = next;
     }
 
+    SourceLocation from() { return from_; }
+
     MapFactory* next() const { return next_; }
 
    private:
+    const SourceLocation from_;
     MapFactory* next_ = nullptr;
   };
 
@@ -84,6 +89,8 @@ class InterceptorList {
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
     Poll<absl::optional<T>> operator()() {
+      gpr_log(GPR_DEBUG, "InterceptorList::RunPromise: %s",
+              DebugString().c_str());
       while (is_running_) {
         auto r = running_.current_factory->PollOnce(running_.space.get());
         if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
@@ -102,6 +109,19 @@ class InterceptorList {
     }
 
    private:
+    std::string DebugString() const {
+      if (is_running_) {
+        return absl::StrCat(
+            "Running:", running_.current_factory == nullptr
+                            ? "END"
+                            : ([p = running_.current_factory->from()]() {
+                                return absl::StrCat(p.file(), ":", p.line());
+                              })()
+                                  .c_str());
+      } else {
+        return absl::StrFormat("Result:has_value:%d", result_.has_value());
+      }
+    }
     struct Running {
       explicit Running(size_t max_size)
           : space(GetContext<Arena>()->MakePooledArray<char>(max_size)) {}
@@ -137,13 +157,13 @@ class InterceptorList {
   }
 
   template <typename Fn>
-  void AppendMap(Fn fn) {
-    Append(MakeFactoryToAdd(std::move(fn)));
+  void AppendMap(Fn fn, SourceLocation from) {
+    Append(MakeFactoryToAdd(std::move(fn), from));
   }
 
   template <typename Fn>
-  void PrependMap(Fn fn) {
-    Prepend(MakeFactoryToAdd(std::move(fn)));
+  void PrependMap(Fn fn, SourceLocation from) {
+    Prepend(MakeFactoryToAdd(std::move(fn), from));
   }
 
  private:
@@ -153,7 +173,8 @@ class InterceptorList {
     using PromiseFactory = promise_detail::RepeatedPromiseFactory<T, Fn>;
     using Promise = typename PromiseFactory::Promise;
 
-    explicit MapFactoryImpl(Fn fn) : fn_(std::move(fn)) {}
+    explicit MapFactoryImpl(Fn fn, SourceLocation from)
+        : MapFactory(from), fn_(std::move(fn)) {}
     virtual void MakePromise(T x, void* memory) final {
       new (memory) Promise(fn_.Make(std::move(x)));
     }
@@ -167,11 +188,11 @@ class InterceptorList {
   };
 
   template <typename Fn>
-  MapFactory* MakeFactoryToAdd(Fn fn) {
+  MapFactory* MakeFactoryToAdd(Fn fn, SourceLocation from) {
     using FactoryType = MapFactoryImpl<Fn>;
     promise_memory_required_ = std::max(promise_memory_required_,
                                         sizeof(typename FactoryType::Promise));
-    return GetContext<Arena>()->New<FactoryType>(std::move(fn));
+    return GetContext<Arena>()->New<FactoryType>(std::move(fn), from);
   }
 
   void Append(MapFactory* f) {

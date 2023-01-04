@@ -242,17 +242,28 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
       GetContext<Arena>()->New<DecompressArgs>(DecompressArgs{false});
   auto* decompress_err =
       GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
-  call_args.server_to_client_messages->InterceptAndMap(
-      [decompress_err, decompress_args,
-       this](MessageHandle message) -> absl::optional<MessageHandle> {
-        if (!decompress_args->valid) return absl::nullopt;
-        auto r = DecompressMessage(std::move(message), *decompress_args);
-        if (!r.ok()) {
-          decompress_err->Set(ServerMetadataFromStatus(r.status()));
-          return absl::nullopt;
-        }
-        return std::move(*r);
-      });
+  call_args.server_to_client_messages->InterceptAndMap([decompress_err,
+                                                        decompress_args,
+                                                        this](MessageHandle
+                                                                  message)
+                                                           -> absl::optional<
+                                                               MessageHandle> {
+    if (!decompress_args->valid) {
+      if (grpc_compression_trace.enabled()) {
+        gpr_log(
+            GPR_DEBUG,
+            "%s: No decompression arguments received, failing decompression",
+            Activity::current()->DebugTag().c_str());
+      }
+      return absl::nullopt;
+    }
+    auto r = DecompressMessage(std::move(message), *decompress_args);
+    if (!r.ok()) {
+      decompress_err->Set(ServerMetadataFromStatus(r.status()));
+      return absl::nullopt;
+    }
+    return std::move(*r);
+  });
   call_args.server_initial_metadata->InterceptAndMap(
       [decompress_args, this](ServerMetadataHandle server_initial_metadata)
           -> absl::optional<ServerMetadataHandle> {
@@ -277,6 +288,8 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
       [decompress_err, decompress_args,
        this](MessageHandle message) -> absl::optional<MessageHandle> {
         auto r = DecompressMessage(std::move(message), decompress_args);
+        gpr_log(GPR_DEBUG, "DecompressMessage returned %s",
+                r.status().ToString().c_str());
         if (!r.ok()) {
           decompress_err->Set(r.status());
           return absl::nullopt;

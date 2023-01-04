@@ -334,8 +334,8 @@ class PipeSender {
   PushType Push(T value);
 
   template <typename Fn>
-  void InterceptAndMap(Fn f) {
-    center_->AppendMap(std::move(f));
+  void InterceptAndMap(Fn f, SourceLocation from = {}) {
+    center_->AppendMap(std::move(f), from);
   }
 
  private:
@@ -366,8 +366,8 @@ class PipeReceiver {
   auto Next();
 
   template <typename Fn>
-  void InterceptAndMap(Fn f) {
-    center_->PrependMap(std::move(f));
+  void InterceptAndMap(Fn f, SourceLocation from = {}) {
+    center_->PrependMap(std::move(f), from);
   }
 
  private:
@@ -442,9 +442,11 @@ auto PipeReceiver<T>::Next() {
   return Seq(
       pipe_detail::Next<T>(center_->Ref()),
       [center = center_->Ref()](absl::optional<T> value) {
+        gpr_log(GPR_DEBUG, "PIPENEXT: has_value=%d", value.has_value());
         return center->Run(std::move(value));
       },
       [center = center_->Ref()](absl::optional<T> value) mutable {
+        gpr_log(GPR_DEBUG, "PIPEFIN: has_value=%d", value.has_value());
         if (value.has_value()) {
           center->value() = std::move(*value);
           return NextResult<T>(std::move(center));

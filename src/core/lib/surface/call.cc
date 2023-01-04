@@ -450,6 +450,31 @@ class FilterStackCall final : public Call {
   static constexpr gpr_atm kRecvNone = 0;
   static constexpr gpr_atm kRecvInitialMetadataFirst = 1;
 
+  enum class PendingOp {
+    kRecvMessage,
+    kRecvInitialMetadata,
+    kRecvTrailingMetadata,
+    kSends
+  };
+  static intptr_t PendingOpMask(PendingOp op) {
+    return static_cast<intptr_t>(1) << static_cast<intptr_t>(op);
+  }
+  static std::string PendingOpString(intptr_t pending_ops) {
+    std::vector<absl::string_view> pending_op_strings;
+    if (pending_ops & PendingOpMask(PendingOp::kRecvMessage)) {
+      pending_op_strings.push_back("kRecvMessage");
+    }
+    if (pending_ops & PendingOpMask(PendingOp::kRecvInitialMetadata)) {
+      pending_op_strings.push_back("kRecvInitialMetadata");
+    }
+    if (pending_ops & PendingOpMask(PendingOp::kRecvTrailingMetadata)) {
+      pending_op_strings.push_back("kRecvTrailingMetadata");
+    }
+    if (pending_ops & PendingOpMask(PendingOp::kSends)) {
+      pending_op_strings.push_back("kSends");
+    }
+    return absl::StrCat("{", absl::StrJoin(pending_op_strings, ","), "}");
+  }
   struct BatchControl {
     FilterStackCall* call_ = nullptr;
     grpc_transport_stream_op_batch op_;
@@ -474,17 +499,23 @@ class FilterStackCall final : public Call {
     } completion_data_;
     grpc_closure start_batch_;
     grpc_closure finish_batch_;
-    std::atomic<intptr_t> steps_to_complete_{0};
+    std::atomic<intptr_t> ops_pending_{0};
     AtomicError batch_error_;
-    void set_num_steps_to_complete(uintptr_t steps) {
-      steps_to_complete_.store(steps, std::memory_order_release);
+    void set_pending_ops(uintptr_t ops) {
+      ops_pending_.store(ops, std::memory_order_release);
     }
-    bool completed_batch_step() {
-      return steps_to_complete_.fetch_sub(1, std::memory_order_acq_rel) == 1;
+    bool completed_batch_step(PendingOp op) {
+      auto mask = PendingOpMask(op);
+      auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
+      gpr_log(GPR_DEBUG, "CALL:%p COMPLETE:%s REMAINING:%s", this,
+              PendingOpString(mask).c_str(),
+              PendingOpString(r & ~mask).c_str());
+      GPR_ASSERT((r & mask) != 0);
+      return r == mask;
     }
 
     void PostCompletion();
-    void FinishStep();
+    void FinishStep(PendingOp op);
     void ProcessDataAfterMetadata();
     void ReceivingStreamReady(grpc_error_handle error);
     void ValidateFilteredMetadata();
@@ -1153,8 +1184,8 @@ void FilterStackCall::BatchControl::PostCompletion() {
   }
 }
 
-void FilterStackCall::BatchControl::FinishStep() {
-  if (GPR_UNLIKELY(completed_batch_step())) {
+void FilterStackCall::BatchControl::FinishStep(PendingOp op) {
+  if (GPR_UNLIKELY(completed_batch_step(op))) {
     PostCompletion();
   }
 }
@@ -1164,7 +1195,7 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
   if (!call->receiving_slice_buffer_.has_value()) {
     *call->receiving_buffer_ = nullptr;
     call->receiving_message_ = false;
-    FinishStep();
+    FinishStep(PendingOp::kRecvMessage);
   } else {
     call->test_only_last_message_flags_ = call->receiving_stream_flags_;
     if ((call->receiving_stream_flags_ & GRPC_WRITE_INTERNAL_COMPRESS) &&
@@ -1179,7 +1210,7 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
         &(*call->receiving_buffer_)->data.raw.slice_buffer);
     call->receiving_message_ = false;
     call->receiving_slice_buffer_.reset();
-    FinishStep();
+    FinishStep(PendingOp::kRecvMessage);
   }
 }
 
@@ -1302,7 +1333,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     Closure::Run(DEBUG_LOCATION, saved_rsr_closure, error);
   }
 
-  FinishStep();
+  FinishStep(PendingOp::kRecvInitialMetadata);
 }
 
 void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
@@ -1311,7 +1342,7 @@ void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
                           "recv_trailing_metadata_ready");
   grpc_metadata_batch* md = &call_->recv_trailing_metadata_;
   call_->RecvTrailingFilter(md, error);
-  FinishStep();
+  FinishStep(PendingOp::kRecvTrailingMetadata);
 }
 
 void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
@@ -1322,7 +1353,7 @@ void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
   if (!error.ok()) {
     call_->CancelWithError(error);
   }
-  FinishStep();
+  FinishStep(PendingOp::kSends);
 }
 
 namespace {
@@ -1349,12 +1380,11 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   size_t i;
   const grpc_op* op;
   BatchControl* bctl;
-  bool has_send_ops = false;
-  int num_recv_ops = 0;
   grpc_call_error error = GRPC_CALL_OK;
   grpc_transport_stream_op_batch* stream_op;
   grpc_transport_stream_op_batch_payload* stream_op_payload;
   uint32_t seen_ops = 0;
+  intptr_t pending_ops = 0;
 
   for (i = 0; i < nops; i++) {
     if (seen_ops & (1u << ops[i].op)) {
@@ -1471,7 +1501,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           stream_op_payload->send_initial_metadata.peer_string =
               peer_string_atm_ptr();
         }
-        has_send_ops = true;
+        pending_ops |= PendingOpMask(PendingOp::kSends);
         break;
       }
       case GRPC_OP_SEND_MESSAGE: {
@@ -1503,7 +1533,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             send_slice_buffer_.c_slice_buffer());
         stream_op_payload->send_message.flags = flags;
         stream_op_payload->send_message.send_message = &send_slice_buffer_;
-        has_send_ops = true;
+        pending_ops |= PendingOpMask(PendingOp::kSends);
         break;
       }
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT: {
@@ -1524,7 +1554,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         sent_final_op_ = true;
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &send_trailing_metadata_;
-        has_send_ops = true;
+        pending_ops |= PendingOpMask(PendingOp::kSends);
         break;
       }
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
@@ -1588,7 +1618,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             &send_trailing_metadata_;
         stream_op_payload->send_trailing_metadata.sent =
             &sent_server_trailing_metadata_;
-        has_send_ops = true;
+        pending_ops |= PendingOpMask(PendingOp::kSends);
         break;
       }
       case GRPC_OP_RECV_INITIAL_METADATA: {
@@ -1623,7 +1653,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           stream_op_payload->recv_initial_metadata.peer_string =
               peer_string_atm_ptr();
         }
-        ++num_recv_ops;
+        pending_ops |= PendingOpMask(PendingOp::kRecvInitialMetadata);
         break;
       }
       case GRPC_OP_RECV_MESSAGE: {
@@ -1659,7 +1689,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             bctl, grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_message.recv_message_ready =
             &receiving_stream_ready_;
-        ++num_recv_ops;
+        pending_ops |= PendingOpMask(PendingOp::kRecvMessage);
         break;
       }
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
@@ -1698,7 +1728,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             bctl, grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
             &receiving_trailing_metadata_ready_;
-        ++num_recv_ops;
+        pending_ops |= PendingOpMask(PendingOp::kRecvTrailingMetadata);
         break;
       }
       case GRPC_OP_RECV_CLOSE_ON_SERVER: {
@@ -1731,7 +1761,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             bctl, grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
             &receiving_trailing_metadata_ready_;
-        ++num_recv_ops;
+        pending_ops |= PendingOpMask(PendingOp::kRecvTrailingMetadata);
         break;
       }
     }
@@ -1741,9 +1771,9 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   if (!is_notify_tag_closure) {
     GPR_ASSERT(grpc_cq_begin_op(cq_, notify_tag));
   }
-  bctl->set_num_steps_to_complete((has_send_ops ? 1 : 0) + num_recv_ops);
+  bctl->set_pending_ops(pending_ops);
 
-  if (has_send_ops) {
+  if (pending_ops & PendingOpMask(PendingOp::kSends)) {
     GRPC_CLOSURE_INIT(
         &bctl->finish_batch_,
         [](void* bctl, grpc_error_handle error) {

@@ -810,7 +810,10 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/interceptor_list.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
     deps = [
         "arena",
         "poll",

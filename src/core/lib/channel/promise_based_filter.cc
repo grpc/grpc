@@ -789,12 +789,6 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       GPR_ASSERT(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r_next)) {
-        if (grpc_trace_channel.enabled()) {
-          gpr_log(GPR_INFO,
-                  "%s ReceiveMessage.WakeInsideCombiner next complete: %s",
-                  base_->LogTag().c_str(),
-                  p->has_value() ? "got message" : "end of stream");
-        }
         next_.reset();
         if (p->has_value()) {
           *intercepted_slice_buffer_ = std::move(*(**p)->payload());
@@ -808,6 +802,16 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
           *intercepted_slice_buffer_ = absl::nullopt;
           *intercepted_flags_ = 0;
           state_ = State::kCancelled;
+          flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
+                              absl::OkStatus(), "recv_message");
+        }
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_INFO,
+                  "%s ReceiveMessage.WakeInsideCombiner next complete: %s "
+                  "new_state=%s",
+                  base_->LogTag().c_str(),
+                  p->has_value() ? "got message" : "end of stream",
+                  StateString(state_));
         }
       }
     }
