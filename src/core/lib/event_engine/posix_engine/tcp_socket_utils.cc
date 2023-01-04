@@ -125,7 +125,7 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   return absl::OkStatus();
 }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace
 
@@ -231,7 +231,7 @@ int Accept4(int sockfd,
   return ret;
 }
 
-#endif /* GRPC_LINUX_SOCKETUTILS */
+#endif  // GRPC_LINUX_SOCKETUTILS
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -620,7 +620,7 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));
       addr.sin6_family = AF_INET6;
-      addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
+      addr.sin6_addr.s6_addr[15] = 1;  // [::1]:0
       if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
         loopback_available = true;
       } else {
@@ -750,7 +750,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
                                                      mapped_target_addr};
 }
 
-#else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   GPR_ASSERT(false && "unimplemented");
@@ -846,7 +846,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
   GPR_ASSERT(false && "unimplemented");
 }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
