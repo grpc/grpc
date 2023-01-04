@@ -15,6 +15,8 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -113,11 +115,18 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
     const EventEngine::ResolvedAddress* resolved_addr) {
   auto path = ResolvedAddrToUnixPathIfPossible(resolved_addr);
   GRPC_RETURN_IF_ERROR(path.status());
-  std::string scheme = path->rfind('\0', 0) == 0 ? "unix-abstract" : "unix";
+  std::string scheme;
+  std::string path_string;
+  if (path->at(0) == '\0') {
+    scheme = "unix-abstract";
+    path_string = path->length() > 1 ? path->substr(1, std::string::npos) : "";
+  } else {
+    scheme = "unix";
+    path_string = *path;
+  }
+
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      std::move(scheme), /*authority=*/"",
-      scheme == "unix" ? std::move(*path)
-                       : std::move(path->substr(1, std::string::npos)),
+      std::move(scheme), /*authority=*/"", std::move(path_string),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
