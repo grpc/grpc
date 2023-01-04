@@ -632,21 +632,21 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
-    if (!is_shutdown_.exchange(true, std::memory_order_acq_rel)) {
+    if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
       impl_->MaybeShutdown(absl::InternalError("Endpoint closing"),
                            std::move(on_release_fd));
     }
   }
 
   ~PosixEndpoint() override {
-    if (!is_shutdown_.exchange(true, std::memory_order_acq_rel)) {
+    if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
       impl_->MaybeShutdown(absl::InternalError("Endpoint closing"), nullptr);
     }
   }
 
  private:
   PosixEndpointImpl* impl_;
-  std::atomic<bool> is_shutdown_{false};
+  std::atomic<bool> shutdown_{false};
 };
 
 #else  // GRPC_POSIX_SOCKET_TCP

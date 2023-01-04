@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -32,6 +33,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -234,8 +236,9 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
   for (iov_size = 0;
        out_offset_.slice_idx != buf_.Count() && iov_size != MAX_WRITE_IOVEC;
        iov_size++) {
-    const Slice& slice = buf_[out_offset_.slice_idx];
-    iov[iov_size].iov_base = const_cast<uint8_t*>(slice.begin());
+    MutableSlice& slice = internal::SliceCast<MutableSlice>(
+        buf_.MutableSliceAt(out_offset_.slice_idx));
+    iov[iov_size].iov_base = slice.begin();
     iov[iov_size].iov_len = slice.length() - out_offset_.byte_idx;
     *sending_length += iov[iov_size].iov_len;
     ++(out_offset_.slice_idx);
@@ -304,8 +307,9 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 #endif  // GRPC_LINUX_ERRQUEUE
   char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
-    const Slice& slice = (*incoming_buffer_)[i];
-    iov[i].iov_base = const_cast<uint8_t*>(slice.begin());
+    MutableSlice& slice =
+        internal::SliceCast<MutableSlice>(incoming_buffer_->MutableSliceAt(i));
+    iov[i].iov_base = slice.begin();
     iov[i].iov_len = slice.length();
   }
 
@@ -1015,9 +1019,9 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     for (iov_size = 0; outgoing_slice_idx != outgoing_buffer_->Count() &&
                        iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
-      const Slice& slice = (*outgoing_buffer_)[outgoing_slice_idx];
-      iov[iov_size].iov_base =
-          const_cast<uint8_t*>(slice.begin()) + outgoing_byte_idx_;
+      MutableSlice& slice = internal::SliceCast<MutableSlice>(
+          outgoing_buffer_->MutableSliceAt(outgoing_slice_idx));
+      iov[iov_size].iov_base = slice.begin() + outgoing_byte_idx_;
       iov[iov_size].iov_len = slice.length() - outgoing_byte_idx_;
 
       sending_length += iov[iov_size].iov_len;
@@ -1172,7 +1176,10 @@ void PosixEndpointImpl::MaybeShutdown(
     stop_error_notification_.store(true, std::memory_order_release);
     handle_->SetHasError();
   }
+<<<<<<< HEAD
   on_release_fd_ = std::move(on_release_fd);
+=======
+>>>>>>> master
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);

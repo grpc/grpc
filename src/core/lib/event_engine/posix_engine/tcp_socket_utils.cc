@@ -159,10 +159,13 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   options.expand_wildcard_addrs =
       (AdjustValue(0, 1, INT_MAX,
                    config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS)) != 0);
-  options.allow_reuse_port =
-      (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
-       0);
-
+  options.allow_reuse_port = PosixSocketWrapper::IsSocketReusePortSupported();
+  auto allow_reuse_port_value = config.GetInt(GRPC_ARG_ALLOW_REUSEPORT);
+  if (allow_reuse_port_value.has_value()) {
+    options.allow_reuse_port =
+        (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
+         0);
+  }
   if (options.tcp_min_read_chunk_size > options.tcp_max_read_chunk_size) {
     options.tcp_min_read_chunk_size = options.tcp_max_read_chunk_size;
   }
@@ -189,8 +192,9 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec) {
   int fd, flags;
+  EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  fd = accept(sockfd, const_cast<sockaddr*>(addr.address()), &len);
+  fd = accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
   if (fd >= 0) {
     if (nonblock) {
       flags = fcntl(fd, F_GETFL, 0);
@@ -203,6 +207,7 @@ int Accept4(int sockfd,
       if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
     }
   }
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
   return fd;
 
 close_and_error:
@@ -218,8 +223,12 @@ int Accept4(int sockfd,
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
+  EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  return accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
+  int ret =
+      accept4(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags);
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+  return ret;
 }
 
 #endif  // GRPC_LINUX_SOCKETUTILS
@@ -453,7 +462,9 @@ bool PosixSocketWrapper::IsSocketReusePortSupported() {
     }
     if (s >= 0) {
       PosixSocketWrapper sock(s);
-      return sock.SetSocketReusePort(1).ok();
+      bool result = sock.SetSocketReusePort(1).ok();
+      close(sock.Fd());
+      return result;
     } else {
       return false;
     }

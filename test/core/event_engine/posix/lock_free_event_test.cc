@@ -169,7 +169,7 @@ class BechmarkCallbackScheduler : public Scheduler {
 };
 
 // A benchmark which repeatedly registers a NotifyOn callback and invokes the
-// callback with SetReady. This benchmakr is intended to measure the cost of
+// callback with SetReady. This benchmark is intended to measure the cost of
 // NotifyOn and SetReady implementations of the lock free event.
 void BM_LockFreeEvent(benchmark::State& state) {
   BechmarkCallbackScheduler cb_scheduler;
