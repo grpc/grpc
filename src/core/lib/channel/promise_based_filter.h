@@ -430,7 +430,7 @@ class BaseCallData : public Activity, private Wakeable {
     void GotPipe(T* pipe);
     // Called from client/server polling to do the receive message part of the
     // work.
-    void WakeInsideCombiner(Flusher* flusher);
+    void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
     void Done(const ServerMetadata& metadata, Flusher* flusher);
 

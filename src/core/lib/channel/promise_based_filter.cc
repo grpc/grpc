@@ -728,7 +728,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
   }
 }
 
-void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
+void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
+                                                      bool allow_push_to_pipe) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_INFO,
             "%s ReceiveMessage.WakeInsideCombiner st=%s push?=%s next?=%s",
@@ -756,6 +757,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       break;
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
+        if (!allow_push_to_pipe) break;
         state_ = State::kPushedToPipe;
         auto message = GetContext<Arena>()->MakePooled<Message>();
         message->payload()->Swap(&**intercepted_slice_buffer_);
@@ -904,6 +906,23 @@ struct ClientCallData::RecvInitialMetadata final {
     }
     return "UNKNOWN";
   }
+
+  bool AllowRecvMessage() const {
+    switch (state) {
+      case kInitial:
+      case kGotPipe:
+      case kHookedWaitingForPipe:
+      case kHookedAndGotPipe:
+      case kCompleteWaitingForPipe:
+      case kCompleteAndGotPipe:
+      case kCompleteAndPushedToPipe:
+      case kRespondedToTrailingMetadataPriorToHook:
+        return false;
+      case kResponded:
+      case kRespondedButNeedToClosePipe:
+        return true;
+    }
+  }
 };
 
 class ClientCallData::PollContext {
@@ -932,7 +951,10 @@ class ClientCallData::PollContext {
       self_->send_message()->WakeInsideCombiner(flusher_);
     }
     if (self_->receive_message() != nullptr) {
-      self_->receive_message()->WakeInsideCombiner(flusher_);
+      self_->receive_message()->WakeInsideCombiner(
+          flusher_, self_->recv_trailing_metadata_ == nullptr
+                        ? true
+                        : self_->recv_initial_metadata_->AllowRecvMessage());
     }
     if (self_->server_initial_metadata_pipe() != nullptr) {
       if (self_->recv_initial_metadata_->metadata_push_.has_value()) {
@@ -2303,7 +2325,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     }
   }
   if (receive_message() != nullptr) {
-    receive_message()->WakeInsideCombiner(flusher);
+    receive_message()->WakeInsideCombiner(flusher, true);
   }
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
