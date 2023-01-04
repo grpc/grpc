@@ -1028,6 +1028,9 @@ class ServerStream final : public ConnectedChannelStream {
                    &client_to_server->receiver, &server_to_client->sender});
       client_initial_metadata_state_.emplace<Running>(
           Running{&server_to_client->receiver, std::move(promise)});
+      server_initial_metadata_
+          .emplace<PipeReceiverNextType<ServerMetadataHandle>>(
+              server_initial_metadata->receiver.Next());
     }
     if (incoming_messages_ != nullptr) {
       PollRecvMessage(incoming_messages_);
