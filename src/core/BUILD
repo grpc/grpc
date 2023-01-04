@@ -4461,14 +4461,16 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "channel_args",
+        "closure",
+        "error",
         "grpc_stateful_session_filter",
+        "iomgr_fwd",
         "json",
         "json_args",
         "json_object_loader",
@@ -4480,6 +4482,7 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
@@ -4488,6 +4491,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
+        "//:work_serializer",
     ],
 )
 
