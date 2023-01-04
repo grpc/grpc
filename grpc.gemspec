@@ -36,12 +36,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
-  s.add_development_dependency 'simplecov',          '~> 0.14.1'
+  s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
   s.add_development_dependency 'rspec',              '~> 3.6'
-  s.add_development_dependency 'rubocop',            '~> 0.49.1'
+  s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
   s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.10'
 
@@ -1052,6 +1052,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/windows/iocp.h )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.cc )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.h )
+  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.cc )
+  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.h )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.cc )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.h )
   s.files += %w( src/core/lib/experiments/config.cc )

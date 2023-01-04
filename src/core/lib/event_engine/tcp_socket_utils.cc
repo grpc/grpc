@@ -75,8 +75,8 @@ absl::StatusOr<std::string> GetScheme(
 }
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    const EventEngine::ResolvedAddress* resolved_addr, bool skip_uri) {
+absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
   const sockaddr* addr = resolved_addr->address();
   if (addr->sa_family != AF_UNIX) {
     return absl::InvalidArgumentError(
@@ -90,36 +90,51 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
 #endif
   bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
-  std::string scheme;
   std::string path;
   if (abstract) {
-    scheme = "unix-abstract";
     if (len >= 0) {
       path = std::string(unix_addr->sun_path + 1, len);
     }
-    if (skip_uri) {
-      path = absl::StrCat(std::string(1, '\0'), path);
-    }
+    path = absl::StrCat(std::string(1, '\0'), path);
   } else {
-    scheme = "unix";
     size_t maxlen = sizeof(unix_addr->sun_path);
     if (strnlen(unix_addr->sun_path, maxlen) == maxlen) {
       return absl::InvalidArgumentError("UDS path is not null-terminated");
     }
     path = unix_addr->sun_path;
   }
-  if (skip_uri) {
-    return path;
+  return path;
+}
+
+absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
+  auto path = ResolvedAddrToUnixPathIfPossible(resolved_addr);
+  GRPC_RETURN_IF_ERROR(path.status());
+  std::string scheme;
+  std::string path_string;
+  if (path->at(0) == '\0') {
+    scheme = "unix-abstract";
+    path_string = path->length() > 1 ? path->substr(1, std::string::npos) : "";
+  } else {
+    scheme = "unix";
+    path_string = std::move(*path);
   }
+
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      std::move(scheme), /*authority=*/"", std::move(path),
+      std::move(scheme), /*authority=*/"", std::move(path_string),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
 }
 #else
+
+absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+  return absl::InvalidArgumentError("Unix socket is not supported.");
+}
+
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    const EventEngine::ResolvedAddress* /*resolved_addr*/, bool /*skip_uri*/) {
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
   return absl::InvalidArgumentError("Unix socket is not supported.");
 }
 #endif
@@ -172,8 +187,7 @@ bool ResolvedAddressToV4Mapped(
     memcpy(&addr6_out->sin6_addr.s6_addr[12], &addr4->sin_addr, 4);
     addr6_out->sin6_port = addr4->sin_port;
     *resolved_addr6_out = EventEngine::ResolvedAddress(
-        reinterpret_cast<sockaddr*>(addr6_out),
-        static_cast<socklen_t>(sizeof(sockaddr_in6)));
+        reinterpret_cast<sockaddr*>(addr6_out), sizeof(sockaddr_in6));
     return true;
   }
   return false;
@@ -281,11 +295,6 @@ absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
   if (!ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
     addr_normalized = resolved_addr;
   }
-  auto scheme = GetScheme(addr_normalized);
-  GRPC_RETURN_IF_ERROR(scheme.status());
-  if (*scheme == "unix") {
-    return ResolvedAddrToUriUnixIfPossible(&addr_normalized, true);
-  }
   return ResolvedAddressToString(addr_normalized);
 }
 
@@ -296,7 +305,7 @@ absl::StatusOr<std::string> ResolvedAddressToString(
   std::string out;
 #ifdef GRPC_HAVE_UNIX_SOCKET
   if (addr->sa_family == AF_UNIX) {
-    return ResolvedAddrToUriUnixIfPossible(&resolved_addr, true);
+    return ResolvedAddrToUnixPathIfPossible(&resolved_addr);
   }
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
@@ -348,7 +357,7 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
   auto scheme = GetScheme(addr);
   GRPC_RETURN_IF_ERROR(scheme.status());
   if (*scheme == "unix") {
-    return ResolvedAddrToUriUnixIfPossible(&addr, false);
+    return ResolvedAddrToUriUnixIfPossible(&addr);
   }
   auto path = ResolvedAddressToString(addr);
   GRPC_RETURN_IF_ERROR(path.status());
