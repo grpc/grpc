@@ -1176,10 +1176,7 @@ void PosixEndpointImpl::MaybeShutdown(
     stop_error_notification_.store(true, std::memory_order_release);
     handle_->SetHasError();
   }
-<<<<<<< HEAD
   on_release_fd_ = std::move(on_release_fd);
-=======
->>>>>>> master
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);

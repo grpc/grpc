@@ -20,7 +20,6 @@
 #include <atomic>
 #include <cstdint>
 
-#include "absl/base/dynamic_annotations.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/atm.h>
@@ -142,10 +141,8 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
         // contains a pointer to the shutdown-error). If the fd is shutdown,
         // schedule the closure with the shutdown error
         if ((curr & kShutdownBit) > 0) {
-          ABSL_ANNOTATE_IGNORE_READS_BEGIN();
           absl::Status shutdown_err =
               grpc_core::internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
-          ABSL_ANNOTATE_IGNORE_READS_END();
           closure->SetStatus(shutdown_err);
           scheduler_->Run(closure);
           return;
