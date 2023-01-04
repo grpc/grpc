@@ -30,6 +30,7 @@
 
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,8 +53,6 @@ class EventEngineEndpointWrapper {
   struct grpc_event_engine_endpoint {
     grpc_endpoint base;
     EventEngineEndpointWrapper* wrapper;
-    std::string peer_address;
-    std::string local_address;
     std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
         read_buffer;
     std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
@@ -63,7 +62,20 @@ class EventEngineEndpointWrapper {
   explicit EventEngineEndpointWrapper(
       std::unique_ptr<EventEngine::Endpoint> endpoint);
 
-  int Fd() { return fd_; }
+  int Fd() {
+    grpc_core::MutexLock lock(&mu_);
+    return fd_;
+  }
+
+  absl::string_view PeerAddress() {
+    grpc_core::MutexLock lock(&mu_);
+    return peer_address_;
+  }
+
+  absl::string_view LocalAddress() {
+    grpc_core::MutexLock lock(&mu_);
+    return local_address_;
+  }
 
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
@@ -103,9 +115,7 @@ class EventEngineEndpointWrapper {
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
-      endpoint_.reset();
-      // For the Ref taken in TriggerShutdown
-      Unref();
+      OnShutdownInternal();
     }
   }
 
@@ -125,8 +135,7 @@ class EventEngineEndpointWrapper {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
-          endpoint_.reset();
-          Unref();
+          OnShutdownInternal();
         }
         return;
       }
@@ -134,10 +143,24 @@ class EventEngineEndpointWrapper {
   }
 
  private:
+  void OnShutdownInternal() {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      fd_ = -1;
+      local_address_ = "";
+      peer_address_ = "";
+    }
+    endpoint_.reset();
+    // For the Ref taken in TriggerShutdown
+    Unref();
+  }
   std::unique_ptr<EventEngine::Endpoint> endpoint_;
   std::unique_ptr<grpc_event_engine_endpoint> eeep_;
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
+  grpc_core::Mutex mu_;
+  std::string peer_address_;
+  std::string local_address_;
   int fd_{-1};
 };
 
@@ -240,34 +263,21 @@ absl::string_view EndpointGetPeerAddress(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->wrapper->ShutdownRef()) {
-    return "";
-  }
-  eeep->wrapper->ShutdownUnref();
-  return eeep->peer_address;
+  return eeep->wrapper->PeerAddress();
 }
 
 absl::string_view EndpointGetLocalAddress(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->wrapper->ShutdownRef()) {
-    return "";
-  }
-  eeep->wrapper->ShutdownUnref();
-  return eeep->local_address;
+  return eeep->wrapper->LocalAddress();
 }
 
 int EndpointGetFd(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->wrapper->ShutdownRef()) {
-    return -1;
-  }
-  int fd = eeep->wrapper->Fd();
-  eeep->wrapper->ShutdownUnref();
-  return fd;
+  return eeep->wrapper->Fd();
 }
 
 bool EndpointCanTrackErr(grpc_endpoint* /* ep */) { return false; }
@@ -293,11 +303,11 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   eeep_->wrapper = this;
   auto local_addr = ResolvedAddressToURI(endpoint_->GetLocalAddress());
   if (local_addr.ok()) {
-    eeep_->local_address = *local_addr;
+    local_address_ = *local_addr;
   }
   auto peer_addr = ResolvedAddressToURI(endpoint_->GetPeerAddress());
   if (peer_addr.ok()) {
-    eeep_->peer_address = *peer_addr;
+    peer_address_ = *peer_addr;
   }
 #ifdef GRPC_POSIX_SOCKET_TCP
   fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
