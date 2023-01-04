@@ -213,7 +213,6 @@ Pod::Spec.new do |s|
     abseil_version = '1.20220623.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
-    ss.dependency 'abseil/base/dynamic_annotations', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
