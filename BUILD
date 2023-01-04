@@ -1262,7 +1262,6 @@ grpc_cc_library(
     # These headers used to be vended by this target, but they have to be
     # removed after landing event engine.
     [
-        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
         "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
         "//src/core:lib/iomgr/event_engine_shims/resolved_address.cc",
     ],
@@ -1354,7 +1353,6 @@ grpc_cc_library(
     # These headers used to be vended by this target, but they have to be
     # removed after landing event engine.
     [
-        "//src/core:lib/iomgr/event_engine_shims/closure.h",
         "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
         "//src/core:lib/iomgr/event_engine_shims/resolved_address.h",
     ],

@@ -1200,8 +1200,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/ev_posix.cc )
   s.files += %w( src/core/lib/iomgr/ev_posix.h )
   s.files += %w( src/core/lib/iomgr/ev_windows.cc )
-  s.files += %w( src/core/lib/iomgr/event_engine_shims/closure.cc )
-  s.files += %w( src/core/lib/iomgr/event_engine_shims/closure.h )
   s.files += %w( src/core/lib/iomgr/event_engine_shims/endpoint.cc )
   s.files += %w( src/core/lib/iomgr/event_engine_shims/endpoint.h )
   s.files += %w( src/core/lib/iomgr/event_engine_shims/resolved_address.cc )

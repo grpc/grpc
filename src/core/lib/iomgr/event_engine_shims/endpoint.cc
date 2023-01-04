@@ -96,7 +96,7 @@ class EventEngineEndpointWrapper {
     }
   }
 
-  // Decrement the shutdwn ref. If this is the last shutdown ref, it also
+  // Decrement the shutdown ref. If this is the last shutdown ref, it also
   // deletes the underlying event engine endpoint. Deletion of the event
   // engine endpoint should trigger execution of any pending read/write
   // callbacks with NOT-OK status.
@@ -134,11 +134,11 @@ class EventEngineEndpointWrapper {
   }
 
  private:
+  std::unique_ptr<EventEngine::Endpoint> endpoint_;
+  std::unique_ptr<grpc_event_engine_endpoint> eeep_;
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
   int fd_{-1};
-  std::unique_ptr<EventEngine::Endpoint> endpoint_;
-  std::unique_ptr<grpc_event_engine_endpoint> eeep_;
 };
 
 // Read from the endpoint and place the data in slices slice buffer. The

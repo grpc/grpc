@@ -1203,6 +1203,8 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      const PosixTcpOptions& options)
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
+      peer_address_(),
+      local_address_(),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
