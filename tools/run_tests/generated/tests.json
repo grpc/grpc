@@ -4435,10 +4435,9 @@
   },
   {
     "args": [],
-    "benchmark": false,
+    "benchmark": true,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -4450,7 +4449,6 @@
     "name": "lock_free_event_test",
     "platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "uses_polling": false

@@ -161,7 +161,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   posix_ee->Connect(
       [&signal](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
-        EXPECT_EQ(status.status().code(), absl::StatusCode::kCancelled);
+        EXPECT_EQ(status.status().code(), absl::StatusCode::kUnknown);
         signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,

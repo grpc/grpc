@@ -86,7 +86,7 @@ void LockfreeEvent::DestroyEvent() {
     // with post-deletion (see the note in the constructor) we want the bit
     // pattern to prevent error retention in a deleted object
   } while (!state_.compare_exchange_strong(curr, kShutdownBit,
-                                           std::memory_order_relaxed,
+                                           std::memory_order_acq_rel,
                                            std::memory_order_relaxed));
 }
 
@@ -111,7 +111,7 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
         // barrier.
         if (state_.compare_exchange_strong(
                 curr, reinterpret_cast<intptr_t>(closure),
-                std::memory_order_release, std::memory_order_relaxed)) {
+                std::memory_order_acq_rel, std::memory_order_relaxed)) {
           return;  // Successful. Return
         }
 
@@ -128,7 +128,7 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
         // closure when transitioning out of CLOSURE_NO_READY state (i.e there
         // is no other code that needs to 'happen-after' this)
         if (state_.compare_exchange_strong(curr, kClosureNotReady,
-                                           std::memory_order_relaxed,
+                                           std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
           scheduler_->Run(closure);
           return;  // Successful. Return.
@@ -230,7 +230,7 @@ void LockfreeEvent::SetReady() {
         // No barrier required as we're transitioning to a state that does not
         // involve a closure
         if (state_.compare_exchange_strong(curr, kClosureReady,
-                                           std::memory_order_relaxed,
+                                           std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
           return;  // early out
         }
