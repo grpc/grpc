@@ -88,8 +88,19 @@ class EventEngineEndpointWrapper {
   // object.
   grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
 
-  // Returns a raw pointer to the underlying EventEngine endpoint object.
-  EventEngine::Endpoint* GetEEEndpoint() { return endpoint_.get(); }
+  // Read using the underlying EventEngine endpoint object.
+  inline void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                   SliceBuffer* buffer,
+                   const EventEngine::Endpoint::ReadArgs* args) {
+    endpoint_->Read(std::move(on_read), buffer, args);
+  }
+
+  // Write using the underlying EventEngine endpoint object
+  inline void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                    SliceBuffer* data,
+                    const EventEngine::Endpoint::WriteArgs* args) {
+    endpoint_->Write(std::move(on_writable), data, args);
+  }
 
   // Returns true if the endpoint is not yet shutdown. In that case, it also
   // acquires a shutdown ref. Otherwise it returns false and doesn't modify
@@ -180,7 +191,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   eeep->wrapper->Ref();
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
   SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
-  eeep->wrapper->GetEEEndpoint()->Read(
+  eeep->wrapper->Read(
       [eeep, cb, slices](absl::Status status) {
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
         grpc_slice_buffer_move_into(read_buffer->c_slice_buffer(), slices);
@@ -213,7 +224,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
   eeep->wrapper->Ref();
   EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
   SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
-  eeep->wrapper->GetEEEndpoint()->Write(
+  eeep->wrapper->Write(
       [eeep, cb](absl::Status status) {
         auto* write_buffer =
             reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
@@ -245,8 +256,8 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s",
-            eeep->wrapper->GetEEEndpoint(), why.ToString().c_str());
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
+            why.ToString().c_str());
   }
   eeep->wrapper->TriggerShutdown();
 }
