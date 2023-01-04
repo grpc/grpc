@@ -82,7 +82,7 @@ BaseCallData::BaseCallData(
       context_(args->context),
       server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
-              ? arena_->New<Pipe<ServerMetadataHandle>>()
+              ? arena_->New<Pipe<ServerMetadataHandle>>(arena_)
               : nullptr),
       send_message_(
           flags & kFilterExaminesOutboundMessages

@@ -81,6 +81,8 @@ class InterceptorList {
       }
     }
 
+    RunPromise& operator=(RunPromise&& other) noexcept = delete;
+
     Poll<absl::optional<T>> operator()() {
       while (is_running_) {
         auto r = running_.current_factory->PollOnce(running_.space.get());
@@ -103,6 +105,11 @@ class InterceptorList {
     struct Running {
       explicit Running(size_t max_size)
           : space(GetContext<Arena>()->MakePooledArray<char>(max_size)) {}
+      Running(const Running&) = delete;
+      Running& operator=(const Running&) = delete;
+      Running(Running&& other) noexcept
+          : current_factory(std::exchange(other.current_factory, nullptr)),
+            space(std::move(other.space)) {}
       MapFactory* current_factory;
       Arena::PoolPtr<char[]> space;
     };

@@ -2694,7 +2694,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
-  Pipe<ServerMetadataHandle> server_initial_metadata_ ABSL_GUARDED_BY(mu());
+  Pipe<ServerMetadataHandle> server_initial_metadata_ ABSL_GUARDED_BY(mu()){
+      arena()};
   Pipe<MessageHandle> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
   Pipe<MessageHandle> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
 
