@@ -341,7 +341,7 @@ class _StreamResponseMixin(Call):
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
-            await self._raise_for_status()
+            raise
 
         if raw_response is cygrpc.EOF:
             return cygrpc.EOF
@@ -449,7 +449,7 @@ class _StreamRequestMixin(Call):
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
-            await self._raise_for_status()
+            raise
 
     async def _done_writing(self) -> None:
         if self.done():
@@ -463,7 +463,7 @@ class _StreamRequestMixin(Call):
             except asyncio.CancelledError:
                 if not self.cancelled():
                     self.cancel()
-                await self._raise_for_status()
+                raise
 
     async def write(self, request: RequestType) -> None:
         self._raise_for_different_style(_APIStyle.READER_WRITER)
@@ -602,6 +602,7 @@ class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
+            raise
 
         if self._cython_call.is_ok():
             return _common.deserialize(serialized_response,
