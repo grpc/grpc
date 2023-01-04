@@ -206,35 +206,12 @@ TEST_F(XdsOverrideHostTest, ConnectingSubchannelIsQueued) {
   ASSERT_NE(subchannel, nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   ExpectReresolutionRequest();
+  EXPECT_TRUE(subchannel->ConnectionRequested());
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), pick_arg);
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), pick_arg);
-}
-
-TEST_F(XdsOverrideHostTest, IdleSubchannelRequestsConnection) {
-  // Send address list to LB policy.
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto picker = ExpectStartupWithRoundRobin(kAddresses);
-  ASSERT_NE(picker, nullptr);
-  // Check that the host is overridden
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
-  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
-  auto subchannel = FindSubchannel(kAddresses[1]);
-  ASSERT_NE(subchannel, nullptr);
-  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
-  ExpectReresolutionRequest();
-  EXPECT_TRUE(subchannel->ConnectionRequested());
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ExpectRoundRobinPicks(picker.get(),
-                        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
-  ExpectQueueEmpty();
-  ExpectPickQueued(picker.get(), pick_arg);
-  // Connection is requested again
-  EXPECT_TRUE(subchannel->ConnectionRequested());
 }
 }  // namespace
 }  // namespace testing

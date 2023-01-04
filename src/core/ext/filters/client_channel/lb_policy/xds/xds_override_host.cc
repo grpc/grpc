@@ -126,7 +126,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     void CancelConnectivityStateWatch(
         ConnectivityStateWatcherInterface* watcher) override;
 
-    grpc_connectivity_state connectivity_state() { return connectivity_state_; }
+    grpc_connectivity_state connectivity_state() {
+      return connectivity_state_.load();
+    }
 
     XdsOverrideHostLb* policy() { return policy_.get(); }
 
@@ -155,7 +157,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     const absl::optional<const std::string> key_;
     RefCountedPtr<XdsOverrideHostLb> policy_;
-    std::atomic<grpc_connectivity_state> connectivity_state_;
+    std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
     std::map<ConnectivityStateWatcherInterface*, ConnectivityStateWatcher*>
         watchers_;
   };
@@ -170,15 +172,12 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    class SubchannelConnectionRequester : public Orphanable {
+    class SubchannelConnectionRequester {
      public:
       explicit SubchannelConnectionRequester(
           RefCountedPtr<SubchannelWrapper> subchannel)
           : subchannel_(std::move(subchannel)) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-      }
-
-      void Orphan() override {
         // Hop into ExecCtx, so that we're not holding the data plane mutex
         // while we run control-plane code.
         ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
@@ -316,15 +315,13 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
     return absl::nullopt;
   }
   auto connectivity_state = subchannel->connectivity_state();
-  // Will use work serializer to request connection when leaves the scope.
-  OrphanablePtr<SubchannelConnectionRequester> connectionRequester;
   if (connectivity_state == GRPC_CHANNEL_READY) {
     return PickResult::Complete(subchannel->wrapped_subchannel());
   } else if (connectivity_state == GRPC_CHANNEL_CONNECTING) {
     return PickResult::Queue();
   } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
-    connectionRequester =
-        MakeOrphanable<SubchannelConnectionRequester>(std::move(subchannel));
+    // Deleted after the connection is requested
+    new SubchannelConnectionRequester(std::move(subchannel));
     return PickResult::Queue();
   }
   return absl::nullopt;
@@ -583,8 +580,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     absl::optional<const std::string> key)
     : DelegatingSubchannel(std::move(subchannel)),
       key_(std::move(key)),
-      policy_(std::move(policy)),
-      connectivity_state_(GRPC_CHANNEL_IDLE) {}
+      policy_(std::move(policy)) {}
 
 XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
   if (key_.has_value()) {

@@ -752,7 +752,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> addresses,
       const std::map<UniqueTypeName, std::string> call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
-    ASSERT_NE(picker, nullptr);
     auto picks = GetCompletePicks(picker, num_iterations * addresses.size(),
                                   call_attributes, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
