@@ -415,6 +415,7 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
     case State::kForwardedBatch:
       completed_status_ = status;
       state_ = State::kBatchCompleted;
+      ScopedContext ctx(base_);
       base_->WakeInsideCombiner(&flusher);
       break;
   }
@@ -916,6 +917,7 @@ class ClientCallData::PollContext {
   PollContext& operator=(const PollContext&) = delete;
 
   void Run() {
+    GPR_DEBUG_ASSERT(HasContext<Arena>());
     if (grpc_trace_channel.enabled()) {
       gpr_log(GPR_INFO, "%s ClientCallData.PollContext.Run %s",
               self_->LogTag().c_str(), self_->DebugString().c_str());
@@ -1140,6 +1142,7 @@ class ClientCallData::PollContext {
       auto run = [](void* p, grpc_error_handle) {
         auto* next_poll = static_cast<NextPoll*>(p);
         {
+          ScopedContext ctx(next_poll->call_data);
           Flusher flusher(next_poll->call_data);
           next_poll->call_data->WakeInsideCombiner(&flusher);
         }

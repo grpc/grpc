@@ -63,16 +63,13 @@ template <typename T>
 class NextResult final {
  public:
   NextResult() : center_(nullptr) {}
-  explicit NextResult(pipe_detail::Center<T>* center) : center_(center) {}
+  explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
+      : center_(std::move(center)) {}
   ~NextResult();
   NextResult(const NextResult&) = delete;
   NextResult& operator=(const NextResult&) = delete;
-  NextResult(NextResult&& other) noexcept
-      : center_(std::exchange(other.center_, nullptr)) {}
-  NextResult& operator=(NextResult&& other) noexcept {
-    center_ = std::exchange(other.center_, nullptr);
-    return *this;
-  }
+  NextResult(NextResult&& other) noexcept = default;
+  NextResult& operator=(NextResult&& other) noexcept = default;
 
   using value_type = T;
 
@@ -90,7 +87,7 @@ class NextResult final {
   T& operator*();
 
  private:
-  pipe_detail::Center<T>* center_;
+  RefCountedPtr<pipe_detail::Center<T>> center_;
 };
 
 namespace pipe_detail {
@@ -113,20 +110,24 @@ class Center : public InterceptorList<T> {
   }
 
   // Add one ref to this object, and return this.
-  Center* Ref() {
+  void IncrementRefCount() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("Ref").c_str());
+      gpr_log(GPR_DEBUG, "%s", DebugOpString("IncrementRefCount").c_str());
     }
     refs_++;
-    GPR_ASSERT(refs_ != 0);
-    return this;
+    GPR_DEBUG_ASSERT(refs_ != 0);
+  }
+
+  RefCountedPtr<Center> Ref() {
+    IncrementRefCount();
+    return RefCountedPtr<Center>(this);
   }
 
   // Drop a ref
   // If no refs remain, destroy this object
   void Unref() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("Unref").c_str());
+      gpr_log(GPR_DEBUG, "%s", DebugOpString("Unref").c_str());
     }
     GPR_DEBUG_ASSERT(refs_ > 0);
     refs_--;
@@ -222,7 +223,6 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
         abort();
     }
-    Unref();
   }
 
   void MarkClosed() {
@@ -294,7 +294,7 @@ class Center : public InterceptorList<T> {
 
   T value_;
   // Number of refs
-  uint8_t refs_ : 3;
+  uint8_t refs_ : 5;
   // Current state of the value.
   ValueState value_state_ : 3;
   IntraActivityWaiter on_empty_;
@@ -311,40 +311,17 @@ class PipeSender {
 
   PipeSender(const PipeSender&) = delete;
   PipeSender& operator=(const PipeSender&) = delete;
-
-  PipeSender(PipeSender&& other) noexcept : center_(other.center_) {
-    other.center_ = nullptr;
-  }
-  PipeSender& operator=(PipeSender&& other) noexcept {
-    if (center_ != nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sDrop due to move", center_->DebugTag().c_str());
-      }
-      center_->Unref();
-    }
-    center_ = other.center_;
-    other.center_ = nullptr;
-    return *this;
-  }
+  PipeSender(PipeSender&& other) noexcept = default;
+  PipeSender& operator=(PipeSender&& other) noexcept = default;
 
   ~PipeSender() {
-    if (center_ != nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sDrop due to destruct",
-                center_->DebugTag().c_str());
-      }
-      center_->MarkClosed();
-      center_->Unref();
-    }
+    if (center_ != nullptr) center_->MarkClosed();
   }
 
   void Close() {
-    if (auto* center = std::exchange(center_, nullptr)) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sClose", center->DebugTag().c_str());
-      }
-      center->MarkClosed();
-      center->Unref();
+    if (center_ != nullptr) {
+      center_->MarkClosed();
+      center_.reset();
     }
   }
 
@@ -364,7 +341,7 @@ class PipeSender {
  private:
   friend struct Pipe<T>;
   explicit PipeSender(pipe_detail::Center<T>* center) : center_(center) {}
-  pipe_detail::Center<T>* center_;
+  RefCountedPtr<pipe_detail::Center<T>> center_;
 };
 
 // Receive end of a Pipe.
@@ -373,21 +350,10 @@ class PipeReceiver {
  public:
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
-
-  PipeReceiver(PipeReceiver&& other) noexcept : center_(other.center_) {
-    other.center_ = nullptr;
-  }
-  PipeReceiver& operator=(PipeReceiver&& other) noexcept {
-    if (center_ != nullptr) center_->Unref();
-    center_ = other.center_;
-    other.center_ = nullptr;
-    return *this;
-  }
+  PipeReceiver(PipeReceiver&& other) noexcept = default;
+  PipeReceiver& operator=(PipeReceiver&& other) noexcept = default;
   ~PipeReceiver() {
-    if (center_ != nullptr) {
-      center_->MarkClosed();
-      center_->Unref();
-    }
+    if (center_ != nullptr) center_->MarkClosed();
   }
 
   void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
@@ -418,33 +384,8 @@ class Push {
  public:
   Push(const Push&) = delete;
   Push& operator=(const Push&) = delete;
-  Push(Push&& other) noexcept
-      : center_(other.center_), state_(std::move(other.state_)) {
-    other.center_ = nullptr;
-  }
-  Push& operator=(Push&& other) noexcept {
-    if (center_ != nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sStop push due to move",
-                center_->DebugTag().c_str());
-      }
-      center_->Unref();
-    }
-    center_ = other.center_;
-    other.center_ = nullptr;
-    state_ = std::move(other.state_);
-    return *this;
-  }
-
-  ~Push() {
-    if (center_ != nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sStop push due to destruct",
-                center_->DebugTag().c_str());
-      }
-      center_->Unref();
-    }
-  }
+  Push(Push&& other) noexcept = default;
+  Push& operator=(Push&& other) noexcept = default;
 
   Poll<bool> operator()() {
     if (auto* p = absl::get_if<T>(&state_)) {
@@ -464,10 +405,10 @@ class Push {
   struct AwaitingAck {};
 
   friend class PipeSender<T>;
-  explicit Push(pipe_detail::Center<T>* center, T push)
-      : center_(center), state_(std::move(push)) {}
+  explicit Push(RefCountedPtr<pipe_detail::Center<T>> center, T push)
+      : center_(std::move(center)), state_(std::move(push)) {}
 
-  Center<T>* center_;
+  RefCountedPtr<Center<T>> center_;
   absl::variant<T, AwaitingAck> state_;
 };
 
@@ -477,39 +418,16 @@ class Next {
  public:
   Next(const Next&) = delete;
   Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept : center_(other.center_) {
-    other.center_ = nullptr;
-  }
-  Next& operator=(Next&& other) noexcept {
-    if (center_ != nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sStop next due to move",
-                center_->DebugTag().c_str());
-      }
-      center_->Unref();
-    }
-    center_ = other.center_;
-    other.center_ = nullptr;
-    return *this;
-  }
-
-  ~Next() {
-    if (center_ != nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%sStop next due to destruct",
-                center_->DebugTag().c_str());
-      }
-      center_->Unref();
-    }
-  }
+  Next(Next&& other) noexcept = default;
+  Next& operator=(Next&& other) noexcept = default;
 
   Poll<absl::optional<T>> operator()() { return center_->Next(); }
 
  private:
   friend class PipeReceiver<T>;
-  explicit Next(pipe_detail::Center<T>* center) : center_(center) {}
+  explicit Next(RefCountedPtr<Center<T>> center) : center_(std::move(center)) {}
 
-  Center<T>* center_;
+  RefCountedPtr<Center<T>> center_;
 };
 
 }  // namespace pipe_detail
@@ -526,10 +444,10 @@ auto PipeReceiver<T>::Next() {
       [center = center_->Ref()](absl::optional<T> value) {
         return center->Run(std::move(value));
       },
-      [center = center_->Ref()](absl::optional<T> value) {
+      [center = center_->Ref()](absl::optional<T> value) mutable {
         if (value.has_value()) {
           center->value() = std::move(*value);
-          return NextResult<T>(center);
+          return NextResult<T>(std::move(center));
         } else {
           return NextResult<T>();
         }
@@ -561,7 +479,10 @@ NextResult<T>::~NextResult() {
 
 template <typename T>
 void NextResult<T>::reset() {
-  if (auto* p = std::exchange(center_, nullptr)) p->AckNext();
+  if (center_ != nullptr) {
+    center_->AckNext();
+    center_.reset();
+  }
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from

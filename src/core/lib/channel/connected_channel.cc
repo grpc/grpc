@@ -736,16 +736,24 @@ class ClientStream : public ConnectedChannelStream {
       trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
       SchedulePush(&metadata_);
     }
+    if (server_initial_metadata_state_ ==
+        ServerInitialMetadataState::kReceivedButNotPushed) {
+      server_initial_metadata_state_ = ServerInitialMetadataState::kPushing;
+      server_initial_metadata_push_promise_ =
+          server_initial_metadata_pipe_->Push(
+              std::move(server_initial_metadata_));
+    }
+    if (server_initial_metadata_state_ ==
+        ServerInitialMetadataState::kPushing) {
+      auto r = (*server_initial_metadata_push_promise_)();
+      if (absl::holds_alternative<bool>(r)) {
+        server_initial_metadata_state_ = ServerInitialMetadataState::kPushed;
+        server_initial_metadata_push_promise_.reset();
+      }
+    }
     PollSendMessage(client_to_server_messages_, &client_trailing_metadata_);
     PollRecvMessage(server_to_client_messages_);
-    if (server_initial_metadata_state_ ==
-        ServerInitialMetadataState::kReceivedButNotSet) {
-      server_initial_metadata_state_ = ServerInitialMetadataState::kSet;
-      GPR_ASSERT(
-          !absl::holds_alternative<Pending>(server_initial_metadata_pipe_->Push(
-              std::move(server_initial_metadata_))()));
-    }
-    if (server_initial_metadata_state_ == ServerInitialMetadataState::kSet &&
+    if (server_initial_metadata_state_ == ServerInitialMetadataState::kPushed &&
         !IsPromiseReceiving() &&
         std::exchange(queued_trailing_metadata_, false)) {
       if (grpc_call_trace.enabled()) {
@@ -768,7 +776,7 @@ class ClientStream : public ConnectedChannelStream {
     {
       MutexLock lock(mu());
       server_initial_metadata_state_ =
-          ServerInitialMetadataState::kReceivedButNotSet;
+          ServerInitialMetadataState::kReceivedButNotPushed;
       initial_metadata_waker_.Wakeup();
     }
     Unref("initial_metadata_ready");
@@ -802,11 +810,17 @@ class ClientStream : public ConnectedChannelStream {
     // Initial metadata has not been received from the server.
     kNotReceived,
     // Initial metadata has been received from the server via the transport, but
-    // has not yet been set on the latch to publish it up the call stack.
-    kReceivedButNotSet,
+    // has not yet been pushed onto the pipe to publish it up the call stack.
+    kReceivedButNotPushed,
     // Initial metadata has been received from the server via the transport and
-    // has been set on the latch to publish it up the call stack.
-    kSet,
+    // has been pushed on the pipe to publish it up the call stack.
+    // It's still in the pipe and has not been removed by the call at the top
+    // yet.
+    kPushing,
+    // Initial metadata has been received from the server via the transport and
+    // has been pushed on the pipe to publish it up the call stack AND removed
+    // by the call at the top.
+    kPushed,
   };
 
   std::string ActiveOpsString() const override
@@ -827,7 +841,7 @@ class ClientStream : public ConnectedChannelStream {
     // Results from transport
     std::vector<std::string> queued;
     if (server_initial_metadata_state_ ==
-        ServerInitialMetadataState::kReceivedButNotSet) {
+        ServerInitialMetadataState::kReceivedButNotPushed) {
       queued.push_back("initial_metadata");
     }
     if (queued_trailing_metadata_) queued.push_back("trailing_metadata");
@@ -866,6 +880,8 @@ class ClientStream : public ConnectedChannelStream {
   ClientMetadataHandle client_trailing_metadata_;
   ServerMetadataHandle server_initial_metadata_;
   ServerMetadataHandle server_trailing_metadata_;
+  absl::optional<PipeSender<ServerMetadataHandle>::PushType>
+      server_initial_metadata_push_promise_;
   grpc_transport_stream_op_batch metadata_;
   grpc_closure metadata_batch_done_ =
       MakeMemberClosure<ClientStream, &ClientStream::MetadataBatchDone>(
@@ -1285,7 +1301,7 @@ grpc_channel_filter MakeConnectedFilter() {
         // and I'm not sure what that is yet.
         // This is only "safe" because call stacks place no additional data
         // after the last call element, and the last call element MUST be the
-        // connected channel. 
+        // connected channel.
         channel_stack->call_stack_size += grpc_transport_stream_size(
             static_cast<channel_data*>(elem->channel_data)->transport);
       },

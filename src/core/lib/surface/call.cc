@@ -2648,6 +2648,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     // before context.
     auto c2s = std::move(client_to_server_messages_);
     auto s2c = std::move(server_to_client_messages_);
+    auto sim = std::move(server_initial_metadata_);
   }
 
   absl::string_view GetServerAuthority() const override { abort(); }
