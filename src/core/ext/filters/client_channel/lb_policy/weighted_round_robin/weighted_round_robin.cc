@@ -248,6 +248,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     Picker(RefCountedPtr<WeightedRoundRobin> wrr,
            WeightedRoundRobinSubchannelList* subchannel_list);
 
+    ~Picker() override;
+
     PickResult Pick(PickArgs args) override;
 
    private:
@@ -268,6 +270,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     };
 
     // Timer for recomputing weights.
+// FIXME: move this directly into Picker class
     class Timer : public InternallyRefCounted<Timer> {
      public:
       explicit Timer(RefCountedPtr<Picker> picker);
@@ -275,9 +278,13 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
-      RefCountedPtr<Picker> picker_;
+      void StartTimer();
+
+      Mutex mu_;
+      // Will be null once timer fires or is orphaned, whichever happens first.
+      RefCountedPtr<Picker> picker_ ABSL_GUARDED_BY(&mu_);
+
       grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle_;
-      std::atomic<bool> done_{false};
     };
 
     // Info stored about each subchannel.
@@ -401,18 +408,30 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
 
 WeightedRoundRobin::Picker::Timer::Timer(RefCountedPtr<Picker> picker)
     : picker_(std::move(picker)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO, "[WRR %p picker %p timer %p] created timer",
+            picker_->wrr_.get(), picker_.get(), this);
+  }
+  StartTimer();
+}
+
+void WeightedRoundRobin::Picker::Timer::StartTimer() {
   picker_->wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
       picker_->weight_update_period_, [self = Ref()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
-        bool done = false;
-        if (self->done_.compare_exchange_strong(done, true,
-                                                std::memory_order_relaxed,
-                                                std::memory_order_relaxed)) {
-          self->picker_->BuildScheduler();
-          // Restart timer, reusing our ref to the picker.
-          auto* picker = self->picker_.get();
-          picker->timer_ = MakeOrphanable<Timer>(std::move(self->picker_));
+        {
+          MutexLock lock(&self->mu_);
+          if (self->picker_ != nullptr) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+              gpr_log(GPR_INFO, "[WRR %p picker %p timer %p] timer fired",
+                      self->picker_->wrr_.get(), self->picker_.get(),
+                      self.get());
+            }
+            self->picker_->BuildScheduler();
+            // Restart timer, reusing our ref to the picker.
+            StartTimer();
+          }
         }
         // Release ref before ExecCtx goes out of scope.
         self.reset();
@@ -420,11 +439,17 @@ WeightedRoundRobin::Picker::Timer::Timer(RefCountedPtr<Picker> picker)
 }
 
 void WeightedRoundRobin::Picker::Timer::Orphan() {
-  bool done = false;
-  if (done_.compare_exchange_strong(done, true, std::memory_order_relaxed,
-                                    std::memory_order_relaxed)) {
-    picker_->wrr_->channel_control_helper()->GetEventEngine()->Cancel(
-        timer_handle_);
+  {
+    MutexLock lock(&mu_);
+    if (picker_ != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+        gpr_log(GPR_INFO, "[WRR %p picker %p timer %p] cancelling timer",
+                picker_->wrr_.get(), picker_.get(), this);
+      }
+      picker_->wrr_->channel_control_helper()->GetEventEngine()->Cancel(
+          timer_handle_);
+      picker_.reset();
+    }
   }
   Unref();
 }
@@ -457,6 +482,12 @@ WeightedRoundRobin::Picker::Picker(
             "[WRR %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " subchannels",
             wrr_.get(), this, subchannel_list, subchannels_.size());
+  }
+}
+
+WeightedRoundRobin::Picker::~Picker() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO, "[WRR %p picker %p] destroying picker", wrr_.get(), this);
   }
 }
 

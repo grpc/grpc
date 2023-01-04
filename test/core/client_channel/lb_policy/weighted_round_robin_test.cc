@@ -82,22 +82,23 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     event_engine_ = mock_ee_;
     auto capture = [this](absl::AnyInvocable<void()> callback) {
       timer_callbacks_.push(std::move(callback));
+      return EventEngine::TaskHandle{1, 2};
     };
     ON_CALL(*mock_ee_,
             RunAfter(::testing::_, ::testing::A<absl::AnyInvocable<void()>>()))
-        .WillByDefault(::testing::DoAll(
-            ::testing::WithArg<1>(capture),
-            ::testing::Return(EventEngine::TaskHandle{1, 2})));
+        .WillByDefault(::testing::DoAll(::testing::WithArg<1>(capture)));
+    auto cancel = [this]() {
+      timer_callbacks_.pop();
+      return true;
+    };
+    ON_CALL(*mock_ee_, Cancel(::testing::_))
+        .WillByDefault(::testing::WithoutArgs(cancel));
     lb_policy_ = MakeLbPolicy("weighted_round_robin");
   }
 
   ~WeightedRoundRobinTest() override {
     EXPECT_TRUE(timer_callbacks_.empty())
-        << "WARNING: Test did not run all timer callbacks; running "
-           "outstanding callbacks to avoid blocking WRR destruction.";
-    while (!timer_callbacks_.empty()) {
-      RunTimerCallback();
-    }
+        << "WARNING: Test did not run all timer callbacks";
   }
 
   void RunTimerCallback() {
@@ -119,6 +120,12 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       absl::SleepFor(absl::Milliseconds(500));
     } while (Timestamp::Now() < deadline);
     return retval;
+  }
+
+  void DrainTimerCallbacks() {
+    while (timer_callbacks_.size() > 1) {
+      RunTimerCallback();
+    }
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
@@ -284,6 +291,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       EXPECT_LT(now, deadline) << location.file() << ":" << location.line();
       if (now >= deadline) return false;
       // Wait for weights to be recalculated.
+      gpr_log(GPR_INFO, "waiting for timer callback...");
       EXPECT_TRUE(WaitForTimerCallback());
       // Get a new picker if there is an update.
       if (!helper_->QueueEmpty()) {
@@ -306,6 +314,7 @@ TEST_F(WeightedRoundRobinTest, Basic) {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
   ASSERT_NE(picker, nullptr);
+  DrainTimerCallbacks();
   // Address 0 gets weight 1, address 1 gets weight 3.
   // No utilization report from backend 2, so it gets the average weight 2.
   WaitForWeightedRoundRobinPicks(
