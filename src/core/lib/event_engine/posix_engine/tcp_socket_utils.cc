@@ -620,7 +620,7 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));
       addr.sin6_family = AF_INET6;
-      addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
+      addr.sin6_addr.s6_addr[15] = 1;  // [::1]:0
       if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
         loopback_available = true;
       } else {

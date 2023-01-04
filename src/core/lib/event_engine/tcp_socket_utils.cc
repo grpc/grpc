@@ -15,8 +15,6 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -116,8 +114,7 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   std::string path_string;
   if (path->at(0) == '\0') {
     scheme = "unix-abstract";
-    path_string =
-        path->length() > 1 ? std::move(path->substr(1, std::string::npos)) : "";
+    path_string = path->length() > 1 ? path->substr(1, std::string::npos) : "";
   } else {
     scheme = "unix";
     path_string = std::move(*path);
