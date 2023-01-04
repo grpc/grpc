@@ -2169,7 +2169,10 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/gprpp/work_serializer.h",
     ],
-    external_deps = ["absl/base:core_headers"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+    ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
