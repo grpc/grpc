@@ -4470,6 +4470,7 @@ grpc_cc_library(
         "closure",
         "error",
         "grpc_stateful_session_filter",
+        "grpc_xds_client",
         "iomgr_fwd",
         "json",
         "json_args",
