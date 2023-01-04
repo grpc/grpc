@@ -92,16 +92,13 @@ absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
   int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
 #endif
   bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
-  std::string scheme;
   std::string path;
   if (abstract) {
-    scheme = "unix-abstract";
     if (len >= 0) {
       path = std::string(unix_addr->sun_path + 1, len);
     }
     path = absl::StrCat(std::string(1, '\0'), path);
   } else {
-    scheme = "unix";
     size_t maxlen = sizeof(unix_addr->sun_path);
     if (strnlen(unix_addr->sun_path, maxlen) == maxlen) {
       return absl::InvalidArgumentError("UDS path is not null-terminated");
@@ -119,10 +116,11 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   std::string path_string;
   if (path->at(0) == '\0') {
     scheme = "unix-abstract";
-    path_string = path->length() > 1 ? path->substr(1, std::string::npos) : "";
+    path_string =
+        path->length() > 1 ? std::move(path->substr(1, std::string::npos)) : "";
   } else {
     scheme = "unix";
-    path_string = *path;
+    path_string = std::move(*path);
   }
 
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
