@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include <functional>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
