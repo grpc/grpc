@@ -63,36 +63,36 @@ CFEventEngine::~CFEventEngine() {
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 CFEventEngine::CreateListener(
-    Listener::AcceptCallback on_accept,
-    absl::AnyInvocable<void(absl::Status)> on_shutdown,
-    const EndpointConfig& config,
-    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+    Listener::AcceptCallback /* on_accept */,
+    absl::AnyInvocable<void(absl::Status)> /* on_shutdown */,
+    const EndpointConfig& /* config */,
+    std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */) {
   GPR_ASSERT(false && "unimplemented");
 }
 
 CFEventEngine::ConnectionHandle CFEventEngine::Connect(
-    OnConnectCallback on_connect, const ResolvedAddress& addr,
-    const EndpointConfig& args, MemoryAllocator memory_allocator,
-    Duration timeout) {
+    OnConnectCallback /* on_connect */, const ResolvedAddress& /* addr */,
+    const EndpointConfig& /* args */, MemoryAllocator /* memory_allocator */,
+    Duration /* timeout */) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-bool CFEventEngine::CancelConnect(ConnectionHandle handle) {
+bool CFEventEngine::CancelConnect(ConnectionHandle /* handle */) {
   GPR_ASSERT(false && "unimplemented");
 }
 
 bool CFEventEngine::IsWorkerThread() { GPR_ASSERT(false && "unimplemented"); }
 
 std::unique_ptr<EventEngine::DNSResolver> CFEventEngine::GetDNSResolver(
-    const DNSResolver::ResolverOptions& options) {
+    const DNSResolver::ResolverOptions& /* options */) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-void CFEventEngine::Run(EventEngine::Closure* closure) {
+void CFEventEngine::Run(EventEngine::Closure* /* closure */) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-void CFEventEngine::Run(absl::AnyInvocable<void()> closure) {
+void CFEventEngine::Run(absl::AnyInvocable<void()> /* closure */) {
   GPR_ASSERT(false && "unimplemented");
 }
 
