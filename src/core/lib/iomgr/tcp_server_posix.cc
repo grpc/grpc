@@ -57,6 +57,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/systemd_utils.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
@@ -101,6 +102,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   GPR_ASSERT(s->options.resource_quota != nullptr);
   GPR_ASSERT(s->on_accept_cb);
   s->memory_quota = s->options.resource_quota->memory_quota();
+  s->pre_allocated_fd = -1;
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return absl::OkStatus();
@@ -149,7 +151,10 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
   if (s->head) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_unlink_if_unix_domain_socket(&sp->addr);
+      // Do not unlink if there is a pre-allocated FD
+      if (grpc_tcp_server_pre_allocated_fd(s) <= 0) {
+        grpc_unlink_if_unix_domain_socket(&sp->addr);
+      }
       GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_orphan(sp->emfd, &sp->destroyed_closure, nullptr,
@@ -429,7 +434,6 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   if (s->tail != nullptr) {
     port_index = s->tail->port_index + 1;
   }
-  grpc_unlink_if_unix_domain_socket(addr);
 
   // Check if this is a wildcard port, and if so, try to keep the port the same
   // as some previously created listener.
@@ -452,6 +456,16 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
       }
     }
   }
+
+  /* Check if systemd has pre-allocated valid FDs */
+  set_matching_sd_fds(s, addr, requested_port);
+
+  /* Do not unlink if there are pre-allocated FDs, or it will stop
+     working after the first client connects */
+  if (grpc_tcp_server_pre_allocated_fd(s) <= 0) {
+    grpc_unlink_if_unix_domain_socket(addr);
+  }
+
   if (grpc_sockaddr_is_wildcard(addr, &requested_port)) {
     return add_wildcard_addrs_to_server(s, port_index, requested_port,
                                         out_port);
@@ -579,6 +593,16 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_unlock(&s->mu);
 }
 
+static int tcp_server_pre_allocated_fd(grpc_tcp_server* s) {
+  return s->pre_allocated_fd;
+}
+
+static void tcp_server_set_pre_allocated_fd(grpc_tcp_server* s, int fd) {
+  gpr_mu_lock(&s->mu);
+  s->pre_allocated_fd = fd;
+  gpr_mu_unlock(&s->mu);
+}
+
 namespace {
 class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
  public:
@@ -642,10 +666,17 @@ static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
 }
 
 grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
-    tcp_server_create,        tcp_server_start,
-    tcp_server_add_port,      tcp_server_create_fd_handler,
-    tcp_server_port_fd_count, tcp_server_port_fd,
-    tcp_server_ref,           tcp_server_shutdown_starting_add,
-    tcp_server_unref,         tcp_server_shutdown_listeners};
+    tcp_server_create,
+    tcp_server_start,
+    tcp_server_add_port,
+    tcp_server_create_fd_handler,
+    tcp_server_port_fd_count,
+    tcp_server_port_fd,
+    tcp_server_ref,
+    tcp_server_shutdown_starting_add,
+    tcp_server_unref,
+    tcp_server_shutdown_listeners,
+    tcp_server_pre_allocated_fd,
+    tcp_server_set_pre_allocated_fd};
 
 #endif  // GRPC_POSIX_SOCKET_TCP_SERVER

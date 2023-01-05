@@ -91,6 +91,8 @@ typedef struct grpc_event_engine_vtable {
   void (*shutdown_engine)(void);
   bool (*add_closure_to_background_poller)(grpc_closure* closure,
                                            grpc_error_handle error);
+
+  void (*fd_set_pre_allocated)(grpc_fd* fd);
 } grpc_event_engine_vtable;
 
 // register a new event engine factory
@@ -178,6 +180,9 @@ void grpc_fd_set_writable(grpc_fd* fd);
 // grpc_fd_notify_on_error being invoked.
 //
 void grpc_fd_set_error(grpc_fd* fd);
+
+// Set the fd to be preallocated
+void grpc_fd_set_pre_allocated(grpc_fd* fd);
 
 // pollset_posix functions
 

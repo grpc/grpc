@@ -227,6 +227,12 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
 }
 
+void grpc_fd_set_pre_allocated(grpc_fd* fd) {
+  GRPC_POLLING_API_TRACE("fd_set_pre_allocated(%d)", grpc_fd_wrapped_fd(fd));
+  GRPC_FD_TRACE("fd_set_pre_allocated(%d)", grpc_fd_wrapped_fd(fd));
+  g_event_engine->fd_set_pre_allocated(fd);
+}
+
 void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
   GRPC_POLLING_API_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   GRPC_FD_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));

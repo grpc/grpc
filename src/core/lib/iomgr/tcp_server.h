@@ -81,6 +81,8 @@ typedef struct grpc_tcp_server_vtable {
                                 grpc_closure* shutdown_starting);
   void (*unref)(grpc_tcp_server* s);
   void (*shutdown_listeners)(grpc_tcp_server* s);
+  int (*pre_allocated_fd)(grpc_tcp_server* s);
+  void (*set_pre_allocated_fd)(grpc_tcp_server* s, int fd);
 } grpc_tcp_server_vtable;
 
 // Create a server, initially not bound to any ports. The caller owns one ref.
@@ -140,6 +142,12 @@ void grpc_tcp_server_unref(grpc_tcp_server* s);
 
 // Shutdown the fds of listeners.
 void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s);
+
+/* Get pre-allocated FD for server. -1 if none is set */
+int grpc_tcp_server_pre_allocated_fd(grpc_tcp_server* s);
+
+/* Set pre-allocated FD for server */
+void grpc_tcp_server_set_pre_allocated_fd(grpc_tcp_server* s, int fd);
 
 void grpc_tcp_server_global_init();
 

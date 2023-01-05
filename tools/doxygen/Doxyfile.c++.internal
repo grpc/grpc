@@ -2257,6 +2257,8 @@ src/core/lib/iomgr/socket_utils_posix.h \
 src/core/lib/iomgr/socket_utils_windows.cc \
 src/core/lib/iomgr/socket_windows.cc \
 src/core/lib/iomgr/socket_windows.h \
+src/core/lib/iomgr/systemd_utils.cc \
+src/core/lib/iomgr/systemd_utils.h \
 src/core/lib/iomgr/tcp_client.cc \
 src/core/lib/iomgr/tcp_client.h \
 src/core/lib/iomgr/tcp_client_cfstream.cc \

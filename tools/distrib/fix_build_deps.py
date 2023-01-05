@@ -547,6 +547,9 @@ def make_library(library):
         if hdr in skip_headers[library]:
             continue
 
+        if hdr == 'systemd/sd-daemon.h':
+            continue
+
         if hdr == 'src/core/lib/profiling/stap_probes.h':
             continue
 
