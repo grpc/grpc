@@ -12174,6 +12174,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
   deps:
