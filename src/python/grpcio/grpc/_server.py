@@ -29,7 +29,7 @@ from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _interceptor  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
-# from grpc._typing import ArityAgnosticMethodHandler
+from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
@@ -63,25 +63,6 @@ _EMPTY_FLAGS = 0
 
 _DEALLOCATED_SERVER_CHECK_PERIOD_S = 1.0
 _INF_TIMEOUT = 1e9
-
-ArityAgnosticMethodHandler = Union[
-    Callable[
-        [RequestType, grpc.ServicerContext, Callable[[ResponseType], None]],
-        ResponseType], Callable[
-            [RequestType, grpc.ServicerContext, Callable[[ResponseType], None]],
-            Iterator[ResponseType]],
-    Callable[[
-        Iterator[RequestType], grpc.ServicerContext, Callable[[ResponseType],
-                                                              None]
-    ], ResponseType], Callable[[
-        Iterator[RequestType], grpc.ServicerContext, Callable[[ResponseType],
-                                                              None]
-    ], Iterator[ResponseType]], Callable[[RequestType, grpc.ServicerContext],
-                                         ResponseType],
-    Callable[[RequestType, grpc.ServicerContext], Iterator[ResponseType]],
-    Callable[[Iterator[RequestType], grpc.ServicerContext], ResponseType],
-    Callable[[Iterator[RequestType], grpc.ServicerContext],
-             Iterator[ResponseType]]]
 
 
 def _serialized_request(request_event: cygrpc.BaseEvent) -> Optional[bytes]:

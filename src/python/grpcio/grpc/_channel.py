@@ -889,7 +889,7 @@ def _start_unary_request(
     if serialized_request is None:
         state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
-        error = _InactiveRpcError(state)
+        error = _InactiveRpcError(state)  # pytype: disable=not-instantiable
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -1098,7 +1098,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                               'Exception serializing request!')
-            raise _InactiveRpcError(state)
+            raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = None if credentials is None else credentials._credentials

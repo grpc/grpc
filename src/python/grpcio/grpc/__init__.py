@@ -31,11 +31,11 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-# from grpc._typing import InterceptorType
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import DoneCallbackType
 from grpc._typing import GeneralIterableType
+from grpc._typing import InterceptorType
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestIterableType
@@ -2113,12 +2113,6 @@ def secure_channel(target: str,
             " Call insecure_channel instead.")
     return _channel.Channel(target, () if options is None else options,
                             credentials._credentials, compression)
-
-
-InterceptorType = Optional[Union[UnaryUnaryClientInterceptor,
-                                 UnaryStreamClientInterceptor,
-                                 StreamUnaryClientInterceptor,
-                                 StreamStreamClientInterceptor]]
 
 
 def intercept_channel(channel: Channel,

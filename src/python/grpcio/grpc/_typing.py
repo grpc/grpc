@@ -19,11 +19,11 @@ from typing import (TYPE_CHECKING, Any, AsyncIterable, Callable, Iterable,
 from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
-    from grpc import ServicerContext
     from grpc import StreamStreamClientInterceptor
     from grpc import StreamUnaryClientInterceptor
     from grpc import UnaryStreamClientInterceptor
     from grpc import UnaryUnaryClientInterceptor
+    from grpc._server import _Context
     from grpc._server import _RPCState
 
 RequestType = TypeVar('RequestType')
@@ -47,19 +47,19 @@ ServerTagCallbackType = Tuple[Optional['_RPCState'],
                               Sequence[NullaryCallbackType]]
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
-    Callable[[RequestType, 'ServicerContext', Callable[[ResponseType], None]],
+    Callable[[RequestType, '_Context', Callable[[ResponseType], None]],
              ResponseType],
-    Callable[[RequestType, 'ServicerContext', Callable[[ResponseType], None]],
+    Callable[[RequestType, '_Context', Callable[[ResponseType], None]],
              Iterator[ResponseType]],
-    Callable[[
-        Iterator[RequestType], 'ServicerContext', Callable[[ResponseType], None]
-    ], ResponseType], Callable[[
-        Iterator[RequestType], 'ServicerContext', Callable[[ResponseType], None]
-    ], Iterator[ResponseType]], Callable[[RequestType, 'ServicerContext'],
-                                         ResponseType],
-    Callable[[RequestType, 'ServicerContext'], Iterator[ResponseType]],
-    Callable[[Iterator[RequestType], 'ServicerContext'],
-             ResponseType], Callable[[Iterator[RequestType], 'ServicerContext'],
+    Callable[
+        [Iterator[RequestType], '_Context', Callable[[ResponseType], None]],
+        ResponseType], Callable[
+            [Iterator[RequestType], '_Context', Callable[[ResponseType], None]],
+            Iterator[ResponseType]], Callable[[RequestType, '_Context'],
+                                              ResponseType],
+    Callable[[RequestType, '_Context'], Iterator[ResponseType]],
+    Callable[[Iterator[RequestType], '_Context'],
+             ResponseType], Callable[[Iterator[RequestType], '_Context'],
                                      Iterator[ResponseType]]]
 InterceptorType = Union['UnaryUnaryClientInterceptor',
                         'UnaryStreamClientInterceptor',
