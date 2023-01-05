@@ -17,15 +17,13 @@
 //
 
 #include <memory>
-#include <unordered_map>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
