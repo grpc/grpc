@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   }
   // construct and start clients
   std::vector<std::thread> threads;
-  for (int i = 0; i < uris.size(); i++) {
+  for (size_t i = 0; i < uris.size(); i++) {
     threads.push_back(std::thread([uris, creds, i, test_case]() {
       auto channel_creation_func = [uris, creds, i]() {
         return grpc::CreateTestChannel(uris[i], creds[i],
