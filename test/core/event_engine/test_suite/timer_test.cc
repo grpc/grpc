@@ -20,10 +20,13 @@
 #include <random>
 #include <ratio>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
+#include "absl/functional/function_ref.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
