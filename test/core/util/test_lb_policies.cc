@@ -755,7 +755,7 @@ constexpr char kQueueOncePolicyName[] = "queue_once";
 
 class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
  public:
-  QueueOnceLoadBalancingPolicy(Args args)
+  explicit QueueOnceLoadBalancingPolicy(Args args)
       : ForwardingLoadBalancingPolicy(
             std::make_unique<Helper>(
                 RefCountedPtr<QueueOnceLoadBalancingPolicy>(this)),
