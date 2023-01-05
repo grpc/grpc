@@ -123,7 +123,7 @@ class MetadataEncoder {
       return;
     }
 
-    payload_->metadata.emplace(key, value);
+    payload_->metadata.emplace(std::string(key), std::string(value));
     log_len_ -= mdentry_len;
   }
 
