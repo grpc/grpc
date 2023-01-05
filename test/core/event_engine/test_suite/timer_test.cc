@@ -190,7 +190,7 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
 }
 
 // Common implementation for the Run and RunAfter test variants below
-// Calls run_fn multiple times, and will hang if the implementation does a
+// Calls run_fn multiple times, and will get stuck if the implementation does a
 // blocking inline execution of the closure. This test will timeout on failure.
 void ImmediateRunTestInternal(
     absl::FunctionRef<void(absl::AnyInvocable<void()>)> run_fn,
