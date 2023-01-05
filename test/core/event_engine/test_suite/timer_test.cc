@@ -195,8 +195,8 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
 void ImmediateRunTestInternal(
     absl::FunctionRef<void(absl::AnyInvocable<void()>)> run_fn,
     grpc_core::Mutex& mu, grpc_core::CondVar& cv) {
-  constexpr size_t num_concurrent_runs = 32;
-  constexpr size_t num_iterations = 100;
+  constexpr int num_concurrent_runs = 32;
+  constexpr int num_iterations = 100;
   constexpr absl::Duration run_timeout = absl::Seconds(60);
   std::atomic<int> waiters{0};
   std::atomic<int> execution_count{0};
