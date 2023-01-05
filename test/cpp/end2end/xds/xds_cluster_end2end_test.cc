@@ -218,6 +218,10 @@ TEST_P(CdsTest, CircuitBreaking) {
                       "circuit breaker drop");
   // Cancel one RPC to allow another one through.
   rpcs[0].CancelRpc();
+  // Add a sleep here to ensure the RPC cancellation has completed correctly
+  // before trying the next RPC.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1000, GPR_TIMESPAN)));
   CheckRpcSendOk(DEBUG_LOCATION);
   // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
