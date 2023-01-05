@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
             uris.size(), creds.size());
     GPR_ASSERT(0);
   }
-  if (uris.size() == 0) {
+  if (uris.empty()) {
     gpr_log(GPR_ERROR, "--server_uris has zero entries");
     GPR_ASSERT(0);
   }
