@@ -782,19 +782,6 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     Helper* helper_;
   };
 
-  class DelegatingPicker : public SubchannelPicker {
-   public:
-    DelegatingPicker(RefCountedPtr<SubchannelPicker> delegate_picker)
-        : delegate_picker_(std::move(delegate_picker)) {}
-
-    PickResult Pick(PickArgs args) override {
-      return delegate_picker_->Pick(args);
-    }
-
-   private:
-    RefCountedPtr<SubchannelPicker> delegate_picker_;
-  };
-
   class Helper : public ChannelControlHelper {
    public:
     Helper(RefCountedPtr<QueueOnceLoadBalancingPolicy> parent)
@@ -823,8 +810,8 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
             GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
             MakeRefCounted<QueueingPicker>(this));
       }
-      parent_->channel_control_helper()->UpdateState(
-          state, status, MakeRefCounted<DelegatingPicker>(std::move(picker)));
+      parent_->channel_control_helper()->UpdateState(state, status,
+                                                     std::move(picker));
     }
 
     void RequestReresolution() override {
@@ -853,9 +840,8 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
         parent_->work_serializer()->Schedule(
             [helper = parent_->channel_control_helper(),
              update_state = std::move(state_to_update_.value())]() {
-              helper->UpdateState(
-                  update_state.state, update_state.status,
-                  MakeRefCounted<DelegatingPicker>(update_state.picker));
+              helper->UpdateState(update_state.state, update_state.status,
+                                  update_state.picker);
             },
             DEBUG_LOCATION);
         // Since we scheduled the update above instead of running inline, we
