@@ -354,6 +354,8 @@ void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
   gpr_free(p);
 }
 
+static void do_next_sched_channel_action(void* arg, grpc_error_handle error);
+
 static void me_destroy(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
   gpr_mu_lock(&p->mu);
@@ -364,7 +366,9 @@ static void me_destroy(grpc_endpoint* ep) {
   } else {
     if (p->halves == 0 && p->simulate_channel_actions) {
       if (p->channel_effects->timer_handle.has_value()) {
-        GetDefaultEventEngine()->Cancel(*p->channel_effects->timer_handle);
+        if (GetDefaultEventEngine()->Cancel(*p->channel_effects->timer_handle)) {
+          do_next_sched_channel_action(ep, absl::CancelledError());
+        }
         p->channel_effects->timer_handle.reset();
       }
     }
@@ -492,24 +496,15 @@ static void sched_next_channel_action_locked(half* m) {
     shutdown_locked(m, err);
     return;
   }
-  // HACK
-  if (m->parent->channel_effects->actions[0].wait_ms == 0) {
-    // early out
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
-                                                grpc_schedule_on_exec_ctx),
-                            absl::OkStatus());
-  } else {
-    m->parent->channel_effects->timer_handle =
-        GetDefaultEventEngine()->RunAfter(
-            grpc_core::Duration::Milliseconds(
-                m->parent->channel_effects->actions[0].wait_ms),
-            [m] {
-              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-              grpc_core::ExecCtx exec_ctx;
-              do_next_sched_channel_action(m, absl::OkStatus());
-            });
-  }
+  m->parent->channel_effects->timer_handle =
+      GetDefaultEventEngine()->RunAfter(
+          grpc_core::Duration::Milliseconds(
+              m->parent->channel_effects->actions[0].wait_ms),
+          [m] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            do_next_sched_channel_action(m, absl::OkStatus());
+          });
 }
 
 void start_scheduling_grpc_passthru_endpoint_channel_effects(
