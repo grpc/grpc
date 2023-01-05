@@ -37,7 +37,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -766,21 +765,12 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
   // We use the standard QueuePicker which invokes ExitIdleLocked() on the first
   // pick.
   void ExitIdleLocked() override {
-    bool needs_update = false;
-    {
-      MutexLock lock(&mu_);
-      needs_update = !std::exchange(seen_pick_queued_, true);
+    bool needs_update = !std::exchange(seen_pick_queued_, true);
+    if (needs_update) {
+      channel_control_helper()->UpdateState(state_to_update_.state,
+                                            state_to_update_.status,
+                                            std::move(state_to_update_.picker));
     }
-    if (needs_update && state_to_update_.has_value()) {
-      channel_control_helper()->UpdateState(
-          state_to_update_->state, state_to_update_->status,
-          std::move(state_to_update_->picker));
-    }
-  }
-
-  bool SeenQueuedPick() {
-    MutexLock lock(&mu_);
-    return seen_pick_queued_;
   }
 
   absl::string_view name() const override { return kQueueOncePolicyName; }
@@ -801,7 +791,7 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
                      RefCountedPtr<SubchannelPicker> picker) override {
       // If we've already seen a queued pick, just propagate the update
       // directly.
-      if (parent_->SeenQueuedPick()) {
+      if (parent_->seen_pick_queued_) {
         parent_->channel_control_helper()->UpdateState(state, status,
                                                        std::move(picker));
         return;
@@ -838,10 +828,9 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     absl::Status status;
     RefCountedPtr<SubchannelPicker> picker;
   };
-  absl::optional<StateToUpdate> state_to_update_;
-  Mutex mu_;
-  bool seen_pick_queued_ ABSL_GUARDED_BY(mu_) =
-      false;  // Has a pick been queued yet
+  StateToUpdate state_to_update_;
+  bool seen_pick_queued_ = false;  // Has a pick been queued yet. Only accessed
+                                   // from within the WorkSerializer.
 };
 
 class QueueOnceLbConfig : public LoadBalancingPolicy::Config {
