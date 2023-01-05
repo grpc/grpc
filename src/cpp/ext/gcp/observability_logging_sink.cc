@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <map>
 #include <utility>

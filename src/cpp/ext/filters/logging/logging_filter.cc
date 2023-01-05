@@ -20,23 +20,60 @@
 
 #include "src/cpp/ext/filters/logging/logging_filter.h"
 
-#include <cstddef>
-#include <limits>
+#include <limits.h>
+#include <stdint.h>
 
-#include "absl/random/distributions.h"
+#include <algorithm>
+#include <cstddef>
+#include <functional>
+#include <limits>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "absl/random/random.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map_pipe.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_concurrently.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/ext/filters/logging/logging_sink.h"
 
 namespace grpc {

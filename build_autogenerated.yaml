@@ -8909,7 +8909,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/ext/filters/logging/logging_test.cc
   deps:
-  - absl/random:distributions
   - grpc++_test_config
   - grpc++_test_util
 - name: loop_test
