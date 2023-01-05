@@ -248,7 +248,7 @@ Slice OrcaService::GetOrCreateSerializedResponse() {
                                                           memory_utilization_);
     }
     if (qps_ != -1) {
-      xds_data_orca_v3_OrcaLoadReport_set_qps(response, qps_);
+      xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, qps_);
     }
     for (const auto& p : named_utilization_) {
       xds_data_orca_v3_OrcaLoadReport_utilization_set(

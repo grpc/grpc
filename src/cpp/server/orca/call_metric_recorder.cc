@@ -100,8 +100,8 @@ absl::optional<std::string> CallMetricRecorder::CreateSerializedReport() {
         response, backend_metric_data_->mem_utilization);
   }
   if (backend_metric_data_->qps != -1) {
-    xds_data_orca_v3_OrcaLoadReport_set_qps(response,
-                                            backend_metric_data_->qps);
+    xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(
+        response, backend_metric_data_->qps);
   }
   for (const auto& p : backend_metric_data_->request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(
