@@ -58,10 +58,9 @@ void LoadBalancingPolicy::Orphan() {
 //
 
 LoadBalancingPolicy::SubchannelPicker::SubchannelPicker()
-    : DualRefCounted(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
-              ? "SubchannelPicker"
-              : nullptr) {}
+    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
+                         ? "SubchannelPicker"
+                         : nullptr) {}
 
 //
 // LoadBalancingPolicy::QueuePicker

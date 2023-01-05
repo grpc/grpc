@@ -380,8 +380,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     LoadBalancingPolicyTest* test_;
     std::shared_ptr<WorkSerializer> work_serializer_;
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
     Mutex mu_;
     std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
@@ -778,12 +777,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     for (size_t i = 0; i < num_picks; ++i) {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker;
-      auto address = ExpectPickComplete(
-          picker, call_attributes,
-          subchannel_call_trackers == nullptr
-              ? nullptr
-              : &subchannel_call_tracker,
-          location);
+      auto address = ExpectPickComplete(picker, call_attributes,
+                                        subchannel_call_trackers == nullptr
+                                            ? nullptr
+                                            : &subchannel_call_tracker,
+                                        location);
       if (!address.has_value()) return absl::nullopt;
       results.emplace_back(std::move(*address));
       if (subchannel_call_trackers != nullptr) {
