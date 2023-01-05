@@ -776,7 +776,7 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
    public:
     QueueingPicker(Helper* helper) : helper_(helper) {}
 
-    PickResult Pick(PickArgs args) override;
+    PickResult Pick(PickArgs /*args*/) override;
 
    private:
     Helper* helper_;
@@ -889,7 +889,7 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 };
 
 LoadBalancingPolicy::PickResult
-QueueOnceLoadBalancingPolicy::QueueingPicker::Pick(PickArgs args) {
+QueueOnceLoadBalancingPolicy::QueueingPicker::Pick(PickArgs /*args*/) {
   helper_->SetPickQueued();
   return PickResult::Queue();
 }
