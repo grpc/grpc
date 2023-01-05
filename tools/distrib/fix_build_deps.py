@@ -449,6 +449,7 @@ for dirname in [
             'grpc_package': lambda **kwargs: None,
             'filegroup': lambda name, **kwargs: None,
             'sh_library': lambda name, **kwargs: None,
+            'platform': lambda name, **kwargs: None,
         }, {})
     parsing_path = None
 
