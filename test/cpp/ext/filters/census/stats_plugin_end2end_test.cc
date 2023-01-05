@@ -35,11 +35,14 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace opencensus {
@@ -144,12 +147,22 @@ class ExportedTracesRecorder
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterQueueOnceLoadBalancingPolicy(builder);
+        });
     RegisterOpenCensusPlugin();
     // OpenCensus C++ has no API to unregister a previously-registered handler,
     // therefore we register this handler once, and enable/disable recording in
     // the individual tests.
     ::opencensus::trace::exporter::SpanExporter::RegisterHandler(
         absl::WrapUnique(traces_recorder_));
+  }
+
+  static void TearDownTestSuite() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
   }
 
   void SetUp() override {
@@ -760,7 +773,10 @@ TEST_F(StatsPluginEnd2EndTest,
        TestRemovePendingResolverResultAndPendingLbPickQueueAnnotations) {
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
-    auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+    ChannelArguments args;
+    args.SetLoadBalancingPolicyName("queue_once");
+    auto channel = CreateCustomChannel(server_address_,
+                                       InsecureChannelCredentials(), args);
     ResetStub(channel);
     EchoRequest request;
     request.set_message("foo");
