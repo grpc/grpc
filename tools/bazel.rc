@@ -5,6 +5,7 @@ build --copt=-DGRPC_BAZEL_BUILD
 build --cxxopt='-std=c++14'
 build --action_env=GRPC_BAZEL_RUNTIME=1
 build --define=use_fast_cpp_protos=true
+build --platform_mappings=bazel/platform_mappings
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384

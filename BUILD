@@ -44,6 +44,25 @@ exports_files(
     visibility = ["//:__subpackages__"],
 )
 
+# TODO(jtattermusch): add platform definitions for other platforms as well.
+# The current set is the very minimum to make android binder example buildable.
+# See https://github.com/grpc/grpc/pull/31938
+platform(
+    name = "android_arm64-v8a",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:android",
+    ],
+)
+
+platform(
+    name = "android_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:android",
+    ],
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},

@@ -1,0 +1,14 @@
+# To support depedencies that use bazel platforms (e.g. boringssl),
+# we need to define mapping between build flags and the corresponding platform
+# they will get interpreted as.
+# See https://github.com/grpc/grpc/pull/31938
+flags:
+  # TODO(jtattermusch): add mappings for flags for other platforms as well.
+  # The current set is the very minimum to make android binder example buildable.
+  --cpu=x86_64
+  --crosstool_top=//external:android/crosstool
+  //:android_x86_64
+
+  --cpu=arm64-v8a
+  --crosstool_top=//external:android/crosstool
+  //:android_arm64-v8a
