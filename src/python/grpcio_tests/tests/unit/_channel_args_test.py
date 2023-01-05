@@ -19,6 +19,8 @@ import unittest
 
 import grpc
 
+from tests.unit import test_common
+
 
 class TestPointerWrapper(object):
 
@@ -52,6 +54,8 @@ class ChannelArgsTest(unittest.TestCase):
         grpc.server(futures.ThreadPoolExecutor(max_workers=1),
                     options=TEST_CHANNEL_ARGS)
 
+    @unittest.skipIf(test_common.running_under_run_time_type_check(),
+                     "This test case used unsupportted types")
     def test_invalid_client_args(self):
         for invalid_arg in INVALID_TEST_CHANNEL_ARGS:
             self.assertRaises(ValueError,

@@ -104,7 +104,7 @@ def _unknown_code_details(unknown_cygrpc_code: Optional[grpc.StatusCode],
 
 class _RPCState(object):
     condition: threading.Condition
-    due: Set[cygrpc.OperationType]
+    due: Any
     initial_metadata: Optional[MetadataType]
     response: Any
     trailing_metadata: Optional[MetadataType]
@@ -115,8 +115,7 @@ class _RPCState(object):
     callbacks: List[NullaryCallbackType]
     fork_epoch: Optional[int]
 
-    def __init__(self, due: Sequence[cygrpc.OperationType],
-                 initial_metadata: Optional[MetadataType],
+    def __init__(self, due: Sequence, initial_metadata: Optional[MetadataType],
                  trailing_metadata: Optional[MetadataType],
                  code: Optional[grpc.StatusCode], details: Optional[str]):
         # `condition` guards all members of _RPCState. `notify_all` is called on
@@ -149,7 +148,7 @@ class _RPCState(object):
         self.condition = threading.Condition()
 
 
-def _abort(state: _RPCState, code: grpc.StatusCode, details: str) -> None:
+def _abort(state: _RPCState, code: Any, details: str) -> None:
     if state.code is None:
         state.code = code
         state.details = details
@@ -1528,7 +1527,8 @@ def _spawn_delivery(
 
 
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
-def _poll_connectivity(state: _ChannelConnectivityState, channel: grpc.Channel,
+def _poll_connectivity(state: _ChannelConnectivityState,
+                       channel: cygrpc.Channel,
                        initial_try_to_connect: bool) -> None:
     try_to_connect = initial_try_to_connect
     connectivity = channel.check_connectivity_state(try_to_connect)
@@ -1567,8 +1567,8 @@ def _poll_connectivity(state: _ChannelConnectivityState, channel: grpc.Channel,
 
 
 def _subscribe(state: _ChannelConnectivityState,
-               callback: Callable[[grpc.ChannelConnectivity],
-                                  None], try_to_connect: bool) -> None:
+               callback: Callable[[grpc.ChannelConnectivity], None],
+               try_to_connect: Optional[bool]) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
             polling_thread = cygrpc.ForkManagedThread(
@@ -1631,7 +1631,7 @@ class Channel(grpc.Channel):
     _connectivity_state: _ChannelConnectivityState
 
     def __init__(self, target: str, options: Sequence[ChannelArgumentType],
-                 credentials: Optional[grpc.ChannelCredentials],
+                 credentials: Optional[cygrpc.ChannelCredentials],
                  compression: Optional[grpc.Compression]):
         """Constructor.
 

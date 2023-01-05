@@ -93,7 +93,8 @@ def _transform(message: Any, transformer: Union[SerializingFunction,
             return None
 
 
-def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
+def serialize(message: Any,
+              serializer: Optional[SerializingFunction]) -> Optional[bytes]:
     return _transform(message, serializer, 'Exception serializing message!')
 
 

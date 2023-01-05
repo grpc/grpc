@@ -69,8 +69,9 @@ class _ClientCallDetails(
 def _unwrap_client_call_details(
     call_details: grpc.ClientCallDetails,
     default_details: grpc.ClientCallDetails
-) -> Tuple[str, float, MetadataType, grpc.CallCredentials, bool,
-           grpc.Compression]:
+) -> Tuple[str, Optional[float], Optional[MetadataType],
+           Optional[grpc.CallCredentials], Optional[bool],
+           Optional[grpc.Compression]]:
     try:
         method = call_details.method  # pytype: disable=attribute-error
     except AttributeError:
@@ -628,10 +629,10 @@ class _Channel(grpc.Channel):
 
 def intercept_channel(
     channel: grpc.Channel,
-    *interceptors: Optional[Sequence[Union[grpc.UnaryUnaryClientInterceptor,
-                                           grpc.UnaryStreamClientInterceptor,
-                                           grpc.StreamStreamClientInterceptor,
-                                           grpc.StreamUnaryClientInterceptor]]]
+    *interceptors: Optional[Union[grpc.UnaryUnaryClientInterceptor,
+                                  grpc.UnaryStreamClientInterceptor,
+                                  grpc.StreamUnaryClientInterceptor,
+                                  grpc.StreamStreamClientInterceptor]]
 ) -> grpc.Channel:
     for interceptor in reversed(list(interceptors)):
         if not isinstance(interceptor, grpc.UnaryUnaryClientInterceptor) and \

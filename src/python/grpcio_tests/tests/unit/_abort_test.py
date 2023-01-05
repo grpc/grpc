@@ -140,6 +140,8 @@ class AbortTest(unittest.TestCase):
         self.assertEqual(rpc_error.details(), _ABORT_DETAILS)
         self.assertEqual(rpc_error.trailing_metadata(), _ABORT_METADATA)
 
+    @unittest.skipIf(test_common.running_under_run_time_type_check(),
+                     "This test case used unsupportted types")
     def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(_INVALID_CODE)(_REQUEST)

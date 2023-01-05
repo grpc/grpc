@@ -128,6 +128,8 @@ def _test_grpc_tools_unimportable():
 @unittest.skipIf(os.name == "nt", "Windows multiprocessing unsupported")
 @unittest.skipIf(test_common.running_under_gevent(),
                  "Import paths do not work with gevent runner.")
+@unittest.skipIf(test_common.running_under_run_time_type_check(),
+                 "Import paths do not work with type check tests runner.")
 class DynamicStubTest(unittest.TestCase):
 
     def test_sunny_day(self):

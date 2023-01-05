@@ -14,6 +14,7 @@
 """Python-related rules intended only for use internal to the repo."""
 
 load("//bazel:gevent_test.bzl", "py_grpc_gevent_test")
+load("//bazel:run_time_type_check_test.bzl", "py_grpc_run_time_type_check_test")
 
 def internal_py_grpc_test(name, **kwargs):
     """Runs a test under all supported environments.
@@ -29,6 +30,8 @@ def internal_py_grpc_test(name, **kwargs):
     )
     py_grpc_gevent_test(name, **kwargs)
 
+    py_grpc_run_time_type_check_test(name, **kwargs)
+
     suite_kwargs = {}
     if "visibility" in kwargs:
         suite_kwargs["visibility"] = kwargs["visibility"]
@@ -38,6 +41,7 @@ def internal_py_grpc_test(name, **kwargs):
         tests = [
             name + ".native",
             name + ".gevent",
+            name + ".typecheck",
         ],
         **suite_kwargs
     )

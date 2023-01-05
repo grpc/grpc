@@ -29,11 +29,12 @@ from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _interceptor  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
-from grpc._typing import ArityAgnosticMethodHandler
+# from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
+from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
@@ -63,25 +64,43 @@ _EMPTY_FLAGS = 0
 _DEALLOCATED_SERVER_CHECK_PERIOD_S = 1.0
 _INF_TIMEOUT = 1e9
 
+ArityAgnosticMethodHandler = Union[
+    Callable[
+        [RequestType, grpc.ServicerContext, Callable[[ResponseType], None]],
+        ResponseType], Callable[
+            [RequestType, grpc.ServicerContext, Callable[[ResponseType], None]],
+            Iterator[ResponseType]],
+    Callable[[
+        Iterator[RequestType], grpc.ServicerContext, Callable[[ResponseType],
+                                                              None]
+    ], ResponseType], Callable[[
+        Iterator[RequestType], grpc.ServicerContext, Callable[[ResponseType],
+                                                              None]
+    ], Iterator[ResponseType]], Callable[[RequestType, grpc.ServicerContext],
+                                         ResponseType],
+    Callable[[RequestType, grpc.ServicerContext], Iterator[ResponseType]],
+    Callable[[Iterator[RequestType], grpc.ServicerContext], ResponseType],
+    Callable[[Iterator[RequestType], grpc.ServicerContext],
+             Iterator[ResponseType]]]
+
 
 def _serialized_request(request_event: cygrpc.BaseEvent) -> Optional[bytes]:
     return request_event.batch_operations[0].message()
 
 
-def _application_code(code: grpc.StatusCode) -> cygrpc.StatusCode:
+def _application_code(code: Any) -> Any:
     cygrpc_code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(code)
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
 
-def _completion_code(state: _RPCState) -> cygrpc.StatusCode:
+def _completion_code(state: _RPCState) -> Any:
     if state.code is None:
         return cygrpc.StatusCode.ok
     else:
         return _application_code(state.code)
 
 
-def _abortion_code(state: _RPCState,
-                   code: cygrpc.StatusCode) -> cygrpc.StatusCode:
+def _abortion_code(state: _RPCState, code: Any) -> Any:
     if state.code is None:
         return code
     else:
@@ -182,7 +201,7 @@ def _get_initial_metadata_operation(
     return operation
 
 
-def _abort(state: _RPCState, call: cygrpc.Call, code: cygrpc.StatusCode,
+def _abort(state: _RPCState, call: cygrpc.Call, code: Any,
            details: bytes) -> None:
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
@@ -350,7 +369,7 @@ class _Context(grpc.ServicerContext):
     def trailing_metadata(self) -> Optional[MetadataType]:
         return self._state.trailing_metadata
 
-    def abort(self, code: grpc.StatusCode, details: str) -> NoReturn:
+    def abort(self, code: Any, details: str) -> NoReturn:
         # treat OK like other invalid arguments: fail the RPC
         if code == grpc.StatusCode.OK:
             _LOGGER.error(
@@ -785,7 +804,7 @@ def _find_method_handler(
         return query_handlers(handler_call_details)
 
 
-def _reject_rpc(rpc_event: cygrpc.BaseEvent, status: cygrpc.StatusCode,
+def _reject_rpc(rpc_event: cygrpc.BaseEvent, status: Any,
                 details: bytes) -> _RPCState:
     rpc_state = _RPCState()
     operations = (
@@ -869,7 +888,7 @@ class _ServerState(object):
     server: cygrpc.Server
     generic_handlers: List[grpc.GenericRpcHandler]
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
-    thread_pool: futures.ThreadPoolExecutor
+    thread_pool: Optional[futures.ThreadPoolExecutor]
     stage: _ServerStage
     termination_event: threading.Event
     shutdown_events: List[threading.Event]
@@ -884,7 +903,7 @@ class _ServerState(object):
                  server: cygrpc.Server,
                  generic_handlers: Sequence[grpc.GenericRpcHandler],
                  interceptor_pipeline: Optional[_interceptor._ServicePipeline],
-                 thread_pool: futures.ThreadPoolExecutor,
+                 thread_pool: Optional[futures.ThreadPoolExecutor],
                  maximum_concurrent_rpcs: Optional[int]):
         self.lock = threading.RLock()
         self.completion_queue = completion_queue
@@ -1075,7 +1094,7 @@ class _Server(grpc.Server):
     _state: _ServerState
 
     # pylint: disable=too-many-arguments
-    def __init__(self, thread_pool: futures.ThreadPoolExecutor,
+    def __init__(self, thread_pool: Optional[futures.ThreadPoolExecutor],
                  generic_handlers: Sequence[grpc.GenericRpcHandler],
                  interceptors: Sequence[grpc.ServerInterceptor],
                  options: Sequence[ChannelArgumentType],
@@ -1126,7 +1145,7 @@ class _Server(grpc.Server):
             self._state.server_deallocated = True
 
 
-def create_server(thread_pool: futures.ThreadPoolExecutor,
+def create_server(thread_pool: Optional[futures.ThreadPoolExecutor],
                   generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
                   interceptors: Sequence[grpc.ServerInterceptor],
                   options: Sequence[ChannelArgumentType],

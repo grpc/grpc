@@ -19,6 +19,7 @@ import unittest
 import grpc
 
 from tests.unit import resources
+from tests.unit import test_common
 
 
 class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
@@ -29,6 +30,8 @@ class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
 
 class ServerTest(unittest.TestCase):
 
+    @unittest.skipIf(test_common.running_under_run_time_type_check(),
+                     "This test case used unsupportted types")
     def test_not_a_generic_rpc_handler_at_construction(self):
         with self.assertRaises(AttributeError) as exception_context:
             grpc.server(futures.ThreadPoolExecutor(max_workers=5),

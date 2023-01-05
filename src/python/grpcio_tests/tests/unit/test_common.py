@@ -15,6 +15,7 @@
 
 import collections
 from concurrent import futures
+import sys
 import threading
 
 import grpc
@@ -142,3 +143,7 @@ def running_under_gevent():
     else:
         import socket
         return socket.socket is gevent.socket.socket
+
+
+def running_under_run_time_type_check():
+    return "typeguard" in sys.modules
