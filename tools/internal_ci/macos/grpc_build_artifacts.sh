@@ -34,7 +34,7 @@ python3.8 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.9 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.10 -m pip install -U cython setuptools==65.4.1 wheel --user
 
-gem install rubygems-update
+gem install rubygems-update -v 3.3.26
 update_rubygems
 
 tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} || FAILED="true"
