@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <stdio.h>
@@ -24,12 +24,13 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -130,7 +131,7 @@ int main(int argc, char** argv) {
   int status;
   size_t i;
   gpr_subprocess* svr;
-  /* figure out where we are */
+  // figure out where we are
   if (lslash) {
     memcpy(root, me, static_cast<size_t>(lslash - me));
     root[lslash - me] = 0;
@@ -140,12 +141,12 @@ int main(int argc, char** argv) {
   if (argc == 2) {
     GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, argv[1]);
   }
-  /* figure out our test name */
+  // figure out our test name
   tmp = lunder - 1;
   while (*tmp != '_') tmp--;
   tmp++;
   memcpy(test, tmp, static_cast<size_t>(lunder - tmp));
-  /* start the server */
+  // start the server
   gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");

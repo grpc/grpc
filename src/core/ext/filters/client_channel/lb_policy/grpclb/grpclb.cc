@@ -65,6 +65,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -83,9 +84,8 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/impl/grpc_types.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -610,8 +610,8 @@ void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
   memset(addr, 0, sizeof(*addr));
   if (server.drop) return;
   const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(server.port));
-  /* the addresses are given in binary format (a in(6)_addr struct) in
-   * server->ip_address.bytes. */
+  // the addresses are given in binary format (a in(6)_addr struct) in
+  // server->ip_address.bytes.
   if (server.ip_size == 4) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
@@ -1378,13 +1378,13 @@ ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
   return ServerAddressList();
 }
 
-/* Returns the channel args for the LB channel, used to create a bidirectional
- * stream for the reception of load balancing updates.
- *
- * Inputs:
- *   - \a response_generator: in order to propagate updates from the resolver
- *   above the grpclb policy.
- *   - \a args: other args inherited from the grpclb policy. */
+// Returns the channel args for the LB channel, used to create a bidirectional
+// stream for the reception of load balancing updates.
+//
+// Inputs:
+//   - \a response_generator: in order to propagate updates from the resolver
+//   above the grpclb policy.
+//   - \a args: other args inherited from the grpclb policy.
 ChannelArgs BuildBalancerChannelArgs(
     FakeResolverResponseGenerator* response_generator,
     const ChannelArgs& args) {

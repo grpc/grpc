@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -82,10 +82,10 @@ static void push_front_worker(grpc_pollset_worker* root,
 
 static size_t pollset_size(void) { return sizeof(grpc_pollset); }
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. We're still going to provide a minimal
-   set of features for the sake of the rest of grpc. But grpc_pollset_work
-   won't actually do any polling, and return as quickly as possible. */
+// There isn't really any such thing as a pollset under Windows, due to the
+// nature of the IO completion ports. We're still going to provide a minimal
+// set of features for the sake of the rest of grpc. But grpc_pollset_work
+// won't actually do any polling, and return as quickly as possible.
 
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   *mu = &grpc_polling_mu;
@@ -123,7 +123,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   if (!pollset->kicked_without_pollers && !pollset->shutting_down) {
     if (g_active_poller == NULL) {
       grpc_pollset_worker* next_worker;
-      /* become poller */
+      // become poller
       pollset->is_iocp_worker = 1;
       g_active_poller = &worker;
       gpr_mu_unlock(&grpc_polling_mu);
@@ -132,11 +132,11 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       gpr_mu_lock(&grpc_polling_mu);
       pollset->is_iocp_worker = 0;
       g_active_poller = NULL;
-      /* try to get a worker from this pollsets worker list */
+      // try to get a worker from this pollsets worker list
       next_worker = pop_front_worker(&pollset->root_worker,
                                      GRPC_POLLSET_WORKER_LINK_POLLSET);
       if (next_worker == NULL) {
-        /* try to get a worker from the global list */
+        // try to get a worker from the global list
         next_worker = pop_front_worker(&g_global_root_worker,
                                        GRPC_POLLSET_WORKER_LINK_GLOBAL);
       }
@@ -240,4 +240,4 @@ grpc_pollset_vtable grpc_windows_pollset_vtable = {
     pollset_destroy,     pollset_work,
     pollset_kick,        pollset_size};
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif  // GRPC_WINSOCK_SOCKET

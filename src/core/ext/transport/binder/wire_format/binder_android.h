@@ -117,6 +117,6 @@ class TransactionReceiverAndroid final : public TransactionReceiver {
 
 }  // namespace grpc_binder
 
-#endif /*GPR_SUPPORT_BINDER_TRANSPORT*/
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H

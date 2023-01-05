@@ -30,12 +30,14 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -417,14 +419,14 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Return all free bytes to quota.
   void ReturnFree() {
     size_t ret = free_bytes_.exchange(0, std::memory_order_acq_rel);
+    if (ret == 0) return;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "Allocator %p returning %zu bytes to quota", this, ret);
     }
-    if (ret == 0) return;
-    memory_quota_->MaybeMoveAllocator(this, /*old_free_bytes=*/ret,
-                                      /*new_free_bytes=*/0);
     taken_bytes_.fetch_sub(ret, std::memory_order_relaxed);
     memory_quota_->Return(ret);
+    memory_quota_->MaybeMoveAllocator(this, /*old_free_bytes=*/ret,
+                                      /*new_free_bytes=*/0);
   }
 
   // Post a reclamation function.
@@ -568,10 +570,10 @@ class MemoryQuota final
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
-  // Return true if the instantaneous memory pressure is high.
+  // Return true if the controlled memory pressure is high.
   bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 1.0;
-    return memory_quota_->GetPressureInfo().instantaneous_pressure >
+    static constexpr double kMemoryPressureHighThreshold = 0.99;
+    return memory_quota_->GetPressureInfo().pressure_control_value >
            kMemoryPressureHighThreshold;
   }
 

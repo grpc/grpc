@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <stdio.h>
@@ -23,11 +23,12 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -88,8 +89,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a grpc_slice containing random alphanumeric characters.
- */
+// Creates and returns a grpc_slice containing random alphanumeric characters.
+//
 static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
@@ -126,9 +127,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "resource_quota_server", nullptr, &args);
 
-  /* Create large request and response bodies. These are big enough to require
-   * multiple round trips to deliver to the peer, and their exact contents of
-   * will be verified on completion. */
+  // Create large request and response bodies. These are big enough to require
+  // multiple round trips to deliver to the peer, and their exact contents of
+  // will be verified on completion.
   grpc_slice request_payload_slice = generate_random_slice();
 
   grpc_call** client_calls =
@@ -240,9 +241,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
     int ev_tag = static_cast<int>(reinterpret_cast<intptr_t>(ev.tag));
     if (ev_tag < CLIENT_BASE_TAG) {
-      abort(); /* illegal tag */
+      abort();  // illegal tag
     } else if (ev_tag < SERVER_START_BASE_TAG) {
-      /* client call finished */
+      // client call finished
       int call_id = ev_tag - CLIENT_BASE_TAG;
       GPR_ASSERT(call_id >= 0);
       GPR_ASSERT(call_id < NUM_CALLS);
@@ -272,7 +273,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
       pending_client_calls--;
     } else if (ev_tag < SERVER_RECV_BASE_TAG) {
-      /* new incoming call to the server */
+      // new incoming call to the server
       int call_id = ev_tag - SERVER_START_BASE_TAG;
       GPR_ASSERT(call_id >= 0);
       GPR_ASSERT(call_id < NUM_CALLS);
@@ -301,7 +302,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       grpc_call_details_destroy(&call_details[call_id]);
       grpc_metadata_array_destroy(&request_metadata_recv[call_id]);
     } else if (ev_tag < SERVER_END_BASE_TAG) {
-      /* finished read on the server */
+      // finished read on the server
       int call_id = ev_tag - SERVER_RECV_BASE_TAG;
       GPR_ASSERT(call_id >= 0);
       GPR_ASSERT(call_id < NUM_CALLS);

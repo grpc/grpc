@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
@@ -117,6 +118,17 @@ class SliceBuffer {
   /// Increased the ref-count of slice at the specified index and returns the
   /// associated slice.
   Slice RefSlice(size_t index);
+
+  /// Array access into the SliceBuffer. It returns a non mutable reference to
+  /// the slice at the specified index
+  const Slice& operator[](size_t index) const {
+    return internal::SliceCast<Slice>(slice_buffer_.slices[index]);
+  }
+
+  /// Return mutable reference to the slice at the specified index
+  Slice& MutableSliceAt(size_t index) const {
+    return internal::SliceCast<Slice>(slice_buffer_.slices[index]);
+  }
 
   /// The total number of bytes held by the SliceBuffer
   size_t Length() { return slice_buffer_.length; }

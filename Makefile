@@ -1679,6 +1679,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
@@ -1714,6 +1715,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/compression_types.h \
     include/grpc/impl/connectivity_state.h \
     include/grpc/impl/grpc_types.h \
+    include/grpc/impl/propagation_bits.h \
+    include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -2146,6 +2149,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
@@ -2181,6 +2185,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/compression_types.h \
     include/grpc/impl/connectivity_state.h \
     include/grpc/impl/grpc_types.h \
+    include/grpc/impl/propagation_bits.h \
+    include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \

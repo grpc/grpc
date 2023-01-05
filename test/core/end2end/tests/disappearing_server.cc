@@ -1,29 +1,30 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -128,8 +129,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   cqv.Expect(tag(101), true);
   cqv.Verify();
 
-  /* should be able to shut down the server early
-     - and still complete the request */
+  // should be able to shut down the server early
+  // - and still complete the request
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
 
   memset(ops, 0, sizeof(ops));
@@ -160,13 +161,13 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   cqv.Expect(tag(1), true);
   cqv.Expect(tag(1000), true);
   cqv.Verify();
-  /* Please refer https://github.com/grpc/grpc/issues/21221 for additional
-   * details.
-   * TODO(yashykt@) - The following line should be removeable after C-Core
-   * correctly handles GOAWAY frames. Internal Reference b/135458602. If this
-   * test remains flaky even after this, an alternative fix would be to send a
-   * request when the server is in the shut down state.
-   */
+  // Please refer https://github.com/grpc/grpc/issues/21221 for additional
+  // details.
+  // TODO(yashykt@) - The following line should be removeable after C-Core
+  // correctly handles GOAWAY frames. Internal Reference b/135458602. If this
+  // test remains flaky even after this, an alternative fix would be to send a
+  // request when the server is in the shut down state.
+  //
   cqv.VerifyEmpty();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
@@ -196,7 +197,7 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
 
   do_request_and_shutdown_server(config, &f, cqv);
 
-  /* now destroy and recreate the server */
+  // now destroy and recreate the server
   config.init_server(&f, nullptr);
 
   do_request_and_shutdown_server(config, &f, cqv);
@@ -207,9 +208,9 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
 
 void disappearing_server(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
-#ifndef GPR_WINDOWS /* b/148110727 for more details */
+#ifndef GPR_WINDOWS  // b/148110727 for more details
   disappearing_server_test(config);
-#endif /* GPR_WINDOWS */
+#endif  // GPR_WINDOWS
 }
 
 void disappearing_server_pre_init(void) {}

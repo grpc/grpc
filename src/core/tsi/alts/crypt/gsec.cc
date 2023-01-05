@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -52,7 +52,7 @@ grpc_status_code gsec_aead_crypter_encrypt(
         crypter, nonce, nonce_length, &aad_vec, 1, &plaintext_vec, 1,
         ciphertext_vec, bytes_written, error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -70,7 +70,7 @@ grpc_status_code gsec_aead_crypter_encrypt_iovec(
         plaintext_vec_length, ciphertext_vec, ciphertext_bytes_written,
         error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -90,7 +90,7 @@ grpc_status_code gsec_aead_crypter_decrypt(
         crypter, nonce, nonce_length, &aad_vec, 1, &ciphertext_vec, 1,
         plaintext_vec, bytes_written, error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -108,7 +108,7 @@ grpc_status_code gsec_aead_crypter_decrypt_iovec(
         ciphertext_vec_length, plaintext_vec, plaintext_bytes_written,
         error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -122,7 +122,7 @@ grpc_status_code gsec_aead_crypter_max_ciphertext_and_tag_length(
         crypter, plaintext_length, max_ciphertext_and_tag_length_to_return,
         error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -136,7 +136,7 @@ grpc_status_code gsec_aead_crypter_max_plaintext_length(
         crypter, ciphertext_and_tag_length, max_plaintext_length_to_return,
         error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -149,7 +149,7 @@ grpc_status_code gsec_aead_crypter_nonce_length(
     return crypter->vtable->nonce_length(crypter, nonce_length_to_return,
                                          error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -162,7 +162,7 @@ grpc_status_code gsec_aead_crypter_key_length(const gsec_aead_crypter* crypter,
     return crypter->vtable->key_length(crypter, key_length_to_return,
                                        error_details);
   }
-  /* An error occurred */
+  // An error occurred
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
@@ -175,7 +175,7 @@ grpc_status_code gsec_aead_crypter_tag_length(const gsec_aead_crypter* crypter,
     return crypter->vtable->tag_length(crypter, tag_length_to_return,
                                        error_details);
   }
-  /* An error occurred. */
+  // An error occurred.
   maybe_copy_error_msg(vtable_error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
