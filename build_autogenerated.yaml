@@ -8871,46 +8871,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: logging_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/promise/cancel_callback.h
-  - src/cpp/ext/filters/census/channel_filter.h
-  - src/cpp/ext/filters/census/client_filter.h
-  - src/cpp/ext/filters/census/context.h
-  - src/cpp/ext/filters/census/grpc_plugin.h
-  - src/cpp/ext/filters/census/measures.h
-  - src/cpp/ext/filters/census/open_census_call_tracer.h
-  - src/cpp/ext/filters/census/rpc_encoding.h
-  - src/cpp/ext/filters/census/server_filter.h
-  - src/cpp/ext/filters/logging/logging_filter.h
-  - src/cpp/ext/filters/logging/logging_sink.h
-  - src/cpp/ext/gcp/observability_config.h
-  - src/cpp/ext/gcp/observability_logging_sink.h
-  - test/cpp/end2end/test_service_impl.h
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
-  - src/cpp/ext/filters/census/channel_filter.cc
-  - src/cpp/ext/filters/census/client_filter.cc
-  - src/cpp/ext/filters/census/context.cc
-  - src/cpp/ext/filters/census/grpc_plugin.cc
-  - src/cpp/ext/filters/census/measures.cc
-  - src/cpp/ext/filters/census/rpc_encoding.cc
-  - src/cpp/ext/filters/census/server_filter.cc
-  - src/cpp/ext/filters/census/views.cc
-  - src/cpp/ext/filters/logging/logging_filter.cc
-  - src/cpp/ext/gcp/observability_config.cc
-  - src/cpp/ext/gcp/observability_logging_sink.cc
-  - test/cpp/end2end/test_service_impl.cc
-  - test/cpp/ext/filters/logging/logging_test.cc
-  deps:
-  - grpc++_test_config
-  - grpc++_test_util
 - name: loop_test
   gtest: true
   build: test
