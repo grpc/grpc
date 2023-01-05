@@ -188,8 +188,8 @@ void EncodeMessageToPayload(const grpc_core::SliceBuffer* message,
         &entry->payload.message,
         absl::string_view(
             reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(sb->slices[i])),
-            std::min(GRPC_SLICE_LENGTH(sb->slices[i]),
-                     static_cast<uint64_t>(log_len))));
+            std::min(static_cast<size_t>(GRPC_SLICE_LENGTH(sb->slices[i])),
+                     static_cast<size_t>(log_len))));
     if (log_len < GRPC_SLICE_LENGTH(sb->slices[i])) {
       entry->payload_truncated = true;
       break;
