@@ -17,6 +17,7 @@
 //
 
 #include <memory>
+#include <thread>
 
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
@@ -29,6 +30,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
+#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(std::string, server_uris, "",
@@ -58,8 +60,8 @@ int main(int argc, char** argv) {
           absl::GetFlag(FLAGS_test_case).c_str());
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   // validate flags
-  std::vector<std::string> uris = absl::StrSplit(absl::GetFlag(FLAGS_server_uris));
-  std::vector<std::string> creds = absl::StrSplit(absl::GetFlag(FLAGS_credentials_types));
+  std::vector<std::string> uris = absl::StrSplit(absl::GetFlag(FLAGS_server_uris), ',');
+  std::vector<std::string> creds = absl::StrSplit(absl::GetFlag(FLAGS_credentials_types), ',');
   if (uris.size() != creds.size()) {
     gpr_log(GPR_ERROR, "Number of entries in --server_uris %ld != number of entries in --credentials_types %ld", uris.size(), creds.size());
     GPR_ASSERT(0);
@@ -71,11 +73,11 @@ int main(int argc, char** argv) {
   // construct and start clients
   std::vector<std::thread> threads;
   for (int i = 0; i < uris.size(); i++) {
-    threads.push_back(std::thread([](){
+    threads.push_back(std::thread([uris, creds, i, test_case](){
       auto channel_creation_func = [uris, creds, i]() {
-        return grpc::testing::CreateTestChannel(uris[i], creds[i], nullptr /* call creds */);
+        return grpc::CreateTestChannel(uris[i], creds[i], nullptr /* call creds */);
       };
-      InteropClient client(std::move(channel_creation_func), true, false);
+      grpc::testing::InteropClient client(channel_creation_func, true, false);
       if (test_case == "rpc_soak") {
         client.DoRpcSoakTest(
             uris[i],
@@ -102,5 +104,5 @@ int main(int argc, char** argv) {
     thd.join();
   }
   gpr_log(GPR_INFO, "All clients done!");
-  return ret;
+  return 0;
 }
