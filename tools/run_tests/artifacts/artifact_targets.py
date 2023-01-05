@@ -486,12 +486,8 @@ def targets():
         PythonArtifact('windows', 'x64', 'Python38'),
         PythonArtifact('windows', 'x64', 'Python39'),
         PythonArtifact('windows', 'x64', 'Python310', presubmit=True),
-        RubyArtifact('linux', 'x86-mingw32', presubmit=True),
-        RubyArtifact('linux', 'x64-mingw32', presubmit=True),
-        RubyArtifact('linux', 'x86_64-linux', presubmit=True),
-        RubyArtifact('linux', 'x86-linux', presubmit=True),
-        RubyArtifact('linux', 'x86_64-darwin', presubmit=True),
-        RubyArtifact('linux', 'arm64-darwin', presubmit=True),
+        # Ruby artifacts disabled because they're broken.
+        # TODO(apolcyn): fix and re-enable if a ruby patch release is needed
         PHPArtifact('linux', 'x64', presubmit=True),
         PHPArtifact('macos', 'x64', presubmit=True),
     ])

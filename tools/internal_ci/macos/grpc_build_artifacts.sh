@@ -23,7 +23,9 @@ cd $(dirname $0)/../../..
 
 export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
+# Ruby builds are disabled on this branch because they're broken.
+# TODO(apolcyn): re-enable and fix if a ruby patch release on 1.46.x is needed
+export PREPARE_BUILD_INSTALL_DEPS_RUBY=false
 export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
@@ -35,9 +37,6 @@ python3.6 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.7 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.8 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
-
-gem install rubygems-update
-update_rubygems
 
 tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} || FAILED="true"
 
