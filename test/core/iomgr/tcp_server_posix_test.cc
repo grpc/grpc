@@ -487,8 +487,7 @@ static int pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
   const int enable = 1;
   setsockopt(pre_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 
-  int b = bind(pre_fd,
-               reinterpret_cast<struct sockaddr*>(&address),
+  int b = bind(pre_fd, reinterpret_cast<struct sockaddr*>(&address),
                sizeof(address));
   if (b < 0) {
     gpr_log(GPR_ERROR, "Unable to bind inet socket: %m");
@@ -521,7 +520,7 @@ static void test_pre_allocated_inet_fd() {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_pre_allocated_inet_fd");
 
   // Pre allocate FD
@@ -549,7 +548,7 @@ static void test_pre_allocated_inet_fd() {
   // Start server
   std::vector<grpc_pollset*> test_pollset;
   test_pollset.push_back(g_pollset);
-  grpc_tcp_server_start(s, &test_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &test_pollset);
 
   // Test connection
   test_addr dst;
@@ -585,8 +584,7 @@ static int pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
     return -1;
   }
 
-  int b = bind(pre_fd,
-               reinterpret_cast<struct sockaddr*>(&address),
+  int b = bind(pre_fd, reinterpret_cast<struct sockaddr*>(&address),
                sizeof(address));
   if (b < 0) {
     gpr_log(GPR_ERROR, "Unable to bind unix socket: %m");
@@ -619,13 +617,13 @@ static void test_pre_allocated_unix_fd() {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_pre_allocated_unix_fd");
 
   // Pre allocate FD
   int pre_fd;
   char path[100];
-  srand(time(0));
+  srand(time(nullptr));
   memset(path, 0, sizeof(path));
   sprintf(path, "/tmp/pre_fd_test_%d", rand());
 
@@ -652,7 +650,7 @@ static void test_pre_allocated_unix_fd() {
   // Start server
   std::vector<grpc_pollset*> test_pollset;
   test_pollset.push_back(g_pollset);
-  grpc_tcp_server_start(s, &test_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &test_pollset);
 
   // Test connection
   test_addr dst;
