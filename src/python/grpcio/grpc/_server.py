@@ -34,7 +34,6 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
-from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
@@ -69,7 +68,7 @@ def _serialized_request(request_event: cygrpc.BaseEvent) -> Optional[bytes]:
     return request_event.batch_operations[0].message()
 
 
-def _application_code(code: Any) -> Any:
+def _application_code(code: grpc.StatusCode) -> Any:
     cygrpc_code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(code)
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
@@ -350,7 +349,7 @@ class _Context(grpc.ServicerContext):
     def trailing_metadata(self) -> Optional[MetadataType]:
         return self._state.trailing_metadata
 
-    def abort(self, code: Any, details: str) -> NoReturn:
+    def abort(self, code: grpc.StatusCode, details: str) -> NoReturn:
         # treat OK like other invalid arguments: fail the RPC
         if code == grpc.StatusCode.OK:
             _LOGGER.error(

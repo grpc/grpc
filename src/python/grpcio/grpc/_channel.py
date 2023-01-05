@@ -148,7 +148,7 @@ class _RPCState(object):
         self.condition = threading.Condition()
 
 
-def _abort(state: _RPCState, code: Any, details: str) -> None:
+def _abort(state: _RPCState, code: grpc.StatusCode, details: str) -> None:
     if state.code is None:
         state.code = code
         state.details = details
