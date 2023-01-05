@@ -1056,7 +1056,7 @@ InteropClient::PerformOneSoakTestIteration(
 }
 
 void InteropClient::PerformSoakTest(
-    absl::string_view server_uri,
+    const std::string& server_uri,
     const bool reset_channel_per_iteration, const int32_t soak_iterations,
     const int32_t max_failures,
     const int32_t max_acceptable_per_iteration_latency_ms,
@@ -1087,12 +1087,12 @@ void InteropClient::PerformSoakTest(
     results.push_back(result);
     if (!success) {
       gpr_log(GPR_DEBUG,
-              "soak iteration: %d elapsed_ms: %d peer: %s failed: %s", i,
-              elapsed_ms, peer.c_str(), debug_string.c_str());
+              "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s failed: %s", i,
+              elapsed_ms, peer.c_str(), server_uri.c_str(), debug_string.c_str());
       total_failures++;
     } else {
-      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d peer: %s succeeded",
-              i, elapsed_ms, peer.c_str());
+      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s succeeded",
+              i, elapsed_ms, peer.c_str(), server_uri.c_str());
     }
     grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
     iterations_ran++;
@@ -1107,7 +1107,7 @@ void InteropClient::PerformSoakTest(
   if (iterations_ran < soak_iterations) {
     gpr_log(
         GPR_ERROR,
-        "soak test consumed all %d seconds of time and quit early, only "
+        "(server_uri: %s) soak test consumed all %d seconds of time and quit early, only "
         "having ran %d out of desired %d iterations. "
         "total_failures: %d. "
         "max_failures_threshold: %d. "
@@ -1117,38 +1117,38 @@ void InteropClient::PerformSoakTest(
         "Some or all of the iterations that did run were unexpectedly slow. "
         "See breakdown above for which iterations succeeded, failed, and "
         "why for more info.",
-        overall_timeout_seconds, iterations_ran, soak_iterations,
+        server_uri.c_str(), overall_timeout_seconds, iterations_ran, soak_iterations,
         total_failures, max_failures, latency_ms_median, latency_ms_90th,
         latency_ms_worst);
     GPR_ASSERT(0);
   } else if (total_failures > max_failures) {
     gpr_log(GPR_ERROR,
-            "soak test ran: %d iterations. total_failures: %d exceeds "
+            "(server_uri: %s) soak test ran: %d iterations. total_failures: %d exceeds "
             "max_failures_threshold: %d. "
             "median_soak_iteration_latency: %lf ms. "
             "90th_soak_iteration_latency: %lf ms. "
             "worst_soak_iteration_latency: %lf ms. "
             "See breakdown above for which iterations succeeded, failed, and "
             "why for more info.",
-            soak_iterations, total_failures, max_failures, latency_ms_median,
+            server_uri.c_str(), soak_iterations, total_failures, max_failures, latency_ms_median,
             latency_ms_90th, latency_ms_worst);
     GPR_ASSERT(0);
   } else {
     gpr_log(GPR_INFO,
-            "soak test ran: %d iterations. total_failures: %d is within "
+            "(server_uri: %s) soak test ran: %d iterations. total_failures: %d is within "
             "max_failures_threshold: %d. "
             "median_soak_iteration_latency: %lf ms. "
             "90th_soak_iteration_latency: %lf ms. "
             "worst_soak_iteration_latency: %lf ms. "
             "See breakdown above for which iterations succeeded, failed, and "
             "why for more info.",
-            soak_iterations, total_failures, max_failures, latency_ms_median,
+            server_uri.c_str(), soak_iterations, total_failures, max_failures, latency_ms_median,
             latency_ms_90th, latency_ms_worst);
   }
 }
 
 bool InteropClient::DoRpcSoakTest(
-    absl::string_view server_uri,
+    const std::string& server_uri,
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
     int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
@@ -1162,7 +1162,7 @@ bool InteropClient::DoRpcSoakTest(
 }
 
 bool InteropClient::DoChannelSoakTest(
-    absl::string_view server_uri,
+    const std::string& server_uri,
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
     int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
