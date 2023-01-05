@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -252,6 +253,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
     PickResult Pick(PickArgs args) override;
 
+    void Orphan() override;
+
    private:
     // A call tracker that collects per-call endpoint utilization reports.
     class SubchannelCallTracker : public SubchannelCallTrackerInterface {
@@ -267,24 +270,6 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
      private:
       RefCountedPtr<AddressWeight> weight_;
       Duration blackout_period_;
-    };
-
-    // Timer for recomputing weights.
-// FIXME: move this directly into Picker class
-    class Timer : public InternallyRefCounted<Timer> {
-     public:
-      explicit Timer(RefCountedPtr<Picker> picker);
-
-      void Orphan() override;
-
-     private:
-      void StartTimer();
-
-      Mutex mu_;
-      // Will be null once timer fires or is orphaned, whichever happens first.
-      RefCountedPtr<Picker> picker_ ABSL_GUARDED_BY(&mu_);
-
-      grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle_;
     };
 
     // Info stored about each subchannel.
@@ -303,8 +288,10 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     // Returns the index into subchannels_ to be picked.
     size_t PickIndex();
 
-    // Builds a new scheduler and swaps it into place.
-    void BuildScheduler();
+    // Builds a new scheduler and swaps it into place, then starts a
+    // timer for the next update.
+    void BuildSchedulerAndStartTimerLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
     RefCountedPtr<WeightedRoundRobin> wrr_;
     const bool use_per_rpc_utilization_;
@@ -312,11 +299,11 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     const Duration blackout_period_;
     std::vector<SubchannelInfo> subchannels_;
 
-    OrphanablePtr<Timer> timer_;
-
     Mutex mu_;
     uint32_t scheduler_state_ ABSL_GUARDED_BY(&mu_);
     absl::optional<StaticStrideScheduler> scheduler_ ABSL_GUARDED_BY(&mu_);
+    absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+        timer_handle_ ABSL_GUARDED_BY(&mu_);
 
     // Used when falling back to RR.
     size_t last_picked_index_;
@@ -366,6 +353,13 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
   // Compute weight.
   float weight = 0;
   if (qps > 0 && cpu_utilization > 0) weight = qps / cpu_utilization;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO,
+            "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f, "
+            "blackout_period=%s: weight=%f",
+            wrr_.get(), key_.c_str(), qps, cpu_utilization,
+            blackout_period.ToString().c_str(), weight);
+  }
   // If this report is non-empty, we will set non_empty_since_ to now;
   // otherwise, we will set it to an infinite future time.
   Timestamp now = Timestamp::Now();
@@ -377,6 +371,10 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
       std::memory_order_relaxed);
   // Update the weight if we are not within the blackout period.
   if (now - last_non_empty_since >= blackout_period) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+      gpr_log(GPR_INFO, "[WRR %p] subchannel %s: updating weight", wrr_.get(),
+              key_.c_str());
+    }
     weight_.store(weight, std::memory_order_relaxed);
   }
 }
@@ -403,58 +401,6 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
 }
 
 //
-// WeightedRoundRobin::Picker::Timer
-//
-
-WeightedRoundRobin::Picker::Timer::Timer(RefCountedPtr<Picker> picker)
-    : picker_(std::move(picker)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
-    gpr_log(GPR_INFO, "[WRR %p picker %p timer %p] created timer",
-            picker_->wrr_.get(), picker_.get(), this);
-  }
-  StartTimer();
-}
-
-void WeightedRoundRobin::Picker::Timer::StartTimer() {
-  picker_->wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
-      picker_->weight_update_period_, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        {
-          MutexLock lock(&self->mu_);
-          if (self->picker_ != nullptr) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
-              gpr_log(GPR_INFO, "[WRR %p picker %p timer %p] timer fired",
-                      self->picker_->wrr_.get(), self->picker_.get(),
-                      self.get());
-            }
-            self->picker_->BuildScheduler();
-            // Restart timer, reusing our ref to the picker.
-            StartTimer();
-          }
-        }
-        // Release ref before ExecCtx goes out of scope.
-        self.reset();
-      });
-}
-
-void WeightedRoundRobin::Picker::Timer::Orphan() {
-  {
-    MutexLock lock(&mu_);
-    if (picker_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
-        gpr_log(GPR_INFO, "[WRR %p picker %p timer %p] cancelling timer",
-                picker_->wrr_.get(), picker_.get(), this);
-      }
-      picker_->wrr_->channel_control_helper()->GetEventEngine()->Cancel(
-          timer_handle_);
-      picker_.reset();
-    }
-  }
-  Unref();
-}
-
-//
 // WeightedRoundRobin::Picker
 //
 
@@ -475,20 +421,29 @@ WeightedRoundRobin::Picker::Picker(
     if (is_ready) found_ready = true;
   }
   GPR_ASSERT(found_ready);
-  BuildScheduler();
-  timer_ = MakeOrphanable<Timer>(Ref());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
             "[WRR %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " subchannels",
             wrr_.get(), this, subchannel_list, subchannels_.size());
   }
+  BuildSchedulerAndStartTimerLocked();
 }
 
 WeightedRoundRobin::Picker::~Picker() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] destroying picker", wrr_.get(), this);
   }
+}
+
+void WeightedRoundRobin::Picker::Orphan() {
+  MutexLock lock(&mu_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
+  }
+  wrr_->channel_control_helper()->GetEventEngine()->Cancel(
+      *timer_handle_);
+  timer_handle_.reset();
 }
 
 WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(
@@ -527,18 +482,41 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
   return last_picked_index_;
 }
 
-void WeightedRoundRobin::Picker::BuildScheduler() {
+void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
+  // Build scheduler.
   std::vector<float> weights;
   weights.reserve(subchannels_.size());
   for (const auto& subchannel : subchannels_) {
     weights.push_back(subchannel.weight->GetWeight());
   }
-  MutexLock lock(&mu_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
+            absl::StrJoin(weights, " ").c_str());
+  }
   scheduler_ = StaticStrideScheduler::Make(
       weights,
       // This requires holding mu_, but we don't have a way to plumb the
       // annotation through absl::AnyInvocable<>.
       [this]() ABSL_NO_THREAD_SAFETY_ANALYSIS { return scheduler_state_++; });
+  // Start timer.
+  WeakRefCountedPtr<Picker> self = WeakRef();
+  timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
+      weight_update_period_, [self = std::move(self)]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        {
+          MutexLock lock(&self->mu_);
+          if (self->timer_handle_.has_value()) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+              gpr_log(GPR_INFO, "[WRR %p picker %p] timer fired",
+                      self->wrr_.get(), self.get());
+            }
+            self->BuildSchedulerAndStartTimerLocked();
+          }
+        }
+        // Release ref before ExecCtx goes out of scope.
+        self.reset();
+      });
 }
 
 //

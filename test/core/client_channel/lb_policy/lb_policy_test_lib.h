@@ -302,6 +302,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << location.file() << ":" << location.line();
       if (update == nullptr) return absl::nullopt;
       StateUpdate result = std::move(*update);
+      gpr_log(GPR_INFO, "got next state update: %s", result.ToString().c_str());
       queue_.pop_front();
       return std::move(result);
     }
@@ -358,7 +359,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         grpc_connectivity_state state, const absl::Status& status,
         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
       MutexLock lock(&mu_);
-      queue_.push_back(StateUpdate{state, status, std::move(picker)});
+      StateUpdate update{state, status, std::move(picker)};
+      gpr_log(GPR_INFO, "state update from LB policy: %s",
+              update.ToString().c_str());
+      queue_.push_back(std::move(update));
     }
 
     void RequestReresolution() override {
@@ -543,10 +547,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool WaitForStateUpdate(
       std::function<bool(FakeHelper::StateUpdate update)> continue_predicate,
       SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "==> WaitForStateUpdate()");
     while (true) {
       auto update = helper_->GetNextStateUpdate(location);
-      if (!update.has_value()) return false;
-      if (!continue_predicate(std::move(*update))) return true;
+      if (!update.has_value()) {
+        gpr_log(GPR_INFO, "WaitForStateUpdate() returning false");
+        return false;
+      }
+      if (!continue_predicate(std::move(*update))) {
+        gpr_log(GPR_INFO, "WaitForStateUpdate() returning true");
+        return true;
+      }
     }
   }
 
@@ -576,6 +587,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // update for state READY, whose picker is returned.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "==> WaitForConnected()");
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {

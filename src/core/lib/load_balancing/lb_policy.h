@@ -40,6 +40,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -257,11 +258,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Currently, pickers are always accessed from within the
   /// client_channel data plane mutex, so they do not have to be
   /// thread-safe.
-  class SubchannelPicker : public RefCounted<SubchannelPicker> {
+  class SubchannelPicker : public DualRefCounted<SubchannelPicker> {
    public:
-    SubchannelPicker() = default;
+    SubchannelPicker();
 
     virtual PickResult Pick(PickArgs args) = 0;
+
+    void Orphan() override {}
   };
 
   /// A proxy object implemented by the client channel and used by the
