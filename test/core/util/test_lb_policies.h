@@ -91,7 +91,7 @@ void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
                                      absl::Status status,
                                      std::atomic<int>* pick_counter = nullptr);
 
-// Registers an LB policy called "queue_once" that queues atleast one pick, and
+// Registers an LB policy called "queue_once" that queues at least one pick, and
 // then delegates to PickFirst.
 void RegisterQueueOnceLoadBalancingPolicy(CoreConfiguration::Builder* builder);
 }  // namespace grpc_core

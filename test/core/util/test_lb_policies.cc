@@ -750,7 +750,7 @@ class FailLbFactory : public LoadBalancingPolicyFactory {
 
 //
 // QueueOnceLoadBalancingPolicy - a load balancing policy that provides a Queue
-// PickResult atleast once, after which it delegates to PickFirst.
+// PickResult at least once, after which it delegates to PickFirst.
 //
 
 constexpr char kQueueOncePolicyName[] = "queue_once";
@@ -764,24 +764,29 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
             std::move(args), "pick_first",
             /*initial_refcount=*/2) {}
 
-  ~QueueOnceLoadBalancingPolicy() override = default;
+  // We use the standard QueuePicker which invokes ExitIdleLocked() on the first
+  // pick.
+  void ExitIdleLocked() override {
+    bool needs_update = false;
+    {
+      MutexLock lock(&mu_);
+      needs_update = !std::exchange(seen_pick_queued_, true);
+    }
+    if (needs_update && state_to_update_.has_value()) {
+      channel_control_helper()->UpdateState(
+          state_to_update_->state, state_to_update_->status,
+          std::move(state_to_update_->picker));
+    }
+  }
+
+  bool SeenQueuedPick() {
+    MutexLock lock(&mu_);
+    return seen_pick_queued_;
+  }
 
   absl::string_view name() const override { return kQueueOncePolicyName; }
 
  private:
-  class Helper;
-
-  // An always queueing picker
-  class QueueingPicker : public SubchannelPicker {
-   public:
-    QueueingPicker(Helper* helper) : helper_(helper) {}
-
-    PickResult Pick(PickArgs /*args*/) override;
-
-   private:
-    Helper* helper_;
-  };
-
   class Helper : public ChannelControlHelper {
    public:
     Helper(RefCountedPtr<QueueOnceLoadBalancingPolicy> parent)
@@ -795,23 +800,18 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override {
-      bool pick_queued;
-      {
-        MutexLock lock(&mu_);
-        pick_queued = pick_queued_;
-        // If a pick has not been queued yet, we need to save the update from
-        // PickFirst to propagate later.
-        if (!pick_queued) {
-          state_to_update_ = {state, status, std::move(picker)};
-        }
+      // If we've already seen a queued pick, just propagate the update
+      // directly.
+      if (parent_->SeenQueuedPick()) {
+        parent_->channel_control_helper()->UpdateState(state, status,
+                                                       std::move(picker));
+        return;
       }
-      if (!pick_queued) {
-        return parent_->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-            MakeRefCounted<QueueingPicker>(this));
-      }
-      parent_->channel_control_helper()->UpdateState(state, status,
-                                                     std::move(picker));
+      // Otherwise, store the update in the LB policy, to be propagated later,
+      // and return a queueing picker.
+      parent_->state_to_update_ = {state, status, std::move(picker)};
+      parent_->channel_control_helper()->UpdateState(
+          state, status, MakeRefCounted<QueuePicker>(parent_->Ref()));
     }
 
     void RequestReresolution() override {
@@ -831,54 +831,19 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
     }
 
-    void SetPickQueued() {
-      MutexLock lock(&mu_);
-      pick_queued_ = true;
-      if (state_to_update_.has_value()) {
-        // Propagate the update from PickFirst but do not do it inline to avoid
-        // deadlocks.
-        parent_->work_serializer()->Schedule(
-            [helper = parent_->channel_control_helper(),
-             update_state = std::move(state_to_update_.value())]() {
-              helper->UpdateState(update_state.state, update_state.status,
-                                  update_state.picker);
-            },
-            DEBUG_LOCATION);
-        // Since we scheduled the update above instead of running inline, we
-        // need to drain the queue for the WorkSerializer.
-        ExecCtx::Run(
-            DEBUG_LOCATION,
-            GRPC_CLOSURE_CREATE(
-                [](void* arg, grpc_error_handle /*error*/) {
-                  auto parent = RefCountedPtr<QueueOnceLoadBalancingPolicy>(
-                      static_cast<QueueOnceLoadBalancingPolicy*>(arg));
-                  parent->work_serializer()->DrainQueue();
-                },
-                parent_->Ref().release(), nullptr),
-            absl::OkStatus());
-        state_to_update_.reset();
-      }
-    }
-
    private:
-    Mutex mu_;
-    struct StateToUpdate {
-      grpc_connectivity_state state;
-      absl::Status status;
-      RefCountedPtr<SubchannelPicker> picker;
-    };
-    absl::optional<StateToUpdate> state_to_update_ ABSL_GUARDED_BY(mu_);
-    bool pick_queued_ ABSL_GUARDED_BY(mu_) =
-        false;  // Has a pick been queued yet
     RefCountedPtr<QueueOnceLoadBalancingPolicy> parent_;
   };
+  struct StateToUpdate {
+    grpc_connectivity_state state;
+    absl::Status status;
+    RefCountedPtr<SubchannelPicker> picker;
+  };
+  absl::optional<StateToUpdate> state_to_update_;
+  Mutex mu_;
+  bool seen_pick_queued_ ABSL_GUARDED_BY(mu_) =
+      false;  // Has a pick been queued yet
 };
-
-LoadBalancingPolicy::PickResult
-QueueOnceLoadBalancingPolicy::QueueingPicker::Pick(PickArgs /*args*/) {
-  helper_->SetPickQueued();
-  return PickResult::Queue();
-}
 
 class QueueOnceLbConfig : public LoadBalancingPolicy::Config {
  public:
