@@ -380,10 +380,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Closures scheduled with \a Run cannot be cancelled. The \a closure will
   /// not be deleted after it has been run, ownership remains with the caller.
   ///
-  /// Implementations must not immediately execute the closure in a blocking
-  /// manner on the same thread before the current thread stack is unwound. For
-  /// example, if the caller must release a lock before the closure can proceed,
-  /// running the closure immediately would cause a deadlock.
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a Run returns. For example, if the caller must release a lock before the
+  /// closure can proceed, running the closure immediately would cause a
+  /// deadlock.
   virtual void Run(Closure* closure) = 0;
   /// Asynchronously executes a task as soon as possible.
   ///
@@ -395,8 +395,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
   ///
-  /// Implementations must not immediately execute the closure in a blocking
-  /// manner on the same thread before the current thread stack is unwound.
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a Run returns.
   virtual void Run(absl::AnyInvocable<void()> closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
@@ -404,8 +404,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
   /// run, nor will it be deleted. Ownership remains with the caller.
   ///
-  /// Implementations must not immediately execute the closure in a blocking
-  /// manner on the same thread before the current thread stack is unwound.
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a RunAfter returns.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
@@ -419,8 +419,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// version in some scenarios. This overload is useful in situations where
   /// performance is not a critical concern.
   ///
-  /// Implementations must not immediately execute the closure in a blocking
-  /// manner on the same thread before the current thread stack is unwound.
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a RunAfter returns.
   virtual TaskHandle RunAfter(Duration when,
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
