@@ -789,7 +789,7 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
  private:
   class Helper : public ChannelControlHelper {
    public:
-    Helper(RefCountedPtr<QueueOnceLoadBalancingPolicy> parent)
+    explicit Helper(RefCountedPtr<QueueOnceLoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
