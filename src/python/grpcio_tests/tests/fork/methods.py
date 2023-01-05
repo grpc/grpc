@@ -19,6 +19,7 @@ import logging
 import multiprocessing
 import os
 import queue
+import tempfile
 import threading
 import time
 
@@ -30,7 +31,13 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
-_CHILD_FINISH_TIMEOUT_S = 60
+_CHILD_FINISH_TIMEOUT_S = 20
+
+_COUNTER = 0
+def mark():
+    global _COUNTER
+    import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAA {}\n".format(_COUNTER)); sys.stderr.flush()
+    _COUNTER += 1
 
 
 def _channel(args):
@@ -118,33 +125,87 @@ class _ChildProcess(object):
         if args is None:
             args = ()
         self._exceptions = multiprocessing.Queue()
+        self._stdout_path = tempfile.mkstemp()[1]
+        self._stderr_path = tempfile.mkstemp()[1]
+        self._child_pid = None
+        self._rc = None
+        # self._stdout = tempfile.TemporaryFile()
+        # self._stderr = tempfile.TemporaryFile()
 
-        def record_exceptions():
-            try:
-                task(*args)
-            except grpc.RpcError as rpc_error:
-                self._exceptions.put('RpcError: %s' % rpc_error)
-            except Exception as e:  # pylint: disable=broad-except
-                self._exceptions.put(e)
+        self._task = task
 
-        self._process = multiprocessing.Process(target=record_exceptions)
+
+        # self._process = multiprocessing.POpen()
+        # self._process = multiprocessing.Process(target=record_exceptions)
+
+    def _child_main(self):
+        try:
+            sys.stderr.write("In _child_main\n"); sys.stderr.flush()
+            # stdout = open(self._stdout_path, 'w')
+            # stderr = open(self._stderr_path, 'w')
+            # # stdout_copy = os.dup(sys.stdout.fileno())
+            # os.dup2(stdout.fileno(), sys.stdout.fileno())
+            # os.dup2(stderr.fileno(), sys.stderr.fileno())
+            self._task(*args)
+        except grpc.RpcError as rpc_error:
+            self._exceptions.put('RpcError: %s' % rpc_error)
+        except Exception as e:  # pylint: disable=broad-except
+            self._exceptions.put(e)
+        # finally:
+        #     stdout.close()
+        #     stderr.close()
+        sys.exit(0)
 
     def start(self):
-        self._process.start()
+        import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forking\n")
+        ret = os.fork()
+        if ret == 0:
+            sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forked child\n")
+            self._child_main()
+        else:
+            sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forked parent\n")
+            self._child_pid = ret
+
+
+    def wait(self, timeout):
+        total = 0.0
+        wait_interval = 1.0
+        while total < timeout:
+            self._rc, termination = os.waitpid(self._child_pid, os.WNOHANG)
+            if termination in (os.WIFEXITED, os.WIFSIGNALED):
+                return True
+            time.sleep(wait_interval)
+            total += wait_interval
+        else:
+            return False
+
 
     def finish(self):
-        self._process.join(timeout=_CHILD_FINISH_TIMEOUT_S)
-        if self._process.is_alive():
-            raise RuntimeError('Child process did not terminate')
-        if self._process.exitcode != 0:
-            raise ValueError('Child process failed with exitcode %d' %
-                             self._process.exitcode)
+        import sys; sys.stderr.write("Joining process\n"); sys.stderr.flush()
+        terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
+        sys.stderr.write("Joined process\n"); sys.stderr.flush()
         try:
-            exception = self._exceptions.get(block=False)
-            raise ValueError('Child process failed: "%s": "%s"' %
-                             (repr(exception), exception))
-        except queue.Empty:
-            pass
+            # TODO: This method seems to be giving bad results. Fix.
+            if not terminated:
+                raise RuntimeError('Child process did not terminate')
+            if self._rc != 0:
+                raise ValueError('Child process failed with exitcode %d' %
+                                 self._rc)
+            try:
+                exception = self._exceptions.get(block=False)
+                raise ValueError('Child process failed: "%s": "%s"' %
+                                 (repr(exception), exception))
+            except queue.Empty:
+                pass
+        except:
+            # stdout = open(self._stdout_path, 'r')
+            # stderr = open(self._stderr_path, 'r')
+            # sys.stderr.write("STDOUT:\n{}\n".format(stdout.read()))
+            # sys.stderr.write("STDERR:\n{}\n".format(stderr.read()))
+            # sys.stderr.flush()
+            # stdout.close()
+            # stderr.close()
+            raise
 
 
 def _async_unary_same_channel(channel):
@@ -173,12 +234,19 @@ def _async_unary_new_channel(channel, args):
             _async_unary(child_stub)
             child_channel.close()
 
+    mark()
     stub = test_pb2_grpc.TestServiceStub(channel)
+    mark()
     _async_unary(stub)
+    mark()
     child_process = _ChildProcess(child_target)
+    mark()
     child_process.start()
+    mark()
     _async_unary(stub)
+    mark()
     child_process.finish()
+    mark()
 
 
 def _blocking_unary_same_channel(channel):
@@ -241,6 +309,7 @@ def _connectivity_watch(channel, args):
 
     def child_target():
 
+        sys.stderr.write("In child target\n"); sys.stderr.flush()
         child_channel_ready_event = threading.Event()
 
         def child_connectivity_callback(state):
@@ -264,15 +333,24 @@ def _connectivity_watch(channel, args):
         if state is grpc.ChannelConnectivity.READY:
             parent_channel_ready_event.set()
 
+    mark()
     channel.subscribe(parent_connectivity_callback)
+    mark()
     stub = test_pb2_grpc.TestServiceStub(channel)
+    mark()
     child_process = _ChildProcess(child_target)
+    mark()
     child_process.start()
+    mark()
     _async_unary(stub)
+    mark()
     if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
         raise ValueError('Channel did not move to READY')
+    mark()
     channel.unsubscribe(parent_connectivity_callback)
+    mark()
     child_process.finish()
+    mark()
 
 
 def _ping_pong_with_child_processes_after_first_response(

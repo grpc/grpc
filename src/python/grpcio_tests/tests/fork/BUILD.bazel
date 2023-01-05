@@ -1,0 +1,19 @@
+# TODO: Flowerbox
+
+py_test(
+	name = "fork_test",
+	python_version = "PY3",
+
+	# TODO: no glob.
+	srcs = glob(["*.py"]),
+	main = "_fork_interop_test.py",
+	imports = ["../.."],
+        deps = [
+		"//src/python/grpcio/grpc:grpcio",
+		"//src/proto/grpc/testing:empty_py_pb2",
+		"//src/proto/grpc/testing:py_messages_proto",
+		"//src/proto/grpc/testing:test_py_pb2_grpc",
+		"//src/python/grpcio_tests/tests/interop:service",
+		"//src/python/grpcio_tests/tests/unit:test_common",
+	],
+)
