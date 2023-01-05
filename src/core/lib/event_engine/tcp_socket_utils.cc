@@ -15,6 +15,8 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -66,10 +68,77 @@ absl::StatusOr<std::string> GetScheme(
     case AF_UNIX:
       return "unix";
     default:
-      return absl::InvalidArgumentError(absl::StrFormat(
-          "Unknown scheme: %d", resolved_address.address()->sa_family));
+      return absl::InvalidArgumentError(
+          absl::StrFormat("Unknown sockaddr family: %d",
+                          resolved_address.address()->sa_family));
   }
 }
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
+  const sockaddr* addr = resolved_addr->address();
+  if (addr->sa_family != AF_UNIX) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
+  }
+  const sockaddr_un* unix_addr = reinterpret_cast<const sockaddr_un*>(addr);
+#ifdef GPR_APPLE
+  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) -
+            sizeof(unix_addr->sun_len) - 1;
+#else
+  int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
+#endif
+  bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
+  std::string path;
+  if (abstract) {
+    if (len >= 0) {
+      path = std::string(unix_addr->sun_path + 1, len);
+    }
+    path = absl::StrCat(std::string(1, '\0'), path);
+  } else {
+    size_t maxlen = sizeof(unix_addr->sun_path);
+    if (strnlen(unix_addr->sun_path, maxlen) == maxlen) {
+      return absl::InvalidArgumentError("UDS path is not null-terminated");
+    }
+    path = unix_addr->sun_path;
+  }
+  return path;
+}
+
+absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
+  auto path = ResolvedAddrToUnixPathIfPossible(resolved_addr);
+  GRPC_RETURN_IF_ERROR(path.status());
+  std::string scheme;
+  std::string path_string;
+  if (path->at(0) == '\0') {
+    scheme = "unix-abstract";
+    path_string = path->length() > 1 ? path->substr(1, std::string::npos) : "";
+  } else {
+    scheme = "unix";
+    path_string = std::move(*path);
+  }
+
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      std::move(scheme), /*authority=*/"", std::move(path_string),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  if (!uri.ok()) return uri.status();
+  return uri->ToString();
+}
+#else
+
+absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+  return absl::InvalidArgumentError("Unix socket is not supported.");
+}
+
+absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+  return absl::InvalidArgumentError("Unix socket is not supported.");
+}
+#endif
+
 }  // namespace
 
 bool ResolvedAddressIsV4Mapped(
@@ -88,7 +157,7 @@ bool ResolvedAddressIsV4Mapped(
                sizeof(kV4MappedPrefix)) == 0) {
       if (resolved_addr4_out != nullptr) {
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
-        memset(addr4_out, 0, sizeof(sockaddr_in));
+        memset(addr4_out, 0, EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
         addr4_out->sin_family = AF_INET;
         // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
@@ -224,10 +293,10 @@ absl::optional<int> ResolvedAddressIsWildcard(
 absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
     const EventEngine::ResolvedAddress& resolved_addr) {
   EventEngine::ResolvedAddress addr_normalized;
-  if (ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
-    return ResolvedAddressToString(addr_normalized);
+  if (!ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
+    addr_normalized = resolved_addr;
   }
-  return ResolvedAddressToString(resolved_addr);
+  return ResolvedAddressToString(addr_normalized);
 }
 
 absl::StatusOr<std::string> ResolvedAddressToString(
@@ -237,27 +306,7 @@ absl::StatusOr<std::string> ResolvedAddressToString(
   std::string out;
 #ifdef GRPC_HAVE_UNIX_SOCKET
   if (addr->sa_family == AF_UNIX) {
-    const sockaddr_un* addr_un = reinterpret_cast<const sockaddr_un*>(addr);
-    bool abstract = addr_un->sun_path[0] == '\0';
-    if (abstract) {
-#ifdef GPR_APPLE
-      int len = resolved_addr.size() - sizeof(addr_un->sun_family) -
-                sizeof(addr_un->sun_len);
-#else
-      int len = resolved_addr.size() - sizeof(addr_un->sun_family);
-#endif
-      if (len <= 0) {
-        return absl::InvalidArgumentError("Empty UDS abstract path");
-      }
-      out = std::string(addr_un->sun_path, len);
-    } else {
-      size_t maxlen = sizeof(addr_un->sun_path);
-      if (strnlen(addr_un->sun_path, maxlen) == maxlen) {
-        return absl::InvalidArgumentError("UDS path is not null-terminated");
-      }
-      out = std::string(addr_un->sun_path);
-    }
-    return out;
+    return ResolvedAddrToUnixPathIfPossible(&resolved_addr);
   }
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
@@ -301,9 +350,17 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
   if (resolved_address.size() == 0) {
     return absl::InvalidArgumentError("Empty address");
   }
-  auto scheme = GetScheme(resolved_address);
+  EventEngine::ResolvedAddress addr = resolved_address;
+  EventEngine::ResolvedAddress addr_normalized;
+  if (ResolvedAddressIsV4Mapped(addr, &addr_normalized)) {
+    addr = addr_normalized;
+  }
+  auto scheme = GetScheme(addr);
   GRPC_RETURN_IF_ERROR(scheme.status());
-  auto path = ResolvedAddressToString(resolved_address);
+  if (*scheme == "unix") {
+    return ResolvedAddrToUriUnixIfPossible(&addr);
+  }
+  auto path = ResolvedAddressToString(addr);
   GRPC_RETURN_IF_ERROR(path.status());
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Create(*scheme, /*authority=*/"", std::move(path.value()),

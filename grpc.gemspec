@@ -36,12 +36,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
-  s.add_development_dependency 'simplecov',          '~> 0.14.1'
+  s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
   s.add_development_dependency 'rspec',              '~> 3.6'
-  s.add_development_dependency 'rubocop',            '~> 0.49.1'
+  s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
   s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.10'
 
@@ -54,6 +54,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/event_engine/endpoint_config.h )
   s.files += %w( include/grpc/event_engine/event_engine.h )
   s.files += %w( include/grpc/event_engine/internal/memory_allocator_impl.h )
+  s.files += %w( include/grpc/event_engine/internal/slice_cast.h )
   s.files += %w( include/grpc/event_engine/memory_allocator.h )
   s.files += %w( include/grpc/event_engine/memory_request.h )
   s.files += %w( include/grpc/event_engine/port.h )
@@ -144,6 +145,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.h )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.cc )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_call_state_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h )
@@ -1317,7 +1319,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/activity.h )
   s.files += %w( src/core/lib/promise/arena_promise.h )
   s.files += %w( src/core/lib/promise/context.h )
-  s.files += %w( src/core/lib/promise/detail/basic_join.h )
   s.files += %w( src/core/lib/promise/detail/basic_seq.h )
   s.files += %w( src/core/lib/promise/detail/promise_factory.h )
   s.files += %w( src/core/lib/promise/detail/promise_like.h )
@@ -1326,7 +1327,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/exec_ctx_wakeup_scheduler.h )
   s.files += %w( src/core/lib/promise/for_each.h )
   s.files += %w( src/core/lib/promise/intra_activity_waiter.h )
-  s.files += %w( src/core/lib/promise/join.h )
   s.files += %w( src/core/lib/promise/latch.h )
   s.files += %w( src/core/lib/promise/loop.h )
   s.files += %w( src/core/lib/promise/map.h )

@@ -30,6 +30,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -56,6 +57,7 @@
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -372,6 +374,9 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
       is_shutdown_ = true;
       shutdown_error_ =
           absl::Status(absl::StatusCode::kInternal, "FD Orphaned");
+      grpc_core::StatusSetInt(&shutdown_error_,
+                              grpc_core::StatusIntProperty::kRpcStatus,
+                              GRPC_STATUS_UNAVAILABLE);
       // signal read/write closed to OS so that future operations fail.
       if (!released_) {
         shutdown(fd_, SHUT_RDWR);
@@ -409,7 +414,7 @@ int PollEventHandle::NotifyOnLocked(PosixEngineClosure** st,
     scheduler_->Run(closure);
     return 1;
   } else {
-    /* upcallptr was set to a different closure.  This is an error! */
+    // upcallptr was set to a different closure.  This is an error!
     gpr_log(GPR_ERROR,
             "User called a notify_on function with a previous callback still "
             "pending");
@@ -447,6 +452,9 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
     if (!is_shutdown_) {
       is_shutdown_ = true;
       shutdown_error_ = why;
+      grpc_core::StatusSetInt(&shutdown_error_,
+                              grpc_core::StatusIntProperty::kRpcStatus,
+                              GRPC_STATUS_UNAVAILABLE);
       // signal read/write closed to OS so that future operations fail.
       shutdown(fd_, SHUT_RDWR);
       SetReadyLocked(&read_closure_);
@@ -842,7 +850,7 @@ PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* GRPC_POSIX_SOCKET_EV_POLL */
+#else  // GRPC_POSIX_SOCKET_EV_POLL
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -890,4 +898,4 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_POSIX_SOCKET_EV_POLL */
+#endif  // GRPC_POSIX_SOCKET_EV_POLL

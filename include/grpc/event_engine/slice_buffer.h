@@ -25,7 +25,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
+#include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -50,7 +52,7 @@ namespace experimental {
 /// an experimental API.
 class SliceBuffer {
  public:
-  explicit SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
+  SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
@@ -117,8 +119,19 @@ class SliceBuffer {
   /// associated slice.
   Slice RefSlice(size_t index);
 
+  /// Array access into the SliceBuffer. It returns a non mutable reference to
+  /// the slice at the specified index
+  const Slice& operator[](size_t index) const {
+    return internal::SliceCast<Slice>(slice_buffer_.slices[index]);
+  }
+
+  /// Return mutable reference to the slice at the specified index
+  Slice& MutableSliceAt(size_t index) const {
+    return internal::SliceCast<Slice>(slice_buffer_.slices[index]);
+  }
+
   /// The total number of bytes held by the SliceBuffer
-  size_t Length() { return slice_buffer_.length; }
+  size_t Length() const { return slice_buffer_.length; }
 
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }

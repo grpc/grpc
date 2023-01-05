@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
@@ -34,8 +34,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"
@@ -53,14 +53,14 @@
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
   "grpc.channelz_is_internal_channel"
 
-/** This is the default value for whether or not to enable channelz. If
- * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
+/// This is the default value for whether or not to enable channelz. If
+/// GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value.
 #define GRPC_ENABLE_CHANNELZ_DEFAULT true
 
-/** This is the default value for the maximum amount of memory used by trace
- * events per channel trace node. If
- * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
- * this default value. */
+/// This is the default value for the maximum amount of memory used by trace
+/// events per channel trace node. If
+/// GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
+/// this default value.
 #define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT (1024 * 4)
 
 namespace grpc_core {
@@ -371,4 +371,4 @@ class ListenSocketNode : public BaseNode {
 }  // namespace channelz
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CHANNELZ_H */
+#endif  // GRPC_CORE_LIB_CHANNEL_CHANNELZ_H

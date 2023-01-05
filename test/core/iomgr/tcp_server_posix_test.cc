@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <gtest/gtest.h>
 
@@ -60,7 +60,7 @@ static grpc_pollset* g_pollset;
 static int g_nconnects = 0;
 
 typedef struct {
-  /* Owns a ref to server. */
+  // Owns a ref to server.
   grpc_tcp_server* server;
   unsigned port_index;
   unsigned fd_index;
@@ -70,7 +70,7 @@ typedef struct {
 typedef struct {
   grpc_tcp_server* server;
 
-  /* arg is this server_weak_ref. */
+  // arg is this server_weak_ref.
   grpc_closure server_shutdown;
 } server_weak_ref;
 
@@ -129,11 +129,11 @@ static void server_weak_ref_init(server_weak_ref* weak_ref) {
                     weak_ref, grpc_schedule_on_exec_ctx);
 }
 
-/* Make weak_ref->server_shutdown a shutdown_starting cb on server.
-   grpc_tcp_server promises that the server object will live until
-   weak_ref->server_shutdown has returned. A strong ref on grpc_tcp_server
-   should be held until server_weak_ref_set() returns to avoid a race where the
-   server is deleted before the shutdown_starting cb is added. */
+// Make weak_ref->server_shutdown a shutdown_starting cb on server.
+// grpc_tcp_server promises that the server object will live until
+// weak_ref->server_shutdown has returned. A strong ref on grpc_tcp_server
+// should be held until server_weak_ref_set() returns to avoid a race where the
+// server is deleted before the shutdown_starting cb is added.
 static void server_weak_ref_set(server_weak_ref* weak_ref,
                                 grpc_tcp_server* server) {
   grpc_tcp_server_shutdown_starting_add(server, &weak_ref->server_shutdown);
@@ -176,7 +176,7 @@ static void test_no_op(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   grpc_tcp_server_unref(s);
 }
 
@@ -191,10 +191,10 @@ static void test_no_op_with_start(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_no_op_with_start");
   std::vector<grpc_pollset*> empty_pollset;
-  grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &empty_pollset);
   grpc_tcp_server_unref(s);
 }
 
@@ -212,7 +212,7 @@ static void test_no_op_with_port(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -240,7 +240,7 @@ static void test_no_op_with_port_and_start(void) {
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
+          on_connect, nullptr, &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port = -1;
 
@@ -252,7 +252,7 @@ static void test_no_op_with_port_and_start(void) {
   ASSERT_GT(port, 0);
 
   std::vector<grpc_pollset*> empty_pollset;
-  grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &empty_pollset);
 
   grpc_tcp_server_unref(s);
 }
@@ -313,12 +313,12 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   return absl::OkStatus();
 }
 
-/* Tests a tcp server on "::" listeners with multiple ports. If channel_args is
-   non-NULL, pass them to the server. If dst_addrs is non-NULL, use valid addrs
-   as destination addrs (port is not set). If dst_addrs is NULL, use listener
-   addrs as destination addrs. If test_dst_addrs is true, test connectivity with
-   each destination address, set grpc_resolved_address::len=0 for failures, but
-   don't fail the overall unitest. */
+// Tests a tcp server on "::" listeners with multiple ports. If channel_args is
+// non-NULL, pass them to the server. If dst_addrs is non-NULL, use valid addrs
+// as destination addrs (port is not set). If dst_addrs is NULL, use listener
+// addrs as destination addrs. If test_dst_addrs is true, test connectivity with
+// each destination address, set grpc_resolved_address::len=0 for failures, but
+// don't fail the overall unitest.
 static void test_connect(size_t num_connects,
                          const grpc_channel_args* channel_args,
                          test_addrs* dst_addrs, bool test_dst_addrs) {
@@ -344,7 +344,7 @@ static void test_connect(size_t num_connects,
                 nullptr,
                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                     new_channel_args),
-                &s));
+                on_connect, nullptr, &s));
   unsigned port_num;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);
@@ -366,8 +366,8 @@ static void test_connect(size_t num_connects,
       grpc_tcp_server_add_port(s, &resolved_addr, &svr_port)));
   gpr_log(GPR_INFO, "Allocated port %d", svr_port);
   ASSERT_GT(svr_port, 0);
-  /* Cannot use wildcard (port==0), because add_port() will try to reuse the
-     same port as a previous add_port(). */
+  // Cannot use wildcard (port==0), because add_port() will try to reuse the
+  // same port as a previous add_port().
   svr1_port = grpc_pick_unused_port_or_die();
   ASSERT_GT(svr1_port, 0);
   gpr_log(GPR_INFO, "Picked unused port %d", svr1_port);
@@ -376,15 +376,15 @@ static void test_connect(size_t num_connects,
             absl::OkStatus());
   ASSERT_EQ(port, svr1_port);
 
-  /* Bad port_index. */
+  // Bad port_index.
   ASSERT_EQ(grpc_tcp_server_port_fd_count(s, 2), 0);
   ASSERT_LT(grpc_tcp_server_port_fd(s, 2, 0), 0);
 
-  /* Bad fd_index. */
+  // Bad fd_index.
   ASSERT_LT(grpc_tcp_server_port_fd(s, 0, 100), 0);
   ASSERT_LT(grpc_tcp_server_port_fd(s, 1, 100), 0);
 
-  /* Got at least one fd per port. */
+  // Got at least one fd per port.
   svr_fd_count = grpc_tcp_server_port_fd_count(s, 0);
   ASSERT_GE(svr_fd_count, 1);
   svr1_fd_count = grpc_tcp_server_port_fd_count(s, 1);
@@ -392,7 +392,7 @@ static void test_connect(size_t num_connects,
 
   std::vector<grpc_pollset*> test_pollset;
   test_pollset.push_back(g_pollset);
-  grpc_tcp_server_start(s, &test_pollset, on_connect, nullptr);
+  grpc_tcp_server_start(s, &test_pollset);
 
   if (dst_addrs != nullptr) {
     int ports[] = {svr_port, svr1_port};
@@ -456,14 +456,14 @@ static void test_connect(size_t num_connects,
       }
     }
   }
-  /* Weak ref to server valid until final unref. */
+  // Weak ref to server valid until final unref.
   ASSERT_NE(weak_ref.server, nullptr);
   ASSERT_GE(grpc_tcp_server_port_fd(s, 0, 0), 0);
 
   grpc_tcp_server_unref(s);
   grpc_core::ExecCtx::Get()->Flush();
 
-  /* Weak ref lost. */
+  // Weak ref lost.
   ASSERT_EQ(weak_ref.server, nullptr);
 }
 
@@ -525,17 +525,17 @@ TEST(TcpServerPosixTest, MainTest) {
     freeifaddrs(ifa);
     ifa = nullptr;
 
-    /* Connect to same addresses as listeners. */
+    // Connect to same addresses as listeners.
     test_connect(1, nullptr, nullptr, false);
     test_connect(10, nullptr, nullptr, false);
 
-    /* Set dst_addrs->addrs[i].len=0 for dst_addrs that are unreachable with a
-       "::" listener. */
+    // Set dst_addrs->addrs[i].len=0 for dst_addrs that are unreachable with a
+    // "::" listener.
     test_connect(1, nullptr, dst_addrs, true);
 
-    /* Test connect(2) with dst_addrs. */
+    // Test connect(2) with dst_addrs.
     test_connect(1, &channel_args, dst_addrs, false);
-    /* Test connect(2) with dst_addrs. */
+    // Test connect(2) with dst_addrs.
     test_connect(10, &channel_args, dst_addrs, false);
 
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
@@ -547,7 +547,7 @@ TEST(TcpServerPosixTest, MainTest) {
   gpr_free(g_pollset);
 }
 
-#endif /* GRPC_POSIX_SOCKET_SERVER */
+#endif  // GRPC_POSIX_SOCKET_SERVER
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

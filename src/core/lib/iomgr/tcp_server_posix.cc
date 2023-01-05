@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* FIXME: "posix" files shouldn't be depending on _GNU_SOURCE */
+// FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -69,6 +69,8 @@ using ::grpc_event_engine::experimental::EndpointConfig;
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
+                                           grpc_tcp_server_cb on_accept_cb,
+                                           void* on_accept_cb_arg,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = new grpc_tcp_server;
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
@@ -89,14 +91,15 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
   s->shutdown_complete = shutdown_complete;
-  s->on_accept_cb = nullptr;
-  s->on_accept_cb_arg = nullptr;
+  s->on_accept_cb = on_accept_cb;
+  s->on_accept_cb_arg = on_accept_cb_arg;
   s->head = nullptr;
   s->tail = nullptr;
   s->nports = 0;
   s->options = TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
   GPR_ASSERT(s->options.resource_quota != nullptr);
+  GPR_ASSERT(s->on_accept_cb);
   s->memory_quota = s->options.resource_quota->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
@@ -134,11 +137,11 @@ static void destroyed_port(void* server, grpc_error_handle /*error*/) {
   }
 }
 
-/* called when all listening endpoints have been shutdown, so no further
-   events will be received on them - at this point it's safe to destroy
-   things */
+// called when all listening endpoints have been shutdown, so no further
+// events will be received on them - at this point it's safe to destroy
+// things
 static void deactivated_all_ports(grpc_tcp_server* s) {
-  /* delete ALL the things */
+  // delete ALL the things
   gpr_mu_lock(&s->mu);
 
   GPR_ASSERT(s->shutdown);
@@ -163,7 +166,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(!s->shutdown);
   s->shutdown = true;
-  /* shutdown all fd's */
+  // shutdown all fd's
   if (s->active_ports) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
@@ -176,7 +179,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
   }
 }
 
-/* event manager callback when reads are ready */
+// event manager callback when reads are ready
 static void on_read(void* arg, grpc_error_handle err) {
   grpc_tcp_listener* sp = static_cast<grpc_tcp_listener*>(arg);
   grpc_pollset* read_notifier_pollset;
@@ -184,13 +187,13 @@ static void on_read(void* arg, grpc_error_handle err) {
     goto error;
   }
 
-  /* loop until accept4 returns EAGAIN, and then re-arm notification */
+  // loop until accept4 returns EAGAIN, and then re-arm notification
   for (;;) {
     grpc_resolved_address addr;
     memset(&addr, 0, sizeof(addr));
     addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-    /* Note: If we ever decide to return this address to the user, remember to
-       strip off the ::ffff:0.0.0.0/96 prefix first. */
+    // Note: If we ever decide to return this address to the user, remember to
+    // strip off the ::ffff:0.0.0.0/96 prefix first.
     int fd = grpc_accept4(sp->fd, &addr, 1, 1);
     if (fd < 0) {
       if (errno == EINTR) {
@@ -205,8 +208,8 @@ static void on_read(void* arg, grpc_error_handle err) {
           gpr_log(GPR_ERROR, "Failed accept4: %s",
                   grpc_core::StrError(errno).c_str());
         } else {
-          /* if we have shutdown listeners, accept4 could fail, and we
-             needn't notify users */
+          // if we have shutdown listeners, accept4 could fail, and we
+          // needn't notify users
         }
         gpr_mu_unlock(&sp->server->mu);
         goto error;
@@ -226,14 +229,14 @@ static void on_read(void* arg, grpc_error_handle err) {
       continue;
     }
 
-    /* For UNIX sockets, the accept call might not fill up the member sun_path
-     * of sockaddr_un, so explicitly call getsockname to get it. */
+    // For UNIX sockets, the accept call might not fill up the member sun_path
+    // of sockaddr_un, so explicitly call getpeername to get it.
     if (grpc_is_unix_socket(&addr)) {
       memset(&addr, 0, sizeof(addr));
       addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                       &(addr.len)) < 0) {
-        gpr_log(GPR_ERROR, "Failed getsockname: %s",
+        gpr_log(GPR_ERROR, "Failed getpeername: %s",
                 grpc_core::StrError(errno).c_str());
         close(fd);
         goto error;
@@ -294,7 +297,7 @@ error:
   }
 }
 
-/* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
+// Treat :: or 0.0.0.0 as a family-agnostic wildcard.
 static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
                                                       unsigned port_index,
                                                       int requested_port,
@@ -315,7 +318,7 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   }
 
   grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
-  /* Try listening on IPv6 first. */
+  // Try listening on IPv6 first.
   if ((v6_err = grpc_tcp_server_add_addr(s, &wild6, port_index, fd_index,
                                          &dsmode, &sp)) == absl::OkStatus()) {
     ++fd_index;
@@ -324,7 +327,7 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
       return absl::OkStatus();
     }
   }
-  /* If we got a v6-only socket or nothing, try adding 0.0.0.0. */
+  // If we got a v6-only socket or nothing, try adding 0.0.0.0.
   grpc_sockaddr_set_port(&wild4, requested_port);
   if ((v4_err = grpc_tcp_server_add_addr(s, &wild4, port_index, fd_index,
                                          &dsmode, &sp2)) == absl::OkStatus()) {
@@ -386,8 +389,8 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = listener->next;
     listener->next = sp;
-    /* sp (the new listener) is a sibling of 'listener' (the original
-       listener). */
+    // sp (the new listener) is a sibling of 'listener' (the original
+    // listener).
     sp->is_sibling = 1;
     sp->sibling = listener->sibling;
     listener->sibling = sp;
@@ -428,8 +431,8 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   }
   grpc_unlink_if_unix_domain_socket(addr);
 
-  /* Check if this is a wildcard port, and if so, try to keep the port the same
-     as some previously created listener. */
+  // Check if this is a wildcard port, and if so, try to keep the port the same
+  // as some previously created listener.
   if (requested_port == 0) {
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len =
@@ -463,8 +466,8 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   return err;
 }
 
-/* Return listener at port_index or NULL. Should only be called with s->mu
-   locked. */
+// Return listener at port_index or NULL. Should only be called with s->mu
+// locked.
 static grpc_tcp_listener* get_port_index(grpc_tcp_server* s,
                                          unsigned port_index) {
   unsigned num_ports = 0;
@@ -505,17 +508,12 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
 }
 
 static void tcp_server_start(grpc_tcp_server* s,
-                             const std::vector<grpc_pollset*>* pollsets,
-                             grpc_tcp_server_cb on_accept_cb,
-                             void* on_accept_cb_arg) {
+                             const std::vector<grpc_pollset*>* pollsets) {
   size_t i;
   grpc_tcp_listener* sp;
-  GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->on_accept_cb);
+  GPR_ASSERT(s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
-  s->on_accept_cb = on_accept_cb;
-  s->on_accept_cb_arg = on_accept_cb_arg;
   s->pollsets = pollsets;
   sp = s->head;
   while (sp != nullptr) {
@@ -571,7 +569,7 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
-  /* shutdown all fd's */
+  // shutdown all fd's
   if (s->active_ports) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
@@ -650,4 +648,4 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
     tcp_server_ref,           tcp_server_shutdown_starting_add,
     tcp_server_unref,         tcp_server_shutdown_listeners};
 
-#endif /* GRPC_POSIX_SOCKET_TCP_SERVER */
+#endif  // GRPC_POSIX_SOCKET_TCP_SERVER

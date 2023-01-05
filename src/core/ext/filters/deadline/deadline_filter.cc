@@ -18,12 +18,15 @@
 
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 
+#include <functional>
+#include <memory>
 #include <new>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -35,6 +38,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -345,7 +350,10 @@ static void deadline_server_start_transport_stream_op_batch(
 
 const grpc_channel_filter grpc_client_deadline_filter = {
     deadline_client_start_transport_stream_op_batch,
-    nullptr,
+    [](grpc_channel_element*, grpc_core::CallArgs call_args,
+       grpc_core::NextPromiseFactory next_promise_factory) {
+      return next_promise_factory(std::move(call_args));
+    },
     grpc_channel_next_op,
     sizeof(base_call_data),
     deadline_init_call_elem,

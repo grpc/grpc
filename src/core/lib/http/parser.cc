@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -85,7 +85,7 @@ static grpc_error_handle handle_response_line(grpc_http_parser* parser) {
     return GRPC_ERROR_CREATE("Expected ' '");
   }
 
-  /* we don't really care about the status code message */
+  // we don't really care about the status code message
 
   return absl::OkStatus();
 }
@@ -194,7 +194,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   }
   GPR_ASSERT(cur >= beg);
   hdr.key = buf2str(beg, static_cast<size_t>(cur - beg));
-  cur++; /* skip : */
+  cur++;  // skip :
 
   while (cur != end && (*cur == ' ' || *cur == '\t')) {
     cur++;
@@ -314,7 +314,7 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
           return absl::OkStatus();
         } else {
           parser->http.response->chunk_length--;
-          /* fallback to the normal body appending code below */
+          // fallback to the normal body appending code below
         }
         break;
       case GRPC_HTTP_CHUNKED_CONSUME_LF:
@@ -324,7 +324,7 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
         parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_LENGTH;
         return absl::OkStatus();
       case GRPC_HTTP_CHUNKED_PLAIN:
-        /* avoiding warning; just fallback to normal codepath */
+        // avoiding warning; just fallback to normal codepath
         break;
     }
     body_length = &parser->http.response->body_length;
