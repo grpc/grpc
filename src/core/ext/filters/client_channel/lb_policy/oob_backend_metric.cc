@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -45,7 +44,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
@@ -55,7 +53,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

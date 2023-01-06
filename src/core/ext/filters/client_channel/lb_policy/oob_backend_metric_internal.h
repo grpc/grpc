@@ -20,15 +20,24 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <set>
+#include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/impl/connectivity_state.h>
+
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 
 namespace grpc_core {
 
