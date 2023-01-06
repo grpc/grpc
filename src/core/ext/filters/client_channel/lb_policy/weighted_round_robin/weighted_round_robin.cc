@@ -287,13 +287,11 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     // Info stored about each subchannel.
     struct SubchannelInfo {
       SubchannelInfo(RefCountedPtr<SubchannelInterface> subchannel,
-                     bool is_ready, RefCountedPtr<AddressWeight> weight)
+                     RefCountedPtr<AddressWeight> weight)
           : subchannel(std::move(subchannel)),
-            is_ready(is_ready),
             weight(std::move(weight)) {}
 
       RefCountedPtr<SubchannelInterface> subchannel;
-      bool is_ready;
       RefCountedPtr<AddressWeight> weight;
     };
 
@@ -426,14 +424,12 @@ WeightedRoundRobin::Picker::Picker(
       blackout_period_(wrr_->config_->blackout_period()),
       scheduler_state_(absl::Uniform<uint32_t>(wrr_->bit_gen_)),
       last_picked_index_(absl::Uniform<size_t>(wrr_->bit_gen_)) {
-  bool found_ready = false;
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     WeightedRoundRobinSubchannelData* sd = subchannel_list->subchannel(i);
-    bool is_ready = sd->connectivity_state() == GRPC_CHANNEL_READY;
-    subchannels_.emplace_back(sd->subchannel()->Ref(), is_ready, sd->weight());
-    if (is_ready) found_ready = true;
+    if (sd->connectivity_state() == GRPC_CHANNEL_READY) {
+      subchannels_.emplace_back(sd->subchannel()->Ref(), sd->weight());
+    }
   }
-  GPR_ASSERT(found_ready);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
             "[WRR %p picker %p] created picker from subchannel_list=%p "
@@ -488,9 +484,7 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
   }
   // We don't have a scheduler (i.e., either all of the weights are 0 or
   // there is only one subchannel), so fall back to RR.
-  do {
-    last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
-  } while (!subchannels_[last_picked_index_].is_ready);
+  last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   return last_picked_index_;
 }
 
