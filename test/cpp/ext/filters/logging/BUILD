@@ -1,3 +1,5 @@
+# gRPC Bazel BUILD file.
+#
 # Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,52 +18,28 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/ext/gcp")
+grpc_package(name = "test/cpp/ext/filters/logging")
 
 grpc_cc_test(
-    name = "observability_test",
+    name = "logging_test",
     srcs = [
-        "observability_test.cc",
+        "logging_test.cc",
     ],
     external_deps = [
         "gtest",
     ],
     language = "C++",
-    uses_polling = False,
+    tags = [
+        "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
+    ],
     deps = [
-        "//:grpcpp_gcp_observability",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "observability_config_test",
-    srcs = [
-        "observability_config_test.cc",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//src/cpp/ext/gcp:observability_config",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "observability_logging_sink_test",
-    srcs = [
-        "observability_logging_sink_test.cc",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/filters/logging:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
