@@ -24,7 +24,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"

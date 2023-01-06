@@ -26,7 +26,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
@@ -62,4 +62,4 @@ class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H

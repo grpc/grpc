@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -29,7 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -48,7 +48,7 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 
-/* -- Constants. -- */
+// -- Constants. --
 
 #if defined(GRPC_ROOT_PEM_PATH)
 static const char* installed_roots_path = GRPC_ROOT_PEM_PATH;
@@ -63,7 +63,7 @@ static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 #define TSI_OPENSSL_ALPN_SUPPORT 1
 #endif
 
-/* -- Overridden default roots. -- */
+// -- Overridden default roots. --
 
 static grpc_ssl_roots_override_callback ssl_roots_override_cb = nullptr;
 
@@ -71,7 +71,7 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
   ssl_roots_override_cb = cb;
 }
 
-/* -- Cipher suites. -- */
+// -- Cipher suites. --
 
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char* cipher_suites = nullptr;
@@ -94,7 +94,7 @@ static void init_cipher_suites(void) {
   cipher_suites = value.release();
 }
 
-/* --- Util --- */
+// --- Util ---
 
 const char* grpc_get_ssl_cipher_suites(void) {
   gpr_once_init(&cipher_suites_once, init_cipher_suites);
@@ -139,7 +139,7 @@ tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
 
 grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
-  /* Check the ALPN if ALPN is supported. */
+  // Check the ALPN if ALPN is supported.
   const tsi_peer_property* p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == nullptr) {
@@ -149,13 +149,13 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
     return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
   }
-#endif /* TSI_OPENSSL_ALPN_SUPPORT */
+#endif  // TSI_OPENSSL_ALPN_SUPPORT
   return absl::OkStatus();
 }
 
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
                                            const tsi_peer* peer) {
-  /* Check the peer name if specified. */
+  // Check the peer name if specified.
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
@@ -182,9 +182,9 @@ absl::Status SslCheckCallHost(absl::string_view host,
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
-  /* If the target name was overridden, then the original target_name was
-   'checked' transitively during the previous peer check at the end of the
-   handshake. */
+  // If the target name was overridden, then the original target_name was
+  //'checked' transitively during the previous peer check at the end of the
+  // handshake.
   if (!overridden_target_name.empty() && host == target_name) {
     status = GRPC_SECURITY_OK;
   }
@@ -261,7 +261,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   size_t i;
   const char* peer_identity_property_name = nullptr;
 
-  /* The caller has checked the certificate type property. */
+  // The caller has checked the certificate type property.
   GPR_ASSERT(peer->property_count >= 1);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
@@ -280,7 +280,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
                                      prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) ==
                0) {
-      /* If there is no subject alt name, have the CN as the identity. */
+      // If there is no subject alt name, have the CN as the identity.
       if (peer_identity_property_name == nullptr) {
         peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
       }
@@ -509,7 +509,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   return GRPC_SECURITY_OK;
 }
 
-/* --- Ssl cache implementation. --- */
+// --- Ssl cache implementation. ---
 
 grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
   tsi_ssl_session_cache* cache = tsi_ssl_session_cache_create_lru(capacity);
@@ -551,7 +551,7 @@ grpc_arg grpc_ssl_session_cache_create_channel_arg(
       const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
 }
 
-/* --- Default SSL root store implementation. --- */
+// --- Default SSL root store implementation. ---
 
 namespace grpc_core {
 

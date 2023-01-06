@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -230,14 +230,14 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
   const uint8_t* p = text.begin();
   const uint8_t* end = text.end();
   int have_digit = 0;
-  /* skip whitespace */
+  // skip whitespace
   for (; p != end && *p == ' '; p++) {
   }
-  /* decode numeric part */
+  // decode numeric part
   for (; p != end && *p >= '0' && *p <= '9'; p++) {
     int32_t digit = static_cast<int32_t>(*p - static_cast<uint8_t>('0'));
     have_digit = 1;
-    /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
+    // spec allows max. 8 digits, but we allow values up to 1,000,000,000
     if (x >= (100 * 1000 * 1000)) {
       if (x != (100 * 1000 * 1000) || digit != 0) {
         return Duration::Infinity();
@@ -246,11 +246,11 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
     x = x * 10 + digit;
   }
   if (!have_digit) return absl::nullopt;
-  /* skip whitespace */
+  // skip whitespace
   for (; p != end && *p == ' '; p++) {
   }
   if (p == end) return absl::nullopt;
-  /* decode unit specifier */
+  // decode unit specifier
   Duration timeout;
   switch (*p) {
     case 'n':

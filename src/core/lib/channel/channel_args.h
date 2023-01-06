@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
@@ -27,6 +27,7 @@
 #include <iosfwd>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -35,7 +36,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
@@ -430,34 +431,34 @@ std::ostream& operator<<(std::ostream& out, const ChannelArgs& args);
 
 }  // namespace grpc_core
 
-/** Copy the arguments in \a src into a new instance */
+/// Copy the arguments in \a src into a new instance
 grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src);
 
-/** Copy the arguments in \a src into a new instance, stably sorting keys */
+/// Copy the arguments in \a src into a new instance, stably sorting keys
 grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* src);
 
-/** Copy the arguments in \a src and append \a to_add. If \a to_add is NULL, it
- * is equivalent to calling \a grpc_channel_args_copy. */
+/// Copy the arguments in \a src and append \a to_add. If \a to_add is NULL, it
+/// is equivalent to calling \a grpc_channel_args_copy.
 grpc_channel_args* grpc_channel_args_copy_and_add(const grpc_channel_args* src,
                                                   const grpc_arg* to_add,
                                                   size_t num_to_add);
 
-/** Copies the arguments in \a src except for those whose keys are in
-    \a to_remove. */
+/// Copies the arguments in \a src except for those whose keys are in
+/// \a to_remove.
 grpc_channel_args* grpc_channel_args_copy_and_remove(
     const grpc_channel_args* src, const char** to_remove, size_t num_to_remove);
 
-/** Copies the arguments from \a src except for those whose keys are in
-    \a to_remove and appends the arguments in \a to_add. */
+/// Copies the arguments from \a src except for those whose keys are in
+/// \a to_remove and appends the arguments in \a to_add.
 grpc_channel_args* grpc_channel_args_copy_and_add_and_remove(
     const grpc_channel_args* src, const char** to_remove, size_t num_to_remove,
     const grpc_arg* to_add, size_t num_to_add);
 
-/** Perform the union of \a a and \a b, prioritizing \a a entries */
+/// Perform the union of \a a and \a b, prioritizing \a a entries
 grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
                                            const grpc_channel_args* b);
 
-/** Destroy arguments created by \a grpc_channel_args_copy */
+/// Destroy arguments created by \a grpc_channel_args_copy
 void grpc_channel_args_destroy(grpc_channel_args* a);
 inline void grpc_channel_args_destroy(const grpc_channel_args* a) {
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(a));
@@ -466,7 +467,7 @@ inline void grpc_channel_args_destroy(const grpc_channel_args* a) {
 int grpc_channel_args_compare(const grpc_channel_args* a,
                               const grpc_channel_args* b);
 
-/** Returns the value of argument \a name from \a args, or NULL if not found. */
+/// Returns the value of argument \a name from \a args, or NULL if not found.
 const grpc_arg* grpc_channel_args_find(const grpc_channel_args* args,
                                        const char* name);
 
@@ -478,28 +479,28 @@ typedef struct grpc_integer_options {
   int max_value;
 } grpc_integer_options;
 
-/** Returns the value of \a arg, subject to the constraints in \a options. */
+/// Returns the value of \a arg, subject to the constraints in \a options.
 int grpc_channel_arg_get_integer(const grpc_arg* arg,
                                  const grpc_integer_options options);
-/** Similar to the above, but needs to find the arg from \a args by the name
- * first. */
+/// Similar to the above, but needs to find the arg from \a args by the name
+/// first.
 int grpc_channel_args_find_integer(const grpc_channel_args* args,
                                    const char* name,
                                    const grpc_integer_options options);
 
-/** Returns the value of \a arg if \a arg is of type GRPC_ARG_STRING.
-    Otherwise, emits a warning log, and returns nullptr.
-    If arg is nullptr, returns nullptr, and does not emit a warning. */
+/// Returns the value of \a arg if \a arg is of type GRPC_ARG_STRING.
+/// Otherwise, emits a warning log, and returns nullptr.
+/// If arg is nullptr, returns nullptr, and does not emit a warning.
 char* grpc_channel_arg_get_string(const grpc_arg* arg);
-/** Similar to the above, but needs to find the arg from \a args by the name
- * first. */
+/// Similar to the above, but needs to find the arg from \a args by the name
+/// first.
 char* grpc_channel_args_find_string(const grpc_channel_args* args,
                                     const char* name);
-/** If \a arg is of type GRPC_ARG_INTEGER, returns true if it's non-zero.
- * Returns \a default_value if \a arg is of other types. */
+/// If \a arg is of type GRPC_ARG_INTEGER, returns true if it's non-zero.
+/// Returns \a default_value if \a arg is of other types.
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
-/** Similar to the above, but needs to find the arg from \a args by the name
- * first. */
+/// Similar to the above, but needs to find the arg from \a args by the name
+/// first.
 bool grpc_channel_args_find_bool(const grpc_channel_args* args,
                                  const char* name, bool default_value);
 
@@ -540,4 +541,4 @@ void grpc_channel_args_set_client_channel_creation_mutator(
 grpc_channel_args_client_channel_creation_mutator
 grpc_channel_args_get_client_channel_creation_mutator();
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */
+#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
