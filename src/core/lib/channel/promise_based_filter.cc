@@ -701,9 +701,11 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       state_ = State::kCancelledWhilstForwarding;
       break;
     case State::kCompletedWhileBatchCompleted:
+    case State::kBatchCompleted:
+      state_ = State::kCompletedWhileBatchCompleted;
+      break;
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
-    case State::kBatchCompleted:
     case State::kPulledFromPipe:
     case State::kPushedToPipe: {
       auto status_code =
@@ -712,9 +714,6 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
         if (state_ == State::kCompletedWhilePulledFromPipe ||
             state_ == State::kPulledFromPipe) {
           state_ = State::kCompletedWhilePulledFromPipe;
-        } else if (state_ == State::kBatchCompleted ||
-                   state_ == State::kCompletedWhileBatchCompleted) {
-          state_ = State::kCompletedWhileBatchCompleted;
         } else {
           state_ = State::kCompletedWhilePushedToPipe;
         }
@@ -741,9 +740,11 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                                                       bool allow_push_to_pipe) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_INFO,
-            "%s ReceiveMessage.WakeInsideCombiner st=%s push?=%s next?=%s",
+            "%s ReceiveMessage.WakeInsideCombiner st=%s push?=%s next?=%s "
+            "allow_push_to_pipe=%s",
             base_->LogTag().c_str(), StateString(state_),
-            push_.has_value() ? "yes" : "no", next_.has_value() ? "yes" : "no");
+            push_.has_value() ? "yes" : "no", next_.has_value() ? "yes" : "no",
+            allow_push_to_pipe ? "yes" : "no");
   }
   switch (state_) {
     case State::kInitial:
@@ -967,7 +968,7 @@ class ClientCallData::PollContext {
     }
     if (self_->receive_message() != nullptr) {
       self_->receive_message()->WakeInsideCombiner(
-          flusher_, self_->recv_trailing_metadata_ == nullptr
+          flusher_, self_->recv_initial_metadata_ == nullptr
                         ? true
                         : self_->recv_initial_metadata_->AllowRecvMessage());
     }
@@ -1020,6 +1021,7 @@ class ClientCallData::PollContext {
             }
             self_->recv_initial_metadata_->state =
                 RecvInitialMetadata::kResponded;
+            repoll_ = true;
             flusher_->AddClosure(
                 std::exchange(self_->recv_initial_metadata_->original_on_ready,
                               nullptr),

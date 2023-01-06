@@ -1135,6 +1135,8 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
 void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
+  gpr_log(GPR_DEBUG, "tag:%p batch_error=%s", completion_data_.notify_tag.tag,
+          error.ToString().c_str());
 
   if (op_.send_initial_metadata) {
     call->send_initial_metadata_.Clear();
@@ -1164,14 +1166,12 @@ void FilterStackCall::BatchControl::PostCompletion() {
   batch_error_.set(absl::OkStatus());
 
   if (completion_data_.notify_tag.is_closure) {
-    // unrefs error
     call_ = nullptr;
     Closure::Run(DEBUG_LOCATION,
                  static_cast<grpc_closure*>(completion_data_.notify_tag.tag),
                  error);
     call->InternalUnref("completion");
   } else {
-    // unrefs error
     grpc_cq_end_op(
         call->cq_, completion_data_.notify_tag.tag, error,
         [](void* user_data, grpc_cq_completion* /*storage*/) {
@@ -1216,6 +1216,8 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
 
 void FilterStackCall::BatchControl::ReceivingStreamReady(
     grpc_error_handle error) {
+  gpr_log(GPR_DEBUG, "tag:%p ReceivingStreamReady error=%s",
+          completion_data_.notify_tag.tag, error.ToString().c_str());
   FilterStackCall* call = call_;
   if (!error.ok()) {
     call->receiving_slice_buffer_.reset();
