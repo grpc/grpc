@@ -656,7 +656,8 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         test for test in tests
         if not test.startswith('test/cpp/ext/filters/census:') and
         not test.startswith('test/core/xds:xds_channel_stack_modifier_test') and
-        not test.startswith('test/cpp/ext/gcp:')
+        not test.startswith('test/cpp/ext/gcp:') and
+        not test.startswith('test/cpp/ext/filters/logging:')
     ]
 
     # missing opencensus/stats/stats.h
@@ -1064,8 +1065,8 @@ _BUILD_EXTRA_METADATA = {
 
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.
-    #'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
-    #'test/core/security:verify_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_verify_jwt' },
+    # 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
+    # 'test/core/security:verify_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_verify_jwt' },
 
     # TODO(jtattermusch): add remaining tools such as grpc_print_google_default_creds_token (they are not used by bazel build)
 

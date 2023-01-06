@@ -40,9 +40,9 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigEmpty) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "bar").ShouldLog());
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "bar").ShouldLog());
 }
 
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientWildCardEntries) {
@@ -65,9 +65,10 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientWildCardEntries) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo", "bar"),
+            LoggingSink::Config(1024, 4096));
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "bar").ShouldLog());
 }
 
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigBadPath) {
@@ -89,7 +90,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigBadPath) {
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
-  EXPECT_EQ(sink.FindMatch(true, "foo"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "").ShouldLog());
 }
 
 TEST(GcpObservabilityLoggingSinkTest,
@@ -113,12 +114,12 @@ TEST(GcpObservabilityLoggingSinkTest,
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "service/bar"),
+  EXPECT_EQ(sink.FindMatch(true, "service", "bar"),
             LoggingSink::Config(1024, 4096));
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "bar").ShouldLog());
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "service/bar"), LoggingSink::Config(0, 0));
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(false, "service", "bar").ShouldLog());
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "bar").ShouldLog());
 }
 
 TEST(GcpObservabilityLoggingSinkTest,
@@ -142,11 +143,13 @@ TEST(GcpObservabilityLoggingSinkTest,
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
-  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo", "bar"),
+            LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo", "baz"),
+            LoggingSink::Config(1024, 4096));
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
-  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "bar").ShouldLog());
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "baz").ShouldLog());
 }
 
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientMultipleEventEntries) {
@@ -174,11 +177,12 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientMultipleEventEntries) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
-  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(512, 2048));
+  EXPECT_EQ(sink.FindMatch(true, "foo", "bar"),
+            LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo", "baz"), LoggingSink::Config(512, 2048));
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
-  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "bar").ShouldLog());
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "baz").ShouldLog());
 }
 
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerWildCardEntries) {
@@ -201,9 +205,10 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerWildCardEntries) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "bar").ShouldLog());
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo", "bar"),
+            LoggingSink::Config(1024, 4096));
 }
 
 TEST(GcpObservabilityLoggingSinkTest,
@@ -227,12 +232,12 @@ TEST(GcpObservabilityLoggingSinkTest,
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "service/bar"), LoggingSink::Config(0, 0));
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(true, "service", "bar").ShouldLog());
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "bar").ShouldLog());
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "service/bar"),
+  EXPECT_EQ(sink.FindMatch(false, "service", "bar"),
             LoggingSink::Config(1024, 4096));
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(false, "foo", "bar").ShouldLog());
 }
 
 TEST(GcpObservabilityLoggingSinkTest,
@@ -256,11 +261,13 @@ TEST(GcpObservabilityLoggingSinkTest,
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
-  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "bar").ShouldLog());
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "baz").ShouldLog());
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(1024, 4096));
-  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo", "bar"),
+            LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo", "baz"),
+            LoggingSink::Config(1024, 4096));
 }
 
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerMultipleEventEntries) {
@@ -288,11 +295,13 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerMultipleEventEntries) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
-  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(0, 0));
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "bar").ShouldLog());
+  EXPECT_FALSE(sink.FindMatch(true, "foo", "baz").ShouldLog());
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(1024, 4096));
-  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(512, 2048));
+  EXPECT_EQ(sink.FindMatch(false, "foo", "bar"),
+            LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo", "baz"),
+            LoggingSink::Config(512, 2048));
 }
 
 TEST(EntryToJsonStructTest, ClientHeader) {
