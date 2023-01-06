@@ -19,10 +19,10 @@ import collections
 from concurrent import futures
 import enum
 import logging
+import sys
 import threading
 import time
 import traceback
-import sys
 from typing import (Any, Callable, Iterable, Iterator, List, Mapping, NoReturn,
                     Optional, Sequence, Set, Tuple, Union)
 
@@ -69,11 +69,13 @@ _INF_TIMEOUT = 1e9
 def _serialized_request(request_event: cygrpc.BaseEvent) -> Optional[bytes]:
     return request_event.batch_operations[0].message()
 
+
 #TODO(xuanwn) Change it to use correct cython type.
 #Issue: https://github.com/grpc/grpc/issues/32033
 def _application_code(code: grpc.StatusCode) -> Union[cygrpc.StatusCode, int]:
     cygrpc_code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(code)
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
+
 
 #TODO(xuanwn) Change it to use correct cython type.
 #Issue: https://github.com/grpc/grpc/issues/32033
@@ -83,9 +85,12 @@ def _completion_code(state: _RPCState) -> Union[cygrpc.StatusCode, int]:
     else:
         return _application_code(state.code)
 
+
 #TODO(xuanwn) Change it to use correct cython type.
 #Issue: https://github.com/grpc/grpc/issues/32033
-def _abortion_code(state: _RPCState, code: Union[cygrpc.StatusCode, int]) -> Union[cygrpc.StatusCode, int]:
+def _abortion_code(
+        state: _RPCState, code: Union[cygrpc.StatusCode,
+                                      int]) -> Union[cygrpc.StatusCode, int]:
     if state.code is None:
         return code
     else:
@@ -186,8 +191,8 @@ def _get_initial_metadata_operation(
     return operation
 
 
-def _abort(state: _RPCState, call: cygrpc.Call, code: Union[cygrpc.StatusCode, int],
-           details: bytes) -> None:
+def _abort(state: _RPCState, call: cygrpc.Call,
+           code: Union[cygrpc.StatusCode, int], details: bytes) -> None:
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
         effective_details = details if state.details is None else state.details
@@ -630,7 +635,7 @@ def _unary_response_in_pool(
                     rpc_event, state, response, response_serializer)
                 if serialized_response is not None:
                     _status(rpc_event, state, serialized_response)
-    except Exception as exp:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         traceback.print_exception(*sys.exc_info())
     finally:
         cygrpc.uninstall_context()
@@ -670,7 +675,7 @@ def _stream_response_in_pool(
                 if proceed:
                     _send_message_callback_to_blocking_iterator_adapter(
                         rpc_event, state, send_response, response_iterator)
-    except Exception as exp:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         traceback.print_exception(*sys.exc_info())
     finally:
         cygrpc.uninstall_context()
@@ -793,7 +798,8 @@ def _find_method_handler(
         return query_handlers(handler_call_details)
 
 
-def _reject_rpc(rpc_event: cygrpc.BaseEvent, status: Union[cygrpc.StatusCode, int],
+def _reject_rpc(rpc_event: cygrpc.BaseEvent, status: Union[cygrpc.StatusCode,
+                                                           int],
                 details: bytes) -> _RPCState:
     rpc_state = _RPCState()
     operations = (

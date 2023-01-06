@@ -23,8 +23,7 @@ import logging
 import sys
 import threading
 import types
-from typing import (Any, Callable, Iterable, Mapping, NoReturn, Optional,
-                    Sequence, Tuple, Union)
+from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -33,7 +32,6 @@ from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
-from grpc._typing import DoneCallbackType
 from grpc._typing import GeneralIterableType
 from grpc._typing import InterceptorType
 from grpc._typing import MetadataType
@@ -41,8 +39,6 @@ from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestIterableType
 from grpc._typing import RequestType
 from grpc._typing import SerializingFunction
-
-from typing import Type  # isort:skip
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
