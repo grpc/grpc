@@ -327,6 +327,11 @@ include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
 include(cmake/download_archive.cmake)
 
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+  include(cmake/systemd.cmake)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ${_gRPC_SYSTEMD_LIBRARIES})
+endif()
+
 # Setup external proto library at third_party/envoy-api with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
@@ -1032,7 +1037,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx lock_free_event_test)
   endif()
   add_dependencies(buildtests_cxx log_test)
@@ -2217,6 +2222,7 @@ add_library(grpc
   src/core/lib/iomgr/socket_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
   src/core/lib/iomgr/tcp_client.cc
   src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_posix.cc
@@ -2885,6 +2891,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/socket_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
   src/core/lib/iomgr/tcp_client.cc
   src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_posix.cc
@@ -4368,6 +4375,7 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/socket_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
   src/core/lib/iomgr/tcp_client.cc
   src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_posix.cc
@@ -11334,6 +11342,7 @@ add_executable(frame_test
   src/core/lib/iomgr/socket_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
   src/core/lib/iomgr/tcp_client.cc
   src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_posix.cc
@@ -14324,7 +14333,7 @@ target_link_libraries(lb_load_data_store_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(lock_free_event_test
     test/core/event_engine/posix/lock_free_event_test.cc
@@ -14356,6 +14365,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    ${_gRPC_BENCHMARK_LIBRARIES}
     grpc_test_util
   )
 
@@ -25131,6 +25141,7 @@ install(FILES
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findc-ares.cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findre2.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findsystemd.cmake
   DESTINATION ${gRPC_INSTALL_CMAKEDIR}/modules
 )
 

@@ -56,6 +56,11 @@ config_setting(
     values = {"cpu": "ios_arm64"},
 )
 
+config_setting(
+    name = "ios_sim_arm64",
+    values = {"cpu": "ios_sim_arm64"},
+)
+
 # The following architectures are found in 
 # https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/apple/ApplePlatform.java
 config_setting(
@@ -106,6 +111,7 @@ copy_file(
         ":ios_armv7": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":ios_armv7s": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":ios_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
+        ":ios_sim_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":tvos_x86_64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":tvos_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":watchos_i386": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",

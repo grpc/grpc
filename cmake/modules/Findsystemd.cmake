@@ -1,6 +1,4 @@
-#!/usr/bin/env python2.7
-
-# Copyright 2019 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,17 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import yaml
 
-BUILDS_YAML_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'preprocessed_builds.yaml')
-with open(BUILDS_YAML_PATH) as f:
-    builds = yaml.safe_load(f)
+find_package(systemd QUIET CONFIG)
+if(systemd_FOUND)
+  message(STATUS "Found systemd via CMake.")
+  return()
+endif()
 
-for build in builds:
-    build['build'] = 'private'
-    build['build_system'] = []
-    build['language'] = 'c'
-    build['secure'] = False
-print(yaml.dump({'libs': builds}))
+if(TARGET systemd)
+  message(STATUS "Found systemd via pkg-config already?")
+  return()
+endif()
+
+find_package(PkgConfig)
+pkg_check_modules(SYSTEMD libsystemd)
+
+if(SYSTEMD_FOUND)
+  set(systemd_FOUND "${SYSTEMD_FOUND}")
+  add_library(systemd INTERFACE IMPORTED)
+  message(STATUS "Found systemd via pkg-config.")
+endif()

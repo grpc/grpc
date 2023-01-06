@@ -815,7 +815,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
-  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         return std::make_unique<FuzzingEventEngine>(
@@ -825,6 +824,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
   FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
+  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
