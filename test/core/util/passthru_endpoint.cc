@@ -368,11 +368,10 @@ static void me_destroy(grpc_endpoint* ep) {
       if (p->channel_effects->timer_handle.has_value()) {
         if (GetDefaultEventEngine()->Cancel(
                 *p->channel_effects->timer_handle)) {
-          grpc_core::ExecCtx::Run(
-              DEBUG_LOCATION,
-              GRPC_CLOSURE_CREATE(do_next_sched_channel_action, ep,
-                                  grpc_schedule_on_exec_ctx),
-              absl::CancelledError());
+          gpr_mu_unlock(&p->mu);
+          // This will destroy the endpoint so just return after that.
+          do_next_sched_channel_action(ep, absl::CancelledError());
+          return;
         }
         p->channel_effects->timer_handle.reset();
       }
