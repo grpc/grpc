@@ -1570,11 +1570,12 @@ void ClientChannel::UpdateStateAndPickerLocked(
   // Old picker will be unreffed after releasing the lock.
   auto picker_to_swap = picker->Ref();
   {
-    MutexLock lock(&picker_mu_);
+    MutexLock lock(&lb_mu_);
     picker_.swap(picker_to_swap);
   }
   // Use the new picker to re-process queued picks.
-  MutexLock lock(&lb_queue_mu_);
+// FIXME: need to not hold the lock while redoing the picks
+  MutexLock lock(&lb_mu_);
   for (LbQueuedCall* call = lb_queued_calls_; call != nullptr;
        call = call->next) {
     // If there are a lot of queued calls here, resuming them all may cause us
@@ -1634,7 +1635,7 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
   }
   LoadBalancingPolicy::PickResult result;
   {
-    MutexLock lock(&picker_mu_);
+    MutexLock lock(&lb_mu_);
     result = picker_->Pick(LoadBalancingPolicy::PickArgs());
   }
   return HandlePickResult<grpc_error_handle>(
@@ -3001,7 +3002,7 @@ class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
     auto* lb_call = self->lb_call_.get();
     auto* chand = lb_call->chand_;
     {
-      MutexLock lock(&chand->lb_queue_mu_);
+      MutexLock lock(&chand->lb_mu_);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p lb_call=%p: cancelling queued pick: "
@@ -3080,7 +3081,7 @@ void ClientChannel::LoadBalancedCall::PickSubchannel() {
   // Get picker.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
   {
-    MutexLock lock(&chand_->picker_mu_);
+    MutexLock lock(&chand_->lb_mu_);
     picker = chand_->picker_;
   }
   // Do pick.
@@ -3088,7 +3089,7 @@ void ClientChannel::LoadBalancedCall::PickSubchannel() {
   bool pick_complete = PickSubchannelImpl(picker.get(), &error);
   // Add or remove from queue, as needed.
   {
-    MutexLock lock(&chand_->lb_queue_mu_);
+    MutexLock lock(&chand_->lb_mu_);
     if (pick_complete) {
       MaybeRemoveCallFromLbQueuedCallsLocked();
     } else {

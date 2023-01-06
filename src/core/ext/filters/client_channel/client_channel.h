@@ -292,11 +292,11 @@ class ClientChannel {
                                 grpc_polling_entity* pollent)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(resolution_mu_);
 
-  // These methods require holding lb_queue_mu_.
+  // These methods require holding lb_mu_.
   void AddLbQueuedCall(LbQueuedCall* call, grpc_polling_entity* pollent)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(lb_queue_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(lb_mu_);
   void RemoveLbQueuedCall(LbQueuedCall* to_remove, grpc_polling_entity* pollent)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(lb_queue_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(lb_mu_);
 
   //
   // Fields set at construction and never modified.
@@ -332,12 +332,10 @@ class ClientChannel {
   //
   // Fields related to LB picks.  Guarded by mutexes.
   //
-  mutable Mutex picker_mu_;
+  mutable Mutex lb_mu_;
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
-      ABSL_GUARDED_BY(picker_mu_);
-  // Linked list of calls queued waiting for LB pick.
-  mutable Mutex lb_queue_mu_;
-  LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(lb_queue_mu_) = nullptr;
+      ABSL_GUARDED_BY(lb_mu_);
+  LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(lb_mu_) = nullptr;
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
@@ -434,7 +432,7 @@ class ClientChannel::LoadBalancedCall
 
   // Removes the call from the channel's list of queued picks if present.
   void MaybeRemoveCallFromLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_queue_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
 
   // Schedules a callback to process the completed pick.  The callback
   // will not run until after this method returns.
@@ -491,7 +489,7 @@ class ClientChannel::LoadBalancedCall
   static void PickDone(void* arg, grpc_error_handle error);
   // Adds the call to the channel's list of queued picks if not already present.
   void MaybeAddCallToLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_queue_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
 
   ClientChannel* chand_;
 
@@ -520,11 +518,11 @@ class ClientChannel::LoadBalancedCall
 
   grpc_closure pick_closure_;
 
-  // Accessed while holding ClientChannel::lb_queue_mu_.
+  // Accessed while holding ClientChannel::lb_mu_.
   ClientChannel::LbQueuedCall queued_call_
-      ABSL_GUARDED_BY(&ClientChannel::lb_queue_mu_);
+      ABSL_GUARDED_BY(&ClientChannel::lb_mu_);
   LbQueuedCallCanceller* lb_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::lb_queue_mu_) = nullptr;
+      ABSL_GUARDED_BY(&ClientChannel::lb_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const BackendMetricData* backend_metric_data_ = nullptr;
