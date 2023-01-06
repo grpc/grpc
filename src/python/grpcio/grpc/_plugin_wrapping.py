@@ -15,7 +15,7 @@
 import collections
 import logging
 import threading
-from typing import AnyStr, Callable, Optional, Type
+from typing import AnyStr, Callable, Optional
 
 import grpc
 from grpc import _common
