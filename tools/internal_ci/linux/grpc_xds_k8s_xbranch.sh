@@ -55,7 +55,7 @@ main() {
     exit 0
   fi
 
-  source ${script_dir}/grpc_xds_k8s_run_test.sh
+  source ${script_dir}/grpc_xds_k8s_run_xtest.sh
 
   activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
