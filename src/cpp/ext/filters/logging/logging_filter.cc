@@ -118,7 +118,9 @@ class MetadataEncoder {
     uint64_t mdentry_len = key.length() + value.length();
     if (mdentry_len > log_len_) {
       gpr_log(GPR_DEBUG,
-              "Skipped metadata key because of max metadata logging bytes");
+              "Skipped metadata key because of max metadata logging bytes %lu "
+              "(current) vs %lu (max less already accounted metadata)",
+              mdentry_len, log_len_);
       truncated_ = true;
       return;
     }
