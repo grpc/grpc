@@ -393,7 +393,7 @@ class FreestandingActivity : public Activity, private Wakeable {
 //   template <typename ActivityType>
 //   class BoundScheduler {
 //    public:
-//     BoundScheduler(ActivityType);
+//     BoundScheduler(WakeupScheduler);
 //     void ScheduleWakeup();
 //   };
 // };
