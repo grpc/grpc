@@ -20,10 +20,13 @@
 #include <random>
 #include <ratio>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
+#include "absl/functional/function_ref.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
@@ -187,4 +190,60 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
             thread_count * call_count);
   }
   ASSERT_EQ(0, failed_call_count.load());
+}
+
+// Common implementation for the Run and RunAfter test variants below
+// Calls run_fn multiple times, and will get stuck if the implementation does a
+// blocking inline execution of the closure. This test will timeout on failure.
+void ImmediateRunTestInternal(
+    absl::FunctionRef<void(absl::AnyInvocable<void()>)> run_fn,
+    grpc_core::Mutex& mu, grpc_core::CondVar& cv) {
+  constexpr int num_concurrent_runs = 32;
+  constexpr int num_iterations = 100;
+  constexpr absl::Duration run_timeout = absl::Seconds(60);
+  std::atomic<int> waiters{0};
+  std::atomic<int> execution_count{0};
+  auto cb = [&mu, &cv, &run_timeout, &waiters, &execution_count]() {
+    waiters.fetch_add(1);
+    grpc_core::MutexLock lock(&mu);
+    EXPECT_FALSE(cv.WaitWithTimeout(&mu, run_timeout))
+        << "callback timed out waiting.";
+    execution_count.fetch_add(1);
+  };
+  for (int i = 0; i < num_iterations; i++) {
+    waiters.store(0);
+    execution_count.store(0);
+    for (int run = 0; run < num_concurrent_runs; run++) {
+      run_fn(cb);
+    }
+    while (waiters.load() != num_concurrent_runs) {
+      absl::SleepFor(absl::Milliseconds(33));
+    }
+    cv.SignalAll();
+    while (execution_count.load() != num_concurrent_runs) {
+      absl::SleepFor(absl::Milliseconds(33));
+    }
+  }
+}
+
+// TODO(hork): re-enabled after either I've implemented XFAIL, or fixed the
+// ThreadPool's behavior under backlog.
+TEST_F(EventEngineTimerTest,
+       DISABLED_RunDoesNotImmediatelyExecuteInTheSameThread) {
+  auto engine = this->NewEventEngine();
+  ImmediateRunTestInternal(
+      [&engine](absl::AnyInvocable<void()> cb) { engine->Run(std::move(cb)); },
+      mu_, cv_);
+}
+
+// TODO(hork): re-enabled after either I've implemented XFAIL, or fixed the
+// ThreadPool's behavior under backlog.
+TEST_F(EventEngineTimerTest,
+       DISABLED_RunAfterDoesNotImmediatelyExecuteInTheSameThread) {
+  auto engine = this->NewEventEngine();
+  ImmediateRunTestInternal(
+      [&engine](absl::AnyInvocable<void()> cb) {
+        engine->RunAfter(std::chrono::seconds(0), std::move(cb));
+      },
+      mu_, cv_);
 }
