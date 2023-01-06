@@ -736,7 +736,6 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/event_engine_wakeup_scheduler.h",
     ],
-    external_deps = ["absl/status"],
     language = "c++",
     deps = [
         "//:event_engine_base_hdrs",
