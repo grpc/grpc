@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -94,10 +94,10 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
                sizeof(kV4MappedPrefix)) == 0) {
       if (resolved_addr4_out != nullptr) {
-        /* Normalize ::ffff:0.0.0.0/96 to IPv4. */
+        // Normalize ::ffff:0.0.0.0/96 to IPv4.
         memset(resolved_addr4_out, 0, sizeof(*resolved_addr4_out));
         addr4_out->sin_family = GRPC_AF_INET;
-        /* s6_addr32 would be nice, but it's non-standard. */
+        // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
         addr4_out->sin_port = addr6->sin6_port;
         resolved_addr4_out->len =
@@ -139,7 +139,7 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   }
   addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family == GRPC_AF_INET) {
-    /* Check for 0.0.0.0 */
+    // Check for 0.0.0.0
     const grpc_sockaddr_in* addr4 =
         reinterpret_cast<const grpc_sockaddr_in*>(addr);
     if (addr4->sin_addr.s_addr != 0) {
@@ -148,7 +148,7 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
     *port_out = grpc_ntohs(addr4->sin_port);
     return 1;
   } else if (addr->sa_family == GRPC_AF_INET6) {
-    /* Check for :: */
+    // Check for ::
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(addr);
     int i;
@@ -253,7 +253,7 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
     return absl::InvalidArgumentError(
         absl::StrCat("Unknown sockaddr family: ", addr->sa_family));
   }
-  /* This is probably redundant, but we wouldn't want to log the wrong error. */
+  // This is probably redundant, but we wouldn't want to log the wrong error.
   errno = save_errno;
   return out;
 }

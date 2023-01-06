@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2022 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -92,8 +92,8 @@ tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
   if (read_from_ssl <= 0) {
     read_from_ssl = SSL_get_error(ssl, read_from_ssl);
     switch (read_from_ssl) {
-      case SSL_ERROR_ZERO_RETURN: /* Received a close_notify alert. */
-      case SSL_ERROR_WANT_READ:   /* We need more data to finish the frame. */
+      case SSL_ERROR_ZERO_RETURN:  // Received a close_notify alert.
+      case SSL_ERROR_WANT_READ:    // We need more data to finish the frame.
         *unprotected_bytes_size = 0;
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
@@ -115,7 +115,7 @@ tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
   return TSI_OK;
 }
 
-/* --- tsi_frame_protector util methods implementation. ---*/
+// --- tsi_frame_protector util methods implementation. ---
 tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
                                const size_t buffer_size, size_t& buffer_offset,
                                unsigned char* buffer, SSL* ssl, BIO* network_io,
@@ -126,7 +126,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   size_t available;
   tsi_result result = TSI_OK;
 
-  /* First see if we have some pending data in the SSL BIO. */
+  // First see if we have some pending data in the SSL BIO.
   int pending_in_ssl = static_cast<int>(BIO_pending(network_io));
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
@@ -142,17 +142,17 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
     return TSI_OK;
   }
 
-  /* Now see if we can send a complete frame. */
+  // Now see if we can send a complete frame.
   available = buffer_size - buffer_offset;
   if (available > *unprotected_bytes_size) {
-    /* If we cannot, just copy the data in our internal buffer. */
+    // If we cannot, just copy the data in our internal buffer.
     memcpy(buffer + buffer_offset, unprotected_bytes, *unprotected_bytes_size);
     buffer_offset += *unprotected_bytes_size;
     *protected_output_frames_size = 0;
     return TSI_OK;
   }
 
-  /* If we can, prepare the buffer, send it to SSL_write and read. */
+  // If we can, prepare the buffer, send it to SSL_write and read.
   memcpy(buffer + buffer_offset, unprotected_bytes, available);
   result = DoSslWrite(ssl, buffer, buffer_size);
   if (result != TSI_OK) return result;
@@ -215,11 +215,11 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   size_t output_bytes_size = *unprotected_bytes_size;
   size_t output_bytes_offset = 0;
 
-  /* First, try to read remaining data from ssl. */
+  // First, try to read remaining data from ssl.
   result = DoSslRead(ssl, unprotected_bytes, unprotected_bytes_size);
   if (result != TSI_OK) return result;
   if (*unprotected_bytes_size == output_bytes_size) {
-    /* We have read everything we could and cannot process any more input. */
+    // We have read everything we could and cannot process any more input.
     *protected_frames_bytes_size = 0;
     return TSI_OK;
   }
@@ -227,7 +227,7 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   unprotected_bytes += output_bytes_offset;
   *unprotected_bytes_size = output_bytes_size - output_bytes_offset;
 
-  /* Then, try to write some data to ssl. */
+  // Then, try to write some data to ssl.
   GPR_ASSERT(*protected_frames_bytes_size <= INT_MAX);
   written_into_ssl = BIO_write(network_io, protected_frames_bytes,
                                static_cast<int>(*protected_frames_bytes_size));
@@ -238,10 +238,10 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   }
   *protected_frames_bytes_size = static_cast<size_t>(written_into_ssl);
 
-  /* Now try to read some data again. */
+  // Now try to read some data again.
   result = DoSslRead(ssl, unprotected_bytes, unprotected_bytes_size);
   if (result == TSI_OK) {
-    /* Don't forget to output the total number of bytes read. */
+    // Don't forget to output the total number of bytes read.
     *unprotected_bytes_size += output_bytes_offset;
   }
   return result;

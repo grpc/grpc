@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h"
 
@@ -37,7 +37,7 @@ constexpr size_t kMaxSlices = 10;
 constexpr size_t kSealRepeatTimes = 5;
 constexpr size_t kTagLength = 16;
 
-/* Test fixtures for each test cases.  */
+// Test fixtures for each test cases.
 struct alts_grpc_record_protocol_test_fixture {
   alts_grpc_record_protocol* client_protect;
   alts_grpc_record_protocol* client_unprotect;
@@ -45,7 +45,7 @@ struct alts_grpc_record_protocol_test_fixture {
   alts_grpc_record_protocol* server_unprotect;
 };
 
-/* Test input variables for protect/unprotect operations.  */
+// Test input variables for protect/unprotect operations.
 struct alts_grpc_record_protocol_test_var {
   size_t header_length;
   size_t tag_length;
@@ -55,7 +55,7 @@ struct alts_grpc_record_protocol_test_var {
   grpc_slice_buffer unprotected_sb;
 };
 
-/* --- Test utility functions. --- */
+// --- Test utility functions. ---
 
 static void create_random_slice_buffer(grpc_slice_buffer* sb) {
   ASSERT_NE(sb, nullptr);
@@ -81,8 +81,8 @@ static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
   return nullptr;
 }
 
-/* Checks if two slice buffer contents are the same. It is not super efficient,
- * but OK for testing.  */
+// Checks if two slice buffer contents are the same. It is not super efficient,
+// but OK for testing.
 static bool are_slice_buffers_equal(grpc_slice_buffer* first,
                                     grpc_slice_buffer* second) {
   EXPECT_NE(first, nullptr);
@@ -123,7 +123,7 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
   gsec_test_random_array(&key, key_length);
   gsec_aead_crypter* crypter = nullptr;
 
-  /* Create client record protocol for protect. */
+  // Create client record protocol for protect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -132,7 +132,7 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
                 crypter, 8, /*is_client=*/true, /*is_protect=*/true, extra_copy,
                 &fixture->client_protect),
             TSI_OK);
-  /* Create client record protocol for unprotect.  */
+  // Create client record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -141,7 +141,7 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
                 crypter, 8, /*is_client=*/true, /*is_protect=*/false,
                 extra_copy, &fixture->client_unprotect),
             TSI_OK);
-  /* Create server record protocol for protect.  */
+  // Create server record protocol for protect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -150,7 +150,7 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
                 crypter, 8, /*is_client=*/false, /*is_protect=*/true,
                 extra_copy, &fixture->server_protect),
             TSI_OK);
-  /* Create server record protocol for unprotect.  */
+  // Create server record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -189,7 +189,7 @@ test_fixture_privacy_integrity_create(bool rekey) {
   gsec_test_random_array(&key, key_length);
   gsec_aead_crypter* crypter = nullptr;
 
-  /* Create client record protocol for protect. */
+  // Create client record protocol for protect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -198,7 +198,7 @@ test_fixture_privacy_integrity_create(bool rekey) {
                 crypter, 8, /*is_client=*/true, /*is_protect=*/true,
                 &fixture->client_protect),
             TSI_OK);
-  /* Create client record protocol for unprotect.  */
+  // Create client record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -207,7 +207,7 @@ test_fixture_privacy_integrity_create(bool rekey) {
                 crypter, 8, /*is_client=*/true, /*is_protect=*/false,
                 &fixture->client_unprotect),
             TSI_OK);
-  /* Create server record protocol for protect.  */
+  // Create server record protocol for protect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -216,7 +216,7 @@ test_fixture_privacy_integrity_create(bool rekey) {
                 crypter, 8, /*is_client=*/false, /*is_protect=*/true,
                 &fixture->server_protect),
             TSI_OK);
-  /* Create server record protocol for unprotect.  */
+  // Create server record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
                 &crypter, nullptr),
@@ -260,12 +260,12 @@ alts_grpc_record_protocol_test_var_create() {
           gpr_zalloc(sizeof(alts_grpc_record_protocol_test_var)));
   var->header_length = alts_iovec_record_protocol_get_header_length();
   var->tag_length = kTagLength;
-  /* Initialized slice buffers.  */
+  // Initialized slice buffers.
   grpc_slice_buffer_init(&var->original_sb);
   grpc_slice_buffer_init(&var->duplicate_sb);
   grpc_slice_buffer_init(&var->protected_sb);
   grpc_slice_buffer_init(&var->unprotected_sb);
-  /* Randomly sets content of original_sb, and copies into duplicate_sb.  */
+  // Randomly sets content of original_sb, and copies into duplicate_sb.
   create_random_slice_buffer(&var->original_sb);
   for (size_t i = 0; i < var->original_sb.count; i++) {
     grpc_slice_buffer_add(&var->duplicate_sb,
@@ -286,7 +286,7 @@ static void alts_grpc_record_protocol_test_var_destroy(
   gpr_free(var);
 }
 
-/* --- alts grpc record protocol tests. --- */
+// --- alts grpc record protocol tests. ---
 
 static void random_seal_unseal(alts_grpc_record_protocol* sender,
                                alts_grpc_record_protocol* receiver) {
@@ -294,7 +294,7 @@ static void random_seal_unseal(alts_grpc_record_protocol* sender,
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_grpc_record_protocol_test_var* var =
         alts_grpc_record_protocol_test_var_create();
-    /* Seals and then unseals.  */
+    // Seals and then unseals.
     size_t data_length = var->original_sb.length;
     tsi_result status = alts_grpc_record_protocol_protect(
         sender, &var->original_sb, &var->protected_sb);
@@ -317,7 +317,7 @@ static void empty_seal_unseal(alts_grpc_record_protocol* sender,
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_grpc_record_protocol_test_var* var =
         alts_grpc_record_protocol_test_var_create();
-    /* Seals and then unseals empty payload.  */
+    // Seals and then unseals empty payload.
     grpc_slice_buffer_reset_and_unref(&var->original_sb);
     grpc_slice_buffer_reset_and_unref(&var->duplicate_sb);
     tsi_result status = alts_grpc_record_protocol_protect(
@@ -340,16 +340,16 @@ static void unsync_seal_unseal(alts_grpc_record_protocol* sender,
   tsi_result status;
   alts_grpc_record_protocol_test_var* var =
       alts_grpc_record_protocol_test_var_create();
-  /* Seals once.  */
+  // Seals once.
   status = alts_grpc_record_protocol_protect(sender, &var->original_sb,
                                              &var->protected_sb);
   ASSERT_EQ(status, TSI_OK);
   grpc_slice_buffer_reset_and_unref(&var->protected_sb);
-  /* Seals again.  */
+  // Seals again.
   status = alts_grpc_record_protocol_protect(sender, &var->duplicate_sb,
                                              &var->protected_sb);
   ASSERT_EQ(status, TSI_OK);
-  /* Unseals the second frame.  */
+  // Unseals the second frame.
   status = alts_grpc_record_protocol_unprotect(receiver, &var->protected_sb,
                                                &var->unprotected_sb);
   ASSERT_EQ(status, TSI_INTERNAL_ERROR);
@@ -363,11 +363,11 @@ static void corrupted_data(alts_grpc_record_protocol* sender,
   tsi_result status;
   alts_grpc_record_protocol_test_var* var =
       alts_grpc_record_protocol_test_var_create();
-  /* Seals once.  */
+  // Seals once.
   status = alts_grpc_record_protocol_protect(sender, &var->original_sb,
                                              &var->protected_sb);
   ASSERT_EQ(status, TSI_OK);
-  /* Corrupts one byte in protected_sb and tries to unprotect.  */
+  // Corrupts one byte in protected_sb and tries to unprotect.
   alter_random_byte(&var->protected_sb);
   status = alts_grpc_record_protocol_unprotect(receiver, &var->protected_sb,
                                                &var->unprotected_sb);
@@ -381,12 +381,12 @@ static void input_check(alts_grpc_record_protocol* rp) {
   tsi_result status;
   alts_grpc_record_protocol_test_var* var =
       alts_grpc_record_protocol_test_var_create();
-  /* Protects with nullptr input.  */
+  // Protects with nullptr input.
   status = alts_grpc_record_protocol_protect(rp, nullptr, &var->protected_sb);
   ASSERT_EQ(status, TSI_INVALID_ARGUMENT);
   status = alts_grpc_record_protocol_protect(rp, &var->original_sb, nullptr);
   ASSERT_EQ(status, TSI_INVALID_ARGUMENT);
-  /* Unprotects with nullptr input.  */
+  // Unprotects with nullptr input.
   status = alts_grpc_record_protocol_protect(rp, &var->original_sb,
                                              &var->protected_sb);
   ASSERT_EQ(status, TSI_OK);
@@ -395,8 +395,8 @@ static void input_check(alts_grpc_record_protocol* rp) {
   ASSERT_EQ(status, TSI_INVALID_ARGUMENT);
   status = alts_grpc_record_protocol_unprotect(rp, &var->protected_sb, nullptr);
   ASSERT_EQ(status, TSI_INVALID_ARGUMENT);
-  /* Unprotects on a temporary slice buffer which length is smaller than header
-   * length plus tag length.  */
+  // Unprotects on a temporary slice buffer which length is smaller than header
+  // length plus tag length.
   grpc_slice_buffer temp_sb;
   grpc_slice_buffer_init(&temp_sb);
   grpc_slice_buffer_move_first(
@@ -409,7 +409,7 @@ static void input_check(alts_grpc_record_protocol* rp) {
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-/* --- Test cases. --- */
+// --- Test cases. ---
 
 static void alts_grpc_record_protocol_random_seal_unseal_tests(
     alts_grpc_record_protocol_test_fixture* fixture) {

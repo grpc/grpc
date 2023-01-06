@@ -126,7 +126,7 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   return absl::OkStatus();
 }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace
 
@@ -160,10 +160,13 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   options.expand_wildcard_addrs =
       (AdjustValue(0, 1, INT_MAX,
                    config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS)) != 0);
-  options.allow_reuse_port =
-      (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
-       0);
-
+  options.allow_reuse_port = PosixSocketWrapper::IsSocketReusePortSupported();
+  auto allow_reuse_port_value = config.GetInt(GRPC_ARG_ALLOW_REUSEPORT);
+  if (allow_reuse_port_value.has_value()) {
+    options.allow_reuse_port =
+        (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
+         0);
+  }
   if (options.tcp_min_read_chunk_size > options.tcp_max_read_chunk_size) {
     options.tcp_min_read_chunk_size = options.tcp_max_read_chunk_size;
   }
@@ -190,8 +193,9 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec) {
   int fd, flags;
+  EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  fd = accept(sockfd, const_cast<sockaddr*>(addr.address()), &len);
+  fd = accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
   if (fd >= 0) {
     if (nonblock) {
       flags = fcntl(fd, F_GETFL, 0);
@@ -204,6 +208,7 @@ int Accept4(int sockfd,
       if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
     }
   }
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
   return fd;
 
 close_and_error:
@@ -219,11 +224,15 @@ int Accept4(int sockfd,
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
+  EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  return accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
+  int ret =
+      accept4(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags);
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+  return ret;
 }
 
-#endif /* GRPC_LINUX_SOCKETUTILS */
+#endif  // GRPC_LINUX_SOCKETUTILS
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -454,7 +463,9 @@ bool PosixSocketWrapper::IsSocketReusePortSupported() {
     }
     if (s >= 0) {
       PosixSocketWrapper sock(s);
-      return sock.SetSocketReusePort(1).ok();
+      bool result = sock.SetSocketReusePort(1).ok();
+      close(sock.Fd());
+      return result;
     } else {
       return false;
     }
@@ -610,7 +621,7 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));
       addr.sin6_family = AF_INET6;
-      addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
+      addr.sin6_addr.s6_addr[15] = 1;  // [::1]:0
       if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
         loopback_available = true;
       } else {
@@ -632,7 +643,7 @@ PosixSocketWrapper::LocalAddress() {
     return absl::InternalError(
         absl::StrCat("getsockname:", grpc_core::StrError(errno)));
   }
-  return addr;
+  return EventEngine::ResolvedAddress(addr.address(), len);
 }
 
 absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
@@ -642,7 +653,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
     return absl::InternalError(
         absl::StrCat("getpeername:", grpc_core::StrError(errno)));
   }
-  return addr;
+  return EventEngine::ResolvedAddress(addr.address(), len);
 }
 
 absl::StatusOr<std::string> PosixSocketWrapper::LocalAddressString() {
@@ -740,7 +751,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
                                                      mapped_target_addr};
 }
 
-#else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   grpc_core::Crash("unimplemented");
@@ -836,7 +847,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
   grpc_core::Crash("unimplemented");
 }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

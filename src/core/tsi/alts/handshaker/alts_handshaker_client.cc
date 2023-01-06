@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -54,59 +54,59 @@ struct recv_message_result {
 
 typedef struct alts_grpc_handshaker_client {
   alts_handshaker_client base;
-  /* One ref is held by the entity that created this handshaker_client, and
-   * another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op. */
+  // One ref is held by the entity that created this handshaker_client, and
+  // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
   gpr_refcount refs;
   alts_tsi_handshaker* handshaker;
   grpc_call* call;
-  /* A pointer to a function handling the interaction with handshaker service.
-   * That is, it points to grpc_call_start_batch_and_execute when the handshaker
-   * client is used in a non-testing use case and points to a custom function
-   * that validates the data to be sent to handshaker service in a testing use
-   * case. */
+  // A pointer to a function handling the interaction with handshaker service.
+  // That is, it points to grpc_call_start_batch_and_execute when the handshaker
+  // client is used in a non-testing use case and points to a custom function
+  // that validates the data to be sent to handshaker service in a testing use
+  // case.
   alts_grpc_caller grpc_caller;
-  /* A gRPC closure to be scheduled when the response from handshaker service
-   * is received. It will be initialized with the injected grpc RPC callback. */
+  // A gRPC closure to be scheduled when the response from handshaker service
+  // is received. It will be initialized with the injected grpc RPC callback.
   grpc_closure on_handshaker_service_resp_recv;
-  /* Buffers containing information to be sent (or received) to (or from) the
-   * handshaker service. */
+  // Buffers containing information to be sent (or received) to (or from) the
+  // handshaker service.
   grpc_byte_buffer* send_buffer = nullptr;
   grpc_byte_buffer* recv_buffer = nullptr;
   // Used to inject a read failure from tests.
   bool inject_read_failure = false;
-  /* Initial metadata to be received from handshaker service. */
+  // Initial metadata to be received from handshaker service.
   grpc_metadata_array recv_initial_metadata;
-  /* A callback function provided by an application to be invoked when response
-   * is received from handshaker service. */
+  // A callback function provided by an application to be invoked when response
+  // is received from handshaker service.
   tsi_handshaker_on_next_done_cb cb;
   void* user_data;
-  /* ALTS credential options passed in from the caller. */
+  // ALTS credential options passed in from the caller.
   grpc_alts_credentials_options* options;
-  /* target name information to be passed to handshaker service for server
-   * authorization check. */
+  // target name information to be passed to handshaker service for server
+  // authorization check.
   grpc_slice target_name;
-  /* boolean flag indicating if the handshaker client is used at client
-   * (is_client = true) or server (is_client = false) side. */
+  // boolean flag indicating if the handshaker client is used at client
+  // (is_client = true) or server (is_client = false) side.
   bool is_client;
-  /* a temporary store for data received from handshaker service used to extract
-   * unused data. */
+  // a temporary store for data received from handshaker service used to extract
+  // unused data.
   grpc_slice recv_bytes;
-  /* a buffer containing data to be sent to the grpc client or server's peer. */
+  // a buffer containing data to be sent to the grpc client or server's peer.
   unsigned char* buffer;
   size_t buffer_size;
-  /** callback for receiving handshake call status */
+  /// callback for receiving handshake call status
   grpc_closure on_status_received;
-  /** gRPC status code of handshake call */
+  /// gRPC status code of handshake call
   grpc_status_code handshake_status_code = GRPC_STATUS_OK;
-  /** gRPC status details of handshake call */
+  /// gRPC status details of handshake call
   grpc_slice handshake_status_details;
-  /* mu synchronizes all fields below including their internal fields. */
+  // mu synchronizes all fields below including their internal fields.
   grpc_core::Mutex mu;
-  /* indicates if the handshaker call's RECV_STATUS_ON_CLIENT op is done. */
+  // indicates if the handshaker call's RECV_STATUS_ON_CLIENT op is done.
   bool receive_status_finished = false;
-  /* if non-null, contains arguments to complete a TSI next callback. */
+  // if non-null, contains arguments to complete a TSI next callback.
   recv_message_result* pending_recv_message_result = nullptr;
-  /* Maximum frame size used by frame protector. */
+  // Maximum frame size used by frame protector.
   size_t max_frame_size;
   // If non-null, will be populated with an error string upon error.
   std::string* error;
@@ -199,7 +199,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   grpc_byte_buffer* recv_buffer = client->recv_buffer;
   alts_tsi_handshaker* handshaker = client->handshaker;
-  /* Invalid input check. */
+  // Invalid input check.
   if (client->cb == nullptr) {
     gpr_log(GPR_ERROR,
             "client->cb is nullptr in alts_tsi_handshaker_handle_response()");
@@ -214,14 +214,14 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
         nullptr, 0, nullptr);
     return;
   }
-  /* TSI handshake has been shutdown. */
+  // TSI handshake has been shutdown.
   if (alts_tsi_handshaker_has_shutdown(handshaker)) {
     gpr_log(GPR_INFO, "TSI handshake shutdown");
     handle_response_done(client, TSI_HANDSHAKE_SHUTDOWN,
                          "TSI handshake shutdown", nullptr, 0, nullptr);
     return;
   }
-  /* Check for failed grpc read. */
+  // Check for failed grpc read.
   if (!is_ok || client->inject_read_failure) {
     gpr_log(GPR_INFO, "read failed on grpc call to handshaker service");
     handle_response_done(client, TSI_INTERNAL_ERROR,
@@ -243,7 +243,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
       alts_tsi_utils_deserialize_response(recv_buffer, arena.ptr());
   grpc_byte_buffer_destroy(client->recv_buffer);
   client->recv_buffer = nullptr;
-  /* Invalid handshaker response check. */
+  // Invalid handshaker response check.
   if (resp == nullptr) {
     gpr_log(GPR_ERROR, "alts_tsi_utils_deserialize_response() failed");
     handle_response_done(client, TSI_DATA_CORRUPTED,
@@ -407,14 +407,14 @@ class HandshakeQueue {
 };
 
 gpr_once g_queued_handshakes_init = GPR_ONCE_INIT;
-/* Using separate queues for client and server handshakes is a
- * hack that's mainly intended to satisfy the alts_concurrent_connectivity_test,
- * which runs many concurrent handshakes where both endpoints
- * are in the same process; this situation is problematic with a
- * single queue because we have a high chance of using up all outstanding
- * slots in the queue, such that there aren't any
- * mutual client/server handshakes outstanding at the same time and
- * able to make progress. */
+// Using separate queues for client and server handshakes is a
+// hack that's mainly intended to satisfy the alts_concurrent_connectivity_test,
+// which runs many concurrent handshakes where both endpoints
+// are in the same process; this situation is problematic with a
+// single queue because we have a high chance of using up all outstanding
+// slots in the queue, such that there aren't any
+// mutual client/server handshakes outstanding at the same time and
+// able to make progress.
 HandshakeQueue* g_client_handshake_queue;
 HandshakeQueue* g_server_handshake_queue;
 
@@ -441,10 +441,10 @@ void HandshakeDone(bool is_client) {
 
 };  // namespace
 
-/**
- * Populate grpc operation data with the fields of ALTS handshaker client and
- * make a grpc call.
- */
+///
+/// Populate grpc operation data with the fields of ALTS handshaker client and
+/// make a grpc call.
+///
 static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
@@ -478,8 +478,8 @@ static void on_status_received(void* arg, grpc_error_handle error) {
   alts_grpc_handshaker_client_unref(client);
 }
 
-/* Serializes a grpc_gcp_HandshakerReq message into a buffer and returns newly
- * grpc_byte_buffer holding it. */
+// Serializes a grpc_gcp_HandshakerReq message into a buffer and returns newly
+// grpc_byte_buffer holding it.
 static grpc_byte_buffer* get_serialized_handshaker_req(
     grpc_gcp_HandshakerReq* req, upb_Arena* arena) {
   size_t buf_length;
@@ -493,7 +493,7 @@ static grpc_byte_buffer* get_serialized_handshaker_req(
   return byte_buffer;
 }
 
-/* Create and populate a client_start handshaker request, then serialize it. */
+// Create and populate a client_start handshaker request, then serialize it.
 static grpc_byte_buffer* get_serialized_start_client(
     alts_handshaker_client* c) {
   GPR_ASSERT(c != nullptr);
@@ -558,7 +558,7 @@ static tsi_result handshaker_client_start_client(alts_handshaker_client* c) {
   return result;
 }
 
-/* Create and populate a start_server handshaker request, then serialize it. */
+// Create and populate a start_server handshaker request, then serialize it.
 static grpc_byte_buffer* get_serialized_start_server(
     alts_handshaker_client* c, grpc_slice* bytes_received) {
   GPR_ASSERT(c != nullptr);
@@ -617,7 +617,7 @@ static tsi_result handshaker_client_start_server(alts_handshaker_client* c,
   return result;
 }
 
-/* Create and populate a next handshaker request, then serialize it. */
+// Create and populate a next handshaker request, then serialize it.
 static grpc_byte_buffer* get_serialized_next(grpc_slice* bytes_received) {
   GPR_ASSERT(bytes_received != nullptr);
   upb::Arena arena;

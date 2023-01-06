@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
@@ -169,8 +169,8 @@ class EndpointPairFixture : public BaseFixture {
     fixture_configuration.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
     grpc_core::ExecCtx exec_ctx;
-    /* add server endpoint to server_
-     * */
+    // add server endpoint to server_
+    //
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
@@ -189,7 +189,7 @@ class EndpointPairFixture : public BaseFixture {
                                           nullptr);
     }
 
-    /* create channel */
+    // create channel
     {
       grpc_core::ChannelArgs c_args;
       {
@@ -254,10 +254,10 @@ class SockPair : public EndpointPairFixture {
                             fixture_configuration) {}
 };
 
-/* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
-   is here only to be able to initialize both the base class and stats_ with the
-   same stats instance without accessing the stats_ fields before the object is
-   properly initialized. */
+// Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
+// is here only to be able to initialize both the base class and stats_ with the
+// same stats instance without accessing the stats_ fields before the object is
+// properly initialized.
 class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
   InProcessCHTTP2WithExplicitStats(

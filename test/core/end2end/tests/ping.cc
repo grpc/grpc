@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 
@@ -61,11 +61,11 @@ static void test_ping(grpc_end2end_test_config config,
   grpc_channel_ping(f.client, f.cq, tag(0), nullptr);
   cqv.Expect(tag(0), false);
 
-  /* check that we're still in idle, and start connecting */
+  // check that we're still in idle, and start connecting
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
              GRPC_CHANNEL_IDLE);
-  /* we'll go through some set of transitions (some might be missed), until
-     READY is reached */
+  // we'll go through some set of transitions (some might be missed), until
+  // READY is reached
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state,
@@ -91,7 +91,7 @@ static void test_ping(grpc_end2end_test_config config,
   cqv.Expect(tag(0xdead), true);
   cqv.Verify();
 
-  /* cleanup server */
+  // cleanup server
   grpc_server_destroy(f.server);
 
   grpc_channel_destroy(f.client);

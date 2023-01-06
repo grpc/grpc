@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
@@ -37,9 +37,9 @@
 
 using grpc_core::Json;
 
-/* This JSON key was generated with the GCE console and revoked immediately.
-   The identifiers have been changed as well.
-   Maximum size for a string literal is 509 chars in C89, yay!  */
+// This JSON key was generated with the GCE console and revoked immediately.
+// The identifiers have been changed as well.
+// Maximum size for a string literal is 509 chars in C89, yay!
 static const char test_json_key_str_part1[] =
     "{ \"private_key\": \"-----BEGIN PRIVATE KEY-----"
     "\\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOEvJsnoHnyHkXcp\\n7mJE"
@@ -71,7 +71,7 @@ static const char test_json_key_str_part3[] =
     "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
     "com\", \"type\": \"service_account\" }";
 
-/* Test refresh token. */
+// Test refresh token.
 static const char test_refresh_token_str[] =
     "{ \"client_id\": \"32555999999.apps.googleusercontent.com\","
     "  \"client_secret\": \"EmssLNjJy1332hD4KFsecret\","
@@ -258,7 +258,7 @@ static void check_jwt_claim(const Json& claim, const char* expected_audience,
     ASSERT_EQ(value.type(), Json::Type::STRING);
     ASSERT_EQ(value.string_value(), expected_scope);
   } else {
-    /* Claims without scope must have a sub. */
+    // Claims without scope must have a sub.
     ASSERT_EQ(object.find("scope"), object.end());
     value = object["sub"];
     ASSERT_EQ(value.type(), Json::Type::STRING);
@@ -356,7 +356,7 @@ static void test_jwt_encode_and_sign(
   offset = static_cast<size_t>(dot - jwt) + 1;
 
   dot = strchr(jwt + offset, '.');
-  ASSERT_EQ(dot, nullptr); /* no more part. */
+  ASSERT_EQ(dot, nullptr);  // no more part.
   b64_signature = jwt + offset;
   check_jwt_signature(b64_signature, json_key.private_key, jwt, offset - 1);
 

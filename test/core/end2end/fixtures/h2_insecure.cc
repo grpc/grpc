@@ -100,7 +100,7 @@ void Chttp2TearDownInsecureFullstack(grpc_end2end_test_fixture* f) {
   delete ffd;
 }
 
-/* All test configurations */
+// All test configurations
 grpc_end2end_test_config configs[] = {
     {"chttp2/insecure_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |

@@ -59,6 +59,7 @@
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -150,14 +151,14 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
       deadline_(args.deadline) {
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
-      callstk,             /* call_stack */
-      nullptr,             /* server_transport_data */
-      args.context,        /* context */
-      args.path.c_slice(), /* path */
-      args.start_time,     /* start_time */
-      args.deadline,       /* deadline */
-      args.arena,          /* arena */
-      args.call_combiner   /* call_combiner */
+      callstk,              // call_stack
+      nullptr,              // server_transport_data
+      args.context,         // context
+      args.path.c_slice(),  // path
+      args.start_time,      // start_time
+      args.deadline,        // deadline
+      args.arena,           // arena
+      args.call_combiner    // call_combiner
   };
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
@@ -799,29 +800,6 @@ void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
   }
 }
 
-namespace {
-
-// Returns a string indicating the subchannel's connectivity state change to
-// \a state.
-const char* SubchannelConnectivityStateChangeString(
-    grpc_connectivity_state state) {
-  switch (state) {
-    case GRPC_CHANNEL_IDLE:
-      return "Subchannel state change to IDLE";
-    case GRPC_CHANNEL_CONNECTING:
-      return "Subchannel state change to CONNECTING";
-    case GRPC_CHANNEL_READY:
-      return "Subchannel state change to READY";
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-      return "Subchannel state change to TRANSIENT_FAILURE";
-    case GRPC_CHANNEL_SHUTDOWN:
-      return "Subchannel state change to SHUTDOWN";
-  }
-  GPR_UNREACHABLE_CODE(return "UNKNOWN");
-}
-
-}  // namespace
-
 // Note: Must be called with a state that is different from the current state.
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
                                             const absl::Status& status) {
@@ -845,8 +823,10 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
     channelz_node_->UpdateConnectivityState(state);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            SubchannelConnectivityStateChangeString(state)));
+        grpc_slice_from_cpp_string(absl::StrCat(
+            "Subchannel connectivity state changed to ",
+            ConnectivityStateName(state),
+            status.ok() ? "" : absl::StrCat(": ", status_.ToString()))));
   }
   // Notify non-health watchers.
   watcher_list_.NotifyLocked(state, status_);

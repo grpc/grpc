@@ -36,12 +36,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
-  s.add_development_dependency 'simplecov',          '~> 0.14.1'
+  s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
   s.add_development_dependency 'rspec',              '~> 3.6'
-  s.add_development_dependency 'rubocop',            '~> 0.49.1'
+  s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
   s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.10'
 
@@ -54,6 +54,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/event_engine/endpoint_config.h )
   s.files += %w( include/grpc/event_engine/event_engine.h )
   s.files += %w( include/grpc/event_engine/internal/memory_allocator_impl.h )
+  s.files += %w( include/grpc/event_engine/internal/slice_cast.h )
   s.files += %w( include/grpc/event_engine/memory_allocator.h )
   s.files += %w( include/grpc/event_engine/memory_request.h )
   s.files += %w( include/grpc/event_engine/port.h )
@@ -144,6 +145,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.h )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.cc )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_call_state_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h )
@@ -1049,8 +1051,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/windows/iocp.h )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.cc )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.h )
-  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.cc )
-  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.h )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.cc )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.h )
   s.files += %w( src/core/lib/experiments/config.cc )
@@ -1265,6 +1265,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/socket_utils_windows.cc )
   s.files += %w( src/core/lib/iomgr/socket_windows.cc )
   s.files += %w( src/core/lib/iomgr/socket_windows.h )
+  s.files += %w( src/core/lib/iomgr/systemd_utils.cc )
+  s.files += %w( src/core/lib/iomgr/systemd_utils.h )
   s.files += %w( src/core/lib/iomgr/tcp_client.cc )
   s.files += %w( src/core/lib/iomgr/tcp_client.h )
   s.files += %w( src/core/lib/iomgr/tcp_client_cfstream.cc )

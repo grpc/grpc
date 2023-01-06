@@ -26,6 +26,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -215,7 +216,6 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
   } else {
     socket.addr = addr;
   }
-
   GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket));
   GPR_ASSERT(socket.port > 0);
   return socket;
@@ -253,7 +253,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     } else {
       continue;
     }
-    memcpy(const_cast<sockaddr*>(addr.address()), ifa_it->ifa_addr, len);
+    addr = EventEngine::ResolvedAddress(ifa_it->ifa_addr, len);
     ResolvedAddressSetPort(addr, requested_port);
     std::string addr_str = *ResolvedAddressToString(addr);
     gpr_log(GPR_DEBUG,

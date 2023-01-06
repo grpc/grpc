@@ -314,7 +314,7 @@ void TcpSetWriteTimestampsCallback(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* GRPC_LINUX_ERRQUEUE */
+#else  // GRPC_LINUX_ERRQUEUE
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -329,4 +329,4 @@ void TcpSetWriteTimestampsCallback(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE
