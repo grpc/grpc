@@ -136,12 +136,12 @@ class WindowsEventEngine : public EventEngine,
   // In this case, the connection_state->mu is already locked, and timer
   // cancellation is not possible.
   bool CancelConnectFromDeadlineTimer(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ConnectionState::mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
   // Completes the connection cancellation logic after checking handle validity
   // and optionally cancelling deadline timers.
   bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ConnectionState::mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
   class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,

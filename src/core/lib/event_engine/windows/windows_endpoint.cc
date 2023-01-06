@@ -156,7 +156,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   DWORD bytes_sent;
   int status = WSASend(socket_->socket(), buffers.data(), (DWORD)buffers.size(),
                        &bytes_sent, 0, nullptr, nullptr);
-  size_t async_buffers_offset;
+  size_t async_buffers_offset = 0;
   if (status == 0) {
     if (bytes_sent == data->Length()) {
       // Write completed, exiting early
@@ -217,7 +217,7 @@ const EventEngine::ResolvedAddress& WindowsEndpoint::GetLocalAddress() const {
 // ---- Handle{Read|Write}Closure
 
 WindowsEndpoint::BaseEventClosure::BaseEventClosure(WindowsEndpoint* endpoint)
-    : endpoint_(endpoint), cb_(&AbortOnEvent) {}
+    : cb_(&AbortOnEvent), endpoint_(endpoint) {}
 
 void WindowsEndpoint::HandleReadClosure::Run() {
   GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p Handling Read Event", endpoint_);
