@@ -568,6 +568,7 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
 #ifdef GRPC_POSIX_SOCKET_TCP
   GPR_DEBUG_ASSERT(fd > 0);
   PosixEventPoller* poller = poller_manager_->Poller();
+  GPR_DEBUG_ASSERT(poller != nullptr);
   EventHandle* handle =
       poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
