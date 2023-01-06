@@ -104,7 +104,9 @@ def _unknown_code_details(unknown_cygrpc_code: Optional[grpc.StatusCode],
 
 class _RPCState(object):
     condition: threading.Condition
-    due: Any
+    #TODO(xuanwn) Change it to use correct cython type.
+    #Issue: https://github.com/grpc/grpc/issues/32033
+    due: Set[Union[cygrpc.OperationType, int]]
     initial_metadata: Optional[MetadataType]
     response: Any
     trailing_metadata: Optional[MetadataType]
@@ -115,7 +117,7 @@ class _RPCState(object):
     callbacks: List[NullaryCallbackType]
     fork_epoch: Optional[int]
 
-    def __init__(self, due: Sequence, initial_metadata: Optional[MetadataType],
+    def __init__(self, due: Sequence[Union[cygrpc.OperationType, int]], initial_metadata: Optional[MetadataType],
                  trailing_metadata: Optional[MetadataType],
                  code: Optional[grpc.StatusCode], details: Optional[str]):
         # `condition` guards all members of _RPCState. `notify_all` is called on

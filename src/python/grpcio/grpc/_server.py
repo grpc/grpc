@@ -69,20 +69,23 @@ _INF_TIMEOUT = 1e9
 def _serialized_request(request_event: cygrpc.BaseEvent) -> Optional[bytes]:
     return request_event.batch_operations[0].message()
 
-
-def _application_code(code: grpc.StatusCode) -> Any:
+#TODO(xuanwn) Change it to use correct cython type.
+#Issue: https://github.com/grpc/grpc/issues/32033
+def _application_code(code: grpc.StatusCode) -> Union[cygrpc.StatusCode, int]:
     cygrpc_code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(code)
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
-
-def _completion_code(state: _RPCState) -> Any:
+#TODO(xuanwn) Change it to use correct cython type.
+#Issue: https://github.com/grpc/grpc/issues/32033
+def _completion_code(state: _RPCState) -> Union[cygrpc.StatusCode, int]:
     if state.code is None:
         return cygrpc.StatusCode.ok
     else:
         return _application_code(state.code)
 
-
-def _abortion_code(state: _RPCState, code: Any) -> Any:
+#TODO(xuanwn) Change it to use correct cython type.
+#Issue: https://github.com/grpc/grpc/issues/32033
+def _abortion_code(state: _RPCState, code: Union[cygrpc.StatusCode, int]) -> Union[cygrpc.StatusCode, int]:
     if state.code is None:
         return code
     else:
@@ -183,7 +186,7 @@ def _get_initial_metadata_operation(
     return operation
 
 
-def _abort(state: _RPCState, call: cygrpc.Call, code: Any,
+def _abort(state: _RPCState, call: cygrpc.Call, code: Union[cygrpc.StatusCode, int],
            details: bytes) -> None:
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
@@ -790,7 +793,7 @@ def _find_method_handler(
         return query_handlers(handler_call_details)
 
 
-def _reject_rpc(rpc_event: cygrpc.BaseEvent, status: Any,
+def _reject_rpc(rpc_event: cygrpc.BaseEvent, status: Union[cygrpc.StatusCode, int],
                 details: bytes) -> _RPCState:
     rpc_state = _RPCState()
     operations = (
