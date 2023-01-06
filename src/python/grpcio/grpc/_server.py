@@ -21,6 +21,8 @@ import enum
 import logging
 import threading
 import time
+import traceback
+import sys
 from typing import (Any, Callable, Iterable, Iterator, List, Mapping, NoReturn,
                     Optional, Sequence, Set, Tuple, Union)
 
@@ -625,6 +627,8 @@ def _unary_response_in_pool(
                     rpc_event, state, response, response_serializer)
                 if serialized_response is not None:
                     _status(rpc_event, state, serialized_response)
+    except Exception as exp:  # pylint: disable=broad-except
+        traceback.print_exception(*sys.exc_info())
     finally:
         cygrpc.uninstall_context()
 
@@ -663,6 +667,8 @@ def _stream_response_in_pool(
                 if proceed:
                     _send_message_callback_to_blocking_iterator_adapter(
                         rpc_event, state, send_response, response_iterator)
+    except Exception as exp:  # pylint: disable=broad-except
+        traceback.print_exception(*sys.exc_info())
     finally:
         cygrpc.uninstall_context()
 

@@ -432,7 +432,8 @@ class MetadataCodeDetailsTest(unittest.TestCase):
     @unittest.skipIf(test_common.running_under_run_time_type_check(),
                      "This test case used unsupportted types")
     def testAbortedUnaryUnaryWithInvalidCode(self):
-        test_cases = zip(_INVALID_ABORT_CODES, _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
+        test_cases = zip(_INVALID_ABORT_CODES,
+                         _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
                          _EXPECTED_DETAILS_WITH_INVALID_ABORT_CODES)
         for abort_code, expected_code, expected_details in test_cases:
             self._servicer.set_code(abort_code)
@@ -461,7 +462,8 @@ class MetadataCodeDetailsTest(unittest.TestCase):
     @unittest.skipIf(test_common.running_under_run_time_type_check(),
                      "This test case used unsupportted types")
     def testAbortedUnaryStreamWithInvalidCode(self):
-        test_cases = zip(_INVALID_ABORT_CODES, _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
+        test_cases = zip(_INVALID_ABORT_CODES,
+                         _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
                          _EXPECTED_DETAILS_WITH_INVALID_ABORT_CODES)
         for abort_code, expected_code, expected_details in test_cases:
             self._servicer.set_code(abort_code)
@@ -492,7 +494,8 @@ class MetadataCodeDetailsTest(unittest.TestCase):
     @unittest.skipIf(test_common.running_under_run_time_type_check(),
                      "This test case used unsupportted types")
     def testAbortedStreamUnaryWithInvalidCode(self):
-        test_cases = zip(_INVALID_ABORT_CODES, _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
+        test_cases = zip(_INVALID_ABORT_CODES,
+                         _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
                          _EXPECTED_DETAILS_WITH_INVALID_ABORT_CODES)
         for abort_code, expected_code, expected_details in test_cases:
             self._servicer.set_code(abort_code)
@@ -523,7 +526,8 @@ class MetadataCodeDetailsTest(unittest.TestCase):
     @unittest.skipIf(test_common.running_under_run_time_type_check(),
                      "This test case used unsupportted types")
     def testAbortedStreamStreamWithInvalidCode(self):
-        test_cases = zip(_INVALID_ABORT_CODES, _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
+        test_cases = zip(_INVALID_ABORT_CODES,
+                         _EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES,
                          _EXPECTED_DETAILS_WITH_INVALID_ABORT_CODES)
         for abort_code, expected_code, expected_details in test_cases:
             self._servicer.set_code(abort_code)
