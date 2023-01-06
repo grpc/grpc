@@ -1,4 +1,4 @@
-# Copyright 2022 The gRPC Authors
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 Houses py_grpc_run_time_type_check_test.
 """
 
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-
 _COPIED_MAIN_SUFFIX = ".typecheck.main"
 
 def py_grpc_run_time_type_check_test(
@@ -26,7 +24,7 @@ def py_grpc_run_time_type_check_test(
         deps = None,
         data = None,
         **kwargs):
-    """Runs a Python test with gevent monkeypatched in.
+    """Runs a Python test with with run time type check enabled.
 
     Args:
       name: The name of the test.
@@ -51,8 +49,6 @@ def py_grpc_run_time_type_check_test(
     augmented_deps = deps + [
         ":{}".format(lib_name),
     ]
-    # if _GRPC_LIB not in augmented_deps:
-    #     augmented_deps.append(_GRPC_LIB)
 
     # The main file needs to be in the same package as the test file.
     copied_main_name = name + _COPIED_MAIN_SUFFIX

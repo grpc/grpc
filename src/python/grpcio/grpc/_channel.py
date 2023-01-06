@@ -117,7 +117,8 @@ class _RPCState(object):
     callbacks: List[NullaryCallbackType]
     fork_epoch: Optional[int]
 
-    def __init__(self, due: Sequence[Union[cygrpc.OperationType, int]], initial_metadata: Optional[MetadataType],
+    def __init__(self, due: Sequence[Union[cygrpc.OperationType, int]],
+                 initial_metadata: Optional[MetadataType],
                  trailing_metadata: Optional[MetadataType],
                  code: Optional[grpc.StatusCode], details: Optional[str]):
         # `condition` guards all members of _RPCState. `notify_all` is called on
