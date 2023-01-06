@@ -120,13 +120,6 @@
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
-- name: posix_event_engine_enable_polling
-  description:
-    If set, enables polling on the default posix event engine.
-  default: true
-  expiry: 2023/01/01
-  owner: vigneshbabu@google.com
-  test_tags: ["event_engine_client_test"]
 - name: free_large_allocator
   description:
     If set, return all free bytes from a "big" allocator
