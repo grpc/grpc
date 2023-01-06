@@ -382,7 +382,8 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
       last_non_empty_since, new_non_empty_since, std::memory_order_relaxed,
       std::memory_order_relaxed);
   // Update the weight if we are not within the blackout period.
-  if (now - last_non_empty_since >= blackout_period) {
+  if (blackout_period == Duration::Zero() ||
+      now - last_non_empty_since >= blackout_period) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] subchannel %s: updating weight", wrr_.get(),
               key_.c_str());

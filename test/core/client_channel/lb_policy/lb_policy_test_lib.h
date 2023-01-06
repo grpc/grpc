@@ -51,6 +51,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -92,6 +93,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       FakeSubchannel(SubchannelState* state,
                      std::shared_ptr<WorkSerializer> work_serializer)
           : state_(state), work_serializer_(std::move(work_serializer)) {}
+
+      ~FakeSubchannel() override {
+        if (orca_watcher_ != nullptr) {
+          MutexLock lock(&state_->backend_metric_watcher_mu_);
+          auto it = state_->watchers_.find(orca_watcher_);
+          if (it != state_->watchers_.end()) state_->watchers_.erase(it);
+        }
+      }
 
       SubchannelState* state() const { return state_; }
 
@@ -146,15 +155,23 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         state_->requested_connection_ = true;
       }
 
-      // Don't need these methods here, so they're no-ops.
+      void AddDataWatcher(
+          std::unique_ptr<DataWatcherInterface> watcher) override {
+        MutexLock lock(&state_->backend_metric_watcher_mu_);
+        GPR_ASSERT(orca_watcher_ == nullptr);
+        orca_watcher_ = static_cast<OrcaWatcher*>(watcher.release());
+        state_->watchers_.emplace(orca_watcher_);
+      }
+
+      // Don't need this method, so it's a no-op.
       void ResetBackoff() override {}
-      void AddDataWatcher(std::unique_ptr<DataWatcherInterface>) override {}
 
       SubchannelState* state_;
       std::shared_ptr<WorkSerializer> work_serializer_;
       std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
                WatcherWrapper*>
           watcher_map_;
+      OrcaWatcher* orca_watcher_ = nullptr;
     };
 
     explicit SubchannelState(absl::string_view address)
@@ -233,13 +250,48 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return MakeRefCounted<FakeSubchannel>(this, std::move(work_serializer));
     }
 
+    // Sends an OOB backend metric report to all watchers.
+    void SendOobBackendMetricReport(const BackendMetricData& backend_metrics) {
+      MutexLock lock(&backend_metric_watcher_mu_);
+      for (const auto& watcher : watchers_) {
+        watcher->watcher()->OnBackendMetricReport(backend_metrics);
+      }
+    }
+
    private:
+    // A heterogeneous sorting functor that allows lookups of
+    // unique_ptr<>s by raw pointer value.
+    struct OrcaWatcherLess {
+      using is_transparent = void;
+      bool operator()(const std::unique_ptr<OrcaWatcher>& w1,
+                      const std::unique_ptr<OrcaWatcher>& w2) const {
+        return w1 < w2;
+      }
+      bool operator()(const std::unique_ptr<OrcaWatcher>& w1,
+                      const OrcaWatcher* w2) const {
+        return w1.get() < w2;
+      }
+      bool operator()(const OrcaWatcher* w1,
+                      const std::unique_ptr<OrcaWatcher>& w2) const {
+        return w1 < w2.get();
+      }
+      bool operator()(const OrcaWatcher* w1, const OrcaWatcher* w2) const {
+        return w1 < w2;
+      }
+    };
+
     const std::string address_;
+
     Mutex mu_;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(&mu_);
+
     Mutex requested_connection_mu_;
     bool requested_connection_ ABSL_GUARDED_BY(&requested_connection_mu_) =
         false;
+
+    Mutex backend_metric_watcher_mu_;
+    std::set<std::unique_ptr<OrcaWatcher>, OrcaWatcherLess> watchers_
+        ABSL_GUARDED_BY(&backend_metric_watcher_mu_);
   };
 
   // A fake helper to be passed to the LB policy.
@@ -449,15 +501,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   class FakeBackendMetricAccessor
       : public LoadBalancingPolicy::BackendMetricAccessor {
    public:
-    explicit FakeBackendMetricAccessor(BackendMetricData backend_metric_data)
+    explicit FakeBackendMetricAccessor(
+        absl::optional<BackendMetricData> backend_metric_data)
         : backend_metric_data_(std::move(backend_metric_data)) {}
 
     const BackendMetricData* GetBackendMetricData() override {
-      return &backend_metric_data_;
+      if (backend_metric_data_.has_value()) return &*backend_metric_data_;
+      return nullptr;
     }
 
    private:
-    const BackendMetricData backend_metric_data_;
+    const absl::optional<BackendMetricData> backend_metric_data_;
   };
 
   LoadBalancingPolicyTest()

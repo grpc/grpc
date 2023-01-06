@@ -135,8 +135,9 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   SendInitialUpdateAndWaitForConnected(
       absl::Span<const absl::string_view> addresses,
+      ConfigBuilder config_builder = ConfigBuilder(),
       SourceLocation location = SourceLocation()) {
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, ConfigBuilder().Build()),
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, config_builder.Build()),
                           lb_policy_.get()),
               absl::OkStatus());
     // Expect the initial CONNECTNG update with a picker that queues.
@@ -201,18 +202,33 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       auto& subchannel_call_tracker = subchannel_call_trackers[i];
       if (subchannel_call_tracker != nullptr) {
         subchannel_call_tracker->Start();
-        BackendMetricData backend_metric_data;
+        absl::optional<BackendMetricData> backend_metric_data;
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {
-          backend_metric_data.qps = it->second.first;
-          backend_metric_data.cpu_utilization = it->second.second;
+          backend_metric_data.emplace();
+          backend_metric_data->qps = it->second.first;
+          backend_metric_data->cpu_utilization = it->second.second;
         }
         FakeMetadata metadata({});
-        FakeBackendMetricAccessor backend_metric_accessor(backend_metric_data);
+        FakeBackendMetricAccessor backend_metric_accessor(
+            std::move(backend_metric_data));
         LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
             address, absl::OkStatus(), &metadata, &backend_metric_accessor};
         subchannel_call_tracker->Finish(args);
       }
+    }
+  }
+
+  void ReportOobBackendMetrics(
+      std::map<absl::string_view /*address*/,
+               std::pair<double /*qps*/, double /*cpu_utilization*/>>
+          backend_metrics) {
+    for (const auto& p : backend_metrics) {
+      auto* subchannel = FindSubchannel(p.first);
+      BackendMetricData backend_metric_data;
+      backend_metric_data.qps = p.second.first;
+      backend_metric_data.cpu_utilization = p.second.second;
+      subchannel->SendOobBackendMetricReport(backend_metric_data);
     }
   }
 
@@ -352,6 +368,36 @@ TEST_F(WeightedRoundRobinTest, FallsBackToRoundRobinWithoutWeights) {
   WaitForWeightedRoundRobinPicks(
       &picker, {},
       {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
+}
+
+TEST_F(WeightedRoundRobinTest, OobReporting) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses, ConfigBuilder().SetEnableOobLoadReport(true));
+  ASSERT_NE(picker, nullptr);
+  // Address 0 gets weight 1, address 1 gets weight 3.
+  // No utilization report from backend 2, so it gets the average weight 2.
+  ReportOobBackendMetrics(
+      {{kAddresses[0], {100, 0.9}}, {kAddresses[1], {100, 0.3}}});
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Now have backend 2 report utilization the same as backend 1, so its
+  // weight will be the same.
+  ReportOobBackendMetrics({{kAddresses[0], {100, 0.9}},
+                           {kAddresses[1], {100, 0.3}},
+                           {kAddresses[2], {100, 0.3}}});
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Backends stop reporting utilization, so all are weighted the same.
+  // FIXME: We don't currently handle the case where OOB reports stop
+  // coming in.  Need to fix the code to reset weights to 0 in that case.
+  //WaitForWeightedRoundRobinPicks(
+  //    &picker, {},
+  //    {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
 
 }  // namespace

@@ -163,6 +163,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )

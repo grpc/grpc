@@ -2650,6 +2650,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/lb_call_state_internal.h",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
+        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/retry_filter.h",
         "//src/core:ext/filters/client_channel/retry_service_config.h",

@@ -345,6 +345,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -1947,6 +1948,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
