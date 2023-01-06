@@ -208,11 +208,11 @@ class CallData {
             grpc_core::HttpPathMetadata())) {
       path = value->as_string_view();
     }
-    std::vector<absl::string_view> parts =
+    std::vector<std::string> parts =
         absl::StrSplit(path, '/', absl::SkipEmpty());
     if (parts.size() == 2) {
-      service_name_ = std::string(parts[0]);
-      method_name_ = std::string(parts[1]);
+      service_name_ = std::move(parts[0]);
+      method_name_ = std::move(parts[1]);
     }
     config_ = g_logging_sink->FindMatch(is_client, service_name_, method_name_);
     if (config_.ShouldLog()) {
@@ -354,8 +354,9 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
-    CallData* calld = grpc_core::GetContext<grpc_core::Arena>()->New<CallData>(
-        true, call_args, default_authority_);
+    CallData* calld =
+        grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<CallData>(
+            true, call_args, default_authority_);
     if (!calld->ShouldLog()) {
       return next_promise_factory(std::move(call_args));
     }
@@ -437,8 +438,9 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
-    CallData* calld = grpc_core::GetContext<grpc_core::Arena>()->New<CallData>(
-        false, call_args, /*default_authority=*/"");
+    CallData* calld =
+        grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<CallData>(
+            false, call_args, /*default_authority=*/"");
     if (!calld->ShouldLog()) {
       return next_promise_factory(std::move(call_args));
     }
