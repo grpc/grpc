@@ -369,7 +369,7 @@ static void me_destroy(grpc_endpoint* ep) {
         if (GetDefaultEventEngine()->Cancel(
                 *p->channel_effects->timer_handle)) {
           gpr_mu_unlock(&p->mu);
-          // This will destroy the endpoint so just return after that.
+          // This will destroy the passthru endpoint so just return after that.
           do_next_sched_channel_action(ep, absl::CancelledError());
           return;
         }
