@@ -35,7 +35,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -522,4 +521,4 @@ struct grpc_server_config_fetcher {
   virtual grpc_pollset_set* interested_parties() = 0;
 };
 
-#endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */
+#endif  // GRPC_CORE_LIB_SURFACE_SERVER_H

@@ -139,6 +139,7 @@ module GRPC
     end
 
     # set_output_stream_done is relevant on client-side
+    # rubocop:disable Metrics/PerceivedComplexity
     def write_loop(requests, is_client: true, set_output_stream_done: nil)
       GRPC.logger.debug('bidi-write-loop: starting')
       count = 0
@@ -182,6 +183,7 @@ module GRPC
     ensure
       set_output_stream_done.call if is_client
     end
+    # rubocop:enable Metrics/PerceivedComplexity
 
     # Provides an enumerator that yields results of remote reads
     def read_loop(set_input_stream_done, is_client: true)

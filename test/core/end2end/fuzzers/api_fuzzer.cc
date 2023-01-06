@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -465,7 +465,7 @@ class Call : public std::enable_shared_from_this<Call> {
     memset(&op, 0, sizeof(op));
     switch (batch_op.op_case()) {
       case api_fuzzer::BatchOp::OP_NOT_SET:
-        /* invalid value */
+        // invalid value
         return {};
       case api_fuzzer::BatchOp::kSendInitialMetadata:
         if (sent_initial_metadata_) {
@@ -772,7 +772,7 @@ static grpc_call_credentials* ReadCallCreds(
       return grpc_google_iam_credentials_create(
           creds.iam().auth_token().c_str(), creds.iam().auth_selector().c_str(),
           nullptr);
-      /* TODO(ctiller): more cred types here */
+      // TODO(ctiller): more cred types here
   }
 }
 
@@ -815,7 +815,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
-  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         return std::make_unique<FuzzingEventEngine>(
@@ -825,6 +824,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
   FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
+  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;

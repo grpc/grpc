@@ -260,6 +260,7 @@ libs:
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
+  - include/grpc/event_engine/internal/slice_cast.h
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
@@ -334,6 +335,7 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/lb_call_state_internal.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -867,6 +869,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -893,7 +896,6 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -902,7 +904,6 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -1593,6 +1594,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -1859,6 +1861,7 @@ libs:
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
+  - include/grpc/event_engine/internal/slice_cast.h
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
@@ -1933,6 +1936,7 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/lb_call_state_internal.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -2157,6 +2161,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -2181,7 +2186,6 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -2190,7 +2194,6 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -2519,6 +2522,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -3383,6 +3387,7 @@ libs:
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
+  - include/grpc/event_engine/internal/slice_cast.h
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
@@ -3589,6 +3594,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -3830,6 +3836,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -7314,6 +7321,7 @@ targets:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -7537,6 +7545,7 @@ targets:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -8863,11 +8872,13 @@ targets:
   src:
   - test/core/event_engine/posix/lock_free_event_test.cc
   deps:
+  - benchmark
   - grpc_test_util
+  benchmark: true
+  defaults: benchmark
   platforms:
   - linux
   - posix
-  - mac
   uses_polling: false
 - name: log_test
   gtest: true
@@ -10237,6 +10248,17 @@ targets:
   headers: []
   src:
   - test/core/client_channel/lb_policy/rls_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: round_robin_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/round_robin_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -11971,6 +11993,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/try_concurrently.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h

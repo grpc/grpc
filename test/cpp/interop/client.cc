@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <memory>
 #include <unordered_map>
@@ -50,38 +50,38 @@ ABSL_FLAG(
 
     // TODO(veblush): Replace the help message with the following full message
     // once Abseil fixes the flag-help compiler error on Windows. (b/171659833)
-    /*
-    "cancel_after_begin : cancel stream after starting it;\n"
-    "cancel_after_first_response: cancel on first response;\n"
-    "channel_soak: sends 'soak_iterations' rpcs, rebuilds channel each time;\n"
-    "client_compressed_streaming : compressed request streaming with "
-    "client_compressed_unary : single compressed request;\n"
-    "client_streaming : request streaming with single response;\n"
-    "compute_engine_creds: large_unary with compute engine auth;\n"
-    "custom_metadata: server will echo custom metadata;\n"
-    "empty_stream : bi-di stream with no request/response;\n"
-    "empty_unary : empty (zero bytes) request and response;\n"
-    "google_default_credentials: large unary using GDC;\n"
-    "half_duplex : half-duplex streaming;\n"
-    "jwt_token_creds: large_unary with JWT token auth;\n"
-    "large_unary : single request and (large) response;\n"
-    "long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
-    "oauth2_auth_token: raw oauth2 access token auth;\n"
-    "per_rpc_creds: raw oauth2 access token on a single rpc;\n"
-    "ping_pong : full-duplex streaming;\n"
-    "response streaming;\n"
-    "rpc_soak: 'sends soak_iterations' large_unary rpcs;\n"
-    "server_compressed_streaming : single request with compressed "
-    "server_compressed_unary : single compressed response;\n"
-    "server_streaming : single request with response streaming;\n"
-    "slow_consumer : single request with response streaming with "
-    "slow client consumer;\n"
-    "special_status_message: verify Unicode and whitespace in status message;\n"
-    "status_code_and_message: verify status code & message;\n"
-    "timeout_on_sleeping_server: deadline exceeds on stream;\n"
-    "unimplemented_method: client calls an unimplemented method;\n"
-    "unimplemented_service: client calls an unimplemented service;\n"
-    */
+    //
+    //"cancel_after_begin : cancel stream after starting it;\n"
+    //"cancel_after_first_response: cancel on first response;\n"
+    //"channel_soak: sends 'soak_iterations' rpcs, rebuilds channel each
+    // time;\n" "client_compressed_streaming : compressed request streaming with
+    //" "client_compressed_unary : single compressed request;\n"
+    //"client_streaming : request streaming with single response;\n"
+    //"compute_engine_creds: large_unary with compute engine auth;\n"
+    //"custom_metadata: server will echo custom metadata;\n"
+    //"empty_stream : bi-di stream with no request/response;\n"
+    //"empty_unary : empty (zero bytes) request and response;\n"
+    //"google_default_credentials: large unary using GDC;\n"
+    //"half_duplex : half-duplex streaming;\n"
+    //"jwt_token_creds: large_unary with JWT token auth;\n"
+    //"large_unary : single request and (large) response;\n"
+    //"long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
+    //"oauth2_auth_token: raw oauth2 access token auth;\n"
+    //"per_rpc_creds: raw oauth2 access token on a single rpc;\n"
+    //"ping_pong : full-duplex streaming;\n"
+    //"response streaming;\n"
+    //"rpc_soak: 'sends soak_iterations' large_unary rpcs;\n"
+    //"server_compressed_streaming : single request with compressed "
+    //"server_compressed_unary : single compressed response;\n"
+    //"server_streaming : single request with response streaming;\n"
+    //"slow_consumer : single request with response streaming with "
+    //"slow client consumer;\n"
+    //"special_status_message: verify Unicode and whitespace in status
+    // message;\n" "status_code_and_message: verify status code & message;\n"
+    //"timeout_on_sleeping_server: deadline exceeds on stream;\n"
+    //"unimplemented_method: client calls an unimplemented method;\n"
+    //"unimplemented_service: client calls an unimplemented service;\n"
+    //
 );
 ABSL_FLAG(std::string, default_service_account, "",
           "Email of GCE default service account");
@@ -300,14 +300,14 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
   actions["channel_soak"] = std::bind(
       &grpc::testing::InteropClient::DoChannelSoakTest, &client,
-      absl::GetFlag(FLAGS_soak_iterations),
+      absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
       absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
       absl::GetFlag(FLAGS_soak_overall_timeout_seconds));
   actions["rpc_soak"] = std::bind(
       &grpc::testing::InteropClient::DoRpcSoakTest, &client,
-      absl::GetFlag(FLAGS_soak_iterations),
+      absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
       absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),

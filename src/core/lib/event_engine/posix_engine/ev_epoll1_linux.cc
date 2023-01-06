@@ -24,6 +24,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
@@ -46,6 +47,7 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -321,6 +323,8 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
 // shutdown() syscall on that fd)
 void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
                                                bool releasing_fd) {
+  grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
+                          GRPC_STATUS_UNAVAILABLE);
   if (read_closure_->SetShutdown(why)) {
     if (!releasing_fd) {
       shutdown(fd_, SHUT_RDWR);
@@ -559,7 +563,7 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* defined(GRPC_LINUX_EPOLL) */
+#else  // defined(GRPC_LINUX_EPOLL)
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
 namespace grpc_event_engine {
@@ -605,5 +609,5 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif  // defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
+#endif  // !defined(GRPC_LINUX_EPOLL)

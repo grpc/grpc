@@ -21,6 +21,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -131,9 +132,8 @@ void AsyncConnect::OnWritable(absl::Status status)
       fd = nullptr;
     }
     if (!status.ok()) {
-      ep = absl::CancelledError(
-          absl::StrCat("Failed to connect to remote host: ", resolved_addr_str_,
-                       " with error: ", status.ToString()));
+      ep = absl::UnknownError(
+          absl::StrCat("Failed to connect to remote host: ", status.message()));
     }
     // Run the OnConnect callback asynchronously.
     if (!connect_cancelled) {
@@ -196,8 +196,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       return;
     case ECONNREFUSED:
       // This error shouldn't happen for anything other than connect().
-      status = absl::FailedPreconditionError(
-          absl::StrCat("connect: ", std::strerror(so_error)));
+      status = absl::FailedPreconditionError(std::strerror(so_error));
       break;
     default:
       // We don't really know which syscall triggered the problem here, so
@@ -219,7 +218,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   } while (err < 0 && errno == EINTR);
   saved_errno = errno;
 
-  auto addr_uri = ResolvedAddressToNormalizedString(addr);
+  auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
