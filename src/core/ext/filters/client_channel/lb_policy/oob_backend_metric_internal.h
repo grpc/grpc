@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_INTERNAL_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_INTERNAL_H
+
 #include <grpc/support/port_platform.h>
 
 #include <memory>
@@ -101,3 +104,5 @@ class OrcaWatcher : public InternalSubchannelDataWatcherInterface {
 };
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_INTERNAL_H

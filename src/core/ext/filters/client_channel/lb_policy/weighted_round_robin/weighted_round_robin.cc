@@ -288,8 +288,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     struct SubchannelInfo {
       SubchannelInfo(RefCountedPtr<SubchannelInterface> subchannel,
                      RefCountedPtr<AddressWeight> weight)
-          : subchannel(std::move(subchannel)),
-            weight(std::move(weight)) {}
+          : subchannel(std::move(subchannel)), weight(std::move(weight)) {}
 
       RefCountedPtr<SubchannelInterface> subchannel;
       RefCountedPtr<AddressWeight> weight;

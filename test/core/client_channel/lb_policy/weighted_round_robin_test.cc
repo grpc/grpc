@@ -395,7 +395,7 @@ TEST_F(WeightedRoundRobinTest, OobReporting) {
   // Backends stop reporting utilization, so all are weighted the same.
   // FIXME: We don't currently handle the case where OOB reports stop
   // coming in.  Need to fix the code to reset weights to 0 in that case.
-  //WaitForWeightedRoundRobinPicks(
+  // WaitForWeightedRoundRobinPicks(
   //    &picker, {},
   //    {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
