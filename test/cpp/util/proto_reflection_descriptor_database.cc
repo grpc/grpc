@@ -35,7 +35,7 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     : stub_(std::move(stub)) {}
 
 ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
-    const std::shared_ptr<grpc::Channel>& channel)
+    const std::shared_ptr<grpc::ChannelInterface>& channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
 ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
