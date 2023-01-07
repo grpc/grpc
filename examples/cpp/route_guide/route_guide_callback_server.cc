@@ -156,8 +156,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
             feature_list_(feature_list) {
         StartRead(&point_);
       }
-      void OnDone() { delete this; }
-      void OnReadDone(bool ok) {
+      void OnDone() override { delete this; }
+      void OnReadDone(bool ok) override {
         if (ok) {
           point_count_++;
           if (!GetFeatureName(point_, *feature_list_).empty()) {
