@@ -2196,10 +2196,12 @@ class PromiseBasedCall : public Call,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void PollRecvMessage(grpc_compression_algorithm compression_algorithm)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void CancelRecvMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartSendMessage(const grpc_op& op, const Completion& completion,
                         PipeSender<MessageHandle>* sender)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   bool PollSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void CancelSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   bool completed() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return completed_;
@@ -2551,14 +2553,20 @@ bool PromiseBasedCall::PollSendMessage() {
   if (!outstanding_send_.has_value()) return true;
   Poll<bool> r = (*outstanding_send_)();
   if (const bool* result = absl::get_if<bool>(&r)) {
-    FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
-    outstanding_send_.reset();
     if (!*result) {
       FailCompletion(send_message_completion_);
       return false;
     }
+    FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
+    outstanding_send_.reset();
   }
   return true;
+}
+
+void PromiseBasedCall::CancelSendMessage() {
+  if (!outstanding_send_.has_value()) return;
+  FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
+  outstanding_send_.reset();
 }
 
 void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
@@ -2616,6 +2624,13 @@ void PromiseBasedCall::PollRecvMessage(
     *recv_message_ = nullptr;
     FinishOpOnCompletion(&recv_message_completion_, PendingOp::kReceiveMessage);
   }
+}
+
+void PromiseBasedCall::CancelRecvMessage() {
+  if (!outstanding_recv_.has_value()) return;
+  *recv_message_ = nullptr;
+  outstanding_recv_.reset();
+  FinishOpOnCompletion(&recv_message_completion_, PendingOp::kReceiveMessage);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3115,17 +3130,6 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
       }
     }
 
-    bool is_waiting() const {
-      switch (state_) {
-        case kUnset:
-        case kFinishedWithFailure:
-        case kFinishedWithSuccess:
-          return false;
-        default:
-          return true;
-      }
-    }
-
     std::string ToString() const {
       switch (state_) {
         case kUnset:
@@ -3234,13 +3238,13 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 
 void ServerPromiseBasedCall::UpdateOnce() {
   if (grpc_call_trace.enabled()) {
-    gpr_log(
-        GPR_INFO, "%s[call] UpdateOnce: %s%shas_promise=%s", DebugTag().c_str(),
-        PresentAndCompletionText("recv_close", !recv_close_state_.is_waiting(),
-                                 recv_close_completion_)
-            .c_str(),
-        PollStateDebugString().c_str(),
-        promise_.has_value() ? "true" : "false");
+    gpr_log(GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %shas_promise=%s",
+            DebugTag().c_str(), recv_close_state_.ToString().c_str(),
+            recv_close_completion_.has_value()
+                ? absl::StrCat(":", recv_close_completion_.ToString()).c_str()
+                : "",
+            PollStateDebugString().c_str(),
+            promise_.has_value() ? "true" : "false");
   }
   if (auto* p =
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
@@ -3283,6 +3287,8 @@ void ServerPromiseBasedCall::UpdateOnce() {
         FinishOpOnCompletion(&send_status_from_server_completion_,
                              PendingOp::kSendStatusFromServer);
       }
+      CancelSendMessage();
+      CancelRecvMessage();
       set_completed();
       promise_ = ArenaPromise<ServerMetadataHandle>();
     }

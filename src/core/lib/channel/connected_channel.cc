@@ -276,9 +276,9 @@ class ConnectedChannelStream : public Orphanable {
     {
       MutexLock lock(mu());
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%s[connected] DropStream: %s",
+        gpr_log(GPR_INFO, "%s[connected] DropStream: %s finished=%s",
                 Activity::current()->DebugTag().c_str(),
-                ActiveOpsString().c_str());
+                ActiveOpsString().c_str(), finished_ ? "true" : "false");
       }
       finished = finished_;
     }
