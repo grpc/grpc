@@ -115,6 +115,12 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_utilization_get(const xds_data_o
 UPB_INLINE const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* xds_data_orca_v3_OrcaLoadReport_utilization_next(const xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   return (const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*)_upb_msg_map_next(msg, UPB_SIZE(4, 8), iter);
 }
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_rps_fractional(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double) = 0;
+}
+UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_rps_fractional(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double);
+}
 
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), double) = value;
@@ -144,6 +150,9 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_utilization_delete(xds_data_orca
 }
 UPB_INLINE xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* xds_data_orca_v3_OrcaLoadReport_utilization_nextmutable(xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   return (xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*)_upb_msg_map_next(msg, UPB_SIZE(4, 8), iter);
+}
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double) = value;
 }
 
 /* xds.data.orca.v3.OrcaLoadReport.RequestCostEntry */

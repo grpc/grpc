@@ -120,6 +120,13 @@
   expiry: 2023/03/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
+- name: free_large_allocator
+  description:
+    If set, return all free bytes from a "big" allocator
+  default: false
+  expiry: 2023/04/01
+  owner: alishananda@google.com
+  test_tags: [resource_quota_test]
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -128,18 +135,3 @@
   expiry: 2023/03/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
-- name: posix_event_engine_enable_polling
-  description:
-    If set, enables polling on the default posix event engine.
-  default: true
-  expiry: 2023/01/01
-  owner: vigneshbabu@google.com
-  test_tags: ["event_engine_client_test"]
-- name: free_large_allocator
-  description:
-    If set, return all free bytes from a "big" allocator
-  default: false
-  expiry: 2023/04/01
-  owner: alishananda@google.com
-  test_tags: [resource_quota_test]
-
