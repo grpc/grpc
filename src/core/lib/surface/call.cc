@@ -507,7 +507,7 @@ class FilterStackCall final : public Call {
     bool completed_batch_step(PendingOp op) {
       auto mask = PendingOpMask(op);
       auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
-      gpr_log(GPR_DEBUG, "CALL:%p COMPLETE:%s REMAINING:%s", this,
+      gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s", this,
               PendingOpString(mask).c_str(),
               PendingOpString(r & ~mask).c_str());
       GPR_ASSERT((r & mask) != 0);
@@ -1216,8 +1216,12 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
 
 void FilterStackCall::BatchControl::ReceivingStreamReady(
     grpc_error_handle error) {
-  gpr_log(GPR_DEBUG, "tag:%p ReceivingStreamReady error=%s",
-          completion_data_.notify_tag.tag, error.ToString().c_str());
+  gpr_log(GPR_DEBUG,
+          "tag:%p ReceivingStreamReady error=%s "
+          "receiving_slice_buffer.has_value=%d recv_state=%" PRIdPTR,
+          completion_data_.notify_tag.tag, error.ToString().c_str(),
+          call_->receiving_slice_buffer_.has_value(),
+          gpr_atm_no_barrier_load(&call_->recv_state_));
   FilterStackCall* call = call_;
   if (!error.ok()) {
     call->receiving_slice_buffer_.reset();
@@ -1784,6 +1788,10 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         bctl, grpc_schedule_on_exec_ctx);
     stream_op->on_complete = &bctl->finish_batch_;
   }
+
+  gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s", bctl,
+          PendingOpString(pending_ops).c_str(),
+          grpc_transport_stream_op_batch_string(stream_op).c_str());
 
   ExecuteBatch(stream_op, &bctl->start_batch_);
 

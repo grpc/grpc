@@ -760,12 +760,12 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
+    case State::kCompletedWhileBatchCompleted:
       interceptor()->Push()->Close();
       state_ = State::kCancelled;
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                           completed_status_, "recv_message");
       break;
-    case State::kCompletedWhileBatchCompleted:
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
         if (!allow_push_to_pipe) break;
@@ -1006,6 +1006,7 @@ class ClientCallData::PollContext {
                   ->Push(ServerMetadataHandle(
                       self_->recv_initial_metadata_->metadata,
                       Arena::PooledDeleter(nullptr))));
+          repoll_ = true;  // ensure Push() gets polled.
           self_->recv_initial_metadata_->metadata_next_.emplace(
               self_->server_initial_metadata_pipe()->receiver.Next());
           ABSL_FALLTHROUGH_INTENDED;
@@ -1512,8 +1513,10 @@ void ClientCallData::StartPromise(Flusher* flusher) {
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   if (grpc_trace_channel.enabled()) {
-    gpr_log(GPR_INFO, "%s ClientCallData.RecvInitialMetadataReady %s",
-            LogTag().c_str(), DebugString().c_str());
+    gpr_log(GPR_INFO,
+            "%s ClientCallData.RecvInitialMetadataReady %s error:%s md:%s",
+            LogTag().c_str(), DebugString().c_str(), error.ToString().c_str(),
+            recv_initial_metadata_->metadata->DebugString().c_str());
   }
   ScopedContext context(this);
   Flusher flusher(this);
