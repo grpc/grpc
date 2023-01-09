@@ -1220,12 +1220,14 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
 
 void FilterStackCall::BatchControl::ReceivingStreamReady(
     grpc_error_handle error) {
-  gpr_log(GPR_DEBUG,
-          "tag:%p ReceivingStreamReady error=%s "
-          "receiving_slice_buffer.has_value=%d recv_state=%" PRIdPTR,
-          completion_data_.notify_tag.tag, error.ToString().c_str(),
-          call_->receiving_slice_buffer_.has_value(),
-          gpr_atm_no_barrier_load(&call_->recv_state_));
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG,
+            "tag:%p ReceivingStreamReady error=%s "
+            "receiving_slice_buffer.has_value=%d recv_state=%" PRIdPTR,
+            completion_data_.notify_tag.tag, error.ToString().c_str(),
+            call_->receiving_slice_buffer_.has_value(),
+            gpr_atm_no_barrier_load(&call_->recv_state_));
+  }
   FilterStackCall* call = call_;
   if (!error.ok()) {
     call->receiving_slice_buffer_.reset();
