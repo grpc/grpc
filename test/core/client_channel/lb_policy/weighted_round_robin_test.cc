@@ -64,8 +64,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   class ConfigBuilder {
    public:
     ConfigBuilder() {
-      // Set blackout period to 0 to make tests fast and deterministic.
-      SetBlackoutPeriod(Duration::Zero());
+      // Set blackout period to 1s to make tests fast and deterministic.
+      SetBlackoutPeriod(Duration::Seconds(1));
     }
 
     ConfigBuilder& SetEnableOobLoadReport(bool value) {
@@ -73,19 +73,25 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       return *this;
     }
     ConfigBuilder& SetOobReportingPeriod(Duration duration) {
+      // No need to apply grpc_test_slowdown_factor() here, because the
+      // OOB load reports are controlled by the test.
       json_["oobReportingPeriod"] = duration.ToJsonString();
       return *this;
     }
     ConfigBuilder& SetBlackoutPeriod(Duration duration) {
-      json_["blackoutPeriod"] = duration.ToJsonString();
+      json_["blackoutPeriod"] =
+          (duration * grpc_test_slowdown_factor()).ToJsonString();
       return *this;
     }
     ConfigBuilder& SetWeightUpdatePeriod(Duration duration) {
+      // No need to apply grpc_test_slowdown_factor() here, because the
+      // timer callbacks are controlled by the test.
       json_["weightUpdatePeriod"] = duration.ToJsonString();
       return *this;
     }
     ConfigBuilder& SetWeightExpirationPeriod(Duration duration) {
-      json_["weightExpirationPeriod"] = duration.ToJsonString();
+      json_["weightExpirationPeriod"] =
+          (duration * grpc_test_slowdown_factor()).ToJsonString();
       return *this;
     }
 
@@ -460,8 +466,8 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses, ConfigBuilder().SetWeightExpirationPeriod(
-                      Duration::Seconds(2 * grpc_test_slowdown_factor())));
+      kAddresses,
+      ConfigBuilder().SetWeightExpirationPeriod(Duration::Seconds(2)));
   ASSERT_NE(picker, nullptr);
   // All backends report weights.
   WaitForWeightedRoundRobinPicks(
