@@ -376,15 +376,27 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
   // Compute weight.
   float weight = 0;
   if (qps > 0 && cpu_utilization > 0) weight = qps / cpu_utilization;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
-    gpr_log(GPR_INFO,
-            "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: weight=%f",
-            wrr_.get(), key_.c_str(), qps, cpu_utilization, weight);
+  if (weight == 0) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+      gpr_log(GPR_INFO,
+              "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: weight=%f "
+              "(not updating)",
+              wrr_.get(), key_.c_str(), qps, cpu_utilization, weight);
+    }
+    return;
   }
-  if (weight == 0) return;
   Timestamp now = Timestamp::Now();
   // Grab the lock and update the data.
   MutexLock lock(&mu_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO,
+            "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: setting "
+            "weight=%f weight_=%f now=%s last_update_time_=%s "
+            "non_empty_since_=%s",
+            wrr_.get(), key_.c_str(), qps, cpu_utilization, weight, weight_,
+            now.ToString().c_str(), last_update_time_.ToString().c_str(),
+            non_empty_since_.ToString().c_str());
+  }
   if (weight_ == 0) non_empty_since_ = now;  // zero to non-zero
   weight_ = weight;
   last_update_time_ = now;
@@ -394,10 +406,21 @@ float WeightedRoundRobin::AddressWeight::GetWeight(
     Timestamp now, Duration weight_expiration_period,
     Duration blackout_period) {
   MutexLock lock(&mu_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO,
+            "[WRR %p] subchannel %s: getting weight: now=%s "
+            "weight_expiration_period=%s blackout_period=%s "
+            "last_update_time_=%s non_empty_since_=%s weight_=%f",
+            wrr_.get(), key_.c_str(), now.ToString().c_str(),
+            weight_expiration_period.ToString().c_str(),
+            blackout_period.ToString().c_str(),
+            last_update_time_.ToString().c_str(),
+            non_empty_since_.ToString().c_str(), weight_);
+  }
   // If the most recent update was longer ago than the expiration
   // period, reset non_empty_since_ so that we apply the blackout period
   // again if we start getting data again in the future, and return 0.
-  if (now - last_update_time_ > weight_expiration_period) {
+  if (now - last_update_time_ >= weight_expiration_period) {
     non_empty_since_ = Timestamp::InfFuture();
     return 0;
   }

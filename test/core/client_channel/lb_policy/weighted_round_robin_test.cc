@@ -31,6 +31,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
@@ -73,25 +74,19 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       return *this;
     }
     ConfigBuilder& SetOobReportingPeriod(Duration duration) {
-      // No need to apply grpc_test_slowdown_factor() here, because the
-      // OOB load reports are controlled by the test.
       json_["oobReportingPeriod"] = duration.ToJsonString();
       return *this;
     }
     ConfigBuilder& SetBlackoutPeriod(Duration duration) {
-      json_["blackoutPeriod"] =
-          (duration * grpc_test_slowdown_factor()).ToJsonString();
+      json_["blackoutPeriod"] = duration.ToJsonString();
       return *this;
     }
     ConfigBuilder& SetWeightUpdatePeriod(Duration duration) {
-      // No need to apply grpc_test_slowdown_factor() here, because the
-      // timer callbacks are controlled by the test.
       json_["weightUpdatePeriod"] = duration.ToJsonString();
       return *this;
     }
     ConfigBuilder& SetWeightExpirationPeriod(Duration duration) {
-      json_["weightExpirationPeriod"] =
-          (duration * grpc_test_slowdown_factor()).ToJsonString();
+      json_["weightExpirationPeriod"] = duration.ToJsonString();
       return *this;
     }
 
@@ -103,6 +98,23 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
    private:
     Json::Object json_;
+  };
+
+  // A custom time cache for which InvalidateCache() is a no-op.  This
+  // ensures that when the timer callback instantiates its own ExecCtx
+  // and therefore its own ScopedTimeCache, it continues to see the time
+  // that we are injecting in the test.
+  class TestTimeCache : public Timestamp::ScopedSource {
+   public:
+    TestTimeCache() : cached_time_(previous()->Now()) {}
+
+    Timestamp Now() override { return cached_time_; }
+    void InvalidateCache() override {}
+
+    void IncrementBy(Duration duration) { cached_time_ += duration; }
+
+   private:
+    Timestamp cached_time_;
   };
 
   WeightedRoundRobinTest() {
@@ -272,13 +284,12 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
                std::pair<double /*qps*/, double /*cpu_utilization*/>>
           backend_metrics,
       std::map<absl::string_view /*address*/, size_t /*num_picks*/> expected,
-      Duration timeout = Duration::Seconds(5),
+      absl::Duration timeout = absl::Seconds(5),
       SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "==> WaitForWeightedRoundRobinPicks(): Expecting %s",
             PickMapString(expected).c_str());
     size_t num_picks = NumPicksNeeded(expected);
-    Timestamp deadline =
-        Timestamp::Now() + (timeout * grpc_test_slowdown_factor());
+    absl::Time deadline = absl::Now() + timeout;
     while (true) {
       gpr_log(GPR_INFO, "TOP OF LOOP");
       // We need to see the expected weights for 3 consecutive passes, just
@@ -320,7 +331,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       }
       if (num_passes == 3) return true;
       // If we're out of time, give up.
-      Timestamp now = Timestamp::Now();
+      absl::Time now = absl::Now();
       EXPECT_LT(now, deadline) << location.file() << ":" << location.line();
       if (now >= deadline) return false;
       // Get a new picker if there is an update; otherwise, wait for the
@@ -334,6 +345,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         gpr_log(GPR_INFO, "running timer callback...");
         RunTimerCallback();
       }
+      // Increment time.
+      time_cache_.IncrementBy(Duration::Seconds(1));
     }
   }
 
@@ -343,6 +356,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   intptr_t next_key_ = 1;
   EventEngine::Duration expected_weight_update_interval_ =
       std::chrono::seconds(1);
+  TestTimeCache time_cache_;
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
