@@ -20,6 +20,9 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -28,6 +31,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 class CFEventEngine : public EventEngine,
+                      public Scheduler,
                       public grpc_core::KeepsGrpcInitialized {
  public:
   CFEventEngine();
