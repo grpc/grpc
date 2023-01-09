@@ -31,18 +31,24 @@ namespace grpc_core {
 class ExecCtxWakeupScheduler {
  public:
   template <typename ActivityType>
-  void ScheduleWakeup(ActivityType* activity) {
-    GRPC_CLOSURE_INIT(
-        &closure_,
-        [](void* arg, grpc_error_handle) {
-          static_cast<ActivityType*>(arg)->RunScheduledWakeup();
-        },
-        activity, grpc_schedule_on_exec_ctx);
-    ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-  }
+  class BoundScheduler {
+   protected:
+    explicit BoundScheduler(ExecCtxWakeupScheduler) {}
+    BoundScheduler(const BoundScheduler&) = delete;
+    BoundScheduler& operator=(const BoundScheduler&) = delete;
+    void ScheduleWakeup() {
+      GRPC_CLOSURE_INIT(
+          &closure_,
+          [](void* arg, grpc_error_handle) {
+            static_cast<ActivityType*>(arg)->RunScheduledWakeup();
+          },
+          static_cast<ActivityType*>(this), nullptr);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
+    }
 
- private:
-  grpc_closure closure_;
+   private:
+    grpc_closure closure_;
+  };
 };
 
 }  // namespace grpc_core
