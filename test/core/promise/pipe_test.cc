@@ -16,7 +16,6 @@
 
 #include <memory>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"

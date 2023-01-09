@@ -60,7 +60,7 @@ TEST_F(InterceptorListTest, CanRunManyWithCaptures) {
   InterceptorList<std::string> list;
   for (size_t i = 0; i < 26 * 1000; i++) {
     list.AppendMap([i = std::make_shared<size_t>(i)](std::string s) {
-      return s + char((*i % 26) + 'a');
+      return s + static_cast<char>((*i % 26) + 'a');
     });
   }
   std::string expected;
@@ -79,7 +79,7 @@ TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
           x = true;
           return Pending{};
         }
-        return s + char((*i % 26) + 'a');
+        return s + static_cast<char>((*i % 26) + 'a');
       };
     });
   }
