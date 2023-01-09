@@ -35,21 +35,21 @@ TEST_F(InterceptorListTest, NoOp) { InterceptorList<std::string>(); }
 
 TEST_F(InterceptorListTest, CanRunOne) {
   InterceptorList<std::string> list;
-  list.AppendMap([](std::string s) { return s + "a"; });
+  list.AppendMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
   EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloa"));
 }
 
 TEST_F(InterceptorListTest, CanRunTwo) {
   InterceptorList<std::string> list;
-  list.AppendMap([](std::string s) { return s + "a"; });
-  list.AppendMap([](std::string s) { return s + "b"; });
+  list.AppendMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
+  list.AppendMap([](std::string s) { return s + "b"; }, DEBUG_LOCATION);
   EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloab"));
 }
 
 TEST_F(InterceptorListTest, CanRunTwoTwice) {
   InterceptorList<std::string> list;
-  list.AppendMap([](std::string s) { return s + s; });
-  list.AppendMap([](std::string s) { return s + s + s; });
+  list.AppendMap([](std::string s) { return s + s; }, DEBUG_LOCATION);
+  list.AppendMap([](std::string s) { return s + s + s; }, DEBUG_LOCATION);
   EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run(std::string(10, 'a'))()).value(),
             std::string(60, 'a'));
   EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run(std::string(100, 'b'))()).value(),
@@ -59,9 +59,11 @@ TEST_F(InterceptorListTest, CanRunTwoTwice) {
 TEST_F(InterceptorListTest, CanRunManyWithCaptures) {
   InterceptorList<std::string> list;
   for (size_t i = 0; i < 26 * 1000; i++) {
-    list.AppendMap([i = std::make_shared<size_t>(i)](std::string s) {
-      return s + static_cast<char>((*i % 26) + 'a');
-    });
+    list.AppendMap(
+        [i = std::make_shared<size_t>(i)](std::string s) {
+          return s + static_cast<char>((*i % 26) + 'a');
+        },
+        DEBUG_LOCATION);
   }
   std::string expected;
   for (size_t i = 0; i < 1000; i++) {
@@ -73,15 +75,18 @@ TEST_F(InterceptorListTest, CanRunManyWithCaptures) {
 TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
   InterceptorList<std::string> list;
   for (size_t i = 0; i < 26 * 1000; i++) {
-    list.AppendMap([i = std::make_shared<size_t>(i)](std::string s) {
-      return [x = false, i, s]() mutable -> Poll<absl::optional<std::string>> {
-        if (!x) {
-          x = true;
-          return Pending{};
-        }
-        return s + static_cast<char>((*i % 26) + 'a');
-      };
-    });
+    list.AppendMap(
+        [i = std::make_shared<size_t>(i)](std::string s) {
+          return
+              [x = false, i, s]() mutable -> Poll<absl::optional<std::string>> {
+                if (!x) {
+                  x = true;
+                  return Pending{};
+                }
+                return s + static_cast<char>((*i % 26) + 'a');
+              };
+        },
+        DEBUG_LOCATION);
   }
   auto promise = list.Run("");
   for (size_t i = 0; i < 26 * 1000; i++) {
