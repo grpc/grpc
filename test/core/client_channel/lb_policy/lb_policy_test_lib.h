@@ -260,6 +260,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
     }
 
+    // Checks that all OOB watchers have the expected reporting period.
+    void CheckOobReportingPeriod(Duration expected,
+                                 SourceLocation location = SourceLocation()) {
+      MutexLock lock(&backend_metric_watcher_mu_);
+      for (const auto& watcher : watchers_) {
+        EXPECT_EQ(watcher->report_interval(), expected)
+            << location.file() << ":" << location.line();
+      }
+    }
+
    private:
     // A heterogeneous sorting functor that allows lookups of
     // unique_ptr<>s by raw pointer value.

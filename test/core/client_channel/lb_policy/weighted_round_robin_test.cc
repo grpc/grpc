@@ -104,7 +104,9 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     event_engine_ = mock_ee_;
     auto capture = [this](std::chrono::duration<int64_t, std::nano> duration,
                           absl::AnyInvocable<void()> callback) {
-      EXPECT_EQ(duration, expected_weight_update_interval_);
+      EXPECT_EQ(duration, expected_weight_update_interval_)
+          << "Expected: " << expected_weight_update_interval_.count() << "ns"
+          << "\n  Actual: " << duration.count() << "ns";
       intptr_t key = next_key_++;
       timer_callbacks_[key] = std::move(callback);
       return EventEngine::TaskHandle{key, 0};
@@ -391,6 +393,49 @@ TEST_F(WeightedRoundRobinTest, OobReporting) {
                            {kAddresses[2], {100, 0.3}}});
   WaitForWeightedRoundRobinPicks(
       &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Verify that OOB reporting interval is the default.
+  for (const auto& address : kAddresses) {
+    auto* subchannel = FindSubchannel(address);
+    ASSERT_NE(subchannel, nullptr);
+    subchannel->CheckOobReportingPeriod(Duration::Seconds(10));
+  }
+}
+
+TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder()
+          .SetEnableOobLoadReport(true)
+          .SetOobReportingPeriod(Duration::Seconds(5)));
+  ASSERT_NE(picker, nullptr);
+  ReportOobBackendMetrics({{kAddresses[0], {100, 0.9}},
+                           {kAddresses[1], {100, 0.3}},
+                           {kAddresses[2], {100, 0.3}}});
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  for (const auto& address : kAddresses) {
+    auto* subchannel = FindSubchannel(address);
+    ASSERT_NE(subchannel, nullptr);
+    subchannel->CheckOobReportingPeriod(Duration::Seconds(5));
+  }
+}
+
+TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  expected_weight_update_interval_ = std::chrono::seconds(2);
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses, ConfigBuilder().SetWeightUpdatePeriod(Duration::Seconds(2)));
+  ASSERT_NE(picker, nullptr);
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
