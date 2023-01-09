@@ -969,35 +969,46 @@ class ServerStream final : public ConnectedChannelStream {
   Poll<ServerMetadataHandle> Poll() {
     absl::MutexLock lock(mu());
 
+    auto poll_send_initial_metadata = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                                          mu()) {
+      if (auto* promise =
+              absl::get_if<PipeReceiverNextType<ServerMetadataHandle>>(
+                  &server_initial_metadata_)) {
+        auto r = (*promise)();
+        if (auto* md = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+          if (grpc_call_trace.enabled()) {
+            gpr_log(
+                GPR_INFO, "%s[connected] got initial metadata %s",
+                Activity::current()->DebugTag().c_str(),
+                (md->has_value() ? (**md)->DebugString() : "<trailers-only>")
+                    .c_str());
+          }
+          memset(&send_initial_metadata_, 0, sizeof(send_initial_metadata_));
+          send_initial_metadata_.send_initial_metadata = true;
+          send_initial_metadata_.payload = batch_payload();
+          send_initial_metadata_.on_complete = &send_initial_metadata_done_;
+          batch_payload()->send_initial_metadata.send_initial_metadata =
+              server_initial_metadata_
+                  .emplace<ServerMetadataHandle>(std::move(**md))
+                  .get();
+          batch_payload()->send_initial_metadata.peer_string = nullptr;
+          SchedulePush(&send_initial_metadata_);
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return true;
+      }
+    };
+
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO, "%s[connected] PollConnectedChannel: %s",
               Activity::current()->DebugTag().c_str(),
               ActiveOpsString().c_str());
     }
 
-    if (auto* promise =
-            absl::get_if<PipeReceiverNextType<ServerMetadataHandle>>(
-                &server_initial_metadata_)) {
-      auto r = (*promise)();
-      if (auto* md = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%s[connected] got initial metadata %s",
-                  Activity::current()->DebugTag().c_str(),
-                  (md->has_value() ? (**md)->DebugString() : "<trailers-only>")
-                      .c_str());
-        }
-        memset(&send_initial_metadata_, 0, sizeof(send_initial_metadata_));
-        send_initial_metadata_.send_initial_metadata = true;
-        send_initial_metadata_.payload = batch_payload();
-        send_initial_metadata_.on_complete = &send_initial_metadata_done_;
-        batch_payload()->send_initial_metadata.send_initial_metadata =
-            server_initial_metadata_
-                .emplace<ServerMetadataHandle>(std::move(**md))
-                .get();
-        batch_payload()->send_initial_metadata.peer_string = nullptr;
-        SchedulePush(&send_initial_metadata_);
-      }
-    }
+    poll_send_initial_metadata();
 
     if (auto* p = absl::get_if<GotTrailingMetadata>(
             &client_trailing_metadata_state_)) {
@@ -1042,6 +1053,11 @@ class ServerStream final : public ConnectedChannelStream {
       }
       auto poll = p->promise();
       if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[connected] got trailing metadata %s; %s",
+                  Activity::current()->DebugTag().c_str(),
+                  (*r)->DebugString().c_str(), ActiveOpsString().c_str());
+        }
         auto& completing = client_initial_metadata_state_.emplace<Completing>();
         completing.server_trailing_metadata = std::move(*r);
         completing.on_complete =
@@ -1052,10 +1068,23 @@ class ServerStream final : public ConnectedChannelStream {
         memset(&op, 0, sizeof(op));
         op.payload = batch_payload();
         op.on_complete = &completing.on_complete;
-        op.send_trailing_metadata = true;
-        batch_payload()->send_trailing_metadata.send_trailing_metadata =
-            completing.server_trailing_metadata.get();
-        batch_payload()->send_trailing_metadata.sent = &completing.sent;
+        if (poll_send_initial_metadata()) {
+          op.send_trailing_metadata = true;
+          batch_payload()->send_trailing_metadata.send_trailing_metadata =
+              completing.server_trailing_metadata.get();
+          batch_payload()->send_trailing_metadata.sent = &completing.sent;
+        } else {
+          op.cancel_stream = true;
+          const auto status_code =
+              completing.server_trailing_metadata->get(GrpcStatusMetadata())
+                  .value_or(GRPC_STATUS_UNKNOWN);
+          batch_payload()->cancel_stream.cancel_error = grpc_error_set_int(
+              absl::Status(static_cast<absl::StatusCode>(status_code),
+                           completing.server_trailing_metadata
+                               ->GetOrCreatePointer(GrpcMessageMetadata())
+                               ->as_string_view()),
+              StatusIntProperty::kRpcStatus, status_code);
+        }
         SchedulePush(&op);
       }
     }
@@ -1182,6 +1211,16 @@ class ServerStream final : public ConnectedChannelStream {
             [](const GotTrailingMetadata& got) -> std::string {
               return absl::StrCat("GOT:", got.result.ToString());
             })));
+    // Send initial metadata
+    ops.push_back(
+        absl::StrCat("server_initial_metadata_state:",
+                     Match(
+                         server_initial_metadata_,
+                         [](const Uninitialized&) { return "UNINITIALIZED"; },
+                         [](const PipeReceiverNextType<ServerMetadataHandle>&) {
+                           return "WAITING";
+                         },
+                         [](const ServerMetadataHandle&) { return "GOT"; })));
     // Send message
     std::string send_message_state = SendMessageString();
     if (send_message_state != "WAITING") {
