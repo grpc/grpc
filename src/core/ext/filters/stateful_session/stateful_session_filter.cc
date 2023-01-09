@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -46,11 +45,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_concurrently.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"

@@ -32,7 +32,6 @@
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 namespace promise_detail {

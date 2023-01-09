@@ -21,7 +21,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -29,7 +28,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "compression_filter.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -46,14 +44,10 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/map_pipe.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/race.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_concurrently.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
