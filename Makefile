@@ -1461,6 +1461,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
+    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/dualstack_socket_posix.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -1989,6 +1990,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
+    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/dualstack_socket_posix.cc \
     src/core/lib/iomgr/endpoint.cc \

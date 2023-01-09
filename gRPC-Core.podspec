@@ -1293,6 +1293,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/call_combiner.h',
                       'src/core/lib/iomgr/cfstream_handle.cc',
                       'src/core/lib/iomgr/cfstream_handle.h',
+                      'src/core/lib/iomgr/closure.cc',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.cc',
                       'src/core/lib/iomgr/combiner.h',
