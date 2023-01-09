@@ -93,6 +93,9 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   Duration oob_reporting_period() const { return oob_reporting_period_; }
   Duration blackout_period() const { return blackout_period_; }
   Duration weight_update_period() const { return weight_update_period_; }
+  Duration weight_expiration_period() const {
+    return weight_expiration_period_;
+  }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -105,6 +108,8 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
                            &WeightedRoundRobinConfig::blackout_period_)
             .OptionalField("weightUpdatePeriod",
                            &WeightedRoundRobinConfig::weight_update_period_)
+            .OptionalField("weightExpirationPeriod",
+                           &WeightedRoundRobinConfig::weight_expiration_period_)
             .Finish();
     return loader;
   }
@@ -114,6 +119,7 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   Duration oob_reporting_period_ = Duration::Seconds(10);
   Duration blackout_period_ = Duration::Seconds(10);
   Duration weight_update_period_ = Duration::Seconds(1);
+  Duration weight_expiration_period_ = Duration::Minutes(3);
 };
 
 // WRR LB policy.
@@ -134,16 +140,21 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
         : wrr_(std::move(wrr)), key_(std::move(key)) {}
     ~AddressWeight() override;
 
-    void MaybeUpdateWeight(double qps, double cpu_utilization,
-                           Duration blackout_period_);
+    void MaybeUpdateWeight(double qps, double cpu_utilization);
 
-    uint64_t GetWeight() const;
+    float GetWeight(Timestamp now, Duration weight_expiration_period,
+                    Duration blackout_period);
+
+    void ResetNonEmptySince();
 
    private:
     RefCountedPtr<WeightedRoundRobin> wrr_;
-    std::string key_;
-    std::atomic<float> weight_{0};
-    std::atomic<Timestamp> non_empty_since_{Timestamp::InfFuture()};
+    const std::string key_;
+
+    Mutex mu_;
+    float weight_ ABSL_GUARDED_BY(&mu_) = 0;
+    Timestamp non_empty_since_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfFuture();
+    Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
   };
 
   // Forward declaration.
@@ -171,15 +182,14 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
    private:
     class OobWatcher : public OobBackendMetricWatcher {
      public:
-      OobWatcher(RefCountedPtr<AddressWeight> weight, Duration blackout_period)
-          : weight_(std::move(weight)), blackout_period_(blackout_period) {}
+      explicit OobWatcher(RefCountedPtr<AddressWeight> weight)
+          : weight_(std::move(weight)) {}
 
       void OnBackendMetricReport(
           const BackendMetricData& backend_metric_data) override;
 
      private:
       RefCountedPtr<AddressWeight> weight_;
-      Duration blackout_period_;
     };
 
     // Performs connectivity state updates that need to be done only
@@ -271,9 +281,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     // A call tracker that collects per-call endpoint utilization reports.
     class SubchannelCallTracker : public SubchannelCallTrackerInterface {
      public:
-      SubchannelCallTracker(RefCountedPtr<AddressWeight> weight,
-                            Duration blackout_period)
-          : weight_(std::move(weight)), blackout_period_(blackout_period) {}
+      explicit SubchannelCallTracker(RefCountedPtr<AddressWeight> weight)
+          : weight_(std::move(weight)) {}
 
       void Start() override {}
 
@@ -281,7 +290,6 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
      private:
       RefCountedPtr<AddressWeight> weight_;
-      Duration blackout_period_;
     };
 
     // Info stored about each subchannel.
@@ -305,6 +313,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     RefCountedPtr<WeightedRoundRobin> wrr_;
     const bool use_per_rpc_utilization_;
     const Duration weight_update_period_;
+    const Duration weight_expiration_period_;
     const Duration blackout_period_;
     std::vector<SubchannelInfo> subchannels_;
 
@@ -358,39 +367,47 @@ WeightedRoundRobin::AddressWeight::~AddressWeight() {
 }
 
 void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
-    double qps, double cpu_utilization, Duration blackout_period) {
+    double qps, double cpu_utilization) {
   // Compute weight.
   float weight = 0;
   if (qps > 0 && cpu_utilization > 0) weight = qps / cpu_utilization;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
-            "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f, "
-            "blackout_period=%s: weight=%f",
-            wrr_.get(), key_.c_str(), qps, cpu_utilization,
-            blackout_period.ToString().c_str(), weight);
+            "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: weight=%f",
+            wrr_.get(), key_.c_str(), qps, cpu_utilization, weight);
   }
-  // If this report is non-empty, we will set non_empty_since_ to now;
-  // otherwise, we will set it to an infinite future time.
+  if (weight == 0) return;
   Timestamp now = Timestamp::Now();
-  Timestamp new_non_empty_since = weight > 0 ? now : Timestamp::InfFuture();
-  // Update non_empty_since_ only if it is currently set to the infinite future.
-  Timestamp last_non_empty_since = Timestamp::InfFuture();
-  non_empty_since_.compare_exchange_strong(
-      last_non_empty_since, new_non_empty_since, std::memory_order_relaxed,
-      std::memory_order_relaxed);
-  // Update the weight if we are not within the blackout period.
-  if (blackout_period == Duration::Zero() ||
-      now - last_non_empty_since >= blackout_period) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
-      gpr_log(GPR_INFO, "[WRR %p] subchannel %s: updating weight", wrr_.get(),
-              key_.c_str());
-    }
-    weight_.store(weight, std::memory_order_relaxed);
-  }
+  // Grab the lock and update the data.
+  MutexLock lock(&mu_);
+  if (weight_ == 0) non_empty_since_ = now;  // zero to non-zero
+  weight_ = weight;
+  last_update_time_ = now;
 }
 
-uint64_t WeightedRoundRobin::AddressWeight::GetWeight() const {
-  return weight_.load(std::memory_order_relaxed);
+float WeightedRoundRobin::AddressWeight::GetWeight(
+    Timestamp now, Duration weight_expiration_period,
+    Duration blackout_period) {
+  MutexLock lock(&mu_);
+  // If the most recent update was longer ago than the expiration
+  // period, reset non_empty_since_ so that we apply the blackout period
+  // again if we start getting data again in the future, and return 0.
+  if (now - last_update_time_ > weight_expiration_period) {
+    non_empty_since_ = Timestamp::InfFuture();
+    return 0;
+  }
+  // If we don't have at least blackout_period worth of data, return 0.
+  if (blackout_period > Duration::Zero() &&
+      now - non_empty_since_ < blackout_period) {
+    return 0;
+  }
+  // Otherwise, return the weight.
+  return weight_;
+}
+
+void WeightedRoundRobin::AddressWeight::ResetNonEmptySince() {
+  MutexLock lock(&mu_);
+  non_empty_since_ = Timestamp::InfFuture();
 }
 
 //
@@ -407,7 +424,7 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
     qps = backend_metric_data->qps;
     cpu_utilization = backend_metric_data->cpu_utilization;
   }
-  weight_->MaybeUpdateWeight(qps, cpu_utilization, blackout_period_);
+  weight_->MaybeUpdateWeight(qps, cpu_utilization);
 }
 
 //
@@ -420,6 +437,7 @@ WeightedRoundRobin::Picker::Picker(
     : wrr_(std::move(wrr)),
       use_per_rpc_utilization_(!wrr_->config_->enable_oob_load_report()),
       weight_update_period_(wrr_->config_->weight_update_period()),
+      weight_expiration_period_(wrr_->config_->weight_expiration_period()),
       blackout_period_(wrr_->config_->blackout_period()),
       scheduler_state_(absl::Uniform<uint32_t>(wrr_->bit_gen_)),
       last_picked_index_(absl::Uniform<size_t>(wrr_->bit_gen_)) {
@@ -461,8 +479,8 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(
   // Collect per-call utilization data if needed.
   std::unique_ptr<SubchannelCallTrackerInterface> subchannel_call_tracker;
   if (use_per_rpc_utilization_) {
-    subchannel_call_tracker = std::make_unique<SubchannelCallTracker>(
-        subchannel_info.weight, blackout_period_);
+    subchannel_call_tracker =
+        std::make_unique<SubchannelCallTracker>(subchannel_info.weight);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
@@ -489,10 +507,13 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
 
 void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   // Build scheduler.
+  const Timestamp now = Timestamp::Now();
   std::vector<float> weights;
   weights.reserve(subchannels_.size());
   for (const auto& subchannel : subchannels_) {
-    weights.push_back(subchannel.weight->GetWeight());
+    weights.push_back(
+        subchannel.weight->GetWeight(now, weight_expiration_period_,
+                                     blackout_period_));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
@@ -736,8 +757,7 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelList::
 void WeightedRoundRobin::WeightedRoundRobinSubchannelData::OobWatcher::
     OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
   weight_->MaybeUpdateWeight(backend_metric_data.qps,
-                             backend_metric_data.cpu_utilization,
-                             blackout_period_);
+                             backend_metric_data.cpu_utilization);
 }
 
 //
@@ -758,7 +778,7 @@ WeightedRoundRobin::WeightedRoundRobinSubchannelData::
   if (p->config_->enable_oob_load_report()) {
     subchannel()->AddDataWatcher(MakeOobBackendMetricWatcher(
         p->config_->oob_reporting_period(),
-        std::make_unique<OobWatcher>(weight_, p->config_->blackout_period())));
+        std::make_unique<OobWatcher>(weight_)));
   }
 }
 
@@ -789,6 +809,14 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelData::
               subchannel());
     }
     subchannel()->RequestConnection();
+  } else if (new_state == GRPC_CHANNEL_READY) {
+    // If we transition back to READY state, restart the blackout period.
+    // Note that we cannot guarantee that we will never receive
+    // lingering callbacks for backend metric reports from the previous
+    // connection after the new connection has been established, but they
+    // should be masked by new backend metric reports from the new
+    // connection by the time the blackout period ends.
+    weight_->ResetNonEmptySince();
   }
   // Update logical connectivity state.
   UpdateLogicalConnectivityStateLocked(new_state);

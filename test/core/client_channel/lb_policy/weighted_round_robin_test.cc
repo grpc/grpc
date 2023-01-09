@@ -84,6 +84,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       json_["weightUpdatePeriod"] = duration.ToJsonString();
       return *this;
     }
+    ConfigBuilder& SetWeightExpirationPeriod(Duration duration) {
+      json_["weightExpirationPeriod"] = duration.ToJsonString();
+      return *this;
+    }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
       Json config = Json::Array{Json::Object{{"weighted_round_robin", json_}}};
@@ -265,7 +269,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     gpr_log(GPR_INFO, "==> WaitForWeightedRoundRobinPicks(): Expecting %s",
             PickMapString(expected).c_str());
     size_t num_picks = NumPicksNeeded(expected);
-    Timestamp deadline = Timestamp::Now() + timeout;
+    Timestamp deadline =
+        Timestamp::Now() + (timeout * grpc_test_slowdown_factor());
     while (true) {
       gpr_log(GPR_INFO, "TOP OF LOOP");
       // We need to see the expected weights for 3 consecutive passes, just
@@ -351,10 +356,6 @@ TEST_F(WeightedRoundRobinTest, Basic) {
        {kAddresses[1], {100, 0.3}},
        {kAddresses[2], {100, 0.3}}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
-  // Backends stop reporting utilization, so all are weighted the same.
-  WaitForWeightedRoundRobinPicks(
-      &picker, {},
-      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
 
 TEST_F(WeightedRoundRobinTest, FallsBackToRoundRobinWithoutWeights) {
@@ -391,13 +392,33 @@ TEST_F(WeightedRoundRobinTest, OobReporting) {
   WaitForWeightedRoundRobinPicks(
       &picker, {},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
-  // Backends stop reporting utilization, so all are weighted the same.
-  // FIXME: We don't currently handle the case where OOB reports stop
-  // coming in.  Need to fix the code to reset weights to 0 in that case.
-  // WaitForWeightedRoundRobinPicks(
-  //    &picker, {},
-  //    {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
+
+TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetWeightExpirationPeriod(
+          Duration::Seconds(2 * grpc_test_slowdown_factor())));
+  ASSERT_NE(picker, nullptr);
+  // All backends report weights.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Backends stop reporting utilization, so all are eventually weighted
+  // the same.
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+// FIXME: add test for blackout period, both by itself and after
+// subchannel reconnection
 
 }  // namespace
 }  // namespace testing
