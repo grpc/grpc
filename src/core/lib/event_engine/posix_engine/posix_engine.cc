@@ -41,7 +41,6 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -132,9 +131,8 @@ void AsyncConnect::OnWritable(absl::Status status)
       fd = nullptr;
     }
     if (!status.ok()) {
-      ep = absl::CancelledError(
-          absl::StrCat("Failed to connect to remote host: ", resolved_addr_str_,
-                       " with error: ", status.ToString()));
+      ep = absl::UnknownError(
+          absl::StrCat("Failed to connect to remote host: ", status.message()));
     }
     // Run the OnConnect callback asynchronously.
     if (!connect_cancelled) {
@@ -197,8 +195,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       return;
     case ECONNREFUSED:
       // This error shouldn't happen for anything other than connect().
-      status = absl::FailedPreconditionError(
-          absl::StrCat("connect: ", std::strerror(so_error)));
+      status = absl::FailedPreconditionError(std::strerror(so_error));
       break;
     default:
       // We don't really know which syscall triggered the problem here, so
@@ -220,7 +217,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   } while (err < 0 && errno == EINTR);
   saved_errno = errno;
 
-  auto addr_uri = ResolvedAddressToNormalizedString(addr);
+  auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
@@ -337,13 +334,11 @@ PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(std::make_shared<ThreadPool>()),
       timer_manager_(executor_) {
-  if (grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
-    poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
-    if (poller_manager_->Poller() != nullptr) {
-      executor_->Run([poller_manager = poller_manager_]() {
-        PollerWorkInternal(poller_manager);
-      });
-    }
+  poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
+  if (poller_manager_->Poller() != nullptr) {
+    executor_->Run([poller_manager = poller_manager_]() {
+      PollerWorkInternal(poller_manager);
+    });
   }
 }
 
@@ -538,11 +533,6 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-  if (!grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
-    GPR_ASSERT(
-        false &&
-        "EventEngine::Connect is not supported because polling is not enabled");
-  }
   GPR_ASSERT(poller_manager_ != nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult> socket =

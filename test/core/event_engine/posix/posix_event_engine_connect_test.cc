@@ -42,7 +42,6 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -161,7 +160,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   posix_ee->Connect(
       [&signal](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
-        EXPECT_EQ(status.status().code(), absl::StatusCode::kCancelled);
+        EXPECT_EQ(status.status().code(), absl::StatusCode::kUnknown);
         signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
@@ -208,9 +207,6 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  if (!grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
-    return 0;
-  }
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

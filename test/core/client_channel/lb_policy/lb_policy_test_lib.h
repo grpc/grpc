@@ -627,6 +627,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
   }
 
+  void ExpectReresolutionRequest(SourceLocation location = SourceLocation()) {
+    ASSERT_TRUE(helper_->GetNextReresolution(location))
+        << location.file() << ":" << location.line();
+  }
+
   // Expects that the LB policy has reported the specified connectivity
   // state to helper_.  Returns the picker from the state update.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectState(
@@ -661,7 +666,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), location);
+            ExpectPickQueued(update.picker.get(), {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -690,7 +695,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), location);
+            ExpectPickQueued(update.picker.get(), {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
@@ -756,7 +761,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    ExpectPickQueued(picker.get(), location);
+    ExpectPickQueued(picker.get(), {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
@@ -781,12 +786,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Requests a pick on picker and expects a Queue result.
-  void ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
-                        SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker);
+  void ExpectPickQueued(
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      SourceLocation location = SourceLocation()) {
+    ASSERT_NE(picker, nullptr);
+    auto pick_result = DoPick(picker, call_attributes);
     ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
-        << PickResultString(pick_result) << " at " << location.file() << ":"
+        << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
   }
 
