@@ -444,9 +444,8 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetWeightExpirationPeriod(
-          Duration::Seconds(2 * grpc_test_slowdown_factor())));
+      kAddresses, ConfigBuilder().SetWeightExpirationPeriod(
+                      Duration::Seconds(2 * grpc_test_slowdown_factor())));
   ASSERT_NE(picker, nullptr);
   // All backends report weights.
   WaitForWeightedRoundRobinPicks(

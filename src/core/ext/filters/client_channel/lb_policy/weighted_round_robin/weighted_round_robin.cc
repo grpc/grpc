@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
@@ -511,9 +510,8 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   std::vector<float> weights;
   weights.reserve(subchannels_.size());
   for (const auto& subchannel : subchannels_) {
-    weights.push_back(
-        subchannel.weight->GetWeight(now, weight_expiration_period_,
-                                     blackout_period_));
+    weights.push_back(subchannel.weight->GetWeight(
+        now, weight_expiration_period_, blackout_period_));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
@@ -776,9 +774,9 @@ WeightedRoundRobin::WeightedRoundRobinSubchannelData::
   WeightedRoundRobin* p =
       static_cast<WeightedRoundRobin*>(subchannel_list->policy());
   if (p->config_->enable_oob_load_report()) {
-    subchannel()->AddDataWatcher(MakeOobBackendMetricWatcher(
-        p->config_->oob_reporting_period(),
-        std::make_unique<OobWatcher>(weight_)));
+    subchannel()->AddDataWatcher(
+        MakeOobBackendMetricWatcher(p->config_->oob_reporting_period(),
+                                    std::make_unique<OobWatcher>(weight_)));
   }
 }
 
