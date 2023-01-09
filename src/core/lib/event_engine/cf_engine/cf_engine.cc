@@ -16,8 +16,12 @@
 
 #ifdef GPR_APPLE
 
+#include <CoreFoundation/CoreFoundation.h>
+
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
+#include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -72,14 +76,30 @@ CFEventEngine::CreateListener(
 }
 
 CFEventEngine::ConnectionHandle CFEventEngine::Connect(
-    OnConnectCallback /* on_connect */, const ResolvedAddress& /* addr */,
-    const EndpointConfig& /* args */, MemoryAllocator /* memory_allocator */,
-    Duration /* timeout */) {
-  grpc_core::Crash("unimplemented");
+    OnConnectCallback on_connect, const ResolvedAddress& addr,
+    const EndpointConfig& /* args */, MemoryAllocator memory_allocator,
+    Duration timeout) {
+  auto addr_uri = ResolvedAddressToURI(addr);
+  gpr_log(GPR_INFO, "CFEventEngine::connect: %s", addr_uri.value().c_str());
+  if (!addr_uri.ok()) {
+    Run([on_connect = std::move(on_connect),
+         ep = absl::FailedPreconditionError(absl::StrCat(
+             "connect failed: ", "invalid addr: ",
+             addr_uri.value()))]() mutable { on_connect(std::move(ep)); });
+    return {0, 0};
+  }
+
+  auto endpoint_ptr = new CFStreamEndpoint(
+      std::static_pointer_cast<CFEventEngine>(shared_from_this()),
+      std::move(memory_allocator));
+
+  endpoint_ptr->Connect(std::move(on_connect), addr, std::move(timeout));
+
+  return {reinterpret_cast<intptr_t>(endpoint_ptr), 0};
 }
 
 bool CFEventEngine::CancelConnect(ConnectionHandle /* handle */) {
-  grpc_core::Crash("unimplemented");
+  return false;
 }
 
 bool CFEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
@@ -89,12 +109,12 @@ std::unique_ptr<EventEngine::DNSResolver> CFEventEngine::GetDNSResolver(
   grpc_core::Crash("unimplemented");
 }
 
-void CFEventEngine::Run(EventEngine::Closure* /* closure */) {
-  grpc_core::Crash("unimplemented");
+void CFEventEngine::Run(EventEngine::Closure* closure) {
+  executor_->Run(closure);
 }
 
-void CFEventEngine::Run(absl::AnyInvocable<void()> /* closure */) {
-  grpc_core::Crash("unimplemented");
+void CFEventEngine::Run(absl::AnyInvocable<void()> closure) {
+  executor_->Run(std::move(closure));
 }
 
 EventEngine::TaskHandle CFEventEngine::RunAfter(Duration when,
