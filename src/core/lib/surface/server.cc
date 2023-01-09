@@ -28,6 +28,7 @@
 #include <new>
 #include <queue>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -58,6 +59,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_join.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"

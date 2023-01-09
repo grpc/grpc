@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <memory>
+#include <string>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
