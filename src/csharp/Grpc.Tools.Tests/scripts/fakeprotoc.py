@@ -142,7 +142,7 @@ def _add_protoc_arg_to_dict(arg_dict, name, value):
     """
     Add the arguments with name/value to a multi-dictionary of arguments
     """
-    if not name in arg_dict:
+    if name not in arg_dict:
         arg_dict[name] = []
 
     arg_dict[name].append(value)
@@ -315,7 +315,7 @@ def main():
     protoc_args = _read_protoc_arguments()
     protoc_arg_dict = _parse_protoc_arguments(protoc_args, projectdir)
 
-    # If argument was passed multiple times, take the last occurence of it.
+    # If argument was passed multiple times, take the last occurrence of it.
     # TODO(jtattermusch): handle multiple occurrences of the same argument
     dependencyfile = protoc_arg_dict.get('--dependency_out')[-1]
     grpcout = protoc_arg_dict.get('--grpc_out')[-1]
