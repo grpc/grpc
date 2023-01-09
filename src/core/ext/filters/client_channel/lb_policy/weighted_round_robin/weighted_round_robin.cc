@@ -397,7 +397,9 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
             now.ToString().c_str(), last_update_time_.ToString().c_str(),
             non_empty_since_.ToString().c_str());
   }
-  if (weight_ == 0) non_empty_since_ = now;  // zero to non-zero
+  if (weight > 0 && non_empty_since_ == Timestamp::InfFuture()) {
+    non_empty_since_ = now;
+  }
   weight_ = weight;
   last_update_time_ = now;
 }

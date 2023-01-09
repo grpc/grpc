@@ -490,15 +490,99 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
        {kAddresses[1], {100, 0.3}},
        {kAddresses[2], {100, 0.3}}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
-  // Backends stop reporting utilization, so all are eventually weighted
-  // the same.
-  WaitForWeightedRoundRobinPicks(
-      &picker, {},
+  // Advance time to make weights stale and trigger the timer callback
+  // to recompute weights.
+  time_cache_.IncrementBy(Duration::Seconds(2));
+  RunTimerCallback();
+  // Picker should now be falling back to round-robin.
+  ExpectWeightedRoundRobinPicks(
+      picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
-// FIXME: add test for blackout period, both by itself and after
-// subchannel reconnection
+TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetWeightExpirationPeriod(Duration::Seconds(2)));
+  ASSERT_NE(picker, nullptr);
+  // All backends report weights.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Advance time to make weights stale and trigger the timer callback
+  // to recompute weights.
+  time_cache_.IncrementBy(Duration::Seconds(2));
+  RunTimerCallback();
+  // Picker should now be falling back to round-robin.
+  ExpectWeightedRoundRobinPicks(
+      picker.get(), {},
+      {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Now start sending weights again.  They should not be used yet,
+  // because we're still in the blackout period.
+  ExpectWeightedRoundRobinPicks(
+      picker.get(),
+      {{kAddresses[0], {100, 0.3}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.9}}},
+      {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Advance time past the blackout period.  This should cause the
+  // weights to be used.
+  time_cache_.IncrementBy(Duration::Seconds(1));
+  RunTimerCallback();
+  ExpectWeightedRoundRobinPicks(
+      picker.get(), {},
+      {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 1}});
+}
+
+TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetWeightExpirationPeriod(Duration::Seconds(2)));
+  ASSERT_NE(picker, nullptr);
+  // All backends report weights.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Trigger disconnection and reconnection on address 2.
+  auto* subchannel = FindSubchannel(kAddresses[2]);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // Wait for the address to come back.  Note that we have not advanced
+  // time, so the address will still be in the blackout period,
+  // resulting in it being assigned the average weight.
+  picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus());
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Advance time to exceed the blackout period and trigger the timer
+  // callback to recompute weights.
+  time_cache_.IncrementBy(Duration::Seconds(1));
+  RunTimerCallback();
+  ExpectWeightedRoundRobinPicks(
+      picker.get(),
+      {{kAddresses[0], {100, 0.3}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.9}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
 
 }  // namespace
 }  // namespace testing
