@@ -559,6 +559,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/authority.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/authority.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/cidr.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/cidr.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/context_params.upb.c" role="src" />
@@ -575,12 +577,26 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/v3/cel.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/v3/cel.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/v3/range.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/v3/range.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c" role="src" />
@@ -841,6 +857,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c" role="src" />
@@ -853,12 +871,26 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.cc" role="src" />
