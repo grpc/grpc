@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package grpc_tools_tests.integration_tests.test_multiple_protos;
+package grpc_tools_tests.integration_tests.test_multiple_protos.another;
 
 // The greeting service definition.
 service Greeter {
