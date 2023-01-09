@@ -14,8 +14,7 @@
 
 syntax = "proto3";
 
-
-package helloworld;
+package grpc_tools_tests.integration_tests.test_single_proto;
 
 // The greeting service definition.
 service Greeter {

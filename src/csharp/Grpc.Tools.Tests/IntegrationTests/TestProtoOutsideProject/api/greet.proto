@@ -16,7 +16,7 @@ syntax = "proto3";
 
 option csharp_namespace = "GrpcGreeter";
 
-package Greet;
+package grpc_tools_tests.integration_tests.test_proto_outside_project;
 
 service Greeter {
   rpc SayHello (Greet.HelloRequest) returns (Greet.HelloReply);
