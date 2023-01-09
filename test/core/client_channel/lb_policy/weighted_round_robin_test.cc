@@ -439,6 +439,22 @@ TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
+TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  expected_weight_update_interval_ = std::chrono::milliseconds(100);
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetWeightUpdatePeriod(Duration::Milliseconds(10)));
+  ASSERT_NE(picker, nullptr);
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
 TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {

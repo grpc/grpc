@@ -113,6 +113,12 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
     return loader;
   }
 
+  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors*) {
+    // Impose lower bound of 100ms on weightUpdatePeriod.
+    weight_update_period_ =
+        std::max(weight_update_period_, Duration::Milliseconds(100));
+  }
+
  private:
   bool enable_oob_load_report_ = false;
   Duration oob_reporting_period_ = Duration::Seconds(10);
