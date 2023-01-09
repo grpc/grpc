@@ -85,6 +85,8 @@ struct grpc_closure {
   const char* file_initiated;
   int line_initiated;
 #endif
+
+  std::string DebugString() const;
 };
 
 #ifndef NDEBUG

@@ -20,6 +20,7 @@
 #include "poll.h"
 
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
@@ -29,7 +30,7 @@ class InterceptorList {
  public:
   class MapFactory {
    public:
-    explicit MapFactory(SourceLocation from) : from_(from) {}
+    explicit MapFactory(DebugLocation from) : from_(from) {}
     virtual void MakePromise(T x, void* memory) = 0;
     virtual void Destroy(void* memory) = 0;
     virtual Poll<absl::optional<T>> PollOnce(void* memory) = 0;
@@ -40,12 +41,12 @@ class InterceptorList {
       next_ = next;
     }
 
-    SourceLocation from() { return from_; }
+    DebugLocation from() { return from_; }
 
     MapFactory* next() const { return next_; }
 
    private:
-    const SourceLocation from_;
+    GPR_NO_UNIQUE_ADDRESS const DebugLocation from_;
     MapFactory* next_ = nullptr;
   };
 
@@ -89,8 +90,10 @@ class InterceptorList {
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
     Poll<absl::optional<T>> operator()() {
-      gpr_log(GPR_DEBUG, "InterceptorList::RunPromise: %s",
-              DebugString().c_str());
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise: %s",
+                DebugString().c_str());
+      }
       while (is_running_) {
         auto r = running_.current_factory->PollOnce(running_.space.get());
         if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
@@ -157,12 +160,12 @@ class InterceptorList {
   }
 
   template <typename Fn>
-  void AppendMap(Fn fn, SourceLocation from) {
+  void AppendMap(Fn fn, DebugLocation from) {
     Append(MakeFactoryToAdd(std::move(fn), from));
   }
 
   template <typename Fn>
-  void PrependMap(Fn fn, SourceLocation from) {
+  void PrependMap(Fn fn, DebugLocation from) {
     Prepend(MakeFactoryToAdd(std::move(fn), from));
   }
 
@@ -173,7 +176,7 @@ class InterceptorList {
     using PromiseFactory = promise_detail::RepeatedPromiseFactory<T, Fn>;
     using Promise = typename PromiseFactory::Promise;
 
-    explicit MapFactoryImpl(Fn fn, SourceLocation from)
+    explicit MapFactoryImpl(Fn fn, DebugLocation from)
         : MapFactory(from), fn_(std::move(fn)) {}
     virtual void MakePromise(T x, void* memory) final {
       new (memory) Promise(fn_.Make(std::move(x)));
@@ -188,7 +191,7 @@ class InterceptorList {
   };
 
   template <typename Fn>
-  MapFactory* MakeFactoryToAdd(Fn fn, SourceLocation from) {
+  MapFactory* MakeFactoryToAdd(Fn fn, DebugLocation from) {
     using FactoryType = MapFactoryImpl<Fn>;
     promise_memory_required_ = std::max(promise_memory_required_,
                                         sizeof(typename FactoryType::Promise));

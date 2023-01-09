@@ -507,9 +507,11 @@ class FilterStackCall final : public Call {
     bool completed_batch_step(PendingOp op) {
       auto mask = PendingOpMask(op);
       auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
-      gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s", this,
-              PendingOpString(mask).c_str(),
-              PendingOpString(r & ~mask).c_str());
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s", this,
+                PendingOpString(mask).c_str(),
+                PendingOpString(r & ~mask).c_str());
+      }
       GPR_ASSERT((r & mask) != 0);
       return r == mask;
     }
@@ -1135,8 +1137,10 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
 void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
-  gpr_log(GPR_DEBUG, "tag:%p batch_error=%s", completion_data_.notify_tag.tag,
-          error.ToString().c_str());
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "tag:%p batch_error=%s", completion_data_.notify_tag.tag,
+            error.ToString().c_str());
+  }
 
   if (op_.send_initial_metadata) {
     call->send_initial_metadata_.Clear();
@@ -1789,9 +1793,11 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s", bctl,
-          PendingOpString(pending_ops).c_str(),
-          grpc_transport_stream_op_batch_string(stream_op).c_str());
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s", bctl,
+            PendingOpString(pending_ops).c_str(),
+            grpc_transport_stream_op_batch_string(stream_op).c_str());
+  }
 
   ExecuteBatch(stream_op, &bctl->start_batch_);
 

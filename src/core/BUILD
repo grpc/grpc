@@ -1217,9 +1217,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "closure",
+    srcs = [
+        "lib/iomgr/closure.cc",
+    ],
     hdrs = [
         "lib/iomgr/closure.h",
     ],
+    external_deps = ["absl/strings:str_format"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "error",

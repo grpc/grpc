@@ -56,14 +56,13 @@ class SourceLocation {
 // No-op for non-debug builds.
 // Callers can use the DEBUG_LOCATION macro in either case.
 #ifndef NDEBUG
-// TODO(roth): See if there's a way to automatically populate this,
-// similarly to how absl::SourceLocation::current() works, so that
-// callers don't need to explicitly pass DEBUG_LOCATION anywhere.
 class DebugLocation {
  public:
   DebugLocation(const char* file = GRPC_DEFAULT_FILE,
                 int line = GRPC_DEFAULT_LINE)
       : location_(file, line) {}
+  explicit DebugLocation(SourceLocation location)
+      : DebugLocation(location.file(), location.line()) {}
   const char* file() const { return location_.file(); }
   int line() const { return location_.line(); }
 
@@ -75,6 +74,7 @@ class DebugLocation {
  public:
   DebugLocation() {}
   DebugLocation(const char* /* file */, int /* line */) {}
+  explicit DebugLocation(SourceLocation) {}
   const char* file() const { return nullptr; }
   int line() const { return -1; }
 };

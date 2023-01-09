@@ -38,6 +38,7 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/interceptor_list.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/trace.h"
@@ -335,7 +336,7 @@ class PipeSender {
 
   template <typename Fn>
   void InterceptAndMap(Fn f, SourceLocation from = {}) {
-    center_->AppendMap(std::move(f), from);
+    center_->AppendMap(std::move(f), DebugLocation(from));
   }
 
  private:
@@ -367,7 +368,7 @@ class PipeReceiver {
 
   template <typename Fn>
   void InterceptAndMap(Fn f, SourceLocation from = {}) {
-    center_->PrependMap(std::move(f), from);
+    center_->PrependMap(std::move(f), DebugLocation(from));
   }
 
  private:
@@ -439,21 +440,19 @@ pipe_detail::Push<T> PipeSender<T>::Push(T value) {
 
 template <typename T>
 auto PipeReceiver<T>::Next() {
-  return Seq(
-      pipe_detail::Next<T>(center_->Ref()),
-      [center = center_->Ref()](absl::optional<T> value) {
-        gpr_log(GPR_DEBUG, "PIPENEXT: has_value=%d", value.has_value());
-        return center->Run(std::move(value));
-      },
-      [center = center_->Ref()](absl::optional<T> value) mutable {
-        gpr_log(GPR_DEBUG, "PIPEFIN: has_value=%d", value.has_value());
-        if (value.has_value()) {
-          center->value() = std::move(*value);
-          return NextResult<T>(std::move(center));
-        } else {
-          return NextResult<T>();
-        }
-      });
+  return Seq(pipe_detail::Next<T>(center_->Ref()),
+             [center = center_->Ref()](absl::optional<T> value) {
+               return Map(center->Run(std::move(value)),
+                          [center = std::move(center)](
+                              absl::optional<T> value) mutable {
+                            if (value.has_value()) {
+                              center->value() = std::move(*value);
+                              return NextResult<T>(std::move(center));
+                            } else {
+                              return NextResult<T>();
+                            }
+                          });
+             });
 }
 
 template <typename T>
