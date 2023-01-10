@@ -17,6 +17,8 @@
 
 #include <stdint.h>
 
+#include <iostream>
+
 #include <atomic>
 #include <memory>
 
@@ -356,6 +358,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
   ForkPollerListAddPoller(this);
+  std::cerr <<  "AAAAAAAAAAAAAAAAAAAAA Instantiating Epoll1Poller " << this << std::endl << std::flush;
 }
 
 void Epoll1Poller::Shutdown() {
@@ -364,6 +367,7 @@ void Epoll1Poller::Shutdown() {
 }
 
 Epoll1Poller::~Epoll1Poller() {
+  std::cerr <<  "AAAAAAAAAAAAAAAAAAAAA Destroying Epoll1Poller " << this << std::endl << std::flush;
   if (g_epoll_set_.epfd >= 0) {
     close(g_epoll_set_.epfd);
     g_epoll_set_.epfd = -1;
@@ -560,6 +564,24 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
   return nullptr;
 }
 
+void Epoll1Poller::PrepareFork() {
+  // Set forking flag.
+  // Kick the event loop.
+  std::cerr << "AAAAAAAAAAAAAAAAAAAAAAA Kicking event loop" << std::endl << std::flush;
+  Kick();
+  std::cerr << "AAAAAAAAAAAAAAAAAAAAAAA Kicked event loop" << std::endl << std::flush;
+}
+
+void Epoll1Poller::PostforkParent() {
+  // Unset forking flag.
+  // Signal the event loop. I guess by kicking?
+}
+
+void Epoll1Poller::PostforkChild() {
+  // Shut down?
+  // Remain idle until the upper layer closes us?
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
@@ -601,6 +623,8 @@ Poller::WorkResult Epoll1Poller::Work(
 }
 
 void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
+
+
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.

@@ -42,6 +42,7 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
     os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
+    os.environ['GRPC_ENABLE_FORK_SUPPORT'] = 'true'
     sys.stderr.write("Running test case.\\n"); sys.stderr.flush()
     methods.TestCase.%s.run_test({
       'server_host': 'localhost',
@@ -50,7 +51,8 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     })
     sys.stderr.write("Ran test case.\\n"); sys.stderr.flush()
 """
-_SUBPROCESS_TIMEOUT_S = 30
+_SUBPROCESS_TIMEOUT_S = 80
+_GDB_TIMEOUT_S = 40
 
 
 @unittest.skipUnless(
@@ -112,11 +114,11 @@ class ForkInteropTest(unittest.TestCase):
         finally:
             timer.cancel()
 
-    def testConnectivityWatch(self):
-        self._verifyTestCase(methods.TestCase.CONNECTIVITY_WATCH)
+    # def testConnectivityWatch(self):
+    #     self._verifyTestCase(methods.TestCase.CONNECTIVITY_WATCH)
 
-    # def testCloseChannelBeforeFork(self):
-    #     self._verifyTestCase(methods.TestCase.CLOSE_CHANNEL_BEFORE_FORK)
+    def testCloseChannelBeforeFork(self):
+        self._verifyTestCase(methods.TestCase.CLOSE_CHANNEL_BEFORE_FORK)
 
     # def testAsyncUnarySameChannel(self):
     #     self._verifyTestCase(methods.TestCase.ASYNC_UNARY_SAME_CHANNEL)
@@ -154,6 +156,34 @@ class ForkInteropTest(unittest.TestCase):
         for stream in self._streams:
             stream.close()
 
+    def _print_backtraces(self, pid):
+        cmd = [
+            "gdb",
+            "-ex", "set confirm off",
+            "-ex", "echo attaching",
+            "-ex", "attach {}".format(pid),
+            "-ex", "echo print_backtrace",
+            "-ex", "thread apply all bt",
+            "-ex", "echo printed_backtrace",
+            "-ex", "quit",
+        ]
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
+        sys.stderr.write("Invoking gdb\n")
+        sys.stderr.flush()
+        process = subprocess.Popen(cmd,
+                                   stdout=streams[0],
+                                   stderr=streams[1])
+        try:
+            process.wait(timeout=_GDB_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            sys.stderr.write("gdb stacktrace generation timed out.\n")
+        finally:
+            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
+                stream.seek(0)
+                sys.stderr.write("gdb {}:\n{}\n".format(stream_name, stream.read().decode("ascii")))
+                stream.close()
+            sys.stderr.flush()
+
     def _verifyTestCase(self, test_case):
         script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name, self._port)
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
@@ -161,21 +191,22 @@ class ForkInteropTest(unittest.TestCase):
                                    stdout=streams[0],
                                    stderr=streams[1])
         try:
-            timer = threading.Timer(_SUBPROCESS_TIMEOUT_S, process.kill)
-            timer.start()
-            process.wait()
-            timer.cancel()
+            process.wait(timeout=_SUBPROCESS_TIMEOUT_S)
+            self.assertEqual(0, process.returncode)
+        except subprocess.TimeoutExpired:
+            self._print_backtraces(process.pid)
+            process.kill()
+            self.assertTrue(False, "Parent process timed out.")
+        finally:
             outputs = []
             for stream in streams:
                 stream.seek(0)
                 outputs.append(stream.read())
-            self.assertEqual(
-                0, process.returncode,
-                'process failed with exit code %d (stdout: "%s", stderr: "%s")' %
-                (process.returncode, outputs[0].decode('ascii'), outputs[1].decode('ascii')))
-        finally:
-            for stream in streams:
+            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
+                stream.seek(0)
+                sys.stderr.write("Parent {}:\n{}\n".format(stream_name, stream.read().decode("ascii")))
                 stream.close()
+            sys.stderr.flush()
 
 
 if __name__ == '__main__':

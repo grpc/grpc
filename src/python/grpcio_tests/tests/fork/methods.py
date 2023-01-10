@@ -19,6 +19,8 @@ import logging
 import multiprocessing
 import os
 import queue
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -32,6 +34,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
+_GDB_TIMEOUT_S = 40
 
 _COUNTER = 0
 def mark():
@@ -159,6 +162,10 @@ class _ChildProcess(object):
     def start(self):
         import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forking\n")
         ret = os.fork()
+        # The child process is seemingly never reaching this line. It also doesn't
+        # like either the core postfork handlers or the Python-level postfork
+        # handlers are running. It must be tied up doing something else. Maybe attach
+        # gdb to it?
         if ret == 0:
             sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forked child\n")
             self._child_main()
@@ -172,12 +179,41 @@ class _ChildProcess(object):
         wait_interval = 1.0
         while total < timeout:
             self._rc, termination = os.waitpid(self._child_pid, os.WNOHANG)
-            if termination in (os.WIFEXITED, os.WIFSIGNALED):
+            if os.WIFEXITED(termination) or os.WIFSIGNALED(termination):
                 return True
             time.sleep(wait_interval)
             total += wait_interval
         else:
             return False
+
+
+    def _print_backtraces(self):
+        cmd = [
+            "gdb",
+            "-ex", "set confirm off",
+            "-ex", "echo attaching",
+            "-ex", "attach {}".format(self._child_pid),
+            "-ex", "echo print_backtrace",
+            "-ex", "thread apply all bt",
+            "-ex", "echo printed_backtrace",
+            "-ex", "quit",
+        ]
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
+        sys.stderr.write("Invoking gdb\n")
+        sys.stderr.flush()
+        process = subprocess.Popen(cmd,
+                                   stdout=streams[0],
+                                   stderr=streams[1])
+        try:
+            process.wait(timeout=_GDB_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            sys.stderr.write("gdb stacktrace generation timed out.\n")
+        finally:
+            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
+                stream.seek(0)
+                sys.stderr.write("gdb {}:\n{}\n".format(stream_name, stream.read().decode("ascii")))
+                stream.close()
+            sys.stderr.flush()
 
 
     def finish(self):
@@ -187,6 +223,7 @@ class _ChildProcess(object):
         try:
             # TODO: This method seems to be giving bad results. Fix.
             if not terminated:
+                self._print_backtraces()
                 raise RuntimeError('Child process did not terminate')
             if self._rc != 0:
                 raise ValueError('Child process failed with exitcode %d' %
@@ -333,24 +370,15 @@ def _connectivity_watch(channel, args):
         if state is grpc.ChannelConnectivity.READY:
             parent_channel_ready_event.set()
 
-    mark()
     channel.subscribe(parent_connectivity_callback)
-    mark()
     stub = test_pb2_grpc.TestServiceStub(channel)
-    mark()
     child_process = _ChildProcess(child_target)
-    mark()
     child_process.start()
-    mark()
     _async_unary(stub)
-    mark()
     if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
         raise ValueError('Channel did not move to READY')
-    mark()
     channel.unsubscribe(parent_connectivity_callback)
-    mark()
     child_process.finish()
-    mark()
 
 
 def _ping_pong_with_child_processes_after_first_response(

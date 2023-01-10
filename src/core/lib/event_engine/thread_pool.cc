@@ -24,6 +24,9 @@
 #include <memory>
 #include <utility>
 
+#include <iostream>
+#include <unistd.h>
+
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -128,8 +131,9 @@ bool ThreadPool::Queue::Step() {
   switch (state_) {
     case State::kRunning:
       break;
-    case State::kShutdown:
     case State::kForking:
+      return false;
+    case State::kShutdown:
       if (!callbacks_.empty()) break;
       return false;
   }
@@ -142,6 +146,8 @@ bool ThreadPool::Queue::Step() {
 }
 
 ThreadPool::ThreadPool() {
+  // std::cerr <<  "AAAAAAAAAAAAAAAAAAAAA Instantiating ThreadPool " << getpid() << std::endl << std::flush;
+  std::cerr <<  "AAAAAAAAAAAAAAAAAAAAA Instantiating ThreadPool " << this << std::endl << std::flush;
   for (unsigned i = 0; i < reserve_threads_; i++) {
     StartThread(state_, StartThreadReason::kInitialPool);
   }
@@ -159,6 +165,7 @@ void ThreadPool::Quiesce() {
 }
 
 ThreadPool::~ThreadPool() {
+  std::cerr <<  "AAAAAAAAAAAAAAAAAAAAA Destroying ThreadPool " << this << std::endl << std::flush;
   GPR_ASSERT(quiesced_.load(std::memory_order_relaxed));
 }
 

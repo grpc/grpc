@@ -27,6 +27,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
@@ -46,7 +47,7 @@ namespace experimental {
 class Epoll1EventHandle;
 
 // Definition of epoll1 based poller.
-class Epoll1Poller : public PosixEventPoller {
+class Epoll1Poller : public PosixEventPoller, public grpc_event_engine::experimental::Forkable {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
   EventHandle* CreateHandle(int fd, absl::string_view name,
@@ -66,6 +67,11 @@ class Epoll1Poller : public PosixEventPoller {
 #endif
   }
   ~Epoll1Poller() override;
+
+  // Forkable
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
 
  private:
   // This initial vector size may need to be tuned

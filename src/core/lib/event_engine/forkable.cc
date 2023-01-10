@@ -21,9 +21,12 @@
 #include <pthread.h>
 
 #include "absl/container/flat_hash_set.h"
+// #include "absl/container/btree_set.h"
 
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
+
+#include <iostream>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -31,7 +34,10 @@ namespace experimental {
 namespace {
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
 bool g_registered ABSL_GUARDED_BY(g_mu){false};
-grpc_core::NoDestruct<absl::flat_hash_set<Forkable*>> g_forkables
+
+// This must be ordered because there are ordering dependencies between
+// certain fork handlers.
+grpc_core::NoDestruct<std::vector<Forkable*>> g_forkables
     ABSL_GUARDED_BY(g_mu);
 }  // namespace
 
@@ -47,39 +53,51 @@ void RegisterForkHandlers() {
 };
 
 void PrepareFork() {
+  std::cerr << "AAAAAAAAAAAAAAAAAAa Entering PrepareFork" << std::endl << std::flush;
   grpc_core::MutexLock lock(g_mu.get());
   for (auto* forkable : *g_forkables) {
+    std::cerr << "AAAAAAAAAAAAAAAAAAa Calling forkable->PrepareFork " << forkable << std::endl << std::flush;
     forkable->PrepareFork();
+    std::cerr << "AAAAAAAAAAAAAAAAAAa Called forkable->PrepareFork " << forkable << std::endl << std::flush;
   }
+  std::cerr << "AAAAAAAAAAAAAAAAAAa Exiting PrepareFork" << std::endl << std::flush;
 }
 void PostforkParent() {
+  std::cerr << "AAAAAAAAAAAAAAAAAAa Entering PostforkParent" << std::endl << std::flush;
   grpc_core::MutexLock lock(g_mu.get());
   for (auto* forkable : *g_forkables) {
     forkable->PostforkParent();
   }
+  std::cerr << "AAAAAAAAAAAAAAAAAAa Exiting PostforkParent" << std::endl << std::flush;
 }
 
 void PostforkChild() {
+  std::cerr << "AAAAAAAAAAAAAAAAAAa Entering PostforkChild" << std::endl << std::flush;
   grpc_core::MutexLock lock(g_mu.get());
   for (auto* forkable : *g_forkables) {
     forkable->PostforkChild();
   }
+  std::cerr << "AAAAAAAAAAAAAAAAAAa Exiting PostforkChild" << std::endl << std::flush;
 }
 
 void ManageForkable(Forkable* forkable) {
   grpc_core::MutexLock lock(g_mu.get());
-  g_forkables->insert(forkable);
+  g_forkables->push_back(forkable);
 }
 
 void StopManagingForkable(Forkable* forkable) {
   grpc_core::MutexLock lock(g_mu.get());
-  g_forkables->erase(forkable);
+  auto iter = std::find(g_forkables->begin(), g_forkables->end(), forkable);
+  GPR_ASSERT(iter != g_forkables->end());
+  g_forkables->erase(iter);
 }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
 #else  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+
+#error This isn't working
 
 namespace grpc_event_engine {
 namespace experimental {
