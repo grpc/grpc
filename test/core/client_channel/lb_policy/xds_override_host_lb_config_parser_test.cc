@@ -96,6 +96,35 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfigNoDraining) {
   EXPECT_EQ(override_host_lb_config->child_config()->name(), "grpclb");
 }
 
+TEST(XdsOverrideHostConfigParsingTest, ValidConfigNoOverrideHostStatuses) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"xds_override_host_experimental\":{\n"
+      "      \"childPolicy\":[\n"
+      "        {\"grpclb\":{}}\n"
+      "      ]"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  EXPECT_EQ(service_config.status(), absl::OkStatus());
+  ASSERT_TRUE(service_config.ok());
+  EXPECT_NE(*service_config, nullptr);
+  auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+      (*service_config)->GetGlobalParsedConfig(0));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), internal::kXdsOverrideHost);
+  auto override_host_lb_config =
+      static_cast<RefCountedPtr<internal::XdsOverrideHostLbConfig>>(lb_config);
+  EXPECT_EQ(override_host_lb_config->override_host_status_mask(), 0xFFFF);
+  ASSERT_NE(override_host_lb_config->child_config(), nullptr);
+  EXPECT_EQ(override_host_lb_config->child_config()->name(), "grpclb");
+}
+
 TEST(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
   const char* service_config_json =
       "{\n"
@@ -176,7 +205,7 @@ TEST(XdsOverrideHostConfigParsingTest, ParsesOverrideHostStatusList) {
                 "[field:childPolicy error:No known policies in list: ]]"));
 }
 
-TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
+TEST(XdsOverrideHostConfigParsingTest, UnrecognizedHostStatus) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -197,7 +226,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
             absl::InvalidArgumentError(
                 "errors validating service config: [field:loadBalancingConfig "
                 "error:errors validating xds_override_host LB policy config: "
-                "[field:childPolicy error:No known policies in list: ]]"));
+                "[field:overrideHostStatus[0] error:invalid host status]]"));
 }
 }  // namespace
 }  // namespace testing
