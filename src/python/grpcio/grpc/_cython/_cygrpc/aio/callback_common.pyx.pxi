@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import enum
 
 cdef class CallbackFailureHandler:
 
@@ -23,10 +24,16 @@ cdef class CallbackFailureHandler:
         self._core_function_name = core_function_name
         self._error_details = error_details
         self._exception_type = exception_type
+        self._core_error_string = grpc_call_error_to_string(grpc_call_error.GRPC_CALL_ERROR)
+        if isinstance(exception_type, enum.IntEnum):
+            self._core_error_string = grpc_call_error_to_string(exception_type)
 
     cdef handle(self, object future):
         future.set_exception(self._exception_type(
-            'Failed "%s": %s' % (self._core_function_name, self._error_details)
+            'Failed "%s" with core error %s: %s' % (
+                self._core_function_name,
+                self._core_error_string,
+                self._error_details)
         ))
 
 
@@ -93,7 +100,8 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
-        raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))
+        grpc_call_error_string = grpc_call_error_to_string(error)
+        raise ExecuteBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: {}".format(error, grpc_call_error_string))
 
     await future
 

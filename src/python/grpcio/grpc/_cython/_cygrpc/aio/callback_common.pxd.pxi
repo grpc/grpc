@@ -15,6 +15,7 @@
 
 cdef class CallbackFailureHandler:
     cdef str _core_function_name
+    cdef const char* _core_error_string
     cdef object _error_details
     cdef object _exception_type
 
