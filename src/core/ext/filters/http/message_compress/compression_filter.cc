@@ -277,7 +277,8 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto decompress_args =
       HandleIncomingMetadata(*call_args.client_initial_metadata);
-  auto* decompress_err = GetContext<Arena>()->New<Latch<absl::Status>>();
+  auto* decompress_err =
+      GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
   call_args.client_to_server_messages->InterceptAndMap(
       [decompress_err, decompress_args,
        this](MessageHandle message) -> absl::optional<MessageHandle> {
@@ -285,7 +286,7 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
         gpr_log(GPR_DEBUG, "DecompressMessage returned %s",
                 r.status().ToString().c_str());
         if (!r.ok()) {
-          decompress_err->Set(r.status());
+          decompress_err->Set(ServerMetadataFromStatus(r.status()));
           return absl::nullopt;
         }
         return std::move(*r);
@@ -312,7 +313,8 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
   // - decompress incoming messages
   // - wait for initial metadata to be sent, and then commence compression of
   //   outgoing messages
-  return next_promise_factory(std::move(call_args));
+  return Race(next_promise_factory(std::move(call_args)),
+              decompress_err->Wait());
 }
 
 }  // namespace grpc_core

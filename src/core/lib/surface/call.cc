@@ -508,9 +508,10 @@ class FilterStackCall final : public Call {
       auto mask = PendingOpMask(op);
       auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s", this,
+        gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
                 PendingOpString(mask).c_str(),
-                PendingOpString(r & ~mask).c_str());
+                PendingOpString(r & ~mask).c_str(),
+                completion_data_.notify_tag.tag);
       }
       GPR_ASSERT((r & mask) != 0);
       return r == mask;
@@ -1796,9 +1797,10 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   }
 
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s", bctl,
+    gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
             PendingOpString(pending_ops).c_str(),
-            grpc_transport_stream_op_batch_string(stream_op).c_str());
+            grpc_transport_stream_op_batch_string(stream_op).c_str(),
+            bctl->completion_data_.notify_tag.tag);
   }
 
   ExecuteBatch(stream_op, &bctl->start_batch_);

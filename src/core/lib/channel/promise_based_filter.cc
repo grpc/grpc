@@ -2070,15 +2070,44 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 
 // Handle cancellation.
 void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(
+        GPR_DEBUG,
+        "%sServerCallData::Completed: send_trailing_state=%s "
+        "send_initial_state=%s error=%s",
+        LogTag().c_str(), StateString(send_trailing_state_),
+        send_initial_metadata_ == nullptr
+            ? "null"
+            : SendInitialMetadata::StateString(send_initial_metadata_->state),
+        error.ToString().c_str());
+  }
   // Track the latest reason for cancellation.
   cancelled_error_ = error;
   // Stop running the promise.
   promise_ = ArenaPromise<ServerMetadataHandle>();
-  if (send_trailing_state_ == SendTrailingState::kQueued) {
-    send_trailing_state_ = SendTrailingState::kCancelled;
-    send_trailing_metadata_batch_.CancelWith(error, flusher);
-  } else {
-    send_trailing_state_ = SendTrailingState::kCancelled;
+  switch (send_trailing_state_) {
+    case SendTrailingState::kInitial:
+    case SendTrailingState::kForwarded:
+      send_trailing_state_ = SendTrailingState::kCancelled;
+      if (!error.ok()) {
+        auto* batch = grpc_make_transport_stream_op(
+            NewClosure([call_combiner = call_combiner()](absl::Status) {
+              GRPC_CALL_COMBINER_STOP(call_combiner, "done-cancel");
+            }));
+        batch->cancel_stream = true;
+        batch->payload->cancel_stream.cancel_error = error;
+        flusher->Resume(batch);
+      }
+      break;
+    case SendTrailingState::kQueued:
+      send_trailing_state_ = SendTrailingState::kCancelled;
+      send_trailing_metadata_batch_.CancelWith(error, flusher);
+      break;
+    case SendTrailingState::kQueuedBehindSendMessage:
+    case SendTrailingState::kQueuedButHaventClosedSends:
+    case SendTrailingState::kCancelled:
+      send_trailing_state_ = SendTrailingState::kCancelled;
+      break;
   }
   if (send_initial_metadata_ != nullptr) {
     switch (send_initial_metadata_->state) {
@@ -2354,7 +2383,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     poll = promise_();
     if (grpc_trace_channel.enabled()) {
       gpr_log(
-          GPR_INFO, "%s: WakeInsideCombiner poll=%s; send_initial_metadata=%s",
+          GPR_INFO,
+          "%s: WakeInsideCombiner poll=%s; send_initial_metadata=%s "
+          "send_trailing_metadata=%s",
           LogTag().c_str(),
           PollToString(
               poll,
@@ -2362,8 +2393,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
               .c_str(),
           send_initial_metadata_ == nullptr
               ? "null"
-              : SendInitialMetadata::StateString(
-                    send_initial_metadata_->state));
+              : SendInitialMetadata::StateString(send_initial_metadata_->state),
+          StateString(send_trailing_state_));
     }
     if (send_initial_metadata_ != nullptr &&
         send_initial_metadata_->state ==
