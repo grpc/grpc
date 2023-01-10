@@ -74,7 +74,8 @@ TraceFlag grpc_lb_wrr_trace(false, "weighted_round_robin_lb");
 
 namespace {
 
-constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
+constexpr absl::string_view kWeightedRoundRobin =
+    "weighted_round_robin_experimental";
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
