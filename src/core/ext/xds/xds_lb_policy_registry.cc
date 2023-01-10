@@ -37,6 +37,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 
@@ -130,7 +131,8 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
   absl::string_view type() override { return Type(); }
 
   static absl::string_view Type() {
-    return "envoy.extensions.load_balancing_policies.client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin";
+    return "envoy.extensions.load_balancing_policies.client_side_weighted_"
+           "round_robin.v3.ClientSideWeightedRoundRobin";
   }
 };
 

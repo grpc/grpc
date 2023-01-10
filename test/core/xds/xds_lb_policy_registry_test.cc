@@ -22,6 +22,7 @@
 #include <string>
 
 #include <google/protobuf/any.pb.h>
+#include <google/protobuf/duration.pb.h>
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
