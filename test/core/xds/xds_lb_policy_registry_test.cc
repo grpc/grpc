@@ -49,6 +49,7 @@
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -123,6 +124,7 @@ TEST(RoundRobin, Basic) {
 //
 
 TEST(ClientSideWeightedRoundRobinTest, DefaultConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   LoadBalancingPolicyProto policy;
   policy.add_policies()
       ->mutable_typed_extension_config()
@@ -134,6 +136,7 @@ TEST(ClientSideWeightedRoundRobinTest, DefaultConfig) {
 }
 
 TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   ClientSideWeightedRoundRobin wrr;
   wrr.mutable_enable_oob_load_report()->set_value(true);
   wrr.mutable_oob_reporting_period()->set_seconds(1);
@@ -158,6 +161,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
 }
 
 TEST(ClientSideWeightedRoundRobinTest, InvalidDurations) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   ClientSideWeightedRoundRobin wrr;
   wrr.mutable_oob_reporting_period()->set_seconds(-1);
   wrr.mutable_blackout_period()->set_seconds(-2);
@@ -192,6 +196,20 @@ TEST(ClientSideWeightedRoundRobinTest, InvalidDurations) {
             ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
             ".weight_update_period.seconds "
             "error:value must be in the range [0, 315576000000]]")
+      << result.status();
+}
+
+TEST(ClientSideWeightedRoundRobinTest, EnvVarNotEnabled) {
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(ClientSideWeightedRoundRobin());
+  auto result = ConvertXdsPolicy(policy);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(),
+            "validation errors: [field:load_balancing_policy "
+            "error:no supported load balancing policy config found]")
       << result.status();
 }
 

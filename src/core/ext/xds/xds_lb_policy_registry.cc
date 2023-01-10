@@ -35,6 +35,8 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 
@@ -241,6 +243,19 @@ class WrrLocalityLbPolicyConfigFactory
 // XdsLbPolicyRegistry
 //
 
+namespace {
+
+// TODO(roth): Remove this when interop tests pass.
+bool XdsWrrLbEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_WRR_LB");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+}  // namespace
+
 XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RingHashLbPolicyConfigFactory::Type(),
@@ -248,9 +263,11 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RoundRobinLbPolicyConfigFactory::Type(),
       std::make_unique<RoundRobinLbPolicyConfigFactory>());
-  policy_config_factories_.emplace(
-      ClientSideWeightedRoundRobinLbPolicyConfigFactory::Type(),
-      std::make_unique<ClientSideWeightedRoundRobinLbPolicyConfigFactory>());
+  if (XdsWrrLbEnabled()) {
+    policy_config_factories_.emplace(
+        ClientSideWeightedRoundRobinLbPolicyConfigFactory::Type(),
+        std::make_unique<ClientSideWeightedRoundRobinLbPolicyConfigFactory>());
+  }
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
