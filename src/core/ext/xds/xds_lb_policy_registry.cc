@@ -121,7 +121,8 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
       Duration duration = ParseDuration(duration_proto, errors);
       config["weightExpirationPeriod"] = duration.ToJsonString();
     }
-    return Json::Object{{"weighted_round_robin", std::move(config)}};
+    return Json::Object{
+        {"weighted_round_robin_experimental", std::move(config)}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -289,7 +290,6 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     absl::string_view* serialized_value =
         absl::get_if<absl::string_view>(&extension->value);
     if (serialized_value != nullptr) {
-gpr_log(GPR_INFO, "TYPE: %s", std::string(extension->type).c_str());
       auto config_factory_it = policy_config_factories_.find(extension->type);
       if (config_factory_it != policy_config_factories_.end()) {
         return Json::Array{config_factory_it->second->ConvertXdsLbPolicyConfig(

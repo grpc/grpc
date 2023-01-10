@@ -130,7 +130,7 @@ TEST(ClientSideWeightedRoundRobinTest, DefaultConfig) {
       ->PackFrom(ClientSideWeightedRoundRobin());
   auto result = ConvertXdsPolicy(policy);
   ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"weighted_round_robin\":{}}");
+  EXPECT_EQ(*result, "{\"weighted_round_robin_experimental\":{}}");
 }
 
 TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
@@ -148,7 +148,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
   auto result = ConvertXdsPolicy(policy);
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(*result,
-            "{\"weighted_round_robin\":{"
+            "{\"weighted_round_robin_experimental\":{"
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
             "\"oobReportingPeriod\":\"1.000000000s\","
