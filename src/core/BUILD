@@ -4316,6 +4316,7 @@ grpc_cc_library(
         "static_stride_scheduler",
         "subchannel_interface",
         "time",
+        "validation_errors",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
