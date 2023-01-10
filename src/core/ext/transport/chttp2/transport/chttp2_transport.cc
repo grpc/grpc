@@ -38,7 +38,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "http_trace.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
