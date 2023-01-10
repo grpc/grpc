@@ -21,6 +21,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/service_config/service_config.h"
@@ -50,16 +51,16 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
   EXPECT_EQ(service_config.status(), absl::OkStatus());
   ASSERT_TRUE(service_config.ok());
   EXPECT_NE(*service_config, nullptr);
-  auto global_config = (*service_config)->GetGlobalParsedConfig(0);
+  auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+      (*service_config)->GetGlobalParsedConfig(0));
   ASSERT_NE(global_config, nullptr);
-  auto lb_config =
-      static_cast<internal::ClientChannelGlobalParsedConfig*>(global_config)
-          ->parsed_lb_config();
+  auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
-  // ASSERT_EQ(static_cast<>)
-  // Which is: INVALID_ARGUMENT: errors validating service config:
-  // [field:loadBalancingConfig error:errors validating xds_override_host LB
-  // policy config: [field:overrideHostStatus[0] error:invalid host status]]
+  ASSERT_EQ(lb_config->name(), internal::kXdsOverrideHost);
+  auto override_host_lb_config =
+      static_cast<RefCountedPtr<internal::XdsOverrideHostLbConfig>>(lb_config);
+  ASSERT_NE(override_host_lb_config->child_config(), nullptr);
+  ASSERT_EQ(override_host_lb_config->child_config()->name(), "grpclb");
 }
 
 TEST(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
