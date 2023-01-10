@@ -43,6 +43,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -1309,6 +1310,7 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
     unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
     return absl::OkStatus();
   }
+  global_stats().IncrementHttp2MetadataSize(frame_length_);
   return input.TakeError();
 }
 

@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+#include "absl/memory/memory.h"
+
 namespace grpc_core {
 namespace {
 union DblUint {
@@ -31,15 +33,15 @@ union DblUint {
   uint64_t uint;
 };
 }  // namespace
-void HistogramCollector_32768_24::Collect(Histogram_32768_24* result) const {
-  for (int i = 0; i < 24; i++) {
+void HistogramCollector_65536_26::Collect(Histogram_65536_26* result) const {
+  for (int i = 0; i < 26; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
   }
 }
-Histogram_32768_24 operator-(const Histogram_32768_24& left,
-                             const Histogram_32768_24& right) {
-  Histogram_32768_24 result;
-  for (int i = 0; i < 24; i++) {
+Histogram_65536_26 operator-(const Histogram_65536_26& left,
+                             const Histogram_65536_26& right) {
+  Histogram_65536_26 result;
+  for (int i = 0; i < 26; i++) {
     result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
   }
   return result;
@@ -117,29 +119,31 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of completion queues created for cq_callback (indicates callback "
     "api usage)",
 };
-const absl::string_view
-    GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
-        "call_initial_size",       "tcp_write_size", "tcp_write_iov_size",
-        "tcp_read_size",           "tcp_read_offer", "tcp_read_offer_iov_size",
-        "http2_send_message_size",
+const absl::string_view GlobalStats::histogram_name[static_cast<int>(
+    Histogram::COUNT)] = {
+    "call_initial_size",       "tcp_write_size",      "tcp_write_iov_size",
+    "tcp_read_size",           "tcp_read_offer",      "tcp_read_offer_iov_size",
+    "http2_send_message_size", "http2_metadata_size",
 };
-const absl::string_view
-    GlobalStats::histogram_doc[static_cast<int>(Histogram::COUNT)] = {
-        "Initial size of the grpc_call arena created at call start",
-        "Number of bytes offered to each syscall_write",
-        "Number of byte segments offered to each syscall_write",
-        "Number of bytes received by each syscall_read",
-        "Number of bytes offered to each syscall_read",
-        "Number of byte segments offered to each syscall_read",
-        "Size of messages received by HTTP2 transport",
+const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
+    Histogram::COUNT)] = {
+    "Initial size of the grpc_call arena created at call start",
+    "Number of bytes offered to each syscall_write",
+    "Number of byte segments offered to each syscall_write",
+    "Number of bytes received by each syscall_read",
+    "Number of bytes offered to each syscall_read",
+    "Number of byte segments offered to each syscall_read",
+    "Size of messages received by HTTP2 transport",
+    "Number of bytes consumed by metadata, according to HPACK accounting rules",
 };
 namespace {
-const int kStatsTable0[25] = {
-    0,   1,   2,   4,    7,    11,   17,   26,   40,   61,    93,    142,  216,
-    329, 500, 760, 1155, 1755, 2667, 4052, 6155, 9350, 14203, 21574, 32768};
-const uint8_t kStatsTable1[27] = {3,  3,  4,  5,  6,  6,  7,  8,  9,
-                                  10, 11, 11, 12, 13, 14, 15, 16, 16,
-                                  17, 18, 19, 20, 20, 21, 22, 23, 24};
+const int kStatsTable0[27] = {0,    1,     2,     4,     7,     11,   17,
+                              26,   40,    61,    92,    139,   210,  317,
+                              478,  721,   1087,  1638,  2468,  3719, 5604,
+                              8443, 12721, 19166, 28875, 43502, 65536};
+const uint8_t kStatsTable1[29] = {3,  3,  4,  5,  6,  6,  7,  8,  9,  10,
+                                  11, 11, 12, 13, 14, 15, 16, 16, 17, 18,
+                                  19, 20, 21, 21, 22, 23, 24, 25, 26};
 const int kStatsTable2[21] = {
     0,     1,      3,      8,       19,      45,      106,
     250,   588,    1383,   3252,    7646,    17976,   42262,
@@ -150,7 +154,7 @@ const uint8_t kStatsTable3[23] = {2,  3,  3,  4,  5,  6,  7,  8,
 const int kStatsTable4[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
 const uint8_t kStatsTable5[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
 }  // namespace
-int Histogram_32768_24::BucketFor(int value) {
+int Histogram_65536_26::BucketFor(int value) {
   if (value < 3) {
     if (value < 0) {
       return 0;
@@ -158,14 +162,14 @@ int Histogram_32768_24::BucketFor(int value) {
       return value;
     }
   } else {
-    if (value < 24577) {
+    if (value < 49153) {
       DblUint val;
       val.dbl = value;
       const int bucket =
           kStatsTable1[((val.uint - 4613937818241073152ull) >> 51)];
       return bucket - (value < kStatsTable0[bucket]);
     } else {
-      return 23;
+      return 25;
     }
   }
 }
@@ -234,7 +238,7 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     default:
       GPR_UNREACHABLE_CODE(return HistogramView());
     case Histogram::kCallInitialSize:
-      return HistogramView{&Histogram_32768_24::BucketFor, kStatsTable0, 24,
+      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable0, 26,
                            call_initial_size.buckets()};
     case Histogram::kTcpWriteSize:
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
@@ -254,6 +258,9 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kHttp2SendMessageSize:
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
                            http2_send_message_size.buckets()};
+    case Histogram::kHttp2MetadataSize:
+      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable0, 26,
+                           http2_metadata_size.buckets()};
   }
 }
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
@@ -298,6 +305,7 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.tcp_read_offer.Collect(&result->tcp_read_offer);
     data.tcp_read_offer_iov_size.Collect(&result->tcp_read_offer_iov_size);
     data.http2_send_message_size.Collect(&result->http2_send_message_size);
+    data.http2_metadata_size.Collect(&result->http2_metadata_size);
   }
   return result;
 }
@@ -336,6 +344,7 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       tcp_read_offer_iov_size - other.tcp_read_offer_iov_size;
   result->http2_send_message_size =
       http2_send_message_size - other.http2_send_message_size;
+  result->http2_metadata_size = http2_metadata_size - other.http2_metadata_size;
   return result;
 }
 }  // namespace grpc_core
