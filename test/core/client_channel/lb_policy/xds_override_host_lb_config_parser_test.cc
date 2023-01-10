@@ -59,6 +59,33 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
   ASSERT_EQ(override_host_lb_config->child_config()->name(), "grpclb");
 }
 
+TEST(XdsOverrideHostConfigParsingTest, ValidConfigWithRR) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"xds_override_host_experimental\":{\n"
+      "      \"childPolicy\":[\n"
+      "        {\"round_robin\":{}}\n"
+      "      ]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok());
+  EXPECT_NE(*service_config, nullptr);
+  auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+      (*service_config)->GetGlobalParsedConfig(0));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), internal::kXdsOverrideHost);
+  auto override_host_lb_config =
+      static_cast<RefCountedPtr<internal::XdsOverrideHostLbConfig>>(lb_config);
+  ASSERT_NE(override_host_lb_config->child_config(), nullptr);
+  ASSERT_EQ(override_host_lb_config->child_config()->name(), "round_robin");
+}
+
 TEST(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
   const char* service_config_json =
       "{\n"
