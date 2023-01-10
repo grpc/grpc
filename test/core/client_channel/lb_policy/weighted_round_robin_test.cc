@@ -92,7 +92,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
-      Json config = Json::Array{Json::Object{{"weighted_round_robin", json_}}};
+      Json config = Json::Array{
+          Json::Object{{"weighted_round_robin_experimental", json_}}};
       gpr_log(GPR_INFO, "CONFIG: %s", config.Dump().c_str());
       return MakeConfig(config);
     }
@@ -140,7 +141,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       return true;
     };
     ON_CALL(*mock_ee_, Cancel(::testing::_)).WillByDefault(cancel);
-    lb_policy_ = MakeLbPolicy("weighted_round_robin");
+    lb_policy_ = MakeLbPolicy("weighted_round_robin_experimental");
   }
 
   ~WeightedRoundRobinTest() override {
