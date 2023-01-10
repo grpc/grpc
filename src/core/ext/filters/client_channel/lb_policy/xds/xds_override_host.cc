@@ -681,7 +681,8 @@ const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
   return kJsonLoader;
 }
 
-void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
+                                           const JsonArgs& args,
                                            ValidationErrors* errors) {
   {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
@@ -701,13 +702,19 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   }
   {
     ValidationErrors::ScopedField field(errors, ".overrideHostStatus");
-    auto it = json.object_value().find("overrideHostStatus");
-    if (it != json.object_value().end()) {
+    auto host_status_list = LoadJsonObjectField<std::vector<std::string>>(
+        json.object_value(), args, "overrideHostStatus", errors,
+        /*required=*/false);
+    if (host_status_list.has_value()) {
       override_host_status_mask_ = 0;
-      auto array = it->second.array_value();
-      for (const auto& value : array) {
-        auto status = XdsHealthStatus::FromString(value.string_value());
-        if (status.has_value()) {
+      for (size_t i = 0; i < host_status_list->size(); ++i) {
+        const std::string& host_status = (*host_status_list)[i];
+        auto status = XdsHealthStatus::FromString(host_status);
+        if (!status.has_value()) {
+          ValidationErrors::ScopedField field(errors,
+                                              absl::StrCat("[", i, "]"));
+          errors->AddError("invalid host status");
+        } else {
           override_host_status_mask_ |= HealthStatusBitMask(*status);
         }
       }

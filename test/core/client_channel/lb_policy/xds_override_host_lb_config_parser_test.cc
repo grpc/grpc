@@ -20,6 +20,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_service_config.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/service_config/service_config.h"
@@ -37,14 +38,28 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
       "    \"xds_override_host_experimental\":{\n"
       "      \"childPolicy\":[\n"
       "        {\"grpclb\":{}}\n"
-      "      ]\n"
+      "      ],\n"
+      "      \"overrideHostStatus\": [\n"
+      "        \"DRAINING\", \"HEALTHY\", \"UNKNOWN\""
+      "      ]"
       "    }\n"
       "  }]\n"
       "}\n";
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  EXPECT_EQ(service_config.status(), absl::OkStatus());
   ASSERT_TRUE(service_config.ok());
   EXPECT_NE(*service_config, nullptr);
+  auto global_config = (*service_config)->GetGlobalParsedConfig(0);
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config =
+      static_cast<internal::ClientChannelGlobalParsedConfig*>(global_config)
+          ->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  // ASSERT_EQ(static_cast<>)
+  // Which is: INVALID_ARGUMENT: errors validating service config:
+  // [field:loadBalancingConfig error:errors validating xds_override_host LB
+  // policy config: [field:overrideHostStatus[0] error:invalid host status]]
 }
 
 TEST(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
@@ -92,6 +107,27 @@ TEST(XdsOverrideHostConfigParsingTest, ReportsEmptyChildPolicyArray) {
       "  \"loadBalancingConfig\":[{\n"
       "    \"xds_override_host_experimental\":{\n"
       "      \"childPolicy\":[\n"
+      "      ]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok()) << service_config.status();
+  EXPECT_EQ(service_config.status(),
+            absl::InvalidArgumentError(
+                "errors validating service config: [field:loadBalancingConfig "
+                "error:errors validating xds_override_host LB policy config: "
+                "[field:childPolicy error:No known policies in list: ]]"));
+}
+
+TEST(XdsOverrideHostConfigParsingTest, ParsesOverrideHostStatusList) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"xds_override_host_experimental\":{\n"
+      "      \"childPolicy\":[\n"
+
       "      ]\n"
       "    }\n"
       "  }]\n"
