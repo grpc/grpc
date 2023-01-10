@@ -504,8 +504,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
-              "state=READY "
-              "picker=%p",
+              "state=READY picker=%p",
               this, drop_picker.get());
     }
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
@@ -518,8 +517,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
-              "status=(%s) "
-              "picker=%p",
+              "status=(%s) picker=%p",
               this, ConnectivityStateName(state_), status_.ToString().c_str(),
               drop_picker.get());
     }

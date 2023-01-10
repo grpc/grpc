@@ -155,7 +155,7 @@ g_stands_for = "golazo"  # @unused
 
 core_version = "24.0.0"  # @unused
 
-version = "1.46.3"  # @unused
+version = "1.46.6"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",

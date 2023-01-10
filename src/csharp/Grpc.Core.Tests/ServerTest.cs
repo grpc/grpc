@@ -109,5 +109,55 @@ namespace Grpc.Core.Tests
             // just create a server, don't start it, and make sure it doesn't prevent shutdown.
             var server = new Server();
         }
+
+        [Test]
+        public void BindPortsNoStartAndShutdownServer()
+        {
+            // Test binding ports but no Start - that the bound ports are
+            // released on Shutdown.
+            // See https://github.com/grpc/grpc/issues/23390
+
+            int boundPort = 0;
+
+            try
+            {
+                // Create server, bind ports then shutdown (without start)
+                Server server = new Server {
+                    Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+                };
+
+                // find the port chosen so we can use it later
+                boundPort = server.Ports.Single().BoundPort;
+                Assert.Greater(boundPort, 0);
+
+                server.ShutdownAsync().Wait();
+            }
+            catch (Exception e)
+            {
+                Assert.Fail($"Failed to create and shutdown first server: {e}");
+            }
+
+            try
+            {
+                // Create new server, bind to same port as before, start and shutdown
+
+                // Note: there is a small possibility that the port may have been reused by a different
+                // test being run in parallel in between the previous Shutdown and using it here
+                // causing this test to be flaky.
+
+                Server server2 = new Server {
+                    Ports = { new ServerPort("localhost", boundPort, ServerCredentials.Insecure) }
+                };
+
+                server2.Start();
+                server2.ShutdownAsync().Wait();
+            }
+            catch (Exception e)
+            {
+                Assert.Fail($"Failed to create and shutdown second server: {e}");
+            }
+
+        }
+
     }
 }

@@ -65,6 +65,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -104,6 +105,7 @@
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
@@ -4850,6 +4852,209 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   EXPECT_TRUE(found);
 }
 
+TEST_P(CdsTest, AggregateClusterFallBackFromRingHashToLogicalDnsAtStartup) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(1);
+  const char* kEdsClusterName = "eds_cluster";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate EDS resource.
+  EdsResourceArgs args({
+      {"locality0",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       0},
+      {"locality1",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populate new CDS resources.
+  Cluster eds_cluster = default_cluster_;
+  eds_cluster.set_name(kEdsClusterName);
+  balancer_->ads_service()->SetCdsResource(eds_cluster);
+  // Populate LOGICAL_DNS cluster.
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kEdsClusterName);
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set up route with channel id hashing
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Inject connection delay to make this act more realistically.
+  ConnectionDelayInjector delay_injector(
+      grpc_core::Duration::Milliseconds(500) * grpc_test_slowdown_factor());
+  // Send RPC.  Need the timeout to be long enough to account for the
+  // subchannel connection delays.
+  CheckRpcSendOk(1, RpcOptions().set_timeout_ms(3500));
+}
+
+// This test covers a bug found in the following scenario:
+// 1. P0 reports TRANSIENT_FAILURE, so we start connecting to P1.
+// 2. While P1 is still in CONNECTING, P0 goes back to READY, so we
+//    switch back to P0, deactivating P1.
+// 3. P0 then goes back to TRANSIENT_FAILURE, and we reactivate P1.
+// The bug caused us to fail to choose P1 even though it is in state
+// CONNECTING (because the failover timer was not running), so we
+// incorrectly failed the RPCs.
+TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
+  const char* kClusterName1 = "cluster1";
+  const char* kClusterName2 = "cluster2";
+  const char* kEdsServiceName2 = "eds_service_name2";
+  // Populate EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  args = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kEdsServiceName2));
+  // Populate new CDS resources.
+  Cluster cluster1 = default_cluster_;
+  cluster1.set_name(kClusterName1);
+  balancer_->ads_service()->SetCdsResource(cluster1);
+  Cluster cluster2 = default_cluster_;
+  cluster2.set_name(kClusterName2);
+  cluster2.mutable_eds_cluster_config()->set_service_name(kEdsServiceName2);
+  balancer_->ads_service()->SetCdsResource(cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kClusterName1);
+  cluster_config.add_clusters(kClusterName2);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // This class injects itself into all TCP connection attempts made
+  // against iomgr.  It intercepts the attempts for the P0 and P1
+  // backends and allows them to proceed as desired to simulate the case
+  // being tested.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   public:
+    ConnectionInjector(int p0_port, int p1_port)
+        : p0_port_(p0_port), p1_port_(p1_port) {}
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      {
+        grpc_core::MutexLock lock(&mu_);
+        const int port = grpc_sockaddr_get_port(addr);
+        gpr_log(GPR_INFO, "==> HandleConnection(): state_=%d, port=%d", state_,
+                port);
+        switch (state_) {
+          case kInit:
+            // Make P0 report TF, which should trigger us to try to connect to
+            // P1.
+            if (port == p0_port_) {
+              gpr_log(GPR_INFO, "*** INJECTING FAILURE FOR P0 ENDPOINT");
+              grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                                      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                          "injected connection failure"));
+              state_ = kP0Failed;
+              return;
+            }
+            break;
+          case kP0Failed:
+            // Hold connection attempt to P1 so that it stays in CONNECTING.
+            if (port == p1_port_) {
+              gpr_log(GPR_INFO,
+                      "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
+              queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
+                  closure, ep, interested_parties, channel_args, addr,
+                  deadline);
+              state_ = kDone;
+              return;
+            }
+            break;
+          case kDone:
+            // P0 should attempt reconnection.  Log it to make the test
+            // easier to debug, but allow it to complete, so that the
+            // priority policy deactivates P1.
+            if (port == p0_port_) {
+              gpr_log(GPR_INFO,
+                      "*** INTERCEPTING CONNECTION ATTEMPT FOR P0 ENDPOINT");
+            }
+            break;
+        }
+      }
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+    // Invoked by the test when the RPC to the P0 backend has succeeded
+    // and it's ready to allow the P1 connection attempt to proceed.
+    void CompletePriority1Connection() {
+      grpc_core::ExecCtx exec_ctx;
+      std::unique_ptr<QueuedAttempt> attempt;
+      {
+        grpc_core::MutexLock lock(&mu_);
+        GPR_ASSERT(state_ == kDone);
+        attempt = std::move(queued_p1_attempt_);
+      }
+      attempt->Resume();
+    }
+
+   private:
+    const int p0_port_;
+    const int p1_port_;
+
+    grpc_core::Mutex mu_;
+    enum {
+      kInit,
+      kP0Failed,
+      kDone,
+    } state_ ABSL_GUARDED_BY(mu_) = kInit;
+    std::unique_ptr<QueuedAttempt> queued_p1_attempt_ ABSL_GUARDED_BY(mu_);
+  };
+  ConnectionInjector connection_attempt_injector(backends_[0]->port(),
+                                                 backends_[1]->port());
+  // Wait for P0 backend.
+  // Increase timeout to account for subchannel connection delays.
+  WaitForBackend(0, WaitForBackendOptions(), RpcOptions().set_timeout_ms(2000));
+  // Bring down the P0 backend.
+  ShutdownBackend(0);
+  // Allow the connection attempt to the P1 backend to resume.
+  connection_attempt_injector.CompletePriority1Connection();
+  // Wait for P1 backend to start getting traffic.
+  WaitForBackend(1);
+}
+
 TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -5732,6 +5937,88 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
 }
 
+// Test that the channel will transition to READY once it starts
+// connecting even if there are no RPCs being sent to the picker.
+TEST_P(CdsTest, RingHashContinuesConnectingWithoutPicks) {
+  // Create EDS resource.
+  CreateAndStartBackends(1);
+  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  EdsResourceArgs args(
+      {{"locality0", {non_existant_endpoint, CreateEndpoint(0)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Change CDS resource to use RING_HASH.
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Add hash policy to RDS resource.
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // A connection injector that cancels the RPC after seeing the
+  // connection attempt for the non-existant endpoint.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   public:
+    explicit ConnectionInjector(int port) : port_(port) {}
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      {
+        grpc_core::MutexLock lock(&mu_);
+        const int port = grpc_sockaddr_get_port(addr);
+        gpr_log(GPR_INFO, "==> HandleConnection(): seen_port_=%d, port=%d",
+                seen_port_, port);
+        // Initial attempt should be for port0_, which should fail.
+        // Cancel the RPC at this point, so that it's no longer
+        // queued when the LB policy updates the picker.
+        if (!seen_port_ && port == port_) {
+          gpr_log(GPR_INFO, "*** SEEN P0 CONNECTION ATTEMPT");
+          seen_port_ = true;
+          cond_.Signal();
+        }
+      }
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+    void WaitForP0ConnectionAttempt() {
+      grpc_core::MutexLock lock(&mu_);
+      while (!seen_port_) {
+        cond_.Wait(&mu_);
+      }
+    }
+
+   private:
+    const int port_;
+
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cond_;
+    bool seen_port_ ABSL_GUARDED_BY(mu_) = false;
+  };
+  ConnectionInjector connection_injector(non_existant_endpoint.port);
+  // A long-running RPC, just used to send the RPC in another thread.
+  LongRunningRpc rpc;
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash",
+       CreateMetadataValueThatHashesToBackendPort(non_existant_endpoint.port)}};
+  rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
+                                std::move(metadata)));
+  // Wait for the RPC to trigger the P0 connection attempt, then cancel it.
+  connection_injector.WaitForP0ConnectionAttempt();
+  rpc.CancelRpc();
+  // Wait for channel to become connected without any pending RPC.
+  EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(5)));
+  // RPC should have been cancelled.
+  EXPECT_EQ(StatusCode::CANCELLED, rpc.GetStatus().error_code());
+  // Make sure the backend did not get any requests.
+  EXPECT_EQ(0UL, backends_[0]->backend_service()->request_count());
+}
+
 // Test that when the first pick is down leading to a transient failure, we
 // will move on to the next ring hash entry.
 TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
@@ -5874,6 +6161,43 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+}
+
+// This tests a bug seen in the wild where ring_hash started with no
+// endpoints and reported TRANSIENT_FAILURE, then got an update with
+// endpoints and reported IDLE, but the picker update was squelched, so
+// it failed to ever get reconnected.
+TEST_P(CdsTest, RingHashReattemptWhenGoingFromTransientFailureToIdle) {
+  CreateAndStartBackends(1);
+  const uint32_t kConnectionTimeoutMilliseconds = 5000;
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Send empty EDS update.
+  EdsResourceArgs args(
+      {{"locality0", std::vector<EdsResourceArgs::Endpoint>()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  // Channel should fail RPCs and go into TRANSIENT_FAILURE.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): As part of https://github.com/grpc/grpc/issues/22883,
+      // figure out how to get a useful resolution note plumbed down to
+      // improve this message.
+      "no ready priority",
+      RpcOptions().set_timeout_ms(kConnectionTimeoutMilliseconds));
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  // Send EDS update with 1 backend.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // A wait_for_ready RPC should succeed, and the channel should report READY.
+  CheckRpcSendOk(1, RpcOptions()
+                        .set_timeout_ms(kConnectionTimeoutMilliseconds)
+                        .set_wait_for_ready(true));
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
 }
 
 // Test unspported hash policy types are all ignored before a supported
@@ -12628,6 +12952,7 @@ int main(int argc, char** argv) {
       absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
           "fake2", &grpc::testing::g_fake2_cert_data_map));
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",

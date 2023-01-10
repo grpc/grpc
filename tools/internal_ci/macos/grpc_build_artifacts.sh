@@ -31,12 +31,10 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
 # install cython for all python versions
-python2.7 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.5 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.6 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.7 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.8 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
+python3.7 -m pip install -U cython setuptools==65.4.1 wheel --user
+python3.8 -m pip install -U cython setuptools==65.4.1 wheel --user
+python3.9 -m pip install -U cython setuptools==65.4.1 wheel --user
+python3.10 -m pip install -U cython setuptools==65.4.1 wheel --user
 
 tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} || FAILED="true"
 

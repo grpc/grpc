@@ -17,7 +17,10 @@
 
 #include <memory>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/timer.h"
 
 namespace grpc {
 namespace testing {
@@ -25,31 +28,104 @@ namespace testing {
 // Allows injecting connection-establishment delays into C-core.
 // Typical usage:
 //
-//  ConnectionDelayInjector delay_injector;
-//  auto scoped_delay =
-//      delay_injector.SetDelay(grpc_core::Duration::Seconds(10));
+//  // At grpc_init() time.
+//  ConnectionAttemptInjector::Init();
 //
-// When ConnectionDelayInjector is instantiated, it replaces the iomgr
-// TCP client vtable, and it sets it back to the original value when it
-// is destroyed.
+//  // When an injection is desired.
+//  ConnectionDelayInjector delay_injector(grpc_core::Duration::Seconds(10));
 //
-// When SetDelay() is called, it sets the global delay, which will
-// automatically be unset when the result goes out of scope.
-//
-// The injection is global, so there must be only one ConnectionDelayInjector
-// object at any one time, and there must be only one scoped delay in effect
-// at any one time.
-class ConnectionDelayInjector {
+// The injection is global, so there must be only one ConnectionAttemptInjector
+// object at any one time.
+class ConnectionAttemptInjector {
  public:
-  class InjectedDelay {
+  // Global initializer.  Replaces the iomgr TCP client vtable.
+  // Must be called exactly once before any TCP connections are established.
+  static void Init();
+
+  ConnectionAttemptInjector();
+  virtual ~ConnectionAttemptInjector();
+
+  // Invoked for every TCP connection attempt.
+  // Implementations must eventually either invoke the closure
+  // themselves or delegate to the iomgr implementation by calling
+  // AttemptConnection().  QueuedAttempt may be used to queue an attempt
+  // for asynchronous processing.
+  virtual void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                                grpc_pollset_set* interested_parties,
+                                const grpc_channel_args* channel_args,
+                                const grpc_resolved_address* addr,
+                                grpc_core::Timestamp deadline) = 0;
+
+ protected:
+  // Represents a queued attempt.
+  // The caller must invoke either Resume() or Fail() before destroying.
+  class QueuedAttempt {
    public:
-    ~InjectedDelay();
+    QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
+                  grpc_pollset_set* interested_parties,
+                  const grpc_channel_args* channel_args,
+                  const grpc_resolved_address* addr,
+                  grpc_core::Timestamp deadline)
+        : closure_(closure),
+          endpoint_(ep),
+          interested_parties_(interested_parties),
+          channel_args_(grpc_channel_args_copy(channel_args)),
+          deadline_(deadline) {
+      memcpy(&address_, addr, sizeof(address_));
+    }
+
+    ~QueuedAttempt() {
+      GPR_ASSERT(closure_ == nullptr);
+      grpc_channel_args_destroy(channel_args_);
+    }
+
+    // Caller must invoke this from a thread with an ExecCtx.
+    void Resume() {
+      GPR_ASSERT(closure_ != nullptr);
+      AttemptConnection(closure_, endpoint_, interested_parties_, channel_args_,
+                        &address_, deadline_);
+      closure_ = nullptr;
+    }
+
+    // Caller must invoke this from a thread with an ExecCtx.
+    void Fail(grpc_error_handle error) {
+      GPR_ASSERT(closure_ != nullptr);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, error);
+      closure_ = nullptr;
+    }
+
+   private:
+    grpc_closure* closure_;
+    grpc_endpoint** endpoint_;
+    grpc_pollset_set* interested_parties_;
+    const grpc_channel_args* channel_args_;
+    grpc_resolved_address address_;
+    grpc_core::Timestamp deadline_;
   };
 
-  ConnectionDelayInjector();
-  ~ConnectionDelayInjector();
+  static void AttemptConnection(grpc_closure* closure, grpc_endpoint** ep,
+                                grpc_pollset_set* interested_parties,
+                                const grpc_channel_args* channel_args,
+                                const grpc_resolved_address* addr,
+                                grpc_core::Timestamp deadline);
+};
 
-  std::unique_ptr<InjectedDelay> SetDelay(grpc_core::Duration duration);
+// A concrete implementation that injects a fixed delay.
+class ConnectionDelayInjector : public ConnectionAttemptInjector {
+ public:
+  explicit ConnectionDelayInjector(grpc_core::Duration duration)
+      : duration_(duration) {}
+
+  void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                        grpc_pollset_set* interested_parties,
+                        const grpc_channel_args* channel_args,
+                        const grpc_resolved_address* addr,
+                        grpc_core::Timestamp deadline) override;
+
+ private:
+  class InjectedDelay;
+
+  grpc_core::Duration duration_;
 };
 
 }  // namespace testing

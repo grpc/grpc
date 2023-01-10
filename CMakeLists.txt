@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.46.3")
+set(PACKAGE_VERSION       "1.46.6")
 set(gRPC_CORE_VERSION     "24.0.0")
 set(gRPC_CORE_SOVERSION   "24")
-set(gRPC_CPP_VERSION      "1.46.3")
+set(gRPC_CPP_VERSION      "1.46.6")
 set(gRPC_CPP_SOVERSION    "1.46")
-set(gRPC_CSHARP_VERSION   "2.46.3")
+set(gRPC_CSHARP_VERSION   "2.46.6")
 set(gRPC_CSHARP_SOVERSION "2.46")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -261,6 +261,8 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
   # Silences thousands of trucation warnings
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
+  # Tell MSVC to build grpc using utf-8
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /utf-8")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
@@ -292,7 +294,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.46.3\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.46.6\"")
 endif()
 
 if(UNIX)
@@ -17218,6 +17220,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
     src/cpp/server/csds/csds.cc
+    test/cpp/end2end/connection_delay_injector.cc
     test/cpp/end2end/rls_server.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test.cc

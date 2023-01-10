@@ -194,7 +194,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
-    bool seen_failure_since_ready_ = false;
 
     OrphanablePtr<DelayedRemovalTimer> delayed_removal_timer_;
   };
@@ -585,19 +584,12 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
   // If the child reports IDLE, immediately tell it to exit idle.
   if (state == GRPC_CHANNEL_IDLE) child_policy_->ExitIdleLocked();
   // Decide what state to report for aggregation purposes.
-  // If we haven't seen a failure since the last time we were in state
-  // READY, then we report the state change as-is.  However, once we do see
-  // a failure, we report TRANSIENT_FAILURE and ignore any subsequent state
-  // changes until we go back into state READY.
-  if (!seen_failure_since_ready_) {
-    if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      seen_failure_since_ready_ = true;
-    }
-  } else {
-    if (state != GRPC_CHANNEL_READY) return;
-    seen_failure_since_ready_ = false;
+  // If the last recorded state was TRANSIENT_FAILURE and the new state
+  // is something other than READY, don't change the state.
+  if (connectivity_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE ||
+      state == GRPC_CHANNEL_READY) {
+    connectivity_state_ = state;
   }
-  connectivity_state_ = state;
   // Notify the LB policy.
   weighted_target_policy_->UpdateStateLocked();
 }

@@ -89,6 +89,11 @@ namespace Grpc.Core
         /// <summary>
         /// Returns <c>true</c> if this credential type allows being composed by <c>CompositeCredentials</c>.
         /// </summary>
+        /// <remark>
+        /// Note: No longer used. Decision on whether composition is allowed now happens in
+        /// <see cref="ChannelCredentialsConfiguratorBase.SetCompositeCredentials(object, ChannelCredentials, CallCredentials)"/>.
+        /// Internal property left for safety because Grpc.Core has internal access to Grpc.Core.Api.
+        /// </remark>
         internal virtual bool IsComposable => false;
 
         private sealed class InsecureCredentials : ChannelCredentials
@@ -118,11 +123,6 @@ namespace Grpc.Core
             {
                 this.channelCredentials = GrpcPreconditions.CheckNotNull(channelCredentials);
                 this.callCredentials = GrpcPreconditions.CheckNotNull(callCredentials);
-
-                if (!channelCredentials.IsComposable)
-                {
-                    throw new ArgumentException(string.Format("CallCredentials can't be composed with {0}. CallCredentials must be used with secure channel credentials like SslCredentials.", channelCredentials.GetType().Name));
-                }
             }
 
             public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)

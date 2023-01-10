@@ -798,7 +798,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   void CheckRpcSendOk(const size_t times = 1,
                       const RpcOptions& rpc_options = RpcOptions());
 
-  // Options to use with CheckRpcSendFailure().
+  // Sends one RPC, which must fail with the specified status code and
+  // a message matching the specified regex.
+  void CheckRpcSendFailure(const grpc_core::DebugLocation& debug_location,
+                           StatusCode expected_status,
+                           absl::string_view expected_message_regex,
+                           const RpcOptions& rpc_options = RpcOptions());
+
+  // DEPRECATED -- USE THE ABOVE VARIANT INSTEAD.
+  // TODO(roth): Change all existing callers to use the above variant
+  // instead and then remove this.
   struct CheckRpcSendFailureOptions {
     std::function<bool(size_t)> continue_predicate = [](size_t i) {
       return i < 1;
@@ -829,8 +838,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
   };
-
-  // Sends RPCs and expects them to fail.
   void CheckRpcSendFailure(
       const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
 

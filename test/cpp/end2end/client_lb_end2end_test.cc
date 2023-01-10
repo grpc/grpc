@@ -605,8 +605,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   response_generator.SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
-  ConnectionDelayInjector delay_injector;
-  auto injected_delay = delay_injector.SetDelay(
+  ConnectionDelayInjector delay_injector(
       grpc_core::Duration::Milliseconds(kMinReconnectBackOffMs * 1.10));
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel->WaitForConnected(
@@ -2128,6 +2127,7 @@ TEST_F(ClientLbAddressTest, Basic) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
   return result;
 }
