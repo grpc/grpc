@@ -33,9 +33,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/random/random.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -59,14 +57,8 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/for_each.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/map_pipe.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_concurrently.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
