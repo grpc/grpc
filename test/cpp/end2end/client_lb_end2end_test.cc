@@ -2834,6 +2834,31 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
       "ABORTED: nope");
 }
 
+//
+// WeightedRoundRobinTest
+//
+
+using WeightedRoundRobinTest = ClientLbEnd2endTest;
+
+TEST_F(WeightedRoundRobinTest, Basic) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  xds::data::orca::v3::OrcaLoadReport load_report;
+  load_report.set_rps_fractional(100);
+  load_report.set_cpu_utilization(0.3);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel =
+      BuildChannel("weighted_round_robin_experimental", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+
+// FIXME: implement test
+
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
