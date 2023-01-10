@@ -178,41 +178,61 @@ class InterceptorList {
 
   template <typename Fn>
   void AppendMap(Fn fn, DebugLocation from) {
-    Append(MakeFactoryToAdd(std::move(fn), from));
+    Append(MakeFactoryToAdd(
+        std::move(fn), [] {}, from));
   }
 
   template <typename Fn>
   void PrependMap(Fn fn, DebugLocation from) {
-    Prepend(MakeFactoryToAdd(std::move(fn), from));
+    Prepend(MakeFactoryToAdd(
+        std::move(fn), [] {}, from));
+  }
+
+  template <typename Fn, typename CleanupFn>
+  void AppendMapWithCleanup(Fn fn, CleanupFn cleanup_fn, DebugLocation from) {
+    Append(MakeFactoryToAdd(std::move(fn), std::move(cleanup_fn), from));
+  }
+
+  template <typename Fn, typename CleanupFn>
+  void PrependMapWithCleanup(Fn fn, CleanupFn cleanup_fn, DebugLocation from) {
+    Prepend(MakeFactoryToAdd(std::move(fn), std::move(cleanup_fn), from));
   }
 
  private:
-  template <typename Fn>
+  template <typename Fn, typename CleanupFn>
   class MapFactoryImpl final : public MapFactory {
    public:
     using PromiseFactory = promise_detail::RepeatedPromiseFactory<T, Fn>;
     using Promise = typename PromiseFactory::Promise;
 
-    explicit MapFactoryImpl(Fn fn, DebugLocation from)
-        : MapFactory(from), fn_(std::move(fn)) {}
-    virtual void MakePromise(T x, void* memory) final {
+    explicit MapFactoryImpl(Fn fn, CleanupFn cleanup_fn, DebugLocation from)
+        : MapFactory(from),
+          fn_(std::move(fn)),
+          cleanup_fn_(std::move(cleanup_fn)) {}
+    ~MapFactoryImpl() override { cleanup_fn_(); }
+    void MakePromise(T x, void* memory) override {
       new (memory) Promise(fn_.Make(std::move(x)));
     }
-    void Destroy(void* memory) { static_cast<Promise*>(memory)->~Promise(); }
-    Poll<absl::optional<T>> PollOnce(void* memory) {
+    void Destroy(void* memory) override {
+      static_cast<Promise*>(memory)->~Promise();
+    }
+    Poll<absl::optional<T>> PollOnce(void* memory) override {
       return poll_cast<absl::optional<T>>((*static_cast<Promise*>(memory))());
     }
 
    private:
-    PromiseFactory fn_;
+    GPR_NO_UNIQUE_ADDRESS PromiseFactory fn_;
+    GPR_NO_UNIQUE_ADDRESS CleanupFn cleanup_fn_;
   };
 
-  template <typename Fn>
-  MapFactory* MakeFactoryToAdd(Fn fn, DebugLocation from) {
-    using FactoryType = MapFactoryImpl<Fn>;
+  template <typename Fn, typename CleanupFn>
+  MapFactory* MakeFactoryToAdd(Fn fn, CleanupFn cleanup_fn,
+                               DebugLocation from) {
+    using FactoryType = MapFactoryImpl<Fn, CleanupFn>;
     promise_memory_required_ = std::max(promise_memory_required_,
                                         sizeof(typename FactoryType::Promise));
-    return GetContext<Arena>()->New<FactoryType>(std::move(fn), from);
+    return GetContext<Arena>()->New<FactoryType>(std::move(fn),
+                                                 std::move(cleanup_fn), from);
   }
 
   void Append(MapFactory* f) {

@@ -33,6 +33,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -364,52 +365,24 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
     }
     calld->LogClientHeader(/*is_client=*/true,
                            call_args.client_initial_metadata);
-    auto* server_initial_metadata = call_args.server_initial_metadata;
-    auto incoming_mapper =
-        grpc_core::PipeMapper<grpc_core::MessageHandle>::Intercept(
-            *call_args.incoming_messages);
-    grpc_core::PipeMapper<grpc_core::MessageHandle> outgoing_mapper =
-        grpc_core::PipeMapper<grpc_core::MessageHandle>::Intercept(
-            *call_args.outgoing_messages);
+    call_args.server_initial_metadata->InterceptAndMap(
+        [calld](grpc_core::ServerMetadataHandle metadata) {
+          calld->LogServerHeader(/*is_client=*/true, metadata.get());
+          return metadata;
+        });
+    call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
+        [calld](grpc_core::MessageHandle message) {
+          calld->LogClientMessage(/*is_client=*/true, message->payload());
+          return message;
+        },
+        [calld] { calld->LogClientHalfClose(/*is_client=*/true); });
+    call_args.server_to_client_messages->InterceptAndMap(
+        [calld](grpc_core::MessageHandle message) {
+          calld->LogServerMessage(/*is_client=*/true, message->payload());
+          return message;
+        });
     return grpc_core::OnCancel(
-        grpc_core::TryConcurrently(
-            grpc_core::Seq(
-                next_promise_factory(std::move(call_args)),
-                [calld](grpc_core::ServerMetadataHandle metadata) mutable
-                -> grpc_core::ServerMetadataHandle {
-                  calld->LogServerTrailer(/*is_client=*/true, metadata.get());
-                  return metadata;
-                }))
-            .NecessaryPull(grpc_core::Seq(
-                server_initial_metadata->Wait(),
-                [calld](
-                    grpc_core::ServerMetadata** server_initial_metadata) mutable
-                -> grpc_core::ArenaPromise<absl::Status> {
-                  if (server_initial_metadata != nullptr) {
-                    calld->LogServerHeader(/*is_client=*/true,
-                                           *server_initial_metadata);
-                  }
-                  return grpc_core::ImmediateOkStatus();
-                }))
-            .NecessaryPull(incoming_mapper.TakeAndRun(
-                [calld](grpc_core::MessageHandle message)
-                    -> absl::StatusOr<grpc_core::MessageHandle> {
-                  calld->LogServerMessage(/*is_client=*/true,
-                                          message->payload());
-                  return message;
-                }))
-            .NecessaryPush(grpc_core::Seq(
-                outgoing_mapper.TakeAndRun(
-                    [calld](grpc_core::MessageHandle message)
-                        -> absl::StatusOr<grpc_core::MessageHandle> {
-                      calld->LogClientMessage(/*is_client=*/true,
-                                              message->payload());
-                      return message;
-                    }),
-                [calld]() mutable -> grpc_core::ArenaPromise<absl::Status> {
-                  calld->LogClientHalfClose(/*is_client=*/true);
-                  return grpc_core::ImmediateOkStatus();
-                })),
+        next_promise_factory(std::move(call_args)),
         [calld]() { calld->LogCancel(/*is_client=*/true); });
   }
 
@@ -448,50 +421,24 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
     }
     calld->LogClientHeader(/*is_client=*/false,
                            call_args.client_initial_metadata);
-    auto* server_initial_metadata = call_args.server_initial_metadata;
-    auto incoming_mapper =
-        grpc_core::PipeMapper<grpc_core::MessageHandle>::Intercept(
-            *call_args.incoming_messages);
-    grpc_core::PipeMapper<grpc_core::MessageHandle> outgoing_mapper =
-        grpc_core::PipeMapper<grpc_core::MessageHandle>::Intercept(
-            *call_args.outgoing_messages);
+    call_args.server_initial_metadata->InterceptAndMap(
+        [calld](grpc_core::ServerMetadataHandle metadata) {
+          calld->LogServerHeader(/*is_client=*/false, metadata.get());
+          return metadata;
+        });
+    call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
+        [calld](grpc_core::MessageHandle message) {
+          calld->LogClientMessage(/*is_client=*/false, message->payload());
+          return message;
+        },
+        [calld] { calld->LogClientHalfClose(/*is_client=*/false); });
+    call_args.server_to_client_messages->InterceptAndMap(
+        [calld](grpc_core::MessageHandle message) {
+          calld->LogServerMessage(/*is_client=*/false, message->payload());
+          return message;
+        });
     return grpc_core::OnCancel(
-        grpc_core::TryConcurrently(
-            grpc_core::Seq(
-                next_promise_factory(std::move(call_args)),
-                [calld](grpc_core::ServerMetadataHandle metadata) mutable
-                -> grpc_core::ServerMetadataHandle {
-                  calld->LogServerTrailer(/*is_client=*/false, metadata.get());
-                  return metadata;
-                }))
-            .Push(grpc_core::Seq(
-                server_initial_metadata->Wait(),
-                [calld](
-                    grpc_core::ServerMetadata** server_initial_metadata) mutable
-                -> grpc_core::ArenaPromise<absl::Status> {
-                  calld->LogServerHeader(/*is_client=*/false,
-                                         *server_initial_metadata);
-                  return grpc_core::ImmediateOkStatus();
-                }))
-            .Push(outgoing_mapper.TakeAndRun(
-                [calld](grpc_core::MessageHandle message)
-                    -> absl::StatusOr<grpc_core::MessageHandle> {
-                  calld->LogServerMessage(/*is_client=*/false,
-                                          message->payload());
-                  return message;
-                }))
-            .NecessaryPull(grpc_core::Seq(
-                incoming_mapper.TakeAndRun(
-                    [calld](grpc_core::MessageHandle message)
-                        -> absl::StatusOr<grpc_core::MessageHandle> {
-                      calld->LogClientMessage(/*is_client=*/false,
-                                              message->payload());
-                      return message;
-                    }),
-                [calld]() mutable -> grpc_core::ArenaPromise<absl::Status> {
-                  calld->LogClientHalfClose(/*is_client=*/false);
-                  return grpc_core::ImmediateOkStatus();
-                })),
+        next_promise_factory(std::move(call_args)),
         [calld]() { calld->LogCancel(/*is_client=*/false); });
   }
 };

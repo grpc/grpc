@@ -54,6 +54,7 @@ grpc_cc_library(
         "logging_filter.h",
     ],
     external_deps = [
+        "absl/cleanup",
         "absl/random",
         "absl/status",
         "absl/status:statusor",

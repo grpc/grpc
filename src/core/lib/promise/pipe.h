@@ -339,6 +339,12 @@ class PipeSender {
     center_->AppendMap(std::move(f), DebugLocation(from));
   }
 
+  template <typename Fn, typename OnHalfClose>
+  void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, SourceLocation from = {}) {
+    center_->AppendMapWithCleanup(std::move(f), std::move(cleanup_fn),
+                                  DebugLocation(from));
+  }
+
  private:
   friend struct Pipe<T>;
   explicit PipeSender(pipe_detail::Center<T>* center) : center_(center) {}
@@ -369,6 +375,13 @@ class PipeReceiver {
   template <typename Fn>
   void InterceptAndMap(Fn f, SourceLocation from = {}) {
     center_->PrependMap(std::move(f), DebugLocation(from));
+  }
+
+  template <typename Fn, typename OnHalfClose>
+  void InterceptAndMapWithHalfClose(Fn f, OnHalfClose cleanup_fn,
+                                    SourceLocation from = {}) {
+    center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn),
+                                   DebugLocation(from));
   }
 
  private:
