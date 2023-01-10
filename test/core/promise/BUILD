@@ -54,8 +54,11 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_context",
+        "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:event_engine_memory_allocator",
         "//src/core:interceptor_list",
+        "//src/core:memory_quota",
         "//src/core:resource_quota",
     ],
 )

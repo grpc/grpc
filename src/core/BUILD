@@ -824,6 +824,7 @@ grpc_cc_library(
         "promise_trace",
         "//:debug_location",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 

@@ -1204,6 +1204,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/call_combiner.h )
   s.files += %w( src/core/lib/iomgr/cfstream_handle.cc )
   s.files += %w( src/core/lib/iomgr/cfstream_handle.h )
+  s.files += %w( src/core/lib/iomgr/closure.cc )
   s.files += %w( src/core/lib/iomgr/closure.h )
   s.files += %w( src/core/lib/iomgr/combiner.cc )
   s.files += %w( src/core/lib/iomgr/combiner.h )

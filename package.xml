@@ -1186,6 +1186,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/cfstream_handle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/cfstream_handle.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/closure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
