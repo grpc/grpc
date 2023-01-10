@@ -99,8 +99,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       ~FakeSubchannel() override {
         if (orca_watcher_ != nullptr) {
           MutexLock lock(&state_->backend_metric_watcher_mu_);
-          auto it = state_->watchers_.find(orca_watcher_);
-          if (it != state_->watchers_.end()) state_->watchers_.erase(it);
+          state_->watchers_.erase(orca_watcher_.get());
         }
       }
 
@@ -161,8 +160,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           std::unique_ptr<DataWatcherInterface> watcher) override {
         MutexLock lock(&state_->backend_metric_watcher_mu_);
         GPR_ASSERT(orca_watcher_ == nullptr);
-        orca_watcher_ = static_cast<OrcaWatcher*>(watcher.release());
-        state_->watchers_.emplace(orca_watcher_);
+        orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
+        state_->watchers_.insert(orca_watcher_.get());
       }
 
       // Don't need this method, so it's a no-op.
@@ -173,7 +172,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
                WatcherWrapper*>
           watcher_map_;
-      OrcaWatcher* orca_watcher_ = nullptr;
+      std::unique_ptr<OrcaWatcher> orca_watcher_;
     };
 
     explicit SubchannelState(absl::string_view address)
@@ -255,7 +254,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // Sends an OOB backend metric report to all watchers.
     void SendOobBackendMetricReport(const BackendMetricData& backend_metrics) {
       MutexLock lock(&backend_metric_watcher_mu_);
-      for (const auto& watcher : watchers_) {
+      for (const auto* watcher : watchers_) {
         watcher->watcher()->OnBackendMetricReport(backend_metrics);
       }
     }
@@ -264,34 +263,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     void CheckOobReportingPeriod(Duration expected,
                                  SourceLocation location = SourceLocation()) {
       MutexLock lock(&backend_metric_watcher_mu_);
-      for (const auto& watcher : watchers_) {
+      for (const auto* watcher : watchers_) {
         EXPECT_EQ(watcher->report_interval(), expected)
             << location.file() << ":" << location.line();
       }
     }
 
    private:
-    // A heterogeneous sorting functor that allows lookups of
-    // unique_ptr<>s by raw pointer value.
-    struct OrcaWatcherLess {
-      using is_transparent = void;
-      bool operator()(const std::unique_ptr<OrcaWatcher>& w1,
-                      const std::unique_ptr<OrcaWatcher>& w2) const {
-        return w1 < w2;
-      }
-      bool operator()(const std::unique_ptr<OrcaWatcher>& w1,
-                      const OrcaWatcher* w2) const {
-        return w1.get() < w2;
-      }
-      bool operator()(const OrcaWatcher* w1,
-                      const std::unique_ptr<OrcaWatcher>& w2) const {
-        return w1 < w2.get();
-      }
-      bool operator()(const OrcaWatcher* w1, const OrcaWatcher* w2) const {
-        return w1 < w2;
-      }
-    };
-
     const std::string address_;
 
     Mutex mu_;
@@ -302,7 +280,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         false;
 
     Mutex backend_metric_watcher_mu_;
-    std::set<std::unique_ptr<OrcaWatcher>, OrcaWatcherLess> watchers_
+    std::set<OrcaWatcher*> watchers_
         ABSL_GUARDED_BY(&backend_metric_watcher_mu_);
   };
 
