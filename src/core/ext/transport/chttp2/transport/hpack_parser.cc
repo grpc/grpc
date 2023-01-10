@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/status_helper.h"
