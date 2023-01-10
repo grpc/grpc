@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
+
 #include <atomic>
 #include <functional>
 #include <map>
@@ -69,38 +71,12 @@ TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host_lb");
 
 namespace {
 
+using internal::kXdsOverrideHost;
+using internal::XdsOverrideHostLbConfig;
+
 //
 // xds_override_host LB policy
 //
-
-constexpr absl::string_view kXdsOverrideHost = "xds_override_host_experimental";
-
-// Config for stateful session LB policy.
-class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
- public:
-  XdsOverrideHostLbConfig() = default;
-
-  XdsOverrideHostLbConfig(const XdsOverrideHostLbConfig&) = delete;
-  XdsOverrideHostLbConfig& operator=(const XdsOverrideHostLbConfig&) = delete;
-
-  XdsOverrideHostLbConfig(XdsOverrideHostLbConfig&& other) = delete;
-  XdsOverrideHostLbConfig& operator=(XdsOverrideHostLbConfig&& other) = delete;
-
-  absl::string_view name() const override { return kXdsOverrideHost; }
-
-  RefCountedPtr<LoadBalancingPolicy::Config> child_config() const {
-    return child_config_;
-  }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
-
- private:
-  RefCountedPtr<LoadBalancingPolicy::Config> child_config_;
-};
-
-// xDS Cluster Impl LB policy.
 class XdsOverrideHostLb : public LoadBalancingPolicy {
  public:
   explicit XdsOverrideHostLb(Args args);
@@ -610,33 +586,6 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
 //
 // factory
 //
-const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
-    const JsonArgs&) {
-  static const auto kJsonLoader =
-      JsonObjectLoader<XdsOverrideHostLbConfig>()
-          // Child policy config is parsed in JsonPostLoad
-          .Finish();
-  return kJsonLoader;
-}
-
-void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
-                                           ValidationErrors* errors) {
-  ValidationErrors::ScopedField field(errors, ".childPolicy");
-  auto it = json.object_value().find("childPolicy");
-  if (it == json.object_value().end()) {
-    errors->AddError("field not present");
-  } else {
-    auto child_policy_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            it->second);
-    if (!child_policy_config.ok()) {
-      errors->AddError(child_policy_config.status().message());
-    } else {
-      child_config_ = std::move(*child_policy_config);
-    }
-  }
-}
-
 class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
@@ -668,4 +617,36 @@ void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<XdsOverrideHostLbFactory>());
 }
+
+namespace internal {
+
+const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
+    const JsonArgs&) {
+  static const auto kJsonLoader =
+      JsonObjectLoader<XdsOverrideHostLbConfig>()
+          // Child policy config is parsed in JsonPostLoad
+          .Finish();
+  return kJsonLoader;
+}
+
+void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                                           ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".childPolicy");
+  auto it = json.object_value().find("childPolicy");
+  if (it == json.object_value().end()) {
+    errors->AddError("field not present");
+  } else {
+    auto child_policy_config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            it->second);
+    if (!child_policy_config.ok()) {
+      errors->AddError(child_policy_config.status().message());
+    } else {
+      child_config_ = std::move(*child_policy_config);
+    }
+  }
+}
+
+}  // namespace internal
+
 }  // namespace grpc_core
