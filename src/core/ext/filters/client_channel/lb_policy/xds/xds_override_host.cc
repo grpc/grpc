@@ -79,6 +79,15 @@ int HealthStatusBitMask(const XdsHealthStatus& status) {
   return 0x1 << status.status();
 }
 
+XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
+  auto attribute = address.GetAttribute(XdsEndpointHealthStatusAttribute::kKey);
+  if (attribute == nullptr) {
+    return XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown);
+  }
+  return static_cast<const XdsEndpointHealthStatusAttribute*>(attribute)
+      ->status();
+}
+
 //
 // xds_override_host LB policy
 //
@@ -113,7 +122,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     XdsOverrideHostLb* policy() { return policy_.get(); }
 
-    void detach() { key_ = absl::nullopt; }
+    void Detach() { key_.reset(); }
 
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
@@ -136,7 +145,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
      private:
       std::unique_ptr<ConnectivityStateWatcherInterface> delegate_;
       RefCountedPtr<SubchannelWrapper> subchannel_;
-      XdsHealthStatus health_status_{XdsHealthStatus::kUnknown};
     };
 
     absl::optional<const std::string> key_;
@@ -216,42 +224,41 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   class SubchannelEntry {
    public:
-    void SetSubchannel(SubchannelWrapper* subchannel) {
-      if (subchannel_ != nullptr) {
-        subchannel_->detach();
+    using Handle =
+        absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>;
+
+    void SetSubchannel(Handle subchannel) {
+      auto current = GetSubchannel();
+      auto next = absl::visit(GetPointer(), subchannel);
+      if (current != nullptr && current != next) {
+        current->Detach();
       }
-      subchannel_ = subchannel;
-      locked_pointer_ = locked_ ? subchannel->Ref() : nullptr;
+      std::swap(subchannel_, subchannel);
     }
 
     void ResetSubchannel(SubchannelWrapper* expected) {
-      if (subchannel_ == expected) {
+      if (GetSubchannel() == expected) {
         subchannel_ = nullptr;
-        locked_pointer_ = nullptr;
       }
     }
 
-    RefCountedPtr<SubchannelWrapper> GetSubchannel() {
-      if (subchannel_ == nullptr) {
-        return nullptr;
-      }
-      return subchannel_->Ref();
-    }
-
-    void SetLocked(bool locked) {
-      locked_ = locked;
-      if (locked_ && subchannel_ != nullptr) {
-        locked_pointer_ = subchannel_->Ref();
-      } else {
-        locked_pointer_ = nullptr;
-      }
+    SubchannelWrapper* GetSubchannel() {
+      return absl::visit(GetPointer(), subchannel_);
     }
 
    private:
-    SubchannelWrapper* subchannel_ = nullptr;
-    /* We do not allow the subchannel to go away while it is draining */
-    RefCountedPtr<SubchannelWrapper> locked_pointer_;
-    bool locked_ = false;
+    struct GetPointer {
+      SubchannelWrapper* operator()(SubchannelWrapper* subchannel) const {
+        return subchannel;
+      }
+
+      SubchannelWrapper* operator()(
+          const RefCountedPtr<SubchannelWrapper>& refCounted) {
+        return refCounted.get();
+      }
+    };
+
+    Handle subchannel_ = nullptr;
   };
 
   ~XdsOverrideHostLb() override;
@@ -276,8 +283,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
       absl::string_view address);
-
-  XdsHealthStatus AddressHealthStatus(const ServerAddress& address);
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -465,16 +470,6 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-XdsHealthStatus XdsOverrideHostLb::AddressHealthStatus(
-    const ServerAddress& address) {
-  auto attribute = address.GetAttribute(XdsEndpointHealthStatusAttribute::kKey);
-  if (attribute == nullptr) {
-    return XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown);
-  }
-  return static_cast<const XdsEndpointHealthStatusAttribute*>(attribute)
-      ->status();
-}
-
 absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     absl::StatusOr<ServerAddressList> addresses,
     int override_host_status_mask) {
@@ -483,15 +478,15 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
   if (addresses.ok()) {
     child_addresses.emplace();
     for (const auto& address : *addresses) {
-      auto status = AddressHealthStatus(address);
+      auto status = GetAddressHealthStatus(address);
       bool locked = false;
-      if (status.status() == XdsHealthStatus::HealthStatus::kDraining) {
-        if ((override_host_status_mask & HealthStatusBitMask(status)) == 0) {
-          continue;
-        }
-        locked = true;
-      } else {
+      if (status.status() != XdsHealthStatus::HealthStatus::kDraining) {
         child_addresses->push_back(address);
+      } else if ((override_host_status_mask & HealthStatusBitMask(status)) ==
+                 0) {
+        continue;
+      } else {
+        locked = true;
       }
       auto key = grpc_sockaddr_to_string(&address.address(), false);
       if (key.ok()) {
@@ -512,10 +507,14 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
   for (const auto& key_and_lock : keys_and_lock) {
     auto it = subchannel_map_.find(key_and_lock.first);
     if (it == subchannel_map_.end()) {
-      subchannel_map_.emplace(key_and_lock.first, SubchannelEntry())
-          .first->second.SetLocked(key_and_lock.second);
+      subchannel_map_.emplace(key_and_lock.first, SubchannelEntry());
     } else {
-      it->second.SetLocked(key_and_lock.second);
+      SubchannelWrapper* subchannel = it->second.GetSubchannel();
+      if (subchannel != nullptr && key_and_lock.second) {
+        it->second.SetSubchannel(subchannel->Ref());
+      } else {
+        it->second.SetSubchannel(subchannel);
+      }
     }
   }
   return child_addresses;
@@ -535,7 +534,14 @@ XdsOverrideHostLb::AdoptSubchannel(
     MutexLock lock(&subchannel_map_mu_);
     auto it = subchannel_map_.find(*key);
     if (it != subchannel_map_.end()) {
-      it->second.SetSubchannel(wrapper.get());
+      auto status = GetAddressHealthStatus(address);
+      if (status.status() == XdsHealthStatus::HealthStatus::kDraining &&
+          (config_->override_host_status_mask() &
+           HealthStatusBitMask(status))) {
+        it->second.SetSubchannel(wrapper);
+      } else {
+        it->second.SetSubchannel(wrapper.get());
+      }
     }
   }
   return wrapper;
@@ -555,7 +561,8 @@ XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
   if (it != subchannel_map_.end()) {
-    return it->second.GetSubchannel();
+    auto subchannel = it->second.GetSubchannel();
+    return subchannel == nullptr ? nullptr : subchannel->Ref();
   }
   return nullptr;
 }
