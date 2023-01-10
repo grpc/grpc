@@ -14,110 +14,118 @@
 
 import logging
 import threading
+import types
+from typing import Any, Callable, Optional, Tuple, Iterator
 
 import grpc
+from grpc._typing import MetadataType
+from grpc_testing import _common
 
 _NOT_YET_OBSERVED = object()
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
-def _cancel(handler):
+def _cancel(handler: _common.ChannelRpcHandler) -> bool:
     return handler.cancel(grpc.StatusCode.CANCELLED, 'Locally cancelled!')
 
 
-def _is_active(handler):
+def _is_active(handler: _common.ChannelRpcHandler) -> bool:
     return handler.is_active()
 
 
-def _time_remaining(unused_handler):
+def _time_remaining(unused_handler: _common.ChannelRpcHandler) -> float:
     raise NotImplementedError()
 
 
-def _add_callback(handler, callback):
+def _add_callback(handler: _common.ChannelRpcHandler,
+                  callback: Callable) -> None:
     return handler.add_callback(callback)
 
 
-def _initial_metadata(handler):
+def _initial_metadata(
+        handler: _common.ChannelRpcHandler) -> Optional[MetadataType]:
     return handler.initial_metadata()
 
 
-def _trailing_metadata(handler):
+def _trailing_metadata(
+        handler: _common.ChannelRpcHandler) -> Optional[MetadataType]:
     trailing_metadata, unused_code, unused_details = handler.termination()
     return trailing_metadata
 
 
-def _code(handler):
+def _code(handler: _common.ChannelRpcHandler) -> grpc.StatusCode:
     unused_trailing_metadata, code, unused_details = handler.termination()
     return code
 
 
-def _details(handler):
+def _details(handler: _common.ChannelRpcHandler) -> str:
     unused_trailing_metadata, unused_code, details = handler.termination()
     return details
 
 
 class _Call(grpc.Call):
+    _hanlder: _common.ChannelRpcHandler
 
-    def __init__(self, handler):
+    def __init__(self, handler: _common.ChannelRpcHandler):
         self._handler = handler
 
-    def cancel(self):
+    def cancel(self) -> bool:
         _cancel(self._handler)
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return _is_active(self._handler)
 
-    def time_remaining(self):
+    def time_remaining(self) -> float:
         return _time_remaining(self._handler)
 
-    def add_callback(self, callback):
+    def add_callback(self, callback: Callable) -> None:
         return _add_callback(self._handler, callback)
 
-    def initial_metadata(self):
+    def initial_metadata(self) -> Optional[MetadataType]:
         return _initial_metadata(self._handler)
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         return _trailing_metadata(self._handler)
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         return _code(self._handler)
 
-    def details(self):
+    def details(self) -> str:
         return _details(self._handler)
 
 
 class _RpcErrorCall(grpc.RpcError, grpc.Call):
 
-    def __init__(self, handler):
+    def __init__(self, handler: _common.ChannelRpcHandler):
         self._handler = handler
 
-    def cancel(self):
+    def cancel(self) -> bool:
         _cancel(self._handler)
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return _is_active(self._handler)
 
-    def time_remaining(self):
+    def time_remaining(self) -> float:
         return _time_remaining(self._handler)
 
-    def add_callback(self, callback):
+    def add_callback(self, callback: Callable) -> None:
         return _add_callback(self._handler, callback)
 
-    def initial_metadata(self):
+    def initial_metadata(self) -> Optional[MetadataType]:
         return _initial_metadata(self._handler)
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         return _trailing_metadata(self._handler)
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         return _code(self._handler)
 
-    def details(self):
+    def details(self) -> str:
         return _details(self._handler)
 
 
-def _next(handler):
+def _next(handler: _common.ChannelRpcHandler) -> Any:
     read = handler.take_response()
     if read.code is None:
         return read.response
@@ -135,7 +143,8 @@ class _HandlerExtras(object):
         self.cancelled = False
 
 
-def _with_extras_cancel(handler, extras):
+def _with_extras_cancel(handler: _common.ChannelRpcHandler,
+                        extras: _HandlerExtras) -> bool:
     with extras.condition:
         if handler.cancel(grpc.StatusCode.CANCELLED, 'Locally cancelled!'):
             extras.cancelled = True
@@ -144,20 +153,21 @@ def _with_extras_cancel(handler, extras):
             return False
 
 
-def _extras_without_cancelled(extras):
+def _extras_without_cancelled(extras: _HandlerExtras):
     with extras.condition:
         return extras.cancelled
 
 
-def _running(handler):
+def _running(handler) -> bool:
     return handler.is_active()
 
 
-def _done(handler):
+def _done(handler) -> bool:
     return not handler.is_active()
 
 
-def _with_extras_unary_response(handler, extras):
+def _with_extras_unary_response(handler: _common.ChannelRpcHandler,
+                                extras: _HandlerExtras) -> Any:
     with extras.condition:
         if extras.unary_response is _NOT_YET_OBSERVED:
             read = handler.take_response()
@@ -170,73 +180,81 @@ def _with_extras_unary_response(handler, extras):
             return extras.unary_response
 
 
-def _exception(unused_handler):
+def _exception(
+        unused_handler: _common.ChannelRpcHandler) -> Optional[Exception]:
     raise NotImplementedError('TODO!')
 
 
-def _traceback(unused_handler):
+def _traceback(
+        unused_handler: _common.ChannelRpcHandler
+) -> Optional[types.TracebackType]:
     raise NotImplementedError('TODO!')
 
 
-def _add_done_callback(handler, callback, future):
+def _add_done_callback(handler: _common.ChannelRpcHandler, callback: Callable,
+                       future) -> None:
     adapted_callback = lambda: callback(future)
     if not handler.add_callback(adapted_callback):
         callback(future)
 
 
 class _FutureCall(grpc.Future, grpc.Call):
+    _handler: _common.ChannelRpcHandler
+    _extras: _HandlerExtras
 
-    def __init__(self, handler, extras):
+    def __init__(self, handler: _common.ChannelRpcHandler,
+                 extras: _HandlerExtras):
         self._handler = handler
         self._extras = extras
 
-    def cancel(self):
+    def cancel(self) -> bool:
         return _with_extras_cancel(self._handler, self._extras)
 
-    def cancelled(self):
+    def cancelled(self) -> bool:
         return _extras_without_cancelled(self._extras)
 
-    def running(self):
+    def running(self) -> bool:
         return _running(self._handler)
 
-    def done(self):
+    def done(self) -> bool:
         return _done(self._handler)
 
-    def result(self):
+    def result(self) -> Any:
         return _with_extras_unary_response(self._handler, self._extras)
 
-    def exception(self):
+    def exception(self) -> Optional[Exception]:
         return _exception(self._handler)
 
-    def traceback(self):
+    def traceback(self) -> Optional[types.TracebackType]:
         return _traceback(self._handler)
 
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn: Callable) -> None:
         _add_done_callback(self._handler, fn, self)
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return _is_active(self._handler)
 
-    def time_remaining(self):
+    def time_remaining(self) -> float:
         return _time_remaining(self._handler)
 
-    def add_callback(self, callback):
+    def add_callback(self, callback: Callable) -> None:
         return _add_callback(self._handler, callback)
 
-    def initial_metadata(self):
+    def initial_metadata(self) -> Optional[MetadataType]:
         return _initial_metadata(self._handler)
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         return _trailing_metadata(self._handler)
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         return _code(self._handler)
 
-    def details(self):
+    def details(self) -> str:
         return _details(self._handler)
 
 
-def consume_requests(request_iterator, handler):
+def consume_requests(request_iterator: Iterator,
+                     handler: _common.ChannelRpcHandler) -> None:
 
     def _consume():
         while True:
@@ -257,7 +275,7 @@ def consume_requests(request_iterator, handler):
     consumption.start()
 
 
-def blocking_unary_response(handler):
+def blocking_unary_response(handler: _common.ChannelRpcHandler) -> Any:
     read = handler.take_response()
     if read.code is None:
         unused_trailing_metadata, code, unused_details = handler.termination()
@@ -269,7 +287,8 @@ def blocking_unary_response(handler):
         raise _RpcErrorCall(handler)
 
 
-def blocking_unary_response_with_call(handler):
+def blocking_unary_response_with_call(
+        handler: _common.ChannelRpcHandler) -> Tuple[Any, _Call]:
     read = handler.take_response()
     if read.code is None:
         unused_trailing_metadata, code, unused_details = handler.termination()
@@ -281,44 +300,45 @@ def blocking_unary_response_with_call(handler):
         raise _RpcErrorCall(handler)
 
 
-def future_call(handler):
+def future_call(handler: _common.ChannelRpcHandler) -> _FutureCall:
     return _FutureCall(handler, _HandlerExtras())
 
 
 class ResponseIteratorCall(grpc.Call):
+    _hanlder: _common.ChannelRpcHandler
 
-    def __init__(self, handler):
+    def __init__(self, handler: _common.ChannelRpcHandler):
         self._handler = handler
 
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         return _next(self._handler)
 
-    def next(self):
+    def next(self) -> Any:
         return _next(self._handler)
 
-    def cancel(self):
+    def cancel(self) -> bool:
         _cancel(self._handler)
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return _is_active(self._handler)
 
-    def time_remaining(self):
+    def time_remaining(self) -> float:
         return _time_remaining(self._handler)
 
-    def add_callback(self, callback):
+    def add_callback(self, callback: Callable) -> None:
         return _add_callback(self._handler, callback)
 
-    def initial_metadata(self):
+    def initial_metadata(self) -> Optional[MetadataType]:
         return _initial_metadata(self._handler)
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         return _trailing_metadata(self._handler)
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         return _code(self._handler)
 
-    def details(self):
+    def details(self) -> str:
         return _details(self._handler)

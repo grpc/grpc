@@ -31,6 +31,7 @@ ResponseType = TypeVar('ResponseType')
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 MetadataType = Sequence[Tuple[Union[str, bytes], Union[str, bytes]]]
+TuplifiedMetadataType = Tuple[Tuple[Union[str, bytes], Union[str, bytes]]]
 ChannelArgumentType = Tuple[Union[str, bytes], Any]
 DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
