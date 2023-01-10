@@ -114,6 +114,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/proto/grpc/testing/xds/v3:client_side_weighted_round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:ring_hash_proto",
         "//src/proto/grpc/testing/xds/v3:round_robin_proto",

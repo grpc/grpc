@@ -479,6 +479,8 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
@@ -492,12 +494,14 @@ libs:
   - src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h
   - src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.h
   - src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h
@@ -647,12 +651,14 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.h
@@ -1253,6 +1259,8 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
@@ -1266,12 +1274,14 @@ libs:
   - src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
   - src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.c
   - src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
@@ -1421,12 +1431,14 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c
@@ -5234,12 +5246,14 @@ targets:
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h
@@ -5341,12 +5355,14 @@ targets:
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
@@ -13173,6 +13189,7 @@ targets:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.proto
   - src/proto/grpc/testing/xds/v3/cluster.proto
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
@@ -13534,12 +13551,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
+  hash: 08f7828a7ae288ef379db9b7f57af73d77a817c22fd0fc42093a95be3e54194a
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
+  strip_prefix: data-plane-api-5962b1204f4b7b0a2ed7622d0149727f602ae74c
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/
