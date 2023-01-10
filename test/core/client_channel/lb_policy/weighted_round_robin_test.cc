@@ -104,7 +104,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   // ensures that when the timer callback instantiates its own ExecCtx
   // and therefore its own ScopedTimeCache, it continues to see the time
   // that we are injecting in the test.
-  class TestTimeCache : public Timestamp::ScopedSource {
+  class TestTimeCache final : public Timestamp::ScopedSource {
    public:
     TestTimeCache() : cached_time_(previous()->Now()) {}
 
