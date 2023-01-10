@@ -205,6 +205,9 @@ TEST_F(ForEachTest, NextResultHeldThroughCallback) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

@@ -387,7 +387,7 @@ class PipeReceiver {
  private:
   friend struct Pipe<T>;
   explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
-  pipe_detail::Center<T>* center_;
+  RefCountedPtr<pipe_detail::Center<T>> center_;
 };
 
 namespace pipe_detail {
