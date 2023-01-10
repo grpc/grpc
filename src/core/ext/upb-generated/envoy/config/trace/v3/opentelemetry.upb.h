@@ -72,6 +72,12 @@ UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_clear_grpc_service(con
 UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenTelemetryConfig_grpc_service(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_GrpcService*);
 }
+UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_clear_service_name(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_config_trace_v3_OpenTelemetryConfig_service_name(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);
+}
 
 UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_set_grpc_service(envoy_config_trace_v3_OpenTelemetryConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   _upb_sethas(msg, 1);
@@ -85,6 +91,9 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenTe
     envoy_config_trace_v3_OpenTelemetryConfig_set_grpc_service(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_set_service_name(envoy_config_trace_v3_OpenTelemetryConfig *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = value;
 }
 
 extern const upb_MiniTable_File envoy_config_trace_v3_opentelemetry_proto_upb_file_layout;

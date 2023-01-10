@@ -25,7 +25,9 @@ typedef enum {
   envoy_type_v3_SECOND = 1,
   envoy_type_v3_MINUTE = 2,
   envoy_type_v3_HOUR = 3,
-  envoy_type_v3_DAY = 4
+  envoy_type_v3_DAY = 4,
+  envoy_type_v3_MONTH = 5,
+  envoy_type_v3_YEAR = 6
 } envoy_type_v3_RateLimitUnit;
 
 
