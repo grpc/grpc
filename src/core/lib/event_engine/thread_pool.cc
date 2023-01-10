@@ -128,8 +128,9 @@ bool ThreadPool::Queue::Step() {
   switch (state_) {
     case State::kRunning:
       break;
-    case State::kShutdown:
     case State::kForking:
+      return false;
+    case State::kShutdown:
       if (!callbacks_.empty()) break;
       return false;
   }
