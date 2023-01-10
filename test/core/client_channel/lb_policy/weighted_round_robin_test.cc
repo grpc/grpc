@@ -427,9 +427,8 @@ TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = SendInitialUpdateAndWaitForConnected(
       kAddresses,
-      ConfigBuilder()
-          .SetEnableOobLoadReport(true)
-          .SetOobReportingPeriod(Duration::Seconds(5)));
+      ConfigBuilder().SetEnableOobLoadReport(true).SetOobReportingPeriod(
+          Duration::Seconds(5)));
   ASSERT_NE(picker, nullptr);
   ReportOobBackendMetrics({{kAddresses[0], {100, 0.9}},
                            {kAddresses[1], {100, 0.3}},
