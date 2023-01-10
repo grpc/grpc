@@ -20,6 +20,7 @@
 
 #include "src/cpp/ext/filters/logging/logging_filter.h"
 
+#include <inttypes.h>
 #include <limits.h>
 #include <stdint.h>
 
