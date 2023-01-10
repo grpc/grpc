@@ -23,8 +23,6 @@ cd $(dirname $0)/../../..
 
 export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-# Ruby builds are disabled on this branch because they're broken.
-# TODO(apolcyn): re-enable and fix if a ruby patch release on 1.46.x is needed
 export PREPARE_BUILD_INSTALL_DEPS_RUBY=false
 export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
