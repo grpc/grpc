@@ -61,6 +61,7 @@ void RegisterOpenCensusViewsForGcpObservability() {
   // Register client default views for GCP observability
   ClientStartedRpcs().RegisterForExport();
   ClientCompletedRpcs().RegisterForExport();
+  ClientRoundtripLatency().RegisterForExport();
   ClientSentCompressedMessageBytesPerRpc().RegisterForExport();
   ClientReceivedCompressedMessageBytesPerRpc().RegisterForExport();
   // Register server default views for GCP observability
