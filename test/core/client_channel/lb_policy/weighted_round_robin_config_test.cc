@@ -52,7 +52,8 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
       "      \"enableOobLoadReport\": 5,\n"
       "      \"oobReportingPeriod\": true,\n"
       "      \"blackoutPeriod\": [],\n"
-      "      \"weightUpdatePeriod\": {}\n"
+      "      \"weightUpdatePeriod\": {},\n"
+      "      \"weightExpirationPeriod\": {}\n"
       "    }\n"
       "  }]\n"
       "}\n";
@@ -66,6 +67,7 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
                 "field:blackoutPeriod error:is not a string; "
                 "field:enableOobLoadReport error:is not a boolean; "
                 "field:oobReportingPeriod error:is not a string; "
+                "field:weightExpirationPeriod error:is not a string; "
                 "field:weightUpdatePeriod error:is not a string]]"));
 }
 
