@@ -22,7 +22,6 @@
 
 #include <inttypes.h>
 #include <limits.h>
-#include <stdint.h>
 
 #include <algorithm>
 #include <cstddef>
