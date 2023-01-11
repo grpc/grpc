@@ -27,7 +27,7 @@ namespace grpc {
 
 class CronetChannelCredentialsImpl final : public ChannelCredentials {
  public:
-  CronetChannelCredentialsImpl(void* engine) : engine_(engine) {}
+  explicit CronetChannelCredentialsImpl(void* engine) : engine_(engine) {}
 
   std::shared_ptr<grpc::Channel> CreateChannelImpl(
       const string& target, const grpc::ChannelArguments& args) override {

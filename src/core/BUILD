@@ -738,6 +738,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_wakeup_scheduler",
+    hdrs = [
+        "lib/promise/event_engine_wakeup_scheduler.h",
+    ],
+    language = "c++",
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_set",
     external_deps = [
         "absl/container:flat_hash_set",
@@ -1621,6 +1634,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "event_engine_poller",
@@ -1656,6 +1670,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "common_event_engine_closures",
@@ -2638,6 +2653,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",

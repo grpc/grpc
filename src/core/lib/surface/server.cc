@@ -50,6 +50,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/mpscq.h"
@@ -439,7 +440,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t /*request_queue_index*/,
                                       RequestedCall* /*call*/) final {
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   Server* server() const override { return server_; }

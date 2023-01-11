@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
@@ -104,9 +105,7 @@ void MaybeUpdateServerInitialMetadata(
     server_initial_metadata->Append(
         "set-cookie", Slice::FromCopiedString(absl::StrJoin(parts, "; ")),
         [](absl::string_view error, const Slice&) {
-          gpr_log(GPR_ERROR, "ERROR ADDING set-cookie METADATA: %s",
-                  std::string(error).c_str());
-          GPR_ASSERT(false);
+          Crash(absl::StrCat("ERROR ADDING set-cookie METADATA: ", error));
         });
   }
 }
