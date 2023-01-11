@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -27,6 +29,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -77,8 +80,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       {
         std::lock_guard<std::mutex> lock(mu);
         if (!shutting_down && !ok) {
-          gpr_log(GPR_INFO, "!ok on request %d", n);
-          abort();
+          grpc_core::Crash(absl::StrFormat("!ok on request %d", n));
         }
         if (shutting_down && !ok) {
           // Failed connection due to shutdown, continue flushing the CQ.

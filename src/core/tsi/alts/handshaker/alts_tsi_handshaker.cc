@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

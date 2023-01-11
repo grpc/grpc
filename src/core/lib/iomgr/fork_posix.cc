@@ -32,6 +32,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"

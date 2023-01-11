@@ -28,6 +28,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"

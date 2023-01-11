@@ -24,6 +24,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(bool, enable_log_reporter, true,

@@ -28,6 +28,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/b64.h"

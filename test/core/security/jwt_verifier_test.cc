@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/slice/b64.h"

@@ -35,6 +35,7 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -42,6 +43,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
@@ -521,10 +523,9 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
     maybe_wake_one_watcher_locked(fd);
   } else {
     // upcallptr was set to a different closure.  This is an error!
-    gpr_log(GPR_ERROR,
-            "User called a notify_on function with a previous callback still "
-            "pending");
-    abort();
+    grpc_core::Crash(
+        "User called a notify_on function with a previous callback still "
+        "pending");
   }
 }
 
@@ -1426,8 +1427,7 @@ int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
   if (timeout == 0) {
     return real_poll_function(fds, nfds, 0);
   } else {
-    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
-    GPR_ASSERT(false);
+    grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     return -1;
   }
 }

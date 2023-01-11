@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -130,10 +131,9 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
         Unref();
         return;
       }
-      gpr_log(GPR_ERROR,
-              "grpc_channel_watch_connectivity_state called on "
-              "something that is not a client channel");
-      GPR_ASSERT(false);
+      Crash(
+          "grpc_channel_watch_connectivity_state called on something that is "
+          "not a client channel");
     }
     // Ref from object creation is held by the watcher callback.
     auto* watcher_timer_init_state = new WatcherTimerInitState(

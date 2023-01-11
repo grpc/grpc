@@ -22,6 +22,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -36,6 +37,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
@@ -195,8 +197,7 @@ class Verifier {
         }
         maybe_expectations_.erase(it2);
       } else {
-        gpr_log(GPR_ERROR, "Unexpected tag: %p", got_tag);
-        abort();
+        grpc_core::Crash(absl::StrFormat("Unexpected tag: %p", got_tag));
       }
     }
   }

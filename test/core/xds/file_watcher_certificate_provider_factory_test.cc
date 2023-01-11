@@ -174,7 +174,7 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
 }
 
 TEST(FileWatcherConfigTest, EmptyJsonObject) {
-  std::string json_str = absl::StrFormat("{}");
+  std::string json_str = "{}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;

@@ -22,6 +22,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 using grpc::reflection::v1alpha::ErrorResponse;
 using grpc::reflection::v1alpha::ListServiceResponse;
 using grpc::reflection::v1alpha::ServerReflection;

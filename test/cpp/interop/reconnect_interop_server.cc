@@ -33,6 +33,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

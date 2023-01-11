@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 

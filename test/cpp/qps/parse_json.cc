@@ -20,7 +20,11 @@
 
 #include <string>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc {
 namespace testing {
@@ -37,8 +41,7 @@ void ParseJson(const std::string& json, const std::string& type,
     std::string errmsg(status.message());
     gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
             status.code(), errmsg.c_str());
-    gpr_log(GPR_ERROR, "JSON: %s", json.c_str());
-    abort();
+    grpc_core::Crash(absl::StrFormat("JSON: %s", json.c_str()));
   }
   GPR_ASSERT(msg->ParseFromString(binary));
 }

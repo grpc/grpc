@@ -41,6 +41,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -465,12 +466,10 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-bool PosixEventEngine::IsWorkerThread() {
-  GPR_ASSERT(false && "unimplemented");
-}
+bool PosixEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 
 bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -523,8 +522,8 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   }
   return connection_cancel_success;
 #else   // GRPC_POSIX_SOCKET_TCP
-  GPR_ASSERT(false &&
-             "EventEngine::CancelConnect is not supported on this platform");
+  grpc_core::Crash(
+      "EventEngine::CancelConnect is not supported on this platform");
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
@@ -546,7 +545,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
                          (*socket).mapped_target_addr,
                          std::move(memory_allocator), options, timeout);
 #else   // GRPC_POSIX_SOCKET_TCP
-  GPR_ASSERT(false && "EventEngine::Connect is not supported on this platform");
+  grpc_core::Crash("EventEngine::Connect is not supported on this platform");
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
@@ -562,8 +561,8 @@ PosixEventEngine::CreateListener(
       std::move(memory_allocator_factory), poller_manager_->Poller(),
       shared_from_this());
 #else   // GRPC_POSIX_SOCKET_TCP
-  GPR_ASSERT(false &&
-             "EventEngine::CreateListener is not supported on this platform");
+  grpc_core::Crash(
+      "EventEngine::CreateListener is not supported on this platform");
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 

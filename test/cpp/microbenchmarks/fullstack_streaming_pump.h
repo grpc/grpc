@@ -77,7 +77,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
         } else if (t == tag(1)) {
           break;
         } else {
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
         }
       }
     }
@@ -144,7 +144,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
         } else if (t == tag(1)) {
           break;
         } else {
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
         }
       }
     }

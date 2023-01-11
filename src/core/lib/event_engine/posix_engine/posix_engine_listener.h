@@ -203,6 +203,8 @@ class PosixEngineListener
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
+#include "src/core/lib/gprpp/crash.h"
+
 class PosixEngineListener
     : public grpc_event_engine::experimental::EventEngine::Listener {
  public:
@@ -210,12 +212,12 @@ class PosixEngineListener
   ~PosixEngineListener() override = default;
   absl::StatusOr<int> Bind(const grpc_event_engine::experimental::EventEngine::
                                ResolvedAddress& /*addr*/) override {
-    GPR_ASSERT(false &&
-               "EventEngine::Listener::Bind not supported on this platform");
+    grpc_core::Crash(
+        "EventEngine::Listener::Bind not supported on this platform");
   }
   absl::Status Start() override {
-    GPR_ASSERT(false &&
-               "EventEngine::Listener::Start not supported on this platform");
+    grpc_core::Crash(
+        "EventEngine::Listener::Start not supported on this platform");
   }
 };
 

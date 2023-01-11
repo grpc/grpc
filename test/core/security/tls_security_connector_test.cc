@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"

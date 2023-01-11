@@ -34,6 +34,7 @@
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/proto/grpc/testing/empty.pb.h"

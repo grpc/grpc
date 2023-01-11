@@ -33,6 +33,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"

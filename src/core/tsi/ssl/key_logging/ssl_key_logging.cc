@@ -20,6 +20,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"

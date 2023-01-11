@@ -19,6 +19,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
@@ -29,6 +31,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
@@ -147,15 +150,15 @@ static void verify_tags(gpr_timespec deadline) {
         if (tags_valid[i]) {
           gpr_log(GPR_DEBUG, "Verifying tag %d", static_cast<int>(i));
           if (tags[i] != tags_expected[i]) {
-            gpr_log(GPR_ERROR, "Got wrong result (%d instead of %d) for tag %d",
-                    tags[i], tags_expected[i], static_cast<int>(i));
-            GPR_ASSERT(false);
+            grpc_core::Crash(absl::StrFormat(
+                "Got wrong result (%d instead of %d) for tag %d", tags[i],
+                tags_expected[i], static_cast<int>(i)));
           }
           tags_valid[i] = false;
           tags_needed[i] = false;
         } else if (done) {
-          gpr_log(GPR_ERROR, "Didn't get tag %d", static_cast<int>(i));
-          GPR_ASSERT(false);
+          grpc_core::Crash(
+              absl::StrFormat("Didn't get tag %d", static_cast<int>(i)));
         }
       }
     }
@@ -169,9 +172,9 @@ static void verify_tags(gpr_timespec deadline) {
     if (done) {
       for (size_t i = 0; i < kAvailableTags; i++) {
         if (tags_valid[i]) {
-          gpr_log(GPR_ERROR, "Got unexpected tag %d and result %d",
-                  static_cast<int>(i), tags[i]);
-          GPR_ASSERT(false);
+          grpc_core::Crash(
+              absl::StrFormat("Got unexpected tag %d and result %d",
+                              static_cast<int>(i), tags[i]));
         }
         tags_valid[i] = false;
       }

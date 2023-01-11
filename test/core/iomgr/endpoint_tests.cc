@@ -28,6 +28,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"

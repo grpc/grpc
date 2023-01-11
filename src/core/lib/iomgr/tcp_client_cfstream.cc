@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"

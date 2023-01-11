@@ -50,6 +50,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"

@@ -24,6 +24,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 void* gpr_malloc(size_t size) {
   void* p;
   if (size == 0) return nullptr;

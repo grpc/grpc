@@ -15,8 +15,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 
-#include <stdlib.h>
-
 #include <atomic>
 #include <cstdint>
 
@@ -27,6 +25,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
@@ -149,10 +148,9 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
         }
 
         // There is already a closure!. This indicates a bug in the code.
-        gpr_log(GPR_ERROR,
-                "LockfreeEvent::NotifyOn: notify_on called with a previous "
-                "callback still pending");
-        abort();
+        grpc_core::Crash(
+            "LockfreeEvent::NotifyOn: notify_on called with a previous "
+            "callback still pending");
       }
     }
   }

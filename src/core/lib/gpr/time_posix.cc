@@ -32,6 +32,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;
   if (sizeof(time_t) < sizeof(int64_t)) {

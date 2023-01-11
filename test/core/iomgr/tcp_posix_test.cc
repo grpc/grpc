@@ -39,6 +39,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"

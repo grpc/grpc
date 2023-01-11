@@ -29,8 +29,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -50,10 +50,10 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
              SliceBuffer* data, const WriteArgs* args) override;
   void Shutdown();
   EventEngine::ResolvedAddress& GetPeerAddress() const override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   EventEngine::ResolvedAddress& GetLocalAddress() const override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
 
  private:
@@ -168,29 +168,27 @@ class PosixOracleEventEngine final : public EventEngine {
                            EventEngine::Duration timeout) override;
 
   bool CancelConnect(ConnectionHandle /*handle*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   bool IsWorkerThread() override { return false; };
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& /*options*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
-  void Run(Closure* /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
-  }
+  void Run(Closure* /*closure*/) override { grpc_core::Crash("unimplemented"); }
   void Run(absl::AnyInvocable<void()> /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   TaskHandle RunAfter(EventEngine::Duration /*duration*/,
                       Closure* /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   TaskHandle RunAfter(EventEngine::Duration /*duration*/,
                       absl::AnyInvocable<void()> /*closure*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
   bool Cancel(TaskHandle /*handle*/) override {
-    GPR_ASSERT(false && "unimplemented");
+    grpc_core::Crash("unimplemented");
   }
 };
 

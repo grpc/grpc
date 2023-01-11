@@ -49,6 +49,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -159,11 +160,10 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     // get the next <ip>,<port> (v4 or v6)
     size_t next_comma = expected_addrs.find(',');
     if (next_comma == std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Missing ','. Expected_addrs arg should be a semicolon-separated "
-              "list of <ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
-              expected_addrs.c_str());
-      abort();
+      grpc_core::Crash(absl::StrFormat(
+          "Missing ','. Expected_addrs arg should be a semicolon-separated "
+          "list of <ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
+          expected_addrs.c_str()));
     }
     std::string next_addr = expected_addrs.substr(0, next_comma);
     expected_addrs = expected_addrs.substr(next_comma + 1, std::string::npos);
@@ -180,10 +180,9 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
         expected_addrs.substr(next_semicolon + 1, std::string::npos);
   }
   if (out.empty()) {
-    gpr_log(GPR_ERROR,
-            "expected_addrs arg should be a semicolon-separated list of "
-            "<ip-port>,<bool> pairs");
-    abort();
+    grpc_core::Crash(
+        "expected_addrs arg should be a semicolon-separated list of "
+        "<ip-port>,<bool> pairs");
   }
   return out;
 }
@@ -476,11 +475,10 @@ class CheckingResultHandler : public ResultHandler {
             result.addresses->size(),
             balancer_addresses == nullptr ? 0L : balancer_addresses->size());
     if (args->expected_addrs.size() != found_lb_addrs.size()) {
-      gpr_log(GPR_DEBUG,
-              "found lb addrs size is: %" PRIdPTR
-              ". expected addrs size is %" PRIdPTR,
-              found_lb_addrs.size(), args->expected_addrs.size());
-      abort();
+      grpc_core::Crash(absl::StrFormat("found lb addrs size is: %" PRIdPTR
+                                       ". expected addrs size is %" PRIdPTR,
+                                       found_lb_addrs.size(),
+                                       args->expected_addrs.size()));
     }
     if (absl::GetFlag(FLAGS_do_ordered_address_comparison) == "True") {
       EXPECT_EQ(args->expected_addrs, found_lb_addrs);
@@ -601,8 +599,7 @@ void RunResolvesRelevantRecordsTest(
                                 absl::GetFlag(FLAGS_local_dns_server_address),
                                 absl::GetFlag(FLAGS_target_name));
   } else {
-    gpr_log(GPR_DEBUG, "Invalid value for --inject_broken_nameserver_list.");
-    abort();
+    grpc_core::Crash("Invalid value for --inject_broken_nameserver_list.");
   }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
           absl::GetFlag(FLAGS_enable_srv_queries).c_str());
@@ -612,8 +609,7 @@ void RunResolvesRelevantRecordsTest(
   if (absl::GetFlag(FLAGS_enable_srv_queries) == "True") {
     resolver_args = resolver_args.Set(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
   } else if (absl::GetFlag(FLAGS_enable_srv_queries) != "False") {
-    gpr_log(GPR_DEBUG, "Invalid value for --enable_srv_queries.");
-    abort();
+    grpc_core::Crash("Invalid value for --enable_srv_queries.");
   }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_txt_queries: %s",
           absl::GetFlag(FLAGS_enable_txt_queries).c_str());
@@ -628,8 +624,7 @@ void RunResolvesRelevantRecordsTest(
     resolver_args =
         resolver_args.Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, false);
   } else if (absl::GetFlag(FLAGS_enable_txt_queries) != "False") {
-    gpr_log(GPR_DEBUG, "Invalid value for --enable_txt_queries.");
-    abort();
+    grpc_core::Crash("Invalid value for --enable_txt_queries.");
   }
   resolver_args = resolver_args.SetObject(GetDefaultEventEngine());
   // create resolver and resolve
@@ -682,8 +677,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   if (absl::GetFlag(FLAGS_target_name).empty()) {
-    gpr_log(GPR_ERROR, "Missing target_name param.");
-    abort();
+    grpc_core::Crash("Missing target_name param.");
   }
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

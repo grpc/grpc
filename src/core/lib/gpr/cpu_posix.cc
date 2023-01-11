@@ -30,6 +30,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 
 static long ncpus = 0;
 

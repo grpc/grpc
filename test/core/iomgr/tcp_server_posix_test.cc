@@ -48,6 +48,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/error.h"

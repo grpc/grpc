@@ -36,6 +36,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"

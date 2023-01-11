@@ -22,9 +22,9 @@
 //
 //
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
@@ -53,6 +53,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -203,8 +204,7 @@ static const char* fd_type_str(fd_type fdtype) {
   } else if (fdtype == SERVER_FD) {
     return "server";
   } else {
-    gpr_log(GPR_ERROR, "Unexpected fd_type %d", fdtype);
-    abort();
+    grpc_core::Crash(absl::StrFormat("Unexpected fd_type %d", fdtype));
   }
 }
 

@@ -15,7 +15,6 @@
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 
 #include <poll.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -26,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
@@ -300,9 +301,8 @@ PosixOracleListener::PosixOracleListener(
       on_shutdown_(std::move(on_shutdown)),
       memory_allocator_factory_(std::move(memory_allocator_factory)) {
   if (pipe(pipefd_) == -1) {
-    gpr_log(GPR_ERROR, "Error creating pipe: %s",
-            grpc_core::StrError(errno).c_str());
-    abort();
+    grpc_core::Crash(absl::StrFormat("Error creating pipe: %s",
+                                     grpc_core::StrError(errno).c_str()));
   }
 }
 

@@ -37,6 +37,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"

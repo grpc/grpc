@@ -30,6 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/tchar.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {

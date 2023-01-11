@@ -44,6 +44,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);

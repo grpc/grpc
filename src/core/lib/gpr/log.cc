@@ -21,11 +21,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/global_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
@@ -48,8 +51,13 @@ static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
 static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "UNREACHABLE CODE: %s", reason);
-  abort();
+  grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
+                   grpc_core::SourceLocation(file, line));
+}
+
+void gpr_assertion_failed(const char* filename, int line, const char* message) {
+  grpc_core::Crash(absl::StrCat("ASSERTION FAILED: ", message),
+                   grpc_core::SourceLocation(filename, line));
 }
 
 const char* gpr_log_severity_string(gpr_log_severity severity) {

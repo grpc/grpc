@@ -28,6 +28,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 
 grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,

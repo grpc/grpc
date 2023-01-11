@@ -29,6 +29,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 void gpr_mu_init(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_init(&mu->mutex, nullptr) == 0);

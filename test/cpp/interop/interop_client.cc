@@ -37,6 +37,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -68,10 +69,9 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
   if (request->response_compressed().value()) {
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Requested some compression, got NONE. This is an error.
-      gpr_log(GPR_ERROR,
-              "Failure: Requested compression but got uncompressed response "
-              "from server.");
-      abort();
+      grpc_core::Crash(
+          "Failure: Requested compression but got uncompressed response "
+          "from server.");
     }
     GPR_ASSERT(inspector.WasCompressed());
   } else {

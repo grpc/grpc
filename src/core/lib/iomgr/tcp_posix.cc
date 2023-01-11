@@ -56,6 +56,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
@@ -364,7 +365,7 @@ class TcpZerocopySendCtx {
       // state was CHECK and is_in_write is false. This means that after the
       // previous sendmsg returned and set is_in_write to false, it did
       // not update the z-copy change from CHECK to OPEN.
-      GPR_ASSERT(false && "OMem state error!");
+      Crash("OMem state error!");
     }
   }
 

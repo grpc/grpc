@@ -27,6 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"

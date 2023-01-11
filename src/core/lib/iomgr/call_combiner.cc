@@ -26,6 +26,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 

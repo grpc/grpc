@@ -36,6 +36,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"

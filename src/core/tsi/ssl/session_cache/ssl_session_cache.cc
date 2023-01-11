@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"

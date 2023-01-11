@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"

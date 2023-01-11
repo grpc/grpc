@@ -29,6 +29,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 
 // Use little endian to interpret a string of bytes as uint32_t.

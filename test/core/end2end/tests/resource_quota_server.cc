@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
@@ -30,6 +32,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
@@ -260,8 +263,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
         case GRPC_STATUS_OK:
           break;
         default:
-          gpr_log(GPR_ERROR, "Unexpected status code: %d", status[call_id]);
-          abort();
+          grpc_core::Crash(
+              absl::StrFormat("Unexpected status code: %d", status[call_id]));
       }
       GPR_ASSERT(pending_client_calls > 0);
 

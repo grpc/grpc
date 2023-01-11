@@ -31,6 +31,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {

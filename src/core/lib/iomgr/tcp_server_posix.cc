@@ -51,6 +51,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

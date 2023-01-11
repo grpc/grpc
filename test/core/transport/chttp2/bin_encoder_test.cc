@@ -20,9 +20,6 @@
 
 #include <string.h>
 
-// This is here for grpc_is_binary_header
-// TODO(murgatroid99): Remove this
-//
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>

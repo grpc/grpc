@@ -28,6 +28,7 @@
 #include <grpcpp/client_context.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"

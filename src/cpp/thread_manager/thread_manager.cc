@@ -18,12 +18,13 @@
 
 #include "src/cpp/thread_manager/thread_manager.h"
 
-#include <stdlib.h>
-
 #include <climits>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -126,11 +127,10 @@ void ThreadManager::CleanupCompletedThreads() {
 
 void ThreadManager::Initialize() {
   if (!thread_quota_->Reserve(min_pollers_)) {
-    gpr_log(GPR_ERROR,
-            "No thread quota available to even create the minimum required "
-            "polling threads (i.e %d). Unable to start the thread manager",
-            min_pollers_);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "No thread quota available to even create the minimum required "
+        "polling threads (i.e %d). Unable to start the thread manager",
+        min_pollers_));
   }
 
   {

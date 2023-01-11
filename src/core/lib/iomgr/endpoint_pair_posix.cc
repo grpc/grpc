@@ -37,6 +37,7 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
