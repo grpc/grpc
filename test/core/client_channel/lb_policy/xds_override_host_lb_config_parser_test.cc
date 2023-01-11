@@ -50,7 +50,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   ASSERT_TRUE(service_config.ok());
   EXPECT_NE(*service_config, nullptr);
-  auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+  auto global_config = static_cast<ClientChannelGlobalParsedConfig*>(
       (*service_config)
           ->GetGlobalParsedConfig(
               ClientChannelServiceConfigParser::ParserIndex()));
@@ -79,7 +79,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfigWithRR) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   ASSERT_TRUE(service_config.ok());
   EXPECT_NE(*service_config, nullptr);
-  auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+  auto global_config = static_cast<ClientChannelGlobalParsedConfig*>(
       (*service_config)
           ->GetGlobalParsedConfig(
               ClientChannelServiceConfigParser::ParserIndex()));
