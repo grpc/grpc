@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <memory>
 #include <new>
+#include <tuple>
 #include <utility>
 
 #include "absl/status/statusor.h"
@@ -934,7 +935,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Release the ownership since it is now owned by the connected filter in the
   // channel stack (published).
-  connecting_result_.transport.release();
+  std::ignore = connecting_result_.transport.release();
   RefCountedPtr<channelz::SocketNode> socket =
       std::move(connecting_result_.socket_node);
   connecting_result_.Reset();
