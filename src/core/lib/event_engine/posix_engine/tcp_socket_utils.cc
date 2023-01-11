@@ -29,6 +29,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -753,31 +754,31 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketZeroCopy() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketNonBlocking(int /*non_blocking*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketCloexec(int /*close_on_exec*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketReuseAddr(int /*reuse*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketLowLatency(int /*low_latency*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketReusePort(int /*reuse*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 void PosixSocketWrapper::ConfigureDefaultTcpUserTimeout(bool /*enable*/,
@@ -786,49 +787,49 @@ void PosixSocketWrapper::ConfigureDefaultTcpUserTimeout(bool /*enable*/,
 
 void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     const PosixTcpOptions& /*options*/, bool /*is_client*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketNoSigpipeIfPossible() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketIpPktInfoIfPossible() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketIpv6RecvPktInfoIfPossible() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketSndBuf(int /*buffer_size_bytes*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketRcvBuf(int /*buffer_size_bytes*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketMutator(
     grpc_fd_usage /*usage*/, grpc_socket_mutator* /*mutator*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::ApplySocketMutatorInOptions(
     grpc_fd_usage /*usage*/, const PosixTcpOptions& /*options*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool PosixSocketWrapper::SetSocketDualStack() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool PosixSocketWrapper::IsSocketReusePortSupported() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
@@ -836,14 +837,14 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     /* socket_factory */,
     const experimental::EventEngine::ResolvedAddress& /*addr*/, int /*type*/,
     int /*protocol*/, DSMode& /*dsmode*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON

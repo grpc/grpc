@@ -1565,6 +1565,7 @@ add_library(gpr
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/crash.cc
   src/core/lib/gprpp/env_linux.cc
   src/core/lib/gprpp/env_posix.cc
   src/core/lib/gprpp/env_windows.cc

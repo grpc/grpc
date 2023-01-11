@@ -32,6 +32,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace {
 using ::grpc_event_engine::experimental::Forkable;

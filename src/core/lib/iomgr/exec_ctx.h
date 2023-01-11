@@ -30,6 +30,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/time.h"

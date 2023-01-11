@@ -32,6 +32,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -133,22 +134,20 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
 
 std::unique_ptr<EventEngine::DNSResolver> WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-bool WindowsEventEngine::IsWorkerThread() {
-  GPR_ASSERT(false && "unimplemented");
-}
+bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration deadline) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
@@ -157,7 +156,7 @@ WindowsEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 }  // namespace experimental

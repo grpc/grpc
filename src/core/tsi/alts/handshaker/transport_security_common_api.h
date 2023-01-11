@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/gcp/transport_security_common.upb.h"
 
 // C struct coresponding to protobuf message RpcProtocolVersions.Version

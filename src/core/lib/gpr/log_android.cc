@@ -28,6 +28,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:

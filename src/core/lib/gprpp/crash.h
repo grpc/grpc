@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2016 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,27 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
+
+#ifndef GRPC_CORE_LIB_GPRPP_CRASH_H
+#define GRPC_CORE_LIB_GPRPP_CRASH_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "absl/strings/string_view.h"
 
-#if GRPC_IF_NAMETOINDEX == 0 || !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
+#include "src/core/lib/gprpp/debug_location.h"
 
-#include <grpc/support/log.h>
+namespace grpc_core {
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/grpc_if_nametoindex.h"
+// Crash the program after printing `message`.
+// ::grpc_core:: prefix to SourceLocation is required to work around a symbol
+// mismatch bug on MSVC.
+[[noreturn]] void Crash(absl::string_view message,
+                        ::grpc_core::SourceLocation location = {});
 
-uint32_t grpc_if_nametoindex(char* name) {
-  gpr_log(GPR_DEBUG,
-          "Not attempting to convert interface name %s to index for current "
-          "platform.",
-          name);
-  return 0;
-}
+}  // namespace grpc_core
 
-#endif  // GRPC_IF_NAMETOINDEX == 0 || \
-       // !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
+#endif  // GRPC_CORE_LIB_GPRPP_CRASH_H

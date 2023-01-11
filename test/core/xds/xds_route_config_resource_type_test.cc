@@ -28,6 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -39,7 +40,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -48,6 +48,7 @@
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -97,9 +98,8 @@ class XdsRouteConfigTest : public ::testing::Test {
         "  ]\n"
         "}");
     if (!bootstrap.ok()) {
-      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              bootstrap.status().ToString().c_str());
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
@@ -344,7 +344,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    GPR_ASSERT(false && "unknown typed_per_filter_config scope");
+    Crash("unknown typed_per_filter_config scope");
   }
 
   static const XdsRouteConfigResource::TypedPerFilterConfig&
@@ -365,7 +365,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   static absl::string_view FieldName() {
@@ -380,7 +380,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   RouteConfiguration route_config_;
@@ -714,7 +714,7 @@ class RetryPolicyTest : public XdsRouteConfigTest,
       default:
         break;
     }
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   RouteConfiguration route_config_;
