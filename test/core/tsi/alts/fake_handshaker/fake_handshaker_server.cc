@@ -21,6 +21,8 @@
 #include <sstream>
 #include <string>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/sync.h>
@@ -30,6 +32,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/async_stream.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"
@@ -253,12 +256,11 @@ class FakeHandshakerService : public HandshakerService::Service {
             &parent->expected_max_concurrent_rpcs_mu_);
         if (++parent->concurrent_rpcs_ >
             parent->expected_max_concurrent_rpcs_) {
-          gpr_log(GPR_ERROR,
-                  "FakeHandshakerService:%p concurrent_rpcs_:%d "
-                  "expected_max_concurrent_rpcs:%d",
-                  parent, parent->concurrent_rpcs_,
-                  parent->expected_max_concurrent_rpcs_);
-          abort();
+          grpc_core::Crash(
+              absl::StrFormat("FakeHandshakerService:%p concurrent_rpcs_:%d "
+                              "expected_max_concurrent_rpcs:%d",
+                              parent, parent->concurrent_rpcs_,
+                              parent->expected_max_concurrent_rpcs_));
         }
       }
     }

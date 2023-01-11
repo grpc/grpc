@@ -26,14 +26,15 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 IOCP::IOCP(Executor* executor) noexcept
     : executor_(executor),
-      iocp_handle_(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr,
-                                          (ULONG_PTR) nullptr, 0)) {
+      iocp_handle_(CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL,
+                                          (ULONG_PTR)NULL, 0)) {
   GPR_ASSERT(iocp_handle_);
   WSASocketFlagsInit();
 }
@@ -58,10 +59,6 @@ std::unique_ptr<WinSocket> IOCP::Watch(SOCKET socket) {
 }
 
 void IOCP::Shutdown() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG, "IOCP::%p shutting down. Outstanding kicks: %d", this,
-            outstanding_kicks_.load());
-  }
   while (outstanding_kicks_.load() > 0) {
     Work(std::chrono::hours(42), []() {});
   }
@@ -70,6 +67,10 @@ void IOCP::Shutdown() {
 
 Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
                               absl::FunctionRef<void()> schedule_poll_again) {
+  static const absl::Status kDeadlineExceeded = absl::DeadlineExceededError(
+      absl::StrFormat("IOCP::%p: Received no completions", this));
+  static const absl::Status kKicked =
+      absl::AbortedError(absl::StrFormat("IOCP::%p: Awoken from a kick", this));
   DWORD bytes = 0;
   ULONG_PTR completion_key;
   LPOVERLAPPED overlapped;
@@ -79,7 +80,7 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   BOOL success = GetQueuedCompletionStatus(
       iocp_handle_, &bytes, &completion_key, &overlapped,
       static_cast<DWORD>(Milliseconds(timeout)));
-  if (success == 0 && overlapped == nullptr) {
+  if (success == 0 && overlapped == NULL) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       gpr_log(GPR_DEBUG, "IOCP::%p deadline exceeded", this);
     }
@@ -94,8 +95,8 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
     if (completion_key == (ULONG_PTR)&kick_token_) {
       return Poller::WorkResult::kKicked;
     }
-    gpr_log(GPR_ERROR, "Unknown custom completion key: %p", completion_key);
-    abort();
+    grpc_core::Crash(
+        absl::StrFormat("Unknown custom completion key: %p", completion_key));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     gpr_log(GPR_DEBUG, "IOCP::%p got event on OVERLAPPED::%p", this,
@@ -139,7 +140,7 @@ DWORD IOCP::WSASocketFlagsInit() {
   // versions, see
   // https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
   // for details.
-  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
+  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                           wsa_socket_flags | WSA_FLAG_NO_HANDLE_INHERIT);
   if (sock != INVALID_SOCKET) {
     // Windows 7, Windows 2008 R2 with SP1 or later

@@ -75,6 +75,11 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
+config_setting(
+    name = "systemd",
+    values = {"define": "use_systemd=true"},
+)
+
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
@@ -537,7 +542,7 @@ grpc_cc_library(
         "//src/core:plugin_registry/grpc_plugin_registry_extra.cc",
     ],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        ":grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -547,7 +552,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     select_deps = [
         {
-            "grpc_no_xds": [],
+            ":grpc_no_xds": [],
             "//conditions:default": GRPC_XDS_TARGETS,
         },
     ],
@@ -638,6 +643,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/tmpfile_posix.cc",
         "//src/core:lib/gpr/tmpfile_windows.cc",
         "//src/core:lib/gpr/wrap_memcpy.cc",
+        "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
         "//src/core:lib/gprpp/global_config_env.cc",
         "//src/core:lib/gprpp/host_port.cc",
@@ -653,6 +659,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/string.h",
         "//src/core:lib/gpr/time_precise.h",
         "//src/core:lib/gpr/tmpfile.h",
+        "//src/core:lib/gprpp/crash.h",
         "//src/core:lib/gprpp/fork.h",
         "//src/core:lib/gprpp/global_config.h",
         "//src/core:lib/gprpp/global_config_custom.h",
@@ -686,6 +693,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "debug_location",
         "//src/core:construct_destruct",
         "//src/core:env",
         "//src/core:examine_stack",
@@ -792,7 +800,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = [
         {
-            "grpc_no_xds": [],
+            ":grpc_no_xds": [],
             "//conditions:default": [
                 "grpc++_xds_client",
                 "grpc++_xds_server",
@@ -997,6 +1005,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
+        "//src/core:default_event_engine",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:slice",
@@ -1170,6 +1179,7 @@ grpc_cc_library(
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/compression_internal.cc",
         "//src/core:lib/compression/message_compress.cc",
+        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
         "//src/core:lib/iomgr/buffer_list.cc",
         "//src/core:lib/iomgr/call_combiner.cc",
         "//src/core:lib/iomgr/cfstream_handle.cc",
@@ -1211,6 +1221,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/socket_utils_linux.cc",
         "//src/core:lib/iomgr/socket_utils_posix.cc",
         "//src/core:lib/iomgr/socket_windows.cc",
+        "//src/core:lib/iomgr/systemd_utils.cc",
         "//src/core:lib/iomgr/tcp_client.cc",
         "//src/core:lib/iomgr/tcp_client_cfstream.cc",
         "//src/core:lib/iomgr/tcp_client_posix.cc",
@@ -1273,6 +1284,7 @@ grpc_cc_library(
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/compression_internal.h",
         "//src/core:lib/compression/message_compress.h",
+        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
         "//src/core:lib/iomgr/block_annotate.h",
         "//src/core:lib/iomgr/buffer_list.h",
         "//src/core:lib/iomgr/call_combiner.h",
@@ -1309,6 +1321,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/socket_factory_posix.h",
         "//src/core:lib/iomgr/socket_utils_posix.h",
         "//src/core:lib/iomgr/socket_windows.h",
+        "//src/core:lib/iomgr/systemd_utils.h",
         "//src/core:lib/iomgr/tcp_client.h",
         "//src/core:lib/iomgr/tcp_client_posix.h",
         "//src/core:lib/iomgr/tcp_posix.h",
@@ -1342,6 +1355,10 @@ grpc_cc_library(
         "//src/core:lib/transport/transport.h",
         "//src/core:lib/transport/transport_impl.h",
     ],
+    defines = select({
+        "systemd": ["HAVE_LIBSYSTEMD"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
@@ -1361,6 +1378,10 @@ grpc_cc_library(
         "madler_zlib",
     ],
     language = "c++",
+    linkopts = select({
+        "systemd": ["-lsystemd"],
+        "//conditions:default": [],
+    }),
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -1386,7 +1407,6 @@ grpc_cc_library(
         "//src/core:atomic_utils",
         "//src/core:bitset",
         "//src/core:channel_args",
-        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -1730,6 +1750,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/synchronization",
         "absl/memory",
         "absl/types:optional",
@@ -1801,6 +1822,7 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/memory",
         "upb_lib",
+        "absl/strings:str_format",
         "protobuf_headers",
     ],
     language = "c++",
@@ -2042,7 +2064,7 @@ grpc_cc_library(
     ],
     hdrs = [],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        ":grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -2053,7 +2075,7 @@ grpc_cc_library(
         "include/grpcpp/ext/admin_services.h",
     ],
     select_deps = [{
-        "grpc_no_xds": [],
+        ":grpc_no_xds": [],
         "//conditions:default": ["//:grpcpp_csds"],
     }],
     deps = [
@@ -2355,6 +2377,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/executor.h",
         "//src/core:lib/iomgr/iomgr_internal.h",
     ],
+    external_deps = ["absl/strings:str_format"],
     visibility = [
         "@grpc:alt_grpc_base_legacy",
         "@grpc:exec_ctx",
@@ -2416,6 +2439,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:iomgr_timer"],

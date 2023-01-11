@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   s.dependency "!ProtoCompiler-gRPCPlugin"
 
   repo_root = '../../../..'
-  bazel_exec_root = "#{repo_root}/bazel-out/darwin-fastbuild/bin"
+  bazel_exec_root = "#{repo_root}/bazel-bin"
 
   protoc = "#{bazel_exec_root}/external/com_google_protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"

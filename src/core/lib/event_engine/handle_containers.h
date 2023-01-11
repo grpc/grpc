@@ -54,13 +54,6 @@ using TaskHandleSet = absl::flat_hash_set<
     TaskHandleComparator<
         grpc_event_engine::experimental::EventEngine::TaskHandle>::Eq>;
 
-using ConnectionHandleSet = absl::flat_hash_set<
-    grpc_event_engine::experimental::EventEngine::ConnectionHandle,
-    TaskHandleComparator<
-        grpc_event_engine::experimental::EventEngine::ConnectionHandle>::Hash,
-    TaskHandleComparator<
-        grpc_event_engine::experimental::EventEngine::ConnectionHandle>::Eq>;
-
 using LookupTaskHandleSet = absl::flat_hash_set<
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle,
     TaskHandleComparator<grpc_event_engine::experimental::EventEngine::

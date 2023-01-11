@@ -24,6 +24,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 namespace grpc_binder {
 
 ABSL_CONST_INIT extern const int kFlagPrefix;
