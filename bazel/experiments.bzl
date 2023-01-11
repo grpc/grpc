@@ -51,9 +51,6 @@ EXPERIMENTS = {
         "endpoint_test": [
             "tcp_read_chunks",
         ],
-        "event_engine_client_test": [
-            "posix_event_engine_enable_polling",
-        ],
         "flow_control_test": [
             "flow_control_fixes",
             "tcp_read_chunks",

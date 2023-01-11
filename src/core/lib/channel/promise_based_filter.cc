@@ -1904,11 +1904,12 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     wake = true;
   }
 
-  if (send_message() != nullptr && batch->send_message) {
+  if (send_message() != nullptr && batch.is_captured() && batch->send_message) {
     send_message()->StartOp(batch);
     wake = true;
   }
-  if (receive_message() != nullptr && batch->recv_message) {
+  if (receive_message() != nullptr && batch.is_captured() &&
+      batch->recv_message) {
     receive_message()->StartOp(batch);
     wake = true;
   }

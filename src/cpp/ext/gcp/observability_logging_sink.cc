@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <map>
 #include <utility>
@@ -83,17 +81,11 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
 }
 
 LoggingSink::Config ObservabilityLoggingSink::FindMatch(
-    bool is_client, absl::string_view path) {
-  size_t pos = path.find('/');
-  if (pos == absl::string_view::npos) {
-    // bad path - did not find '/'
-    return LoggingSink::Config(0, 0);
-  }
-  absl::string_view service =
-      path.substr(0, pos);  // service name is before the '/'
-  absl::string_view method =
-      path.substr(pos + 1);  // method name starts after the '/'
+    bool is_client, absl::string_view service, absl::string_view method) {
   const auto& configs = is_client ? client_configs_ : server_configs_;
+  if (service.empty() || method.empty()) {
+    return LoggingSink::Config();
+  }
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
       if ((config_method.service == "*") ||
@@ -101,14 +93,14 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
            ((config_method.method == "*") ||
             (method == config_method.method)))) {
         if (config.exclude) {
-          return LoggingSink::Config(0, 0);
+          return LoggingSink::Config();
         }
         return LoggingSink::Config(config.max_metadata_bytes,
                                    config.max_message_bytes);
       }
     }
   }
-  return LoggingSink::Config(0, 0);
+  return LoggingSink::Config();
 }
 
 namespace {
@@ -202,9 +194,11 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
                            ::google::protobuf::Struct* peer_json) {
   (*peer_json->mutable_fields())["type"].set_string_value(
       AddressTypeToString(peer.type));
-  (*peer_json->mutable_fields())["address"].set_string_value(
-      std::move(peer.address));
-  (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  if (peer.type != LoggingSink::Entry::Address::Type::kUnknown) {
+    (*peer_json->mutable_fields())["address"].set_string_value(
+        std::move(peer.address));
+    (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  }
 }
 
 }  // namespace
