@@ -93,18 +93,49 @@ class MyTestServiceImpl : public TestServiceImpl {
       ++request_count_;
     }
     AddClient(context->peer());
+    absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report;
+    {
+      grpc_core::MutexLock lock(&load_report_mu_);
+      load_report = load_report_;
+    }
     if (request->has_param() && request->param().has_backend_metrics()) {
-      load_report_ = request->param().backend_metrics();
+      if (!load_report.has_value()) load_report.emplace();
+      const auto& request_metrics = request->param().backend_metrics();
+      if (request_metrics.cpu_utilization() > 0) {
+        load_report->set_cpu_utilization(request_metrics.cpu_utilization());
+      }
+      if (request_metrics.mem_utilization() > 0) {
+        load_report->set_mem_utilization(request_metrics.mem_utilization());
+      }
+      if (request_metrics.rps_fractional() > 0) {
+        load_report->set_rps_fractional(request_metrics.rps_fractional());
+      }
+      for (const auto& p : request_metrics.request_cost()) {
+        (*load_report->mutable_request_cost())[p.first] = p.second;
+      }
+      for (const auto& p : request_metrics.utilization()) {
+        (*load_report->mutable_utilization())[p.first] = p.second;
+      }
+    }
+    if (load_report.has_value()) {
       auto* recorder = context->ExperimentalGetCallMetricRecorder();
       EXPECT_NE(recorder, nullptr);
-      recorder->RecordCpuUtilizationMetric(load_report_.cpu_utilization())
-          .RecordMemoryUtilizationMetric(load_report_.mem_utilization())
-          .RecordQpsMetric(load_report_.rps_fractional());
-      for (const auto& p : load_report_.request_cost()) {
-        recorder->RecordRequestCostMetric(p.first, p.second);
+      recorder->RecordCpuUtilizationMetric(load_report->cpu_utilization())
+          .RecordMemoryUtilizationMetric(load_report->mem_utilization())
+          .RecordQpsMetric(load_report->rps_fractional());
+      for (const auto& p : load_report->request_cost()) {
+        char* key = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+        strncpy(key, p.first.data(), p.first.size());
+        key[p.first.size()] = '\0';
+        recorder->RecordRequestCostMetric(key, p.second);
       }
-      for (const auto& p : load_report_.utilization()) {
-        recorder->RecordUtilizationMetric(p.first, p.second);
+      for (const auto& p : load_report->utilization()) {
+        char* key = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+        strncpy(key, p.first.data(), p.first.size());
+        key[p.first.size()] = '\0';
+        recorder->RecordUtilizationMetric(key, p.second);
       }
     }
     return TestServiceImpl::Echo(context, request, response);
@@ -125,6 +156,12 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
+  void SetLoadReport(
+      absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report) {
+    grpc_core::MutexLock lock(&load_report_mu_);
+    load_report_ = std::move(load_report);
+  }
+
  private:
   void AddClient(const std::string& client) {
     grpc_core::MutexLock lock(&clients_mu_);
@@ -132,11 +169,14 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   grpc_core::Mutex mu_;
-  int request_count_ = 0;
+  int request_count_ ABSL_GUARDED_BY(&mu_) = 0;
+
   grpc_core::Mutex clients_mu_;
-  std::set<std::string> clients_;
-  // For strings storage.
-  xds::data::orca::v3::OrcaLoadReport load_report_;
+  std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
+
+  grpc_core::Mutex load_report_mu_;
+  absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_
+      ABSL_GUARDED_BY(&load_report_mu_);
 };
 
 class FakeResolverResponseGeneratorWrapper {
