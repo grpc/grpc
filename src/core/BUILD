@@ -4444,6 +4444,9 @@ grpc_cc_library(
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
