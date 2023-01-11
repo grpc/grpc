@@ -121,9 +121,8 @@ TEST_P(End2EndBinderTransportTest, UnaryCallWithNonOkStatus) {
 TEST_P(End2EndBinderTransportTest, UnaryCallServerTimeout) {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub = NewStub();
   grpc::ClientContext context;
-  constexpr auto timeout_ms = absl::Milliseconds(1 * 1000);  /// 1 second
   context.set_deadline(absl::ToChronoTime(
-      absl::Now() + (timeout_ms * grpc_test_slowdown_factor())));
+      absl::Now() + (absl::Seconds(1) * grpc_test_slowdown_factor())));
   grpc::testing::EchoRequest request;
   grpc::testing::EchoResponse response;
   request.set_message("UnaryCallServerTimeout");
