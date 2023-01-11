@@ -127,31 +127,34 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
      public:
-      ConnectivityStateWatcher(
-          std::unique_ptr<ConnectivityStateWatcherInterface> delegate,
-          RefCountedPtr<SubchannelWrapper> subchannel)
-          : delegate_(std::move(delegate)), subchannel_(subchannel) {}
+      ConnectivityStateWatcher(SubchannelWrapper* subchannel)
+          : subchannel_(subchannel) {}
 
       void OnConnectivityStateChange(grpc_connectivity_state state,
                                      absl::Status status) override {
-        delegate_->OnConnectivityStateChange(state, status);
-        subchannel_->connectivity_state_ = state;
+        subchannel_->OnConnectivityStateChange(state, std::move(status));
       }
 
       grpc_pollset_set* interested_parties() override {
-        return delegate_->interested_parties();
+        return subchannel_->interested_parties();
       }
 
      private:
-      std::unique_ptr<ConnectivityStateWatcherInterface> delegate_;
-      RefCountedPtr<SubchannelWrapper> subchannel_;
+      SubchannelWrapper* subchannel_ = nullptr;
     };
 
+    grpc_pollset_set* interested_parties();
+
+    void OnConnectivityStateChange(grpc_connectivity_state state,
+                                   absl::Status status);
+
+    ConnectivityStateWatcherInterface* watcher_ = nullptr;
+    grpc_pollset_set* interested_parties_ = nullptr;
+    std::vector<std::unique_ptr<ConnectivityStateWatcherInterface>> delegate_;
     absl::optional<const std::string> key_;
     RefCountedPtr<XdsOverrideHostLb> policy_;
     std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
-    std::map<ConnectivityStateWatcherInterface*, ConnectivityStateWatcher*>
-        watchers_;
+    std::vector<std::unique_ptr<ConnectivityStateWatcherInterface>> watchers_;
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -622,9 +625,14 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     absl::optional<const std::string> key)
     : DelegatingSubchannel(std::move(subchannel)),
       key_(std::move(key)),
-      policy_(std::move(policy)) {}
+      policy_(std::move(policy)) {
+  auto watcher = std::make_unique<ConnectivityStateWatcher>(this);
+  watcher_ = watcher.get();
+  wrapped_subchannel()->WatchConnectivityState(std::move(watcher));
+}
 
 XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
+  wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
   if (key_.has_value()) {
     policy_->ResetSubchannel(*key_, this);
   }
@@ -632,20 +640,35 @@ XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
 
 void XdsOverrideHostLb::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
-  auto watcher_id = watcher.get();
-  auto wrapper =
-      std::make_unique<ConnectivityStateWatcher>(std::move(watcher), Ref());
-  watchers_.emplace(watcher_id, wrapper.get());
-  wrapped_subchannel()->WatchConnectivityState(std::move(wrapper));
+  watchers_.push_back(std::move(watcher));
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  auto original_watcher = watchers_.find(watcher);
-  if (original_watcher != watchers_.end()) {
-    wrapped_subchannel()->CancelConnectivityStateWatch(
-        original_watcher->second);
-    watchers_.erase(original_watcher);
+  std::remove_if(watchers_.begin(), watchers_.end(),
+                 [watcher](const auto& watcher_ptr) {
+                   return watcher_ptr.get() == watcher;
+                 });
+}
+
+grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::interested_parties() {
+  if (interested_parties_ != nullptr) {
+    grpc_pollset_set_destroy(interested_parties_);
+    interested_parties_ = nullptr;
+  }
+  interested_parties_ = grpc_pollset_set_create();
+  for (const auto& watcher : watchers_) {
+    grpc_pollset_set_add_pollset_set(interested_parties_,
+                                     watcher->interested_parties());
+  }
+  return interested_parties_;
+}
+
+void XdsOverrideHostLb::SubchannelWrapper::OnConnectivityStateChange(
+    grpc_connectivity_state state, absl::Status status) {
+  connectivity_state_ = state;
+  for (const auto& watcher : watchers_) {
+    watcher->OnConnectivityStateChange(state, status);
   }
 }
 
