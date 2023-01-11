@@ -80,13 +80,11 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 
   void OnConnected(std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
     GPR_ASSERT(endpoint_binder != nullptr);
-    grpc_transport* transport = grpc_create_binder_transport_client(
+    result_->transport = TransportPointer(grpc_create_binder_transport_client(
         std::move(endpoint_binder),
-        grpc_binder::GetSecurityPolicySetting()->Get(conn_id_));
-    GPR_ASSERT(transport != nullptr);
+        grpc_binder::GetSecurityPolicySetting()->Get(conn_id_)));
+    GPR_ASSERT(result_->transport != nullptr);
     result_->channel_args = args_.channel_args;
-    // Taking the ownership.
-    result_->transport = TransportPointer(transport);
 
     GPR_ASSERT(notify_ != nullptr);
     // ExecCtx is required here for running grpc_closure because this callback
