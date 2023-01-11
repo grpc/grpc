@@ -51,11 +51,9 @@ grpc_cc_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "observability_config",
-        "observability_logging_sink",
         "//:gpr",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/cpp/ext/filters/logging:logging_filter",
     ],
 )
 
