@@ -36,12 +36,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
-  s.add_development_dependency 'simplecov',          '~> 0.14.1'
+  s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
   s.add_development_dependency 'rspec',              '~> 3.6'
-  s.add_development_dependency 'rubocop',            '~> 0.49.1'
+  s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
   s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.10'
 
@@ -577,6 +577,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/authority.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/authority.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/core/v3/cidr.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/core/v3/cidr.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/context_params.upb.c )
@@ -593,12 +595,26 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/v3/cel.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/v3/cel.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/v3/range.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/v3/range.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c )
@@ -859,6 +875,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c )
@@ -871,12 +889,26 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h )
   s.files += %w( src/core/ext/xds/certificate_provider_store.cc )
@@ -1263,6 +1295,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/socket_utils_windows.cc )
   s.files += %w( src/core/lib/iomgr/socket_windows.cc )
   s.files += %w( src/core/lib/iomgr/socket_windows.h )
+  s.files += %w( src/core/lib/iomgr/systemd_utils.cc )
+  s.files += %w( src/core/lib/iomgr/systemd_utils.h )
   s.files += %w( src/core/lib/iomgr/tcp_client.cc )
   s.files += %w( src/core/lib/iomgr/tcp_client.h )
   s.files += %w( src/core/lib/iomgr/tcp_client_cfstream.cc )

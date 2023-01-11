@@ -247,6 +247,8 @@ INTERNAL_DEPS = {
         '//src/proto/grpc/reflection/v1alpha:reflection_proto',
     'src/proto/grpc/gcp/transport_security_common.upb.h':
         'alts_upb',
+    'src/proto/grpc/gcp/handshaker.upb.h':
+        'alts_upb',
     'src/proto/grpc/gcp/altscontext.upb.h':
         'alts_upb',
     'src/proto/grpc/lookup/v1/rls.upb.h':
@@ -543,6 +545,9 @@ def make_library(library):
     external_deps = Choices(None, {})
     for hdr in hdrs:
         if hdr in skip_headers[library]:
+            continue
+
+        if hdr == 'systemd/sd-daemon.h':
             continue
 
         if hdr == 'src/core/lib/profiling/stap_probes.h':

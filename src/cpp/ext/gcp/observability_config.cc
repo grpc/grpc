@@ -48,12 +48,12 @@ namespace internal {
 namespace {
 
 // Loads the contents of the file pointed by env var
-// GRPC_OBSERVABILITY_CONFIG_FILE. If unset, falls back to the contents of
-// GRPC_OBSERVABILITY_CONFIG.
+// GRPC_GCP_OBSERVABILITY_CONFIG_FILE. If unset, falls back to the contents of
+// GRPC_GCP_OBSERVABILITY_CONFIG.
 absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
-  // First, try GRPC_OBSERVABILITY_CONFIG_FILE
+  // First, try GRPC_GCP_OBSERVABILITY_CONFIG_FILE
   std::string contents_str;
-  auto path = grpc_core::GetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
+  auto path = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
   if (path.has_value()) {
     grpc_slice contents;
     grpc_error_handle error =
@@ -67,15 +67,15 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
     grpc_slice_unref(contents);
     return std::move(contents_str);
   }
-  // Next, try GRPC_OBSERVABILITY_CONFIG env var.
-  auto env_config = grpc_core::GetEnv("GRPC_OBSERVABILITY_CONFIG");
+  // Next, try GRPC_GCP_OBSERVABILITY_CONFIG env var.
+  auto env_config = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
   if (env_config.has_value()) {
     return std::move(*env_config);
   }
   // No observability config found.
   return absl::FailedPreconditionError(
-      "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
-      "GRPC_OBSERVABILITY_CONFIG "
+      "Environment variables GRPC_GCP_OBSERVABILITY_CONFIG_FILE or "
+      "GRPC_GCP_OBSERVABILITY_CONFIG "
       "not defined");
 }
 
