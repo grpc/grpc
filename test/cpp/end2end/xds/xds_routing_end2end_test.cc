@@ -482,13 +482,25 @@ TEST_P(LdsRdsTest, NoMatchingRoute) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
+TEST_P(LdsRdsTest, EmptyRouteList) {
+  RouteConfiguration route_config = default_route_config_;
+  route_config.mutable_virtual_hosts(0)->clear_routes();
+  SetRouteConfiguration(balancer_.get(), route_config);
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "No matching route found in xDS route config");
+  // Do a bit of polling, to allow the ACK to get to the ADS server.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+}
+
 // Testing just one example of an invalid resource here.
 // Unit tests for XdsRouteConfigResourceType have exhaustive tests for all
 // of the invalid cases.
 TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
+  route_config.mutable_virtual_hosts(0)->mutable_routes(0)->clear_match();
   SetRouteConfiguration(balancer_.get(), route_config);
   const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
@@ -505,8 +517,8 @@ TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
                 "field:api_listener.api_listener.value["
                 "envoy.extensions.filters.network.http_connection_manager.v3"
                 ".HttpConnectionManager].route_config.",
-          "virtual_hosts[0].routes "
-          "error:no valid routes in VirtualHost]]"));
+          "virtual_hosts[0].routes[0].match "
+          "error:field not present]]"));
 }
 
 // Tests that LDS client should fail RPCs with UNAVAILABLE status code if the

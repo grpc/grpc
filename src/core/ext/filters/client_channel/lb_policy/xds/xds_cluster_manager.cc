@@ -101,8 +101,6 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
 
  private:
   std::map<std::string, Child> cluster_map_;
@@ -664,16 +662,6 @@ const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader(
           .Field("children", &XdsClusterManagerLbConfig::cluster_map_)
           .Finish();
   return loader;
-}
-
-void XdsClusterManagerLbConfig::JsonPostLoad(const Json&, const JsonArgs&,
-                                             ValidationErrors* errors) {
-  if (cluster_map_.empty()) {
-    ValidationErrors::ScopedField field(errors, ".children");
-    if (!errors->FieldHasErrors()) {
-      errors->AddError("no valid children configured");
-    }
-  }
 }
 
 class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {

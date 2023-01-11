@@ -274,25 +274,6 @@ TEST_F(VirtualHostTest, NoDomainsSpecified) {
       << decode_result.resource.status();
 }
 
-TEST_F(VirtualHostTest, NoRoutesInVirtualHost) {
-  RouteConfiguration route_config;
-  route_config.set_name("foo");
-  auto* vhost = route_config.add_virtual_hosts();
-  vhost->add_domains("*");
-  std::string serialized_resource;
-  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsRouteConfigResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes "
-            "error:no valid routes in VirtualHost]")
-      << decode_result.resource.status();
-}
-
 //
 // typed_per_filter_config tests
 //
