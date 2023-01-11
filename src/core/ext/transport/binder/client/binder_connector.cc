@@ -85,7 +85,8 @@ class BinderConnector : public grpc_core::SubchannelConnector {
         grpc_binder::GetSecurityPolicySetting()->Get(conn_id_));
     GPR_ASSERT(transport != nullptr);
     result_->channel_args = args_.channel_args;
-    result_->transport = transport;
+    // Taking the ownership.
+    result_->transport = TransportPointer(transport);
 
     GPR_ASSERT(notify_ != nullptr);
     // ExecCtx is required here for running grpc_closure because this callback

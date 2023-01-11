@@ -919,19 +919,22 @@ bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
   ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
                                   connecting_result_.channel_args);
-  builder.SetTransport(connecting_result_.transport);
+  builder.SetTransport(connecting_result_.transport.get());
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> stk = builder.Build();
   if (!stk.ok()) {
     auto error = absl_status_to_grpc_error(stk.status());
-    grpc_transport_destroy(connecting_result_.transport);
+    connecting_result_.Reset();
     gpr_log(GPR_ERROR,
             "subchannel %p %s: error initializing subchannel stack: %s", this,
             key_.ToString().c_str(), StatusToString(error).c_str());
     return false;
   }
+  // Release the ownership since it is now owned by the connected filter in the
+  // channel stack.
+  connecting_result_.transport.release();
   RefCountedPtr<channelz::SocketNode> socket =
       std::move(connecting_result_.socket_node);
   connecting_result_.Reset();

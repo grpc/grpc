@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -28,6 +30,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
@@ -48,16 +51,22 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     ChannelArgs channel_args;
   };
 
+  struct TransportDeleter {
+    void operator()(grpc_transport* transport) {
+      grpc_transport_destroy(transport);
+    }
+  };
+  using TransportPointer = std::unique_ptr<grpc_transport, TransportDeleter>;
   struct Result {
     // The connected transport.
-    grpc_transport* transport = nullptr;
+    TransportPointer transport;
     // Channel args to be passed to filters.
     ChannelArgs channel_args;
     // Channelz socket node of the connected transport, if any.
     RefCountedPtr<channelz::SocketNode> socket_node;
 
     void Reset() {
-      transport = nullptr;
+      transport.reset();
       channel_args = ChannelArgs();
       socket_node.reset();
     }
