@@ -20,7 +20,6 @@
 
 #include <inttypes.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
@@ -40,6 +39,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
@@ -189,17 +189,15 @@ std::string CqVerifier::ToString() const {
 }
 
 void CqVerifier::FailNoEventReceived(const SourceLocation& location) const {
-  gpr_log(GPR_ERROR, "[%s:%d] no event received, but expected:%s",
-          location.file(), location.line(), ToString().c_str());
-  abort();
+  Crash(absl::StrFormat("[%s:%d] no event received, but expected:%s",
+                        location.file(), location.line(), ToString().c_str()));
 }
 
 void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
                                      const SourceLocation& location) const {
   gpr_log(GPR_ERROR, "[%s:%d] cq returned unexpected event: %s",
           location.file(), location.line(), grpc_event_string(ev).c_str());
-  gpr_log(GPR_ERROR, "expected tags:\n%s", ToString().c_str());
-  abort();
+  Crash(absl::StrFormat("expected tags:\n%s", ToString().c_str()));
 }
 
 void CqVerifier::Verify(Duration timeout, SourceLocation location) {

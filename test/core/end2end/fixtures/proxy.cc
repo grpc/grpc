@@ -18,7 +18,6 @@
 
 #include "test/core/end2end/fixtures/proxy.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <string>
@@ -34,6 +33,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/surface/call.h"
@@ -454,8 +454,7 @@ static void thread_main(void* arg) {
         proxy->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
-        gpr_log(GPR_ERROR, "Should never reach here");
-        abort();
+        grpc_core::Crash("Should never reach here");
       case GRPC_QUEUE_SHUTDOWN:
         return;
       case GRPC_OP_COMPLETE:

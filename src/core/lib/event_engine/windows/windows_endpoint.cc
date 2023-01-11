@@ -43,9 +43,9 @@ constexpr int64_t kDefaultTargetReadSize = 8192;
 constexpr int kMaxWSABUFCount = 16;
 
 void AbortOnEvent(absl::Status) {
-  GPR_ASSERT(false &&
-             "INTERNAL ERROR: Asked to handle read/write event with an invalid "
-             "callback");
+  grpc_core::Crash(
+      "INTERNAL ERROR: Asked to handle read/write event with an invalid "
+      "callback");
 }
 
 }  // namespace
@@ -64,10 +64,9 @@ WindowsEndpoint::WindowsEndpoint(
   int addr_len = sizeof(addr);
   if (getsockname(socket_->socket(), reinterpret_cast<sockaddr*>(addr),
                   &addr_len) < 0) {
-    gpr_log(
-        GPR_ERROR, "Unrecoverable error: Failed to get local socket name. %s",
-        GRPC_WSA_ERROR(WSAGetLastError(), "getsockname").ToString().c_str());
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "Unrecoverable error: Failed to get local socket name. %s",
+        GRPC_WSA_ERROR(WSAGetLastError(), "getsockname").ToString().c_str()));
   }
   local_address_ =
       EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(addr), addr_len);

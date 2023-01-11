@@ -29,6 +29,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -207,8 +208,7 @@ static void consumer_thread(void* arg) {
         gpr_event_set(&opt->on_finished, reinterpret_cast<void*>(1));
         return;
       case GRPC_QUEUE_TIMEOUT:
-        gpr_log(GPR_ERROR, "Invalid timeout received");
-        abort();
+        grpc_core::Crash("Invalid timeout received");
     }
   }
 }

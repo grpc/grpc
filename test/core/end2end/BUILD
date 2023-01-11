@@ -203,6 +203,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "inproc_callback_test",
     srcs = ["inproc_callback_test.cc"],
+    external_deps = ["absl/strings:str_format"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

@@ -176,6 +176,8 @@ libs:
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/crash.h
+  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/env.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
@@ -221,6 +223,7 @@ libs:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/crash.cc
   - src/core/lib/gprpp/env_linux.cc
   - src/core/lib/gprpp/env_posix.cc
   - src/core/lib/gprpp/env_windows.cc
@@ -350,6 +353,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -543,6 +547,7 @@ libs:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.h
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.h
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.h
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.h
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.h
@@ -551,9 +556,16 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
   - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.h
   - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.h
@@ -684,15 +696,23 @@ libs:
   - src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h
   - src/core/ext/xds/certificate_provider_store.h
   - src/core/ext/xds/file_watcher_certificate_provider_factory.h
@@ -795,7 +815,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -1300,6 +1319,7 @@ libs:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.c
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.c
@@ -1308,9 +1328,16 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.c
   - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c
@@ -1441,15 +1468,23 @@ libs:
   - src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
   - src/core/ext/xds/certificate_provider_store.cc
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
@@ -2090,7 +2125,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -3529,7 +3563,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -4341,7 +4374,6 @@ targets:
   headers:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5246,15 +5278,24 @@ targets:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.h
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.h
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.h
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.h
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h
   - src/core/lib/security/authorization/cel_authorization_engine.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
@@ -5344,15 +5385,24 @@ targets:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.c
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   - test/core/util/cmdline.cc
@@ -5624,7 +5674,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6575,6 +6624,17 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: event_engine_wakeup_scheduler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  src:
+  - test/core/promise/event_engine_wakeup_scheduler_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: event_poller_posix_test
   gtest: true
   build: test
@@ -6628,7 +6688,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6905,7 +6964,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6997,7 +7055,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7267,7 +7324,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -8827,7 +8883,6 @@ targets:
   headers:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -8943,7 +8998,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9300,7 +9354,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -9508,7 +9561,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
@@ -9607,7 +9659,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -11651,7 +11702,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/resource_quota/thread_quota.h
@@ -11979,7 +12029,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -13501,10 +13550,10 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/xds
-  hash: 5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
+  hash: 41ea212940ab44bf7f8a8b4169cfbc612ed2166dafabc0a56a8820ef665fc6a4
   proto_prefix: third_party/xds/
-  strip_prefix: xds-cb28da3451f158a947dfc45090fe92b07b243bc1
+  strip_prefix: xds-06c439db220b89134a8a49bad41994560d6537c6
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
-  - https://github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
+  - https://github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
 tests: []

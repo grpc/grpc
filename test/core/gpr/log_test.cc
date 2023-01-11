@@ -22,6 +22,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/util/test_config.h"
 
 static bool log_func_reached = false;
@@ -37,7 +38,7 @@ static void test_should_log(gpr_log_func_args* /*args*/) {
 }
 
 static void test_should_not_log(gpr_log_func_args* /*args*/) {
-  GPR_ASSERT(false);
+  grpc_core::Crash("unreachable");
 }
 
 #define test_log_function_reached(SEVERITY)     \

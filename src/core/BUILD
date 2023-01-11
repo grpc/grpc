@@ -732,6 +732,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_wakeup_scheduler",
+    hdrs = [
+        "lib/promise/event_engine_wakeup_scheduler.h",
+    ],
+    language = "c++",
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_set",
     external_deps = [
         "absl/container:flat_hash_set",
@@ -1561,6 +1574,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "event_engine_poller",
@@ -1596,6 +1610,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "common_event_engine_closures",
@@ -1843,7 +1858,6 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
-        "experiments",
         "init_internally",
         "iomgr_port",
         "posix_event_engine_closure",
@@ -2605,6 +2619,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -4455,6 +4470,9 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds_override_host",
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
     ],
     external_deps = [
         "absl/base:core_headers",
