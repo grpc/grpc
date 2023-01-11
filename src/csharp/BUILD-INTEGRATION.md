@@ -1,351 +1,91 @@
-Protocol Buffers/gRPC Codegen Integration Into .NET Build
-=================================================
+# Protocol Buffers/gRPC Codegen Integration Into .NET Build
 
-With Grpc.Tools package version 1.17 we made it easier to compile .proto files
-in your project using the `dotnet build` command, Visual Studio, or command-line
-MSBuild. You need to configure the .csproj project according to the way you want
-to integrate Protocol Buffer files into your build.
+The [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) NuGet package provides C# tooling support for `.proto` files in `.csproj` projects:
+* It contains protocol buffers compiler and gRPC plugin to generate C# code.
+* It can be used in building both grpc-dotnet projects and legacy c-core C# projects.
 
-There is also a Reference section at the end of the file.
+Using `Grpc.Tools` in `.csproj` files is described below. Other packages providing the runtime libraries for gRPC are described elsewhere. These include:
+* Legacy gRPC c-core implementation
+  * `Grpc.Core` - contains a gRPC client and server and supports .NET Framework, .NET Core, and .NET 5 or later.
+* gRPC-dotnet implementation
+  * `Grpc.AspNetCore` - contains a gRPC server that is hosted in ASP.NET Core and requires .NET Core 3.x or .NET 5 or later.
+  * `Grpc.Net.Client` - contains a gRPC client.
 
-Common scenarios
-----------------
+Other documentation giving an overview of gRPC for .NET, the tooling support, and a tutorial on how to create server and client projects in C# can be found here:
+* [Overview for gRPC on .NET](https://learn.microsoft.com/en-us/aspnet/core/grpc/)
+* [C# Tooling support for .proto files](https://learn.microsoft.com/en-us/aspnet/core/grpc/basics#c-tooling-support-for-proto-files)
+* [Tutorial: Create a gRPC client and server in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/tutorials/grpc/grpc-start)
 
-### I just want to compile .proto files into my library
+For information for the legacy gRPC C# implementation based on the native gRPC Core library (Grpc.Core package) see:
+* https://github.com/grpc/grpc/blob/master/src/csharp/README.md
+* https://github.com/grpc/grpc/tree/v1.46.x/src/csharp#how-to-use
 
-This is the approach taken by the examples in the `csharp/examples` directory.
-Protoc output files (for example, `Helloworld.cs` and `HelloworldGrpc.cs`
-compiled from `helloworld.proto`) are placed among *object* and other temporary
-files of your project, and automatically provided as inputs to the C# compiler.
-As with other automatically generated .cs files, they are included in the source
-and symbols NuGet package, if you build one.
+## Getting Started
 
-Simply reference your .proto files in a `<Protobuf>` item group. The following
-example will add all .proto files in a project and all its subdirectories
-(excluding special directories such as `bin` and `obj`):
+The package [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) is used to generate the C# files from
+`.proto` files. These files:
+* are generated on an as-needed basis each time the project is built.
+* aren't added to the project or checked into source control.
+* are a build artefact usually contained in the obj directory.
+
+This package is required when building both the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
+* The `Grpc.AspNetCore` metapackage already includes a reference to `Grpc.Tools`. 
+* Client projects and projects using `Grpc.Core` need to directly reference `Grpc.Tool`s alongside the other packages required.
+
+It isn't required at runtime, so the dependency should be marked with `PrivateAssets="All"`, e.g.
+```xml
+<PackageReference Include="Grpc.Tools" Version="2.50.0">
+  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+  <PrivateAssets>all</PrivateAssets>
+</PackageReference>
+```
+
+Support is provided for the following platforms:
+* Windows (x86, x64, and arm64 via using the x86 binaries)
+* MacOS (arm64)
+* Linux (x86, x64, and arm64)
+
+## Adding `.proto` files to a project
+
+To add `.proto` files to a project edit the project’s `.csproj` file and add an item group with a `<Protobuf>` element that refers to the `.proto` file, e.g.
 
 ```xml
-  <ItemGroup>
-    <Protobuf Include="**/*.proto" />
-  </ItemGroup>
+<ItemGroup>
+    <Protobuf Include="Protos\greet.proto" />
+</ItemGroup>
 ```
 
-You must add a reference to the NuGet packages Grpc.Tools and Grpc (the latter
-is a meta-package, in turn referencing Grpc.Core and Google.Protobuf packages).
-It is **very important** to mark Grpc.Tools as a development-only dependency, so
-that the *users* of your library do not fetch the tools package:
-
-* "dotnet SDK" .csproj (Visual Studio, `dotnet new`): Add an attribute
- `PrivateAssets="All"` to the Grpc.Tools package reference. See an example in the
- [Greeter.csproj](../../examples/csharp/Helloworld/Greeter/Greeter.csproj#L10)
- example project in this repository. If adding a package reference in Visual
- Studio, edit the project file and add this attribute. [This is a bug in NuGet
- client](https://github.com/NuGet/Home/issues/4125).
-
-* "Classic" .csproj with `packages.config` (Visual Studio before 2017, old versions of Mono):
- This is handled automatically by NuGet after you set the `developmentDependency="true"`
- attribute on the `<package>` tag in `packages.config`.
-
-If building a NuGet package from your library with the nuget command line tool
-from a .nuspec file, then the spec file may (and probably should) reference the
-Grpc metapackage, but **do not add a reference to Grpc.Tools** to it. "dotnet SDK"
-projects handle this automatically when called from `dotnet pack` by excluding
-any packages with private assets, such as thus marked Grpc.Tools.
-
-#### Per-file options that can be set in Visual Studio
-
-For a "dotnet SDK" project, you have more control of some frequently used options.
-**You may need to open and close Visual Studio** for this form to appear in the
-properties window after adding a reference to Grpc.Tools package (we do not know
-whether this is a bug or by design, but it looks like a bug):
-
-![Properties in an SDK project](doc/integration.md-fig.2-sdk.png)
-
-You can also change options of multiple files at once by selecting them in the
-Project Explorer together.
-
-For a "classic" project, you can only add .proto files with all options set to
-default (if you find it necessary to modify these options, then hand-edit the
-.csproj file). Click on the "show all files" button, add files to project, then
-change file type of the .proto files to "Protobuf" in the Properties window
-drop-down. This menu item will appear after you import the Grpc.Tools package:
-
-![Properties in a classic project](doc/integration.md-fig.1-classic.png)
-
-See the Reference section at end of this file for options that can be set
-per-file by modifying the source .csproj directly.
-
-#### My .proto files are in a directory outside the project
-
-Refer to the example files
-[RouteGuide.csproj](../../examples/csharp/RouteGuide/RouteGuide/RouteGuide.csproj#L58-L60)
-and [Greeter.csproj](../../examples/csharp/Helloworld/Greeter/Greeter.csproj#L11)
-in this repository. For the files to show up in Visual Studio properly, add a
-`Link` attribute with just a filename to the `<Protobuf>` item. This will be the
-display name of the file. In the `Include` attribute, specify the complete path
-to file. A relative path is based off the project directory.
-
-Or, if using Visual Studio, add files _as links_ from outside directory. In the
-Add Files dialog, there is a little [down arrow near the Open
-button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
-link". If you do not select this option, Visual Studio will copy files to the
-project directory instead.
-
-Alternatively, you can also specify `AdditionalImportDirs` and provide a list of directories to search for imported .proto files. The directories are searched in the order given.
-
-Eg.
+Wildcards can be used to select several `.proto` files, e.g.
 
 ```xml
-  <Protobuf Include="protos/*.proto" ProtoRoot="protos"
-      AdditionalImportDirs="/folder/ouside/project/protos/myapis/;/another/folder/" ... />
+<ItemGroup>
+    <Protobuf Include="**\*.proto" />
+</ItemGroup>
 ```
 
-#### My .proto files have same filename in different folders
-
-Starting from Grpc.Tools version 2.31, protocol buffers compilation preserves original folder structure for generated files. Eg.
-
-- `../ProjectFolder/Protos/v2/http.proto`
-- `../ProjectFolder/Protos/v3/http.proto`
-
-Will result in:
-
-- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v2/Greet.cs`
-- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v2/GreetGrpc.cs`
-- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v3/Greet.cs`
-- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v3/GreetGrpc.cs`
-
-This feature resolves problems we have faced in large projects. Moreover, There is now also a project-wide new option Protobuf_ProtoRoot to define the fallback ProtoRoot. If the ProtoRoot is set, this also reduces the amount of problems that lead to duplicates. Eg.
+By default, a `<Protobuf>` reference generates a concrete client and a service base class. The reference element's `GrpcServices` attribute can be used to limit C# asset generation. See the reference section below for all options. E.g. to only generate client code:
 
 ```xml
-  <ItemGroup>
-    <Protobuf Include="Protos\v2\greet.proto" ProtoRoot="Protos" />
-  </ItemGroup>
+<ItemGroup>
+    <Protobuf Include="Protos\greet.proto" GrpcServices="Client" />
+</ItemGroup>
 ```
 
-Before Grpc.Tools version 2.31 all .proto files were compiled into `obj` directory, flattening relative paths. For proto files with duplicated names it cause following errors `NETSDK1022 Duplicate 'Compile' items were included. [...]` or `MSB3105 [...] Duplicate items are not supported by the "Sources" parameter`. The workaround for this problem was introducing relative paths in your `obj` folder, by manipulating output path. Eg. 
+For `.prot`o files that are outside of the project directory a link can be added so that the files are visible in Visual Studio. E.g.
 
 ```xml
-  <ItemGroup>
-    <Protobuf Include="Protos/v2/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
-    <Protobuf Include="Protos/v3/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
-  </ItemGroup>
+<ItemGroup>
+   <Protobuf Include="..\Proto\aggregate.proto" GrpcServices="Client" Link="Protos\aggregate.proto"/>
+   <Protobuf Include="..\Proto\greet.proto" GrpcServices="None" Link="Protos\greet.proto"/>
+   <Protobuf Include="..\Proto\count.proto" GrpcServices="None" Link="Protos\count.proto"/>
+</ItemGroup>
 ```
 
-__Note, this was a workaround approach, we recommend updating Grpc.Tools to the latest version.__
+See also the example project files in https://github.com/grpc/grpc-dotnet/tree/master/examples
 
-### I just want to generate proto and gRPC C# sources from my .proto files (no C# compile)
+# Reference
 
-Suppose you want to place generated files right beside each respective source
-.proto file. Create a .csproj library file in the common root of your .proto
-tree, and add a reference to Grpc.Tools package (this works in Windows too, `$`
-below stands for a command prompt in either platform):
-
-```
-/myproject/myprotofiles$ dotnet new classlib
-  . . .
-  Restoring packages for /myproject/myprotofiles/myprotofiles.csproj...
-  . . .
-/myproject/myprotofiles$ rm *.cs        <-- remove all *.cs files from template;
-C:\myproject\myprotofiles> del *.cs /y  <-- on Windows, use the del command instead.
-/myproject/myprotofiles$ dotnet add package Grpc.Tools
-```
-
-(the latter command also accepts an optional `--version X.Y` switch for a
-specific version of package, should you need one). Next open the generated
-.csproj file in a text editor.
-
-Since you are not building a package, you may not worry about adding
-`PrivateAssets="All"` attribute, but it will not hurt, in case you are
-repurposing the project at some time later. The important part is (1) tell the
-gRPC tools to select the whole directory of files; (2) order placement of each
-output besides its source, and (3) not compile the generated .cs files. Add the
-following stanza under the `<Project>` xml node:
-
-```xml
-  <ItemGroup>
-    <Protobuf Include="**/*.proto" OutputDir="%(RelativeDir)" CompileOutputs="false"  />
-  </ItemGroup>
-```
-
-The `Include` tells the build system to recursively examine project directory
-and its subdirectories (`**`) include all files matching the wildcard `*.proto`.
-You can instead selectively include your files or selectively exclude files from
-the glob pattern; [MSBuild documentation explains
-that](https://docs.microsoft.com/visualstudio/msbuild/msbuild-items). The
-`OutputDir="%(RelativeDir)"` orders the output directory for each .cs file be
-same as the corresponding .proto directory. Finally, `CompileOutputs="false"`
-prevents compiling the generated files into an assembly.
-
-Note that an empty assembly is still generated, but you should ignore it. As
-with any build system, it is used to detect out-of-date dependencies and
-recompile them.
-
-#### I am getting a warning about a missing expected file!
-
-When we are preparing compile, there is no way to know whether a given proto
-file will produce a *Grpc.cs output or not. If the proto file has a `service`
-clause, it will; otherwise, it won't, but the build script cannot know that in
-advance. When we are treating generated .cs files as temporary, this is ok, but
-when generating them for you, creating empty files is probably not. You need to
-tell the compiler which files should be compiled with gRPC services, and which
-only contain protobuffer message definitions.
-
-One option is just ignore the warning. Another is quench it by setting the
-property `Protobuf_NoWarnMissingExpected` to `true`:
-
-```xml
-<PropertyGroup>
-  <Protobuf_NoWarnMissingExpected>true</Protobuf_NoWarnMissingExpected>
-</PropertyGroup>
-```
-
-For a small to medium projects this is sufficient. But because of a missing
-output dependency, the corresponding .proto file will be recompiled on every
-build. If your project is large, or if other large builds depend on generated
-files, and are also needlessly recompiled, you'll want to prevent these rebuilds
-when files have not in fact changed, as follows:
-
-##### Explicitly tell protoc for which files it should use the gRPC plugin
-
-You need to set the `Protobuf` item property `GrpcServices` to `None` for those
-.proto inputs which do not have a `service` declared (or, optionally, those
-which do but you do not want a service/client stub for). The default value for
-the `GrpcServices` is `Both` (both client and server stub are generated). This
-is easy enough to do with glob patterns if your files are laid out in
-directories according to their service use, for example:
-
-```xml
-  <ItemGroup>
-    <Protobuf Include="**/*.proto" OutputDir="%(RelativeDir)"
-              CompileOutputs="false" GrpcServices="None" />
-    <Protobuf Update="**/hello/*.proto;**/bye/*.proto" GrpcServices="Both" />
-  </ItemGroup>
-```
-
-In this sample, all .proto files are compiled with `GrpcServices="None"`, except
-for .proto files in subdirectories on any tree level named `hello/` and `bye`,
-which will take `GrpcServices="Both"` Note the use of the `Update` attribute
-instead of `Include`. If you write `Include` by mistake, the files will be added
-to compile *twice*, once with, and once without GrpcServices. Pay attention not
-to do that!
-
-Another example would be the use of globbing if your service .proto files are
-named according to a pattern, for example `*_services.proto`. In this case, The
-`Update` attribute can be written as `Update="**/*_service.proto"`, to set the
-attribute `GrpcServices="Both"` only on these files.
-
-But what if no patterns work, and you cannot sort a large set of .proto file
-into those containing a service and those not? As a last resort,
-
-##### Force creating empty .cs files for missing outputs.
-
-Naturally, this results in a dirtier compiler output tree, but you may clean it
-using other ways (for example, by not copying zero-length .cs files to their
-final destination). Remember, though, that the files are still important to keep
-in their output locations to prevent needless recompilation. You may force
-generating empty files by setting the property `Protobuf_TouchMissingExpected`
-to `true`:
-
-```xml
-  <PropertyGroup>
-    <Protobuf_TouchMissingExpected>true</Protobuf_TouchMissingExpected>
-  </PropertyGroup>
-```
-
-#### But I do not use gRPC at all, I need only protobuffer messages compiled
-
-Set `GrpcServices="None"` on all proto files:
-
-```xml
-  <ItemGroup>
-    <Protobuf Include="**/*.proto" OutputDir="%(RelativeDir)"
-              CompileOutputs="false" GrpcServices="None" />
-  </ItemGroup>
-```
-
-#### That's good so far, but I do not want the `bin` and `obj` directories in my tree
-
-You may create the project in a subdirectory of the root of your files, such as,
-for example, `.build`. In this case, you want to refer to the proto files
-relative to that `.build/` directory as
-
-```xml
-  <ItemGroup>
-    <Protobuf Include="../**/*.proto" ProtoRoot=".."
-              OutputDir="%(RelativeDir)" CompileOutputs="false" />
-  </ItemGroup>
-```
-
-Pay attention to the `ProtoRoot` property. It needs to be set to the directory
-where `import` declarations in the .proto files are looking for files, since the
-project root is no longer the same as the proto root.
-
-Alternatively, you may place the project in a directory *above* your proto root,
-and refer to the files with a subdirectory name:
-
-```xml
-  <ItemGroup>
-    <Protobuf Include="proto_root/**/*.proto" ProtoRoot="proto_root"
-              OutputDir="%(RelativeDir)" CompileOutputs="false" />
-  </ItemGroup>
-```
-
-### Alas, this all is nice, but my scenario is more complex, -OR-
-### I'll investigate that when I have time. I just want to run protoc as I did before.
-
-One option is examine our [.targets and .props files](Grpc.Tools/build/) and see
-if you can create your own build sequence from the provided targets so that it
-fits your needs. Also please open an issue (and tag @kkm000 in it!) with your
-scenario. We'll try to support it if it appears general enough.
-
-But if you just want to run `protoc` using MsBuild `<Exec>` task, as you
-probably did before the version 1.17 of Grpc.Tools, we have a few build
-variables that point to resolved names of tools and common protoc imports.
-You'll have to roll your own dependency checking (or go with a full
-recompilation each time, if that works for you), but at the very least each
-version of the Tools package will point to the correct location of the files,
-and resolve the compiler and plugin executables appropriate for the host system.
-These property variables are:
-
-* `Protobuf_ProtocFullPath` points to the full path and filename of protoc executable, e. g.,
-  "C:\Users\kkm\.nuget\packages\grpc.tools\1.17.0\build\native\bin\windows\protoc.exe".
-
-* `gRPC_PluginFullPath` points to the full path and filename of gRPC plugin, such as
-  "C:\Users\kkm\.nuget\packages\grpc.tools\1.17.0\build\native\bin\windows\grpc_csharp_plugin.exe"
-
-* `Protobuf_StandardImportsPath` points to the standard proto import directory, for example,
-  "C:\Users\kkm\.nuget\packages\grpc.tools\1.17.0\build\native\include". This is
-  the directory where a declaration such as `import "google/protobuf/wrappers.proto";`
-  in a proto file would find its target.
-
-Use MSBuild property expansion syntax `$(VariableName)` in your protoc command
-line to substitute these variables, for instance,
-
-```xml
-  <Target Name="MyProtoCompile">
-    <PropertyGroup>
-      <ProtoCCommand>$(Protobuf_ProtocFullPath) --plugin=protoc-gen-grpc=$(gRPC_PluginFullPath)  -I $(Protobuf_StandardImportsPath) ....rest of your command.... </ProtoCCommand>
-    </PropertyGroup>
-    <Message Importance="high" Text="$(ProtoCCommand)" />
-    <Exec Command="$(ProtoCCommand)" />
-  </Target>
-```
-
-Also make sure *not* to include any file names to the `Protobuf` item
-collection, otherwise they will be compiled by default. If, by any chance, you
-used that name for your build scripting, you must rename it.
-
-### What about C++ projects?
-
-This is in the works. Currently, the same variables as above are set to point to
-the protoc binary, C++ gRPC plugin and the standard imports, but nothing else.
-Do not use the `Protobuf` item collection name so that your project remains
-future-proof. We'll use it for C++ projects too.
-
-Reference
----------
-
-### Protobuf item metadata reference
+## Protobuf item metadata reference
 
 The following metadata are recognized on the `<Protobuf>` items.
 
@@ -361,7 +101,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 | GrpcOutputDir  | See notes | A directory                        | Directory for generated gRPC stubs    |
 | GrpcOutputOptions | | arbitrary options                  | Extra options passed to gRPC codegen as `--grpc_opt=opt1,opt2` |
 | GrpcServices   | `both`    | `none`, `client`, `server`, `both` | Generated gRPC stubs             |
-| AdditionalImportDirs | See notes | Directories                        | Specify additional directories in which to search for imports .proto files |
+| AdditionalImportDirs | See notes | Directories                        | Specify additional directories in which to search for imports `.proto` files |
 
 __Notes__
 
@@ -370,7 +110,7 @@ For files _inside_ the project cone, `ProtoRoot` is set by default to the
 project directory. For every file _outside_ of the project directory, the value
 is set to this file's containing directory name, individually per file. If you
 include a subtree of proto files that lies outside of the project directory, you
-need to set this metadatum. There is an example in this file above. The path in
+need to set `ProtoRoot`. There is an example in this below. The path in
 this variable is relative to the project directory.
 
 * __OutputDir__  
@@ -378,7 +118,7 @@ The default value for this metadatum is the value of the property
 `Protobuf_OutputPath`. This property, in turn, unless you set it in your
 project, will be set to the value of the standard MSBuild property
 `IntermediateOutputPath`, which points to the location of compilation object
-outputs, such as "obj/Release/netstandard1.5/". The path in this property is
+outputs, such as `"obj/Release/netstandard1.5/"`. The path in this property is
 considered relative to the project directory.
 
 * __GrpcOutputDir__  
@@ -394,13 +134,13 @@ otherwise unsupported (e.g. experimental) flags to protocol buffer compiler.
 
 * __GrpcOutputOptions__ 
 Pass additional options to the `grpc_csharp_plugin` in form of the `--grpc_opt` flag.
-Normally this option should not be used as it's values are already controlled by "Access"
-and "GrpcServices" metadata, but it might be useful in situations where you want
+Normally this option should not be used as it's values are already controlled by `Access`
+and `GrpcServices` metadata, but it might be useful in situations where you want
 to explicitly pass some otherwise unsupported (e.g. experimental) options to the
 `grpc_csharp_plugin`.
 
 * __AdditionalImportDirs__
-Specify additional directories in which to search for imports in .proto files. The directories are searched in the order given. You may specify directories _outside_ of the 
+Specify additional directories in which to search for imports in `.proto files`. The directories are searched in the order given. You may specify directories _outside_ of the 
 project directory. The directories are passed to the `protoc` code generator via the `-I/--proto_path` option
 together with `Protobuf_StandardImportsPath` and `ProtoRoot` directories.
 
@@ -409,9 +149,10 @@ __Specifying multiple values in properties__
 Some properties allow you to specify multiple values in a list. The items in a list need to
 be separated by semi-colons (;). This is the syntax that MsBuild uses for lists.
 
-The properties that can have lists of items are: __OutputOptions__, __AdditionalProtocArguments__, __GrpcOutputOptions__, __AdditionalImportDirs__
+The properties that can have lists of items are: `OutputOptions`, `AdditionalProtocArguments`,
+ `GrpcOutputOptions`, `AdditionalImportDirs`
 
-Example: to specify two additional arguments: ```--plugin=protoc-gen-myplugin=D:\myplugin.exe --myplugin_out=.```
+Example: to specify two additional arguments: `--plugin=protoc-gen-myplugin=D:\myplugin.exe --myplugin_out=.`
 
 ```xml
   <ItemGroup>
@@ -421,8 +162,7 @@ Example: to specify two additional arguments: ```--plugin=protoc-gen-myplugin=D:
   </ItemGroup>
 ```
 
-`grpc_csharp_plugin` command line options
----------
+## `grpc_csharp_plugin` command line options
 
 Under the hood, the `Grpc.Tools` build integration invokes the `protoc` and `grpc_csharp_plugin` binaries
 to perform code generation. Here is an overview of the available `grpc_csharp_plugin` options:
@@ -440,3 +180,254 @@ protoc --plugin=protoc-gen-grpc=grpc_csharp_plugin --csharp_out=OUT_DIR \
     --grpc_out=OUT_DIR --grpc_opt=lite_client,no_server \
     -I INCLUDE_DIR foo.proto
 ```
+## Environment Variables
+
+Environment variables can be set to change the behavior of `Grpc.Tools` - setting the CPU architecture or operating system, or using custom built protocol buffers compiler and gRPC plugin.
+
+| Name                | Synopsis                                                                      |
+|---------------------|-------------------------------------------------------------------------------|
+|`PROTOBUF_TOOLS_OS`  | Operating system version of the tools to use: `linux`, `macosx`, or `windows` |
+|`PROTOBUF_TOOLS_CPU` | CPU architecture version of the tools to use: `x86`, `x64`, or `arm64`        |
+|`PROTOBUF_PROTOC`    | Full path to the protocol buffers compiler                                    |
+|`GRPC_PROTOC_PLUGIN` | Full path to the grpc_csharp_plugin                                           |
+
+For example, to use a custom built protoc compiler and grpc_csharp_plugin:
+```bash
+export PROTOBUF_PROTOC=$my_custom_build/protoc
+export GRPC_PROTOC_PLUGIN=$my_custom_build/grpc_csharp_plugin
+dotnet build myproject.csproj
+```
+
+## MSBuild Properties
+
+You can set some Properties in your project file or on the command line when doing a build. The
+following properties change the behavior of `Grpc.Tools`:
+
+| Name                | Synopsis                                                                      |
+|---------------------|-------------------------------------------------------------------------------|
+| `Protobuf_ToolsOs`  | Same as `PROTOBUF_TOOLS_OS` environment variable                              |
+| `Protobuf_ToolsCpu` | Same as `PROTOBUF_TOOLS_CPU` environment variable                             |
+| `Protobuf_ProtocFullPath` | Same as `PROTOBUF_PROTOC` environment variable                          |
+| `gRPC_PluginFullPath` | Same as `GRPC_PROTOC_PLUGIN` environment variable                           |
+| `Protobuf_NoWarnMissingExpected` | Default: `false`. If `true` then no warnings are given if expected files not generated. See example below for an explanation. |
+
+# Scenarios and Examples
+
+For other examples see also the `.csproj` files in the examples in GitHub:
+* Grpc-dotnet examples: https://github.com/grpc/grpc-dotnet/tree/master/examples
+* Grpc c-core C# examples: https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp
+
+Quick links to the examples below:
+
+* [AdditionalImportDirs - Setting location of imported `.proto` files](#AdditionalImportDirs)
+* [ProtoRoot - Avoiding duplicate generated file names](#ProtoRoot)
+* [GrpcServices - Generating gRPC services and protocol buffers messages](#grpcservices)
+* [Generate proto and gRPC C# sources from .proto files (no C# compile)](#nocompile)
+* [Visual Studio: setting per-file `.proto` file options](#visualstudio)
+* [Bypassing Grpc.Tools to run the protocol buffers compiler explicitly](#compiler)
+
+---
+## <a name="AdditionalImportDirs"></a>AdditionalImportDirs - Setting location of imported `.proto` files
+
+If your `.proto` files import other files that are not co-located with the `.proto` file 
+you can specify the directories to search for the
+imported files by specifying `AdditionalImportDirs` and provide a list of directories.
+The directories are searched in the order given. E.g.:
+
+```xml
+  <Protobuf Include="protos/*.proto" ProtoRoot="protos"
+      AdditionalImportDirs="/folder/protos/myapis/;/another/folder/"
+      ... />
+```
+
+Note - the paths for standard imports included in the `Grpc.Tools` package are automatically passed to the protocol buffers compiler and do not need to be explicitly set.
+E.g. the directory `"...\.nuget\packages\grpc.tools\2.51.0\build\native\include"` is automatically included.  This is the directory where a declaration such as `import "google/protobuf/wrappers.proto";` in a proto file would be found.
+
+---
+## <a name="ProtoRoot"></a>ProtoRoot - Avoiding duplicate generated file names
+
+`Grpc.Tools` tries to preserve the original directory structure relative to where the `.proto`
+files are when creating the `.cs` files under the `obj` directory. It does this by using the
+`ProtoRoot` metadata on the `<Protobuf>` items.
+
+`ProtoRoot` specifies a common directory that is an ancestor of all `.proto` files, and the generated files under the `obj` directory will have the same directory structure. 
+
+For `.proto` files under the project directory `ProtoRoot` is by default set to “.”. It can also be explicitly set. 
+
+E.g.
+Specifying `<Protobuf Include="**\*.proto" />` for files:
+```
+	ProjectFolder\Protos\v1\hello.proto
+	ProjectFolder\Protos\v2\hello.proto
+```
+Will generate files:
+```
+  ProjectFolder\obj\Debug\net6.0\Protos\v1\Hello.cs
+  ProjectFolder\obj\Debug\net6.0\Protos\v1\HelloGrpc.cs
+  ProjectFolder\obj\Debug\net6.0\Protos\v2\Hello.cs
+  ProjectFolder\obj\Debug\net6.0\Protos\v2\HelloGrpc.cs
+```
+But `<Protobuf Include="**\*.proto" ProtoRoot="Protos" />` will generate files:
+
+```
+  ProjectFolder\obj\Debug\net6.0\v1\Hello.cs
+  ProjectFolder\obj\Debug\net6.0\v1\HelloGrpc.cs
+  ProjectFolder\obj\Debug\net6.0\v2\Hello.cs
+  ProjectFolder\obj\Debug\net6.0\v2\HelloGrpc.cs
+```
+
+Setting `ProtoRoot` is useful if you have `.proto` files from different directories,
+e.g. some from inside the project and some external to the project, to make sure that structure
+under the `obj` directory does not cause any name clashes.
+
+---
+## <a name="grpcservices"></a>GrpcServices - Generating gRPC services and protocol buffers messages
+The protocol buffers files (`.proto` files) define both the service interface and the
+structure of the payload messages.
+
+Two `.cs` file can be generated from a `.proto` file. For example, if the `.proto` file 
+is `myfile.proto` then the two possible files are:
+* `Myfile.cs` - contains the generated code for protocol buffers messages
+* `MyfileGrpc.cs`  - contains the generated code for gRPC client and/or server
+
+When a `.proto` file contains service definitions the protocol buffers compiler calls
+the gRPC plugin to generate gRPC client and/or server stub code. Whether or not the `.cs` file
+is generated for the gRPC code and what it contains is controlled by the `GrpcServices` metadata
+on the `<Protobuf>` item.
+
+* `GrpcServices="both"` (the default) - `Myfile.cs` and `MyfileGrpc.cs` generated
+* `GrpcServices="none"` - just `Myfile.cs` generated
+* `GrpcServices="client"` - `Myfile.cs` and `MyfileGrpc.cs` (just client code)
+* `GrpcServices="server"` - `Myfile.cs` and `MyfileGrpc.cs` (just server code)
+
+However when a `.proto` **does not file contains any service definitions** but only contains
+message definitions then an empty (zero length) `MyfileGrpc.cs` may still be created
+by `Grpc.Tools` unless the `.proto` file is specified with `GrpcServices="none"` in the project file.
+
+This is because `Grpc.Tools` has no way of knowing in advanced of running the protocol buffers
+compiler whether a `.proto` file has a service clause. It creates the emtpy files as a marker
+for incremental builds so that the `.proto` files are not unnecessarily recompiled. Empty files
+are not a problem on a small project but you may wish to avoid them on a larger project.
+
+Therefore it is better to explicitly mark files with the correct `GrpcServices` metadata if you can. For
+example:
+
+```xml
+<ItemGroup>
+  <Protobuf Include="**/*.proto" GrpcServices="None" />
+  <Protobuf Update="**/hello/*.proto;**/bye/*.proto" GrpcServices="Both" />
+</ItemGroup>
+```
+In the above example all `.proto` files are compiled with `GrpcServices="None"`, except for `.proto`
+files in subdirectories on any tree level named `hello` and `bye`, which will take 
+`GrpcServices="Both"`. Note the use of the `Update` attribute instead of `Include` - otherwise
+the files will be added twice.
+
+Another example would be the use of globbing if your service `.proto` files are named according
+to a pattern, for example `*_services.proto`. In this case the `Update` attribute can be written
+as `Update="**/*_service.proto"` to set the attribute `GrpcServices="Both"` only on these files.
+
+### Seeing a warning about a missing expected file
+
+If a `*Grpc.cs` file is not generated because the `.proto` file does not contain a service clause
+(see above) then `Grpc.Tools` only creates empty files for files generated in the intermediate
+`obj` directory. If the files are configured to be generated elsewhere then empty files are not
+ created so as not to polute non-intermediate directories. In this case a warning is output:
+ ```
+ Some expected protoc outputs were not generated
+ ```
+The warning can be suppressed by setting the MSBuild property:
+```xml
+<PropertyGroup>
+  <Protobuf_NoWarnMissingExpected>true</Protobuf_NoWarnMissingExpected>
+</PropertyGroup>
+```
+but it is better to set `GrpcServices="None"` on the `.proto` files affected to avoid
+unnecessary rebuilds. 
+
+---
+## <a name="nocompile"></a>Generate proto and gRPC C# sources from .proto files (no C# compile)
+
+If you just want to generate the C# sources from `.proto` files without compiling the C# files
+ (e.g. for use in other projects), then add this to a `.csproj` file:
+ ```xml
+<ItemGroup>
+  <Protobuf Include="**/*.proto"
+      OutputDir="%(RelativeDir)" CompileOutputs="false"  />
+</ItemGroup>
+```
+
+* `Include` tells the build system to recursively examine project directory and its 
+subdirectories (**) include all files matching the wildcard `*.proto`.
+* `OutputDir="%(RelativeDir)"` makes the output directory for each `.cs` file to be 
+same as the corresponding `.proto` directory.
+* `CompileOutputs="false"` prevents compiling the generated files into an assembly.
+Note that an empty assembly is still generated which can be ignored. 
+
+NOTE: To start with an empty project to add your `.proto` files to you can do the following
+at a command prompt:
+```bash
+dotnet new classlib
+rm *.cs              # remove .cs files - for Windows the command is: del *.cs /y
+dotnet add package Grpc.Tools
+``` 
+
+---
+## <a name="visualstudio"></a>Visual Studio: setting per-file `.proto` file options 
+
+In Visual Studio it is possible to set some frequently used per-file options on `.proto` files 
+without editing the `.csproj` file directly. However editing the `.csproj` gives you more
+flexibilty.
+
+### "dotnet SDK" projects
+
+For a "dotnet SDK" project, you have more control of some frequently used options.
+**You may need to open and close Visual Studio** for this form to appear in the
+properties window after adding a reference to `Grpc.Tools` package:
+
+![Properties in an SDK project](doc/integration.md-fig.2-sdk.png)
+
+You can also change options of multiple files at once by selecting them in the
+Project Explorer together.
+
+### "classic" projects
+
+For a "classic" project, you can only add `.proto` files with all options set to
+default. Click on the "show all files" button, add files to project, then
+change file type of the `.proto` files to "Protobuf" in the Properties window
+drop-down. This menu item will appear after you import the `Grpc.Tools` package:
+
+![Properties in a classic project](doc/integration.md-fig.1-classic.png)
+
+---
+## <a href="compiler"></a>Bypassing Grpc.Tools to run the protocol buffers compiler explicitly
+
+It is possible to bypass all the build logic in `Grpc.Tools` and run the protocol buffers compiler
+explicitly in your project file, and just use the `Grpc.Tools` as a means of getting the compiler.
+**This is not recommended** but there may be situations where you want to do this.
+
+You can use the following Properties:
+* `Protobuf_ProtocFullPath` points to the full path and filename of protoc executable, e.g.
+  `"...\.nuget\packages\grpc.tools\2.51.0\build\native\bin\windows\protoc.exe"`
+
+* `gRPC_PluginFullPath` points to the full path and filename of gRPC plugin, e.g.
+  `"...\.nuget\packages\grpc.tools\2.51.0\build\native\bin\windows\grpc_csharp_plugin.exe"`
+
+* `Protobuf_StandardImportsPath` points to the standard proto import directory, e.g.
+  `"...\.nuget\packages\grpc.tools\2.51.0\build\native\include"`. This is
+  the directory where a declaration such as `import "google/protobuf/wrappers.proto";`
+  in a proto file would find its target.
+
+then in your project file:
+
+```xml
+  <Target Name="MyProtoCompile">
+    <PropertyGroup>
+      <ProtoCCommand>$(Protobuf_ProtocFullPath) --plugin=protoc-gen-grpc=$(gRPC_PluginFullPath)  -I $(Protobuf_StandardImportsPath) ....rest of your command.... </ProtoCCommand>
+    </PropertyGroup>
+    <Message Importance="high" Text="$(ProtoCCommand)" />
+    <Exec Command="$(ProtoCCommand)" />
+  </Target>
+```
+Do not include any `<Protobuf>` items in the project file as that will invoke the `Grpc.Tools` build and your files will be compiled twice.
+
