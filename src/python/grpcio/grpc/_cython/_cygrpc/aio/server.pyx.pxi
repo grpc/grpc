@@ -727,7 +727,6 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
                 )
             except ExecuteBatchError:
                 _LOGGER.exception('Failed sending error status from server')
-                raise
 
 
 cdef _add_callback_handler(object rpc_task, RPCState rpc_state):
