@@ -18,18 +18,21 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
 
+#include <stddef.h>
+
+#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -480,14 +483,14 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       child_addresses.emplace();
       for (const auto& address : *addresses) {
         auto status = GetAddressHealthStatus(address);
-        bool locked = false;
+        bool draining = false;
         if (status.status() != XdsHealthStatus::HealthStatus::kDraining) {
           child_addresses->push_back(address);
         } else if ((override_host_status_mask & HealthStatusBitMask(status)) ==
                    0) {
           continue;
         } else {
-          locked = true;
+          draining = true;
         }
         auto key = grpc_sockaddr_to_string(&address.address(), false);
         if (key.ok()) {
@@ -496,12 +499,12 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
             new_map.emplace(std::make_pair(*key, SubchannelEntry(nullptr)));
           } else {
             SubchannelWrapper* subchannel = it->second.GetSubchannel();
-            if (subchannel == nullptr || !locked) {
-              new_map.emplace(
-                  std::make_pair(*key, SubchannelEntry(subchannel)));
-            } else {
+            if (subchannel != nullptr && draining) {
               new_map.emplace(
                   std::make_pair(*key, SubchannelEntry(subchannel->Ref())));
+            } else {
+              new_map.emplace(
+                  std::make_pair(*key, SubchannelEntry(subchannel)));
             }
           }
         }
@@ -636,10 +639,10 @@ void XdsOverrideHostLb::SubchannelWrapper::WatchConnectivityState(
 
 void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  std::remove_if(watcher_->watchers_.begin(), watcher_->watchers_.end(),
-                 [watcher](const auto& watcher_ptr) {
-                   return watcher_ptr.get() == watcher;
-                 });
+  (void)std::remove_if(watcher_->watchers_.begin(), watcher_->watchers_.end(),
+                       [watcher](const auto& watcher_ptr) {
+                         return watcher_ptr.get() == watcher;
+                       });
 }
 
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
