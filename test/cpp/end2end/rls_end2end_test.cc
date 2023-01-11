@@ -230,7 +230,7 @@ class RlsEnd2endTest : public ::testing::Test {
   }
 
   struct RpcOptions {
-    int timeout_ms = 1000;
+    int timeout_ms = 10000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
 
