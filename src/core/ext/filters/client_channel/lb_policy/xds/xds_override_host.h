@@ -29,9 +29,6 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
-namespace internal {
-
-constexpr absl::string_view kXdsOverrideHost = "xds_override_host_experimental";
 
 // Config for stateful session LB policy.
 class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
@@ -44,7 +41,9 @@ class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
   XdsOverrideHostLbConfig(XdsOverrideHostLbConfig&& other) = delete;
   XdsOverrideHostLbConfig& operator=(XdsOverrideHostLbConfig&& other) = delete;
 
-  absl::string_view name() const override { return kXdsOverrideHost; }
+  static absl::string_view Name() { return "xds_override_host_experimental"; }
+
+  absl::string_view name() const override { return Name(); }
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_config() const {
     return child_config_;
@@ -57,6 +56,5 @@ class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_config_;
 };
-}  // namespace internal
 }  // namespace grpc_core
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_OVERRIDE_HOST_H

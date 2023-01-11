@@ -32,6 +32,9 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using internal::ClientChannelGlobalParsedConfig;
+using internal::ClientChannelServiceConfigParser;
+
 TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
   const char* service_config_json =
       "{\n"
@@ -48,13 +51,15 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
   ASSERT_TRUE(service_config.ok());
   EXPECT_NE(*service_config, nullptr);
   auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(0));
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
-  ASSERT_EQ(lb_config->name(), internal::kXdsOverrideHost);
+  ASSERT_EQ(lb_config->name(), XdsOverrideHostLbConfig::Name());
   auto override_host_lb_config =
-      static_cast<RefCountedPtr<internal::XdsOverrideHostLbConfig>>(lb_config);
+      static_cast<RefCountedPtr<XdsOverrideHostLbConfig>>(lb_config);
   ASSERT_NE(override_host_lb_config->child_config(), nullptr);
   ASSERT_EQ(override_host_lb_config->child_config()->name(), "grpclb");
 }
@@ -75,13 +80,15 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfigWithRR) {
   ASSERT_TRUE(service_config.ok());
   EXPECT_NE(*service_config, nullptr);
   auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(0));
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
-  ASSERT_EQ(lb_config->name(), internal::kXdsOverrideHost);
+  ASSERT_EQ(lb_config->name(), XdsOverrideHostLbConfig::Name());
   auto override_host_lb_config =
-      static_cast<RefCountedPtr<internal::XdsOverrideHostLbConfig>>(lb_config);
+      static_cast<RefCountedPtr<XdsOverrideHostLbConfig>>(lb_config);
   ASSERT_NE(override_host_lb_config->child_config(), nullptr);
   ASSERT_EQ(override_host_lb_config->child_config()->name(), "round_robin");
 }

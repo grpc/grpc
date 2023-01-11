@@ -71,9 +71,6 @@ TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host_lb");
 
 namespace {
 
-using internal::kXdsOverrideHost;
-using internal::XdsOverrideHostLbConfig;
-
 //
 // xds_override_host LB policy
 //
@@ -81,7 +78,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
  public:
   explicit XdsOverrideHostLb(Args args);
 
-  absl::string_view name() const override { return kXdsOverrideHost; }
+  absl::string_view name() const override {
+    return XdsOverrideHostLbConfig::Name();
+  }
 
   absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -593,7 +592,9 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<XdsOverrideHostLb>(std::move(args));
   }
 
-  absl::string_view name() const override { return kXdsOverrideHost; }
+  absl::string_view name() const override {
+    return XdsOverrideHostLbConfig::Name();
+  }
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
@@ -618,7 +619,7 @@ void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
       std::make_unique<XdsOverrideHostLbFactory>());
 }
 
-namespace internal {
+// XdsOverrideHostLbConfig
 
 const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
     const JsonArgs&) {
@@ -646,7 +647,5 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
     }
   }
 }
-
-}  // namespace internal
 
 }  // namespace grpc_core
