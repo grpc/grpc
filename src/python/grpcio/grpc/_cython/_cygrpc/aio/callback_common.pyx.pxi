@@ -24,19 +24,11 @@ cdef class CallbackFailureHandler:
         self._core_function_name = core_function_name
         self._error_details = error_details
         self._exception_type = exception_type
-        self._core_error_string = NULL
-        if isinstance(exception_type, enum.IntEnum):
-            self._core_error_string = grpc_call_error_to_string(exception_type)
 
     cdef handle(self, object future):
-        if self._core_error_string == NULL:
-            error_string = 'Failed "%s": %s' % (self._core_function_name, self._error_details)
-        else:
-            error_string = 'Failed "%s" with core error %s: %s' % (
-                self._core_function_name,
-                self._core_error_string,
-                self._error_details)
-        future.set_exception(self._exception_type(error_string))
+        future.set_exception(self._exception_type(
+            'Failed "%s": %s' % (self._core_function_name, self._error_details)
+        ))
 
 
 cdef class CallbackWrapper:
