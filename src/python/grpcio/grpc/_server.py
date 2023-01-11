@@ -19,7 +19,6 @@ import collections
 from concurrent import futures
 import enum
 import logging
-import sys
 import threading
 import time
 import traceback
@@ -627,7 +626,7 @@ def _unary_response_in_pool(
                 if serialized_response is not None:
                     _status(rpc_event, state, serialized_response)
     except Exception:  # pylint: disable=broad-except
-        traceback.print_exception(*sys.exc_info())
+        traceback.print_exc()
     finally:
         cygrpc.uninstall_context()
 
@@ -667,7 +666,7 @@ def _stream_response_in_pool(
                     _send_message_callback_to_blocking_iterator_adapter(
                         rpc_event, state, send_response, response_iterator)
     except Exception:  # pylint: disable=broad-except
-        traceback.print_exception(*sys.exc_info())
+        traceback.print_exc()
     finally:
         cygrpc.uninstall_context()
 
