@@ -1011,9 +1011,13 @@ class ClientCallData::PollContext {
               (*self_->recv_initial_metadata_->metadata_next_)();
           if (NextResult<ServerMetadataHandle>* nr =
                   absl::get_if<kPollReadyIdx>(&p)) {
-            ServerMetadataHandle md = std::move(nr->value());
-            if (self_->recv_initial_metadata_->metadata != md.get()) {
-              *self_->recv_initial_metadata_->metadata = std::move(*md);
+            if (nr->has_value()) {
+              ServerMetadataHandle md = std::move(nr->value());
+              if (self_->recv_initial_metadata_->metadata != md.get()) {
+                *self_->recv_initial_metadata_->metadata = std::move(*md);
+              }
+            } else {
+              self_->recv_initial_metadata_->metadata->Clear();
             }
             self_->recv_initial_metadata_->state =
                 RecvInitialMetadata::kResponded;
