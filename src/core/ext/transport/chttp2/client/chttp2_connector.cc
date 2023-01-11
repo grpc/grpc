@@ -22,7 +22,6 @@
 
 #include <stdint.h>
 
-#include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -166,17 +165,17 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      self->result_->transport = TransportPointer(
-          grpc_create_chttp2_transport(args->args, args->endpoint, true));
+      self->result_->transport =
+          grpc_create_chttp2_transport(args->args, args->endpoint, true);
       GPR_ASSERT(self->result_->transport != nullptr);
       self->result_->socket_node =
-          grpc_chttp2_transport_get_socket_node(self->result_->transport.get());
+          grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
       self->endpoint_ = args->endpoint;
       self->Ref().release();  // Ref held by OnReceiveSettings()
       GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
                         grpc_schedule_on_exec_ctx);
-      grpc_chttp2_transport_start_reading(self->result_->transport.get(),
+      grpc_chttp2_transport_start_reading(self->result_->transport,
                                           args->read_buffer,
                                           &self->on_receive_settings_, nullptr);
       RefCountedPtr<Chttp2Connector> cc = self->Ref();

@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <memory>
 #include <new>
-#include <tuple>
 #include <utility>
 
 #include "absl/status/statusor.h"
@@ -880,6 +879,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
 
 void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (shutdown_) {
+    connecting_result_.Reset();
     return;
   }
   // If we didn't get a transport or we fail to publish it, report
@@ -920,7 +920,7 @@ bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
   ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
                                   connecting_result_.channel_args);
-  builder.SetTransport(connecting_result_.transport.get());
+  builder.SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
@@ -933,9 +933,6 @@ bool Subchannel::PublishTransportLocked() {
             key_.ToString().c_str(), StatusToString(error).c_str());
     return false;
   }
-  // Release the ownership since it is now owned by the connected filter in the
-  // channel stack (published).
-  std::ignore = connecting_result_.transport.release();
   RefCountedPtr<channelz::SocketNode> socket =
       std::move(connecting_result_.socket_node);
   connecting_result_.Reset();

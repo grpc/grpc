@@ -19,8 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -51,22 +49,19 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     ChannelArgs channel_args;
   };
 
-  struct TransportDeleter {
-    void operator()(grpc_transport* transport) {
-      grpc_transport_destroy(transport);
-    }
-  };
-  using TransportPointer = std::unique_ptr<grpc_transport, TransportDeleter>;
   struct Result {
     // The connected transport.
-    TransportPointer transport;
+    grpc_transport* transport = nullptr;
     // Channel args to be passed to filters.
     ChannelArgs channel_args;
     // Channelz socket node of the connected transport, if any.
     RefCountedPtr<channelz::SocketNode> socket_node;
 
     void Reset() {
-      transport.reset();
+      if (transport != nullptr) {
+        grpc_transport_destroy(transport);
+        transport = nullptr;
+      }
       channel_args = ChannelArgs();
       socket_node.reset();
     }
