@@ -147,7 +147,7 @@ class LoggingTest : public ::testing::Test {
   std::unique_ptr<EchoTestService::Stub> stub_;
 };
 
-TEST_F(LoggingTest, DISABLED_SimpleRpc) {
+TEST_F(LoggingTest, SimpleRpc) {
   g_test_logging_sink->SetConfig(
       grpc::internal::LoggingSink::Config(4096, 4096));
   EchoRequest request;
@@ -304,7 +304,7 @@ TEST_F(LoggingTest, DISABLED_SimpleRpc) {
                                      "server-trailer-value")))))));
 }
 
-TEST_F(LoggingTest, DISABLED_LoggingDisabled) {
+TEST_F(LoggingTest, LoggingDisabled) {
   g_test_logging_sink->SetConfig(grpc::internal::LoggingSink::Config());
   EchoRequest request;
   request.set_message("foo");
@@ -316,7 +316,7 @@ TEST_F(LoggingTest, DISABLED_LoggingDisabled) {
   EXPECT_TRUE(g_test_logging_sink->entries().empty());
 }
 
-TEST_F(LoggingTest, DISABLED_MetadataTruncated) {
+TEST_F(LoggingTest, MetadataTruncated) {
   g_test_logging_sink->SetConfig(grpc::internal::LoggingSink::Config(
       40 /* expect truncated metadata*/, 4096));
   EchoRequest request;
@@ -474,7 +474,7 @@ TEST_F(LoggingTest, DISABLED_MetadataTruncated) {
                                      "server-trailer-value")))))));
 }
 
-TEST_F(LoggingTest, DISABLED_PayloadTruncated) {
+TEST_F(LoggingTest, PayloadTruncated) {
   g_test_logging_sink->SetConfig(grpc::internal::LoggingSink::Config(4096, 10));
   EchoRequest request;
   // The following message should get truncated
@@ -635,7 +635,7 @@ TEST_F(LoggingTest, DISABLED_PayloadTruncated) {
                                      "server-trailer-value")))))));
 }
 
-TEST_F(LoggingTest, DISABLED_CancelledRpc) {
+TEST_F(LoggingTest, CancelledRpc) {
   g_test_logging_sink->SetConfig(
       grpc::internal::LoggingSink::Config(4096, 4096));
   EchoRequest request;
