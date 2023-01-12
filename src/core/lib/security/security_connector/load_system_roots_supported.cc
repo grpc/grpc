@@ -134,7 +134,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     if (file_descriptor != -1) {
       // Read file into bundle.
       size_t cert_file_size = roots_filenames[i].size;
-      int read_ret =
+      ssize_t read_ret =
           read(file_descriptor, bundle_string + bytes_read, cert_file_size);
       if (read_ret != -1) {
         bytes_read += read_ret;

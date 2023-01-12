@@ -79,7 +79,7 @@ inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
 }  // namespace grpc_core
 
 inline uint32_t grpc_slice_hash(const grpc_slice& s) {
-  return absl::HashOf(grpc_core::StringViewFromSlice(s));
+  return static_cast<uint32_t>(absl::HashOf(grpc_core::StringViewFromSlice(s)));
 }
 
 namespace grpc_core {

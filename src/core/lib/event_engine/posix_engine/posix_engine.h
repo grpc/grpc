@@ -235,7 +235,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       const grpc_event_engine::experimental::PosixTcpOptions& options,
       Duration timeout);
 
-  void OnConnectFinishInternal(int connection_handle);
+  void OnConnectFinishInternal(int64_t connection_handle);
 
   std::vector<ConnectionShard> connection_shards_;
   std::atomic<int64_t> last_connection_id_{1};
