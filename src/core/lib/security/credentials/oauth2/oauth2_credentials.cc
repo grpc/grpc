@@ -729,7 +729,7 @@ grpc_access_token_credentials::grpc_access_token_credentials(
           absl::StrCat("Bearer ", access_token))) {}
 
 std::string grpc_access_token_credentials::debug_string() {
-  return absl::StrFormat("AccessTokenCredentials{Token:present}");
+  return "AccessTokenCredentials{Token:present}";
 }
 
 grpc_call_credentials* grpc_access_token_credentials_create(

@@ -27,6 +27,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:grpcpp_gcp_observability",
         "//test/cpp/util:test_util",
@@ -42,6 +43,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//src/cpp/ext/gcp:observability_config",
         "//test/cpp/util:test_util",
@@ -57,6 +59,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//src/cpp/ext/gcp:observability_logging_sink",
         "//test/cpp/util:test_util",

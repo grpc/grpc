@@ -856,7 +856,7 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
 }
 
 void PosixEndpointImpl::HandleError(absl::Status /*status*/) {
-  GPR_ASSERT(false && "Error handling not supported on this platform");
+  grpc_core::Crash("Error handling not supported on this platform");
 }
 
 void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {}
@@ -866,7 +866,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
                                             ssize_t* /*sent_length*/,
                                             int* /*saved_errno*/,
                                             int /*additional_flags*/) {
-  GPR_ASSERT(false && "Write with timestamps not supported for this platform");
+  grpc_core::Crash("Write with timestamps not supported for this platform");
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
@@ -1168,12 +1168,15 @@ void PosixEndpointImpl::Write(
   }
 }
 
-void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
+void PosixEndpointImpl::MaybeShutdown(
+    absl::Status why,
+    absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
   if (poller_->CanTrackErrors()) {
     ZerocopyDisableAndWaitForRemaining();
     stop_error_notification_.store(true, std::memory_order_release);
     handle_->SetHasError();
   }
+  on_release_fd_ = std::move(on_release_fd);
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
@@ -1181,7 +1184,13 @@ void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  handle_->OrphanHandle(on_done_, nullptr, "");
+  int release_fd = -1;
+  handle_->OrphanHandle(on_done_,
+                        on_release_fd_ == nullptr ? nullptr : &release_fd, "");
+  if (on_release_fd_ != nullptr) {
+    engine_->Run([on_release_fd = std::move(on_release_fd_),
+                  release_fd]() mutable { on_release_fd(release_fd); });
+  }
   delete on_read_;
   delete on_write_;
   delete on_error_;
@@ -1299,7 +1308,7 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
     std::shared_ptr<EventEngine> /*engine*/,
     const PosixTcpOptions& /*options*/) {
-  GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
+  grpc_core::Crash("Cannot create PosixEndpoint on this platform");
 }
 
 }  // namespace experimental

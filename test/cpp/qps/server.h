@@ -28,6 +28,7 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"

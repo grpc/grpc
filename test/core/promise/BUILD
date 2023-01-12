@@ -392,6 +392,25 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "mpsc_test",
+    srcs = ["mpsc_test.cc"],
+    external_deps = [
+        "absl/types:optional",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:mpsc",
+    ],
+)
+
 grpc_proto_fuzzer(
     name = "promise_fuzzer",
     srcs = ["promise_fuzzer.cc"],
@@ -431,6 +450,26 @@ grpc_cc_test(
     deps = [
         "//src/core:activity",
         "//src/core:exec_ctx_wakeup_scheduler",
+        "//src/core:poll",
+    ],
+)
+
+grpc_cc_test(
+    name = "event_engine_wakeup_scheduler_test",
+    srcs = ["event_engine_wakeup_scheduler_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:activity",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:notification",
         "//src/core:poll",
     ],
 )

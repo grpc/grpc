@@ -71,6 +71,7 @@ grpc_cc_library(
         "//:httpcli",
         "//:sockaddr_utils",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
         "//src/core:error",
@@ -202,6 +203,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "inproc_callback_test",
     srcs = ["inproc_callback_test.cc"],
+    external_deps = ["absl/strings:str_format"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
