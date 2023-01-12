@@ -34,28 +34,28 @@
 #include "src/core/lib/gprpp/per_cpu.h"
 
 namespace grpc_core {
-class HistogramCollector_32768_24;
-class Histogram_32768_24 {
+class HistogramCollector_65536_26;
+class Histogram_65536_26 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  friend Histogram_32768_24 operator-(const Histogram_32768_24& left,
-                                      const Histogram_32768_24& right);
+  friend Histogram_65536_26 operator-(const Histogram_65536_26& left,
+                                      const Histogram_65536_26& right);
 
  private:
-  friend class HistogramCollector_32768_24;
-  uint64_t buckets_[24]{};
+  friend class HistogramCollector_65536_26;
+  uint64_t buckets_[26]{};
 };
-class HistogramCollector_32768_24 {
+class HistogramCollector_65536_26 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_32768_24::BucketFor(value)].fetch_add(
+    buckets_[Histogram_65536_26::BucketFor(value)].fetch_add(
         1, std::memory_order_relaxed);
   }
-  void Collect(Histogram_32768_24* result) const;
+  void Collect(Histogram_65536_26* result) const;
 
  private:
-  std::atomic<uint64_t> buckets_[24]{};
+  std::atomic<uint64_t> buckets_[26]{};
 };
 class HistogramCollector_16777216_20;
 class Histogram_16777216_20 {
@@ -132,6 +132,7 @@ struct GlobalStats {
     kTcpReadOffer,
     kTcpReadOfferIovSize,
     kHttp2SendMessageSize,
+    kHttp2MetadataSize,
     COUNT
   };
   GlobalStats();
@@ -163,13 +164,14 @@ struct GlobalStats {
     };
     uint64_t counters[static_cast<int>(Counter::COUNT)];
   };
-  Histogram_32768_24 call_initial_size;
+  Histogram_65536_26 call_initial_size;
   Histogram_16777216_20 tcp_write_size;
   Histogram_80_10 tcp_write_iov_size;
   Histogram_16777216_20 tcp_read_size;
   Histogram_16777216_20 tcp_read_offer;
   Histogram_80_10 tcp_read_offer_iov_size;
   Histogram_16777216_20 http2_send_message_size;
+  Histogram_65536_26 http2_metadata_size;
   HistogramView histogram(Histogram which) const;
   std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;
 };
@@ -257,6 +259,9 @@ class GlobalStatsCollector {
   void IncrementHttp2SendMessageSize(int value) {
     data_.this_cpu().http2_send_message_size.Increment(value);
   }
+  void IncrementHttp2MetadataSize(int value) {
+    data_.this_cpu().http2_metadata_size.Increment(value);
+  }
 
  private:
   struct Data {
@@ -277,13 +282,14 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> cq_pluck_creates{0};
     std::atomic<uint64_t> cq_next_creates{0};
     std::atomic<uint64_t> cq_callback_creates{0};
-    HistogramCollector_32768_24 call_initial_size;
+    HistogramCollector_65536_26 call_initial_size;
     HistogramCollector_16777216_20 tcp_write_size;
     HistogramCollector_80_10 tcp_write_iov_size;
     HistogramCollector_16777216_20 tcp_read_size;
     HistogramCollector_16777216_20 tcp_read_offer;
     HistogramCollector_80_10 tcp_read_offer_iov_size;
     HistogramCollector_16777216_20 http2_send_message_size;
+    HistogramCollector_65536_26 http2_metadata_size;
   };
   PerCpu<Data> data_;
 };
