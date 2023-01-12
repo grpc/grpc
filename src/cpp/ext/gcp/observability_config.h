@@ -116,9 +116,9 @@ struct GcpObservabilityConfig {
   }
 
   // Tries to load the contents of GcpObservabilityConfig from the file located
-  // by the value of environment variable `GRPC_OBSERVABILITY_CONFIG_FILE`. If
-  // `GRPC_OBSERVABILITY_CONFIG_FILE` is unset, falls back to
-  // `GRPC_OBSERVABILITY_CONFIG`.
+  // by the value of environment variable `GRPC_GCP_OBSERVABILITY_CONFIG_FILE`.
+  // If `GRPC_GCP_OBSERVABILITY_CONFIG_FILE` is unset, falls back to
+  // `GRPC_GCP_OBSERVABILITY_CONFIG`.
   static absl::StatusOr<GcpObservabilityConfig> ReadFromEnv();
 };
 

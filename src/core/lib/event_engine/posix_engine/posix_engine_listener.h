@@ -135,7 +135,7 @@ class PosixEngineListenerImpl
     void Append(ListenerSocket socket) override {
       acceptors_.push_back(new AsyncConnectionAcceptor(
           listener_->engine_, listener_->shared_from_this(), socket));
-      if (on_append_ != nullptr) {
+      if (on_append_) {
         on_append_(socket.sock.Fd());
       }
     }
@@ -164,7 +164,7 @@ class PosixEngineListenerImpl
     }
 
    private:
-    PosixListenerWithFdSupport::OnPosixBindNewFdCallback on_append_ = nullptr;
+    PosixListenerWithFdSupport::OnPosixBindNewFdCallback on_append_;
     std::list<AsyncConnectionAcceptor*> acceptors_;
     PosixEngineListenerImpl* listener_;
   };
@@ -236,39 +236,40 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class PosixEngineListener : public PosixListenerWithFdSupport {
+#include "src/core/lib/gprpp/crash.h"
+
+class PosixEngineListener
+    : public grpc_event_engine::experimental::EventEngine::Listener {
  public:
   PosixEngineListener() = default;
   ~PosixEngineListener() override = default;
-  absl::StatusOr<int> Bind(
-      const EventEngine::ResolvedAddress& /*addr*/) override {
-    GPR_ASSERT(false &&
-               "PosixEngineListener::Bind not supported on this "
-               "platform");
+  absl::StatusOr<int> Bind(const grpc_event_engine::experimental::EventEngine::
+                               ResolvedAddress& /*addr*/) override {
+    grpc_core::Crash(
+        "EventEngine::Listener::Bind not supported on this platform");
+  }
+  absl::Status Start() override {
+    grpc_core::Crash(
+        "EventEngine::Listener::Start not supported on this platform");
   }
   absl::StatusOr<int> BindWithFd(
       const EventEngine::ResolvedAddress& /*addr*/,
       PosixListenerWithFdSupport::OnPosixBindNewFdCallback
       /*on_bind_new_fd*/) override {
-    GPR_ASSERT(false &&
-               "PosixEngineListener::BindWithFd not supported on this "
-               "platform");
+    grpc_core::Crash(
+        "PosixEngineListener::BindWithFd not supported on this "
+        "platform");
   }
   absl::Status HandleExternalConnection(
       int /*listener_fd*/, int /*fd*/, SliceBuffer* /*pending_data*/) override {
-    GPR_ASSERT(false &&
-               "PosixEngineListener::HandleExternalConnection not "
-               "supported on this platform");
-  }
-  absl::Status Start() override {
-    GPR_ASSERT(false &&
-               "PosixEngineListener::Listener::Start not supported on "
-               "this platform");
+    grpc_core::Crash(
+        "PosixEngineListener::HandleExternalConnection not "
+        "supported on this platform");
   }
   void ShutdownListeningFds() override {
-    GPR_ASSERT(false &&
-               "PosixEngineListener::ShutdownListeningFds not supported on "
-               "this platform");
+    grpc_core::Crash(
+        "PosixEngineListener::ShutdownListeningFds not supported on "
+        "this platform");
   }
 };
 

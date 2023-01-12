@@ -22,6 +22,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 using grpc::reflection::v1alpha::ErrorResponse;
 using grpc::reflection::v1alpha::ListServiceResponse;
 using grpc::reflection::v1alpha::ServerReflection;
@@ -35,7 +37,7 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     : stub_(std::move(stub)) {}
 
 ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
-    const std::shared_ptr<grpc::Channel>& channel)
+    const std::shared_ptr<grpc::ChannelInterface>& channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
 ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {

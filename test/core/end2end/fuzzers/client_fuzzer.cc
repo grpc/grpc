@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -35,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -156,11 +158,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
       if (ev.type != GRPC_OP_COMPLETE) {
-        gpr_log(GPR_ERROR,
-                "[%d/%d requested calls] Unexpected event type (expected "
-                "COMPLETE): %s",
-                i, requested_calls, grpc_event_string(&ev).c_str());
-        abort();
+        grpc_core::Crash(absl::StrFormat(
+            "[%d/%d requested calls] Unexpected event type (expected "
+            "COMPLETE): %s",
+            i, requested_calls, grpc_event_string(&ev).c_str()));
       }
     }
     grpc_completion_queue_shutdown(cq);
@@ -168,9 +169,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
       if (ev.type != GRPC_QUEUE_SHUTDOWN) {
-        gpr_log(GPR_ERROR, "Unexpected event type (expected SHUTDOWN): %s",
-                grpc_event_string(&ev).c_str());
-        abort();
+        grpc_core::Crash(
+            absl::StrFormat("Unexpected event type (expected SHUTDOWN): %s",
+                            grpc_event_string(&ev).c_str()));
       }
     }
     grpc_call_unref(call);

@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_BACKEND_METRIC_DATA_H
@@ -34,6 +32,8 @@ struct BackendMetricData {
   /// Memory utilization expressed as a fraction of available memory
   /// resources.
   double mem_utilization = -1;
+  /// Total QPS being served by the backend across all services.
+  double qps = -1;
   /// Application-specific requests cost metrics.  Metric names are
   /// determined by the application.  Each value is an absolute cost
   /// (e.g. 3487 bytes of storage) associated with the request.

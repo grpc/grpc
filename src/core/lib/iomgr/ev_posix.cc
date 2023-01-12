@@ -26,12 +26,15 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
@@ -187,9 +190,8 @@ void grpc_event_engine_init(void) {
     gpr_free(strings);
 
     if (g_event_engine == nullptr) {
-      gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
-              value.get());
-      abort();
+      grpc_core::Crash(absl::StrFormat(
+          "No event engine could be initialized from %s", value.get()));
     }
   });
   g_event_engine->init_engine();
@@ -225,6 +227,12 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   GRPC_FD_TRACE("grpc_fd_orphan, fd:%d closed", grpc_fd_wrapped_fd(fd));
 
   g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
+}
+
+void grpc_fd_set_pre_allocated(grpc_fd* fd) {
+  GRPC_POLLING_API_TRACE("fd_set_pre_allocated(%d)", grpc_fd_wrapped_fd(fd));
+  GRPC_FD_TRACE("fd_set_pre_allocated(%d)", grpc_fd_wrapped_fd(fd));
+  g_event_engine->fd_set_pre_allocated(fd);
 }
 
 void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why) {

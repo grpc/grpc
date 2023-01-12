@@ -33,6 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"

@@ -49,8 +49,6 @@ const char* const description_monitoring_experiment =
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
-const char* const description_posix_event_engine_enable_polling =
-    "If set, enables polling on the default posix event engine.";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 }  // namespace
@@ -71,8 +69,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_client", description_event_engine_client, false},
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
-    {"posix_event_engine_enable_polling",
-     description_posix_event_engine_enable_polling, true},
     {"free_large_allocator", description_free_large_allocator, false},
 };
 
