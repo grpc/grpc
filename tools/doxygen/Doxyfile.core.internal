@@ -944,6 +944,7 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
@@ -1902,6 +1903,8 @@ src/core/lib/gprpp/bitset.h \
 src/core/lib/gprpp/chunked_vector.h \
 src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
+src/core/lib/gprpp/crash.cc \
+src/core/lib/gprpp/crash.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
 src/core/lib/gprpp/env.h \

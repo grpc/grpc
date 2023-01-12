@@ -392,6 +392,25 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "mpsc_test",
+    srcs = ["mpsc_test.cc"],
+    external_deps = [
+        "absl/types:optional",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:mpsc",
+    ],
+)
+
 grpc_proto_fuzzer(
     name = "promise_fuzzer",
     srcs = ["promise_fuzzer.cc"],

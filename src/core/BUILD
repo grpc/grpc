@@ -833,6 +833,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "mpsc",
+    hdrs = [
+        "lib/promise/mpsc.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "ref_counted",
+        "wait_set",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "for_each",
     external_deps = [
         "absl/status",
@@ -1573,6 +1590,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "event_engine_poller",
@@ -1608,6 +1626,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "common_event_engine_closures",
@@ -2590,6 +2609,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -4440,6 +4460,9 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds_override_host",
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
     ],
     external_deps = [
         "absl/base:core_headers",

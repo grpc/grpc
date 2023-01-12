@@ -176,6 +176,8 @@ libs:
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/crash.h
+  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/env.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
@@ -221,6 +223,7 @@ libs:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/crash.cc
   - src/core/lib/gprpp/env_linux.cc
   - src/core/lib/gprpp/env_posix.cc
   - src/core/lib/gprpp/env_windows.cc
@@ -350,6 +353,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -810,7 +814,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -2119,7 +2122,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -3556,7 +3558,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -4367,7 +4368,6 @@ targets:
   headers:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5668,7 +5668,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6663,7 +6662,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6940,7 +6938,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7032,7 +7029,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7301,7 +7297,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -8860,7 +8855,6 @@ targets:
   headers:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -8976,7 +8970,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9269,6 +9262,35 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpsc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/wait_set.h
+  src:
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/mpsc_test.cc
+  deps:
+  - absl/container:flat_hash_set
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
 - name: mpscq_test
   gtest: true
   build: test
@@ -9333,7 +9355,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -9541,7 +9562,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
@@ -9640,7 +9660,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -11684,7 +11703,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/resource_quota/thread_quota.h
@@ -12012,7 +12030,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h

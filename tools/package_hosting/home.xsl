@@ -47,7 +47,7 @@
     <li><a href="https://github.com/grpc/grpc-go">Go</a>: <code>go get google.golang.org/grpc</code></li>
     <li><a href="https://github.com/grpc/grpc-java">Java</a>: Use JARs from <a href="https://search.maven.org/search?q=g:io.grpc">gRPC Maven Central Repository</a></li>
     <li><a href="https://github.com/grpc/grpc-kotlin">Kotlin</a>: Use JARs from <a href="https://mvnrepository.com/artifact/io.grpc">gRPC Maven Central Repository</a></li>
-    <li><a href="https://github.com/grpc/grpc-node">Node</a>: <code>npm install grpc</code></li>
+    <li><a href="https://github.com/grpc/grpc-node">Node</a>: <code>npm install @grpc/grpc-js</code></li>
     <li><a href="https://github.com/grpc/grpc/blob/master/src/objective-c">Objective-C</a>: Add <code>gRPC-ProtoRPC</code> dependency to podspec</li>
     <li><a href="https://github.com/grpc/grpc/blob/master/src/php">PHP</a>: <code>pecl install grpc</code></li>
     <li><a href="https://github.com/grpc/grpc/blob/master/src/python/grpcio">Python</a>: <code>pip install grpcio</code></li>
