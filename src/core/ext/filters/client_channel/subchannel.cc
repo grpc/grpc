@@ -933,6 +933,9 @@ bool Subchannel::PublishTransportLocked() {
             key_.ToString().c_str(), StatusToString(error).c_str());
     return false;
   }
+  // Release the ownership since it is now owned by the connected filter in the
+  // channel stack (published).
+  connecting_result_.transport = nullptr;
   RefCountedPtr<channelz::SocketNode> socket =
       std::move(connecting_result_.socket_node);
   connecting_result_.Reset();
