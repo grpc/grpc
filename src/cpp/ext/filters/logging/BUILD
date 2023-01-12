@@ -81,6 +81,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
         "//src/core:context",
+        "//src/core:map",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:slice",
