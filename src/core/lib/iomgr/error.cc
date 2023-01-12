@@ -29,6 +29,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 #ifdef GPR_WINDOWS
 #include <grpc/support/log_windows.h>
 #endif

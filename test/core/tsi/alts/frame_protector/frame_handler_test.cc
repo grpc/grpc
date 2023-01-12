@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 const size_t kFrameHandlerTestBufferSize = 1024;

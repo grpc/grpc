@@ -18,9 +18,6 @@
 
 EXPERIMENTS = {
     "dbg": {
-        "event_engine_client_test": [
-            "event_engine_client",
-        ],
     },
     "off": {
         "core_end2end_test": [
@@ -29,6 +26,9 @@ EXPERIMENTS = {
         "endpoint_test": [
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
+        ],
+        "event_engine_client_test": [
+            "event_engine_client",
         ],
         "flow_control_test": [
             "peer_state_based_framing",
@@ -50,9 +50,6 @@ EXPERIMENTS = {
         ],
         "endpoint_test": [
             "tcp_read_chunks",
-        ],
-        "event_engine_client_test": [
-            "posix_event_engine_enable_polling",
         ],
         "flow_control_test": [
             "flow_control_fixes",

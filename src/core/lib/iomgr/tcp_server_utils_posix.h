@@ -98,6 +98,9 @@ struct grpc_tcp_server {
 
   // used to create slice allocators for endpoints, owned
   grpc_core::MemoryQuotaRefPtr memory_quota;
+
+  /* used to store a pre-allocated FD assigned to a socket */
+  int pre_allocated_fd;
 };
 
 // If successful, add a listener to \a s for \a addr, set \a dsmode for the
