@@ -34,11 +34,11 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
 using ::envoy::extensions::load_balancing_policies::
     client_side_weighted_round_robin::v3::ClientSideWeightedRoundRobin;
 using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
     WrrLocality;
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 using WrrTest = XdsEnd2endTest;
 
@@ -72,25 +72,22 @@ TEST_P(WrrTest, Basic) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   size_t num_picks = 0;
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult&) {
-        if (++num_picks == 7) {
-          gpr_log(GPR_INFO,
-                  "request counts: %" PRIuPTR " %" PRIuPTR " %" PRIuPTR,
-                  backends_[0]->backend_service()->request_count(),
-                  backends_[1]->backend_service()->request_count(),
-                  backends_[2]->backend_service()->request_count());
-          if (backends_[0]->backend_service()->request_count() == 1 &&
-              backends_[1]->backend_service()->request_count() == 3 &&
-              backends_[2]->backend_service()->request_count() == 3) {
-            return false;
-          }
-          num_picks = 0;
-          ResetBackendCounters();
-        }
-        return true;
-      });
+  SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult&) {
+    if (++num_picks == 7) {
+      gpr_log(GPR_INFO, "request counts: %" PRIuPTR " %" PRIuPTR " %" PRIuPTR,
+              backends_[0]->backend_service()->request_count(),
+              backends_[1]->backend_service()->request_count(),
+              backends_[2]->backend_service()->request_count());
+      if (backends_[0]->backend_service()->request_count() == 1 &&
+          backends_[1]->backend_service()->request_count() == 3 &&
+          backends_[2]->backend_service()->request_count() == 3) {
+        return false;
+      }
+      num_picks = 0;
+      ResetBackendCounters();
+    }
+    return true;
+  });
 }
 
 }  // namespace
