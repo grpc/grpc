@@ -839,7 +839,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
   remaining = std::min(remaining, kRcvLowatMax);
 
   // Setting SO_RCVLOWAT for small quantities does not save on CPU.
-  if (remaining < kRcvLowatThreshold) {
+  if (remaining < 2 * kRcvLowatThreshold) {
     remaining = 0;
   }
 
