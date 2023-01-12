@@ -51,4 +51,4 @@
 - 1.49 'g' stands for ['gamma'](https://github.com/grpc/grpc/tree/v1.49.x)
 - 1.50 'g' stands for ['galley'](https://github.com/grpc/grpc/tree/v1.50.x)
 - 1.51 'g' stands for ['galaxy'](https://github.com/grpc/grpc/tree/v1.51.x)
-- 1.52 'g' stands for ['gribkoff'](https://github.com/grpc/grpc/tree/master)
+- 1.52 'g' stands for ['gribkoff'](https://github.com/grpc/grpc/tree/v1.52.x)
