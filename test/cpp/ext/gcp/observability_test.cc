@@ -28,8 +28,8 @@ TEST(GcpObservabilityTest, RegistrationTest) {
   auto status = grpc::experimental::GcpObservabilityInit();
   EXPECT_EQ(status,
             absl::FailedPreconditionError(
-                "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
-                "GRPC_OBSERVABILITY_CONFIG "
+                "Environment variables GRPC_GCP_OBSERVABILITY_CONFIG_FILE or "
+                "GRPC_GCP_OBSERVABILITY_CONFIG "
                 "not defined"));
 
   grpc_core::CoreConfiguration::Reset();

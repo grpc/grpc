@@ -6607,6 +6607,17 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: event_engine_wakeup_scheduler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  src:
+  - test/core/promise/event_engine_wakeup_scheduler_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: event_poller_posix_test
   gtest: true
   build: test
