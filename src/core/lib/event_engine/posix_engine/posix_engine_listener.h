@@ -229,9 +229,9 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
   }
 
  private:
+  std::shared_ptr<PosixEngineListenerImpl> impl_;
   // Set to true when the listener had been explicitly shutdown.
   std::atomic<bool> shutdown_{false};
-  std::shared_ptr<PosixEngineListenerImpl> impl_;
 };
 
 #else  // GRPC_POSIX_SOCKET_TCP
