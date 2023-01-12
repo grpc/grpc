@@ -2908,24 +2908,23 @@ TEST_F(WeightedRoundRobinTest, Basic) {
       "}";
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Wait for the right set of WRR picks.
-  SendRpcsUntil(
-      DEBUG_LOCATION, stub,
-      [&, num_picks = size_t(0)](const Status&) mutable {
-        if (++num_picks == 7) {
-          gpr_log(GPR_INFO, "request counts: %d %d %d",
-                  servers_[0]->service_.request_count(),
-                  servers_[1]->service_.request_count(),
-                  servers_[2]->service_.request_count());
-          if (servers_[0]->service_.request_count() == 1 &&
-              servers_[1]->service_.request_count() == 3 &&
-              servers_[2]->service_.request_count() == 3) {
-            return false;
-          }
-          num_picks = 0;
-          ResetCounters();
-        }
-        return true;
-      });
+  size_t num_picks = 0;
+  SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status&) {
+    if (++num_picks == 7) {
+      gpr_log(GPR_INFO, "request counts: %d %d %d",
+              servers_[0]->service_.request_count(),
+              servers_[1]->service_.request_count(),
+              servers_[2]->service_.request_count());
+      if (servers_[0]->service_.request_count() == 1 &&
+          servers_[1]->service_.request_count() == 3 &&
+          servers_[2]->service_.request_count() == 3) {
+        return false;
+      }
+      num_picks = 0;
+      ResetCounters();
+    }
+    return true;
+  });
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());
@@ -2956,24 +2955,23 @@ TEST_F(WeightedRoundRobinTest, OobReporting) {
       "}";
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Wait for the right set of WRR picks.
-  SendRpcsUntil(
-      DEBUG_LOCATION, stub,
-      [&, num_picks = size_t(0)](const Status&) mutable {
-        if (++num_picks == 7) {
-          gpr_log(GPR_INFO, "request counts: %d %d %d",
-                  servers_[0]->service_.request_count(),
-                  servers_[1]->service_.request_count(),
-                  servers_[2]->service_.request_count());
-          if (servers_[0]->service_.request_count() == 1 &&
-              servers_[1]->service_.request_count() == 3 &&
-              servers_[2]->service_.request_count() == 3) {
-            return false;
-          }
-          num_picks = 0;
-          ResetCounters();
-        }
-        return true;
-      });
+  size_t num_picks = 0;
+  SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status&) {
+    if (++num_picks == 7) {
+      gpr_log(GPR_INFO, "request counts: %d %d %d",
+              servers_[0]->service_.request_count(),
+              servers_[1]->service_.request_count(),
+              servers_[2]->service_.request_count());
+      if (servers_[0]->service_.request_count() == 1 &&
+          servers_[1]->service_.request_count() == 3 &&
+          servers_[2]->service_.request_count() == 3) {
+        return false;
+      }
+      num_picks = 0;
+      ResetCounters();
+    }
+    return true;
+  });
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());
