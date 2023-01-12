@@ -833,6 +833,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "mpsc",
+    hdrs = [
+        "lib/promise/mpsc.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "ref_counted",
+        "wait_set",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "for_each",
     external_deps = [
         "absl/status",
