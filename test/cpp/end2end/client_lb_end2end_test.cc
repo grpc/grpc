@@ -2931,6 +2931,54 @@ TEST_F(WeightedRoundRobinTest, Basic) {
             channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(WeightedRoundRobinTest, OobReporting) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Tell each server to report the appropriate CPU utilization.
+  servers_[0]->orca_service_.SetCpuUtilization(0.9);
+  servers_[0]->orca_service_.SetQps(100);
+  servers_[1]->orca_service_.SetCpuUtilization(0.3);
+  servers_[1]->orca_service_.SetQps(100);
+  servers_[2]->orca_service_.SetCpuUtilization(0.3);
+  servers_[2]->orca_service_.SetQps(100);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  const char kServiceConfig[] =
+      "{\n"
+      "  \"loadBalancingConfig\": [\n"
+      "    {\"weighted_round_robin_experimental\": {\n"
+      "      \"blackoutPeriod\": \"0s\",\n"
+      "      \"enableOobLoadReport\": true\n"
+      "    }}\n"
+      "  ]\n"
+      "}";
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Wait for the right set of WRR picks.
+  SendRpcsUntil(
+      DEBUG_LOCATION, stub,
+      [&, num_picks = size_t(0)](const Status&) mutable {
+        if (++num_picks == 7) {
+          gpr_log(GPR_INFO, "request counts: %d %d %d",
+                  servers_[0]->service_.request_count(),
+                  servers_[1]->service_.request_count(),
+                  servers_[2]->service_.request_count());
+          if (servers_[0]->service_.request_count() == 1 &&
+              servers_[1]->service_.request_count() == 3 &&
+              servers_[2]->service_.request_count() == 3) {
+            return false;
+          }
+          num_picks = 0;
+          ResetCounters();
+        }
+        return true;
+      });
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
