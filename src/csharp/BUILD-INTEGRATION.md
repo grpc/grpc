@@ -30,7 +30,7 @@ The package [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) is used to g
 
 This package is required when building both the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
 * The `Grpc.AspNetCore` metapackage already includes a reference to `Grpc.Tools`. 
-* Client projects and projects using `Grpc.Core` need to directly reference `Grpc.Tool`s alongside the other packages required.
+* Client projects and projects using `Grpc.Core` need to directly reference `Grpc.Tools` alongside the other packages required.
 
 It isn't required at runtime, so the dependency should be marked with `PrivateAssets="All"`, e.g.
 ```xml
@@ -63,7 +63,9 @@ Wildcards can be used to select several `.proto` files, e.g.
 </ItemGroup>
 ```
 
-By default, a `<Protobuf>` reference generates a concrete client and a service base class. The reference element's `GrpcServices` attribute can be used to limit C# asset generation. See the reference section below for all options. E.g. to only generate client code:
+By default, a `<Protobuf>` reference generates a concrete client and a service base class.
+The `GrpcServices` attribute can be used to limit C# asset generation. See the reference section below for all
+options. E.g. to only generate client code:
 
 ```xml
 <ItemGroup>
@@ -71,7 +73,7 @@ By default, a `<Protobuf>` reference generates a concrete client and a service b
 </ItemGroup>
 ```
 
-For `.prot`o files that are outside of the project directory a link can be added so that the files are visible in Visual Studio. E.g.
+For `.proto` files that are outside of the project directory a link can be added so that the files are visible in Visual Studio. E.g.
 
 ```xml
 <ItemGroup>
@@ -110,11 +112,11 @@ For files _inside_ the project cone, `ProtoRoot` is set by default to the
 project directory. For every file _outside_ of the project directory, the value
 is set to this file's containing directory name, individually per file. If you
 include a subtree of proto files that lies outside of the project directory, you
-need to set `ProtoRoot`. There is an example in this below. The path in
+need to set `ProtoRoot`. There is an example of this below. The path in
 this variable is relative to the project directory.
 
 * __OutputDir__  
-The default value for this metadatum is the value of the property
+The default value is the value of the property
 `Protobuf_OutputPath`. This property, in turn, unless you set it in your
 project, will be set to the value of the standard MSBuild property
 `IntermediateOutputPath`, which points to the location of compilation object
@@ -200,7 +202,7 @@ dotnet build myproject.csproj
 
 ## MSBuild Properties
 
-You can set some Properties in your project file or on the command line when doing a build. The
+You can set some Properties in your project file or on the MSBuild command line. The
 following properties change the behavior of `Grpc.Tools`:
 
 | Name                | Synopsis                                                                      |
@@ -210,6 +212,7 @@ following properties change the behavior of `Grpc.Tools`:
 | `Protobuf_ProtocFullPath` | Same as `PROTOBUF_PROTOC` environment variable                          |
 | `gRPC_PluginFullPath` | Same as `GRPC_PROTOC_PLUGIN` environment variable                           |
 | `Protobuf_NoWarnMissingExpected` | Default: `false`. If `true` then no warnings are given if expected files not generated. See example below for an explanation. |
+| `Protobuf_OutputPath`| Default: `IntermediateOutputPath` - ususally the `obj` directory. Sets the default value for `OutputDir` on `<Protobuf>` items.|
 
 # Scenarios and Examples
 
@@ -291,8 +294,8 @@ is `myfile.proto` then the two possible files are:
 * `MyfileGrpc.cs`  - contains the generated code for gRPC client and/or server
 
 When a `.proto` file contains service definitions the protocol buffers compiler calls
-the gRPC plugin to generate gRPC client and/or server stub code. Whether or not the `.cs` file
-is generated for the gRPC code and what it contains is controlled by the `GrpcServices` metadata
+the gRPC plugin to generate gRPC client and/or server stub code. Whether or not the `*Grpc.cs` file
+is generated and what it contains is controlled by the `GrpcServices` metadata
 on the `<Protobuf>` item.
 
 * `GrpcServices="both"` (the default) - `Myfile.cs` and `MyfileGrpc.cs` generated
@@ -321,7 +324,7 @@ example:
 In the above example all `.proto` files are compiled with `GrpcServices="None"`, except for `.proto`
 files in subdirectories on any tree level named `hello` and `bye`, which will take 
 `GrpcServices="Both"`. Note the use of the `Update` attribute instead of `Include` - otherwise
-the files will be added twice.
+the files would be added twice.
 
 Another example would be the use of globbing if your service `.proto` files are named according
 to a pattern, for example `*_services.proto`. In this case the `Update` attribute can be written
@@ -332,7 +335,7 @@ as `Update="**/*_service.proto"` to set the attribute `GrpcServices="Both"` only
 If a `*Grpc.cs` file is not generated because the `.proto` file does not contain a service clause
 (see above) then `Grpc.Tools` only creates empty files for files generated in the intermediate
 `obj` directory. If the files are configured to be generated elsewhere then empty files are not
- created so as not to polute non-intermediate directories. In this case a warning is output:
+ created so as not to pollute non-intermediate directories. In this case a warning is output:
  ```
  Some expected protoc outputs were not generated
  ```
@@ -349,7 +352,7 @@ unnecessary rebuilds.
 ## <a name="nocompile"></a>Generate proto and gRPC C# sources from .proto files (no C# compile)
 
 If you just want to generate the C# sources from `.proto` files without compiling the C# files
- (e.g. for use in other projects), then add this to a `.csproj` file:
+ (e.g. for use in other projects) then you can do something similar to this to a `.csproj` file:
  ```xml
 <ItemGroup>
   <Protobuf Include="**/*.proto"
@@ -362,6 +365,7 @@ subdirectories (**) include all files matching the wildcard `*.proto`.
 * `OutputDir="%(RelativeDir)"` makes the output directory for each `.cs` file to be 
 same as the corresponding `.proto` directory.
 * `CompileOutputs="false"` prevents compiling the generated files into an assembly.
+
 Note that an empty assembly is still generated which can be ignored. 
 
 NOTE: To start with an empty project to add your `.proto` files to you can do the following
@@ -400,7 +404,7 @@ drop-down. This menu item will appear after you import the `Grpc.Tools` package:
 ![Properties in a classic project](doc/integration.md-fig.1-classic.png)
 
 ---
-## <a href="compiler"></a>Bypassing Grpc.Tools to run the protocol buffers compiler explicitly
+## <a name="compiler"></a>Bypassing Grpc.Tools to run the protocol buffers compiler explicitly
 
 It is possible to bypass all the build logic in `Grpc.Tools` and run the protocol buffers compiler
 explicitly in your project file, and just use the `Grpc.Tools` as a means of getting the compiler.
