@@ -176,7 +176,10 @@ class Arena {
       // by setting the arena to nullptr.
       // This is a transitional hack and should be removed once promise based
       // filter is removed.
-      if (free_list_ != nullptr) FreePooled(p, free_list_);
+      if (free_list_ != nullptr) {
+        p->~T();
+        FreePooled(p, free_list_);
+      }
     }
 
     bool has_freelist() const { return free_list_ != nullptr; }

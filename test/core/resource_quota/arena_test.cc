@@ -200,6 +200,16 @@ TEST_F(ArenaTest, CreateManyObjects) {
   }
 }
 
+TEST_F(ArenaTest, CreateManyObjectsWithDestructors) {
+  using TestObj = std::unique_ptr<int>;
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  std::vector<Arena::PoolPtr<TestObj>> objs;
+  objs.reserve(1000);
+  for (int i = 0; i < 1000; i++) {
+    objs.emplace_back(arena->MakePooled<TestObj>(new int(i)));
+  }
+}
+
 TEST_F(ArenaTest, CreatePoolArray) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
   auto p = arena->MakePooledArray<int>(1024);

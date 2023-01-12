@@ -51,9 +51,7 @@ class InterceptorList {
     virtual void MakePromise(T x, void* memory) = 0;
     virtual void Destroy(void* memory) = 0;
     virtual Poll<absl::optional<T>> PollOnce(void* memory) = 0;
-    virtual ~MapFactory() {
-      gpr_log(GPR_ERROR, "DESTROY: %s:%d", from_.file(), from_.line());
-    }
+    virtual ~MapFactory() = default;
 
     void SetNext(MapFactory* next) {
       GPR_DEBUG_ASSERT(next_ == nullptr);
