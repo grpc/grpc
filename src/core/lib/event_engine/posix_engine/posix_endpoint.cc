@@ -1168,12 +1168,15 @@ void PosixEndpointImpl::Write(
   }
 }
 
-void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
+void PosixEndpointImpl::MaybeShutdown(
+    absl::Status why,
+    absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
   if (poller_->CanTrackErrors()) {
     ZerocopyDisableAndWaitForRemaining();
     stop_error_notification_.store(true, std::memory_order_release);
     handle_->SetHasError();
   }
+  on_release_fd_ = std::move(on_release_fd);
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
@@ -1181,7 +1184,13 @@ void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  handle_->OrphanHandle(on_done_, nullptr, "");
+  int release_fd = -1;
+  handle_->OrphanHandle(on_done_,
+                        on_release_fd_ == nullptr ? nullptr : &release_fd, "");
+  if (on_release_fd_ != nullptr) {
+    engine_->Run([on_release_fd = std::move(on_release_fd_),
+                  release_fd]() mutable { on_release_fd(release_fd); });
+  }
   delete on_read_;
   delete on_write_;
   delete on_error_;
