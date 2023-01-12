@@ -21,6 +21,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
@@ -49,7 +50,9 @@ class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
     return child_config_;
   }
 
-  int override_host_status_mask() const { return override_host_status_mask_; }
+  XdsHealthStatusSet override_host_status_set() const {
+    return override_host_status_set_;
+  }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
@@ -57,7 +60,7 @@ class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_config_;
-  int override_host_status_mask_ = 0xFFFF;
+  XdsHealthStatusSet override_host_status_set_;
 };
 
 }  // namespace grpc_core

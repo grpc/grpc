@@ -53,6 +53,32 @@ class XdsHealthStatus {
   HealthStatus status_;
 };
 
+class XdsHealthStatusSet {
+ public:
+  XdsHealthStatusSet() = default;
+
+  explicit XdsHealthStatusSet(absl::Span<const XdsHealthStatus> statuses) {
+    for (XdsHealthStatus status : statuses) {
+      Add(status);
+    }
+  }
+
+  bool operator==(const XdsHealthStatusSet& other) const {
+    return status_mask_ == other.status_mask_;
+  }
+
+  void Clear() { status_mask_ = 0; }
+
+  void Add(XdsHealthStatus status) { status_mask_ |= (0x1 << status.status()); }
+
+  bool Contains(XdsHealthStatus status) const {
+    return status_mask_ & (0x1 << status.status());
+  }
+
+ private:
+  int status_mask_ = 0;
+};
+
 bool operator<(const XdsHealthStatus& hs1, const XdsHealthStatus& hs2);
 
 class XdsEndpointHealthStatusAttribute

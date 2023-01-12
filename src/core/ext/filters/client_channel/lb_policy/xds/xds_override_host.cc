@@ -75,10 +75,6 @@ TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host_lb");
 
 namespace {
 
-int HealthStatusBitMask(const XdsHealthStatus& status) {
-  return 0x1 << status.status();
-}
-
 XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
   auto attribute = address.GetAttribute(XdsEndpointHealthStatusAttribute::kKey);
   if (attribute == nullptr) {
@@ -274,7 +270,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   absl::StatusOr<ServerAddressList> UpdateAddressMap(
       absl::StatusOr<ServerAddressList> addresses,
-      int override_host_status_mask);
+      const XdsHealthStatusSet& override_host_status_set);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
       ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel);
@@ -426,8 +422,8 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   }
   // Update child policy.
   UpdateArgs update_args;
-  update_args.addresses = UpdateAddressMap(
-      std::move(args.addresses), config_->override_host_status_mask());
+  update_args.addresses = UpdateAddressMap(std::move(args.addresses),
+                                           config_->override_host_status_set());
   update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = config_->child_config();
   update_args.args = std::move(args.args);
@@ -479,7 +475,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
 
 absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     absl::StatusOr<ServerAddressList> addresses,
-    int override_host_status_mask) {
+    const XdsHealthStatusSet& override_host_status_set) {
   // It will also retain subchannels until after update. Otherwise destroying
   // the subchannels will try to reacquire the locks in the ResetSubchannel...
   std::map<std::string, SubchannelEntry, std::less<>> new_map;
@@ -493,8 +489,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
         bool draining = false;
         if (status.status() != XdsHealthStatus::HealthStatus::kDraining) {
           child_addresses->push_back(address);
-        } else if ((override_host_status_mask & HealthStatusBitMask(status)) ==
-                   0) {
+        } else if (!override_host_status_set.Contains(status)) {
           continue;
         } else {
           draining = true;
@@ -540,8 +535,7 @@ XdsOverrideHostLb::AdoptSubchannel(
     if (it != subchannel_map_.end()) {
       auto status = GetAddressHealthStatus(address);
       if (status.status() == XdsHealthStatus::HealthStatus::kDraining &&
-          (config_->override_host_status_mask() &
-           HealthStatusBitMask(status))) {
+          (config_->override_host_status_set().Contains(status))) {
         it->second.SetSubchannel(wrapper);
       } else {
         it->second.SetSubchannel(wrapper.get());
@@ -747,7 +741,6 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
         json.object_value(), args, "overrideHostStatus", errors,
         /*required=*/false);
     if (host_status_list.has_value()) {
-      override_host_status_mask_ = 0;
       for (size_t i = 0; i < host_status_list->size(); ++i) {
         const std::string& host_status = (*host_status_list)[i];
         auto status = XdsHealthStatus::FromString(host_status);
@@ -756,9 +749,14 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
                                               absl::StrCat("[", i, "]"));
           errors->AddError("invalid host status");
         } else {
-          override_host_status_mask_ |= HealthStatusBitMask(*status);
+          override_host_status_set_.Add(*status);
         }
       }
+    } else {
+      override_host_status_set_ = XdsHealthStatusSet(
+          {XdsHealthStatus(XdsHealthStatus::HealthStatus::kDraining),
+           XdsHealthStatus(XdsHealthStatus::HealthStatus::kHealthy),
+           XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown)});
     }
   }
 }
