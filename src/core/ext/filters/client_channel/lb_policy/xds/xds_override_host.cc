@@ -94,6 +94,7 @@ XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
 class XdsOverrideHostLb : public LoadBalancingPolicy {
  public:
   explicit XdsOverrideHostLb(Args args);
+  ~XdsOverrideHostLb() override;
 
   absl::string_view name() const override {
     return XdsOverrideHostLbConfig::Name();
@@ -107,7 +108,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   class SubchannelWrapper : public DelegatingSubchannel {
    public:
     SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel,
-                      RefCountedPtr<XdsOverrideHostLb> policy,
+                      XdsOverrideHostLb* policy,
                       absl::optional<const std::string> key);
 
     ~SubchannelWrapper() override;
@@ -122,9 +123,10 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return watcher_->connectivity_state_.load();
     }
 
-    XdsOverrideHostLb* policy() { return policy_.get(); }
-
-    void Detach() { key_.reset(); }
+    void Detach() {
+      policy_ = nullptr;
+      key_.reset();
+    }
 
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
@@ -147,7 +149,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     ConnectivityStateWatcher* watcher_ = nullptr;
     absl::optional<const std::string> key_;
-    RefCountedPtr<XdsOverrideHostLb> policy_;
+    XdsOverrideHostLb* policy_;
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -163,8 +165,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     class SubchannelConnectionRequester {
      public:
       explicit SubchannelConnectionRequester(
-          RefCountedPtr<SubchannelWrapper> subchannel)
-          : subchannel_(std::move(subchannel)) {
+          RefCountedPtr<SubchannelWrapper> subchannel,
+          RefCountedPtr<XdsOverrideHostLb> policy)
+          : subchannel_(std::move(subchannel)), policy_(policy) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
         // Hop into ExecCtx, so that we're not holding the data plane mutex
         // while we run control-plane code.
@@ -172,11 +175,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       }
 
      private:
-      XdsOverrideHostLb* policy() { return subchannel_->policy(); }
-
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionRequester*>(arg);
-        self->policy()->work_serializer()->Run(
+        self->policy_->work_serializer()->Run(
             [self]() {
               self->subchannel_->RequestConnection();
               delete self;
@@ -185,6 +186,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       }
 
       RefCountedPtr<SubchannelWrapper> subchannel_;
+      RefCountedPtr<XdsOverrideHostLb> policy_;
       grpc_closure closure_;
     };
 
@@ -242,7 +244,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       }
     }
 
-    SubchannelWrapper* GetSubchannel() {
+    SubchannelWrapper* GetSubchannel() const {
       return absl::visit(GetPointer(), subchannel_);
     }
 
@@ -260,8 +262,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     Handle subchannel_ = nullptr;
   };
-
-  ~XdsOverrideHostLb() override;
 
   void ShutdownLocked() override;
 
@@ -331,7 +331,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
     return PickResult::Queue();
   } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
     // Deleted after the connection is requested
-    new SubchannelConnectionRequester(std::move(subchannel));
+    new SubchannelConnectionRequester(std::move(subchannel), policy_);
     return PickResult::Queue();
   }
   return absl::nullopt;
@@ -371,6 +371,13 @@ XdsOverrideHostLb::XdsOverrideHostLb(Args args)
 }
 
 XdsOverrideHostLb::~XdsOverrideHostLb() {
+  MutexLock lock(&subchannel_map_mu_);
+  for (const auto& key_subchannel : subchannel_map_) {
+    auto subchannel = key_subchannel.second.GetSubchannel();
+    if (subchannel != nullptr) {
+      subchannel->Detach();
+    }
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO,
             "[xds_override_host_lb %p] destroying xds_override_host LB policy",
@@ -526,7 +533,7 @@ XdsOverrideHostLb::AdoptSubchannel(
     key = std::move(*subchannel_key);
   }
   auto wrapper =
-      MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(), key);
+      MakeRefCounted<SubchannelWrapper>(std::move(subchannel), this, key);
   if (key.has_value()) {
     MutexLock lock(&subchannel_map_mu_);
     auto it = subchannel_map_.find(*key);
@@ -614,8 +621,7 @@ void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
 //
 
 XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
-    RefCountedPtr<SubchannelInterface> subchannel,
-    RefCountedPtr<XdsOverrideHostLb> policy,
+    RefCountedPtr<SubchannelInterface> subchannel, XdsOverrideHostLb* policy,
     absl::optional<const std::string> key)
     : DelegatingSubchannel(std::move(subchannel)),
       key_(std::move(key)),
