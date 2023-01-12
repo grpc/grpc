@@ -156,6 +156,9 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
+  // TODO(roth): Once the backend utilization APIs are updated, change
+  // this to use those instead of manually constructing the data for
+  // each call.
   void SetLoadReport(
       absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report) {
     grpc_core::MutexLock lock(&load_report_mu_);
@@ -257,7 +260,7 @@ class FakeResolverResponseGeneratorWrapper {
     if (service_config_json != nullptr) {
       result.service_config = grpc_core::ServiceConfigImpl::Create(
           grpc_core::ChannelArgs(), service_config_json);
-      GPR_ASSERT(result.service_config.ok());
+      EXPECT_TRUE(result.service_config.ok()) << result.service_config.status();
     }
     return result;
   }
@@ -2883,17 +2886,46 @@ using WeightedRoundRobinTest = ClientLbEnd2endTest;
 TEST_F(WeightedRoundRobinTest, Basic) {
   const int kNumServers = 3;
   StartServers(kNumServers);
+  // Tell each server to report the appropriate CPU utilization.
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_rps_fractional(100);
+  load_report.set_cpu_utilization(0.9);
+  servers_[0]->service_.SetLoadReport(load_report);
   load_report.set_cpu_utilization(0.3);
+  servers_[1]->service_.SetLoadReport(load_report);
+  servers_[2]->service_.SetLoadReport(load_report);
+  // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel =
-      BuildChannel("weighted_round_robin_experimental", response_generator);
+  auto channel = BuildChannel("", response_generator);
   auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts());
-
-// FIXME: implement test
-
+  const char kServiceConfig[] =
+      "{\n"
+      "  \"loadBalancingConfig\": [\n"
+      "    {\"weighted_round_robin_experimental\": {\n"
+      "      \"blackoutPeriod\": \"0s\"\n"
+      "    }}\n"
+      "  ]\n"
+      "}";
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Wait for the right set of WRR picks.
+  SendRpcsUntil(
+      DEBUG_LOCATION, stub,
+      [&, num_picks = size_t(0)](const Status&) mutable {
+        if (++num_picks == 7) {
+          gpr_log(GPR_INFO, "request counts: %d %d %d",
+                  servers_[0]->service_.request_count(),
+                  servers_[1]->service_.request_count(),
+                  servers_[2]->service_.request_count());
+          if (servers_[0]->service_.request_count() == 1 &&
+              servers_[1]->service_.request_count() == 3 &&
+              servers_[2]->service_.request_count() == 3) {
+            return false;
+          }
+          num_picks = 0;
+          ResetCounters();
+        }
+        return true;
+      });
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());
