@@ -21,6 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <functional>
+#include <utility>
+#include <vector>
+
 #include "absl/base/call_once.h"
 
 #include <grpcpp/opencensus.h>

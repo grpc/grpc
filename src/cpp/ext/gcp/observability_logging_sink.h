@@ -29,10 +29,9 @@
 
 #include <google/protobuf/struct.pb.h>
 
+#include "absl/base/call_once.h"
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
-
-#include <grpcpp/channel.h>
 
 #include "src/cpp/ext/filters/logging/logging_sink.h"
 #include "src/cpp/ext/gcp/observability_config.h"

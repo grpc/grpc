@@ -22,8 +22,6 @@
 
 #include "absl/status/status.h"
 
-#include "grpc_plugin.h"
-
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
 namespace grpc {
