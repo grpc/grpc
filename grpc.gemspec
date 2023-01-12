@@ -1085,6 +1085,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/windows/iocp.h )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.cc )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.h )
+  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.cc )
+  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.h )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.cc )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.h )
   s.files += %w( src/core/lib/experiments/config.cc )
