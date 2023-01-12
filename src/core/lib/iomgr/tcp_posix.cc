@@ -844,7 +844,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
   }
 
   // Decrement remaining by kRcvLowatThreshold. This would have the effect of
-  // wakeing up a little early. That would help with latency because some bytes
+  // waking up a little early. It would help with latency because some bytes
   // may arrive while we execute the recvmsg syscall after waking up.
   if (remaining > 0) {
     remaining -= kRcvLowatThreshold;
@@ -1135,9 +1135,9 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   }
   // Update rcv lowat needs to be called at the end of the current read
   // operation to ensure the right SO_RCVLOWAT value is set for the next read.
-  // Otherwise the next endpoint read operation may hang because the previously
-  // set rcv lowat value will persist and the socket may erroneously considered
-  // to not be ready for read.
+  // Otherwise the next endpoint read operation may get stuck indefinitely
+  // because the previously set rcv lowat value will persist and the socket may
+  // erroneously considered to not be ready for read.
   update_rcvlowat(tcp);
   grpc_closure* cb = tcp->read_cb;
   tcp->read_cb = nullptr;
