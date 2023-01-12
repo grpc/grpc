@@ -375,7 +375,11 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
           return message;
         });
     return grpc_core::OnCancel(
-        next_promise_factory(std::move(call_args)),
+        Map(next_promise_factory(std::move(call_args)),
+            [calld](grpc_core::ServerMetadataHandle md) {
+              calld->LogServerTrailer(/*is_client=*/true, md.get());
+              return md;
+            }),
         [calld]() { calld->LogCancel(/*is_client=*/true); });
   }
 
@@ -431,7 +435,11 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
           return message;
         });
     return grpc_core::OnCancel(
-        next_promise_factory(std::move(call_args)),
+        Map(next_promise_factory(std::move(call_args)),
+            [calld](grpc_core::ServerMetadataHandle md) {
+              calld->LogServerTrailer(/*is_client=*/false, md.get());
+              return md;
+            }),
         [calld]() { calld->LogCancel(/*is_client=*/false); });
   }
 };

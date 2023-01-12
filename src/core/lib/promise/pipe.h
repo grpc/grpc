@@ -196,6 +196,7 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
         return on_full_.pending();
       case ValueState::kReadyClosed:
+        this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
         ABSL_FALLTHROUGH_INTENDED;
       case ValueState::kReady:
@@ -216,6 +217,7 @@ class Center : public InterceptorList<T> {
         on_empty_.Wake();
         break;
       case ValueState::kReadyClosed:
+        this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
         break;
       case ValueState::kClosed:
@@ -233,6 +235,7 @@ class Center : public InterceptorList<T> {
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
+        this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
         on_full_.Wake();
         break;

@@ -51,7 +51,9 @@ class InterceptorList {
     virtual void MakePromise(T x, void* memory) = 0;
     virtual void Destroy(void* memory) = 0;
     virtual Poll<absl::optional<T>> PollOnce(void* memory) = 0;
-    virtual ~MapFactory() = default;
+    virtual ~MapFactory() {
+      gpr_log(GPR_ERROR, "DESTROY: %s:%d", from_.file(), from_.line());
+    }
 
     void SetNext(MapFactory* next) {
       GPR_DEBUG_ASSERT(next_ == nullptr);
@@ -163,13 +165,7 @@ class InterceptorList {
   InterceptorList() = default;
   InterceptorList(const InterceptorList&) = delete;
   InterceptorList& operator=(const InterceptorList&) = delete;
-  ~InterceptorList() {
-    for (auto* f = first_map_; f != nullptr;) {
-      auto* next = f->next();
-      f->~MapFactory();
-      f = next;
-    }
-  }
+  ~InterceptorList() { DeleteFactories(); }
 
   RunPromise Run(absl::optional<T> initial_value) {
     return RunPromise(promise_memory_required_, first_map_,
@@ -196,6 +192,14 @@ class InterceptorList {
   template <typename Fn, typename CleanupFn>
   void PrependMapWithCleanup(Fn fn, CleanupFn cleanup_fn, DebugLocation from) {
     Prepend(MakeFactoryToAdd(std::move(fn), std::move(cleanup_fn), from));
+  }
+
+ protected:
+  void ResetInterceptorList() {
+    DeleteFactories();
+    first_map_ = nullptr;
+    last_map_ = nullptr;
+    promise_memory_required_ = 0;
   }
 
  private:
@@ -252,6 +256,14 @@ class InterceptorList {
     } else {
       f->SetNext(first_map_);
       first_map_ = f;
+    }
+  }
+
+  void DeleteFactories() {
+    for (auto* f = first_map_; f != nullptr;) {
+      auto* next = f->next();
+      f->~MapFactory();
+      f = next;
     }
   }
 
