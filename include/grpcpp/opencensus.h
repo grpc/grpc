@@ -76,6 +76,7 @@ extern const absl::string_view kRpcServerStartedRpcsMeasureName;
 // Canonical gRPC view definitions.
 const ::opencensus::stats::ViewDescriptor& ClientStartedRpcs();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcs();
+const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatency();
 const ::opencensus::stats::ViewDescriptor&
 ClientSentCompressedMessageBytesPerRpc();
 const ::opencensus::stats::ViewDescriptor&

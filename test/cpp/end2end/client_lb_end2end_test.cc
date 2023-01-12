@@ -93,17 +93,49 @@ class MyTestServiceImpl : public TestServiceImpl {
       ++request_count_;
     }
     AddClient(context->peer());
+    absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report;
+    {
+      grpc_core::MutexLock lock(&load_report_mu_);
+      load_report = load_report_;
+    }
     if (request->has_param() && request->param().has_backend_metrics()) {
-      load_report_ = request->param().backend_metrics();
+      if (!load_report.has_value()) load_report.emplace();
+      const auto& request_metrics = request->param().backend_metrics();
+      if (request_metrics.cpu_utilization() > 0) {
+        load_report->set_cpu_utilization(request_metrics.cpu_utilization());
+      }
+      if (request_metrics.mem_utilization() > 0) {
+        load_report->set_mem_utilization(request_metrics.mem_utilization());
+      }
+      if (request_metrics.rps_fractional() > 0) {
+        load_report->set_rps_fractional(request_metrics.rps_fractional());
+      }
+      for (const auto& p : request_metrics.request_cost()) {
+        (*load_report->mutable_request_cost())[p.first] = p.second;
+      }
+      for (const auto& p : request_metrics.utilization()) {
+        (*load_report->mutable_utilization())[p.first] = p.second;
+      }
+    }
+    if (load_report.has_value()) {
       auto* recorder = context->ExperimentalGetCallMetricRecorder();
       EXPECT_NE(recorder, nullptr);
-      recorder->RecordCpuUtilizationMetric(load_report_.cpu_utilization())
-          .RecordMemoryUtilizationMetric(load_report_.mem_utilization());
-      for (const auto& p : load_report_.request_cost()) {
-        recorder->RecordRequestCostMetric(p.first, p.second);
+      recorder->RecordCpuUtilizationMetric(load_report->cpu_utilization())
+          .RecordMemoryUtilizationMetric(load_report->mem_utilization())
+          .RecordQpsMetric(load_report->rps_fractional());
+      for (const auto& p : load_report->request_cost()) {
+        char* key = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+        strncpy(key, p.first.data(), p.first.size());
+        key[p.first.size()] = '\0';
+        recorder->RecordRequestCostMetric(key, p.second);
       }
-      for (const auto& p : load_report_.utilization()) {
-        recorder->RecordUtilizationMetric(p.first, p.second);
+      for (const auto& p : load_report->utilization()) {
+        char* key = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+        strncpy(key, p.first.data(), p.first.size());
+        key[p.first.size()] = '\0';
+        recorder->RecordUtilizationMetric(key, p.second);
       }
     }
     return TestServiceImpl::Echo(context, request, response);
@@ -124,6 +156,15 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
+  // TODO(roth): Once the backend utilization APIs are updated, change
+  // this to use those instead of manually constructing the data for
+  // each call.
+  void SetLoadReport(
+      absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report) {
+    grpc_core::MutexLock lock(&load_report_mu_);
+    load_report_ = std::move(load_report);
+  }
+
  private:
   void AddClient(const std::string& client) {
     grpc_core::MutexLock lock(&clients_mu_);
@@ -131,11 +172,14 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   grpc_core::Mutex mu_;
-  int request_count_ = 0;
+  int request_count_ ABSL_GUARDED_BY(&mu_) = 0;
+
   grpc_core::Mutex clients_mu_;
-  std::set<std::string> clients_;
-  // For strings storage.
-  xds::data::orca::v3::OrcaLoadReport load_report_;
+  std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
+
+  grpc_core::Mutex load_report_mu_;
+  absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_
+      ABSL_GUARDED_BY(&load_report_mu_);
 };
 
 class FakeResolverResponseGeneratorWrapper {
@@ -216,7 +260,7 @@ class FakeResolverResponseGeneratorWrapper {
     if (service_config_json != nullptr) {
       result.service_config = grpc_core::ServiceConfigImpl::Create(
           grpc_core::ChannelArgs(), service_config_json);
-      GPR_ASSERT(result.service_config.ok());
+      EXPECT_TRUE(result.service_config.ok()) << result.service_config.status();
     }
     return result;
   }
@@ -2271,6 +2315,7 @@ xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(backend_metric_data.cpu_utilization);
   load_report.set_mem_utilization(backend_metric_data.mem_utilization);
+  load_report.set_rps_fractional(backend_metric_data.qps);
   for (const auto& p : backend_metric_data.request_cost) {
     std::string name(p.first);
     (*load_report.mutable_request_cost())[name] = p.second;
@@ -2501,6 +2546,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(0.5);
   load_report.set_mem_utilization(0.75);
+  load_report.set_rps_fractional(0.25);
   auto* request_cost = load_report.mutable_request_cost();
   (*request_cost)["foo"] = 0.8;
   (*request_cost)["bar"] = 1.4;
@@ -2520,6 +2566,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
     // available in OSS.
     EXPECT_EQ(actual->cpu_utilization(), load_report.cpu_utilization());
     EXPECT_EQ(actual->mem_utilization(), load_report.mem_utilization());
+    EXPECT_EQ(actual->rps_fractional(), load_report.rps_fractional());
     EXPECT_EQ(actual->request_cost().size(), load_report.request_cost().size());
     for (const auto& p : actual->request_cost()) {
       auto it = load_report.request_cost().find(p.first);
@@ -2690,7 +2737,8 @@ TEST_F(OobBackendMetricTest, Basic) {
   constexpr char kMetricName[] = "foo";
   servers_[0]->orca_service_.SetCpuUtilization(0.1);
   servers_[0]->orca_service_.SetMemoryUtilization(0.2);
-  servers_[0]->orca_service_.SetNamedUtilization(kMetricName, 0.3);
+  servers_[0]->orca_service_.SetQps(0.3);
+  servers_[0]->orca_service_.SetNamedUtilization(kMetricName, 0.4);
   // Start client.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("oob_backend_metric_test_lb", response_generator);
@@ -2708,9 +2756,10 @@ TEST_F(OobBackendMetricTest, Basic) {
       EXPECT_EQ(report->first, servers_[0]->port_);
       EXPECT_EQ(report->second.cpu_utilization(), 0.1);
       EXPECT_EQ(report->second.mem_utilization(), 0.2);
+      EXPECT_EQ(report->second.rps_fractional(), 0.3);
       EXPECT_THAT(
           report->second.utilization(),
-          ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.3)));
+          ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.4)));
       break;
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
@@ -2719,7 +2768,8 @@ TEST_F(OobBackendMetricTest, Basic) {
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
   // data once we see a report with the new CPU utilization value.
-  servers_[0]->orca_service_.SetNamedUtilization(kMetricName, 0.6);
+  servers_[0]->orca_service_.SetNamedUtilization(kMetricName, 0.7);
+  servers_[0]->orca_service_.SetQps(0.6);
   servers_[0]->orca_service_.SetMemoryUtilization(0.5);
   servers_[0]->orca_service_.SetCpuUtilization(0.4);
   // Wait for client to see new report.
@@ -2730,9 +2780,10 @@ TEST_F(OobBackendMetricTest, Basic) {
       if (report->second.cpu_utilization() != 0.1) {
         EXPECT_EQ(report->second.cpu_utilization(), 0.4);
         EXPECT_EQ(report->second.mem_utilization(), 0.5);
+        EXPECT_EQ(report->second.rps_fractional(), 0.6);
         EXPECT_THAT(
             report->second.utilization(),
-            ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.6)));
+            ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.7)));
         break;
       }
     }
@@ -2824,6 +2875,108 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
       DEBUG_LOCATION, stub, StatusCode::INTERNAL,
       "Illegal status code from ConfigSelector; original status: "
       "ABORTED: nope");
+}
+
+//
+// WeightedRoundRobinTest
+//
+
+using WeightedRoundRobinTest = ClientLbEnd2endTest;
+
+TEST_F(WeightedRoundRobinTest, Basic) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Tell each server to report the appropriate CPU utilization.
+  xds::data::orca::v3::OrcaLoadReport load_report;
+  load_report.set_rps_fractional(100);
+  load_report.set_cpu_utilization(0.9);
+  servers_[0]->service_.SetLoadReport(load_report);
+  load_report.set_cpu_utilization(0.3);
+  servers_[1]->service_.SetLoadReport(load_report);
+  servers_[2]->service_.SetLoadReport(load_report);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  const char kServiceConfig[] =
+      "{\n"
+      "  \"loadBalancingConfig\": [\n"
+      "    {\"weighted_round_robin_experimental\": {\n"
+      "      \"blackoutPeriod\": \"0s\"\n"
+      "    }}\n"
+      "  ]\n"
+      "}";
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Wait for the right set of WRR picks.
+  SendRpcsUntil(
+      DEBUG_LOCATION, stub,
+      [&, num_picks = size_t(0)](const Status&) mutable {
+        if (++num_picks == 7) {
+          gpr_log(GPR_INFO, "request counts: %d %d %d",
+                  servers_[0]->service_.request_count(),
+                  servers_[1]->service_.request_count(),
+                  servers_[2]->service_.request_count());
+          if (servers_[0]->service_.request_count() == 1 &&
+              servers_[1]->service_.request_count() == 3 &&
+              servers_[2]->service_.request_count() == 3) {
+            return false;
+          }
+          num_picks = 0;
+          ResetCounters();
+        }
+        return true;
+      });
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
+TEST_F(WeightedRoundRobinTest, OobReporting) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Tell each server to report the appropriate CPU utilization.
+  servers_[0]->orca_service_.SetCpuUtilization(0.9);
+  servers_[0]->orca_service_.SetQps(100);
+  servers_[1]->orca_service_.SetCpuUtilization(0.3);
+  servers_[1]->orca_service_.SetQps(100);
+  servers_[2]->orca_service_.SetCpuUtilization(0.3);
+  servers_[2]->orca_service_.SetQps(100);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  const char kServiceConfig[] =
+      "{\n"
+      "  \"loadBalancingConfig\": [\n"
+      "    {\"weighted_round_robin_experimental\": {\n"
+      "      \"blackoutPeriod\": \"0s\",\n"
+      "      \"enableOobLoadReport\": true\n"
+      "    }}\n"
+      "  ]\n"
+      "}";
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Wait for the right set of WRR picks.
+  SendRpcsUntil(
+      DEBUG_LOCATION, stub,
+      [&, num_picks = size_t(0)](const Status&) mutable {
+        if (++num_picks == 7) {
+          gpr_log(GPR_INFO, "request counts: %d %d %d",
+                  servers_[0]->service_.request_count(),
+                  servers_[1]->service_.request_count(),
+                  servers_[2]->service_.request_count());
+          if (servers_[0]->service_.request_count() == 1 &&
+              servers_[1]->service_.request_count() == 3 &&
+              servers_[2]->service_.request_count() == 3) {
+            return false;
+          }
+          num_picks = 0;
+          ResetCounters();
+        }
+        return true;
+      });
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
 }
 
 }  // namespace
