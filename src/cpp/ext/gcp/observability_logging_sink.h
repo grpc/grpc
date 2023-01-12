@@ -71,9 +71,9 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::vector<Configuration> client_configs_;
   std::vector<Configuration> server_configs_;
   std::string project_id_;
-  std::shared_ptr<grpc::Channel> channel_;
-  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
   std::string authority_;
+  absl::once_flag once_;
+  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
 };
 
 // Exposed for just for testing purposes

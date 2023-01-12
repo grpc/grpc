@@ -59,6 +59,7 @@
 #include "src/cpp/ext/filters/census/measures.h"
 
 namespace grpc {
+namespace internal {
 
 constexpr uint32_t
     OpenCensusCallTracer::OpenCensusCallAttemptTracer::kMaxTraceContextLen;
@@ -330,4 +331,5 @@ CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
                        context_.tags());
 }
 
+}  // namespace internal
 }  // namespace grpc
