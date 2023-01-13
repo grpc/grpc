@@ -303,6 +303,11 @@ class Center : public InterceptorList<T> {
   ValueState value_state_ : 3;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
+
+  // Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+#endif
 };
 
 }  // namespace pipe_detail
@@ -352,6 +357,11 @@ class PipeSender {
   friend struct Pipe<T>;
   explicit PipeSender(pipe_detail::Center<T>* center) : center_(center) {}
   RefCountedPtr<pipe_detail::Center<T>> center_;
+
+  // Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+#endif
 };
 
 // Receive end of a Pipe.
@@ -391,6 +401,11 @@ class PipeReceiver {
   friend struct Pipe<T>;
   explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
   RefCountedPtr<pipe_detail::Center<T>> center_;
+
+  // Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+#endif
 };
 
 namespace pipe_detail {

@@ -151,6 +151,11 @@ class SliceBuffer {
  private:
   /// The backing raw slice buffer.
   grpc_slice_buffer slice_buffer_;
+
+// Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+#endif
 };
 
 }  // namespace grpc_core
