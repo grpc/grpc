@@ -149,6 +149,11 @@ config_setting(
 )
 
 config_setting(
+    name = "mac_arm64",
+    values = {"cpu": "darwin_arm64"},
+)
+
+config_setting(
     name = "use_strict_warning",
     values = {"define": "use_strict_warning=true"},
 )

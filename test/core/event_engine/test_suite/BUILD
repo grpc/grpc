@@ -113,6 +113,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "cf_event_engine_test",
+    srcs = ["cf_event_engine_test.cc"],
+    tags = [
+        "no_linux",
+        "no_windows",
+    ],
+    uses_polling = False,
+    deps = [
+        ":timer",
+        "//src/core:cf_event_engine",
+    ],
+)
+
+grpc_cc_test(
     name = "fuzzing_event_engine_test",
     srcs = ["fuzzing_event_engine_test.cc"],
     tags = [
