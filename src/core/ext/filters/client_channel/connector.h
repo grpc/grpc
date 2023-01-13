@@ -28,6 +28,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
@@ -57,7 +58,10 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     RefCountedPtr<channelz::SocketNode> socket_node;
 
     void Reset() {
-      transport = nullptr;
+      if (transport != nullptr) {
+        grpc_transport_destroy(transport);
+        transport = nullptr;
+      }
       channel_args = ChannelArgs();
       socket_node.reset();
     }
