@@ -15,6 +15,10 @@
 
 import unittest
 
+from typeguard.importhook import install_import_hook
+
+install_import_hook('grpc_reflection')
+
 from google.protobuf.descriptor_pool import DescriptorPool
 import grpc
 from grpc_reflection.v1alpha import reflection

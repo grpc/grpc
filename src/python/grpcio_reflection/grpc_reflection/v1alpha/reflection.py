@@ -93,7 +93,10 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     ]
 else:
 
-    def enable_server_reflection(service_names, server, pool=None):
+    def enable_server_reflection(
+            service_names: Iterable[str],
+            server: grpc.Server,
+            pool: Optional[descriptor_pool.DescriptorPool] = None) -> None:
         _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
             ReflectionServicer(service_names, pool=pool), server)
 

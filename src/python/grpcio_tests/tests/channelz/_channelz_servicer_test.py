@@ -17,6 +17,10 @@ from concurrent import futures
 import sys
 import unittest
 
+from typeguard.importhook import install_import_hook
+
+install_import_hook('grpc_channelz')
+
 import grpc
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2

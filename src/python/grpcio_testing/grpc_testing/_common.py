@@ -23,7 +23,9 @@ from grpc._typing import MetadataType
 from grpc._typing import TuplifiedMetadataType
 
 
-def _fuss(tuplified_metadata: Union[TuplifiedMetadataType, Tuple]) -> MetadataType:
+def _fuss(
+        tuplified_metadata: Union[TuplifiedMetadataType,
+                                  Tuple]) -> MetadataType:
     return tuplified_metadata + ((
         'grpc.metadata_added_by_runtime',
         'gRPC is allowed to add metadata in transmission and does so.',

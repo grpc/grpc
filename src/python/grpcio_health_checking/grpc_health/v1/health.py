@@ -61,7 +61,7 @@ class _Watcher():
     def __next__(self):
         return self._next()
 
-    def add(self, response: Any) -> _health_pb2.HealthCheckResponse:
+    def add(self, response: Any) -> None:
         with self._condition:
             self._responses.append(response)
             self._condition.notify()

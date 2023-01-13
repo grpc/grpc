@@ -13,8 +13,9 @@
 # limitations under the License.
 """Base implementation of reflection servicer."""
 
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, Optional, Sequence, Union
 
+import google._upb._message
 from google.protobuf import descriptor_pb2  # pytype: disable=pyi-error
 from google.protobuf import descriptor_pool
 from google.protobuf.descriptor_pb2 import \
@@ -35,7 +36,7 @@ def _not_found_error() -> _reflection_pb2.ServerReflectionResponse:
 
 
 def _file_descriptor_response(
-    descriptor: FileDescriptorProto
+    descriptor: Union[FileDescriptorProto, google._upb._message.FileDescriptor]
 ) -> _reflection_pb2.ServerReflectionResponse:
     proto = descriptor_pb2.FileDescriptorProto()
     descriptor.CopyToProto(proto)

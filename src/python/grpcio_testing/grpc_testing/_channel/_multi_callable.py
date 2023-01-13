@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Optional, Tuple, Iterator
+from typing import Any, Iterator, Optional, Tuple
 
 import grpc
 from grpc._typing import MetadataType
