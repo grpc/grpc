@@ -54,7 +54,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
 
   RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
-      Json::Array override_host_status = {"UNKNOWN", "HEALTHY", "DRAINING"},
+      Json::Array override_host_status = {"UNKNOWN", "HEALTHY"},
       std::string child_policy = "round_robin") {
     Json::Object child_policy_config = {{child_policy, Json::Object()}};
     return MakeConfig(Json::Array{Json::Object{
