@@ -1176,6 +1176,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "slice_refcount",
+    srcs = [
+        "lib/slice/slice_refcount.cc",
+    ],
     hdrs = [
         "lib/slice/slice_refcount.h",
     ],
@@ -1183,8 +1186,10 @@ grpc_cc_library(
         "//:include/grpc/slice.h",
     ],
     deps = [
+        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 

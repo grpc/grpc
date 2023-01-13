@@ -116,6 +116,7 @@ some configuration as environment variables that can be set.
   - queue_refcount
   - error_refcount
   - stream_refcount
+  - slice_refcount
   - workqueue_refcount
   - fd_refcount
   - cq_refcount
