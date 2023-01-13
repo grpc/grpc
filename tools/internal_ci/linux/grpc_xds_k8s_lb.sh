@@ -15,6 +15,8 @@
 
 set -eo pipefail
 
+script_dir="$(dirname "$0")"
+
 run_test() {
   local test_name="${1:?Usage: run_test test_name}"
   echo "${test_name}"
@@ -24,17 +26,16 @@ run_test() {
     script="bad.py"
   fi
   set -x
-  python3 "$script" \
-    |& tee "sponge_log.log"
+  python3 "${script_dir}/${script}" |& tee "sponge_log.log"
 }
 
 
 main() {
-  local script_dir
-  script_dir="$(dirname "$0")"
+  set -x
+  bash --version
+  echo ""
 
   # Run tests
-  set -x
   local failed_tests=0
   test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test" "outlier_detection_test")
   for test in "${test_suites[@]}"; do
