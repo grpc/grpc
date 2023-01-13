@@ -34,6 +34,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -135,8 +136,7 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
 #ifdef GRPC_POSIX_SOCKET_TCP
   grpc_endpoint_pair p;
-  if (grpc_core::IsEventEngineClientEnabled() &&
-      grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+  if (grpc_core::IsEventEngineClientEnabled()) {
     p = grpc_iomgr_event_engine_shim_endpoint_pair(&args);
   } else {
     p = grpc_iomgr_create_endpoint_pair("test", &args);

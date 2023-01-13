@@ -18,9 +18,7 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -32,6 +30,7 @@
 
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -55,8 +54,6 @@ class EventEngineEndpointWrapper {
   struct grpc_event_engine_endpoint {
     grpc_endpoint base;
     EventEngineEndpointWrapper* wrapper;
-    std::string peer_address;
-    std::string local_address;
     std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
         read_buffer;
     std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
@@ -66,7 +63,20 @@ class EventEngineEndpointWrapper {
   explicit EventEngineEndpointWrapper(
       std::unique_ptr<EventEngine::Endpoint> endpoint);
 
-  int Fd() { return fd_; }
+  int Fd() {
+    grpc_core::MutexLock lock(&mu_);
+    return fd_;
+  }
+
+  absl::string_view PeerAddress() {
+    grpc_core::MutexLock lock(&mu_);
+    return peer_address_;
+  }
+
+  absl::string_view LocalAddress() {
+    grpc_core::MutexLock lock(&mu_);
+    return local_address_;
+  }
 
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
@@ -79,8 +89,19 @@ class EventEngineEndpointWrapper {
   // object.
   grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
 
-  // Returns a raw pointer to the underlying EventEngine endpoint object.
-  EventEngine::Endpoint* GetEEEndpoint() { return endpoint_.get(); }
+  // Read using the underlying EventEngine endpoint object.
+  inline void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                   SliceBuffer* buffer,
+                   const EventEngine::Endpoint::ReadArgs* args) {
+    endpoint_->Read(std::move(on_read), buffer, args);
+  }
+
+  // Write using the underlying EventEngine endpoint object
+  inline void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                    SliceBuffer* data,
+                    const EventEngine::Endpoint::WriteArgs* args) {
+    endpoint_->Write(std::move(on_writable), data, args);
+  }
 
   // Returns true if the endpoint is not yet shutdown. In that case, it also
   // acquires a shutdown ref. Otherwise it returns false and doesn't modify
@@ -99,7 +120,7 @@ class EventEngineEndpointWrapper {
     }
   }
 
-  // Decrement the shutdwn ref. If this is the last shutdown ref, it also
+  // Decrement the shutdown ref. If this is the last shutdown ref, it also
   // deletes the underlying event engine endpoint. Deletion of the event
   // engine endpoint should trigger execution of any pending read/write
   // callbacks with NOT-OK status.
@@ -112,9 +133,7 @@ class EventEngineEndpointWrapper {
             ->Shutdown(std::move(on_release_fd_));
       }
 #endif  // GRPC_POSIX_SOCKET_TCP
-      endpoint_.reset();
-      // For the Ref taken in TriggerShutdown
-      Unref();
+      OnShutdownInternal();
     }
   }
 
@@ -147,8 +166,7 @@ class EventEngineEndpointWrapper {
                 ->Shutdown(std::move(on_release_fd_));
           }
 #endif  // GRPC_POSIX_SOCKET_TCP
-          endpoint_.reset();
-          Unref();
+          OnShutdownInternal();
         }
         return;
       }
@@ -156,14 +174,28 @@ class EventEngineEndpointWrapper {
   }
 
  private:
+  void OnShutdownInternal() {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      fd_ = -1;
+      local_address_ = "";
+      peer_address_ = "";
+    }
+    endpoint_.reset();
+    // For the Ref taken in TriggerShutdown
+    Unref();
+  }
+  std::unique_ptr<EventEngine::Endpoint> endpoint_;
+  std::unique_ptr<grpc_event_engine_endpoint> eeep_;
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
-  int fd_{-1};
 #ifdef GRPC_POSIX_SOCKET_TCP
   absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
 #endif  // GRPC_POSIX_SOCKET_TCP
-  std::unique_ptr<EventEngine::Endpoint> endpoint_;
-  std::unique_ptr<grpc_event_engine_endpoint> eeep_;
+  grpc_core::Mutex mu_;
+  std::string peer_address_;
+  std::string local_address_;
+  int fd_{-1};
 };
 
 // Read from the endpoint and place the data in slices slice buffer. The
@@ -182,7 +214,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   eeep->wrapper->Ref();
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
   SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
-  eeep->wrapper->GetEEEndpoint()->Read(
+  eeep->wrapper->Read(
       [eeep, cb, slices](absl::Status status) {
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
         grpc_slice_buffer_move_into(read_buffer->c_slice_buffer(), slices);
@@ -215,7 +247,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
   eeep->wrapper->Ref();
   EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
   SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
-  eeep->wrapper->GetEEEndpoint()->Write(
+  eeep->wrapper->Write(
       [eeep, cb](absl::Status status) {
         auto* write_buffer =
             reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
@@ -247,8 +279,8 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s",
-            eeep->wrapper->GetEEEndpoint(), why.ToString().c_str());
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
+            why.ToString().c_str());
   }
   eeep->wrapper->TriggerShutdown(nullptr);
 }
@@ -265,34 +297,21 @@ absl::string_view EndpointGetPeerAddress(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->wrapper->ShutdownRef()) {
-    return "";
-  }
-  eeep->wrapper->ShutdownUnref();
-  return eeep->peer_address;
+  return eeep->wrapper->PeerAddress();
 }
 
 absl::string_view EndpointGetLocalAddress(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->wrapper->ShutdownRef()) {
-    return "";
-  }
-  eeep->wrapper->ShutdownUnref();
-  return eeep->local_address;
+  return eeep->wrapper->LocalAddress();
 }
 
 int EndpointGetFd(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->wrapper->ShutdownRef()) {
-    return -1;
-  }
-  int fd = eeep->wrapper->Fd();
-  eeep->wrapper->ShutdownUnref();
-  return fd;
+  return eeep->wrapper->Fd();
 }
 
 bool EndpointCanTrackErr(grpc_endpoint* /* ep */) { return false; }
@@ -318,11 +337,11 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   eeep_->wrapper = this;
   auto local_addr = ResolvedAddressToURI(endpoint_->GetLocalAddress());
   if (local_addr.ok()) {
-    eeep_->local_address = *local_addr;
+    local_address_ = *local_addr;
   }
   auto peer_addr = ResolvedAddressToURI(endpoint_->GetPeerAddress());
   if (peer_addr.ok()) {
-    eeep_->peer_address = *peer_addr;
+    peer_address_ = *peer_addr;
   }
 #ifdef GRPC_POSIX_SOCKET_TCP
   fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())

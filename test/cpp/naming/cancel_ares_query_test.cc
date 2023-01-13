@@ -40,6 +40,7 @@
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -151,7 +152,7 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 
   void ReportResult(grpc_core::Resolver::Result /*result*/) override {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 
  private:
@@ -198,8 +199,7 @@ class CancelDuringAresQuery : public ::testing::Test {
   static void TearDownTestSuite() {
     grpc_shutdown();
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      gpr_log(GPR_ERROR, "Test took too long");
-      abort();
+      grpc_core::Crash("Test took too long");
     }
   }
 

@@ -48,8 +48,8 @@ class ObservabilityLoggingSink : public LoggingSink {
 
   ~ObservabilityLoggingSink() override = default;
 
-  LoggingSink::Config FindMatch(bool is_client,
-                                absl::string_view path) override;
+  LoggingSink::Config FindMatch(bool is_client, absl::string_view service,
+                                absl::string_view method) override;
 
   void LogEntry(Entry entry) override;
 

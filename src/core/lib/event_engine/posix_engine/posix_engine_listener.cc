@@ -221,10 +221,8 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
   (void)sock.SetSocketNoSigpipeIfPossible();
   auto peer_name = sock.PeerAddressString();
   if (!peer_name.ok()) {
-    gpr_log(GPR_ERROR, "HandleExternalConnection(ERROR) fd = %d, error = %s",
-            fd, peer_name.status().ToString().c_str());
     return absl::UnknownError(
-        absl::StrCat("HandleExternalConnection: Invalid peer address: ",
+        absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));
   }
   auto endpoint = CreatePosixEndpoint(

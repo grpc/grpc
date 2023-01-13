@@ -17,7 +17,6 @@
 #include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <atomic>
 #include <list>
@@ -28,6 +27,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/status.h>
@@ -38,6 +38,7 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -415,10 +416,9 @@ int PollEventHandle::NotifyOnLocked(PosixEngineClosure** st,
     return 1;
   } else {
     // upcallptr was set to a different closure.  This is an error!
-    gpr_log(GPR_ERROR,
-            "User called a notify_on function with a previous callback still "
-            "pending");
-    abort();
+    grpc_core::Crash(
+        "User called a notify_on function with a previous callback still "
+        "pending");
   }
   return 0;
 }
@@ -717,18 +717,15 @@ Poller::WorkResult PollPoller::Work(
       // may crash.
       r = poll(pfds, pfd_count, timeout_ms);
     } else {
-      gpr_log(GPR_ERROR,
-              "Attempted a blocking poll when declared non-polling.");
-      GPR_ASSERT(false);
+      grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     }
 
     if (r <= 0) {
       if (r < 0 && errno != EINTR) {
         // Abort fail here.
-        gpr_log(GPR_ERROR,
-                "(event_engine) PollPoller:%p encountered poll error: %s", this,
-                grpc_core::StrError(errno).c_str());
-        GPR_ASSERT(false);
+        grpc_core::Crash(absl::StrFormat(
+            "(event_engine) PollPoller:%p encountered poll error: %s", this,
+            grpc_core::StrError(errno).c_str()));
       }
 
       for (i = 1; i < pfd_count; i++) {
@@ -850,29 +847,31 @@ PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
 
 #else  // GRPC_POSIX_SOCKET_EV_POLL
 
+#include "src/core/lib/gprpp/crash.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
 PollPoller::PollPoller(Scheduler* /* engine */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-void PollPoller::Shutdown() { GPR_ASSERT(false && "unimplemented"); }
+void PollPoller::Shutdown() { grpc_core::Crash("unimplemented"); }
 
-PollPoller::~PollPoller() { GPR_ASSERT(false && "unimplemented"); }
+PollPoller::~PollPoller() { grpc_core::Crash("unimplemented"); }
 
 EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
                                       bool /*track_err*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 Poller::WorkResult PollPoller::Work(
     EventEngine::Duration /*timeout*/,
     absl::FunctionRef<void()> /*schedule_poll_again*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-void PollPoller::Kick() { GPR_ASSERT(false && "unimplemented"); }
+void PollPoller::Kick() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
@@ -882,15 +881,15 @@ PollPoller* MakePollPoller(Scheduler* /*scheduler*/,
 }
 
 void PollPoller::KickExternal(bool /*ext*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 void PollPoller::PollerHandlesListAddHandle(PollEventHandle* /*handle*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 }  // namespace experimental

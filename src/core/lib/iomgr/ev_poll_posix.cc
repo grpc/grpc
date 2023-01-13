@@ -35,6 +35,7 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -42,6 +43,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
@@ -125,6 +127,8 @@ struct grpc_fd {
 
   // Only used when GRPC_ENABLE_FORK_SUPPORT=1
   grpc_fork_fd_list* fork_fd_list;
+
+  bool is_pre_allocated;
 };
 
 // True when GRPC_ENABLE_FORK_SUPPORT=1.
@@ -384,6 +388,7 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   r->on_done_closure = nullptr;
   r->closed = 0;
   r->released = 0;
+  r->is_pre_allocated = false;
   gpr_atm_no_barrier_store(&r->pollhup, 0);
 
   std::string name2 = absl::StrCat(name, " fd=", fd);
@@ -438,7 +443,9 @@ static int has_watchers(grpc_fd* fd) {
 static void close_fd_locked(grpc_fd* fd) {
   fd->closed = 1;
   if (!fd->released) {
-    close(fd->fd);
+    if (!fd->is_pre_allocated) {
+      close(fd->fd);
+    }
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure,
                           absl::OkStatus());
@@ -516,10 +523,9 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
     maybe_wake_one_watcher_locked(fd);
   } else {
     // upcallptr was set to a different closure.  This is an error!
-    gpr_log(GPR_ERROR,
-            "User called a notify_on function with a previous callback still "
-            "pending");
-    abort();
+    grpc_core::Crash(
+        "User called a notify_on function with a previous callback still "
+        "pending");
   }
 }
 
@@ -547,7 +553,9 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
     fd->shutdown = 1;
     fd->shutdown_error = why;
     // signal read/write closed to OS so that future operations fail
-    shutdown(fd->fd, SHUT_RDWR);
+    if (!fd->is_pre_allocated) {
+      shutdown(fd->fd, SHUT_RDWR);
+    }
     set_ready_locked(fd, &fd->read_closure);
     set_ready_locked(fd, &fd->write_closure);
   }
@@ -705,6 +713,8 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
 
   GRPC_FD_UNREF(fd, "poll");
 }
+
+static void fd_set_pre_allocated(grpc_fd* fd) { fd->is_pre_allocated = true; }
 
 //******************************************************************************
 // pollset_posix.c
@@ -1405,6 +1415,8 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
     /* shutdown_engine = */ shutdown_background_closure,
     []() {},
     add_closure_to_background_poller,
+
+    fd_set_pre_allocated,
 };
 
 namespace {
@@ -1415,8 +1427,7 @@ int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
   if (timeout == 0) {
     return real_poll_function(fds, nfds, 0);
   } else {
-    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
-    GPR_ASSERT(false);
+    grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     return -1;
   }
 }

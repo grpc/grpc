@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -448,8 +449,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
-  if (grpc_core::IsEventEngineClientEnabled() &&
-      grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+  if (grpc_core::IsEventEngineClientEnabled()) {
     return event_engine_tcp_client_connect(closure, ep, config, addr, deadline);
   }
   grpc_resolved_address mapped_addr;
@@ -467,8 +467,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 static bool tcp_cancel_connect(int64_t connection_handle) {
-  if (grpc_core::IsEventEngineClientEnabled() &&
-      grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+  if (grpc_core::IsEventEngineClientEnabled()) {
     return event_engine_tcp_client_cancel_connect(connection_handle);
   }
   if (connection_handle <= 0) {

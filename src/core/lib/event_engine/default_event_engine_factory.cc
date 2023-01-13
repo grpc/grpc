@@ -30,10 +30,6 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<WindowsEventEngine>();
 }
 
-int DefaultEventEngineEndpointWrappedFd(EventEngine::Endpoint* /*endpoint*/) {
-  return -1;
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 #else  // not GPR_WINDOWS

@@ -15,12 +15,9 @@
 
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 
-#include <stdlib.h>
-
 #include <atomic>
 #include <cstdint>
 
-#include "absl/base/dynamic_annotations.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/atm.h>
@@ -28,6 +25,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
@@ -142,20 +140,17 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
         // contains a pointer to the shutdown-error). If the fd is shutdown,
         // schedule the closure with the shutdown error
         if ((curr & kShutdownBit) > 0) {
-          ABSL_ANNOTATE_IGNORE_READS_BEGIN();
           absl::Status shutdown_err =
               grpc_core::internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
-          ABSL_ANNOTATE_IGNORE_READS_END();
           closure->SetStatus(shutdown_err);
           scheduler_->Run(closure);
           return;
         }
 
         // There is already a closure!. This indicates a bug in the code.
-        gpr_log(GPR_ERROR,
-                "LockfreeEvent::NotifyOn: notify_on called with a previous "
-                "callback still pending");
-        abort();
+        grpc_core::Crash(
+            "LockfreeEvent::NotifyOn: notify_on called with a previous "
+            "callback still pending");
       }
     }
   }

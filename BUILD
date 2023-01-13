@@ -75,6 +75,11 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
+config_setting(
+    name = "systemd",
+    values = {"define": "use_systemd=true"},
+)
+
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
@@ -153,7 +158,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gribkoff"  # @unused
 
-core_version = "29.0.0"  # @unused
+core_version = "30.0.0"  # @unused
 
 version = "1.52.0-dev"  # @unused
 
@@ -537,7 +542,7 @@ grpc_cc_library(
         "//src/core:plugin_registry/grpc_plugin_registry_extra.cc",
     ],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        ":grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -547,7 +552,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     select_deps = [
         {
-            "grpc_no_xds": [],
+            ":grpc_no_xds": [],
             "//conditions:default": GRPC_XDS_TARGETS,
         },
     ],
@@ -638,6 +643,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/tmpfile_posix.cc",
         "//src/core:lib/gpr/tmpfile_windows.cc",
         "//src/core:lib/gpr/wrap_memcpy.cc",
+        "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
         "//src/core:lib/gprpp/global_config_env.cc",
         "//src/core:lib/gprpp/host_port.cc",
@@ -653,6 +659,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/string.h",
         "//src/core:lib/gpr/time_precise.h",
         "//src/core:lib/gpr/tmpfile.h",
+        "//src/core:lib/gprpp/crash.h",
         "//src/core:lib/gprpp/fork.h",
         "//src/core:lib/gprpp/global_config.h",
         "//src/core:lib/gprpp/global_config_custom.h",
@@ -686,6 +693,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "debug_location",
         "//src/core:construct_destruct",
         "//src/core:env",
         "//src/core:examine_stack",
@@ -792,7 +800,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = [
         {
-            "grpc_no_xds": [],
+            ":grpc_no_xds": [],
             "//conditions:default": [
                 "grpc++_xds_client",
                 "grpc++_xds_server",
@@ -997,6 +1005,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
+        "//src/core:default_event_engine",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:slice",
@@ -1212,6 +1221,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/socket_utils_linux.cc",
         "//src/core:lib/iomgr/socket_utils_posix.cc",
         "//src/core:lib/iomgr/socket_windows.cc",
+        "//src/core:lib/iomgr/systemd_utils.cc",
         "//src/core:lib/iomgr/tcp_client.cc",
         "//src/core:lib/iomgr/tcp_client_cfstream.cc",
         "//src/core:lib/iomgr/tcp_client_posix.cc",
@@ -1319,6 +1329,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/socket_factory_posix.h",
         "//src/core:lib/iomgr/socket_utils_posix.h",
         "//src/core:lib/iomgr/socket_windows.h",
+        "//src/core:lib/iomgr/systemd_utils.h",
         "//src/core:lib/iomgr/tcp_client.h",
         "//src/core:lib/iomgr/tcp_client_posix.h",
         "//src/core:lib/iomgr/tcp_posix.h",
@@ -1360,6 +1371,10 @@ grpc_cc_library(
         "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
         "//src/core:lib/iomgr/event_engine_shims/resolved_address.h",
     ],
+    defines = select({
+        "systemd": ["HAVE_LIBSYSTEMD"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
@@ -1379,6 +1394,10 @@ grpc_cc_library(
         "madler_zlib",
     ],
     language = "c++",
+    linkopts = select({
+        "systemd": ["-lsystemd"],
+        "//conditions:default": [],
+    }),
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -1716,11 +1735,9 @@ grpc_cc_library(
     visibility = ["@grpc:tsi"],
     deps = [
         "gpr",
-        "grpc_base",
-        "tsi_alts_credentials",
+        "tsi_alts_frame_protector",
         "tsi_base",
         "tsi_fake_credentials",
-        "tsi_ssl_credentials",
         "//src/core:tsi_local_credentials",
         "//src/core:useful",
     ],
@@ -1751,6 +1768,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/synchronization",
         "absl/memory",
         "absl/types:optional",
@@ -1822,6 +1840,7 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/memory",
         "upb_lib",
+        "absl/strings:str_format",
         "protobuf_headers",
     ],
     language = "c++",
@@ -2063,7 +2082,7 @@ grpc_cc_library(
     ],
     hdrs = [],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        ":grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -2074,7 +2093,7 @@ grpc_cc_library(
         "include/grpcpp/ext/admin_services.h",
     ],
     select_deps = [{
-        "grpc_no_xds": [],
+        ":grpc_no_xds": [],
         "//conditions:default": ["//:grpcpp_csds"],
     }],
     deps = [
@@ -2377,6 +2396,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/executor.h",
         "//src/core:lib/iomgr/iomgr_internal.h",
     ],
+    external_deps = ["absl/strings:str_format"],
     visibility = [
         "@grpc:alt_grpc_base_legacy",
         "@grpc:exec_ctx",
@@ -2438,6 +2458,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:iomgr_timer"],
@@ -3022,6 +3043,38 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi_alts_credentials",
     srcs = [
+        "//src/core:tsi/alts/handshaker/alts_handshaker_client.cc",
+        "//src/core:tsi/alts/handshaker/alts_shared_resource.cc",
+        "//src/core:tsi/alts/handshaker/alts_tsi_handshaker.cc",
+        "//src/core:tsi/alts/handshaker/alts_tsi_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/alts/handshaker/alts_handshaker_client.h",
+        "//src/core:tsi/alts/handshaker/alts_shared_resource.h",
+        "//src/core:tsi/alts/handshaker/alts_tsi_handshaker.h",
+        "//src/core:tsi/alts/handshaker/alts_tsi_handshaker_private.h",
+        "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
+    ],
+    external_deps = ["upb_lib"],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "alts_upb",
+        "alts_util",
+        "gpr",
+        "grpc_base",
+        "tsi_alts_frame_protector",
+        "tsi_base",
+        "//src/core:channel_args",
+        "//src/core:closure",
+        "//src/core:pollset_set",
+        "//src/core:slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "tsi_alts_frame_protector",
+    srcs = [
         "//src/core:tsi/alts/crypt/aes_gcm.cc",
         "//src/core:tsi/alts/crypt/gsec.cc",
         "//src/core:tsi/alts/frame_protector/alts_counter.cc",
@@ -3031,10 +3084,6 @@ grpc_cc_library(
         "//src/core:tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc",
         "//src/core:tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc",
         "//src/core:tsi/alts/frame_protector/frame_handler.cc",
-        "//src/core:tsi/alts/handshaker/alts_handshaker_client.cc",
-        "//src/core:tsi/alts/handshaker/alts_shared_resource.cc",
-        "//src/core:tsi/alts/handshaker/alts_tsi_handshaker.cc",
-        "//src/core:tsi/alts/handshaker/alts_tsi_utils.cc",
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc",
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc",
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc",
@@ -3048,11 +3097,6 @@ grpc_cc_library(
         "//src/core:tsi/alts/frame_protector/alts_frame_protector.h",
         "//src/core:tsi/alts/frame_protector/alts_record_protocol_crypter_common.h",
         "//src/core:tsi/alts/frame_protector/frame_handler.h",
-        "//src/core:tsi/alts/handshaker/alts_handshaker_client.h",
-        "//src/core:tsi/alts/handshaker/alts_shared_resource.h",
-        "//src/core:tsi/alts/handshaker/alts_tsi_handshaker.h",
-        "//src/core:tsi/alts/handshaker/alts_tsi_handshaker_private.h",
-        "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h",
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h",
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h",
@@ -3061,27 +3105,19 @@ grpc_cc_library(
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
     ],
     external_deps = [
-        "libssl",
         "libcrypto",
-        "upb_lib",
+        "libssl",
     ],
     language = "c++",
-    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
-        "alts_upb",
-        "alts_util",
-        "config",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr",
-        "grpc_base",
+        "gpr_platform",
         "tsi_base",
-        "//src/core:arena",
-        "//src/core:channel_args",
-        "//src/core:closure",
-        "//src/core:error",
-        "//src/core:pollset_set",
         "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:useful",
     ],
 )
@@ -3428,12 +3464,14 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "hpack_parser_table",
+        "stats",
         "//src/core:decode_huff",
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:hpack_constants",
         "//src/core:slice",
         "//src/core:slice_refcount",
+        "//src/core:stats_data",
         "//src/core:status_helper",
     ],
 )

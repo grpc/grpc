@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -533,11 +534,11 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
     void check_peer(tsi_peer, grpc_endpoint*, const ChannelArgs&,
                     RefCountedPtr<grpc_auth_context>*, grpc_closure*) override {
-      GPR_ASSERT(false);
+      Crash("unreachable");
     }
 
     void cancel_check_peer(grpc_closure*, grpc_error_handle) override {
-      GPR_ASSERT(false);
+      Crash("unreachable");
     }
 
     int cmp(const grpc_security_connector*) const override {
@@ -552,7 +553,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
     void add_handshakers(const ChannelArgs&, grpc_pollset_set*,
                          HandshakeManager*) override {
-      GPR_ASSERT(false);
+      Crash("unreachable");
     }
   };
 
@@ -2212,15 +2213,15 @@ TEST(CredentialsTest, TestAuthMetadataContext) {
                                 &auth_md_context);
     if (strcmp(auth_md_context.service_url,
                test_cases[i].desired_service_url) != 0) {
-      gpr_log(GPR_ERROR, "Invalid service url, want: %s, got %s.",
-              test_cases[i].desired_service_url, auth_md_context.service_url);
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Invalid service url, want: %s, got %s.",
+                            test_cases[i].desired_service_url,
+                            auth_md_context.service_url));
     }
     if (strcmp(auth_md_context.method_name,
                test_cases[i].desired_method_name) != 0) {
-      gpr_log(GPR_ERROR, "Invalid method name, want: %s, got %s.",
-              test_cases[i].desired_method_name, auth_md_context.method_name);
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Invalid method name, want: %s, got %s.",
+                            test_cases[i].desired_method_name,
+                            auth_md_context.method_name));
     }
     GPR_ASSERT(auth_md_context.channel_auth_context == nullptr);
     grpc_slice_unref(call_host);

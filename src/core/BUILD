@@ -732,6 +732,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_wakeup_scheduler",
+    hdrs = [
+        "lib/promise/event_engine_wakeup_scheduler.h",
+    ],
+    language = "c++",
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_set",
     external_deps = [
         "absl/container:flat_hash_set",
@@ -816,6 +829,23 @@ grpc_cc_library(
         "poll",
         "//:gpr",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "mpsc",
+    hdrs = [
+        "lib/promise/mpsc.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "ref_counted",
+        "wait_set",
+        "//:gpr",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -1463,10 +1493,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/posix_engine/lockfree_event.h",
     ],
-    external_deps = [
-        "absl/base:dynamic_annotations",
-        "absl/status",
-    ],
+    external_deps = ["absl/status"],
     deps = [
         "gpr_atm",
         "posix_event_engine_closure",
@@ -1563,6 +1590,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "event_engine_poller",
@@ -1598,6 +1626,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "common_event_engine_closures",
@@ -1848,7 +1877,6 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
-        "experiments",
         "init_internally",
         "iomgr_port",
         "posix_event_engine_base_hdrs",
@@ -2588,6 +2616,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -4439,19 +4468,24 @@ grpc_cc_library(
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "channel_args",
+        "closure",
+        "error",
         "grpc_stateful_session_filter",
+        "iomgr_fwd",
         "json",
         "json_args",
         "json_object_loader",
@@ -4463,6 +4497,7 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
@@ -4471,6 +4506,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
+        "//:work_serializer",
     ],
 )
 

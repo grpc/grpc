@@ -58,13 +58,13 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 #include <inttypes.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -106,6 +106,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -791,10 +792,9 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
       static_cast<const TokenAndClientStatsAttribute*>(
           address.GetAttribute(kGrpcLbAddressAttributeKey));
   if (attribute == nullptr) {
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
-            parent_.get(), address.ToString().c_str());
-    abort();
+    Crash(absl::StrFormat(
+        "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
+        parent_.get(), address.ToString().c_str()));
   }
   std::string lb_token = attribute->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = attribute->client_stats();

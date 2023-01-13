@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -166,10 +167,10 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     } else if (args->endpoint != nullptr) {
       self->result_->transport =
           grpc_create_chttp2_transport(args->args, args->endpoint, true);
+      GPR_ASSERT(self->result_->transport != nullptr);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
-      GPR_ASSERT(self->result_->transport != nullptr);
       self->endpoint_ = args->endpoint;
       self->Ref().release();  // Ref held by OnReceiveSettings()
       GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
@@ -205,9 +206,6 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
                                             self->args_.interested_parties);
       if (!error.ok()) {
         // Transport got an error while waiting on SETTINGS frame.
-        // TODO(yashykt): The following two lines should be moved to
-        // SubchannelConnector::Result::Reset()
-        grpc_transport_destroy(self->result_->transport);
         self->result_->Reset();
       }
       self->MaybeNotify(error);
@@ -235,9 +233,6 @@ void Chttp2Connector::OnTimeout() {
     // The transport did not receive the settings frame in time. Destroy the
     // transport.
     grpc_endpoint_delete_from_pollset_set(endpoint_, args_.interested_parties);
-    // TODO(yashykt): The following two lines should be moved to
-    // SubchannelConnector::Result::Reset()
-    grpc_transport_destroy(result_->transport);
     result_->Reset();
     MaybeNotify(GRPC_ERROR_CREATE(
         "connection attempt timed out before receiving SETTINGS frame"));

@@ -58,14 +58,5 @@ absl::AnyInvocable<void(absl::Status)> GrpcClosureToStatusCallback(
   };
 }
 
-absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure) {
-  return [closure]() { RunEventEngineClosure(closure, absl::OkStatus()); };
-}
-
-absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure,
-                                                 grpc_error_handle error) {
-  return [closure, error]() { RunEventEngineClosure(closure, error); };
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
