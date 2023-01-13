@@ -139,7 +139,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       friend class SubchannelWrapper;
 
       SubchannelWrapper* subchannel_ = nullptr;
-      std::vector<std::unique_ptr<ConnectivityStateWatcherInterface>> watchers_;
+      std::map<ConnectivityStateWatcherInterface*,
+               std::unique_ptr<ConnectivityStateWatcherInterface>>
+          watchers_;
       std::atomic<grpc_connectivity_state> connectivity_state_{
           GRPC_CHANNEL_IDLE};
     };
@@ -635,15 +637,16 @@ XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
 
 void XdsOverrideHostLb::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
-  watcher_->watchers_.push_back(std::move(watcher));
+  watcher_->watchers_.insert({watcher.get(), std::move(watcher)});
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  (void)std::remove_if(watcher_->watchers_.begin(), watcher_->watchers_.end(),
-                       [watcher](const auto& watcher_ptr) {
-                         return watcher_ptr.get() == watcher;
-                       });
+  auto& watchers = watcher_->watchers_;
+  auto it = watchers.find(watcher);
+  if (it != watchers.end()) {
+    watchers.erase(it);
+  }
 }
 
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
@@ -659,7 +662,7 @@ void XdsOverrideHostLb::SubchannelWrapper::ConnectivityStateWatcher::
                               absl::Status status) {
   connectivity_state_.store(state);
   for (const auto& watcher : watchers_) {
-    watcher->OnConnectivityStateChange(state, status);
+    watcher.second->OnConnectivityStateChange(state, status);
   }
 }
 
