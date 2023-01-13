@@ -63,22 +63,21 @@ class ArrayEncoder {
  public:
   explicit ArrayEncoder(grpc_metadata_array* result) : result_(result) {}
 
-  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+  void Encode(const Slice& key, const Slice& value) {
     Append(key.Ref(), value.Ref());
   }
 
   template <typename Which>
   void Encode(Which, const typename Which::ValueType& value) {
-    Append(grpc_core::Slice(
-               grpc_core::StaticSlice::FromStaticString(Which::key())),
-           grpc_core::Slice(Which::Encode(value)));
+    Append(Slice(StaticSlice::FromStaticString(Which::key())),
+           Slice(Which::Encode(value)));
   }
 
-  void Encode(grpc_core::HttpMethodMetadata,
-              const typename grpc_core::HttpMethodMetadata::ValueType&) {}
+  void Encode(HttpMethodMetadata,
+              const typename HttpMethodMetadata::ValueType&) {}
 
  private:
-  void Append(grpc_core::Slice key, grpc_core::Slice value) {
+  void Append(Slice key, Slice value) {
     if (result_->count == result_->capacity) {
       result_->capacity =
           std::max(result_->capacity + 8, result_->capacity * 2);
@@ -131,7 +130,7 @@ class ServerAuthFilter::RunApplicationCode {
     Waker waker{Activity::current()->MakeOwningWaker()};
     absl::StatusOr<CallArgs> call_args;
     grpc_metadata_array md =
-        MetadataBatchToMetadataArray(call_args.client_initial_metadata.get());
+        MetadataBatchToMetadataArray(call_args->client_initial_metadata.get());
     std::atomic<bool> done{false};
   };
 
@@ -140,8 +139,8 @@ class ServerAuthFilter::RunApplicationCode {
       void* user_data, const grpc_metadata* consumed_md, size_t num_consumed_md,
       const grpc_metadata* response_md, size_t num_response_md,
       grpc_status_code status, const char* error_details) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
+    ApplicationCallbackExecCtx callback_exec_ctx;
+    ExecCtx exec_ctx;
 
     auto* state = static_cast<State*>(user_data);
 
@@ -155,7 +154,7 @@ class ServerAuthFilter::RunApplicationCode {
     if (status == GRPC_STATUS_OK) {
       CallArgs md = state->call_args->client_initial_metadata;
       for (size_t i = 0; i < num_consumed_md; i++) {
-        md->Remove(grpc_core::StringViewFromSlice(consumed_md[i].key));
+        md.Remove(StringViewFromSlice(consumed_md[i].key));
       }
     } else {
       if (error_details == nullptr) {
@@ -163,13 +162,13 @@ class ServerAuthFilter::RunApplicationCode {
       }
       state_->call_args =
           grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
-                             grpc_core::StatusIntProperty::kRpcStatus, status);
+                             StatusIntProperty::kRpcStatus, status);
     }
 
     // Clean up.
     for (size_t i = 0; i < state_->md.count; i++) {
-      grpc_core::CSliceUnref(state_->md.metadata[i].key);
-      grpc_core::CSliceUnref(state_->md.metadata[i].value);
+      CSliceUnref(state_->md.metadata[i].key);
+      CSliceUnref(state_->md.metadata[i].value);
     }
     grpc_metadata_array_destroy(&state_->md);
 
