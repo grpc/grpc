@@ -20,6 +20,7 @@
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -67,33 +68,33 @@ CFEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> /* on_shutdown */,
     const EndpointConfig& /* config */,
     std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 CFEventEngine::ConnectionHandle CFEventEngine::Connect(
     OnConnectCallback /* on_connect */, const ResolvedAddress& /* addr */,
     const EndpointConfig& /* args */, MemoryAllocator /* memory_allocator */,
     Duration /* timeout */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool CFEventEngine::CancelConnect(ConnectionHandle /* handle */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-bool CFEventEngine::IsWorkerThread() { GPR_ASSERT(false && "unimplemented"); }
+bool CFEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 
 std::unique_ptr<EventEngine::DNSResolver> CFEventEngine::GetDNSResolver(
     const DNSResolver::ResolverOptions& /* options */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 void CFEventEngine::Run(EventEngine::Closure* /* closure */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 void CFEventEngine::Run(absl::AnyInvocable<void()> /* closure */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 EventEngine::TaskHandle CFEventEngine::RunAfter(Duration when,
