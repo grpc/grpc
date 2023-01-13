@@ -204,6 +204,11 @@ ArenaPromise<ServerMetadataHandle> ServerAuthFilter::MakeCallPromise(
                 std::move(next_promise_factory));
 }
 
+ServerAuthFilter::ServerAuthFilter(
+    RefCountedPtr<grpc_server_credentials> server_credentials,
+    RefCountedPtr<grpc_auth_context> auth_context)
+    : server_credentials_(server_credentials), auth_context_(auth_context) {}
+
 absl::StatusOr<ServerAuthFilter> ServerAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
