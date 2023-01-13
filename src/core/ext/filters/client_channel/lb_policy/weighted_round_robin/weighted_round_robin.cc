@@ -24,6 +24,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
