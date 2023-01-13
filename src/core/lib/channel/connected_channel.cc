@@ -1028,20 +1028,16 @@ class ServerStream final : public ConnectedChannelStream {
 
     if (auto* p =
             absl::get_if<GotInitialMetadata>(&client_initial_metadata_state_)) {
-      auto* server_to_client = GetContext<Arena>()->New<Pipe<MessageHandle>>();
-      auto* client_to_server = GetContext<Arena>()->New<Pipe<MessageHandle>>();
-      auto* server_initial_metadata =
-          GetContext<Arena>()->New<Pipe<ServerMetadataHandle>>();
-      incoming_messages_ = &client_to_server->sender;
-      auto promise = p->next_promise_factory(
-          CallArgs{std::move(p->client_initial_metadata),
-                   &server_initial_metadata->sender,
-                   &client_to_server->receiver, &server_to_client->sender});
+      incoming_messages_ = &pipes_.client_to_server.sender;
+      auto promise = p->next_promise_factory(CallArgs{
+          std::move(p->client_initial_metadata),
+          &pipes_.server_initial_metadata.sender,
+          &pipes_.client_to_server.receiver, &pipes_.server_to_client.sender});
       client_initial_metadata_state_.emplace<Running>(
-          Running{&server_to_client->receiver, std::move(promise)});
+          Running{&pipes_.server_to_client.receiver, std::move(promise)});
       server_initial_metadata_
           .emplace<PipeReceiverNextType<ServerMetadataHandle>>(
-              server_initial_metadata->receiver.Next());
+              pipes_.server_initial_metadata.receiver.Next());
     }
     if (incoming_messages_ != nullptr) {
       PollRecvMessage(incoming_messages_);
@@ -1260,6 +1256,12 @@ class ServerStream final : public ConnectedChannelStream {
     waker.Wakeup();
   }
 
+  struct Pipes {
+    Pipe<MessageHandle> server_to_client;
+    Pipe<MessageHandle> client_to_server;
+    Pipe<ServerMetadataHandle> server_initial_metadata;
+  };
+
   using ClientInitialMetadataState =
       absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,
                     Running, Completing, Complete>;
@@ -1278,6 +1280,7 @@ class ServerStream final : public ConnectedChannelStream {
   grpc_closure send_initial_metadata_done_ =
       MakeMemberClosure<ServerStream, &ServerStream::SendInitialMetadataDone>(
           this);
+  Pipes pipes_ ABSL_GUARDED_BY(mu());
 };
 
 class ServerConnectedCallPromise {
