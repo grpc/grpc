@@ -46,14 +46,21 @@ namespace promise_filter_detail {
 namespace {
 class FakeActivity final : public Activity {
  public:
+  explicit FakeActivity(Activity* wake_activity)
+      : wake_activity_(wake_activity) {}
   void Orphan() override {}
   void ForceImmediateRepoll() override {}
-  Waker MakeOwningWaker() override { abort(); }
-  Waker MakeNonOwningWaker() override { abort(); }
+  Waker MakeOwningWaker() override { return wake_activity_->MakeOwningWaker(); }
+  Waker MakeNonOwningWaker() override {
+    return wake_activity_->MakeNonOwningWaker();
+  }
   void Run(absl::FunctionRef<void()> f) {
     ScopedActivity activity(this);
     f();
   }
+
+ private:
+  Activity* const wake_activity_;
 };
 
 absl::Status StatusFromMetadata(const ServerMetadata& md) {
@@ -96,7 +103,7 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
 }
 
 BaseCallData::~BaseCallData() {
-  FakeActivity().Run([this] {
+  FakeActivity(this).Run([this] {
     if (send_message_ != nullptr) {
       send_message_->~SendMessage();
     }
@@ -2111,7 +2118,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
-  FakeActivity().Run([this, filter] {
+  FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),
                  server_initial_metadata_latch(), outgoing_messages_pipe(),
