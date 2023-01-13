@@ -44,6 +44,7 @@
 #include "src/cpp/common/channel_filter.h"
 
 namespace grpc {
+namespace internal {
 
 // A CallData class will be created for every grpc call within a channel. It is
 // used to store data and methods specific to that call. CensusServerCallData is
@@ -108,6 +109,7 @@ class CensusServerCallData : public CallData {
   char stats_buf_[kMaxServerStatsLen];
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
