@@ -161,8 +161,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   SendInitialUpdateAndWaitForConnected(
       absl::Span<const absl::string_view> addresses,
       ConfigBuilder config_builder = ConfigBuilder(),
+      absl::Span<const absl::string_view> update_addresses = {},
       SourceLocation location = SourceLocation()) {
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, config_builder.Build()),
+    if (update_addresses.empty()) update_addresses = addresses;
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(update_addresses, config_builder.Build()),
                           lb_policy_.get()),
               absl::OkStatus());
     // Expect the initial CONNECTNG update with a picker that queues.
@@ -366,6 +368,31 @@ TEST_F(WeightedRoundRobinTest, Basic) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Address 0 gets weight 1, address 1 gets weight 3.
+  // No utilization report from backend 2, so it gets the average weight 2.
+  WaitForWeightedRoundRobinPicks(
+      &picker, {{kAddresses[0], {100, 0.9}}, {kAddresses[1], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Now have backend 2 report utilization the same as backend 1, so its
+  // weight will be the same.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], {100, 0.9}},
+       {kAddresses[1], {100, 0.3}},
+       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+TEST_F(WeightedRoundRobinTest, IgnoresDuplicateAddresses) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  const std::array<absl::string_view, 4> kUpdateAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
+      "ipv4:127.0.0.1:441"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses, ConfigBuilder(), kUpdateAddresses);
   ASSERT_NE(picker, nullptr);
   // Address 0 gets weight 1, address 1 gets weight 3.
   // No utilization report from backend 2, so it gets the average weight 2.
