@@ -23,6 +23,10 @@ linux = RUBY_PLATFORM =~ /linux/
 cross_compiling = ENV['RCD_HOST_RUBY_VERSION'] # set by rake-compiler-dock in build containers
 # TruffleRuby uses the Sulong LLVM runtime, which is different from Apple's.
 apple_toolchain = darwin && RUBY_ENGINE != 'truffleruby'
+p "apolcyn ext darwin: |#{darwin}|"
+p "apolcyn ext cross_compiling: |#{cross_compiling}|"
+p "apolcyn ext RUBY_ENGINE: |#{RUBY_ENGINE}|"
+p "apolcyn ext apple_toolchain: |#{apple_toolchain}|"
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
@@ -174,6 +178,7 @@ strip_tool = RbConfig::CONFIG['STRIP']
 strip_tool += ' -x' if apple_toolchain
 
 if grpc_config == 'opt'
+  p "apolcyn ext adding strip to Makefile"
   File.open('Makefile.new', 'w') do |o|
     o.puts 'hijack: all strip'
     o.puts
