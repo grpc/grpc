@@ -167,13 +167,13 @@ class ServerAuthFilter::RunApplicationCode {
     }
 
     // Clean up.
-    for (size_t i = 0; i < state_->md.count; i++) {
+    for (size_t i = 0; i < state->md.count; i++) {
       CSliceUnref(state->md.metadata[i].key);
       CSliceUnref(state->md.metadata[i].value);
     }
-    grpc_metadata_array_destroy(&state_->md);
+    grpc_metadata_array_destroy(&state->md);
 
-    auto waker = std::move(state_->waker);
+    auto waker = std::move(state->waker);
     state->done.store(true, std::memory_order_release);
     waker.Wakeup();
   }
