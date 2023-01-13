@@ -1980,6 +1980,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cf_event_engine",
+    srcs = ["lib/event_engine/cf_engine/cf_engine.cc"],
+    hdrs = ["lib/event_engine/cf_engine/cf_engine.h"],
+    deps = [
+        "event_engine_common",
+        "event_engine_trace",
+        "event_engine_utils",
+        "init_internally",
+        "posix_event_engine_timer_manager",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_tcp_socket_utils",
     srcs = [
         "lib/event_engine/tcp_socket_utils.cc",
