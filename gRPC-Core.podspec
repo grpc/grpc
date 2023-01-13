@@ -1625,6 +1625,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_buffer.cc',
                       'src/core/lib/slice/slice_buffer.h',
                       'src/core/lib/slice/slice_internal.h',
+                      'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
