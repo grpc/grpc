@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/experiments/config.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 #include "test/core/util/test_config.h"
@@ -35,6 +36,8 @@ int main(int argc, char** argv) {
         return std::make_unique<
             grpc_event_engine::experimental::PosixOracleEventEngine>();
       });
+  // TODO(vigneshbabu): remove when the experiment is over
+  grpc_core::ForceEnableExperiment("event_engine_client", true);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();
