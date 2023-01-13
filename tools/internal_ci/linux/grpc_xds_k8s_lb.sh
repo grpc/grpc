@@ -25,13 +25,13 @@ run_test() {
   if [[ "$test_name" == "failover_test" ]]; then
     script="bad.py"
   fi
-  set -x
+  #  set -x
   python3 "${script_dir}/${script}" |& tee "sponge_log.log"
 }
 
 
 main() {
-  set -x
+#  set -x
   bash --version
   echo ""
 
@@ -39,7 +39,8 @@ main() {
   local failed_tests=0
   test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test" "outlier_detection_test")
   for test in "${test_suites[@]}"; do
-    run_test $test || (( failed_tests++ ))
+    # run_test $test || (( failed_tests++ ))
+    run_test $test ||  (( failed_tests++ )) && true
     echo
   done
   echo
