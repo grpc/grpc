@@ -162,8 +162,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfigNoOverrideHostStatuses) {
       static_cast<RefCountedPtr<XdsOverrideHostLbConfig>>(lb_config);
   EXPECT_EQ(override_host_lb_config->override_host_status_set(),
             XdsHealthStatusSet(
-                {XdsHealthStatus(XdsHealthStatus::HealthStatus::kDraining),
-                 XdsHealthStatus(XdsHealthStatus::HealthStatus::kHealthy),
+                {XdsHealthStatus(XdsHealthStatus::HealthStatus::kHealthy),
                  XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown)}));
   ASSERT_NE(override_host_lb_config->child_config(), nullptr);
   EXPECT_EQ(override_host_lb_config->child_config()->name(), "grpclb");
