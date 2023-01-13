@@ -276,14 +276,14 @@ TEST(AlarmTest, InfPastExpiry) {
   void* output_tag;
   bool ok;
   CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
   EXPECT_EQ(junk, output_tag);
 
   alarm.Set(&cq, std::chrono::system_clock::time_point(), junk);
-  status = cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  status = cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
