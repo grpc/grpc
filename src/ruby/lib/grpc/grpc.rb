@@ -19,6 +19,9 @@ begin
   if !Dir.glob("#{distrib_lib_dir}/grpc_c*").empty?
     require "#{distrib_lib_dir}/grpc_c"
   else
+    path = File.expand_path('grpc_c.bundle', File.dirname(__FILE__))
+    p `ls -l #{path}`
+    p `file #{path}`
     require 'grpc/grpc_c'
   end
 end
