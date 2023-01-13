@@ -848,6 +848,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/memory",
         "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
@@ -1213,6 +1214,7 @@ grpc_cc_library(
     deps = [
         "slice_cast",
         "slice_refcount",
+        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
@@ -1227,6 +1229,7 @@ grpc_cc_library(
         "lib/slice/slice_buffer.h",
         "//:include/grpc/slice_buffer.h",
     ],
+    external_deps = ["absl/memory"],
     deps = [
         "slice",
         "slice_refcount",

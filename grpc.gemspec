@@ -1536,6 +1536,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/slice_buffer.cc )
   s.files += %w( src/core/lib/slice/slice_buffer.h )
   s.files += %w( src/core/lib/slice/slice_internal.h )
+  s.files += %w( src/core/lib/slice/slice_refcount.cc )
   s.files += %w( src/core/lib/slice/slice_refcount.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.cc )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )
