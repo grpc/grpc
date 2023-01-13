@@ -59,6 +59,7 @@
 #include "src/cpp/ext/filters/census/measures.h"
 
 namespace grpc {
+namespace internal {
 
 constexpr uint32_t
     OpenCensusCallTracer::OpenCensusCallAttemptTracer::kMaxTraceContextLen;
@@ -71,6 +72,7 @@ constexpr uint32_t
 
 grpc_error_handle CensusClientChannelData::Init(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
+  OpenCensusExporterRegistry::Get().RunRegistryPostInit();
   tracing_enabled_ = grpc_core::ChannelArgs::FromC(args->channel_args)
                          .GetInt(GRPC_ARG_ENABLE_OBSERVABILITY)
                          .value_or(true);
@@ -330,4 +332,5 @@ CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
                        context_.tags());
 }
 
+}  // namespace internal
 }  // namespace grpc

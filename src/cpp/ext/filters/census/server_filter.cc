@@ -44,6 +44,7 @@
 #include "src/cpp/ext/filters/census/measures.h"
 
 namespace grpc {
+namespace internal {
 
 constexpr uint32_t CensusServerCallData::kMaxServerStatsLen;
 
@@ -193,4 +194,5 @@ void CensusServerCallData::Destroy(grpc_call_element* /*elem*/,
   }
 }
 
+}  // namespace internal
 }  // namespace grpc

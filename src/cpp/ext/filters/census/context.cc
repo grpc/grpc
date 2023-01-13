@@ -92,13 +92,14 @@ size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice* /*tags*/) {
 
 size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
                             size_t buf_size) {
-  return RpcServerStatsEncoding::Encode(server_elapsed_time, buf, buf_size);
+  return internal::RpcServerStatsEncoding::Encode(server_elapsed_time, buf,
+                                                  buf_size);
 }
 
 size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
                               uint64_t* server_elapsed_time) {
-  return RpcServerStatsEncoding::Decode(absl::string_view(buf, buf_size),
-                                        server_elapsed_time);
+  return internal::RpcServerStatsEncoding::Decode(
+      absl::string_view(buf, buf_size), server_elapsed_time);
 }
 
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info) {
