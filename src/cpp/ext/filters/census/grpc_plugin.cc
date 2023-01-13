@@ -202,8 +202,6 @@ bool OpenCensusTracingEnabled() {
   return g_open_census_tracing_enabled.load(std::memory_order_relaxed);
 }
 
-void RegisterPostInitOpenCensusExporter(std::function<void()> f) {}
-
 }  // namespace internal
 
 }  // namespace grpc
