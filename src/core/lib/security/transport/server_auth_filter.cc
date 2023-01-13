@@ -21,29 +21,36 @@
 #include <string.h>
 
 #include <algorithm>
-#include <new>
+#include <atomic>
+#include <functional>
+#include <memory>
+#include <utility>
 
-#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"  // IWYU pragma: keep
