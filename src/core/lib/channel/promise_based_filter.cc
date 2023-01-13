@@ -2250,7 +2250,11 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   }
 }
 
-void ServerCallData::OnWakeup() { abort(); }  // not implemented
+void ServerCallData::OnWakeup() {
+  Flusher flusher(this);
+  ScopedContext context(this);
+  WakeInsideCombiner(&flusher);
+}
 
 }  // namespace promise_filter_detail
 }  // namespace grpc_core
