@@ -51,6 +51,11 @@ struct grpc_metadata;
 struct grpc_call;
 struct census_context;
 
+namespace grpc_core {
+struct BackendMetricData;
+class ServerMetricRecorder;
+}  // namespace grpc_core
+
 namespace grpc {
 template <class W, class R>
 class ServerAsyncReader;
@@ -115,10 +120,46 @@ class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
 
-namespace experimental {
-class OrcaServerInterceptor;
-class CallMetricRecorder;
-}  // namespace experimental
+class CallMetricRecorder {
+ public:
+  virtual ~CallMetricRecorder() = default;
+
+  // Records a call metric measurement for CPU utilization.
+  // Multiple calls to this method will override the stored value.
+  // Values outside of the valid range [0, 1] are ignored.
+  virtual CallMetricRecorder& RecordCpuUtilizationMetric(double value) = 0;
+
+  // Records a call metric measurement for memory utilization.
+  // Multiple calls to this method will override the stored value.
+  // Values outside of the valid range [0, 1] are ignored.
+  virtual CallMetricRecorder& RecordMemoryUtilizationMetric(double value) = 0;
+
+  // Records a call metric measurement for queries per second.
+  // Multiple calls to this method will override the stored value.
+  // Values outside of the valid range [0, infy) are ignored.
+  virtual CallMetricRecorder& RecordQpsMetric(double value) = 0;
+
+  // Records a call metric measurement for utilization.
+  // Multiple calls to this method with the same name will
+  // override the corresponding stored value. The lifetime of the
+  // name string needs to be longer than the lifetime of the RPC
+  // itself, since it's going to be sent as trailers after the RPC
+  // finishes. It is assumed the strings are common names that
+  // are global constants.
+  // Values outside of the valid range [0, 1] are ignored.
+  virtual CallMetricRecorder& RecordUtilizationMetric(string_ref name,
+                                                      double value) = 0;
+
+  // Records a call metric measurement for request cost.
+  // Multiple calls to this method with the same name will
+  // override the corresponding stored value. The lifetime of the
+  // name string needs to be longer than the lifetime of the RPC
+  // itself, since it's going to be sent as trailers after the RPC
+  // finishes. It is assumed the strings are common names that
+  // are global constants.
+  virtual CallMetricRecorder& RecordRequestCostMetric(string_ref name,
+                                                      double value) = 0;
+};
 
 /// Base class of ServerContext.
 class ServerContextBase {
@@ -291,9 +332,7 @@ class ServerContextBase {
   /// client in order to make load balancing decisions. This will
   /// return nullptr if the feature hasn't been enabled using
   /// \a EnableCallMetricRecording.
-  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder() {
-    return call_metric_recorder_;
-  }
+  CallMetricRecorder* GetCallMetricRecorder() { return call_metric_recorder_; }
 
   /// EXPERIMENTAL API
   /// Returns the call's authority.
@@ -404,7 +443,6 @@ class ServerContextBase {
   friend class grpc::ClientContext;
   friend class grpc::GenericServerContext;
   friend class grpc::GenericCallbackServerContext;
-  friend class grpc::experimental::OrcaServerInterceptor;
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -445,7 +483,14 @@ class ServerContextBase {
     }
   }
 
-  void CreateCallMetricRecorder();
+  // Arena allocates a new BackendMetricState for the current call.
+  // BackendMetricState serves as both the CallMetricRecorder and
+  // BackendMetricProvider interfaces. Sets the provided ServerMetricRecorder to
+  // the BackendMetricProvider when not null.
+  // This should be called only once and only when call metric recording is
+  // enabled.
+  void CreateCallMetricRecorder(
+      grpc_core::ServerMetricRecorder* server_metric_recorder = nullptr);
 
   struct CallWrapper {
     ~CallWrapper();
@@ -484,7 +529,7 @@ class ServerContextBase {
   grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
-  experimental::CallMetricRecorder* call_metric_recorder_ = nullptr;
+  CallMetricRecorder* call_metric_recorder_ = nullptr;
 
   class Reactor : public grpc::ServerUnaryReactor {
    public:

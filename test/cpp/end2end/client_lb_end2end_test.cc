@@ -39,7 +39,6 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/sync.h>
@@ -96,7 +95,7 @@ class MyTestServiceImpl : public TestServiceImpl {
     AddClient(context->peer());
     if (request->has_param() && request->param().has_backend_metrics()) {
       load_report_ = request->param().backend_metrics();
-      auto* recorder = context->ExperimentalGetCallMetricRecorder();
+      auto* recorder = context->GetCallMetricRecorder();
       EXPECT_NE(recorder, nullptr);
       recorder->RecordCpuUtilizationMetric(load_report_.cpu_utilization())
           .RecordMemoryUtilizationMetric(load_report_.mem_utilization())
@@ -423,12 +422,12 @@ class ClientLbEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      experimental::EnableCallMetricRecording(&builder);
       std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
+      builder.EnableCallMetricRecording();
       server_ = builder.BuildAndStart();
       grpc_core::MutexLock lock(&mu_);
       server_ready_ = true;
@@ -2509,8 +2508,12 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   (*request_cost)["foo"] = 0.8;
   (*request_cost)["bar"] = 1.4;
   auto* utilization = load_report.mutable_utilization();
-  (*utilization)["baz"] = 1.1;
+  (*utilization)["baz"] = 1.0;
   (*utilization)["quux"] = 0.9;
+  // This will be rejected.
+  (*utilization)["out_of_range_invalid"] = 1.1;
+  auto expected = load_report;
+  expected.mutable_utilization()->erase("out_of_range_invalid");
   auto response_generator = BuildResolverResponseGenerator();
   auto channel =
       BuildChannel("intercept_trailing_metadata_lb", response_generator);
@@ -2522,19 +2525,19 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
     ASSERT_TRUE(actual.has_value());
     // TODO(roth): Change this to use EqualsProto() once that becomes
     // available in OSS.
-    EXPECT_EQ(actual->cpu_utilization(), load_report.cpu_utilization());
-    EXPECT_EQ(actual->mem_utilization(), load_report.mem_utilization());
-    EXPECT_EQ(actual->rps_fractional(), load_report.rps_fractional());
-    EXPECT_EQ(actual->request_cost().size(), load_report.request_cost().size());
+    EXPECT_EQ(actual->cpu_utilization(), expected.cpu_utilization());
+    EXPECT_EQ(actual->mem_utilization(), expected.mem_utilization());
+    EXPECT_EQ(actual->rps_fractional(), expected.rps_fractional());
+    EXPECT_EQ(actual->request_cost().size(), expected.request_cost().size());
     for (const auto& p : actual->request_cost()) {
-      auto it = load_report.request_cost().find(p.first);
-      ASSERT_NE(it, load_report.request_cost().end());
+      auto it = expected.request_cost().find(p.first);
+      ASSERT_NE(it, expected.request_cost().end());
       EXPECT_EQ(it->second, p.second);
     }
-    EXPECT_EQ(actual->utilization().size(), load_report.utilization().size());
+    EXPECT_EQ(actual->utilization().size(), expected.utilization().size());
     for (const auto& p : actual->utilization()) {
-      auto it = load_report.utilization().find(p.first);
-      ASSERT_NE(it, load_report.utilization().end());
+      auto it = expected.utilization().find(p.first);
+      ASSERT_NE(it, expected.utilization().end());
       EXPECT_EQ(it->second, p.second);
     }
   }

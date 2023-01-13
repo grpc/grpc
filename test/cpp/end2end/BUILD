@@ -495,7 +495,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//:grpcpp_orca_interceptor",
         "//:grpcpp_orca_service",
         "//src/core:channel_args",
         "//src/proto/grpc/testing:echo_messages_proto",

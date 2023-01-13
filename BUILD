@@ -504,6 +504,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "//src/core:backend_metric_filter",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -585,6 +586,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "tsi_base",
         "uri_parser",
+        "//src/core:backend_metric_filter",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -1775,7 +1777,6 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
-        "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1790,6 +1791,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
@@ -1842,7 +1844,6 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_unsecure",
-        "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1853,6 +1854,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
@@ -1926,50 +1928,6 @@ grpc_cc_library(
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "grpcpp_call_metric_recorder",
-    srcs = [
-        "src/cpp/server/orca/call_metric_recorder.cc",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/types:optional",
-        "upb_lib",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "include/grpcpp/ext/call_metric_recorder.h",
-    ],
-    visibility = ["@grpc:public"],
-    deps = [
-        "grpc++_public_hdrs",
-        "xds_orca_upb",
-        "//src/core:arena",
-        "//src/core:grpc_backend_metric_data",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpcpp_orca_interceptor",
-    srcs = [
-        "src/cpp/server/orca/orca_interceptor.cc",
-    ],
-    hdrs = [
-        "src/cpp/server/orca/orca_interceptor.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    visibility = ["@grpc:public"],
-    deps = [
-        "grpc++",
-        "grpc_base",
-        "grpcpp_call_metric_recorder",
-    ],
 )
 
 grpc_cc_library(

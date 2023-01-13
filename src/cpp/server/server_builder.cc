@@ -366,7 +366,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
       std::move(acceptors_), server_config_fetcher_, resource_quota_,
-      std::move(creators)));
+      std::move(creators), server_metric_recorder_));
 
   ServerInitializer* initializer = server->initializer();
 
@@ -467,6 +467,15 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
       gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
       return *this;
   }
+}
+
+ServerBuilder& ServerBuilder::EnableCallMetricRecording(
+    grpc_core::ServerMetricRecorder* server_metric_recorder) {
+  AddChannelArgument(GRPC_ARG_CALL_METRIC_RECORDING, 1);
+  if (server_metric_recorder != nullptr) {
+    server_metric_recorder_ = server_metric_recorder;
+  }
+  return *this;
 }
 
 }  // namespace grpc
