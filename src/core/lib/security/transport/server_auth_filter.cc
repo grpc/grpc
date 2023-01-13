@@ -43,6 +43,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"  // IWYU pragma: keep
@@ -152,28 +153,28 @@ class ServerAuthFilter::RunApplicationCode {
     }
 
     if (status == GRPC_STATUS_OK) {
-      CallArgs md = state->call_args->client_initial_metadata;
+      ClientMetadataHandle& md = state->call_args->client_initial_metadata;
       for (size_t i = 0; i < num_consumed_md; i++) {
-        md.Remove(StringViewFromSlice(consumed_md[i].key));
+        md->Remove(StringViewFromSlice(consumed_md[i].key));
       }
     } else {
       if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";
       }
-      state_->call_args =
+      state->call_args =
           grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
                              StatusIntProperty::kRpcStatus, status);
     }
 
     // Clean up.
     for (size_t i = 0; i < state_->md.count; i++) {
-      CSliceUnref(state_->md.metadata[i].key);
-      CSliceUnref(state_->md.metadata[i].value);
+      CSliceUnref(state->md.metadata[i].key);
+      CSliceUnref(state->md.metadata[i].value);
     }
     grpc_metadata_array_destroy(&state_->md);
 
     auto waker = std::move(state_->waker);
-    state_->done.store(true, std::memory_order_release);
+    state->done.store(true, std::memory_order_release);
     waker.Wakeup();
   }
 
@@ -208,7 +209,7 @@ absl::StatusOr<ServerAuthFilter> ServerAuthFilter::Create(
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
   GPR_ASSERT(auth_context != nullptr);
   auto creds = args.GetObjectRef<grpc_server_credentials>();
-  return ServerAuthFilter(std::move(auth_context), std::move(creds));
+  return ServerAuthFilter(std::move(creds), std::move(auth_context));
 }
 
 }  // namespace grpc_core
