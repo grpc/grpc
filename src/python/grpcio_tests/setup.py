@@ -43,7 +43,7 @@ INSTALL_REQUIRES = (
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
     'oauth2client>=1.4.7', 'protobuf>=4.21.6', 'google-auth>=1.17.2',
-    'requests>=2.14.2', 'typeguard>=2.13.3')
+    'requests>=2.14.2')
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
