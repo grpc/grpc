@@ -28,6 +28,7 @@
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
 namespace grpc {
+namespace internal {
 
 class CensusClientChannelData : public ChannelData {
  public:
@@ -53,6 +54,7 @@ class CensusClientChannelData : public ChannelData {
   bool tracing_enabled_ = true;
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H

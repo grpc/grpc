@@ -58,7 +58,11 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
-    experiments.enabled[i] = g_experiment_metadata[i].default_value;
+    if (!g_forced_experiments[i].forced) {
+      experiments.enabled[i] = g_experiment_metadata[i].default_value;
+    } else {
+      experiments.enabled[i] = g_forced_experiments[i].value;
+    }
   }
   // Get the global config.
   auto experiments_str = GPR_GLOBAL_CONFIG_GET(grpc_experiments);

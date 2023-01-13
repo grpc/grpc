@@ -42,11 +42,13 @@
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
-  RegisterChannelFilter<CensusClientChannelData,
-                        CensusClientChannelData::CensusClientCallData>(
+  RegisterChannelFilter<
+      internal::CensusClientChannelData,
+      internal::CensusClientChannelData::CensusClientCallData>(
       "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
-  RegisterChannelFilter<CensusChannelData, CensusServerCallData>(
+  RegisterChannelFilter<internal::CensusChannelData,
+                        internal::CensusServerCallData>(
       "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
 
@@ -168,8 +170,21 @@ ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
 
 }  // namespace experimental
 
+namespace internal {
+
+namespace {
 std::atomic<bool> g_open_census_stats_enabled(true);
 std::atomic<bool> g_open_census_tracing_enabled(true);
+}  // namespace
+
+//
+// OpenCensusExporterRegistry
+//
+
+OpenCensusExporterRegistry& OpenCensusExporterRegistry::Get() {
+  static OpenCensusExporterRegistry* registry = new OpenCensusExporterRegistry;
+  return *registry;
+}
 
 void EnableOpenCensusStats(bool enable) {
   g_open_census_stats_enabled = enable;
@@ -186,5 +201,7 @@ bool OpenCensusStatsEnabled() {
 bool OpenCensusTracingEnabled() {
   return g_open_census_tracing_enabled.load(std::memory_order_relaxed);
 }
+
+}  // namespace internal
 
 }  // namespace grpc
