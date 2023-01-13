@@ -50,6 +50,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -224,13 +225,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     using Handle =
         absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>;
 
-    explicit SubchannelEntry(Handle subchannel) {
-      SetSubchannel(std::move(subchannel));
-    }
+    explicit SubchannelEntry(Handle subchannel) : subchannel_(subchannel) {}
 
     void SetSubchannel(Handle subchannel) {
-      auto current = GetSubchannel();
-      auto next = absl::visit(GetPointer(), subchannel);
+      SubchannelWrapper* current = GetSubchannel();
+      SubchannelWrapper* next = GetPointer(subchannel);
       if (current != nullptr && current != next) {
         current->Detach();
       }
@@ -243,21 +242,17 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       }
     }
 
-    SubchannelWrapper* GetSubchannel() const {
-      return absl::visit(GetPointer(), subchannel_);
-    }
+    SubchannelWrapper* GetSubchannel() const { return GetPointer(subchannel_); }
 
    private:
-    struct GetPointer {
-      SubchannelWrapper* operator()(SubchannelWrapper* subchannel) const {
-        return subchannel;
-      }
-
-      SubchannelWrapper* operator()(
-          const RefCountedPtr<SubchannelWrapper>& refCounted) {
-        return refCounted.get();
-      }
-    };
+    static SubchannelWrapper* GetPointer(const Handle& subchannel_handle) {
+      return Match(
+          subchannel_handle,
+          [](SubchannelWrapper* subchannel) { return subchannel; },
+          [](RefCountedPtr<SubchannelWrapper> subchannel) {
+            return subchannel.get();
+          });
+    }
 
     Handle subchannel_ = nullptr;
   };
