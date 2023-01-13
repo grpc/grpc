@@ -560,7 +560,6 @@ class Server(abc.ABC):
     def invoke_stream_unary(self,
                             method_descriptor: descriptor.MethodDescriptor,
                             invocation_metadata: Optional[MetadataType],
-                            request: Any,
                             timeout: Optional[float]) -> StreamUnaryServerRpc:
         """Invokes an RPC to be serviced by the system under test.
 
@@ -580,7 +579,6 @@ class Server(abc.ABC):
     def invoke_stream_stream(self,
                              method_descriptor: descriptor.MethodDescriptor,
                              invocation_metadata: Optional[MetadataType],
-                             request: Any,
                              timeout: Optional[float]) -> StreamStreamServerRpc:
         """Invokes an RPC to be serviced by the system under test.
 

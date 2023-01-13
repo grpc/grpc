@@ -15,11 +15,11 @@
 from typing import Any, Mapping
 
 from google.protobuf import descriptor  # pytype: disable=pyi-error
-from grpc_testing._server import _Server
+from grpc_testing import Server
 from grpc_testing._server import _server  # pytype: disable=pyi-error
 
 
 def server_from_dictionary(descriptors_to_servicers: Mapping[
-    descriptor.ServiceDescriptor, Any], time: float) -> _Server:
+    descriptor.ServiceDescriptor, Any], time: float) -> Server:
     return _server.server_from_descriptor_to_servicers(descriptors_to_servicers,
                                                        time)
