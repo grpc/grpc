@@ -27,6 +27,7 @@
 #include "src/cpp/common/channel_filter.h"
 
 namespace grpc {
+namespace internal {
 
 class CensusChannelData : public ChannelData {
  public:
@@ -34,6 +35,7 @@ class CensusChannelData : public ChannelData {
                          grpc_channel_element_args* args) override;
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H

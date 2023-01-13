@@ -56,24 +56,9 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
   for (auto& server_rpc_event_config : logging_config.server_rpc_events) {
     server_configs_.emplace_back(server_rpc_event_config);
   }
-  std::string endpoint;
-  absl::optional<std::string> endpoint_env =
-      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
-  if (endpoint_env.has_value() && !endpoint_env->empty()) {
-    endpoint = std::move(*endpoint_env);
-  } else {
-    endpoint = "logging.googleapis.com";
-  }
-  ChannelArguments args;
-  // Disable observability for RPCs on this channel
-  args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
-  // Set keepalive time to 24 hrs to effectively disable keepalive ping, but
-  // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
-  args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 24 * 60 * 60 * 1000 /* 24 hours */);
-  args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
-  stub_ = google::logging::v2::LoggingServiceV2::NewStub(
-      CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args));
   absl::optional<std::string> authority_env =
+      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+  absl::optional<std::string> endpoint_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
   if (authority_env.has_value() && !authority_env->empty()) {
     authority_ = std::move(*endpoint_env);
@@ -232,6 +217,25 @@ void EntryToJsonStructProto(LoggingSink::Entry entry,
 }
 
 void ObservabilityLoggingSink::LogEntry(Entry entry) {
+  absl::call_once(once_, [this]() {
+    std::string endpoint;
+    absl::optional<std::string> endpoint_env =
+        grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+    if (endpoint_env.has_value() && !endpoint_env->empty()) {
+      endpoint = std::move(*endpoint_env);
+    } else {
+      endpoint = "logging.googleapis.com";
+    }
+    ChannelArguments args;
+    // Disable observability for RPCs on this channel
+    args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+    // Set keepalive time to 24 hrs to effectively disable keepalive ping, but
+    // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 24 * 60 * 60 * 1000 /* 24 hours */);
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
+    stub_ = google::logging::v2::LoggingServiceV2::NewStub(
+        CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args));
+  });
   struct CallContext {
     ClientContext context;
     google::logging::v2::WriteLogEntriesRequest request;

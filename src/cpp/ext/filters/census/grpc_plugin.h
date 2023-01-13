@@ -21,6 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <functional>
+#include <utility>
+#include <vector>
+
+#include "absl/base/call_once.h"
+
 #include <grpcpp/opencensus.h>
 
 namespace grpc {
@@ -116,6 +123,8 @@ using experimental::ServerSentMessagesPerRpcHour;      // NOLINT
 using experimental::ServerServerLatencyHour;           // NOLINT
 using experimental::ServerStartedRpcsHour;             // NOLINT
 
+namespace internal {
+
 // Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
 // of a program, before any channels/servers are built.
 void EnableOpenCensusStats(bool enable);
@@ -123,6 +132,38 @@ void EnableOpenCensusTracing(bool enable);
 // Gets the current status of OpenCensus stats/tracing
 bool OpenCensusStatsEnabled();
 bool OpenCensusTracingEnabled();
+
+// Registers a function that would initialize an OpenCensus exporter. This
+// function would be run before the first time the OpenCensus plugin is run.
+class OpenCensusExporterRegistry {
+ public:
+  static OpenCensusExporterRegistry& Get();
+
+  // Registers the functions to be run post-init.
+  void Register(std::function<void()> f) {
+    exporter_registry_.push_back(std::move(f));
+  }
+
+  // Runs the registry post-init exactly once. Protected with an absl::CallOnce.
+  void RunRegistryPostInit() {
+    absl::call_once(
+        once_, &OpenCensusExporterRegistry::RunRegistryPostInitHelper, this);
+  }
+
+ private:
+  void RunRegistryPostInitHelper() {
+    for (const auto& f : exporter_registry_) {
+      f();
+    }
+  }
+
+  OpenCensusExporterRegistry() = default;
+
+  std::vector<std::function<void()>> exporter_registry_;
+  absl::once_flag once_;
+};
+
+}  // namespace internal
 
 }  // namespace grpc
 

@@ -865,7 +865,7 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
 
 // Test the working of EnableOpenCensusStats.
 TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
-  EnableOpenCensusStats(false);
+  grpc::internal::EnableOpenCensusStats(false);
 
   View client_started_rpcs_view(ClientStartedRpcsCumulative());
   View server_started_rpcs_view(ServerStartedRpcsCumulative());
@@ -889,12 +889,12 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
   EXPECT_TRUE(client_completed_rpcs_view.GetData().int_data().empty());
   EXPECT_TRUE(server_completed_rpcs_view.GetData().int_data().empty());
 
-  EnableOpenCensusStats(true);
+  grpc::internal::EnableOpenCensusStats(true);
 }
 
 // Test the working of EnableOpenCensusTracing.
 TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
-  EnableOpenCensusTracing(false);
+  grpc::internal::EnableOpenCensusTracing(false);
 
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
@@ -924,7 +924,7 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
   // No span should be exported
   ASSERT_EQ(0, recorded_spans.size());
 
-  EnableOpenCensusTracing(true);
+  grpc::internal::EnableOpenCensusTracing(true);
 }
 
 // This test verifies that users depending on src/cpp/ext/filters/census header

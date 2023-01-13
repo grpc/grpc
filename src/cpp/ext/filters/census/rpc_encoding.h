@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc {
+namespace internal {
 
 // TODO(unknown): This may not be needed. Check to see if opencensus requires
 // a trailing server response.
@@ -108,6 +109,7 @@ class RpcServerStatsEncoding {
   RpcServerStatsEncoding operator=(RpcServerStatsEncoding&&) = delete;
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_RPC_ENCODING_H
