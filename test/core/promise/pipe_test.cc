@@ -51,7 +51,7 @@ TEST_F(PipeTest, CanSendAndReceive) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [] {
-        auto* pipe = GetContext<Arena>()->New<Pipe<int>>();
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
         return Seq(
             // Concurrently: send 42 into the pipe, and receive from the pipe.
             Join(pipe->sender.Push(42),
@@ -75,7 +75,7 @@ TEST_F(PipeTest, CanReceiveAndSend) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [] {
-        auto* pipe = GetContext<Arena>()->New<Pipe<int>>();
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
         return Seq(
             // Concurrently: receive from the pipe, and send 42 into the pipe.
             Join(Map(pipe->receiver.Next(),
@@ -166,9 +166,9 @@ TEST_F(PipeTest, CanFlowControlThroughManyStages) {
   // completes.
   MakeActivity(
       [done] {
-        auto* pipe1 = GetContext<Arena>()->New<Pipe<int>>();
-        auto* pipe2 = GetContext<Arena>()->New<Pipe<int>>();
-        auto* pipe3 = GetContext<Arena>()->New<Pipe<int>>();
+        auto* pipe1 = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        auto* pipe2 = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        auto* pipe3 = GetContext<Arena>()->ManagedNew<Pipe<int>>();
         auto* sender1 = &pipe1->sender;
         auto* receiver1 = &pipe1->receiver;
         auto* sender2 = &pipe2->sender;
