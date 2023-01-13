@@ -176,7 +176,7 @@ main() {
   local failed_tests=0
   test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "outlier_detection_test")
   for test in "${test_suites[@]}"; do
-    run_test $test || (( failed_tests++ ))
+    run_test $test || (( failed_tests++ )) && true
   done
   echo "Failed test suites: ${failed_tests}"
   if (( failed_tests > 0 )); then
