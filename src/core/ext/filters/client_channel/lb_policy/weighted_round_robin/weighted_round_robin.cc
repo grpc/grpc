@@ -399,9 +399,7 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
             now.ToString().c_str(), last_update_time_.ToString().c_str(),
             non_empty_since_.ToString().c_str());
   }
-  if (weight > 0 && non_empty_since_ == Timestamp::InfFuture()) {
-    non_empty_since_ = now;
-  }
+  if (non_empty_since_ == Timestamp::InfFuture()) non_empty_since_ = now;
   weight_ = weight;
   last_update_time_ = now;
 }
@@ -619,7 +617,21 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[WRR %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    addresses = std::move(*args.addresses);
+    // Weed out duplicate addresses.
+    struct AddressLessThan {
+      bool operator()(const grpc_resolved_address& addr1,
+                      const grpc_resolved_address& addr2) const {
+        if (addr1.len != addr2.len) return addr1.len < addr2.len;
+        return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
+      }
+    };
+    std::set<grpc_resolved_address, AddressLessThan> seen_addresses;
+    for (ServerAddress& address : *args.addresses) {
+      auto it = seen_addresses.find(address.address());
+      if (it != seen_addresses.end()) continue;
+      seen_addresses.insert(address.address());
+      addresses.emplace_back(std::move(address));
+    }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] received update with address error: %s", this,
