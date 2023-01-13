@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Iterator, Mapping, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from google.protobuf import descriptor  # pytype: disable=pyi-error
 import grpc

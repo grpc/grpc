@@ -20,7 +20,7 @@ import grpc
 from grpc._typing import MetadataType
 from grpc_testing import _common
 
-_CLIENT_INACTIVE = object()
+_CLIENT_INACTIVE = grpc.StatusCode.UNKNOWN
 
 
 class Handler(_common.ServerRpcHandler):

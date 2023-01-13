@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import copy
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 import grpc
 from grpc_testing._server import _handler

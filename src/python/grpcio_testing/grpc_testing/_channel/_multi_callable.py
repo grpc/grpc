@@ -17,7 +17,6 @@ from typing import Any, Iterator, Optional, Tuple
 import grpc
 from grpc._typing import MetadataType
 from grpc_testing import _common
-from grpc_testing._channel import _channel_state
 from grpc_testing._channel import _invocation
 
 
