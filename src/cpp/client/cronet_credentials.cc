@@ -20,6 +20,13 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpc/grpc.h>
+#include <grpcpp/support/client_interceptor.h>
+#include <grpcpp/support/config.h>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "src/cpp/client/create_channel_internal.h"
 
