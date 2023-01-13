@@ -57,6 +57,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resolver/resolver_registry.h"
