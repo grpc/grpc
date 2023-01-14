@@ -1275,7 +1275,7 @@ class ServerStream final : public ConnectedChannelStream {
   absl::variant<Uninitialized, PipeReceiverNextType<ServerMetadataHandle>,
                 ServerMetadataHandle>
       ABSL_GUARDED_BY(mu()) server_initial_metadata_ = Uninitialized{};
-  PipeSender<MessageHandle>* incoming_messages_;
+  PipeSender<MessageHandle>* incoming_messages_ = nullptr;
   grpc_transport_stream_op_batch send_initial_metadata_;
   grpc_closure send_initial_metadata_done_ =
       MakeMemberClosure<ServerStream, &ServerStream::SendInitialMetadataDone>(
