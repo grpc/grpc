@@ -112,24 +112,20 @@ typedef struct addr_req {
   std::unique_ptr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
-static void finish_resolve(void* arg) {
-  addr_req* r = static_cast<addr_req*>(arg);
-
-  if (0 == strcmp(r->addr, "server")) {
-    *r->addresses = std::make_unique<grpc_core::ServerAddressList>();
+static void finish_resolve(addr_req&& r) {
+  if (0 == strcmp(r.addr, "server")) {
+    *r.addresses = std::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
         grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
-    (*r->addresses)
+    (*r.addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, absl::OkStatus());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done, absl::OkStatus());
   } else {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done,
                             absl::UnknownError("Resolution failed"));
   }
-
-  gpr_free(r->addr);
-  delete r;
+  gpr_free(r.addr);
 }
 
 namespace {
@@ -237,15 +233,16 @@ grpc_ares_request* my_dns_lookup_ares(
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     int /*query_timeout*/) {
-  addr_req* r = new addr_req();
-  r->addr = gpr_strdup(addr);
-  r->on_done = on_done;
-  r->addresses = addresses;
-  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    finish_resolve(r);
-  });
+  addr_req r;
+  r.addr = gpr_strdup(addr);
+  r.on_done = on_done;
+  r.addresses = addresses;
+  GetDefaultEventEngine()->RunAfter(
+      grpc_core::Duration::Seconds(1), [r = std::move(r)]() mutable {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        finish_resolve(std::move(r));
+      });
   return nullptr;
 }
 
@@ -264,13 +261,12 @@ typedef struct {
   gpr_timespec deadline;
 } future_connect;
 
-static void do_connect(void* arg) {
-  future_connect* fc = static_cast<future_connect*>(arg);
+static void do_connect(future_connect&& fc) {
   if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr, true);
-    *fc->ep = client;
+    *fc.ep = client;
     start_scheduling_grpc_passthru_endpoint_channel_effects(client,
                                                             g_channel_actions);
 
@@ -283,11 +279,10 @@ static void do_connect(void* arg) {
                                     core_server->channel_args(), nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, absl::OkStatus());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc.closure, absl::OkStatus());
   } else {
-    sched_connect(fc->closure, fc->ep, fc->deadline);
+    sched_connect(fc.closure, fc.ep, fc.deadline);
   }
-  gpr_free(fc);
 }
 
 static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
@@ -298,16 +293,16 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
                             GRPC_ERROR_CREATE("Connect deadline exceeded"));
     return;
   }
-
-  future_connect* fc = static_cast<future_connect*>(gpr_malloc(sizeof(*fc)));
-  fc->closure = closure;
-  fc->ep = ep;
-  fc->deadline = deadline;
-  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [fc] {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    do_connect(fc);
-  });
+  future_connect fc;
+  fc.closure = closure;
+  fc.ep = ep;
+  fc.deadline = deadline;
+  GetDefaultEventEngine()->RunAfter(
+      grpc_core::Duration::Seconds(1), [fc = std::move(fc)]() mutable {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        do_connect(std::move(fc));
+      });
 }
 
 static int64_t my_tcp_client_connect(
