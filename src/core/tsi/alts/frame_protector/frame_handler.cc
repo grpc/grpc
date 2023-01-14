@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -29,9 +29,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 
-/* Use little endian to interpret a string of bytes as uint32_t. */
+// Use little endian to interpret a string of bytes as uint32_t.
 static uint32_t load_32_le(const unsigned char* buffer) {
   return (static_cast<uint32_t>(buffer[3]) << 24) |
          (static_cast<uint32_t>(buffer[2]) << 16) |
@@ -39,7 +40,7 @@ static uint32_t load_32_le(const unsigned char* buffer) {
          static_cast<uint32_t>(buffer[0]);
 }
 
-/* Store uint32_t as a string of little endian bytes. */
+// Store uint32_t as a string of little endian bytes.
 static void store_32_le(uint32_t value, unsigned char* buffer) {
   buffer[3] = static_cast<unsigned char>(value >> 24) & 0xFF;
   buffer[2] = static_cast<unsigned char>(value >> 16) & 0xFF;
@@ -47,7 +48,7 @@ static void store_32_le(uint32_t value, unsigned char* buffer) {
   buffer[0] = static_cast<unsigned char>(value) & 0xFF;
 }
 
-/* Frame writer implementation. */
+// Frame writer implementation.
 alts_frame_writer* alts_create_frame_writer() {
   return grpc_core::Zalloc<alts_frame_writer>();
 }
@@ -79,7 +80,7 @@ bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
     return true;
   }
   size_t bytes_written = 0;
-  /* Write some header bytes, if needed. */
+  // Write some header bytes, if needed.
   if (writer->header_bytes_written != sizeof(writer->header_buffer)) {
     size_t bytes_to_write =
         std::min(*bytes_size,
@@ -95,7 +96,7 @@ bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
       return true;
     }
   }
-  /* Write some non-header bytes. */
+  // Write some non-header bytes.
   size_t bytes_to_write =
       std::min(writer->input_size - writer->input_bytes_written, *bytes_size);
   memcpy(output, writer->input_buffer, bytes_to_write);
@@ -118,7 +119,7 @@ size_t alts_get_num_writer_bytes_remaining(alts_frame_writer* writer) {
 
 void alts_destroy_frame_writer(alts_frame_writer* writer) { gpr_free(writer); }
 
-/* Frame reader implementation. */
+// Frame reader implementation.
 alts_frame_reader* alts_create_frame_reader() {
   alts_frame_reader* reader = grpc_core::Zalloc<alts_frame_reader>();
   return reader;
@@ -164,7 +165,7 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
     return true;
   }
   size_t bytes_processed = 0;
-  /* Process the header, if needed. */
+  // Process the header, if needed.
   if (reader->header_bytes_read != sizeof(reader->header_buffer)) {
     size_t bytes_to_write = std::min(
         *bytes_size, sizeof(reader->header_buffer) - reader->header_bytes_read);
@@ -197,7 +198,7 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
     }
     reader->bytes_remaining = frame_length - kFrameMessageTypeFieldSize;
   }
-  /* Process the non-header bytes. */
+  // Process the non-header bytes.
   size_t bytes_to_write = std::min(*bytes_size, reader->bytes_remaining);
   memcpy(reader->output_buffer, bytes, bytes_to_write);
   reader->output_buffer += bytes_to_write;

@@ -56,14 +56,14 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
     : channel_stack_(std::move(args.channel_stack)) {
   grpc_call_stack* call_stack = CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
-      call_stack,        /* call_stack */
-      nullptr,           /* server_transport_data */
-      args.context,      /* context */
-      args.path,         /* path */
-      args.start_time,   /* start_time */
-      args.deadline,     /* deadline */
-      args.arena,        /* arena */
-      args.call_combiner /* call_combiner */
+      call_stack,         // call_stack
+      nullptr,            // server_transport_data
+      args.context,       // context
+      args.path,          // path
+      args.start_time,    // start_time
+      args.deadline,      // deadline
+      args.arena,         // arena
+      args.call_combiner  // call_combiner
   };
   *error = grpc_call_stack_init(channel_stack_->channel_stack_.get(), 1,
                                 Destroy, this, &call_args);

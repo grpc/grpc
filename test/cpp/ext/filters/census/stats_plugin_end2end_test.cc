@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string>
 #include <thread>  // NOLINT
@@ -35,11 +35,14 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace opencensus {
@@ -144,12 +147,22 @@ class ExportedTracesRecorder
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterQueueOnceLoadBalancingPolicy(builder);
+        });
     RegisterOpenCensusPlugin();
     // OpenCensus C++ has no API to unregister a previously-registered handler,
     // therefore we register this handler once, and enable/disable recording in
     // the individual tests.
     ::opencensus::trace::exporter::SpanExporter::RegisterHandler(
         absl::WrapUnique(traces_recorder_));
+  }
+
+  static void TearDownTestSuite() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
   }
 
   void SetUp() override {
@@ -760,7 +773,10 @@ TEST_F(StatsPluginEnd2EndTest,
        TestRemovePendingResolverResultAndPendingLbPickQueueAnnotations) {
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
-    auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+    ChannelArguments args;
+    args.SetLoadBalancingPolicyName("queue_once");
+    auto channel = CreateCustomChannel(server_address_,
+                                       InsecureChannelCredentials(), args);
     ResetStub(channel);
     EchoRequest request;
     request.set_message("foo");
@@ -849,7 +865,7 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
 
 // Test the working of EnableOpenCensusStats.
 TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
-  EnableOpenCensusStats(false);
+  grpc::internal::EnableOpenCensusStats(false);
 
   View client_started_rpcs_view(ClientStartedRpcsCumulative());
   View server_started_rpcs_view(ServerStartedRpcsCumulative());
@@ -873,12 +889,12 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
   EXPECT_TRUE(client_completed_rpcs_view.GetData().int_data().empty());
   EXPECT_TRUE(server_completed_rpcs_view.GetData().int_data().empty());
 
-  EnableOpenCensusStats(true);
+  grpc::internal::EnableOpenCensusStats(true);
 }
 
 // Test the working of EnableOpenCensusTracing.
 TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
-  EnableOpenCensusTracing(false);
+  grpc::internal::EnableOpenCensusTracing(false);
 
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
@@ -908,7 +924,7 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
   // No span should be exported
   ASSERT_EQ(0, recorded_spans.size());
 
-  EnableOpenCensusTracing(true);
+  grpc::internal::EnableOpenCensusTracing(true);
 }
 
 // This test verifies that users depending on src/cpp/ext/filters/census header

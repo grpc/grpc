@@ -45,6 +45,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "slice_cast",
+    hdrs = [
+        "//:include/grpc/event_engine/internal/slice_cast.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_common",
+    srcs = [
+        "lib/event_engine/resolved_address.cc",
+        "lib/event_engine/slice.cc",
+        "lib/event_engine/slice_buffer.cc",
+    ],
+    deps = [
+        "event_engine_interface",
+        "slice",
+        "slice_refcount",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_handle_containers",
     hdrs = [
         "lib/event_engine/handle_containers.h",
@@ -70,6 +94,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "slice",
+        "slice_cast",
         "slice_refcount",
         "//:gpr",
         "//:gpr_platform",
@@ -92,6 +117,7 @@ grpc_cc_library(
         "event_engine_slice",
         "slice",
         "slice_buffer",
+        "slice_cast",
         "slice_refcount",
         "//:gpr",
         "//:gpr_platform",
@@ -410,6 +436,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_like",
         "promise_status",
+        "try_seq",
         "//:gpr",
     ],
 )
@@ -426,6 +453,7 @@ grpc_cc_library(
         "map",
         "pipe",
         "promise_factory",
+        "try_seq",
         "//:gpr_platform",
     ],
 )
@@ -748,6 +776,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_wakeup_scheduler",
+    hdrs = [
+        "lib/promise/event_engine_wakeup_scheduler.h",
+    ],
+    language = "c++",
+    deps = [
+        "event_engine_interface",
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_set",
     external_deps = [
         "absl/container:flat_hash_set",
@@ -832,6 +873,23 @@ grpc_cc_library(
         "poll",
         "//:gpr",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "mpsc",
+    hdrs = [
+        "lib/promise/mpsc.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "ref_counted",
+        "wait_set",
+        "//:gpr",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -924,6 +982,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "channel_args_endpoint_config",
         "closure",
         "error",
         "handshaker_factory",
@@ -1137,6 +1196,8 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "event_engine_slice",
+        "slice_cast",
         "slice_refcount",
         "//:gpr",
         "//:grpc_slice_type",
@@ -1424,6 +1485,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_base_hdrs",
+    srcs = [],
+    hdrs = [
+        "lib/event_engine/posix.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine_timer_manager",
     srcs = ["lib/event_engine/posix_engine/timer_manager.cc"],
     hdrs = [
@@ -1586,6 +1664,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "event_engine_interface",
@@ -1598,8 +1677,10 @@ grpc_cc_library(
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "status_helper",
         "strerror",
         "//:gpr",
+        "//:grpc_status_enum",
     ],
 )
 
@@ -1619,6 +1700,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "common_event_engine_closures",
@@ -1630,9 +1712,11 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "status_helper",
         "strerror",
         "time",
         "//:gpr",
+        "//:grpc_status_enum",
     ],
 )
 
@@ -1713,10 +1797,12 @@ grpc_cc_library(
         "event_engine_memory_allocator",
         "event_engine_slice",
         "event_engine_slice_buffer",
+        "event_engine_tcp_socket_utils",
         "experiments",
         "iomgr_port",
         "load_file",
         "memory_quota",
+        "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_internal_errqueue",
@@ -1725,10 +1811,13 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "slice",
+        "slice_cast",
+        "status_helper",
         "strerror",
         "time",
         "useful",
         "//:gpr",
+        "//:grpc_status_enum",
         "//:ref_counted_ptr",
     ],
 )
@@ -1830,8 +1919,10 @@ grpc_cc_library(
     deps = [
         "event_engine_interface",
         "event_engine_memory_allocator",
+        "event_engine_slice_buffer",
         "event_engine_tcp_socket_utils",
         "iomgr_port",
+        "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
@@ -1863,6 +1954,7 @@ grpc_cc_library(
         "event_engine_interface",
         "event_engine_memory_allocator",
         "event_engine_poller",
+        "event_engine_slice_buffer",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
@@ -1870,6 +1962,7 @@ grpc_cc_library(
         "experiments",
         "init_internally",
         "iomgr_port",
+        "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
@@ -1893,16 +1986,22 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "channel_args_endpoint_config",
+        "common_event_engine_closures",
+        "error",
+        "event_engine_executor",
         "event_engine_handle_containers",
         "event_engine_interface",
         "event_engine_memory_allocator",
         "event_engine_slice_buffer",
+        "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",
         "posix_event_engine_timer_manager",
         "time",
+        "windows_endpoint",
         "windows_iocp",
         "//:gpr",
     ],
@@ -1965,6 +2064,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cf_event_engine",
+    srcs = ["lib/event_engine/cf_engine/cf_engine.cc"],
+    hdrs = ["lib/event_engine/cf_engine/cf_engine.h"],
+    deps = [
+        "event_engine_handle_containers",
+        "event_engine_interface",
+        "event_engine_trace",
+        "event_engine_utils",
+        "init_internally",
+        "posix_event_engine_timer_manager",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_tcp_socket_utils",
     srcs = [
         "lib/event_engine/tcp_socket_utils.cc",
@@ -2019,6 +2133,26 @@ grpc_cc_library(
         "//conditions:default": ["posix_event_engine"],
     }],
     deps = [
+        "event_engine_interface",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_args_endpoint_config",
+    srcs = [
+        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "channel_args",
         "event_engine_interface",
         "//:gpr_platform",
     ],
@@ -2623,6 +2757,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -4521,14 +4656,24 @@ grpc_cc_library(
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
+    ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "channel_args",
+        "closure",
+        "error",
+        "grpc_stateful_session_filter",
+        "iomgr_fwd",
         "json",
         "json_args",
         "json_object_loader",
@@ -4540,6 +4685,7 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
@@ -4548,6 +4694,8 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:sockaddr_utils",
+        "//:work_serializer",
     ],
 )
 
@@ -4953,6 +5101,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "channel_args_endpoint_config",
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
@@ -5004,6 +5153,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "channel_args_endpoint_config",
         "closure",
         "error",
         "grpc_insecure_credentials",

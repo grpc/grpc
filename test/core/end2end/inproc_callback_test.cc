@@ -1,23 +1,25 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <inttypes.h>
 #include <string.h>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
@@ -29,6 +31,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
@@ -147,15 +150,15 @@ static void verify_tags(gpr_timespec deadline) {
         if (tags_valid[i]) {
           gpr_log(GPR_DEBUG, "Verifying tag %d", static_cast<int>(i));
           if (tags[i] != tags_expected[i]) {
-            gpr_log(GPR_ERROR, "Got wrong result (%d instead of %d) for tag %d",
-                    tags[i], tags_expected[i], static_cast<int>(i));
-            GPR_ASSERT(false);
+            grpc_core::Crash(absl::StrFormat(
+                "Got wrong result (%d instead of %d) for tag %d", tags[i],
+                tags_expected[i], static_cast<int>(i)));
           }
           tags_valid[i] = false;
           tags_needed[i] = false;
         } else if (done) {
-          gpr_log(GPR_ERROR, "Didn't get tag %d", static_cast<int>(i));
-          GPR_ASSERT(false);
+          grpc_core::Crash(
+              absl::StrFormat("Didn't get tag %d", static_cast<int>(i)));
         }
       }
     }
@@ -169,9 +172,9 @@ static void verify_tags(gpr_timespec deadline) {
     if (done) {
       for (size_t i = 0; i < kAvailableTags; i++) {
         if (tags_valid[i]) {
-          gpr_log(GPR_ERROR, "Got unexpected tag %d and result %d",
-                  static_cast<int>(i), tags[i]);
-          GPR_ASSERT(false);
+          grpc_core::Crash(
+              absl::StrFormat("Got unexpected tag %d and result %d",
+                              static_cast<int>(i), tags[i]));
         }
         tags_valid[i] = false;
       }
@@ -480,7 +483,7 @@ static void simple_request_pre_init() {
   gpr_cv_init(&tags_cv);
 }
 
-/* All test configurations */
+// All test configurations
 static grpc_end2end_test_config configs[] = {
     {"inproc-callback", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
      inproc_create_fixture, inproc_init_client, inproc_init_server,

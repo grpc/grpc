@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <memory>
 #include <vector>
@@ -48,7 +48,7 @@
 #include <fcntl.h>
 
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#endif /* GRPC_POSIX_SOCKET */
+#endif  // GRPC_POSIX_SOCKET
 
 namespace grpc {
 namespace testing {
@@ -70,7 +70,7 @@ enum class ChannelType {
   kFdChannel,
 };
 
-/* Hijacks Echo RPC and fills in the expected values */
+// Hijacks Echo RPC and fills in the expected values
 class HijackingInterceptor : public experimental::Interceptor {
  public:
   explicit HijackingInterceptor(experimental::ClientRpcInfo* info) {
@@ -739,7 +739,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 // TODO(yashykt): Maybe add support for non-posix sockets too
 #ifdef GRPC_POSIX_SOCKET
     scenarios.emplace_back(ChannelType::kFdChannel, rpc_type);
-#endif /* GRPC_POSIX_SOCKET */
+#endif  // GRPC_POSIX_SOCKET
   }
   return scenarios;
 }
@@ -771,7 +771,7 @@ class ParameterizedClientInterceptorsEnd2endTest
       server_ = builder.BuildAndStart();
       AddInsecureChannelFromFd(server_.get(), sv_[1]);
     }
-#endif /* GRPC_POSIX_SOCKET */
+#endif  // GRPC_POSIX_SOCKET
   }
 
   ~ParameterizedClientInterceptorsEnd2endTest() override {
@@ -792,7 +792,7 @@ class ParameterizedClientInterceptorsEnd2endTest
       return experimental::CreateCustomInsecureChannelWithInterceptorsFromFd(
           "", sv_[0], ChannelArguments(), std::move(creators));
     }
-#endif /* GRPC_POSIX_SOCKET */
+#endif  // GRPC_POSIX_SOCKET
     return nullptr;
   }
 

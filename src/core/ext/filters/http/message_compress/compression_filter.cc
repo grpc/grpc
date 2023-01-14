@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -49,7 +50,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_concurrently.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"

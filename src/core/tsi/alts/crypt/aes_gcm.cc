@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -35,13 +35,13 @@ constexpr size_t kKdfCounterLen = 6;
 constexpr size_t kKdfCounterOffset = 2;
 constexpr size_t kRekeyAeadKeyLen = kAes128GcmKeyLength;
 
-/* Struct for additional data required if rekeying is enabled. */
+// Struct for additional data required if rekeying is enabled.
 struct gsec_aes_gcm_aead_rekey_data {
   uint8_t kdf_counter[kKdfCounterLen];
   uint8_t nonce_mask[kAesGcmNonceLength];
 };
 
-/* Main struct for AES_GCM crypter interface. */
+// Main struct for AES_GCM crypter interface.
 struct gsec_aes_gcm_aead_crypter {
   gsec_aead_crypter crypter;
   size_t key_length;
@@ -79,7 +79,7 @@ static void aes_gcm_format_errors(const char* error_msg, char** error_details) {
   }
   char* openssl_errors = aes_gcm_get_openssl_errors();
   if (openssl_errors != nullptr && error_msg != nullptr) {
-    size_t len = strlen(error_msg) + strlen(openssl_errors) + 2; /* ", " */
+    size_t len = strlen(error_msg) + strlen(openssl_errors) + 2;  // ", "
     *error_details = static_cast<char*>(gpr_malloc(len + 1));
     snprintf(*error_details, len + 1, "%s, %s", error_msg, openssl_errors);
     gpr_free(openssl_errors);

@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <map>
 #include <utility>
@@ -58,24 +56,9 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
   for (auto& server_rpc_event_config : logging_config.server_rpc_events) {
     server_configs_.emplace_back(server_rpc_event_config);
   }
-  std::string endpoint;
-  absl::optional<std::string> endpoint_env =
-      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
-  if (endpoint_env.has_value() && !endpoint_env->empty()) {
-    endpoint = std::move(*endpoint_env);
-  } else {
-    endpoint = "logging.googleapis.com";
-  }
-  ChannelArguments args;
-  // Disable observability for RPCs on this channel
-  args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
-  // Set keepalive time to 24 hrs to effectively disable keepalive ping, but
-  // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
-  args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 24 * 60 * 60 * 1000 /* 24 hours */);
-  args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
-  stub_ = google::logging::v2::LoggingServiceV2::NewStub(
-      CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args));
   absl::optional<std::string> authority_env =
+      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+  absl::optional<std::string> endpoint_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
   if (authority_env.has_value() && !authority_env->empty()) {
     authority_ = std::move(*endpoint_env);
@@ -83,17 +66,11 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
 }
 
 LoggingSink::Config ObservabilityLoggingSink::FindMatch(
-    bool is_client, absl::string_view path) {
-  size_t pos = path.find('/');
-  if (pos == absl::string_view::npos) {
-    // bad path - did not find '/'
-    return LoggingSink::Config(0, 0);
-  }
-  absl::string_view service =
-      path.substr(0, pos);  // service name is before the '/'
-  absl::string_view method =
-      path.substr(pos + 1);  // method name starts after the '/'
+    bool is_client, absl::string_view service, absl::string_view method) {
   const auto& configs = is_client ? client_configs_ : server_configs_;
+  if (service.empty() || method.empty()) {
+    return LoggingSink::Config();
+  }
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
       if ((config_method.service == "*") ||
@@ -101,14 +78,14 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
            ((config_method.method == "*") ||
             (method == config_method.method)))) {
         if (config.exclude) {
-          return LoggingSink::Config(0, 0);
+          return LoggingSink::Config();
         }
         return LoggingSink::Config(config.max_metadata_bytes,
                                    config.max_message_bytes);
       }
     }
   }
-  return LoggingSink::Config(0, 0);
+  return LoggingSink::Config();
 }
 
 namespace {
@@ -202,9 +179,11 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
                            ::google::protobuf::Struct* peer_json) {
   (*peer_json->mutable_fields())["type"].set_string_value(
       AddressTypeToString(peer.type));
-  (*peer_json->mutable_fields())["address"].set_string_value(
-      std::move(peer.address));
-  (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  if (peer.type != LoggingSink::Entry::Address::Type::kUnknown) {
+    (*peer_json->mutable_fields())["address"].set_string_value(
+        std::move(peer.address));
+    (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  }
 }
 
 }  // namespace
@@ -238,6 +217,25 @@ void EntryToJsonStructProto(LoggingSink::Entry entry,
 }
 
 void ObservabilityLoggingSink::LogEntry(Entry entry) {
+  absl::call_once(once_, [this]() {
+    std::string endpoint;
+    absl::optional<std::string> endpoint_env =
+        grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+    if (endpoint_env.has_value() && !endpoint_env->empty()) {
+      endpoint = std::move(*endpoint_env);
+    } else {
+      endpoint = "logging.googleapis.com";
+    }
+    ChannelArguments args;
+    // Disable observability for RPCs on this channel
+    args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+    // Set keepalive time to 24 hrs to effectively disable keepalive ping, but
+    // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 24 * 60 * 60 * 1000 /* 24 hours */);
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
+    stub_ = google::logging::v2::LoggingServiceV2::NewStub(
+        CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args));
+  });
   struct CallContext {
     ClientContext context;
     google::logging::v2::WriteLogEntriesRequest request;

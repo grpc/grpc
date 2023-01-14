@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <gtest/gtest.h>
 
@@ -42,6 +42,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -101,7 +102,7 @@ void test_succeeds(void) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
 
-  /* create a phony server */
+  // create a phony server
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(svr_fd, 0);
   ASSERT_EQ(bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len),
@@ -112,7 +113,7 @@ void test_succeeds(void) {
   connections_complete_before = g_connections_complete;
   gpr_mu_unlock(g_mu);
 
-  /* connect to it */
+  // connect to it
   ASSERT_EQ(getsockname(svr_fd, (struct sockaddr*)addr,
                         (socklen_t*)&resolved_addr.len),
             0);
@@ -124,7 +125,7 @@ void test_succeeds(void) {
       &done, &g_connecting, g_pollset_set,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       &resolved_addr, grpc_core::Timestamp::InfFuture());
-  /* await the connection */
+  // await the connection
   do {
     resolved_addr.len = static_cast<socklen_t>(sizeof(addr));
     r = accept(svr_fd, reinterpret_cast<struct sockaddr*>(addr),
@@ -172,7 +173,7 @@ void test_fails(void) {
   connections_complete_before = g_connections_complete;
   gpr_mu_unlock(g_mu);
 
-  /* connect to a broken address */
+  // connect to a broken address
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
   int64_t connection_handle = grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set,
@@ -180,7 +181,7 @@ void test_fails(void) {
       &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
-  /* wait for the connection callback to finish */
+  // wait for the connection callback to finish
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;
     grpc_core::Timestamp polling_deadline = test_deadline();
@@ -226,7 +227,7 @@ void test_connect_cancellation_succeeds(void) {
             bind(sock, reinterpret_cast<sockaddr*>(resolved_addr.addr),
                  resolved_addr.len) == 0);
   };
-  /* create a phony server */
+  // create a phony server
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
   // Try ipv6
   if (!try_bind(svr_fd)) {
@@ -386,7 +387,7 @@ TEST(TcpClientPosixTest, MainTest) {
   gpr_free(g_pollset);
 }
 
-#endif /* GRPC_POSIX_SOCKET_CLIENT */
+#endif  // GRPC_POSIX_SOCKET_CLIENT
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

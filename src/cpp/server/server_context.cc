@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <assert.h>
 
@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/compression.h>
@@ -52,6 +53,7 @@
 #include <grpcpp/support/server_interceptor.h>
 #include <grpcpp/support/string_ref.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -131,15 +133,15 @@ class ServerContextBase::CompletionOp final
   // This will be called while interceptors are run if the RPC is a hijacked
   // RPC. This should set hijacking state for each of the ops.
   void SetHijackingState() override {
-    /* Servers don't allow hijacking */
-    GPR_ASSERT(false);
+    // Servers don't allow hijacking
+    grpc_core::Crash("unreachable");
   }
 
-  /* Should be called after interceptors are done running */
+  // Should be called after interceptors are done running
   void ContinueFillOpsAfterInterception() override {}
 
-  /* Should be called after interceptors are done running on the finalize result
-   * path */
+  // Should be called after interceptors are done running on the finalize result
+  // path
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
     if (!has_tag_) {
@@ -148,7 +150,7 @@ class ServerContextBase::CompletionOp final
       // Unref can delete this, so do not access anything from this afterward.
       return;
     }
-    /* Start a phony op so that we can return the tag */
+    // Start a phony op so that we can return the tag
     GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_,
                                      nullptr) == GRPC_CALL_OK);
   }
@@ -193,7 +195,7 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
   // explanatory log on failure.
   GPR_ASSERT(grpc_call_start_batch(call->call(), &ops, 1, core_cq_tag_,
                                    nullptr) == GRPC_CALL_OK);
-  /* No interceptors to run here */
+  // No interceptors to run here
 }
 
 bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
@@ -235,7 +237,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
   if (call_cancel && callback_controller_ != nullptr) {
     callback_controller_->MaybeCallOnCancel();
   }
-  /* Add interception point and run through interceptors */
+  // Add interception point and run through interceptors
   interceptor_methods_.AddInterceptionHookPoint(
       experimental::InterceptionHookPoints::POST_RECV_CLOSE);
   if (interceptor_methods_.RunInterceptors()) {
@@ -365,9 +367,8 @@ void ServerContextBase::set_compression_algorithm(
   compression_algorithm_ = algorithm;
   const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
-    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
-            algorithm);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "Name for compression algorithm '%d' unknown.", algorithm));
   }
   GPR_ASSERT(algorithm_name != nullptr);
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);

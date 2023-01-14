@@ -24,7 +24,9 @@ grpc_cc_library(
     srcs = ["timer_test.cc"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/functional:bind_front",
+        "absl/functional:function_ref",
         "absl/time",
         "gtest",
     ],
@@ -65,6 +67,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resource_quota",
@@ -89,6 +92,7 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resource_quota",
@@ -144,6 +148,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "cf_event_engine_test",
+    srcs = ["cf_event_engine_test.cc"],
+    tags = [
+        "no_linux",
+        "no_windows",
+    ],
+    uses_polling = False,
+    deps = [
+        "conformance_test_base_lib",
+        "//:gpr_platform",
+        "//:grpc",
+        "//src/core:cf_event_engine",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
     name = "fuzzing_event_engine_test",
     srcs = ["fuzzing_event_engine_test.cc"],
     external_deps = [
@@ -175,6 +196,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/time",
     ],
     tags = [
@@ -241,6 +263,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:uri_parser",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resolved_address",

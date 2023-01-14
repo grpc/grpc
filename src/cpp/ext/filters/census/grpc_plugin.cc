@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -42,11 +42,13 @@
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
-  RegisterChannelFilter<CensusClientChannelData,
-                        CensusClientChannelData::CensusClientCallData>(
+  RegisterChannelFilter<
+      internal::OpenCensusClientChannelData,
+      internal::OpenCensusClientChannelData::OpenCensusClientCallData>(
       "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
-  RegisterChannelFilter<CensusChannelData, CensusServerCallData>(
+  RegisterChannelFilter<internal::OpenCensusChannelData,
+                        internal::OpenCensusServerCallData>(
       "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
 
@@ -168,8 +170,21 @@ ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
 
 }  // namespace experimental
 
+namespace internal {
+
+namespace {
 std::atomic<bool> g_open_census_stats_enabled(true);
 std::atomic<bool> g_open_census_tracing_enabled(true);
+}  // namespace
+
+//
+// OpenCensusExporterRegistry
+//
+
+OpenCensusExporterRegistry& OpenCensusExporterRegistry::Get() {
+  static OpenCensusExporterRegistry* registry = new OpenCensusExporterRegistry;
+  return *registry;
+}
 
 void EnableOpenCensusStats(bool enable) {
   g_open_census_stats_enabled = enable;
@@ -186,5 +201,7 @@ bool OpenCensusStatsEnabled() {
 bool OpenCensusTracingEnabled() {
   return g_open_census_tracing_enabled.load(std::memory_order_relaxed);
 }
+
+}  // namespace internal
 
 }  // namespace grpc

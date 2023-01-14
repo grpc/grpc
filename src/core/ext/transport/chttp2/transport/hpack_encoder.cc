@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -34,6 +34,7 @@
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -43,24 +44,24 @@ namespace {
 
 constexpr size_t kDataFrameHeaderSize = 9;
 
-} /* namespace */
+}  // namespace
 
-/* fills p (which is expected to be kDataFrameHeaderSize bytes long)
- * with a data frame header */
+// fills p (which is expected to be kDataFrameHeaderSize bytes long)
+// with a data frame header
 static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
                        uint8_t flags) {
-  /* len is the current frame size (i.e. for the frame we're finishing).
-     We finish a frame if:
-     1) We called ensure_space(), (i.e. add_tiny_header_data()) and adding
-        'need_bytes' to the frame would cause us to exceed max_frame_size.
-     2) We called add_header_data, and adding the slice would cause us to exceed
-        max_frame_size.
-     3) We're done encoding the header.
+  // len is the current frame size (i.e. for the frame we're finishing).
+  // We finish a frame if:
+  // 1) We called ensure_space(), (i.e. add_tiny_header_data()) and adding
+  //    'need_bytes' to the frame would cause us to exceed max_frame_size.
+  // 2) We called add_header_data, and adding the slice would cause us to exceed
+  //    max_frame_size.
+  // 3) We're done encoding the header.
 
-     Thus, len is always <= max_frame_size.
-     max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
-     which has a max allowable value of 16777215 (see chttp_transport.cc).
-     Thus, the following assert can be a debug assert. */
+  // Thus, len is always <= max_frame_size.
+  // max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+  // which has a max allowable value of 16777215 (see chttp_transport.cc).
+  // Thus, the following assert can be a debug assert.
   GPR_DEBUG_ASSERT(len <= 16777216);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
@@ -137,7 +138,7 @@ static WireValue GetWireValue(Slice value, bool true_binary_enabled,
                            value.c_slice())));
     }
   } else {
-    /* TODO(ctiller): opportunistically compress non-binary headers */
+    // TODO(ctiller): opportunistically compress non-binary headers
     return WireValue(0x00, false, std::move(value));
   }
 }
@@ -362,7 +363,7 @@ void HPackCompressor::Encoder::Encode(HttpSchemeMetadata,
       EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      GPR_ASSERT(false);
+      Crash("invalid http scheme encoding");
       break;
   }
 }
@@ -430,7 +431,7 @@ void HPackCompressor::Encoder::Encode(HttpMethodMetadata,
                                              Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      GPR_ASSERT(false);
+      Crash("invalid http method encoding");
       break;
   }
 }

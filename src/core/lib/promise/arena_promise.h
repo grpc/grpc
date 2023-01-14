@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -227,4 +228,4 @@ class ArenaPromise {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_PROMISE_ARENA_PROMISE_H */
+#endif  // GRPC_CORE_LIB_PROMISE_ARENA_PROMISE_H

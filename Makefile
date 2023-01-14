@@ -410,7 +410,7 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 29.0.0
+CORE_VERSION = 30.0.0
 CPP_VERSION = 1.52.0-dev
 CSHARP_VERSION = 2.52.0-dev
 
@@ -448,7 +448,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 SHARED_EXT_CSHARP = dll
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -29
+SHARED_VERSION_CORE = -30
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -2
 else ifeq ($(SYSTEM),Darwin)
@@ -826,8 +826,8 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE):
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.29 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.29
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.30 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.30
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -867,6 +867,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/crash.cc \
     src/core/lib/gprpp/env_linux.cc \
     src/core/lib/gprpp/env_posix.cc \
     src/core/lib/gprpp/env_windows.cc \
@@ -943,8 +944,8 @@ $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.29 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.29
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.30 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.30
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1197,6 +1198,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/xds/annotations/v3/status.upb.c \
     src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c \
     src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/cidr.upb.c \
     src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
     src/core/ext/upb-generated/xds/core/v3/context_params.upb.c \
     src/core/ext/upb-generated/xds/core/v3/extension.upb.c \
@@ -1205,9 +1207,16 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
     src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
     src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/xds/type/v3/cel.upb.c \
+    src/core/ext/upb-generated/xds/type/v3/range.upb.c \
     src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c \
@@ -1338,15 +1347,23 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -1428,6 +1445,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
+    src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
@@ -1492,6 +1510,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/socket_utils_posix.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/systemd_utils.cc \
     src/core/lib/iomgr/tcp_client.cc \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
@@ -1679,6 +1698,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
@@ -1772,8 +1792,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.29 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.29
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.30 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.30
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1952,6 +1972,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
+    src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
@@ -2015,6 +2036,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_posix.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/systemd_utils.cc \
     src/core/lib/iomgr/tcp_client.cc \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
@@ -2145,6 +2167,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
@@ -2228,8 +2251,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.29 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.29
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.30 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.30
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2635,8 +2658,8 @@ $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.29 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.29
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.30 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.30
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3042,15 +3065,23 @@ src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/annotations/v3/status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/authority.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/cidr.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/context_params.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/extension.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/resource.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/type/v3/cel.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/type/v3/range.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c: $(OPENSSL_DEP)
@@ -3180,15 +3211,23 @@ src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.c: $(OPENSSL
 src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)

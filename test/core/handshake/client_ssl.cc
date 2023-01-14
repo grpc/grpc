@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <netinet/in.h>
 #include <stdint.h>
@@ -55,6 +55,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -241,16 +242,14 @@ static void server_thread(void* arg) {
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
-    abort();
+    grpc_core::Crash("Couldn't set server cipher list.");
   }
 
   // Enable automatic curve selection. This is a NO-OP when using OpenSSL
   // versions > 1.0.2.
   if (!SSL_CTX_set_ecdh_auto(ctx, /*onoff=*/1)) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Couldn't set automatic curve selection.");
-    abort();
+    grpc_core::Crash("Couldn't set automatic curve selection.");
   }
 
   // Register the ALPN selection callback.
@@ -413,7 +412,7 @@ TEST(ClientSslTest, MainTest) {
   EVP_cleanup();
 }
 
-#endif /* GRPC_POSIX_SOCKET_TCP */
+#endif  // GRPC_POSIX_SOCKET_TCP
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
