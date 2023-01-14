@@ -69,4 +69,25 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
   return std::unique_ptr<ServerBuilderOption>(new IntOption(name, value));
 }
 
+std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
+    const std::string& name, void* value) {
+  class PointerOption final : public ServerBuilderOption {
+   public:
+    PointerOption(const std::string& name, void* value)
+        : name_(name), value_(value) {}
+
+    void UpdateArguments(ChannelArguments* args) override {
+      args->SetPointer(name_, value_);
+    }
+    void UpdatePlugins(
+        std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/)
+        override {}
+
+   private:
+    const std::string name_;
+    void* value_;
+  };
+  return std::unique_ptr<ServerBuilderOption>(new PointerOption(name, value));
+}
+
 }  // namespace grpc
