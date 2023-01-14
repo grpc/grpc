@@ -490,45 +490,56 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
 absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     absl::StatusOr<ServerAddressList> addresses,
     const XdsHealthStatusSet& override_host_status_set) {
-  // It will also retain subchannels until after update. Otherwise destroying
-  // the subchannels will try to reacquire the locks in the ResetSubchannel...
-  std::map<std::string, SubchannelEntry, std::less<>> new_map;
-  absl::StatusOr<ServerAddressList> child_addresses;
+  if (!addresses.ok()) {
+    return addresses;
+  }
+  ServerAddressList return_value;
+  std::map<const std::string, XdsHealthStatus> addresses_for_map;
+  for (const auto& address : *addresses) {
+    XdsHealthStatus status = GetAddressHealthStatus(address);
+    if (override_host_status_set.Contains(status)) {
+      auto key = grpc_sockaddr_to_string(&address.address(), false);
+      if (key.ok()) {
+        addresses_for_map.insert({std::move(*key), status});
+      }
+      if (status.status() != XdsHealthStatus::kDraining) {
+        return_value.push_back(std::move(address));
+      }
+    }
+  }
+  // Channels going from DRAINING to other state might only be retained
+  // by the policy. This makes sure their removal is processed after the
+  // mutex is released.
+  std::vector<RefCountedPtr<SubchannelWrapper>> retained;
   {
     MutexLock lock(&subchannel_map_mu_);
-    if (addresses.ok()) {
-      child_addresses.emplace();
-      for (const auto& address : *addresses) {
-        auto status = GetAddressHealthStatus(address);
-        bool draining = false;
-        if (status.status() != XdsHealthStatus::HealthStatus::kDraining) {
-          child_addresses->push_back(address);
-        } else if (!override_host_status_set.Contains(status)) {
-          continue;
-        } else {
-          draining = true;
+    for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
+      auto key_status = addresses_for_map.find(it->first);
+      SubchannelWrapper* subchannel = it->second.GetSubchannel();
+      if (key_status == addresses_for_map.end()) {
+        if (subchannel != nullptr) {
+          subchannel->Detach();
         }
-        auto key = grpc_sockaddr_to_string(&address.address(), false);
-        if (key.ok()) {
-          auto it = subchannel_map_.find(*key);
-          SubchannelEntry::Handle subchannel_handle = nullptr;
-          if (it != subchannel_map_.end()) {
-            SubchannelWrapper* subchannel = it->second.GetSubchannel();
-            if (subchannel != nullptr && draining) {
-              subchannel_handle = subchannel->Ref();
-            } else {
-              subchannel_handle = subchannel;
-            }
+        it = subchannel_map_.erase(it);
+      } else {
+        if (subchannel == nullptr ||
+            key_status->second.status() != XdsHealthStatus::kDraining) {
+          if (subchannel != nullptr) {
+            retained.push_back(subchannel->Ref());
           }
-          new_map.emplace(*key, SubchannelEntry(subchannel_handle));
+          it->second.SetSubchannel(subchannel);
+        } else {
+          it->second.SetSubchannel(subchannel->Ref());
         }
+        addresses_for_map.erase(key_status);
+        it++;
       }
-    } else {
-      child_addresses = std::move(addresses);
     }
-    std::swap(new_map, subchannel_map_);
+    for (const auto& key_status : addresses_for_map) {
+      subchannel_map_.emplace(key_status.first, SubchannelEntry(nullptr));
+    }
   }
-  return child_addresses;
+  return return_value;
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
