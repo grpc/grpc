@@ -26,7 +26,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/internal/slice_cast.h>
-#include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -409,6 +408,7 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
 
 namespace grpc_event_engine {
 namespace experimental {
+class Slice;
 namespace internal {
 template <>
 struct SliceCastable<grpc_core::Slice, grpc_slice> {};

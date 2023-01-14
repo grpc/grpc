@@ -1196,7 +1196,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "event_engine_slice",
         "slice_cast",
         "slice_refcount",
         "//:gpr",
@@ -1496,8 +1495,10 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
+        "event_engine_interface",
+        "event_engine_memory_allocator",
+        "event_engine_slice_buffer",
         "//:gpr",
-        "//:grpc_base",
     ],
 )
 
