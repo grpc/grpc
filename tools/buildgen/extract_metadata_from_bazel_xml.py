@@ -344,7 +344,7 @@ def _compute_transitive_metadata(
                     # This item is not processed before, compute now
                     try:
                         _compute_transitive_metadata(dep, bazel_rules,
-                                                    bazel_label_to_dep_name)
+                                                     bazel_label_to_dep_name)
                     except:
                         print("Error when processing %s" % dep)
                         raise
@@ -445,7 +445,7 @@ def _populate_transitive_metadata(bazel_rules: Any,
         try:
             if '_PROCESSING_DONE' not in bazel_rules[rule_name]:
                 _compute_transitive_metadata(rule_name, bazel_rules,
-                                            bazel_label_to_dep_name)
+                                             bazel_label_to_dep_name)
         except:
             print("Error processing rule %s" % rule_name)
             raise

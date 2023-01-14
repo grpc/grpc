@@ -138,7 +138,8 @@ EXTERNAL_DEPS = {
         'address_sorting',
     'ares.h':
         'cares',
-    'benchmark/benchmark.h': 'benchmark',
+    'benchmark/benchmark.h':
+        'benchmark',
     'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
         'googleapis_trace_grpc_service',
     'google/logging/v2/logging.grpc.pb.h':
