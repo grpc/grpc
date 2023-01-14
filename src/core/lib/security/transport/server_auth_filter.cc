@@ -168,9 +168,9 @@ class ServerAuthFilter::RunApplicationCode {
       if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";
       }
-      state->call_args =
-          grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
-                             StatusIntProperty::kRpcStatus, status);
+      state->call_args = grpc_error_set_int(
+          absl::Status(static_cast<absl::StatusCode>(status), error_details),
+          StatusIntProperty::kRpcStatus, status);
     }
 
     // Clean up.
