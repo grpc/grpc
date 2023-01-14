@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -2129,11 +2130,6 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   });
   // Poll once.
   WakeInsideCombiner(&flusher);
-  if (auto* closure =
-          std::exchange(original_recv_initial_metadata_ready_, nullptr)) {
-    flusher.AddClosure(closure, absl::OkStatus(),
-                       "original_recv_initial_metadata");
-  }
 }
 
 std::string ServerCallData::DebugString() const {
@@ -2246,6 +2242,13 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
       if (destroy_md) {
         md->~grpc_metadata_batch();
       }
+    }
+  }
+  if (std::exchange(forward_recv_initial_metadata_callback_, false)) {
+    if (auto* closure =
+            std::exchange(original_recv_initial_metadata_ready_, nullptr)) {
+      flusher->AddClosure(closure, absl::OkStatus(),
+                          "original_recv_initial_metadata");
     }
   }
 }
