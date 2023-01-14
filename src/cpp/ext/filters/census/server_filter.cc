@@ -46,7 +46,7 @@
 namespace grpc {
 namespace internal {
 
-constexpr uint32_t CensusServerCallData::kMaxServerStatsLen;
+constexpr uint32_t OpenCensusServerCallData::kMaxServerStatsLen;
 
 namespace {
 
@@ -79,13 +79,13 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 }  // namespace
 
-void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
-                                               grpc_error_handle error) {
+void OpenCensusServerCallData::OnDoneRecvMessageCb(void* user_data,
+                                                   grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  CensusServerCallData* calld =
-      reinterpret_cast<CensusServerCallData*>(elem->call_data);
-  CensusChannelData* channeld =
-      reinterpret_cast<CensusChannelData*>(elem->channel_data);
+  OpenCensusServerCallData* calld =
+      reinterpret_cast<OpenCensusServerCallData*>(elem->call_data);
+  OpenCensusChannelData* channeld =
+      reinterpret_cast<OpenCensusChannelData*>(elem->channel_data);
   GPR_ASSERT(calld != nullptr);
   GPR_ASSERT(channeld != nullptr);
   // Stream messages are no longer valid after receiving trailing metadata.
@@ -96,11 +96,11 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
                           error);
 }
 
-void CensusServerCallData::OnDoneRecvInitialMetadataCb(
+void OpenCensusServerCallData::OnDoneRecvInitialMetadataCb(
     void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  CensusServerCallData* calld =
-      reinterpret_cast<CensusServerCallData*>(elem->call_data);
+  OpenCensusServerCallData* calld =
+      reinterpret_cast<OpenCensusServerCallData*>(elem->call_data);
   GPR_ASSERT(calld != nullptr);
   if (error.ok()) {
     grpc_metadata_batch* initial_metadata = calld->recv_initial_metadata_;
@@ -125,7 +125,7 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
                           calld->initial_on_done_recv_initial_metadata_, error);
 }
 
-void CensusServerCallData::StartTransportStreamOpBatch(
+void OpenCensusServerCallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, TransportStreamOpBatch* op) {
   if (op->recv_initial_metadata() != nullptr) {
     // substitute our callback for the op callback
@@ -158,7 +158,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, op->op());
 }
 
-grpc_error_handle CensusServerCallData::Init(
+grpc_error_handle OpenCensusServerCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   start_time_ = absl::Now();
   gc_ =
@@ -172,9 +172,9 @@ grpc_error_handle CensusServerCallData::Init(
   return absl::OkStatus();
 }
 
-void CensusServerCallData::Destroy(grpc_call_element* /*elem*/,
-                                   const grpc_call_final_info* final_info,
-                                   grpc_closure* /*then_call_closure*/) {
+void OpenCensusServerCallData::Destroy(grpc_call_element* /*elem*/,
+                                       const grpc_call_final_info* final_info,
+                                       grpc_closure* /*then_call_closure*/) {
   grpc_auth_context_release(auth_context_);
   if (OpenCensusStatsEnabled()) {
     const uint64_t request_size = GetOutgoingDataSize(final_info);
