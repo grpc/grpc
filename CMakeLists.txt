@@ -2676,7 +2676,7 @@ target_link_libraries(grpc_test_util_unsecure
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
-  grpc
+  grpc_unsecure
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -7631,6 +7631,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc
     grpc_test_util_unsecure
   )
 
@@ -10612,6 +10613,7 @@ target_link_libraries(factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
   grpc_test_util_unsecure
 )
 
@@ -16431,6 +16433,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc
     grpc_test_util_unsecure
   )
 
@@ -18792,6 +18795,7 @@ target_link_libraries(smoke_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
   grpc_test_util_unsecure
 )
 
@@ -21822,6 +21826,7 @@ target_link_libraries(uri_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
   grpc_test_util_unsecure
 )
 

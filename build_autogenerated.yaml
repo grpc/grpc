@@ -1884,7 +1884,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - grpc
+  - grpc_unsecure
 - name: grpc_unsecure
   build: all
   language: c
@@ -5445,6 +5445,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   deps:
+  - grpc
   - grpc_test_util_unsecure
   platforms:
   - linux
@@ -6798,6 +6799,7 @@ targets:
   src:
   - test/core/event_engine/factory_test.cc
   deps:
+  - grpc
   - grpc_test_util_unsecure
 - name: fake_binder_test
   gtest: true
@@ -9929,6 +9931,7 @@ targets:
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
   deps:
+  - grpc
   - grpc_test_util_unsecure
   platforms:
   - linux
@@ -10918,6 +10921,7 @@ targets:
   src:
   - test/core/event_engine/smoke_test.cc
   deps:
+  - grpc
   - grpc_test_util_unsecure
 - name: sockaddr_resolver_test
   gtest: true
@@ -12411,6 +12415,7 @@ targets:
   src:
   - test/core/uri/uri_parser_test.cc
   deps:
+  - grpc
   - grpc_test_util_unsecure
 - name: useful_test
   gtest: true
