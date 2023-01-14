@@ -129,7 +129,7 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
           initial_metadata_err->Set(ServerMetadataFromStatus(r));
           return absl::nullopt;
         }
-        return md;
+        return std::move(md);
       });
 
   return Race(Map(next_promise_factory(std::move(call_args)),
