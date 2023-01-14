@@ -67,10 +67,10 @@ constexpr uint32_t
     OpenCensusCallTracer::OpenCensusCallAttemptTracer::kMaxTagsLen;
 
 //
-// CensusClientChannelData
+// OpenCensusClientChannelData
 //
 
-grpc_error_handle CensusClientChannelData::Init(
+grpc_error_handle OpenCensusClientChannelData::Init(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
   OpenCensusExporterRegistry::Get().RunRegistryPostInit();
   tracing_enabled_ = grpc_core::ChannelArgs::FromC(args->channel_args)
@@ -80,13 +80,13 @@ grpc_error_handle CensusClientChannelData::Init(
 }
 
 //
-// CensusClientChannelData::CensusClientCallData
+// OpenCensusClientChannelData::OpenCensusClientCallData
 //
 
-grpc_error_handle CensusClientChannelData::CensusClientCallData::Init(
+grpc_error_handle OpenCensusClientChannelData::OpenCensusClientCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   tracer_ = args->arena->New<OpenCensusCallTracer>(
-      args, (static_cast<CensusClientChannelData*>(elem->channel_data))
+      args, (static_cast<OpenCensusClientChannelData*>(elem->channel_data))
                 ->tracing_enabled_);
   GPR_DEBUG_ASSERT(args->context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
   args->context[GRPC_CONTEXT_CALL_TRACER].value = tracer_;
@@ -96,15 +96,16 @@ grpc_error_handle CensusClientChannelData::CensusClientCallData::Init(
   return absl::OkStatus();
 }
 
-void CensusClientChannelData::CensusClientCallData::StartTransportStreamOpBatch(
-    grpc_call_element* elem, TransportStreamOpBatch* op) {
+void OpenCensusClientChannelData::OpenCensusClientCallData::
+    StartTransportStreamOpBatch(grpc_call_element* elem,
+                                TransportStreamOpBatch* op) {
   // Note that we are generating the overall call context here instead of in
   // the constructor of `OpenCensusCallTracer` due to the semantics of
   // `grpc_census_call_set_context` which allows the application to set the
   // census context for a call anytime before the first call to
   // `grpc_call_start_batch`.
   if (op->op()->send_initial_metadata && OpenCensusTracingEnabled() &&
-      (static_cast<CensusClientChannelData*>(elem->channel_data))
+      (static_cast<OpenCensusClientChannelData*>(elem->channel_data))
           ->tracing_enabled_) {
     tracer_->GenerateContext();
   }
