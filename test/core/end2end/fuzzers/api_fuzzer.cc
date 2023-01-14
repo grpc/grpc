@@ -112,7 +112,7 @@ typedef struct addr_req {
   std::unique_ptr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
-static void finish_resolve(addr_req&& r) {
+static void finish_resolve(addr_req r) {
   if (0 == strcmp(r.addr, "server")) {
     *r.addresses = std::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
@@ -238,10 +238,10 @@ grpc_ares_request* my_dns_lookup_ares(
   r.on_done = on_done;
   r.addresses = addresses;
   GetDefaultEventEngine()->RunAfter(
-      grpc_core::Duration::Seconds(1), [r = std::move(r)]() mutable {
+      grpc_core::Duration::Seconds(1), [r]() mutable {
         grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
-        finish_resolve(std::move(r));
+        finish_resolve(r);
       });
   return nullptr;
 }
@@ -261,7 +261,7 @@ typedef struct {
   gpr_timespec deadline;
 } future_connect;
 
-static void do_connect(future_connect&& fc) {
+static void do_connect(future_connect fc) {
   if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;
@@ -298,10 +298,10 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc.ep = ep;
   fc.deadline = deadline;
   GetDefaultEventEngine()->RunAfter(
-      grpc_core::Duration::Seconds(1), [fc = std::move(fc)]() mutable {
+      grpc_core::Duration::Seconds(1), [fc]() mutable {
         grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
-        do_connect(std::move(fc));
+        do_connect(fc);
       });
 }
 
