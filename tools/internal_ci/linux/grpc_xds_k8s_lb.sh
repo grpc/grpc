@@ -168,10 +168,10 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
-  run_alpha_test subsetting_test || (( failed_tests++ )) && true
+  run_alpha_test subsetting_test || (( ++failed_tests ))
   test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test" "outlier_detection_test")
   for test in "${test_suites[@]}"; do
-    run_test $test || (( failed_tests++ )) && true
+    run_test $test || (( ++failed_tests ))
   done
   echo "Failed test suites: ${failed_tests}"
   if (( failed_tests > 0 )); then
