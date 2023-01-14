@@ -967,7 +967,7 @@ class ServerStream final : public ConnectedChannelStream {
   }
 
   Poll<ServerMetadataHandle> PollOnce() {
-    absl::MutexLock lock(mu());
+    MutexLock lock(mu());
 
     auto poll_send_initial_metadata = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
                                           mu()) {
