@@ -1744,6 +1744,7 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -2643,6 +2644,7 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -3962,6 +3964,7 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -5766,6 +5769,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
@@ -6759,6 +6763,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
@@ -7060,6 +7065,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/pid_controller.cc
@@ -7629,6 +7635,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -8714,6 +8721,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/interceptor_list_test.cc
   deps:
@@ -9123,6 +9131,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
   deps:
@@ -9677,6 +9686,7 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
@@ -9814,6 +9824,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
@@ -10892,12 +10903,15 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
@@ -11521,6 +11535,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -11528,11 +11543,13 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
@@ -12184,6 +12201,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/try_concurrently_test.cc
   deps:

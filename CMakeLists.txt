@@ -2357,6 +2357,7 @@ add_library(grpc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -2995,6 +2996,7 @@ add_library(grpc_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -4480,6 +4482,7 @@ add_library(grpc_authorization_provider
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -8244,6 +8247,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10528,6 +10532,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11007,6 +11012,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
@@ -11488,6 +11494,7 @@ add_executable(frame_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -13852,6 +13859,7 @@ add_executable(interceptor_list_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14641,6 +14649,7 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16004,6 +16013,7 @@ add_executable(periodic_update_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16157,6 +16167,7 @@ add_executable(pipe_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -18746,7 +18757,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
+  src/core/lib/debug/trace.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/slice/slice_string_helpers_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -20140,11 +20153,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_slice_buffer_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/slice_buffer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -21506,6 +21521,7 @@ add_executable(try_concurrently_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/try_concurrently_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
