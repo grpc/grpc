@@ -232,8 +232,8 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
        this](MessageHandle message) -> absl::optional<MessageHandle> {
         return CompressMessage(std::move(message), compression_algorithm);
       });
-  auto* decompress_args =
-      GetContext<Arena>()->New<DecompressArgs>(DecompressArgs{false});
+  auto* decompress_args = GetContext<Arena>()->New<DecompressArgs>(
+      DecompressArgs{false, GRPC_COMPRESS_NONE, absl::nullopt});
   auto* decompress_err =
       GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
   call_args.server_to_client_messages->InterceptAndMap([decompress_err,

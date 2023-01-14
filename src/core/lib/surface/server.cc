@@ -541,7 +541,7 @@ class Server::AllocatingRequestMatcherRegistered
   }
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
-      size_t start_request_queue_index) override {
+      size_t /*start_request_queue_index*/) override {
     const bool still_running = server()->ShutdownRefOnRequest();
     auto cleanup_ref =
         absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });

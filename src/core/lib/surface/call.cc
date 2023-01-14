@@ -3076,7 +3076,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
   ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args);
 
-  void CancelWithErrorLocked(grpc_error_handle error) override { abort(); }
+  void CancelWithErrorLocked(grpc_error_handle) override { abort(); }
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
   bool failed_before_recv_message() const override { abort(); }

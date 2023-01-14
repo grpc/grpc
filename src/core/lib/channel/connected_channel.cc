@@ -919,7 +919,7 @@ class ClientConnectedCallPromise {
 
 class ServerStream final : public ConnectedChannelStream {
  public:
-  ServerStream(grpc_transport* transport, CallArgs call_args,
+  ServerStream(grpc_transport* transport,
                NextPromiseFactory next_promise_factory)
       : ConnectedChannelStream(transport) {
     SetStream(static_cast<grpc_stream*>(
@@ -1285,11 +1285,10 @@ class ServerStream final : public ConnectedChannelStream {
 
 class ServerConnectedCallPromise {
  public:
-  ServerConnectedCallPromise(grpc_transport* transport, CallArgs call_args,
+  ServerConnectedCallPromise(grpc_transport* transport,
                              NextPromiseFactory next_promise_factory)
       : impl_(GetContext<Arena>()->New<ServerStream>(
-            transport, std::move(call_args), std::move(next_promise_factory))) {
-  }
+            transport, std::move(next_promise_factory))) {}
 
   ServerConnectedCallPromise(const ServerConnectedCallPromise&) = delete;
   ServerConnectedCallPromise& operator=(const ServerConnectedCallPromise&) =
@@ -1303,10 +1302,9 @@ class ServerConnectedCallPromise {
   }
 
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
-                                                 CallArgs call_args,
+                                                 CallArgs,
                                                  NextPromiseFactory next) {
-    return ServerConnectedCallPromise(transport, std::move(call_args),
-                                      std::move(next));
+    return ServerConnectedCallPromise(transport, std::move(next));
   }
 
   Poll<ServerMetadataHandle> operator()() { return impl_->Poll(); }
