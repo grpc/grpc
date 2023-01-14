@@ -7603,7 +7603,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/cf_event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_utils.cc
-    test/core/event_engine/test_suite/timer_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -7632,7 +7631,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
+    grpc_test_util_unsecure
   )
 
 
@@ -10017,7 +10016,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_config_test
   src/core/lib/channel/channel_args.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10049,8 +10055,10 @@ target_link_libraries(endpoint_config_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
+  absl::hash
   absl::type_traits
   absl::statusor
+  absl::utility
   gpr
 )
 
@@ -14493,12 +14501,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-<<<<<<< HEAD
-    grpc
-=======
     ${_gRPC_BENCHMARK_LIBRARIES}
-    grpc_test_util
->>>>>>> 80e5f981399c9eda1dd4ded072dfc391c3c54bdb
+    grpc
   )
 
 

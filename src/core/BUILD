@@ -2053,6 +2053,8 @@ grpc_cc_library(
     ],
     deps = [
         "error",
+        "event_engine_interface",
+        "event_engine_memory_allocator",
         "event_engine_tcp_socket_utils",
         "event_engine_trace",
         "status_helper",
@@ -2060,7 +2062,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_base",
     ],
 )
 

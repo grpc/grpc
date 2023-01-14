@@ -342,8 +342,12 @@ def _compute_transitive_metadata(
             if external_dep_name_maybe is None:
                 if "_PROCESSING_DONE" not in bazel_rules[dep]:
                     # This item is not processed before, compute now
-                    _compute_transitive_metadata(dep, bazel_rules,
-                                                 bazel_label_to_dep_name)
+                    try:
+                        _compute_transitive_metadata(dep, bazel_rules,
+                                                    bazel_label_to_dep_name)
+                    except:
+                        print("Error when processing %s" % dep)
+                        raise
                 transitive_deps.update(bazel_rules[dep].get(
                     '_TRANSITIVE_DEPS', []))
                 collapsed_deps.update(
@@ -438,9 +442,13 @@ def _populate_transitive_metadata(bazel_rules: Any,
     # Make sure we reached all the Bazel rules
     # TODO(lidiz) potentially we could only update a subset of rules
     for rule_name in bazel_rules:
-        if '_PROCESSING_DONE' not in bazel_rules[rule_name]:
-            _compute_transitive_metadata(rule_name, bazel_rules,
-                                         bazel_label_to_dep_name)
+        try:
+            if '_PROCESSING_DONE' not in bazel_rules[rule_name]:
+                _compute_transitive_metadata(rule_name, bazel_rules,
+                                            bazel_label_to_dep_name)
+        except:
+            print("Error processing rule %s" % rule_name)
+            raise
 
 
 def update_test_metadata_with_transitive_metadata(
