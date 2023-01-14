@@ -966,7 +966,7 @@ class ServerStream final : public ConnectedChannelStream {
     gtm.waker = Activity::current()->MakeOwningWaker();
   }
 
-  Poll<ServerMetadataHandle> Poll() {
+  Poll<ServerMetadataHandle> PollOnce() {
     absl::MutexLock lock(mu());
 
     auto poll_send_initial_metadata = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
@@ -1307,7 +1307,7 @@ class ServerConnectedCallPromise {
     return ServerConnectedCallPromise(transport, std::move(next));
   }
 
-  Poll<ServerMetadataHandle> operator()() { return impl_->Poll(); }
+  Poll<ServerMetadataHandle> operator()() { return impl_->PollOnce(); }
 
  private:
   OrphanablePtr<ServerStream> impl_;
