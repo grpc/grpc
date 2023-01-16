@@ -92,7 +92,7 @@ class FilterTest {
         : public promise_detail::Context<Arena>,
           public promise_detail::Context<grpc_call_context_element> {
      public:
-      ScopedContext(Call* call)
+      explicit ScopedContext(Call* call)
           : promise_detail::Context<Arena>(call->arena_.get()),
             promise_detail::Context<grpc_call_context_element>(call->context_) {
       }
@@ -109,7 +109,7 @@ class FilterTest {
   };
 
   template <typename Filter>
-  FilterTest(Filter filter)
+  explicit FilterTest(Filter filter)
       : channel_(std::make_shared<Channel>(
             std::make_unique<Filter>(std::move(filter)))) {}
 

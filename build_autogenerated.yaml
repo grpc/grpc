@@ -5815,9 +5815,10 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/promise/test_context.h
+  - test/core/filters/filter_test.h
   src:
   - test/core/filters/client_auth_filter_test.cc
+  - test/core/filters/filter_test.cc
   deps:
   - grpc
   uses_polling: false
@@ -5826,9 +5827,10 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/promise/test_context.h
+  - test/core/filters/filter_test.h
   src:
   - test/core/filters/client_authority_filter_test.cc
+  - test/core/filters/filter_test.cc
   deps:
   - grpc
   uses_polling: false
@@ -6970,6 +6972,18 @@ targets:
   - test/cpp/end2end/filter_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: filter_test_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/filters/filter_test.h
+  src:
+  - test/core/filters/filter_test.cc
+  - test/core/filters/filter_test_test.cc
+  deps:
+  - grpc
+  - grpc_unsecure
 - name: flaky_network_test
   gtest: true
   build: test
