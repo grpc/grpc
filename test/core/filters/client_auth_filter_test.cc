@@ -14,7 +14,6 @@
 
 #include <stddef.h>
 
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -22,10 +21,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -38,25 +36,23 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/promise/test_context.h"
+#include "test/core/filters/filter_test.h"
 
 // TODO(roth): Need to add a lot more tests here.  I created this file
 // as part of adding a feature, and I added tests only for the feature I
 // was adding.  When we have time, we need to go back and write
 // comprehensive tests for all of the functionality in the filter.
+
+using ::testing::_;
+using ::testing::AllOf;
+using ::testing::StrictMock;
 
 namespace grpc_core {
 namespace {
@@ -91,16 +87,7 @@ class ClientAuthFilterTest : public ::testing::Test {
   };
 
   ClientAuthFilterTest()
-      : memory_allocator_(
-            ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-                "test")),
-        arena_(MakeScopedArena(1024, &memory_allocator_)),
-        initial_metadata_batch_(arena_.get()),
-        trailing_metadata_batch_(arena_.get()),
-        target_(Slice::FromStaticString("localhost:1234")),
-        channel_creds_(grpc_fake_transport_security_credentials_create()) {
-    initial_metadata_batch_.Set(HttpAuthorityMetadata(), target_.Ref());
-  }
+      : channel_creds_(grpc_fake_transport_security_credentials_create()) {}
 
   ~ClientAuthFilterTest() override {
     for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
@@ -116,7 +103,7 @@ class ClientAuthFilterTest : public ::testing::Test {
         status_for_call_creds.ok()
             ? nullptr
             : MakeRefCounted<FailCallCreds>(std::move(status_for_call_creds)),
-        std::string(target_.as_string_view()).c_str(), &args);
+        std::string(target()).c_str(), &args);
     auto auth_context = MakeRefCounted<grpc_auth_context>(nullptr);
     absl::string_view security_level = "TSI_SECURITY_NONE";
     auth_context->add_property(GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
@@ -125,11 +112,8 @@ class ClientAuthFilterTest : public ::testing::Test {
         .SetObject(std::move(auth_context));
   }
 
-  MemoryAllocator memory_allocator_;
-  ScopedArenaPtr arena_;
-  grpc_metadata_batch initial_metadata_batch_;
-  grpc_metadata_batch trailing_metadata_batch_;
-  Slice target_;
+  absl::string_view target() { return "localhost:1234"; }
+
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_call_context_element call_context_[GRPC_CONTEXT_COUNT];
 };
@@ -146,66 +130,32 @@ TEST_F(ClientAuthFilterTest, CreateSucceeds) {
 }
 
 TEST_F(ClientAuthFilterTest, CallCredsFails) {
-  auto filter = ClientAuthFilter::Create(
+  //  initial_metadata_batch_.Set(HttpAuthorityMetadata(), target_.Ref());
+  StrictMock<FilterTest::Call> call(FilterTest(*ClientAuthFilter::Create(
       MakeChannelArgs(absl::UnauthenticatedError("access denied")),
-      ChannelFilter::Args());
-  // TODO(ctiller): use Activity here, once it's ready.
-  TestContext<Arena> context(arena_.get());
-  TestContext<grpc_call_context_element> promise_call_context(call_context_);
-  auto promise = filter->MakeCallPromise(
-      CallArgs{ClientMetadataHandle(&initial_metadata_batch_,
-                                    Arena::PooledDeleter(nullptr)),
-               nullptr, nullptr, nullptr},
-      [&](CallArgs /*call_args*/) {
-        return ArenaPromise<ServerMetadataHandle>(
-            [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle(&trailing_metadata_batch_,
-                                          Arena::PooledDeleter(nullptr));
-            });
-      });
-  auto result = promise();
-  ServerMetadataHandle* server_metadata =
-      absl::get_if<ServerMetadataHandle>(&result);
-  ASSERT_TRUE(server_metadata != nullptr);
-  auto status_md = (*server_metadata)->get(GrpcStatusMetadata());
-  ASSERT_TRUE(status_md.has_value());
-  EXPECT_EQ(*status_md, GRPC_STATUS_UNAUTHENTICATED);
-  const Slice* message_md =
-      (*server_metadata)->get_pointer(GrpcMessageMetadata());
-  ASSERT_TRUE(message_md != nullptr);
-  EXPECT_EQ(message_md->as_string_view(), "access denied");
+      ChannelFilter::Args())));
+  call.Start(call.NewClientMetadata({{":authority", target()}}));
+  EXPECT_CALL(
+      call, Finished(AllOf(
+                HasMetadataKeyValue(
+                    "grpc-status", std::to_string(GRPC_STATUS_UNAUTHENTICATED)),
+                HasMetadataKeyValue("grpc-message", "access denied"))));
+  call.Step();
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
-  auto filter = ClientAuthFilter::Create(
-      MakeChannelArgs(absl::AbortedError("nope")), ChannelFilter::Args());
-  // TODO(ctiller): use Activity here, once it's ready.
-  TestContext<Arena> context(arena_.get());
-  TestContext<grpc_call_context_element> promise_call_context(call_context_);
-  auto promise = filter->MakeCallPromise(
-      CallArgs{ClientMetadataHandle(&initial_metadata_batch_,
-                                    Arena::PooledDeleter(nullptr)),
-               nullptr, nullptr, nullptr},
-      [&](CallArgs /*call_args*/) {
-        return ArenaPromise<ServerMetadataHandle>(
-            [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle(&trailing_metadata_batch_,
-                                          Arena::PooledDeleter(nullptr));
-            });
-      });
-  auto result = promise();
-  ServerMetadataHandle* server_metadata =
-      absl::get_if<ServerMetadataHandle>(&result);
-  ASSERT_TRUE(server_metadata != nullptr);
-  auto status_md = (*server_metadata)->get(GrpcStatusMetadata());
-  ASSERT_TRUE(status_md.has_value());
-  EXPECT_EQ(*status_md, GRPC_STATUS_INTERNAL);
-  const Slice* message_md =
-      (*server_metadata)->get_pointer(GrpcMessageMetadata());
-  ASSERT_TRUE(message_md != nullptr);
-  EXPECT_EQ(message_md->as_string_view(),
-            "Illegal status code from call credentials; original status: "
-            "ABORTED: nope");
+  StrictMock<FilterTest::Call> call(*ClientAuthFilter::Create(
+      MakeChannelArgs(absl::AbortedError("nope")), ChannelFilter::Args()));
+  call.Start(call.NewClientMetadata({{":authority", target()}}));
+  EXPECT_CALL(
+      call,
+      Finished(AllOf(
+          HasMetadataKeyValue("grpc-status",
+                              std::to_string(GRPC_STATUS_INTERNAL)),
+          HasMetadataKeyValue("grpc-message",
+                              "Illegal status code from call credentials; "
+                              "original status: ABORTED: nope"))));
+  call.Step();
 }
 
 }  // namespace

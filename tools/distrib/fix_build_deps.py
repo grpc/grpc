@@ -423,6 +423,7 @@ for dirname in [
         "test/core/util",
         "test/core/end2end",
         "test/core/event_engine",
+        "test/core/filters",
         "test/core/promise",
         "test/core/resource_quota",
         "test/core/transport/chaotic_good",

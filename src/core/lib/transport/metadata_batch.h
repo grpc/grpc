@@ -1209,8 +1209,6 @@ class MetadataMap {
 
   // Parse metadata from a key/value pair, and return an object representing
   // that result.
-  // TODO(ctiller): key should probably be an absl::string_view.
-  // Once we don't care about interning anymore, make that change!
   static ParsedMetadata<Derived> Parse(absl::string_view key, Slice value,
                                        uint32_t transport_size,
                                        MetadataParseErrorFn on_error) {
