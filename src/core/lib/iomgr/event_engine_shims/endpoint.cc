@@ -89,16 +89,14 @@ class EventEngineEndpointWrapper {
   grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
 
   // Read using the underlying EventEngine endpoint object.
-  void Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                   SliceBuffer* buffer,
-                   const EventEngine::Endpoint::ReadArgs* args) {
+  void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const EventEngine::Endpoint::ReadArgs* args) {
     endpoint_->Read(std::move(on_read), buffer, args);
   }
 
   // Write using the underlying EventEngine endpoint object
   void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                    SliceBuffer* data,
-                    const EventEngine::Endpoint::WriteArgs* args) {
+             SliceBuffer* data, const EventEngine::Endpoint::WriteArgs* args) {
     endpoint_->Write(std::move(on_writable), data, args);
   }
 
