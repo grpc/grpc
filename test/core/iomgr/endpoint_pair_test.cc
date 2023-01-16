@@ -28,10 +28,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -50,19 +50,7 @@ namespace {
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
-
-EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
-  grpc_resolved_address addr;
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse. Error: %s",
-            uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
-}
+using ::grpc_event_engine::experimental::URIToResolvedAddress;
 
 grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
     grpc_channel_args* c_args) {
@@ -93,7 +81,7 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
-  GPR_ASSERT(listener->Bind(URIToResolvedAddress(target_addr)).ok());
+  GPR_ASSERT(listener->Bind(*URIToResolvedAddress(target_addr)).ok());
   GPR_ASSERT(listener->Start().ok());
 
   ee->Connect(
@@ -103,7 +91,7 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
-      URIToResolvedAddress(target_addr), config,
+      *URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 24h);
 
   client_signal.WaitForNotification();

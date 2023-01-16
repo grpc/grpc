@@ -1167,7 +1167,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base",
     srcs = [
-        "//src/core:lib/address_utils/parse_address.cc",
         "//src/core:lib/channel/channel_stack.cc",
         "//src/core:lib/channel/channel_stack_builder_impl.cc",
         "//src/core:lib/channel/channel_trace.cc",
@@ -1199,8 +1198,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/gethostname_fallback.cc",
         "//src/core:lib/iomgr/gethostname_host_name_max.cc",
         "//src/core:lib/iomgr/gethostname_sysconf.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_posix.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_unsupported.cc",
         "//src/core:lib/iomgr/internal_errqueue.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
         "//src/core:lib/iomgr/iomgr.cc",
@@ -1274,10 +1271,9 @@ grpc_cc_library(
     # removed after landing event engine.
     [
         "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
-        "//src/core:lib/iomgr/event_engine_shims/resolved_address.cc",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
     ],
     hdrs = [
-        "//src/core:lib/address_utils/parse_address.h",
         "//src/core:lib/channel/call_finalization.h",
         "//src/core:lib/channel/call_tracer.h",
         "//src/core:lib/channel/channel_stack.h",
@@ -1306,7 +1302,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_poll_posix.h",
         "//src/core:lib/iomgr/ev_posix.h",
         "//src/core:lib/iomgr/gethostname.h",
-        "//src/core:lib/iomgr/grpc_if_nametoindex.h",
         "//src/core:lib/iomgr/internal_errqueue.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
@@ -1367,7 +1362,7 @@ grpc_cc_library(
     # removed after landing event engine.
     [
         "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
-        "//src/core:lib/iomgr/event_engine_shims/resolved_address.h",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.h",
     ],
     defines = select({
         "systemd": ["HAVE_LIBSYSTEMD"],
@@ -1409,6 +1404,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "orphanable",
+        "parse_address",
         "promise",
         "ref_counted_ptr",
         "sockaddr_utils",
@@ -1431,6 +1427,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:error",
+        "//src/core:event_engine_common",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_log",
         "//src/core:experiments",
@@ -2494,6 +2491,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "parse_address",
+    srcs = [
+        "//src/core:lib/address_utils/parse_address.cc",
+        "//src/core:lib/iomgr/grpc_if_nametoindex_posix.cc",
+        "//src/core:lib/iomgr/grpc_if_nametoindex_unsupported.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/address_utils/parse_address.h",
+        "//src/core:lib/iomgr/grpc_if_nametoindex.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "gpr",
+        "uri_parser",
+        "//src/core:error",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_port",
+        "//src/core:resolved_address",
+        "//src/core:status_helper",
+    ],
+)
+
+grpc_cc_library(
     name = "backoff",
     srcs = [
         "//src/core:lib/backoff/backoff.cc",
@@ -2819,6 +2844,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "orphanable",
+        "parse_address",
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",

@@ -89,14 +89,14 @@ class EventEngineEndpointWrapper {
   grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
 
   // Read using the underlying EventEngine endpoint object.
-  inline void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+  void Read(absl::AnyInvocable<void(absl::Status)> on_read,
                    SliceBuffer* buffer,
                    const EventEngine::Endpoint::ReadArgs* args) {
     endpoint_->Read(std::move(on_read), buffer, args);
   }
 
   // Write using the underlying EventEngine endpoint object
-  inline void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+  void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                     SliceBuffer* data,
                     const EventEngine::Endpoint::WriteArgs* args) {
     endpoint_->Write(std::move(on_writable), data, args);
@@ -190,7 +190,8 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   eeep->wrapper->Ref();
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
-  SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
+  SliceBuffer* read_buffer = new (&eeep->read_buffer)
+      SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   eeep->wrapper->Read(
       [eeep, cb, slices](absl::Status status) {
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
@@ -223,7 +224,8 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   eeep->wrapper->Ref();
   EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
-  SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
+  SliceBuffer* write_buffer = new (&eeep->write_buffer)
+      SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   eeep->wrapper->Write(
       [eeep, cb](absl::Status status) {
         auto* write_buffer =

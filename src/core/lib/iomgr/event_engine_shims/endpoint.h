@@ -22,14 +22,13 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+/// Creates an internal grpc_endpoint struct from an EventEngine Endpoint.
+/// Server code needs to create grpc_endpoints after the EventEngine has made
+/// connections.
 grpc_endpoint* grpc_event_engine_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-/// Creates an internal grpc_endpoint struct from an EventEngine Endpoint.
-/// Server code needs to create grpc_endpoints after the EventEngine has made
-/// connections.
 
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_ENDPOINT_H
