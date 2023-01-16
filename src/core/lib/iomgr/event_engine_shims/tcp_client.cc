@@ -24,6 +24,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -51,6 +52,8 @@ int64_t event_engine_tcp_client_connect(
         } else {
           *endpoint = nullptr;
         }
+        GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Status: %s",
+                                ep.status().ToString().c_str());
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
                                 absl_status_to_grpc_error(conn_status));
       },
@@ -61,10 +64,14 @@ int64_t event_engine_tcp_client_connect(
           : grpc_event_engine::experimental::MemoryAllocator(),
       std::max(grpc_core::Duration::Milliseconds(1),
                deadline - grpc_core::Timestamp::Now()));
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Peer: %s, handle: %ld",
+                          (*addr_uri).c_str(), handle.keys[0]);
   return handle.keys[0];
 }
 
 bool event_engine_tcp_client_cancel_connect(int64_t connection_handle) {
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::CancelConnect handle: %ld",
+                          connection_handle);
   return GetDefaultEventEngine()->CancelConnect(
       {static_cast<intptr_t>(connection_handle), 0});
 }

@@ -1429,6 +1429,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:event_engine_common",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:experiments",
         "//src/core:gpr_atm",
