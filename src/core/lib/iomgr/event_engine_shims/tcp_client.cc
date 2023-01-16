@@ -64,13 +64,13 @@ int64_t event_engine_tcp_client_connect(
           : grpc_event_engine::experimental::MemoryAllocator(),
       std::max(grpc_core::Duration::Milliseconds(1),
                deadline - grpc_core::Timestamp::Now()));
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Peer: %s, handle: %ld",
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Peer: %s, handle: %" PRId64,
                           (*addr_uri).c_str(), handle.keys[0]);
   return handle.keys[0];
 }
 
 bool event_engine_tcp_client_cancel_connect(int64_t connection_handle) {
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::CancelConnect handle: %ld",
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::CancelConnect handle: %" PRId64,
                           connection_handle);
   return GetDefaultEventEngine()->CancelConnect(
       {static_cast<intptr_t>(connection_handle), 0});
