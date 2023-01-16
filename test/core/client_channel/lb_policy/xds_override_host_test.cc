@@ -290,6 +290,8 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
        {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
+  // There are two notifications - one from child policy and one from the parent
+  // policy due to draining channel update
   picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
