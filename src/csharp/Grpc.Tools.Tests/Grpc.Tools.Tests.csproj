@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.8.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="NUnit; NUnitLite" Version="3.10.1" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
