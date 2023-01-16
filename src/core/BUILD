@@ -2162,6 +2162,12 @@ grpc_cc_library(
         "//:windows": ["windows_event_engine"],
         "//:windows_msvc": ["windows_event_engine"],
         "//:windows_other": ["windows_event_engine"],
+        "//:mac": ["cf_event_engine"],
+        "//:mac_x86_64": ["cf_event_engine"],
+        "//:mac_arm64": ["cf_event_engine"],
+        "//:ios": ["cf_event_engine"],
+        "//:tvos": ["cf_event_engine"],
+        "//:watchos": ["cf_event_engine"],
         "//conditions:default": ["posix_event_engine"],
     }],
     deps = [

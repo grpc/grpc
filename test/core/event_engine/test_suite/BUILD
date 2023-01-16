@@ -40,6 +40,7 @@ grpc_cc_test(
     name = "posix_event_engine_test",
     srcs = ["posix_event_engine_test.cc"],
     tags = [
+        "no_mac",
         "no_windows",
     ],
     uses_event_engine = True,
