@@ -290,12 +290,22 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
        {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_READY, absl::OkStatus(), pick_arg);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  ExpectQueueEmpty();
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), pick_arg);
-  EXPECT_TRUE(subchannel->ConnectionRequested());
-  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), pick_arg);
+  ExpectRoundRobinPicks(picker.get(),
+                        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  ExpectRoundRobinPicks(picker.get(),
+                        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
 }
 
 TEST_F(XdsOverrideHostTest, DrainingNotDrainingGone) {

@@ -136,7 +136,10 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return watcher_->connectivity_state_.load();
     }
 
-    void Detach() { key_.reset(); }
+    void Detach() {
+      watcher_->Detach();
+      key_.reset();
+    }
 
     RefCountedPtr<XdsOverrideHostLb> policy() { return policy_; }
 
@@ -151,6 +154,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
       grpc_pollset_set* interested_parties() override;
 
+      void Detach() { detached_.store(true); }
+
      private:
       friend class SubchannelWrapper;
 
@@ -160,7 +165,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
           watchers_;
       std::atomic<grpc_connectivity_state> connectivity_state_{
           GRPC_CHANNEL_IDLE};
+      std::atomic<bool> detached_{false};
     };
+
+    void UpdateConnectivityState(grpc_connectivity_state state,
+                                 absl::Status status);
 
     ConnectivityStateWatcher* watcher_;
     absl::optional<std::string> key_;
@@ -238,15 +247,19 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     using Handle =
         absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>;
 
-    explicit SubchannelEntry(Handle subchannel) : subchannel_(subchannel) {}
+    explicit SubchannelEntry(Handle subchannel,
+                             XdsHealthStatus::HealthStatus health_status)
+        : subchannel_(subchannel), health_status_(health_status) {}
 
-    void SetSubchannel(Handle subchannel) {
+    void SetSubchannel(Handle subchannel,
+                       XdsHealthStatus::HealthStatus health_status) {
       SubchannelWrapper* current = GetSubchannel();
       SubchannelWrapper* next = GetPointer(subchannel);
       if (current != nullptr && current != next) {
         current->Detach();
       }
       std::swap(subchannel_, subchannel);
+      health_status_ = health_status;
     }
 
     void ResetSubchannel(SubchannelWrapper* expected) {
@@ -256,6 +269,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
     SubchannelWrapper* GetSubchannel() const { return GetPointer(subchannel_); }
+
+    XdsHealthStatus::HealthStatus get_health_status() { return health_status_; }
+    void set_health_status(XdsHealthStatus::HealthStatus health_status) {
+      health_status_ = health_status;
+    }
 
    private:
     static SubchannelWrapper* GetPointer(const Handle& subchannel_handle) {
@@ -268,6 +286,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
     Handle subchannel_ = nullptr;
+    XdsHealthStatus::HealthStatus health_status_ =
+        XdsHealthStatus::HealthStatus::kUnknown;
   };
 
   void ShutdownLocked() override;
@@ -290,6 +310,10 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
       absl::string_view address);
+
+  void RefreshSubchannelStateIfDraining(absl::string_view subchannel_key,
+                                        grpc_connectivity_state state,
+                                        absl::Status status);
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -527,16 +551,19 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
           if (subchannel != nullptr) {
             retained.push_back(subchannel->Ref());
           }
-          it->second.SetSubchannel(subchannel);
+          it->second.SetSubchannel(subchannel, key_status->second.status());
         } else {
-          it->second.SetSubchannel(subchannel->Ref());
+          it->second.SetSubchannel(subchannel->Ref(),
+                                   key_status->second.status());
         }
         addresses_for_map.erase(key_status);
         it++;
       }
     }
     for (const auto& key_status : addresses_for_map) {
-      subchannel_map_.emplace(key_status.first, SubchannelEntry(nullptr));
+      subchannel_map_.emplace(
+          key_status.first,
+          SubchannelEntry(nullptr, key_status.second.status()));
     }
   }
   return return_value;
@@ -555,9 +582,9 @@ XdsOverrideHostLb::AdoptSubchannel(
       auto status = GetAddressHealthStatus(address);
       if (status.status() == XdsHealthStatus::HealthStatus::kDraining &&
           (config_->override_host_status_set().Contains(status))) {
-        it->second.SetSubchannel(wrapper);
+        it->second.SetSubchannel(wrapper, status.status());
       } else {
-        it->second.SetSubchannel(wrapper.get());
+        it->second.SetSubchannel(wrapper.get(), status.status());
       }
     }
     return wrapper;
@@ -584,6 +611,22 @@ XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
     return subchannel == nullptr ? nullptr : subchannel->Ref();
   }
   return nullptr;
+}
+
+void XdsOverrideHostLb::RefreshSubchannelStateIfDraining(
+    absl::string_view subchannel_key, grpc_connectivity_state state,
+    absl::Status status) {
+  absl::optional<XdsHealthStatus::HealthStatus> subchannel_health_status;
+  {
+    MutexLock lock(&subchannel_map_mu_);
+    auto it = subchannel_map_.find(subchannel_key);
+    if (it != subchannel_map_.end()) {
+      subchannel_health_status = it->second.get_health_status();
+    }
+  }
+  if (subchannel_health_status == XdsHealthStatus::kDraining) {
+    MaybeUpdatePickerLocked();
+  }
 }
 
 //
@@ -665,6 +708,13 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
   }
 }
 
+void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
+    grpc_connectivity_state state, absl::Status status) {
+  if (key_.has_value()) {
+    policy_->RefreshSubchannelStateIfDraining(*key_, state, status);
+  }
+}
+
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
     ConnectivityStateWatcher::interested_parties() {
   if (subchannel_->policy_ == nullptr) {
@@ -679,6 +729,9 @@ void XdsOverrideHostLb::SubchannelWrapper::ConnectivityStateWatcher::
   connectivity_state_.store(state);
   for (const auto& watcher : watchers_) {
     watcher->OnConnectivityStateChange(state, status);
+  }
+  if (!detached_.load()) {
+    subchannel_->UpdateConnectivityState(state, status);
   }
 }
 

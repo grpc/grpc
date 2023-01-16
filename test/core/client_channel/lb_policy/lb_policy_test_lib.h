@@ -652,14 +652,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void ExpectStateAndQueuingPicker(
       grpc_connectivity_state expected_state,
       absl::Status expected_status = absl::OkStatus(),
+      std::map<UniqueTypeName, std::string> pick_arg = {},
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    ExpectPickQueued(picker.get(), {}, location);
+    ExpectPickQueued(picker.get(), pick_arg, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
   void ExpectConnectingUpdate(SourceLocation location = SourceLocation()) {
-    ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+    ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(), {},
                                 location);
   }
 
