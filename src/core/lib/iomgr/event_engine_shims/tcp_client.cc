@@ -65,7 +65,8 @@ int64_t event_engine_tcp_client_connect(
       std::max(grpc_core::Duration::Milliseconds(1),
                deadline - grpc_core::Timestamp::Now()));
   GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Peer: %s, handle: %" PRId64,
-                          (*addr_uri).c_str(), handle.keys[0]);
+                          (*addr_uri).c_str(),
+                          static_cast<int64_t>(handle.keys[0]));
   return handle.keys[0];
 }
 
