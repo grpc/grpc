@@ -21,6 +21,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -38,6 +39,39 @@ class NoOpFilter final : public ChannelFilter {
  public:
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
                                                      NextPromiseFactory next) {
+    return next(std::move(args));
+  }
+};
+
+class AddClientInitialMetadataFilter final : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
+                                                     NextPromiseFactory next) {
+    args.client_initial_metadata->Set(HttpPathMetadata(),
+                                      Slice::FromCopiedString("foo.bar"));
+    return next(std::move(args));
+  }
+};
+
+class AddServerTrailingMetadataFilter final : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
+                                                     NextPromiseFactory next) {
+    return Map(next(std::move(args)), [](ServerMetadataHandle handle) {
+      handle->Set(HttpStatusMetadata(), 420);
+      return handle;
+    });
+  }
+};
+
+class AddServerInitialMetadataFilter final : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
+                                                     NextPromiseFactory next) {
+    args.server_initial_metadata->InterceptAndMap([](ServerMetadataHandle md) {
+      md->Set(GrpcEncodingMetadata(), GRPC_COMPRESS_GZIP);
+      return md;
+    });
     return next(std::move(args));
   }
 };
@@ -67,12 +101,50 @@ TEST(FilterTestTest, CanStart) {
   call.Step();
 }
 
+TEST(FilterTestTest, CanSetClientInitialMetadata) {
+  StrictMock<FilterTest::Call> call(
+      FilterTest{AddClientInitialMetadataFilter()});
+  EXPECT_CALL(call, Started(HasMetadataKeyValue(":path", "foo.bar")));
+  call.Start(call.NewClientMetadata());
+  call.Step();
+}
+
 TEST(FilterTestTest, CanFinish) {
   StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata());
   EXPECT_CALL(call, Finished(_));
+  call.Step();
+}
+
+TEST(FilterTestTest, CanSetServerTrailingMetadata) {
+  StrictMock<FilterTest::Call> call(
+      FilterTest{AddServerTrailingMetadataFilter()});
+  EXPECT_CALL(call, Started(_));
+  call.Start(call.NewClientMetadata());
+  call.FinishNextFilter(call.NewServerMetadata());
+  EXPECT_CALL(call, Finished(HasMetadataKeyValue(":status", "420")));
+  call.Step();
+}
+
+TEST(FilterTestTest, CanProcessServerInitialMetadata) {
+  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+  EXPECT_CALL(call, Started(_));
+  call.Start(call.NewClientMetadata());
+  call.ForwardServerInitialMetadata(call.NewServerMetadata());
+  EXPECT_CALL(call, ForwardedServerInitialMetadata(_));
+  call.Step();
+}
+
+TEST(FilterTestTest, CanSetServerInitialMetadata) {
+  StrictMock<FilterTest::Call> call(
+      FilterTest{AddServerInitialMetadataFilter()});
+  EXPECT_CALL(call, Started(_));
+  call.Start(call.NewClientMetadata());
+  call.ForwardServerInitialMetadata(call.NewServerMetadata());
+  EXPECT_CALL(call, ForwardedServerInitialMetadata(
+                        HasMetadataKeyValue("grpc-encoding", "gzip")));
   call.Step();
 }
 

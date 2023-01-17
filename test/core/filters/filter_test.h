@@ -70,6 +70,10 @@ class FilterTest {
   class Call {
    public:
     explicit Call(const FilterTest& test);
+    ~Call();
+
+    Call(const Call&) = delete;
+    Call& operator=(const Call&) = delete;
 
     ClientMetadataHandle NewClientMetadata(
         std::initializer_list<std::pair<absl::string_view, absl::string_view>>
@@ -79,33 +83,22 @@ class FilterTest {
             init = {});
 
     void Start(ClientMetadataHandle md);
+    void ForwardServerInitialMetadata(ServerMetadataHandle md);
     void FinishNextFilter(ServerMetadataHandle md);
 
     void Step();
 
     MOCK_METHOD(void, Started, (const ClientMetadata& client_initial_metadata));
+    MOCK_METHOD(void, ForwardedServerInitialMetadata,
+                (const ServerMetadata& server_initial_metadata));
     MOCK_METHOD(void, Finished,
                 (const ServerMetadata& server_trailing_metadata));
 
    private:
-    class ScopedContext
-        : public promise_detail::Context<Arena>,
-          public promise_detail::Context<grpc_call_context_element> {
-     public:
-      ScopedContext(Call* call)
-          : promise_detail::Context<Arena>(call->arena_.get()),
-            promise_detail::Context<grpc_call_context_element>(call->context_) {
-      }
-    };
-    Poll<ServerMetadataHandle> PollNextFilter();
+    class ScopedContext;
+    class Impl;
 
-    std::shared_ptr<Channel> const channel_;
-    ScopedArenaPtr arena_{MakeScopedArena(channel_->initial_arena_size,
-                                          &channel_->memory_allocator)};
-    absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
-    Poll<ServerMetadataHandle> poll_next_filter_result_;
-    // Contexts for various subsystems (security, tracing, ...).
-    grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
+    std::unique_ptr<Impl> impl_;
   };
 
   template <typename Filter>

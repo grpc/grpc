@@ -16,6 +16,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
+#include "filter_test.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/crash.h"
@@ -24,14 +25,165 @@
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
+// FilterTest::Call::Impl
+
+class FilterTest::Call::Impl {
+ public:
+  Impl(Call* call, std::shared_ptr<Channel> channel)
+      : call_(call), channel_(std::move(channel)) {}
+
+  Arena* arena() { return arena_.get(); }
+  grpc_call_context_element* legacy_context() { return legacy_context_; }
+
+  void Start(ClientMetadataHandle md);
+  void ForwardServerInitialMetadata(ServerMetadataHandle md);
+  void FinishNextFilter(ServerMetadataHandle md);
+
+  bool StepOnce();
+
+ private:
+  Poll<ServerMetadataHandle> PollNextFilter();
+
+  Call* const call_;
+  std::shared_ptr<Channel> const channel_;
+  ScopedArenaPtr arena_{MakeScopedArena(channel_->initial_arena_size,
+                                        &channel_->memory_allocator)};
+  absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
+  Poll<ServerMetadataHandle> poll_next_filter_result_;
+  Pipe<ServerMetadataHandle> pipe_server_initial_metadata_{arena_.get()};
+  Pipe<MessageHandle> pipe_server_to_client_messages_{arena_.get()};
+  Pipe<MessageHandle> pipe_client_to_server_messages_{arena_.get()};
+  PipeSender<ServerMetadataHandle>* server_initial_metadata_sender_ = nullptr;
+  PipeSender<MessageHandle>* server_to_client_messages_sender_ = nullptr;
+  PipeReceiver<MessageHandle>* client_to_server_messages_receiver_ = nullptr;
+  absl::optional<PipeSender<ServerMetadataHandle>::PushType>
+      push_server_initial_metadata_;
+  absl::optional<PipeReceiverNextType<ServerMetadataHandle>>
+      next_server_initial_metadata_;
+  absl::optional<ServerMetadataHandle> forward_server_initial_metadata_;
+  // Contexts for various subsystems (security, tracing, ...).
+  grpc_call_context_element legacy_context_[GRPC_CONTEXT_COUNT] = {};
+};
+
+void FilterTest::Call::Impl::Start(ClientMetadataHandle md) {
+  EXPECT_EQ(promise_, absl::nullopt);
+  promise_ = channel_->filter->MakeCallPromise(
+      CallArgs{std::move(md), &pipe_server_initial_metadata_.sender,
+               &pipe_client_to_server_messages_.receiver,
+               &pipe_server_to_client_messages_.sender},
+      [this](CallArgs args) -> ArenaPromise<ServerMetadataHandle> {
+        server_initial_metadata_sender_ = args.server_initial_metadata;
+        client_to_server_messages_receiver_ = args.client_to_server_messages;
+        server_to_client_messages_sender_ = args.server_to_client_messages;
+        next_server_initial_metadata_.emplace(
+            pipe_server_initial_metadata_.receiver.Next());
+        call_->Started(*args.client_initial_metadata);
+        return [this]() { return PollNextFilter(); };
+      });
+  EXPECT_NE(promise_, absl::nullopt);
+}
+
+Poll<ServerMetadataHandle> FilterTest::Call::Impl::PollNextFilter() {
+  return std::exchange(poll_next_filter_result_, Pending());
+}
+
+void FilterTest::Call::Impl::ForwardServerInitialMetadata(
+    ServerMetadataHandle md) {
+  EXPECT_FALSE(forward_server_initial_metadata_.has_value());
+  forward_server_initial_metadata_ = std::move(md);
+}
+
+void FilterTest::Call::Impl::FinishNextFilter(ServerMetadataHandle md) {
+  poll_next_filter_result_ = std::move(md);
+}
+
+bool FilterTest::Call::Impl::StepOnce() {
+  EXPECT_NE(promise_, absl::nullopt);
+  if (forward_server_initial_metadata_.has_value() &&
+      !push_server_initial_metadata_.has_value()) {
+    push_server_initial_metadata_.emplace(server_initial_metadata_sender_->Push(
+        std::move(*forward_server_initial_metadata_)));
+    forward_server_initial_metadata_.reset();
+  }
+
+  if (push_server_initial_metadata_.has_value()) {
+    auto r = (*push_server_initial_metadata_)();
+    if (!absl::holds_alternative<Pending>(r)) {
+      push_server_initial_metadata_.reset();
+    }
+  }
+
+  if (next_server_initial_metadata_.has_value()) {
+    auto r = (*next_server_initial_metadata_)();
+    if (auto* p = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+      if (p->has_value()) call_->ForwardedServerInitialMetadata(*p->value());
+      next_server_initial_metadata_.reset();
+    }
+  }
+
+  auto r = (*promise_)();
+  if (absl::holds_alternative<Pending>(r)) return false;
+  promise_.reset();
+  call_->Finished(*absl::get<ServerMetadataHandle>(r));
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FilterTest::Call::ScopedContext
+
+class FilterTest::Call::ScopedContext final
+    : public Activity,
+      public promise_detail::Context<Arena>,
+      public promise_detail::Context<grpc_call_context_element> {
+ public:
+  ScopedContext(Call* call)
+      : promise_detail::Context<Arena>(call->impl_->arena()),
+        promise_detail::Context<grpc_call_context_element>(
+            call->impl_->legacy_context()),
+        call_(call) {}
+
+  void Orphan() override { Crash("Orphan called on Call::ScopedContext"); }
+  void ForceImmediateRepoll() override { repoll_ = true; }
+  Waker MakeOwningWaker() override { return Waker(new NoOpWakeable(this)); }
+  Waker MakeNonOwningWaker() override { return Waker(new NoOpWakeable(this)); }
+  std::string DebugTag() const override {
+    return absl::StrFormat("FILTER_TEST_CALL[%p]", call_);
+  }
+
+  bool repoll() const { return repoll_; }
+
+ private:
+  class NoOpWakeable final : public Wakeable {
+   public:
+    NoOpWakeable(ScopedContext* ctx) : tag_(ctx->DebugTag()) {}
+    void Wakeup() override { delete this; }
+    void Drop() override { delete this; }
+    std::string ActivityDebugTag() const override { return tag_; }
+
+   private:
+    const std::string tag_;
+  };
+
+  ScopedActivity scoped_activity_{this};
+  Call* const call_;
+  bool repoll_ = false;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // FilterTest::Call
 
-FilterTest::Call::Call(const FilterTest& test) : channel_(test.channel_) {}
+FilterTest::Call::Call(const FilterTest& test)
+    : impl_(std::make_unique<Impl>(this, test.channel_)) {}
+
+FilterTest::Call::~Call() {
+  ScopedContext ctx(this);
+  impl_.reset();
+}
 
 ClientMetadataHandle FilterTest::Call::NewClientMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         init) {
-  auto md = arena_->MakePooled<ClientMetadata>(arena_.get());
+  auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
   for (auto& p : init) {
     auto parsed = ClientMetadata::Parse(
         p.first, Slice::FromCopiedString(p.second),
@@ -48,7 +200,7 @@ ClientMetadataHandle FilterTest::Call::NewClientMetadata(
 ServerMetadataHandle FilterTest::Call::NewServerMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         init) {
-  auto md = arena_->MakePooled<ClientMetadata>(arena_.get());
+  auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
   for (auto& p : init) {
     auto parsed = ServerMetadata::Parse(
         p.first, Slice::FromCopiedString(p.second),
@@ -63,33 +215,22 @@ ServerMetadataHandle FilterTest::Call::NewServerMetadata(
 }
 
 void FilterTest::Call::Start(ClientMetadataHandle md) {
-  EXPECT_EQ(promise_, absl::nullopt);
   ScopedContext ctx(this);
-  promise_ = channel_->filter->MakeCallPromise(
-      CallArgs{std::move(md), nullptr, nullptr, nullptr},
-      [this](CallArgs args) -> ArenaPromise<ServerMetadataHandle> {
-        Started(*args.client_initial_metadata);
-        return [this]() { return PollNextFilter(); };
-      });
-  EXPECT_NE(promise_, absl::nullopt);
+  impl_->Start(std::move(md));
+}
+
+void FilterTest::Call::ForwardServerInitialMetadata(ServerMetadataHandle md) {
+  impl_->ForwardServerInitialMetadata(std::move(md));
 }
 
 void FilterTest::Call::FinishNextFilter(ServerMetadataHandle md) {
-  poll_next_filter_result_ = std::move(md);
-}
-
-Poll<ServerMetadataHandle> FilterTest::Call::PollNextFilter() {
-  return std::exchange(poll_next_filter_result_, Pending());
+  impl_->FinishNextFilter(std::move(md));
 }
 
 void FilterTest::Call::Step() {
-  EXPECT_NE(promise_, absl::nullopt);
-  ScopedContext ctx(this);
   for (;;) {
-    auto r = (*promise_)();
-    if (absl::holds_alternative<Pending>(r)) return;
-    promise_.reset();
-    Finished(*absl::get<ServerMetadataHandle>(r));
+    ScopedContext ctx(this);
+    if (!impl_->StepOnce() && ctx.repoll()) continue;
     return;
   }
 }
