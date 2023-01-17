@@ -16,9 +16,11 @@
 
 set -ex
 
+EXIT=0
 export GRPC_CONFIG=${CONFIG:-opt}
 if [ "${GRPC_CONFIG}" == "dbg" ]
 then
+  EXIT=1
   CMAKE_CONFIG=Debug
 else
   CMAKE_CONFIG=Release
@@ -40,3 +42,6 @@ popd
 # unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake build)
 # see https://github.com/madler/zlib/issues/133
 (cd third_party/zlib; git checkout zconf.h)
+ls -l src/ruby/lib/grpc/grpc_c.bundle
+file src/ruby/lib/grpc/grpc_c.bundle
+exit $EXIT
