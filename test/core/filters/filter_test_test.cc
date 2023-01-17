@@ -37,8 +37,8 @@ namespace {
 
 class NoOpFilter final : public ChannelFilter {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
-                                                     NextPromiseFactory next) {
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs args, NextPromiseFactory next) override {
     return next(std::move(args));
   }
 };

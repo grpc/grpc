@@ -120,7 +120,7 @@ class FilterTest {
   };
 
   template <typename Filter>
-  FilterTest(Filter filter)
+  explicit FilterTest(Filter filter)
       : channel_(std::make_shared<Channel>(
             std::make_unique<Filter>(std::move(filter)))) {}
 
