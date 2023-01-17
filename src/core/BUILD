@@ -1877,6 +1877,7 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
+        "experiments",
         "init_internally",
         "iomgr_port",
         "posix_event_engine_base_hdrs",
@@ -1976,6 +1977,21 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "cf_event_engine",
+    srcs = ["lib/event_engine/cf_engine/cf_engine.cc"],
+    hdrs = ["lib/event_engine/cf_engine/cf_engine.h"],
+    deps = [
+        "event_engine_common",
+        "event_engine_trace",
+        "event_engine_utils",
+        "init_internally",
+        "posix_event_engine_timer_manager",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
     ],
 )
 
