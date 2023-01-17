@@ -136,10 +136,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return watcher_->connectivity_state_.load();
     }
 
-    void Detach() {
-      watcher_->Detach();
-      key_.reset();
-    }
+    void Detach() { key_.reset(); }
 
     RefCountedPtr<XdsOverrideHostLb> policy() { return policy_; }
 
@@ -154,18 +151,21 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
       grpc_pollset_set* interested_parties() override;
 
-      void Detach() { detached_.store(true); }
+      void Detach() {
+        MutexLock lock(&watcher_mu_);
+        subchannel_ = nullptr;
+      }
 
      private:
       friend class SubchannelWrapper;
 
-      SubchannelWrapper* subchannel_ = nullptr;
+      Mutex watcher_mu_;
+      SubchannelWrapper* subchannel_ ABSL_GUARDED_BY(watcher_mu_) = nullptr;
       std::set<std::unique_ptr<ConnectivityStateWatcherInterface>,
                PtrLessThan<ConnectivityStateWatcherInterface>>
           watchers_;
-      std::atomic<grpc_connectivity_state> connectivity_state_{
+      std::atomic<grpc_connectivity_state> connectivity_state_ = {
           GRPC_CHANNEL_IDLE};
-      std::atomic<bool> detached_{false};
     };
 
     void UpdateConnectivityState(grpc_connectivity_state state,
@@ -688,6 +688,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
 }
 
 XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
+  watcher_->Detach();
   wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
   if (key_.has_value()) {
     policy_->ResetSubchannel(*key_, this);
@@ -730,8 +731,15 @@ void XdsOverrideHostLb::SubchannelWrapper::ConnectivityStateWatcher::
   for (const auto& watcher : watchers_) {
     watcher->OnConnectivityStateChange(state, status);
   }
-  if (!detached_.load()) {
-    subchannel_->UpdateConnectivityState(state, status);
+  RefCountedPtr<SubchannelWrapper> subchannel;
+  {
+    MutexLock lock(&watcher_mu_);
+    if (subchannel_ != nullptr) {
+      subchannel = subchannel_->Ref();
+    }
+  }
+  if (subchannel != nullptr) {
+    subchannel->UpdateConnectivityState(state, status);
   }
 }
 
