@@ -641,7 +641,6 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
-        "grpc_types",
         "http_connect_handshaker",
         "httpcli",
         "iomgr_timer",
