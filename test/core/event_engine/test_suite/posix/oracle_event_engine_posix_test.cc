@@ -11,13 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 
 #include <gtest/gtest.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
+#include "test/core/util/test_config.h"
 
-class EventEngineDNSTest : public EventEngineTest {};
-
-// TODO(hork): establish meaningful tests
-TEST_F(EventEngineDNSTest, TODO) { grpc_core::ExecCtx exec_ctx; }
+int main(int argc, char** argv) {
+  testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
+  auto ee_factory = []() {
+    return std::make_unique<
+        grpc_event_engine::experimental::PosixOracleEventEngine>();
+  };
+  SetEventEngineFactories(/*ee_factory=*/ee_factory,
+                          /*oracle_ee_factory=*/ee_factory);
+  return RUN_ALL_TESTS();
+}

@@ -20,8 +20,8 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/experiments/config.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
-#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
+#include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {

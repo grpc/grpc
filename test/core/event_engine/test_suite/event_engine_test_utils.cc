@@ -16,7 +16,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <memory>
 #include <random>
 #include <string>
@@ -30,9 +29,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -48,71 +45,18 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-
 constexpr int kMinMessageSize = 1024;
 constexpr int kMaxMessageSize = 4096;
-
 }  // namespace
-
-// Returns a random message with bounded length.
-std::string GetNextSendMessage() {
-  static const char alphanum[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-  static std::random_device rd;
-  static std::seed_seq seed{rd()};
-  static std::mt19937 gen(seed);
-  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
-  static grpc_core::Mutex g_mu;
-  std::string tmp_s;
-  int len;
-  {
-    grpc_core::MutexLock lock(&g_mu);
-    len = dis(gen);
-  }
-  tmp_s.reserve(len);
-  for (int i = 0; i < len; ++i) {
-    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-  }
-  return tmp_s;
-}
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
+    GRPC_LOG_EVERY_N_SEC(2, "engine.use_count() = %ld", engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));
   }
 }
 
-EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
-  grpc_resolved_address addr;
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse. Error: %s",
-            uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
-}
-
-void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data) {
-  buf->Append(Slice::FromCopiedString(data));
-}
-
-std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
-  if (!buf->Length()) {
-    return std::string();
-  }
-  std::string tmp(buf->Length(), '\0');
-  char* bytes = const_cast<char*>(tmp.c_str());
-  grpc_slice_buffer_move_first_into_buffer(buf->c_slice_buffer(), buf->Length(),
-                                           bytes);
-  return tmp;
-}
-
-absl::Status SendValidatePayload(std::string data,
+absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
                                  EventEngine::Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
@@ -160,7 +104,7 @@ absl::Status SendValidatePayload(std::string data,
   // Check if data written == data read
   std::string data_read = ExtractSliceBufferIntoString(&read_store_buf);
   if (data != data_read) {
-    gpr_log(GPR_INFO, "Data written = %s", data.c_str());
+    gpr_log(GPR_INFO, "Data written = %s", data.data());
     gpr_log(GPR_INFO, "Data read = %s", data_read.c_str());
     return absl::CancelledError("Data read != Data written");
   }
@@ -168,7 +112,7 @@ absl::Status SendValidatePayload(std::string data,
 }
 
 absl::Status ConnectionManager::BindAndStartListener(
-    std::vector<std::string> addrs, bool listener_type_oracle) {
+    const std::vector<std::string>& addrs, bool listener_type_oracle) {
   grpc_core::MutexLock lock(&mu_);
   if (addrs.empty()) {
     return absl::InvalidArgumentError(
@@ -254,6 +198,59 @@ ConnectionManager::CreateConnection(std::string target_addr,
                            std::move(server_endpoint));
   }
   return absl::CancelledError("Failed to create connection.");
+}
+
+void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data) {
+  buf->Append(Slice::FromCopiedString(data));
+}
+
+std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
+  if (!buf->Length()) {
+    return std::string();
+  }
+  std::string tmp(buf->Length(), '\0');
+  char* bytes = const_cast<char*>(tmp.c_str());
+  grpc_slice_buffer_move_first_into_buffer(buf->c_slice_buffer(), buf->Length(),
+                                           bytes);
+  return tmp;
+}
+
+// Returns a random message with bounded length.
+std::string GetNextSendMessage() {
+  static const char alphanum[] =
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
+  static std::random_device rd;
+  static std::seed_seq seed{rd()};
+  static std::mt19937 gen(seed);
+  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
+  static grpc_core::Mutex g_mu;
+  std::string tmp_s;
+  int len;
+  {
+    grpc_core::MutexLock lock(&g_mu);
+    len = dis(gen);
+  }
+  tmp_s.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+  return tmp_s;
+}
+
+EventEngine::ResolvedAddress URIToResolvedAddress(
+    absl::string_view address_str) {
+  grpc_resolved_address addr;
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "Failedtoparse.Error:%s",
+            uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
+  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
 
 }  // namespace experimental

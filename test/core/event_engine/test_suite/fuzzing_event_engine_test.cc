@@ -24,7 +24,7 @@
 #include "absl/time/time.h"
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
 namespace grpc_event_engine {
 namespace experimental {
