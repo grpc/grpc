@@ -27,6 +27,14 @@ p "apolcyn ext darwin: |#{darwin}|"
 p "apolcyn ext cross_compiling: |#{cross_compiling}|"
 p "apolcyn ext RUBY_ENGINE: |#{RUBY_ENGINE}|"
 p "apolcyn ext apple_toolchain: |#{apple_toolchain}|"
+p "apolcyn ext RbConfig[CC]: |#{RbConfig::CONFIG['CC']}|"
+p "apolcyn ext RbConfig[LD]: |#{RbConfig::CONFIG['LD']}|"
+p "apolcyn ext RbConfig[CXX]: |#{RbConfig::CONFIG['CXX']}|"
+p "apolcyn ext RbConfig[LDXX]: |#{RbConfig::CONFIG['LDXX']}|"
+p "apolcyn ext RbConfig[STRIP]: |#{RbConfig::CONFIG['STRIP']}|"
+p "apolcyn ext ENV[CC]: |#{ENV['CC']}|"
+p "apolcyn ext ENV[CXX]: |#{ENV['CXX']}|"
+p "apolcyn ext ENV[LD]: |#{ENV['LD']}|"
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
