@@ -238,7 +238,7 @@ grpc_ares_request* my_dns_lookup_ares(
   r.on_done = on_done;
   r.addresses = addresses;
   GetDefaultEventEngine()->RunAfter(
-      grpc_core::Duration::Seconds(1), [r]() mutable {
+      grpc_core::Duration::Seconds(1), [r] {
         grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         finish_resolve(r);
@@ -298,7 +298,7 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc.ep = ep;
   fc.deadline = deadline;
   GetDefaultEventEngine()->RunAfter(
-      grpc_core::Duration::Seconds(1), [fc]() mutable {
+      grpc_core::Duration::Seconds(1), [fc] {
         grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         do_connect(fc);
