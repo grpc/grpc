@@ -746,7 +746,12 @@ class SockToPolledFdMap {
           protocol);
       return s;
     }
-    std::ignore = grpc_tcp_set_non_block(s);
+    grpc_error_handle error = grpc_tcp_set_non_block(s);
+    if (!error.ok()) {
+      GRPC_CARES_TRACE_LOG("WSAIoctl failed with error: %s",
+                           StatusToString(error).c_str());
+      return INVALID_SOCKET;
+    }
     GrpcPolledFdWindows* polled_fd =
         new GrpcPolledFdWindows(s, map->mu_, af, type);
     GRPC_CARES_TRACE_LOG(
