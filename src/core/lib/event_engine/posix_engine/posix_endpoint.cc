@@ -516,55 +516,35 @@ void PosixEndpointImpl::UpdateRcvLowat() {
 }
 
 void PosixEndpointImpl::MaybeMakeReadSlices() {
-  if (grpc_core::IsTcpReadChunksEnabled()) {
-    static const int kBigAlloc = 64 * 1024;
-    static const int kSmallAlloc = 8 * 1024;
-    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_)) {
-      size_t allocate_length = min_progress_size_;
-      const size_t target_length = static_cast<size_t>(target_length_);
-      // If memory pressure is low and we think there will be more than
-      // min_progress_size bytes to read, allocate a bit more.
-      const bool low_memory_pressure =
-          memory_owner_.GetPressureInfo().pressure_control_value < 0.8;
-      if (low_memory_pressure && target_length > allocate_length) {
-        allocate_length = target_length;
-      }
-      int extra_wanted =
-          allocate_length - static_cast<int>(incoming_buffer_->Length());
-      if (extra_wanted >=
-          (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
-        while (extra_wanted > 0) {
-          extra_wanted -= kBigAlloc;
-          incoming_buffer_->AppendIndexed(
-              Slice(memory_owner_.MakeSlice(kBigAlloc)));
-        }
-      } else {
-        while (extra_wanted > 0) {
-          extra_wanted -= kSmallAlloc;
-          incoming_buffer_->AppendIndexed(
-              Slice(memory_owner_.MakeSlice(kSmallAlloc)));
-        }
-      }
-      MaybePostReclaimer();
+  static const int kBigAlloc = 64 * 1024;
+  static const int kSmallAlloc = 8 * 1024;
+  if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_)) {
+    size_t allocate_length = min_progress_size_;
+    const size_t target_length = static_cast<size_t>(target_length_);
+    // If memory pressure is low and we think there will be more than
+    // min_progress_size bytes to read, allocate a bit more.
+    const bool low_memory_pressure =
+        memory_owner_.GetPressureInfo().pressure_control_value < 0.8;
+    if (low_memory_pressure && target_length > allocate_length) {
+      allocate_length = target_length;
     }
-  } else {
-    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_) &&
-        incoming_buffer_->Count() < MAX_READ_IOVEC) {
-      int target_length =
-          std::max(static_cast<int>(target_length_), min_progress_size_);
-      int extra_wanted =
-          target_length - static_cast<int>(incoming_buffer_->Length());
-      int min_read_chunk_size =
-          std::max(min_read_chunk_size_, min_progress_size_);
-      int max_read_chunk_size =
-          std::max(max_read_chunk_size_, min_progress_size_);
-      incoming_buffer_->AppendIndexed(
-          Slice(memory_owner_.MakeSlice(grpc_core::MemoryRequest(
-              min_read_chunk_size,
-              grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                               max_read_chunk_size)))));
-      MaybePostReclaimer();
+    int extra_wanted =
+        allocate_length - static_cast<int>(incoming_buffer_->Length());
+    if (extra_wanted >=
+        (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
+      while (extra_wanted > 0) {
+        extra_wanted -= kBigAlloc;
+        incoming_buffer_->AppendIndexed(
+            Slice(memory_owner_.MakeSlice(kBigAlloc)));
+      }
+    } else {
+      while (extra_wanted > 0) {
+        extra_wanted -= kSmallAlloc;
+        incoming_buffer_->AppendIndexed(
+            Slice(memory_owner_.MakeSlice(kSmallAlloc)));
+      }
     }
+    MaybePostReclaimer();
   }
 }
 
