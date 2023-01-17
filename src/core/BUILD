@@ -2204,9 +2204,7 @@ grpc_cc_library(
     hdrs = [
         "lib/debug/stats_data.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     deps = [
         "histogram_view",
         "per_cpu",
