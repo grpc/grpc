@@ -148,6 +148,26 @@ TEST(FilterTestTest, CanSetServerInitialMetadata) {
   call.Step();
 }
 
+TEST(FilterTestTest, CanProcessClientToServerMessage) {
+  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+  EXPECT_CALL(call, Started(_));
+  call.Start(call.NewClientMetadata());
+  call.ForwardMessageClientToServer(call.NewMessage("abc"));
+  EXPECT_CALL(call, ForwardedMessageClientToServer(HasMessagePayload("abc")));
+  call.Step();
+}
+
+TEST(FilterTestTest, CanProcessServerToClientMessage) {
+  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+  EXPECT_CALL(call, Started(_));
+  call.Start(call.NewClientMetadata());
+  call.ForwardServerInitialMetadata(call.NewServerMetadata());
+  call.ForwardMessageServerToClient(call.NewMessage("abc"));
+  EXPECT_CALL(call, ForwardedServerInitialMetadata(_));
+  EXPECT_CALL(call, ForwardedMessageServerToClient(HasMessagePayload("abc")));
+  call.Step();
+}
+
 }  // namespace
 }  // namespace grpc_core
 

@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
@@ -40,7 +41,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/filters/filter_test.h"
 
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
   std::string temp;
@@ -48,11 +48,22 @@ MATCHER_P2(HasMetadataKeyValue, key, value, "") {
   return r == value;
 }
 
+MATCHER_P(HasMessageFlags, value, "") { return arg.flags() == value; }
+
+MATCHER_P(HasMessagePayload, value, "") {
+  return arg.payload()->JoinIntoString() == value;
+}
+
 namespace grpc_core {
 
 inline std::ostream& operator<<(std::ostream& os,
                                 const grpc_metadata_batch& md) {
   return os << md.DebugString();
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Message& msg) {
+  return os << "flags:" << msg.flags()
+            << " payload:" << absl::CEscape(msg.payload()->JoinIntoString());
 }
 
 class FilterTest {
@@ -81,9 +92,13 @@ class FilterTest {
     ServerMetadataHandle NewServerMetadata(
         std::initializer_list<std::pair<absl::string_view, absl::string_view>>
             init = {});
+    MessageHandle NewMessage(absl::string_view payload = "",
+                             uint32_t flags = 0);
 
     void Start(ClientMetadataHandle md);
     void ForwardServerInitialMetadata(ServerMetadataHandle md);
+    void ForwardMessageClientToServer(MessageHandle msg);
+    void ForwardMessageServerToClient(MessageHandle msg);
     void FinishNextFilter(ServerMetadataHandle md);
 
     void Step();
@@ -91,6 +106,8 @@ class FilterTest {
     MOCK_METHOD(void, Started, (const ClientMetadata& client_initial_metadata));
     MOCK_METHOD(void, ForwardedServerInitialMetadata,
                 (const ServerMetadata& server_initial_metadata));
+    MOCK_METHOD(void, ForwardedMessageClientToServer, (const Message& msg));
+    MOCK_METHOD(void, ForwardedMessageServerToClient, (const Message& msg));
     MOCK_METHOD(void, Finished,
                 (const ServerMetadata& server_trailing_metadata));
 

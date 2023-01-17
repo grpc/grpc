@@ -23,11 +23,24 @@ grpc_cc_library(
     name = "filter_test",
     srcs = ["filter_test.cc"],
     hdrs = ["filter_test.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
+        "gtest",
+    ],
     language = "c++",
     deps = [
+        "//:gpr",
         "//:grpc",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//src/core:context",
+        "//src/core:memory_quota",
+        "//src/core:poll",
         "//src/core:resource_quota",
+        "//src/core:slice",
     ],
 )
 
@@ -35,7 +48,11 @@ grpc_cc_test(
     name = "filter_test_test",
     srcs = ["filter_test_test.cc"],
     external_deps = ["gtest"],
-    deps = ["filter_test"],
+    deps = [
+        "filter_test",
+        "//:grpc_unsecure",
+        "//src/core:arena_promise",
+    ],
 )
 
 grpc_cc_test(
@@ -46,7 +63,6 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
     language = "c++",
@@ -59,17 +75,11 @@ grpc_cc_test(
         "//:grpc_security_base",
         "//:promise",
         "//:ref_counted_ptr",
-        "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
         "//src/core:grpc_fake_credentials",
-        "//src/core:memory_quota",
-        "//src/core:poll",
-        "//src/core:resource_quota",
-        "//src/core:slice",
         "//src/core:unique_type_name",
         "//src/core:useful",
-        "//test/core/promise:test_context",
     ],
 )
 
@@ -79,7 +89,7 @@ grpc_cc_test(
     external_deps = [
         "absl/status",
         "absl/strings",
-        "absl/types:variant",
+        "absl/types:optional",
         "gtest",
     ],
     language = "c++",
@@ -88,13 +98,7 @@ grpc_cc_test(
     deps = [
         "filter_test",
         "//:grpc",
-        "//:ref_counted_ptr",
-        "//src/core:arena",
         "//src/core:grpc_client_authority_filter",
-        "//src/core:memory_quota",
-        "//src/core:poll",
-        "//src/core:resource_quota",
-        "//test/core/promise:test_context",
     ],
 )
 

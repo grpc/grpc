@@ -14,9 +14,10 @@
 
 #include "test/core/filters/filter_test.h"
 
+#include <queue>
+
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
-#include "filter_test.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/crash.h"
@@ -37,6 +38,8 @@ class FilterTest::Call::Impl {
 
   void Start(ClientMetadataHandle md);
   void ForwardServerInitialMetadata(ServerMetadataHandle md);
+  void ForwardMessageClientToServer(MessageHandle msg);
+  void ForwardMessageServerToClient(MessageHandle msg);
   void FinishNextFilter(ServerMetadataHandle md);
 
   bool StepOnce();
@@ -60,7 +63,17 @@ class FilterTest::Call::Impl {
       push_server_initial_metadata_;
   absl::optional<PipeReceiverNextType<ServerMetadataHandle>>
       next_server_initial_metadata_;
+  absl::optional<PipeSender<MessageHandle>::PushType>
+      push_server_to_client_messages_;
+  absl::optional<PipeReceiverNextType<MessageHandle>>
+      next_server_to_client_messages_;
+  absl::optional<PipeSender<MessageHandle>::PushType>
+      push_client_to_server_messages_;
+  absl::optional<PipeReceiverNextType<MessageHandle>>
+      next_client_to_server_messages_;
   absl::optional<ServerMetadataHandle> forward_server_initial_metadata_;
+  std::queue<MessageHandle> forward_client_to_server_messages_;
+  std::queue<MessageHandle> forward_server_to_client_messages_;
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element legacy_context_[GRPC_CONTEXT_COUNT] = {};
 };
@@ -93,6 +106,14 @@ void FilterTest::Call::Impl::ForwardServerInitialMetadata(
   forward_server_initial_metadata_ = std::move(md);
 }
 
+void FilterTest::Call::Impl::ForwardMessageClientToServer(MessageHandle msg) {
+  forward_client_to_server_messages_.push(std::move(msg));
+}
+
+void FilterTest::Call::Impl::ForwardMessageServerToClient(MessageHandle msg) {
+  forward_server_to_client_messages_.push(std::move(msg));
+}
+
 void FilterTest::Call::Impl::FinishNextFilter(ServerMetadataHandle md) {
   poll_next_filter_result_ = std::move(md);
 }
@@ -118,6 +139,73 @@ bool FilterTest::Call::Impl::StepOnce() {
     if (auto* p = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
       if (p->has_value()) call_->ForwardedServerInitialMetadata(*p->value());
       next_server_initial_metadata_.reset();
+    }
+  }
+
+  if (server_initial_metadata_sender_ != nullptr &&
+      !next_server_initial_metadata_.has_value()) {
+    // We've finished sending server initial metadata, so we can
+    // process server-to-client messages.
+    if (!next_server_to_client_messages_.has_value()) {
+      next_server_to_client_messages_.emplace(
+          pipe_server_to_client_messages_.receiver.Next());
+    }
+
+    if (push_server_to_client_messages_.has_value()) {
+      auto r = (*push_server_to_client_messages_)();
+      if (!absl::holds_alternative<Pending>(r)) {
+        push_server_to_client_messages_.reset();
+      }
+    }
+
+    {
+      auto r = (*next_server_to_client_messages_)();
+      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
+        if (p->has_value()) call_->ForwardedMessageServerToClient(*p->value());
+        next_server_to_client_messages_.reset();
+        Activity::current()->ForceImmediateRepoll();
+      }
+    }
+
+    if (!push_server_to_client_messages_.has_value() &&
+        !forward_server_to_client_messages_.empty()) {
+      push_server_to_client_messages_.emplace(
+          server_to_client_messages_sender_->Push(
+              std::move(forward_server_to_client_messages_.front())));
+      forward_server_to_client_messages_.pop();
+      Activity::current()->ForceImmediateRepoll();
+    }
+  }
+
+  if (client_to_server_messages_receiver_ != nullptr) {
+    if (!next_client_to_server_messages_.has_value()) {
+      next_client_to_server_messages_.emplace(
+          client_to_server_messages_receiver_->Next());
+    }
+
+    if (push_client_to_server_messages_.has_value()) {
+      auto r = (*push_client_to_server_messages_)();
+      if (!absl::holds_alternative<Pending>(r)) {
+        push_client_to_server_messages_.reset();
+      }
+    }
+
+    {
+      auto r = (*next_client_to_server_messages_)();
+      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
+        if (p->has_value()) call_->ForwardedMessageClientToServer(*p->value());
+        next_client_to_server_messages_.reset();
+        Activity::current()->ForceImmediateRepoll();
+      }
+    }
+
+    if (!push_client_to_server_messages_.has_value() &&
+        !forward_client_to_server_messages_.empty()) {
+      push_client_to_server_messages_.emplace(
+          pipe_client_to_server_messages_.sender.Push(
+              std::move(forward_client_to_server_messages_.front())));
+      forward_client_to_server_messages_.pop();
+      Activity::current()->ForceImmediateRepoll();
     }
   }
 
@@ -214,6 +302,13 @@ ServerMetadataHandle FilterTest::Call::NewServerMetadata(
   return md;
 }
 
+MessageHandle FilterTest::Call::NewMessage(absl::string_view data,
+                                           uint32_t flags) {
+  SliceBuffer buffer;
+  if (!data.empty()) buffer.Append(Slice::FromCopiedString(data));
+  return impl_->arena()->MakePooled<Message>(std::move(buffer), flags);
+}
+
 void FilterTest::Call::Start(ClientMetadataHandle md) {
   ScopedContext ctx(this);
   impl_->Start(std::move(md));
@@ -221,6 +316,14 @@ void FilterTest::Call::Start(ClientMetadataHandle md) {
 
 void FilterTest::Call::ForwardServerInitialMetadata(ServerMetadataHandle md) {
   impl_->ForwardServerInitialMetadata(std::move(md));
+}
+
+void FilterTest::Call::ForwardMessageClientToServer(MessageHandle msg) {
+  impl_->ForwardMessageClientToServer(std::move(msg));
+}
+
+void FilterTest::Call::ForwardMessageServerToClient(MessageHandle msg) {
+  impl_->ForwardMessageServerToClient(std::move(msg));
 }
 
 void FilterTest::Call::FinishNextFilter(ServerMetadataHandle md) {
