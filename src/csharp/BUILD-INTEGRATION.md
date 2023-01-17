@@ -4,21 +4,7 @@ The [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) NuGet package provid
 * It contains protocol buffers compiler and gRPC plugin to generate C# code.
 * It can be used in building both grpc-dotnet projects and legacy c-core C# projects.
 
-Using `Grpc.Tools` in `.csproj` files is described below. Other packages providing the runtime libraries for gRPC are described elsewhere. These include:
-* Legacy gRPC c-core implementation
-  * `Grpc.Core` - contains a gRPC client and server and supports .NET Framework, .NET Core, and .NET 5 or later.
-* gRPC-dotnet implementation
-  * `Grpc.AspNetCore` - contains a gRPC server that is hosted in ASP.NET Core and requires .NET Core 3.x or .NET 5 or later.
-  * `Grpc.Net.Client` - contains a gRPC client.
-
-Other documentation giving an overview of gRPC for .NET, the tooling support, and a tutorial on how to create server and client projects in C# can be found here:
-* [Overview for gRPC on .NET](https://learn.microsoft.com/en-us/aspnet/core/grpc/)
-* [C# Tooling support for .proto files](https://learn.microsoft.com/en-us/aspnet/core/grpc/basics#c-tooling-support-for-proto-files)
-* [Tutorial: Create a gRPC client and server in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/tutorials/grpc/grpc-start)
-
-For information for the legacy gRPC C# implementation based on the native gRPC Core library (Grpc.Core package) see:
-* https://github.com/grpc/grpc/blob/master/src/csharp/README.md
-* https://github.com/grpc/grpc/tree/v1.46.x/src/csharp#how-to-use
+Using `Grpc.Tools` in `.csproj` files is described below. Other packages providing the runtime libraries for gRPC are described elsewhere. 
 
 ## Getting Started
 
@@ -28,11 +14,17 @@ The package [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) is used to g
 * aren't added to the project or checked into source control.
 * are a build artefact usually contained in the obj directory.
 
-This package is required when building both the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
-* The `Grpc.AspNetCore` metapackage already includes a reference to `Grpc.Tools`. 
-* Client projects and projects using `Grpc.Core` need to directly reference `Grpc.Tools` alongside the other packages required.
+This package is optional. You may instead choose to generate the C# source files from
+`.proto` files by running the `protoc` compiler manually or from a script.
+However this package helps to simplify generating the C# source files by
+integrating the code generation into the build process.
 
-It isn't required at runtime, so the dependency should be marked with `PrivateAssets="All"`, e.g.
+This package can be used when building both the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
+* The `Grpc.AspNetCore` metapackage already includes a reference to `Grpc.Tools`. 
+* Client projects and projects using `Grpc.Core` need to reference `Grpc.Tools` explicity if you want code generation for those projects
+
+`Grpc.Tools` is only used at build-time and has no runtime components.
+It should be marked with `PrivateAssets="All"` to exclude it from being included at runtime, e.g.
 ```xml
 <PackageReference Include="Grpc.Tools" Version="2.50.0">
   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -42,7 +34,7 @@ It isn't required at runtime, so the dependency should be marked with `PrivateAs
 
 Support is provided for the following platforms:
 * Windows (x86, x64, and arm64 via using the x86 binaries)
-* MacOS (arm64)
+* MacOS (x64 and arm64 via using the x64 binaries)
 * Linux (x86, x64, and arm64)
 
 ## Adding `.proto` files to a project
@@ -108,10 +100,12 @@ The following metadata are recognized on the `<Protobuf>` items.
 __Notes__
 
 * __ProtoRoot__  
-For files _inside_ the project cone, `ProtoRoot` is set by default to the
-project directory. For every file _outside_ of the project directory, the value
-is set to this file's containing directory name, individually per file. If you
-include a subtree of proto files that lies outside of the project directory, you
+For files _inside_ the project directory or its subdirectories, `ProtoRoot` is set by default to the
+project directory.
+
+    For files _outside_ of the project directory, the value
+is set to the file's containing directory name, individually per file. If you
+include a subtree of `.proto` files that lies outside of the project directory, you
 need to set `ProtoRoot`. There is an example of this below. The path in
 this variable is relative to the project directory.
 
@@ -133,6 +127,9 @@ Sets generated class access on _both_ generated message and gRPC stub classes.
 Pass additional commandline arguments to the `protoc` command being invoked.
 Normally this option should not be used, but it exists for scenarios when you need to pass
 otherwise unsupported (e.g. experimental) flags to protocol buffer compiler.
+
+* __OutputOptions__
+Pass additional C# code generation options to `protoc` in the form `--csharp_opt=opt1,opt2`. See [C#-specific options](https://protobuf.dev/reference/csharp/csharp-generated/#compiler_options) for possible values.
 
 * __GrpcOutputOptions__ 
 Pass additional options to the `grpc_csharp_plugin` in form of the `--grpc_opt` flag.
@@ -213,6 +210,7 @@ following properties change the behavior of `Grpc.Tools`:
 | `gRPC_PluginFullPath` | Same as `GRPC_PROTOC_PLUGIN` environment variable                           |
 | `Protobuf_NoWarnMissingExpected` | Default: `false`. If `true` then no warnings are given if expected files not generated. See example below for an explanation. |
 | `Protobuf_OutputPath`| Default: `IntermediateOutputPath` - ususally the `obj` directory. Sets the default value for `OutputDir` on `<Protobuf>` items.|
+| `EnableDefaultProtobufItems` | Default: `false`. If `true` then `.proto` files under the project are automatically included without the need to specify any `<Protobuf>` items.
 
 # Scenarios and Examples
 
@@ -222,20 +220,71 @@ For other examples see also the `.csproj` files in the examples in GitHub:
 
 Quick links to the examples below:
 
+* [ProtoRoot - Common root for one or more `.proto` files](#ProtoRoot)
 * [AdditionalImportDirs - Setting location of imported `.proto` files](#AdditionalImportDirs)
-* [ProtoRoot - Avoiding duplicate generated file names](#ProtoRoot)
 * [GrpcServices - Generating gRPC services and protocol buffers messages](#grpcservices)
+* [Automatically including `.proto` files](#autoinclude)
 * [Generate proto and gRPC C# sources from .proto files (no C# compile)](#nocompile)
 * [Visual Studio: setting per-file `.proto` file options](#visualstudio)
 * [Bypassing Grpc.Tools to run the protocol buffers compiler explicitly](#compiler)
 
 ---
+## <a name="ProtoRoot"></a>ProtoRoot - Common root for one or more `.proto` files
+
+`ProtoRoot` specifies a common directory that is an ancestor for a set of `.proto` files.
+
+It has two purposes:
+* working out relative directories to preserve the structure when generating `.cs` files
+* adding a directory to be searched for imported `.proto` files
+
+These are explained in an example below.
+
+For `.proto` files under the project directory `ProtoRoot` is by default set to “.”.
+It can also be explicitly set.
+
+For `.proto` files outside of the project then you must set `ProtoRoot` to give the 
+location of the files.
+
+In either case if you are importing a `.proto` file from within another file then you should set
+`ProtoRoot` so that the import paths can be found. (See also `AdditionalImportDirs` below.)
+
+Generated files in the output directory will have the same directory structure as the
+`.proto` files under `ProtoRoot`.
+
+By default the output directory for generated files is `obj\RELEASE\FRAMEWORK\` (e.g. `obj\Debug\net6.0\`) unless `OutputDir` or `GrpcOutputDir` are specified.
+### Example use of `ProtoRoot`
+Specifying:
+```xml
+<Protobuf Include="Protos\Services\**\*.proto"
+          ProtoRoot="Protos" />
+<Protobuf Include="Protos\Messages\**\*.proto"
+          ProtoRoot="Protos"
+          GrpcServices="none" />
+```
+for files:
+```
+	ProjectFolder\Protos\Services\v1\hello.proto
+	ProjectFolder\Protos\Services\v2\hello.proto
+	ProjectFolder\Protos\Messages\v1\message.proto
+```
+will generate files:
+```
+  ProjectFolder\obj\Debug\net6.0\Services\v1\Hello.cs
+  ProjectFolder\obj\Debug\net6.0\Services\v1\HelloGrpc.cs
+  ProjectFolder\obj\Debug\net6.0\Services\v2\Hello.cs
+  ProjectFolder\obj\Debug\net6.0\Services\v2\HelloGrpc.cs
+  ProjectFolder\obj\Debug\net6.0\Messages\v1\Message.cs
+```
+Notes:
+* the structure under `ProjectFolder\Protos\` is mirrored in the output directory.
+* if one of the files has `import "Messages\v1\message.proto"` then this will be found since
+`ProjectFolder\Protos` will have been added to the import search path.
+---
 ## <a name="AdditionalImportDirs"></a>AdditionalImportDirs - Setting location of imported `.proto` files
 
-If your `.proto` files import other files that are not co-located with the `.proto` file 
-you can specify the directories to search for the
-imported files by specifying `AdditionalImportDirs` and provide a list of directories.
-The directories are searched in the order given. E.g.:
+In addition to specifying `ProtoRoot` other import directories can be specified for
+directories to search when importing `.proto` files by specifying `AdditionalImportDirs` 
+and provide a list of directories. The directories are searched in the order given. E.g.:
 
 ```xml
   <Protobuf Include="protos/*.proto" ProtoRoot="protos"
@@ -243,46 +292,10 @@ The directories are searched in the order given. E.g.:
       ... />
 ```
 
-Note - the paths for standard imports included in the `Grpc.Tools` package are automatically passed to the protocol buffers compiler and do not need to be explicitly set.
-E.g. the directory `"...\.nuget\packages\grpc.tools\2.51.0\build\native\include"` is automatically included.  This is the directory where a declaration such as `import "google/protobuf/wrappers.proto";` in a proto file would be found.
-
----
-## <a name="ProtoRoot"></a>ProtoRoot - Avoiding duplicate generated file names
-
-`Grpc.Tools` tries to preserve the original directory structure relative to where the `.proto`
-files are when creating the `.cs` files under the `obj` directory. It does this by using the
-`ProtoRoot` metadata on the `<Protobuf>` items.
-
-`ProtoRoot` specifies a common directory that is an ancestor of all `.proto` files, and the generated files under the `obj` directory will have the same directory structure. 
-
-For `.proto` files under the project directory `ProtoRoot` is by default set to “.”. It can also be explicitly set. 
-
-E.g.
-Specifying `<Protobuf Include="**\*.proto" />` for files:
+Note: the path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) is automatically included. E.g. the `import` below will work without having to explicity specifying the path in `AdditionalImportDirs`:
+```protobuf
+import "google/protobuf/wrappers.proto";
 ```
-	ProjectFolder\Protos\v1\hello.proto
-	ProjectFolder\Protos\v2\hello.proto
-```
-Will generate files:
-```
-  ProjectFolder\obj\Debug\net6.0\Protos\v1\Hello.cs
-  ProjectFolder\obj\Debug\net6.0\Protos\v1\HelloGrpc.cs
-  ProjectFolder\obj\Debug\net6.0\Protos\v2\Hello.cs
-  ProjectFolder\obj\Debug\net6.0\Protos\v2\HelloGrpc.cs
-```
-But `<Protobuf Include="**\*.proto" ProtoRoot="Protos" />` will generate files:
-
-```
-  ProjectFolder\obj\Debug\net6.0\v1\Hello.cs
-  ProjectFolder\obj\Debug\net6.0\v1\HelloGrpc.cs
-  ProjectFolder\obj\Debug\net6.0\v2\Hello.cs
-  ProjectFolder\obj\Debug\net6.0\v2\HelloGrpc.cs
-```
-
-Setting `ProtoRoot` is useful if you have `.proto` files from different directories,
-e.g. some from inside the project and some external to the project, to make sure that structure
-under the `obj` directory does not cause any name clashes.
-
 ---
 ## <a name="grpcservices"></a>GrpcServices - Generating gRPC services and protocol buffers messages
 The protocol buffers files (`.proto` files) define both the service interface and the
@@ -349,6 +362,17 @@ but it is better to set `GrpcServices="None"` on the `.proto` files affected to 
 unnecessary rebuilds. 
 
 ---
+## <a name="autoinclude"></a>Automatically including `.proto` files
+
+For SDK projects it is possible to automatically include `.proto` files found in the project
+directory or sub-directories, without having to specify them with a `<Protobuf>` item.
+To do this the property `EnableDefaultProtobufItems` has be set to `true` in the project file or on the MSBuild command line.
+
+By default it is not set and `<Protobuf>` items must be included in the project for
+the `.proto` files to be compiled.
+
+---
+
 ## <a name="nocompile"></a>Generate proto and gRPC C# sources from .proto files (no C# compile)
 
 If you just want to generate the C# sources from `.proto` files without compiling the C# files
@@ -435,3 +459,15 @@ then in your project file:
 ```
 Do not include any `<Protobuf>` items in the project file as that will invoke the `Grpc.Tools` build and your files will be compiled twice.
 
+---
+
+## See also
+
+gRPC project documentation:
+* [gRPC for .NET](https://github.com/grpc/grpc-dotnet)
+* [gRPC C# (legacy implementation using gRPC Core library)](https://github.com/grpc/grpc/blob/master/src/csharp/README.md)
+* [Grpc.Tools internal documentation](Grpc.Tools/implementation_notes.md) - implementation notes for how `Grpc.Tools` works
+
+Microsoft documentation:
+* [Microsoft: Overview for gRPC on .NET](https://learn.microsoft.com/en-us/aspnet/core/grpc/)
+* [Microsoft: C# Tooling support for .proto files](https://learn.microsoft.com/en-us/aspnet/core/grpc/basics#c-tooling-support-for-proto-files)
