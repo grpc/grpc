@@ -237,12 +237,11 @@ grpc_ares_request* my_dns_lookup_ares(
   r.addr = gpr_strdup(addr);
   r.on_done = on_done;
   r.addresses = addresses;
-  GetDefaultEventEngine()->RunAfter(
-      grpc_core::Duration::Seconds(1), [r] {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-        grpc_core::ExecCtx exec_ctx;
-        finish_resolve(r);
-      });
+  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    finish_resolve(r);
+  });
   return nullptr;
 }
 
@@ -297,12 +296,11 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc.closure = closure;
   fc.ep = ep;
   fc.deadline = deadline;
-  GetDefaultEventEngine()->RunAfter(
-      grpc_core::Duration::Seconds(1), [fc] {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-        grpc_core::ExecCtx exec_ctx;
-        do_connect(fc);
-      });
+  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [fc] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    do_connect(fc);
+  });
 }
 
 static int64_t my_tcp_client_connect(
