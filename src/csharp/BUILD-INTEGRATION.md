@@ -1,6 +1,6 @@
 # Protocol Buffers/gRPC Codegen Integration Into .NET Build
 
-The [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) NuGet package provides C# tooling support for `.proto` files in `.csproj` projects:
+The [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) NuGet package provides C# tooling support for generating C# code from `.proto` files in `.csproj` projects:
 * It contains protocol buffers compiler and gRPC plugin to generate C# code.
 * It can be used in building both grpc-dotnet projects and legacy c-core C# projects.
 
@@ -22,11 +22,11 @@ For information for the legacy gRPC C# implementation based on the native gRPC C
 
 ## Getting Started
 
-The package [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) is used to generate the C# files from
+The package [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) is used automatically to generate the C# code for protocol buffer messages and gRPC service stubs rom
 `.proto` files. These files:
 * are generated on an as-needed basis each time the project is built.
 * aren't added to the project or checked into source control.
-* are a build artefact usually contained in the obj directory.
+* are a build artifact usually contained in the `obj` directory.
 
 This package is required when building both the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
 * The `Grpc.AspNetCore` metapackage already includes a reference to `Grpc.Tools`. 
@@ -63,7 +63,7 @@ Wildcards can be used to select several `.proto` files, e.g.
 </ItemGroup>
 ```
 
-By default, a `<Protobuf>` reference generates a concrete client and a service base class.
+By default, a `<Protobuf>` reference generates gRPC client and a service base class from the `service` definitions in the `.proto` files.
 The `GrpcServices` attribute can be used to limit C# asset generation. See the reference section below for all
 options. E.g. to only generate client code:
 
@@ -95,9 +95,9 @@ The following metadata are recognized on the `<Protobuf>` items.
 |----------------|-----------|----------------------|----------------------------------|
 | Access         | `public`  | `public`, `internal`               | Generated class access           |
 | AdditionalProtocArguments | | arbitrary cmdline arguments | Extra command line flags passed to `protoc` command. To specify multiple arguments use semi-colons (;) to separate them. See example below |
-| ProtoCompile   | `true`    | `true`, `false`                    | Pass files to protoc?            |
+| ProtoCompile   | `true`    | `true`, `false`                    | If `false`, don't invoke `protoc` to generate code. |
 | ProtoRoot      | See notes | A directory                        | Common root for set of files     |
-| CompileOutputs | `true`    | `true`, `false`                    | C#-compile generated files?      |
+| CompileOutputs | `true`    | `true`, `false`                    | If `false`, C# code will be generated, but it won't be included in the C# build. |
 | OutputDir      | See notes | A directory                        | Directory for generated C# files with protobuf messages |
 | OutputOptions  | | arbitrary options                  | Extra options passed to C# codegen as `--csharp_opt=opt1,opt2` |
 | GrpcOutputDir  | See notes | A directory                        | Directory for generated gRPC stubs    |
@@ -136,7 +136,7 @@ otherwise unsupported (e.g. experimental) flags to protocol buffer compiler.
 
 * __GrpcOutputOptions__ 
 Pass additional options to the `grpc_csharp_plugin` in form of the `--grpc_opt` flag.
-Normally this option should not be used as it's values are already controlled by `Access`
+Normally this option should not be used as its values are already controlled by `Access`
 and `GrpcServices` metadata, but it might be useful in situations where you want
 to explicitly pass some otherwise unsupported (e.g. experimental) options to the
 `grpc_csharp_plugin`.
@@ -217,8 +217,8 @@ following properties change the behavior of `Grpc.Tools`:
 # Scenarios and Examples
 
 For other examples see also the `.csproj` files in the examples in GitHub:
-* Grpc-dotnet examples: https://github.com/grpc/grpc-dotnet/tree/master/examples
-* Grpc c-core C# examples: https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp
+* [grpc-dotnet examples](https://github.com/grpc/grpc-dotnet/tree/master/examples)
+* [`Grpc.Core` examples](https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp)
 
 Quick links to the examples below:
 
@@ -255,7 +255,7 @@ files are when creating the `.cs` files under the `obj` directory. It does this 
 
 `ProtoRoot` specifies a common directory that is an ancestor of all `.proto` files, and the generated files under the `obj` directory will have the same directory structure. 
 
-For `.proto` files under the project directory `ProtoRoot` is by default set to “.”. It can also be explicitly set. 
+For `.proto` files under the project directory `ProtoRoot` is by default set to `.`. It can also be explicitly set.
 
 E.g.
 Specifying `<Protobuf Include="**\*.proto" />` for files:
@@ -308,7 +308,7 @@ message definitions then an empty (zero length) `MyfileGrpc.cs` may still be cre
 by `Grpc.Tools` unless the `.proto` file is specified with `GrpcServices="none"` in the project file.
 
 This is because `Grpc.Tools` has no way of knowing in advanced of running the protocol buffers
-compiler whether a `.proto` file has a service clause. It creates the emtpy files as a marker
+compiler whether a `.proto` file has a service clause. It creates the empty files as a marker
 for incremental builds so that the `.proto` files are not unnecessarily recompiled. Empty files
 are not a problem on a small project but you may wish to avoid them on a larger project.
 
