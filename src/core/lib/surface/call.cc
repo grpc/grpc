@@ -3096,7 +3096,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  private:
   struct Uninitialized {};
 
-  class RecvCloseState {
+  class RecvCloseOpCancelState {
    public:
     // Request that receiver be filled in per grpc_op_recv_close_on_server.
     // Returns true if the request can be fulfilled immediately.
@@ -3178,7 +3178,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
-  RecvCloseState recv_close_state_ ABSL_GUARDED_BY(mu());
+  RecvCloseOpCancelState recv_close_op_cancel_state_ ABSL_GUARDED_BY(mu());
   Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
   Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
@@ -3243,7 +3243,7 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 void ServerPromiseBasedCall::UpdateOnce() {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %shas_promise=%s",
-            DebugTag().c_str(), recv_close_state_.ToString().c_str(),
+            DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
             recv_close_completion_.has_value()
                 ? absl::StrCat(":", recv_close_completion_.ToString()).c_str()
                 : "",
@@ -3269,10 +3269,11 @@ void ServerPromiseBasedCall::UpdateOnce() {
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
-                DebugTag().c_str(), recv_close_state_.ToString().c_str(),
+                DebugTag().c_str(),
+                recv_close_op_cancel_state_.ToString().c_str(),
                 (*result)->DebugString().c_str());
       }
-      if (recv_close_state_.CompleteCall(
+      if (recv_close_op_cancel_state_.CompleteCall(
               (*result)->get(GrpcStatusFromWire()).value_or(false))) {
         FinishOpOnCompletion(&recv_close_completion_,
                              PendingOp::kReceiveCloseOnServer);
@@ -3380,9 +3381,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%s[call] StartBatch: RecvClose %s",
-                  DebugTag().c_str(), recv_close_state_.ToString().c_str());
+                  DebugTag().c_str(),
+                  recv_close_op_cancel_state_.ToString().c_str());
         }
-        if (!recv_close_state_.RequestReceiveCloseOnServer(
+        if (!recv_close_op_cancel_state_.RequestReceiveCloseOnServer(
                 op.data.recv_close_on_server.cancelled)) {
           recv_close_completion_ =
               AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
