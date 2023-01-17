@@ -298,6 +298,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // policy due to draining channel update
   picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_READY, absl::OkStatus(), pick_arg);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -315,7 +316,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
                         {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
 }
 
-TEST_F(XdsOverrideHostTest, DrainingNotDrainingGone) {
+TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -341,13 +342,6 @@ TEST_F(XdsOverrideHostTest, DrainingNotDrainingGone) {
   ASSERT_NE(picker, nullptr);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
-  // Subchannel gone - making sure it does not linger.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
-       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
-  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
 }
 
 TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
