@@ -93,8 +93,8 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
-        grpc_call_error_string = grpc_call_error_to_string(error)
-        raise ExecuteBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: {}".format(error, grpc_call_error_string))
+        grpc_call_error_string = grpc_call_error_to_string(error).decode()
+        raise ExecuteBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: '{}'".format(error, grpc_call_error_string))
 
     await future
 
