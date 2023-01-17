@@ -2205,7 +2205,6 @@ grpc_cc_library(
         "lib/debug/stats_data.h",
     ],
     external_deps = [
-        "absl/memory", 
         "absl/strings",
     ],
     deps = [
