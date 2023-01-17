@@ -96,6 +96,7 @@ class FilterTest {
                              uint32_t flags = 0);
 
     void Start(ClientMetadataHandle md);
+    void Cancel();
     void ForwardServerInitialMetadata(ServerMetadataHandle md);
     void ForwardMessageClientToServer(MessageHandle msg);
     void ForwardMessageServerToClient(MessageHandle msg);

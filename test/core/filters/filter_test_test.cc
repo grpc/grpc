@@ -43,6 +43,21 @@ class NoOpFilter final : public ChannelFilter {
   }
 };
 
+class DelayStartFilter final : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
+                                                     NextPromiseFactory next) {
+    return Seq(
+        [args = std::move(args), i = 10]() mutable -> Poll<CallArgs> {
+          --i;
+          if (i == 0) return std::move(args);
+          Activity::current()->ForceImmediateRepoll();
+          return Pending{};
+        },
+        next);
+  }
+};
+
 class AddClientInitialMetadataFilter final : public ChannelFilter {
  public:
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
@@ -99,6 +114,26 @@ TEST(FilterTestTest, CanStart) {
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.Step();
+}
+
+TEST(FilterTestTest, CanStartWithDelay) {
+  StrictMock<FilterTest::Call> call(FilterTest{DelayStartFilter()});
+  EXPECT_CALL(call, Started(_));
+  call.Start(call.NewClientMetadata());
+  call.Step();
+}
+
+TEST(FilterTestTest, CanCancel) {
+  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+  EXPECT_CALL(call, Started(_));
+  call.Start(call.NewClientMetadata());
+  call.Cancel();
+}
+
+TEST(FilterTestTest, CanCancelWithDelay) {
+  StrictMock<FilterTest::Call> call(FilterTest{DelayStartFilter()});
+  call.Start(call.NewClientMetadata());
+  call.Cancel();
 }
 
 TEST(FilterTestTest, CanSetClientInitialMetadata) {

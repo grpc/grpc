@@ -14,10 +14,12 @@
 
 #include "test/core/filters/filter_test.h"
 
+#include <memory>
 #include <queue>
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
+#include "filter_test.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/crash.h"
@@ -35,6 +37,7 @@ class FilterTest::Call::Impl {
 
   Arena* arena() { return arena_.get(); }
   grpc_call_context_element* legacy_context() { return legacy_context_; }
+  const std::shared_ptr<Channel>& channel() const { return channel_; }
 
   void Start(ClientMetadataHandle md);
   void ForwardServerInitialMetadata(ServerMetadataHandle md);
@@ -312,6 +315,11 @@ MessageHandle FilterTest::Call::NewMessage(absl::string_view data,
 void FilterTest::Call::Start(ClientMetadataHandle md) {
   ScopedContext ctx(this);
   impl_->Start(std::move(md));
+}
+
+void FilterTest::Call::Cancel() {
+  ScopedContext ctx(this);
+  impl_.reset(new Impl(this, impl_->channel()));
 }
 
 void FilterTest::Call::ForwardServerInitialMetadata(ServerMetadataHandle md) {
