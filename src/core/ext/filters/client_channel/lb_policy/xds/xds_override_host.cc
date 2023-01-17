@@ -152,10 +152,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
       grpc_pollset_set* interested_parties() override;
 
-      void Detach() {
-        MutexLock lock(&watcher_mu_);
-        subchannel_ = nullptr;
-      }
+      void Detach();
 
      private:
       friend class SubchannelWrapper;
@@ -299,8 +296,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   RefCountedPtr<SubchannelWrapper> LookupSubchannel(absl::string_view address);
 
   absl::StatusOr<ServerAddressList> UpdateAddressMap(
-      absl::StatusOr<ServerAddressList> addresses,
-      const XdsHealthStatusSet& override_host_status_set);
+      absl::StatusOr<ServerAddressList> addresses);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
       ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel);
@@ -457,8 +453,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   }
   // Update child policy.
   UpdateArgs update_args;
-  update_args.addresses = UpdateAddressMap(std::move(args.addresses),
-                                           config_->override_host_status_set());
+  update_args.addresses = UpdateAddressMap(std::move(args.addresses));
   update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = config_->child_config();
   update_args.args = std::move(args.args);
@@ -509,8 +504,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
 }
 
 absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
-    absl::StatusOr<ServerAddressList> addresses,
-    const XdsHealthStatusSet& override_host_status_set) {
+    absl::StatusOr<ServerAddressList> addresses) {
   if (!addresses.ok()) {
     return addresses;
   }
@@ -738,6 +732,11 @@ void XdsOverrideHostLb::SubchannelWrapper::ConnectivityStateWatcher::
   if (subchannel != nullptr) {
     subchannel->UpdateConnectivityState();
   }
+}
+
+void XdsOverrideHostLb::SubchannelWrapper::ConnectivityStateWatcher::Detach() {
+  MutexLock lock(&watcher_mu_);
+  subchannel_ = nullptr;
 }
 
 //
