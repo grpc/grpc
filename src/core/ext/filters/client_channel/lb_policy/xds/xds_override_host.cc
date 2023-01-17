@@ -169,8 +169,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
           GRPC_CHANNEL_IDLE};
     };
 
-    void UpdateConnectivityState(grpc_connectivity_state state,
-                                 absl::Status status);
+    void UpdateConnectivityState();
 
     ConnectivityStateWatcher* watcher_;
     absl::optional<std::string> key_;
@@ -311,9 +310,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
       absl::string_view address);
 
-  void RefreshSubchannelStateIfDraining(absl::string_view subchannel_key,
-                                        grpc_connectivity_state state,
-                                        absl::Status status);
+  void RefreshSubchannelStateIfDraining(absl::string_view subchannel_key);
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -615,8 +612,7 @@ XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
 }
 
 void XdsOverrideHostLb::RefreshSubchannelStateIfDraining(
-    absl::string_view subchannel_key, grpc_connectivity_state state,
-    absl::Status status) {
+    absl::string_view subchannel_key) {
   absl::optional<XdsHealthStatus::HealthStatus> subchannel_health_status;
   {
     MutexLock lock(&subchannel_map_mu_);
@@ -710,10 +706,9 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
   }
 }
 
-void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
-    grpc_connectivity_state state, absl::Status status) {
+void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState() {
   if (key_.has_value()) {
-    policy_->RefreshSubchannelStateIfDraining(*key_, state, status);
+    policy_->RefreshSubchannelStateIfDraining(*key_);
   }
 }
 
@@ -741,7 +736,7 @@ void XdsOverrideHostLb::SubchannelWrapper::ConnectivityStateWatcher::
     }
   }
   if (subchannel != nullptr) {
-    subchannel->UpdateConnectivityState(state, status);
+    subchannel->UpdateConnectivityState();
   }
 }
 
