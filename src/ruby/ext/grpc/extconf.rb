@@ -16,7 +16,6 @@ require 'etc'
 require 'mkmf'
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
-windows_ucrt = RUBY_PLATFORM =~ /(mingw|mswin).*ucrt/
 bsd = RUBY_PLATFORM =~ /bsd/
 darwin = RUBY_PLATFORM =~ /darwin/
 linux = RUBY_PLATFORM =~ /linux/
@@ -110,7 +109,6 @@ unless windows
   exit 1 unless $? == 0
 end
 
-$CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 
 def have_ruby_abi_version()
