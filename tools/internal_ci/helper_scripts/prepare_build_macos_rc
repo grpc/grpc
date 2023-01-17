@@ -86,7 +86,6 @@ then
   echo "Setting default ruby version."
   rvm use "$RUBY_VERSION" --default
   echo "Updating osx-ssl-certs."
-  gem install bundler -v 2.4
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
 
