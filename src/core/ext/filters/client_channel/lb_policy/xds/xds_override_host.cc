@@ -25,6 +25,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -251,8 +252,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
                              XdsHealthStatus::HealthStatus health_status)
         : subchannel_(subchannel), health_status_(health_status) {}
 
-    void SetSubchannel(Handle subchannel,
-                       XdsHealthStatus::HealthStatus health_status) {
+    void SetSubchannel(Handle subchannel, XdsHealthStatus health_status) {
       SubchannelWrapper* current = GetSubchannel();
       SubchannelWrapper* next = GetPointer(subchannel);
       if (current != nullptr && current != next) {
@@ -270,8 +270,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     SubchannelWrapper* GetSubchannel() const { return GetPointer(subchannel_); }
 
-    XdsHealthStatus::HealthStatus get_health_status() { return health_status_; }
-    void set_health_status(XdsHealthStatus::HealthStatus health_status) {
+    XdsHealthStatus get_health_status() { return health_status_; }
+    void set_health_status(XdsHealthStatus health_status) {
       health_status_ = health_status;
     }
 
@@ -286,8 +286,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
     Handle subchannel_ = nullptr;
-    XdsHealthStatus::HealthStatus health_status_ =
-        XdsHealthStatus::HealthStatus::kUnknown;
+    XdsHealthStatus health_status_ =
+        XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown);
   };
 
   void ShutdownLocked() override;
@@ -521,11 +521,9 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
   std::map<const std::string, XdsHealthStatus> addresses_for_map;
   for (const auto& address : *addresses) {
     XdsHealthStatus status = GetAddressHealthStatus(address);
-    if (override_host_status_set.Contains(status)) {
-      auto key = grpc_sockaddr_to_string(&address.address(), false);
-      if (key.ok()) {
-        addresses_for_map.insert({std::move(*key), status});
-      }
+    auto key = grpc_sockaddr_to_string(&address.address(), false);
+    if (key.ok()) {
+      addresses_for_map.insert({std::move(*key), status});
     }
     if (status.status() != XdsHealthStatus::kDraining) {
       return_value.push_back(std::move(address));
@@ -551,10 +549,9 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
           if (subchannel != nullptr) {
             retained.push_back(subchannel->Ref());
           }
-          it->second.SetSubchannel(subchannel, key_status->second.status());
+          it->second.SetSubchannel(subchannel, key_status->second);
         } else {
-          it->second.SetSubchannel(subchannel->Ref(),
-                                   key_status->second.status());
+          it->second.SetSubchannel(subchannel->Ref(), key_status->second);
         }
         addresses_for_map.erase(key_status);
         it++;
@@ -580,11 +577,10 @@ XdsOverrideHostLb::AdoptSubchannel(
     auto it = subchannel_map_.find(*key);
     if (it != subchannel_map_.end()) {
       auto status = GetAddressHealthStatus(address);
-      if (status.status() == XdsHealthStatus::HealthStatus::kDraining &&
-          (config_->override_host_status_set().Contains(status))) {
-        it->second.SetSubchannel(wrapper, status.status());
+      if (status.status() == XdsHealthStatus::HealthStatus::kDraining) {
+        it->second.SetSubchannel(wrapper, status);
       } else {
-        it->second.SetSubchannel(wrapper.get(), status.status());
+        it->second.SetSubchannel(wrapper.get(), status);
       }
     }
     return wrapper;
@@ -607,8 +603,13 @@ XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
   if (it != subchannel_map_.end()) {
-    auto subchannel = it->second.GetSubchannel();
-    return subchannel == nullptr ? nullptr : subchannel->Ref();
+    if (config_->override_host_status_set().Contains(
+            it->second.get_health_status())) {
+      auto subchannel = it->second.GetSubchannel();
+      return subchannel == nullptr ? nullptr : subchannel->Ref();
+    } else {
+      return nullptr;
+    }
   }
   return nullptr;
 }
@@ -621,7 +622,7 @@ void XdsOverrideHostLb::RefreshSubchannelStateIfDraining(
     MutexLock lock(&subchannel_map_mu_);
     auto it = subchannel_map_.find(subchannel_key);
     if (it != subchannel_map_.end()) {
-      subchannel_health_status = it->second.get_health_status();
+      subchannel_health_status = it->second.get_health_status().status();
     }
   }
   if (subchannel_health_status == XdsHealthStatus::kDraining) {
