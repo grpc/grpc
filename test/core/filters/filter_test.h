@@ -16,31 +16,29 @@
 #define TEST_CORE_FILTERS_FILTER_TEST_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <initializer_list>
 #include <iosfwd>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <utility>
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "test/core/filters/filter_test.h"
 
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
   std::string temp;

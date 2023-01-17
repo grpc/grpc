@@ -16,6 +16,7 @@
 
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "gmock/gmock.h"
@@ -25,7 +26,13 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -45,8 +52,8 @@ class NoOpFilter final : public ChannelFilter {
 
 class DelayStartFilter final : public ChannelFilter {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
-                                                     NextPromiseFactory next) {
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs args, NextPromiseFactory next) override {
     return Seq(
         [args = std::move(args), i = 10]() mutable -> Poll<CallArgs> {
           --i;
@@ -60,8 +67,8 @@ class DelayStartFilter final : public ChannelFilter {
 
 class AddClientInitialMetadataFilter final : public ChannelFilter {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
-                                                     NextPromiseFactory next) {
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs args, NextPromiseFactory next) override {
     args.client_initial_metadata->Set(HttpPathMetadata(),
                                       Slice::FromCopiedString("foo.bar"));
     return next(std::move(args));
@@ -70,8 +77,8 @@ class AddClientInitialMetadataFilter final : public ChannelFilter {
 
 class AddServerTrailingMetadataFilter final : public ChannelFilter {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
-                                                     NextPromiseFactory next) {
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs args, NextPromiseFactory next) override {
     return Map(next(std::move(args)), [](ServerMetadataHandle handle) {
       handle->Set(HttpStatusMetadata(), 420);
       return handle;
@@ -81,8 +88,8 @@ class AddServerTrailingMetadataFilter final : public ChannelFilter {
 
 class AddServerInitialMetadataFilter final : public ChannelFilter {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs args,
-                                                     NextPromiseFactory next) {
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs args, NextPromiseFactory next) override {
     args.server_initial_metadata->InterceptAndMap([](ServerMetadataHandle md) {
       md->Set(GrpcEncodingMetadata(), GRPC_COMPRESS_GZIP);
       return md;

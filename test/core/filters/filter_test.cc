@@ -14,16 +14,28 @@
 
 #include "test/core/filters/filter_test.h"
 
+#include <algorithm>
 #include <memory>
 #include <queue>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "filter_test.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "test/core/filters/filter_test.h"
 
 namespace grpc_core {
 
@@ -227,7 +239,7 @@ class FilterTest::Call::ScopedContext final
       public promise_detail::Context<Arena>,
       public promise_detail::Context<grpc_call_context_element> {
  public:
-  ScopedContext(Call* call)
+  explicit ScopedContext(Call* call)
       : promise_detail::Context<Arena>(call->impl_->arena()),
         promise_detail::Context<grpc_call_context_element>(
             call->impl_->legacy_context()),
@@ -246,7 +258,7 @@ class FilterTest::Call::ScopedContext final
  private:
   class NoOpWakeable final : public Wakeable {
    public:
-    NoOpWakeable(ScopedContext* ctx) : tag_(ctx->DebugTag()) {}
+    explicit NoOpWakeable(ScopedContext* ctx) : tag_(ctx->DebugTag()) {}
     void Wakeup() override { delete this; }
     void Drop() override { delete this; }
     std::string ActivityDebugTag() const override { return tag_; }
@@ -319,7 +331,7 @@ void FilterTest::Call::Start(ClientMetadataHandle md) {
 
 void FilterTest::Call::Cancel() {
   ScopedContext ctx(this);
-  impl_.reset(new Impl(this, impl_->channel()));
+  impl_ = absl::make_unique<Impl>(this, impl_->channel());
 }
 
 void FilterTest::Call::ForwardServerInitialMetadata(ServerMetadataHandle md) {
