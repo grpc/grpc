@@ -55,9 +55,9 @@ typedef struct gpr_timespec {
 
 /** Time constants. */
 GPRAPI gpr_timespec
-gpr_time_0(gpr_clock_type type); /** The zero time interval. */
-GPRAPI gpr_timespec gpr_inf_future(gpr_clock_type type); /** The far future */
-GPRAPI gpr_timespec gpr_inf_past(gpr_clock_type type);   /** The far past. */
+gpr_time_0(gpr_clock_type type); /**< The zero time interval. */
+GPRAPI gpr_timespec gpr_inf_future(gpr_clock_type type); /**< The far future */
+GPRAPI gpr_timespec gpr_inf_past(gpr_clock_type type);   /**< The far past. */
 
 #define GPR_MS_PER_SEC 1000
 #define GPR_US_PER_SEC 1000000
