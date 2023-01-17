@@ -144,7 +144,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
      public:
-      ConnectivityStateWatcher(SubchannelWrapper* subchannel)
+      explicit ConnectivityStateWatcher(SubchannelWrapper* subchannel)
           : subchannel_(subchannel) {}
 
       void OnConnectivityStateChange(grpc_connectivity_state state,
@@ -517,7 +517,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       addresses_for_map.insert({std::move(*key), status});
     }
     if (status.status() != XdsHealthStatus::kDraining) {
-      return_value.push_back(std::move(address));
+      return_value.push_back(address);
     }
   }
   // Channels going from DRAINING to other state might only be retained
@@ -709,7 +709,7 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState() {
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
     ConnectivityStateWatcher::interested_parties() {
   MutexLock lock(&watcher_mu_);
-  if (subchannel_->policy_ == nullptr) {
+  if (subchannel_ == nullptr) {
     return nullptr;
   }
   return subchannel_->policy_->interested_parties();

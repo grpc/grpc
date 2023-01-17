@@ -20,7 +20,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
