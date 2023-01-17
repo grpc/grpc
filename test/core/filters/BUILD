@@ -24,7 +24,9 @@ grpc_cc_library(
     srcs = ["filter_test.cc"],
     hdrs = ["filter_test.h"],
     external_deps = [
+        "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
         "gtest",
@@ -34,13 +36,17 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:ref_counted_ptr",
+        "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
+        "//src/core:basic_seq",
         "//src/core:context",
         "//src/core:memory_quota",
+        "//src/core:pipe",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:slice",
+        "//src/core:slice_buffer",
     ],
 )
 
@@ -51,7 +57,13 @@ grpc_cc_test(
     deps = [
         "filter_test",
         "//:grpc_unsecure",
+        "//src/core:activity",
         "//src/core:arena_promise",
+        "//src/core:map",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:seq",
+        "//src/core:slice",
     ],
 )
 
@@ -89,7 +101,6 @@ grpc_cc_test(
     external_deps = [
         "absl/status",
         "absl/strings",
-        "absl/types:optional",
         "gtest",
     ],
     language = "c++",
