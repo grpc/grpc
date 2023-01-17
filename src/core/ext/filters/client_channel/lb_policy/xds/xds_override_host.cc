@@ -526,9 +526,9 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       if (key.ok()) {
         addresses_for_map.insert({std::move(*key), status});
       }
-      if (status.status() != XdsHealthStatus::kDraining) {
-        return_value.push_back(std::move(address));
-      }
+    }
+    if (status.status() != XdsHealthStatus::kDraining) {
+      return_value.push_back(std::move(address));
     }
   }
   // Channels going from DRAINING to other state might only be retained
@@ -718,6 +718,7 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
 
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
     ConnectivityStateWatcher::interested_parties() {
+  MutexLock lock(&watcher_mu_);
   if (subchannel_->policy_ == nullptr) {
     return nullptr;
   }

@@ -53,7 +53,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   XdsOverrideHostTest()
       : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
 
-  RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
+  static RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
       Json::Array override_host_status = {"UNKNOWN", "HEALTHY"},
       std::string child_policy = "round_robin") {
     Json::Object child_policy_config = {{child_policy, Json::Object()}};
@@ -64,11 +64,13 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
+  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses,
+                              RefCountedPtr<LoadBalancingPolicy::Config>
+                                  config = MakeXdsOverrideHostConfig()) {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
-                          policy_.get()),
-              absl::OkStatus());
+    EXPECT_EQ(
+        ApplyUpdate(BuildUpdate(addresses, std::move(config)), policy_.get()),
+        absl::OkStatus());
     ExpectConnectingUpdate();
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
@@ -102,7 +104,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const std::pair<const absl::string_view,
                                  XdsHealthStatus::HealthStatus>>
           addresses_and_statuses,
-      Json::Array override_host_status = {"UNKNOWN", "HEALTHY", "DRAINING"}) {
+      Json::Array override_host_status = {"UNKNOWN", "HEALTHY"}) {
     LoadBalancingPolicy::UpdateArgs update;
     update.config = MakeXdsOverrideHostConfig(std::move(override_host_status));
     update.addresses.emplace();
@@ -256,7 +258,8 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
        {kAddresses[1], XdsHealthStatus::HealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}},
+      {"UNKNOWN", "HEALTHY", "DRAINING"});
   auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -287,7 +290,8 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
        {kAddresses[1], XdsHealthStatus::HealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}},
+      {"UNKNOWN", "HEALTHY", "DRAINING"});
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   // There are two notifications - one from child policy and one from the parent
@@ -305,6 +309,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
                         {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(),
                         {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
@@ -318,7 +323,8 @@ TEST_F(XdsOverrideHostTest, DrainingNotDrainingGone) {
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
        {kAddresses[1], XdsHealthStatus::HealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}},
+      {"UNKNOWN", "HEALTHY", "DRAINING"});
   auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -329,7 +335,8 @@ TEST_F(XdsOverrideHostTest, DrainingNotDrainingGone) {
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kHealthy},
        {kAddresses[1], XdsHealthStatus::HealthStatus::kHealthy},
-       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}},
+      {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
@@ -343,31 +350,80 @@ TEST_F(XdsOverrideHostTest, DrainingNotDrainingGone) {
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
 }
 
-TEST_F(XdsOverrideHostTest, DrainingStateNotOverwritten) {
-  // Send address list to LB policy.
+TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   ASSERT_NE(ExpectStartupWithRoundRobin(kAddresses), nullptr);
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::HealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}},
-      {"UNKNOWN", "HEALTHY"});
+       {kAddresses[1], XdsHealthStatus::HealthStatus::kHealthy},
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kDraining}},
+      {"UNKNOWN", "HEALTHY", "DRAINING"});
   auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
-  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
-  ExpectQueueEmpty();
-  // Draining subchannel is not returned
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
-  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]}, pick_arg);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:441"}}),
+            kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:442"}}),
+            kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:443"}}),
+            kAddresses[2]);
+  // UNKNOWN excluded - first chanel does not get overridden
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
-       {kAddresses[2], XdsHealthStatus::HealthStatus::kHealthy}});
+       {kAddresses[1], XdsHealthStatus::HealthStatus::kHealthy},
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kDraining}},
+      {"HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
-  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]}, pick_arg);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]},
+                        {{XdsHostOverrideTypeName(), "127.0.0.1:441"}});
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:442"}}),
+            kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:443"}}),
+            kAddresses[2]);
+  // DRAINING excluded - second chanel does not get overridden
+  ApplyUpdateWithHealthStatuses(
+      {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
+       {kAddresses[1], XdsHealthStatus::HealthStatus::kHealthy},
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kDraining}},
+      {"UNKNOWN", "HEALTHY"});
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:441"}}),
+            kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:442"}}),
+            kAddresses[1]);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]},
+                        {{XdsHostOverrideTypeName(), "127.0.0.1:443"}});
+  // HEALTHY excluded - third chanel does not get overridden
+  ApplyUpdateWithHealthStatuses(
+      {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
+       {kAddresses[1], XdsHealthStatus::HealthStatus::kHealthy},
+       {kAddresses[2], XdsHealthStatus::HealthStatus::kDraining}},
+      {"UNKNOWN", "DRAINING"});
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:441"}}),
+            kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(),
+                               {{XdsHostOverrideTypeName(), "127.0.0.1:442"}}),
+            kAddresses[1]);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]},
+                        {{XdsHostOverrideTypeName(), "127.0.0.1:443"}});
 }
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
