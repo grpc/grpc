@@ -1946,6 +1946,7 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
+        "experiments",
         "init_internally",
         "iomgr_port",
         "posix_event_engine_base_hdrs",
