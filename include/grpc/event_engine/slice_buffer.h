@@ -53,12 +53,6 @@ namespace experimental {
 class SliceBuffer {
  public:
   SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
-  // Transfers slices into this new SliceBuffer, leaving the parameter empty.
-  // Does not take ownership of the slice_buffer argument.
-  explicit SliceBuffer(grpc_slice_buffer* slice_buffer) {
-    grpc_slice_buffer_init(&slice_buffer_);
-    grpc_slice_buffer_swap(&slice_buffer_, slice_buffer);
-  }
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
@@ -149,6 +143,12 @@ class SliceBuffer {
   }
 
  private:
+  // Transfers slices into this new SliceBuffer, leaving the parameter empty.
+  // Does not take ownership of the slice_buffer argument.
+  explicit SliceBuffer(grpc_slice_buffer* slice_buffer) {
+    grpc_slice_buffer_init(&slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, slice_buffer);
+  }
   /// The backing raw slice buffer.
   grpc_slice_buffer slice_buffer_;
 };

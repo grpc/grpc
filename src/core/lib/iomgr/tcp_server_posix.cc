@@ -59,7 +59,7 @@
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
-#include "src/core/lib/iomgr/event_engine_shims/resolved_address.h"
+#include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"

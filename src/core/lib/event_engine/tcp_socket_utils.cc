@@ -17,6 +17,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -50,6 +51,7 @@
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_event_engine {
@@ -367,6 +369,20 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
                              /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
+    std::string address_str) {
+  grpc_resolved_address addr;
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "Failed to parse URI. Error: %s",
+            uri.status().ToString().c_str());
+  }
+  GRPC_RETURN_IF_ERROR(uri.status());
+  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
 
 }  // namespace experimental

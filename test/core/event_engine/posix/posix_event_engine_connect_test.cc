@@ -146,10 +146,11 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
+  GPR_ASSERT(resolved_addr.ok());
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
-      ResolvedAddressToNormalizedString(resolved_addr).value();
-  auto sockets = CreateConnectedSockets(resolved_addr);
+      ResolvedAddressToNormalizedString(*resolved_addr).value();
+  auto sockets = CreateConnectedSockets(*resolved_addr);
   grpc_core::Notification signal;
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();
@@ -161,7 +162,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
         EXPECT_EQ(status.status().code(), absl::StatusCode::kUnknown);
         signal.Notify();
       },
-      URIToResolvedAddress(target_addr), config,
+      *URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 3s);
   signal.WaitForNotification();
   for (auto sock : sockets) {
@@ -174,10 +175,11 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
+  GPR_ASSERT(resolved_addr.ok());
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
-      ResolvedAddressToNormalizedString(resolved_addr).value();
-  auto sockets = CreateConnectedSockets(resolved_addr);
+      ResolvedAddressToNormalizedString(*resolved_addr).value();
+  auto sockets = CreateConnectedSockets(*resolved_addr);
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
@@ -188,7 +190,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
         FAIL() << "The on_connect callback should not have run since the "
                   "connection attempt was cancelled.";
       },
-      URIToResolvedAddress(target_addr), config,
+      *URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-2"), 3s);
   if (connection_handle.keys[0] > 0) {
     ASSERT_TRUE(posix_ee->CancelConnect(connection_handle));

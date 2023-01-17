@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC Authors
+// Copyright 2022 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
 #include <grpc/support/port_platform.h>
-
-#include "src/core/lib/iomgr/event_engine_shims/resolved_address.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -23,19 +23,12 @@ namespace grpc_event_engine {
 namespace experimental {
 
 EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address& addr) {
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
-}
+    const grpc_resolved_address& addr);
 
 grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress& ra) {
-  grpc_resolved_address grpc_addr;
-  memset(&grpc_addr, 0, sizeof(grpc_resolved_address));
-  memcpy(grpc_addr.addr, ra.address(), ra.size());
-  grpc_addr.len = ra.size();
-  return grpc_addr;
-}
+    const EventEngine::ResolvedAddress& ra);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H

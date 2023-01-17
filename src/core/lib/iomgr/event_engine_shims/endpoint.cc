@@ -30,12 +30,15 @@
 
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
@@ -90,16 +93,14 @@ class EventEngineEndpointWrapper {
   grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
 
   // Read using the underlying EventEngine endpoint object.
-  inline void Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                   SliceBuffer* buffer,
-                   const EventEngine::Endpoint::ReadArgs* args) {
+  void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const EventEngine::Endpoint::ReadArgs* args) {
     endpoint_->Read(std::move(on_read), buffer, args);
   }
 
   // Write using the underlying EventEngine endpoint object
-  inline void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                    SliceBuffer* data,
-                    const EventEngine::Endpoint::WriteArgs* args) {
+  void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, const EventEngine::Endpoint::WriteArgs* args) {
     endpoint_->Write(std::move(on_writable), data, args);
   }
 
@@ -213,12 +214,27 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   eeep->wrapper->Ref();
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
-  SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
+  SliceBuffer* read_buffer = new (&eeep->read_buffer)
+      SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   eeep->wrapper->Read(
       [eeep, cb, slices](absl::Status status) {
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
         grpc_slice_buffer_move_into(read_buffer->c_slice_buffer(), slices);
         read_buffer->~SliceBuffer();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+          size_t i;
+          gpr_log(GPR_INFO, "TCP: %p READ (peer=%s) error=%s", eeep->wrapper,
+                  std::string(eeep->wrapper->PeerAddress()).c_str(),
+                  status.ToString().c_str());
+          if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+            for (i = 0; i < slices->count; i++) {
+              char* dump = grpc_dump_slice(slices->slices[i],
+                                           GPR_DUMP_HEX | GPR_DUMP_ASCII);
+              gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
+              gpr_free(dump);
+            }
+          }
+        }
         {
           grpc_core::ExecCtx exec_ctx;
           grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
@@ -246,12 +262,31 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   eeep->wrapper->Ref();
   EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
-  SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    size_t i;
+    gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s)", eeep->wrapper,
+            std::string(eeep->wrapper->PeerAddress()).c_str());
+    if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      for (i = 0; i < slices->count; i++) {
+        char* dump =
+            grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        gpr_log(GPR_DEBUG, "WRITE DATA: %s", dump);
+        gpr_free(dump);
+      }
+    }
+  }
+  SliceBuffer* write_buffer = new (&eeep->write_buffer)
+      SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   eeep->wrapper->Write(
       [eeep, cb](absl::Status status) {
         auto* write_buffer =
             reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
         write_buffer->~SliceBuffer();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+          gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s) error=%s", eeep->wrapper,
+                  std::string(eeep->wrapper->PeerAddress()).c_str(),
+                  status.ToString().c_str());
+        }
         {
           grpc_core::ExecCtx exec_ctx;
           grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
@@ -282,6 +317,8 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
             why.ToString().c_str());
   }
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Shutdown:%s", eeep->wrapper,
+                          why.ToString().c_str());
   eeep->wrapper->TriggerShutdown(nullptr);
 }
 
@@ -291,6 +328,7 @@ void EndpointDestroy(grpc_endpoint* ep) {
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   eeep->wrapper->Unref();
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Destroy", eeep->wrapper);
 }
 
 absl::string_view EndpointGetPeerAddress(grpc_endpoint* ep) {
@@ -349,6 +387,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 #else   // GRPC_POSIX_SOCKET_TCP
   fd_ = -1;
 #endif  // GRPC_POSIX_SOCKET_TCP
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Create", eeep_->wrapper);
 }
 
 }  // namespace

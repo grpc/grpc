@@ -799,6 +799,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -859,7 +860,7 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -1601,7 +1602,7 @@ libs:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -2114,6 +2115,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -2173,7 +2175,7 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -2535,7 +2537,7 @@ libs:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -3557,6 +3559,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -3612,7 +3615,7 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -3855,7 +3858,7 @@ libs:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -7303,6 +7306,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -7358,7 +7362,7 @@ targets:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -7583,7 +7587,7 @@ targets:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  - src/core/lib/iomgr/event_engine_shims/resolved_address.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -11461,6 +11465,9 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h

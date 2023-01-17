@@ -302,6 +302,7 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc_client_channel",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:server_address",
         "//:uri_parser",
