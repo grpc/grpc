@@ -134,7 +134,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
         ConnectivityStateWatcherInterface* watcher) override;
 
     grpc_connectivity_state connectivity_state() {
-      return watcher_->connectivity_state_.load();
+      return connectivity_state_.load();
     }
 
     void Shutdown();
@@ -154,21 +154,20 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       grpc_pollset_set* interested_parties() override;
 
      private:
-      friend class SubchannelWrapper;
-
-      RefCountedPtr<SubchannelWrapper> subchannel_ = nullptr;
-      std::set<std::unique_ptr<ConnectivityStateWatcherInterface>,
-               PtrLessThan<ConnectivityStateWatcherInterface>>
-          watchers_;
-      std::atomic<grpc_connectivity_state> connectivity_state_ = {
-          GRPC_CHANNEL_IDLE};
+      RefCountedPtr<SubchannelWrapper> subchannel_;
     };
 
-    void UpdateConnectivityState();
+    void UpdateConnectivityState(grpc_connectivity_state state,
+                                 absl::Status status);
 
     ConnectivityStateWatcher* watcher_;
     absl::optional<std::string> key_;
     RefCountedPtr<XdsOverrideHostLb> policy_;
+    std::set<std::unique_ptr<ConnectivityStateWatcherInterface>,
+             PtrLessThan<ConnectivityStateWatcherInterface>>
+        watchers_;
+    std::atomic<grpc_connectivity_state> connectivity_state_ = {
+        GRPC_CHANNEL_IDLE};
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -684,20 +683,24 @@ XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
 
 void XdsOverrideHostLb::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
-  watcher_->watchers_.insert(std::move(watcher));
+  watchers_.insert(std::move(watcher));
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  auto& watchers = watcher_->watchers_;
-  auto it = watchers.find(watcher);
-  if (it != watchers.end()) {
-    watchers.erase(it);
+  auto it = watchers_.find(watcher);
+  if (it != watchers_.end()) {
+    watchers_.erase(it);
   }
 }
 
-void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState() {
+void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
+    grpc_connectivity_state state, absl::Status status) {
   if (key_.has_value()) {
+    connectivity_state_.store(state);
+    for (const auto& watcher : watchers_) {
+      watcher->OnConnectivityStateChange(state, status);
+    }
     policy_->RefreshSubchannelStateIfDraining(*key_);
   }
 }
@@ -718,11 +721,7 @@ grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
 void XdsOverrideHostLb::SubchannelWrapper::ConnectivityStateWatcher::
     OnConnectivityStateChange(grpc_connectivity_state state,
                               absl::Status status) {
-  connectivity_state_.store(state);
-  for (const auto& watcher : watchers_) {
-    watcher->OnConnectivityStateChange(state, status);
-  }
-  subchannel_->UpdateConnectivityState();
+  subchannel_->UpdateConnectivityState(state, status);
 }
 
 //
