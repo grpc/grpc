@@ -195,7 +195,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
       // listeners, the ownership of the byte buffer received is transferred to
       // this callback and it is thus this callback's duty to delete it.
       // Make this hack default once event engine is rolled out.
-      if (grpc_core::IsEventEngineServerEnabled()) {
+      if (IsEventEngineServerEnabled()) {
         grpc_byte_buffer_destroy(acceptor->pending_data);
       }
     }

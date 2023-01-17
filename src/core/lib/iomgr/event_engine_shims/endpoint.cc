@@ -45,7 +45,6 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace grpc_event_engine {
 namespace experimental {
-
 namespace {
 
 constexpr int64_t kShutdownBit = static_cast<int64_t>(1) << 32;
@@ -142,13 +141,12 @@ class EventEngineEndpointWrapper {
   // and decrements the shutdown ref. If trigger shutdown has been called
   // before or in parallel, only one of them would win the race. The other
   // invocation would simply return.
-#ifdef GRPC_POSIX_SOCKET_TCP
   void TriggerShutdown(
       absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
+#ifdef GRPC_POSIX_SOCKET_TCP
     on_release_fd_ = std::move(on_release_fd);
 #else
-  void TriggerShutdown(
-      absl::AnyInvocable<void(absl::StatusOr<int>)> /*on_release_fd*/) {
+    (void)on_release_fd;
 #endif  // GRPC_POSIX_SOCKET_TCP
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {

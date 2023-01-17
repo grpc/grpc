@@ -316,7 +316,7 @@ grpc_cc_test(
     language = "C++",
     tags = [
         "event_engine_server_test",
-        "no_windows"
+        "no_windows",
     ],
     deps = [
         "//:gpr",
