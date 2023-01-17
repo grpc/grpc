@@ -42,14 +42,17 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
+// gmock matcher to ensure that metadata has a key/value pair.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
   std::string temp;
   auto r = arg.GetStringValue(key, &temp);
   return r == value;
 }
 
+// gmock matcher to ensure that a message has a given set of flags.
 MATCHER_P(HasMessageFlags, value, "") { return arg.flags() == value; }
 
+// gmock matcher to ensure that a message has a given payload.
 MATCHER_P(HasMessagePayload, value, "") {
   return arg.payload()->JoinIntoString() == value;
 }
@@ -78,6 +81,9 @@ class FilterTest {
   };
 
  public:
+  // One "call" outstanding against this filter.
+  // In reality - this filter is the only thing in the call.
+  // Provides mocks to trap events that happen on the call.
   class Call {
    public:
     explicit Call(const FilterTest& test);
@@ -86,29 +92,47 @@ class FilterTest {
     Call(const Call&) = delete;
     Call& operator=(const Call&) = delete;
 
+    // Construct client metadata in the arena of this call.
+    // Optional argument is a list of key/value pairs to add to the metadata.
     ClientMetadataHandle NewClientMetadata(
         std::initializer_list<std::pair<absl::string_view, absl::string_view>>
             init = {});
+    // Construct server metadata in the arena of this call.
+    // Optional argument is a list of key/value pairs to add to the metadata.
     ServerMetadataHandle NewServerMetadata(
         std::initializer_list<std::pair<absl::string_view, absl::string_view>>
             init = {});
+    // Construct a message in the arena of this call.
     MessageHandle NewMessage(absl::string_view payload = "",
                              uint32_t flags = 0);
 
+    // Start the call.
     void Start(ClientMetadataHandle md);
+    // Cancel the call.
     void Cancel();
+    // Forward server initial metadata through this filter.
     void ForwardServerInitialMetadata(ServerMetadataHandle md);
+    // Forward a message from client to server through this filter.
     void ForwardMessageClientToServer(MessageHandle msg);
+    // Forward a message from server to client through this filter.
     void ForwardMessageServerToClient(MessageHandle msg);
+    // Have the 'next' filter in the chain finish this call and return trailing
+    // metadata.
     void FinishNextFilter(ServerMetadataHandle md);
 
     void Step();
 
+    // Mock to trap starting the next filter in the chain.
     MOCK_METHOD(void, Started, (const ClientMetadata& client_initial_metadata));
+    // Mock to trap receiving server initial metadata in the next filter in the
+    // chain.
     MOCK_METHOD(void, ForwardedServerInitialMetadata,
                 (const ServerMetadata& server_initial_metadata));
+    // Mock to trap seeing a message forward from client to server.
     MOCK_METHOD(void, ForwardedMessageClientToServer, (const Message& msg));
+    // Mock to trap seeing a message forward from server to client.
     MOCK_METHOD(void, ForwardedMessageServerToClient, (const Message& msg));
+    // Mock to trap seeing a call finish in the next filter in the chain.
     MOCK_METHOD(void, Finished,
                 (const ServerMetadata& server_trailing_metadata));
 
