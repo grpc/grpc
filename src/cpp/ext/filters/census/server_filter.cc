@@ -122,7 +122,7 @@ void OpenCensusServerCallData::OnDoneRecvInitialMetadataCb(
     if (OpenCensusStatsEnabled()) {
       std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
           calld->context_.tags().tags();
-      tags.emplace_back(ServerMethodTagKey(), calld->method_);
+      tags.emplace_back(ServerMethodTagKey(), std::string(calld->method_));
       ::opencensus::stats::Record({{RpcServerStartedRpcs(), 1}}, tags);
     }
   }
@@ -187,9 +187,10 @@ void OpenCensusServerCallData::Destroy(grpc_call_element* /*elem*/,
     double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();
-    tags.emplace_back(ServerMethodTagKey(), method_);
-    tags.emplace_back(ServerStatusTagKey(),
-                      StatusCodeToString(final_info->final_status));
+    tags.emplace_back(ServerMethodTagKey(), std::string(method_));
+    tags.emplace_back(
+        ServerStatusTagKey(),
+        std::string(StatusCodeToString(final_info->final_status)));
     ::opencensus::stats::Record(
         {{RpcServerSentBytesPerRpc(), static_cast<double>(response_size)},
          {RpcServerReceivedBytesPerRpc(), static_cast<double>(request_size)},
