@@ -214,6 +214,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
   SliceBuffer* read_buffer = new (&eeep->read_buffer)
       SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
+  read_buffer->Clear();
   eeep->wrapper->Read(
       [eeep, cb, slices](absl::Status status) {
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
