@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -21,8 +21,8 @@ grpc_package(
     visibility = "public",
 )
 
-# TODO(hork): A single InitTestSuite() call should initialize all tests. 
-# This can be done after each test suite specialization can explicitly opt in or out 
+# TODO(hork): A single InitTestSuite() call should initialize all tests.
+# This can be done after each test suite specialization can explicitly opt in or out
 # of tests declaratively.
 # grpc_cc_library(
 #     name = "init",

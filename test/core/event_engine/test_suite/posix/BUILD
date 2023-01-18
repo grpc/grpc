@@ -29,9 +29,9 @@ grpc_cc_library(
     ],
     visibility = ["//test:__subpackages__"],
     deps = [
-        "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//:grpc",
         "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/util:grpc_test_util",
     ],
 )
