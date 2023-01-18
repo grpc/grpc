@@ -665,16 +665,21 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
 
 void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
     grpc_connectivity_state state, absl::Status status) {
-  if (key_.has_value()) {
-    connectivity_state_.store(state);
-    for (const auto& watcher : watchers_) {
+  connectivity_state_.store(state);
+  // Assumption is that watchers may come and go as the events are processed
+  std::vector<ConnectivityStateWatcherInterface*> watchers(watchers_.size());
+  for (const auto& watcher : watchers_) {
+    watchers.push_back(watcher.get());
+  }
+  for (auto watcher : watchers) {
+    if (watchers_.find(watcher) != watchers_.end()) {
       watcher->OnConnectivityStateChange(state, status);
     }
-    if (key_.has_value() &&
-        policy_->config_->override_host_status_set().Contains(health_status_) &&
-        health_status_.status() == XdsHealthStatus::kDraining) {
-      policy_->MaybeUpdatePickerLocked();
-    }
+  }
+  if (key_.has_value() &&
+      policy_->config_->override_host_status_set().Contains(health_status_) &&
+      health_status_.status() == XdsHealthStatus::kDraining) {
+    policy_->MaybeUpdatePickerLocked();
   }
 }
 
