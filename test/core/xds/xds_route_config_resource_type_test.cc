@@ -14,7 +14,10 @@
 // limitations under the License.
 //
 
+#include <stdint.h>
+
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
