@@ -1816,7 +1816,6 @@ grpc_cc_library(
         "status_helper",
         "strerror",
         "time",
-        "useful",
         "//:gpr",
         "//:grpc_status_enum",
         "//:ref_counted_ptr",
