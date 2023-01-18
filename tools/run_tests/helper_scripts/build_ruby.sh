@@ -40,3 +40,4 @@ popd
 # unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake build)
 # see https://github.com/madler/zlib/issues/133
 (cd third_party/zlib; git checkout zconf.h)
+exit 1
