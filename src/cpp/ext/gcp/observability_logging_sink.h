@@ -20,19 +20,17 @@
 #define GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_LOGGING_SINK_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
-
+#include <google/protobuf/struct.pb.h>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <google/protobuf/struct.pb.h>
+#include <map>
+#include <utility>
 
 #include "absl/base/call_once.h"
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
-
 #include "src/cpp/ext/filters/logging/logging_sink.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
@@ -43,7 +41,8 @@ namespace internal {
 class ObservabilityLoggingSink : public LoggingSink {
  public:
   ObservabilityLoggingSink(GcpObservabilityConfig::CloudLogging logging_config,
-                           std::string project_id);
+                           std::string project_id,
+                           std::map<std::string, std::string> labels);
 
   ~ObservabilityLoggingSink() override = default;
 
@@ -71,6 +70,7 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::vector<Configuration> server_configs_;
   std::string project_id_;
   std::string authority_;
+  std::vector<std::pair<std::string, std::string>> labels_;
   absl::once_flag once_;
   std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
 };

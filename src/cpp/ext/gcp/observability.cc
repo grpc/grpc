@@ -132,7 +132,7 @@ absl::Status GcpObservabilityInit() {
   if (config->cloud_logging.has_value()) {
     grpc::internal::RegisterLoggingFilter(
         new grpc::internal::ObservabilityLoggingSink(
-            config->cloud_logging.value(), config->project_id));
+            config->cloud_logging.value(), config->project_id, config->labels));
   }
   return absl::OkStatus();
 }

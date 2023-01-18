@@ -48,7 +48,8 @@ namespace grpc {
 namespace internal {
 
 ObservabilityLoggingSink::ObservabilityLoggingSink(
-    GcpObservabilityConfig::CloudLogging logging_config, std::string project_id)
+    GcpObservabilityConfig::CloudLogging logging_config, std::string project_id,
+    std::map<std::string, std::string> labels)
     : project_id_(std::move(project_id)) {
   for (auto& client_rpc_event_config : logging_config.client_rpc_events) {
     client_configs_.emplace_back(client_rpc_event_config);
@@ -62,6 +63,10 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
   if (authority_env.has_value() && !authority_env->empty()) {
     authority_ = std::move(*endpoint_env);
+  }
+  labels_.reserve(labels.size());
+  for (const auto& label : labels) {
+    labels_.emplace_back(label.first, label.second);
   }
 }
 
@@ -250,6 +255,9 @@ void ObservabilityLoggingSink::LogEntry(Entry entry) {
       absl::StrFormat("projects/{%s}/logs/"
                       "microservices.googleapis.com%%2Fobservability%%2fgrpc",
                       project_id_));
+  for (const auto& label : labels_) {
+    (*call->request.mutable_labels())[label.first] = label.second;
+  }
   auto* proto_entry = call->request.add_entries();
   // Fill the current timestamp
   gpr_timespec timespec =
