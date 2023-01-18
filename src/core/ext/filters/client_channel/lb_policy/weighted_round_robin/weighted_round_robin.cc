@@ -326,13 +326,12 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     std::vector<SubchannelInfo> subchannels_;
 
     Mutex mu_;
-    uint32_t scheduler_state_ ABSL_GUARDED_BY(&mu_);
-    absl::optional<StaticStrideScheduler> scheduler_ ABSL_GUARDED_BY(&mu_);
+    std::shared_ptr<StaticStrideScheduler> scheduler_ ABSL_GUARDED_BY(&mu_);
     absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
         timer_handle_ ABSL_GUARDED_BY(&mu_);
 
     // Used when falling back to RR.
-    size_t last_picked_index_;
+    std::atomic<size_t> last_picked_index_;
   };
 
   ~WeightedRoundRobin() override;
@@ -360,6 +359,9 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
   bool shutdown_ = false;
 
   absl::BitGen bit_gen_;
+
+  // Accessed by picker.
+  std::atomic<uint32_t> scheduler_state_{absl::Uniform<uint32_t>(bit_gen_)};
 };
 
 //
@@ -470,7 +472,6 @@ WeightedRoundRobin::Picker::Picker(
       weight_update_period_(wrr_->config_->weight_update_period()),
       weight_expiration_period_(wrr_->config_->weight_expiration_period()),
       blackout_period_(wrr_->config_->blackout_period()),
-      scheduler_state_(absl::Uniform<uint32_t>(wrr_->bit_gen_)),
       last_picked_index_(absl::Uniform<size_t>(wrr_->bit_gen_)) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     WeightedRoundRobinSubchannelData* sd = subchannel_list->subchannel(i);
@@ -523,17 +524,21 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(
 }
 
 size_t WeightedRoundRobin::Picker::PickIndex() {
-  // Grab the mutex and do WRR pick if we have a scheduler.
+  // Grab a ref to the scheduler.
+  std::shared_ptr<StaticStrideScheduler> scheduler;
   {
     MutexLock lock(&mu_);
-    if (scheduler_.has_value()) {
-      return scheduler_->Pick();
-    }
+    scheduler = scheduler_;
   }
+  // If we have a scheduler, use it to do a WRR pick.
+  if (scheduler != nullptr) return scheduler->Pick();
   // We don't have a scheduler (i.e., either all of the weights are 0 or
   // there is only one subchannel), so fall back to RR.
-  last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
-  return last_picked_index_;
+  size_t index = last_picked_index_.fetch_add(1);
+  if (index > 0 && index % subchannels_.size() == 0) {
+    last_picked_index_.fetch_sub(subchannels_.size());
+  }
+  return index % subchannels_.size();
 }
 
 void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
@@ -549,11 +554,13 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
             absl::StrJoin(weights, " ").c_str());
   }
-  scheduler_ = StaticStrideScheduler::Make(
-      weights,
-      // This requires holding mu_, but we don't have a way to plumb the
-      // annotation through absl::AnyInvocable<>.
-      [this]() ABSL_NO_THREAD_SAFETY_ANALYSIS { return scheduler_state_++; });
+  auto scheduler = StaticStrideScheduler::Make(
+      weights, [this]() { return wrr_->scheduler_state_.fetch_add(1); });
+  if (scheduler.has_value()) {
+    scheduler_ = std::make_shared<StaticStrideScheduler>(std::move(*scheduler));
+  } else {
+    scheduler_.reset();
+  }
   // Start timer.
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
