@@ -86,6 +86,8 @@ absl::Status GcpObservabilityInit() {
       !config->cloud_logging.has_value()) {
     return absl::OkStatus();
   }
+  grpc::internal::OpenCensusRegistry::Get().RegisterConstantLabels(
+      config->labels);
   grpc::RegisterOpenCensusPlugin();
   RegisterOpenCensusViewsForGcpObservability();
   if (config->cloud_trace.has_value()) {
