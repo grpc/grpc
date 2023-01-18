@@ -568,6 +568,8 @@ def make_library(library):
                    if library.startswith('//test/') else {})
     external_deps = Choices(None, {})
     for dep in original_deps[library]:
+        if not dep.startswith('//'):
+            dep = library[:library.find(':')] + ':' + dep
         if dep in alwayslink_targets:
             deps.add(dep, 'alwayslink:' + dep)
     for hdr in hdrs:
