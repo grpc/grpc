@@ -17,6 +17,14 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
+namespace grpc_event_engine {
+namespace experimental {
+
+void InitDNSTests() {}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
 class EventEngineDNSTest : public EventEngineTest {};
 
 // TODO(hork): establish meaningful tests

@@ -46,6 +46,14 @@
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/port.h"
 
+namespace grpc_event_engine {
+namespace experimental {
+
+void InitServerTests() {}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
 class EventEngineServerTest : public EventEngineTest {};
 
 using namespace std::chrono_literals;

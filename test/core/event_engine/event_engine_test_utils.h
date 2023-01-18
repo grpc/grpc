@@ -157,7 +157,7 @@ class NotifyOnDelete {
   grpc_core::Notification* signal_;
 };
 
-// DO NOT SUBMIT(hork): move to src/core/ EE utils
+// TODO(hork): move to src/core/ EE utils
 EventEngine::ResolvedAddress URIToResolvedAddress(
     absl::string_view address_str);
 

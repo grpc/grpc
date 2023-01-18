@@ -41,6 +41,14 @@
 using ::testing::ElementsAre;
 using namespace std::chrono_literals;
 
+namespace grpc_event_engine {
+namespace experimental {
+
+void InitTimerTests() {}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
 class EventEngineTimerTest : public EventEngineTest {
  public:
   void ScheduleCheckCB(std::chrono::steady_clock::time_point when,

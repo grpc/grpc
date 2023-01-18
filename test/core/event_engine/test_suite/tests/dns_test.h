@@ -15,7 +15,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-void InitDNSTests() {}
+void InitDNSTests();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
