@@ -52,10 +52,10 @@ grpc_cc_test(
     # engine design which doesn't rely on poll is required.
     uses_polling = True,
     deps = [
-        "client",
         "oracle_event_engine_posix",
-        "server",
+        "//test/core/event_engine/test_suite/tests:server",
         "//:grpc",
+        "//test/core/event_engine/test_suite/tests:client",
         "//test/core/util:grpc_test_util",
     ],
 )
