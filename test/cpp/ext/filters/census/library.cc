@@ -21,7 +21,8 @@
 namespace grpc {
 namespace testing {
 
-const auto TEST_TAG_KEY = ::opencensus::tags::TagKey::Register("my_key");
+const ::opencensus::tags::TagKey TEST_TAG_KEY =
+    ::opencensus::tags::TagKey::Register("my_key");
 const char* TEST_TAG_VALUE = "my_value";
 const char* kExpectedTraceIdKey = "expected_trace_id";
 
