@@ -198,8 +198,7 @@ def server(migration_thread_pool: Optional[Executor] = None,
         indicate no limit.
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
-        lifetime of the server unless overridden by set_compression. This is an
-        EXPERIMENTAL option.
+        lifetime of the server unless overridden by set_compression.
 
     Returns:
       A Server object.

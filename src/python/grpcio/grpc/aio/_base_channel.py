@@ -52,7 +52,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           A UnaryUnaryCall object.
@@ -91,7 +91,7 @@ class UnaryStreamMultiCallable(abc.ABC):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           A UnaryStreamCall object.
@@ -130,7 +130,7 @@ class StreamUnaryMultiCallable(abc.ABC):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           A StreamUnaryCall object.
@@ -169,7 +169,7 @@ class StreamStreamMultiCallable(abc.ABC):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           A StreamStreamCall object.
