@@ -1741,7 +1741,6 @@ grpc_cc_library(
         "status_helper",
         "strerror",
         "time",
-        "useful",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",

@@ -51,12 +51,8 @@ EXPERIMENTS = {
         "core_end2end_tests": [
             "new_hpack_huffman_decoder",
         ],
-        "endpoint_test": [
-            "tcp_read_chunks",
-        ],
         "flow_control_test": [
             "flow_control_fixes",
-            "tcp_read_chunks",
         ],
         "hpack_test": [
             "new_hpack_huffman_decoder",
