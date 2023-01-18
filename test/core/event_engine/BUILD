@@ -189,3 +189,25 @@ grpc_cc_test(
         "//src/core:iomgr_port",
     ],
 )
+
+grpc_cc_library(
+    name = "event_engine_test_utils",
+    testonly = True,
+    srcs = ["event_engine_test_utils.cc"],
+    hdrs = ["event_engine_test_utils.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//:uri_parser",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:memory_quota",
+        "//src/core:notification",
+        "//src/core:resolved_address",
+    ],
+)

@@ -100,7 +100,9 @@ void RunUntilInterrupted() {
   std::unique_ptr<EventEngine::Endpoint> endpoint;
   grpc_core::Notification connected;
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
-  ChannelArgsEndpointConfig config;
+  ChannelArgsEndpointConfig config{grpc_core::CoreConfiguration::Get()
+                                       .channel_args_preconditioning()
+                                       .PreconditionChannelArgs(nullptr)};
   std::string canonical_target =
       grpc_core::CoreConfiguration::Get()
           .resolver_registry()

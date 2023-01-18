@@ -13,7 +13,7 @@ grpc_cc_test(
     name = "my_custom_event_engine_test",
     srcs = ["my_custom_event_engine_test.cc"],
     uses_polling = False,
-    deps = ["//test/core/event_engine/test_suite:complete"],
+    deps = ["//test/core/event_engine/test_suite/tests:timer"],
 )
 ```
 
@@ -35,15 +35,15 @@ int main(int argc, char** argv) {
 Alternatively, if you only want to exercise a subset of the conformance tests,
 you could depend on any subset of the following:
 
-* `//test/core/event_engine/test_suite:timer`
-* `//test/core/event_engine/test_suite:dns`
-* `//test/core/event_engine/test_suite:client`
-* `//test/core/event_engine/test_suite:server`
+* `//test/core/event_engine/test_suite/tests:timer`
+* `//test/core/event_engine/test_suite/tests:dns`
+* `//test/core/event_engine/test_suite/tests:client`
+* `//test/core/event_engine/test_suite/tests:server`
 
 # Useful testing tools
 
-The suite also provides [tools](tools/) that let you exercise your custom EventEngine. 
-For example, the `echo_client` library allows you to prop up a TCP client based on your EventEngine::Connect and ::Endpoint implementations, and communicate with a remote TCP listener of your choosing.
+The suite also provides [tools](tools/) that let you exercise your custom EventEngine in other ways. 
+For example, the `echo_client` library allows you to prop up a TCP echo client based on your EventEngine::Connect and ::Endpoint implementations, and communicate with a remote TCP listener of your choosing.
 
 You'll need to provide the following code
 

@@ -22,29 +22,15 @@ grpc_package(
 )
 
 grpc_cc_library(
-    name = "conformance_test_base_lib",
+    name = "event_engine_test_framework",
     testonly = True,
     srcs = ["event_engine_test_framework.cc"],
     hdrs = ["event_engine_test_framework.h"],
     external_deps = ["gtest"],
     deps = [
-        "event_engine_test_utils",
         "//:grpc",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "event_engine_test_utils",
-    testonly = True,
-    srcs = ["event_engine_test_utils.cc"],
-    hdrs = ["event_engine_test_utils.h"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-    ],
-    deps = [
-        "//:grpc_base",
     ],
 )
 
@@ -59,8 +45,8 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
-        "event_engine_test_utils",
         "//src/core:posix_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:server",
@@ -79,10 +65,10 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         # TODO(hork): enable when the listener (or an oracle) is available
-        # "client",
+        # "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:timer",
         "//src/core:windows_event_engine",
-        "event_engine_test_utils",
+        "//test/core/event_engine:event_engine_test_utils",
     ],
 )
 

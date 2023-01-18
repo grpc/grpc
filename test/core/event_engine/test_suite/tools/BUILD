@@ -31,10 +31,23 @@ grpc_cc_binary(
     deps = ["echo_client"],
 )
 
+# TODO(hork): this needs to reuse the same configuration in the test suite.
+grpc_cc_binary(
+    name = "posix_event_engine_echo_client",
+    testonly = True,
+    srcs = ["posix_event_engine_factory.cc"],
+    tags = [
+        "bazel_only",
+        "no_windows",
+    ],
+    deps = ["echo_client"],
+)
+
 # -- Testing tools --
 
 grpc_cc_library(
     name = "echo_client",
+    testonly = True,
     srcs = ["echo_client.cc"],
     external_deps = [
         "absl/flags:flag",
