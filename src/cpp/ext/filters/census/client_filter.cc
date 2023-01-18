@@ -72,10 +72,15 @@ constexpr uint32_t
 
 grpc_error_handle OpenCensusClientChannelData::Init(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
-  OpenCensusRegistry::Get().RunFunctionsPostInit();
-  tracing_enabled_ = grpc_core::ChannelArgs::FromC(args->channel_args)
-                         .GetInt(GRPC_ARG_ENABLE_OBSERVABILITY)
-                         .value_or(true);
+  bool observability_enabled = grpc_core::ChannelArgs::FromC(args->channel_args)
+                                   .GetInt(GRPC_ARG_ENABLE_OBSERVABILITY)
+                                   .value_or(true);
+  // Only run the Post-Init Registry if observability is enabled to avoid
+  // running into a cyclic loop for exporter channels.
+  if (observability_enabled) {
+    OpenCensusRegistry::Get().RunFunctionsPostInit();
+  }
+  tracing_enabled_ = observability_enabled;
   return absl::OkStatus();
 }
 
