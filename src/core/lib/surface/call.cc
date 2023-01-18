@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <new>
 #include <string>
@@ -1876,7 +1877,8 @@ class PromiseBasedCall : public Call,
                          public grpc_event_engine::experimental::EventEngine::
                              Closure /* for deadlines */ {
  public:
-  PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
+  PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+                   const grpc_call_create_args& args);
 
   void ContextSet(grpc_context_index elem, void* value,
                   void (*destroy)(void* value)) override;
@@ -2335,7 +2337,7 @@ class PromiseBasedCall : public Call,
   }
 
   mutable Mutex mu_;
-  std::atomic<uint64_t> refs_{MakeRefPair(1, 0)};
+  std::atomic<uint64_t> refs_;
   CallContext call_context_{this};
   bool keep_polling_ ABSL_GUARDED_BY(mu()) = false;
 
@@ -2372,10 +2374,11 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
   return absl::OkStatus();
 }
 
-PromiseBasedCall::PromiseBasedCall(Arena* arena,
+PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
+      refs_(MakeRefPair(initial_external_refs, 0)),
       cq_(args.cq) {
   if (args.cq != nullptr) {
     GPR_ASSERT(args.pollset_set_alternative == nullptr &&
@@ -2484,7 +2487,8 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
       }
     }
     gpr_log(
-        GPR_INFO, "%s[call] FinishOpOnCompletion %s %s %s", DebugTag().c_str(),
+        GPR_INFO, "%s[call] FinishOpOnCompletion tag:%p %s %s %s",
+        DebugTag().c_str(), completion_info_[completion->index()].pending.tag,
         completion->ToString().c_str(), PendingOpString(reason),
         (pending.empty()
              ? (success ? std::string("done") : std::string("failed"))
@@ -2706,7 +2710,7 @@ void PublishMetadataArray(grpc_metadata_array* array, grpc_metadata_batch* md) {
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
-      : PromiseBasedCall(arena, *args) {
+      : PromiseBasedCall(arena, 1, *args) {
     global_stats().IncrementClientCallsCreated();
     ScopedContext context(this);
     send_initial_metadata_ =
@@ -3221,6 +3225,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
       std::move(call_args.client_initial_metadata);
   PublishMetadataArray(publish_initial_metadata,
                        call_->client_initial_metadata_.get());
+  call_->ExternalRef();
   publish(call_->c_ptr());
   return [this]() {
     call_->mu()->AssertHeld();
@@ -3230,7 +3235,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
 
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
-    : PromiseBasedCall(arena, *args),
+    : PromiseBasedCall(arena, 0, *args),
       call_context_(this, args->server_transport_data),
       server_(args->server) {
   global_stats().IncrementServerCallsCreated();
@@ -3263,13 +3268,19 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 
 void ServerPromiseBasedCall::UpdateOnce() {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %shas_promise=%s",
-            DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
-            recv_close_completion_.has_value()
-                ? absl::StrCat(":", recv_close_completion_.ToString()).c_str()
-                : "",
-            PollStateDebugString().c_str(),
-            promise_.has_value() ? "true" : "false");
+    gpr_log(
+        GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %s%shas_promise=%s",
+        DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
+        recv_close_completion_.has_value()
+            ? absl::StrCat(":", recv_close_completion_.ToString()).c_str()
+            : "",
+        send_status_from_server_completion_.has_value()
+            ? absl::StrCat("send_status:",
+                           send_status_from_server_completion_.ToString(), " ")
+                  .c_str()
+            : "",
+        PollStateDebugString().c_str(),
+        promise_.has_value() ? "true" : "false");
   }
   if (auto* p =
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
