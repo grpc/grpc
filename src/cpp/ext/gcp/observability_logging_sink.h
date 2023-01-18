@@ -20,17 +20,21 @@
 #define GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_LOGGING_SINK_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stdint.h>
-#include <google/protobuf/struct.pb.h>
+
+#include <map>
 #include <memory>
 #include <string>
-#include <vector>
-#include <map>
 #include <utility>
+#include <vector>
+
+#include <google/protobuf/struct.pb.h>
 
 #include "absl/base/call_once.h"
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
+
 #include "src/cpp/ext/filters/logging/logging_sink.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
