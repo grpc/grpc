@@ -1990,6 +1990,9 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/internal/get_current_time_posix.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/time.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/time/time.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/any.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_any_cast.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_any_cast.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_optional_access.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/types/bad_variant_access.cc" role="src" />
