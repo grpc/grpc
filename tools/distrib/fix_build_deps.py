@@ -685,7 +685,7 @@ def make_library(library):
             time.perf_counter() - start_time)
 
 
-if __name__ == "__main__":
+def main() -> None:
     update_libraries = []
     for library in sorted(consumes.keys()):
         if library in no_update:
@@ -721,3 +721,7 @@ if __name__ == "__main__":
 
     if error:
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
