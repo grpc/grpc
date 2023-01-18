@@ -398,6 +398,10 @@ grpc_endpoint* grpc_event_engine_endpoint_create(
   return wrapper->GetGrpcEndpoint();
 }
 
+bool grpc_is_event_engine_endpoint(grpc_endpoint* ep) {
+  return ep->vtable == &grpc_event_engine_endpoint_vtable;
+}
+
 void grpc_event_engine_endpoint_destroy_and_release_fd(
     grpc_endpoint* ep, int* fd, grpc_closure* on_release_fd) {
   auto* eeep =

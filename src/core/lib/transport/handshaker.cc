@@ -37,9 +37,9 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
@@ -195,7 +195,8 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
       // listeners, the ownership of the byte buffer received is transferred to
       // this callback and it is thus this callback's duty to delete it.
       // Make this hack default once event engine is rolled out.
-      if (IsEventEngineServerEnabled()) {
+      if (grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+              endpoint)) {
         grpc_byte_buffer_destroy(acceptor->pending_data);
       }
     }

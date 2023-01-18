@@ -2017,8 +2017,7 @@ int grpc_tcp_fd(grpc_endpoint* ep) {
 
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done) {
-  if (ep->vtable != &vtable) {
-    // This is a crude way to detect if the endpoint is an EE endpoint.
+  if (grpc_event_engine::experimental::grpc_is_event_engine_endpoint(ep)) {
     return grpc_event_engine::experimental::
         grpc_event_engine_endpoint_destroy_and_release_fd(ep, fd, done);
   }
