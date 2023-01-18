@@ -32,9 +32,14 @@ p "apolcyn ext RbConfig[LD]: |#{RbConfig::CONFIG['LD']}|"
 p "apolcyn ext RbConfig[CXX]: |#{RbConfig::CONFIG['CXX']}|"
 p "apolcyn ext RbConfig[LDXX]: |#{RbConfig::CONFIG['LDXX']}|"
 p "apolcyn ext RbConfig[STRIP]: |#{RbConfig::CONFIG['STRIP']}|"
+p "apolcyn ext RbConfig[STRIP]: |#{RbConfig::CONFIG['LDFLAGS']}|"
 p "apolcyn ext ENV[CC]: |#{ENV['CC']}|"
 p "apolcyn ext ENV[CXX]: |#{ENV['CXX']}|"
 p "apolcyn ext ENV[LD]: |#{ENV['LD']}|"
+p "apolcyn ext ENV[LDFLAGS]: |#{ENV['LDFLAGS']}|"
+p "apolcyn macos version BEGIN"
+p `sw_vers`
+p "apolcyn macos version END"
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
