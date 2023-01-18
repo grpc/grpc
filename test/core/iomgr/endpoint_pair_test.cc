@@ -60,6 +60,8 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  auto resolved_addr = URIToResolvedAddress(target_addr);
+  GPR_ASSERT(resolved_addr.ok());
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;
@@ -81,7 +83,7 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
-  GPR_ASSERT(listener->Bind(*URIToResolvedAddress(target_addr)).ok());
+  GPR_ASSERT(listener->Bind(*resolved_addr).ok());
   GPR_ASSERT(listener->Start().ok());
 
   ee->Connect(
@@ -91,8 +93,8 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
-      *URIToResolvedAddress(target_addr), config,
-      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
+      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
+      24h);
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
