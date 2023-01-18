@@ -7603,6 +7603,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/cf_event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_utils.cc
+    test/core/event_engine/test_suite/timer_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -7632,7 +7633,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc
-    grpc_test_util_unsecure
   )
 
 
@@ -11626,6 +11626,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
+    test/core/event_engine/test_suite/timer_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -15489,10 +15490,12 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(oracle_event_engine_posix_test
+    test/core/event_engine/test_suite/client_test.cc
     test/core/event_engine/test_suite/event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+    test/core/event_engine/test_suite/server_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -15522,6 +15525,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
+    grpc_test_util_unsecure
   )
 
 
@@ -16401,10 +16405,13 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(posix_event_engine_test
+    test/core/event_engine/test_suite/client_test.cc
     test/core/event_engine/test_suite/event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/posix_event_engine_test.cc
+    test/core/event_engine/test_suite/server_test.cc
+    test/core/event_engine/test_suite/timer_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
