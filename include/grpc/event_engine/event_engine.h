@@ -121,7 +121,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
 
     ResolvedAddress(const sockaddr* address, socklen_t size);
-    ResolvedAddress() = default;
+    ResolvedAddress();
     ResolvedAddress(const ResolvedAddress&) = default;
     const struct sockaddr* address() const;
     socklen_t size() const;
