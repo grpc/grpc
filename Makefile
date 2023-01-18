@@ -411,8 +411,8 @@ Q = @
 endif
 
 CORE_VERSION = 30.0.0
-CPP_VERSION = 1.52.0-dev
-CSHARP_VERSION = 2.52.0-dev
+CPP_VERSION = 1.53.0-dev
+CSHARP_VERSION = 2.53.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1445,6 +1445,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
+    src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
@@ -1976,6 +1977,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
+    src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \

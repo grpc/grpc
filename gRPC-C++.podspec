@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.52.0-dev'
+  version = '1.53.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -758,6 +758,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/utils.h',
                       'src/core/lib/event_engine/windows/iocp.h',
                       'src/core/lib/event_engine/windows/win_socket.h',
+                      'src/core/lib/event_engine/windows/windows_endpoint.h',
                       'src/core/lib/event_engine/windows/windows_engine.h',
                       'src/core/lib/experiments/config.h',
                       'src/core/lib/experiments/experiments.h',
@@ -1674,6 +1675,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/utils.h',
                               'src/core/lib/event_engine/windows/iocp.h',
                               'src/core/lib/event_engine/windows/win_socket.h',
+                              'src/core/lib/event_engine/windows/windows_endpoint.h',
                               'src/core/lib/event_engine/windows/windows_engine.h',
                               'src/core/lib/experiments/config.h',
                               'src/core/lib/experiments/experiments.h',

@@ -11,33 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <memory>
+#include <grpc/support/port_platform.h>
 
-#include <gtest/gtest.h>
+#ifdef GPR_APPLE
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
-#include "src/core/lib/experiments/config.h"
+#include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
-#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  SetEventEngineFactories(
-      []() {
-        return std::make_unique<
-            grpc_event_engine::experimental::PosixEventEngine>();
-      },
-      []() {
-        return std::make_unique<
-            grpc_event_engine::experimental::PosixOracleEventEngine>();
-      });
-  // TODO(vigneshbabu): remove when the experiment is over
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
+  auto factory = []() {
+    return std::make_unique<grpc_event_engine::experimental::CFEventEngine>();
+  };
+  SetEventEngineFactories(factory, factory);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();
@@ -45,3 +35,9 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return r;
 }
+
+#else  // GPR_APPLE
+
+int main(int /* argc */, char** /* argv */) { return 0; }
+
+#endif  // GPR_APPLE
