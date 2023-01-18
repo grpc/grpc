@@ -835,6 +835,7 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     GPR_ASSERT(weighted_clusters_proto != nullptr);
     std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
         action_weighted_clusters;
+    uint64_t total_weight = 0;
     size_t clusters_size;
     const envoy_config_route_v3_WeightedCluster_ClusterWeight* const* clusters =
         envoy_config_route_v3_WeightedCluster_clusters(weighted_clusters_proto,
@@ -874,12 +875,15 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       } else {
         cluster.weight = google_protobuf_UInt32Value_value(weight_proto);
         if (cluster.weight == 0) continue;
+        total_weight += cluster.weight;
       }
       // Add entry to WeightedClusters.
       action_weighted_clusters.emplace_back(std::move(cluster));
     }
     if (action_weighted_clusters.empty()) {
       errors->AddError("no valid clusters specified");
+    } else if (total_weight > std::numeric_limits<uint32_t>::max()) {
+      errors->AddError("sum of cluster weights exceeds uint32 max");
     }
     route_action.action = std::move(action_weighted_clusters);
   } else if (XdsRlsEnabled() &&
