@@ -43,11 +43,11 @@
   RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.22.1'
 
   # Install Android NDK
-  RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r19c-linux-x86_64.zip && ${'\\'}
+  RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip && ${'\\'}
       unzip -q android-ndk.zip -d /opt && ${'\\'}
       rm -f android-ndk.zip
-  ENV ANDROID_NDK_PATH /opt/android-ndk-r19c
-  ENV ANDROID_NDK_HOME /opt/android-ndk-r19c
+  ENV ANDROID_NDK_PATH /opt/android-ndk-r16b
+  ENV ANDROID_NDK_HOME /opt/android-ndk-r16b
 
   # Install gcloud
   RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
