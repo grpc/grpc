@@ -132,8 +132,12 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        "conformance_test_base_lib",
+        "//:gpr_platform",
+        "//:grpc",
         "//src/core:windows_event_engine",
         "//test/core/event_engine/test_suite:timer",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
