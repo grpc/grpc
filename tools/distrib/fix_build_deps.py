@@ -439,6 +439,8 @@ for dirname in [
         "test/core/event_engine/fuzzing_event_engine",
         "test/core/event_engine/posix",
         "test/core/event_engine/test_suite",
+        "test/core/event_engine/test_suite/posix",
+        "test/core/event_engine/test_suite/tests",
         "test/core/promise",
         "test/core/resource_quota",
         "test/core/transport/chaotic_good",

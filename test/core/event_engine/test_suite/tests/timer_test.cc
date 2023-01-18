@@ -36,7 +36,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
 using ::testing::ElementsAre;
 using namespace std::chrono_literals;

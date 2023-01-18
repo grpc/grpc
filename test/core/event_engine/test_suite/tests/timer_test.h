@@ -1,4 +1,4 @@
-// Copyright 2022 gRPC authors.
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+namespace grpc_event_engine {
+namespace experimental {
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+void InitTimerTests() {}
 
-class EventEngineDNSTest : public EventEngineTest {};
-
-// TODO(hork): establish meaningful tests
-TEST_F(EventEngineDNSTest, TODO) { grpc_core::ExecCtx exec_ctx; }
+}  // namespace experimental
+}  // namespace grpc_event_engine

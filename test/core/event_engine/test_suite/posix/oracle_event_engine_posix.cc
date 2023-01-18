@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
+#include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 
 #include <poll.h>
 #include <sys/socket.h>
