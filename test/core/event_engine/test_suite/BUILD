@@ -101,31 +101,23 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_cc_library(
-    name = "complete",
-    testonly = 1,
-    alwayslink = 1,
-)
-
 # -- EventEngine implementations --
 
 grpc_cc_test(
     name = "posix_event_engine_test",
     srcs = ["posix_event_engine_test.cc"],
-    external_deps = ["gtest"],
     tags = [
         "no_windows",
+        "nofixdeps",
     ],
     uses_event_engine = True,
     uses_polling = True,
     deps = [
-        "conformance_test_base_lib",
-        "oracle_event_engine_posix",
-        "//:grpc",
-        "//src/core:event_engine_interface",
-        "//src/core:experiments",
+        ":client",
+        ":oracle_event_engine_posix",
+        ":server",
         "//src/core:posix_event_engine",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/event_engine/test_suite:timer",
     ],
 )
 
@@ -136,14 +128,12 @@ grpc_cc_test(
         "bazel_only",
         "no_linux",
         "no_mac",
+        "nofixdeps",
     ],
     uses_polling = False,
     deps = [
-        "conformance_test_base_lib",
-        "//:gpr_platform",
-        "//:grpc",
         "//src/core:windows_event_engine",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/event_engine/test_suite:timer",
     ],
 )
 
@@ -153,33 +143,27 @@ grpc_cc_test(
     tags = [
         "no_linux",
         "no_windows",
+        "nofixdeps",
     ],
     uses_polling = False,
     deps = [
-        "conformance_test_base_lib",
-        "//:gpr_platform",
-        "//:grpc",
+        ":timer",
         "//src/core:cf_event_engine",
-        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
 grpc_cc_test(
     name = "fuzzing_event_engine_test",
     srcs = ["fuzzing_event_engine_test.cc"],
-    external_deps = [
-        "absl/time",
-        "gtest",
-    ],
     tags = [
         "no_mac",
         "no_windows",
+        "nofixdeps",
     ],
     uses_polling = False,
     deps = [
-        "conformance_test_base_lib",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/event_engine/test_suite:timer",
     ],
 )
 
@@ -225,6 +209,7 @@ grpc_cc_test(
     tags = [
         "no_test_ios",
         "no_windows",
+        "nofixdeps",
     ],
     # TODO(vignesbabu): This is required because the oracle event engine uses
     # poll syscall. If uses_polling is set to False, there will be an attempt
@@ -233,8 +218,10 @@ grpc_cc_test(
     # engine design which doesn't rely on poll is required.
     uses_polling = True,
     deps = [
-        "conformance_test_base_lib",
-        "oracle_event_engine_posix",
+        ":client",
+        ":oracle_event_engine_posix",
+        ":server",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
