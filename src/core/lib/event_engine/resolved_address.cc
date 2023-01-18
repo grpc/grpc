@@ -24,10 +24,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress::ResolvedAddress() {
-  memset(&address_, 0, MAX_SIZE_BYTES);
-}
-
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
     : size_(size) {
