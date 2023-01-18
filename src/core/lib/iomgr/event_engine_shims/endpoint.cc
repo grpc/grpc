@@ -404,6 +404,9 @@ void grpc_event_engine_endpoint_destroy_and_release_fd(
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   if (fd == nullptr || on_release_fd == nullptr) {
+    if (fd != nullptr) {
+      *fd = -1;
+    }
     eeep->wrapper->TriggerShutdown(nullptr);
   } else {
     *fd = -1;
