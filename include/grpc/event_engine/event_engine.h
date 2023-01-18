@@ -127,7 +127,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     socklen_t size() const;
 
    private:
-    char address_[MAX_SIZE_BYTES];
+    char address_[MAX_SIZE_BYTES] = {};
     socklen_t size_ = 0;
   };
 
