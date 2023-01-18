@@ -53,9 +53,9 @@ grpc_cc_test(
     uses_polling = True,
     deps = [
         "oracle_event_engine_posix",
-        "//test/core/event_engine/test_suite/tests:server",
         "//:grpc",
         "//test/core/event_engine/test_suite/tests:client",
+        "//test/core/event_engine/test_suite/tests:server",
         "//test/core/util:grpc_test_util",
     ],
 )

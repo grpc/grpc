@@ -209,5 +209,6 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resolved_address",
+        "//src/core:time",
     ],
 )

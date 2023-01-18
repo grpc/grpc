@@ -19,7 +19,6 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
 

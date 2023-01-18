@@ -13,6 +13,11 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <grpc/event_engine/slice.h>
+
 // The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
 // implementations, allowing third-party TCP listeners to interact with your
 // EventEngine client. Example usage:
@@ -26,22 +31,32 @@
 //    bazel run
 //    //test/core/event_engine/test_suite/tools:my_event_engine_echo_client
 
+#include <chrono>
+#include <memory>
+#include <ratio>
+#include <string>
+#include <utility>
+
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 

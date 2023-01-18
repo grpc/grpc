@@ -25,8 +25,10 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
