@@ -27,6 +27,8 @@
 #include "opencensus/trace/context_util.h"
 #include "opencensus/trace/propagation/grpc_trace_bin.h"
 
+#include "grpc_plugin.h"
+
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/rpc_encoding.h"
 
@@ -44,10 +46,16 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
   SpanContext parent_ctx =
       opencensus::trace::propagation::FromGrpcTraceBinHeader(tracing);
   if (parent_ctx.IsValid()) {
-    new (context) CensusContext(method, parent_ctx);
-    return;
+    new (context) CensusContext(method, parent_ctx,
+                                grpc::internal::OpenCensusRegistry::Get()
+                                    .PopulateTagMapWithConstantLabels({}));
+  } else {
+    new (context)
+        CensusContext(method, grpc::internal::OpenCensusRegistry::Get()
+                                  .PopulateTagMapWithConstantLabels({}));
   }
-  new (context) CensusContext(method, TagMap{});
+  grpc::internal::OpenCensusRegistry::Get()
+      .PopulateCensusContextWithConstantAttributes(context);
 }
 
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
@@ -59,19 +67,27 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
     SpanContext span_ctxt = parent_ctxt->Context();
     Span span = parent_ctxt->Span();
     if (span_ctxt.IsValid()) {
-      new (ctxt) CensusContext(method, &span, TagMap{});
+      new (ctxt) CensusContext(method, &span,
+                               grpc::internal::OpenCensusRegistry::Get()
+                                   .PopulateTagMapWithConstantLabels({}));
+      grpc::internal::OpenCensusRegistry::Get()
+          .PopulateCensusContextWithConstantAttributes(ctxt);
       return;
     }
   }
   const Span& span = opencensus::trace::GetCurrentSpan();
-  const TagMap& tags = opencensus::tags::GetCurrentTagMap();
+  const TagMap& tags = grpc::internal::OpenCensusRegistry::Get()
+                           .PopulateTagMapWithConstantLabels(
+                               opencensus::tags::GetCurrentTagMap());
   if (span.context().IsValid()) {
     // Create span with parent.
     new (ctxt) CensusContext(method, &span, tags);
-    return;
+  } else {
+    // Create span without parent.
+    new (ctxt) CensusContext(method, tags);
   }
-  // Create span without parent.
-  new (ctxt) CensusContext(method, tags);
+  grpc::internal::OpenCensusRegistry::Get()
+      .PopulateCensusContextWithConstantAttributes(ctxt);
 }
 
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,

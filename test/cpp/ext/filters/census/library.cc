@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2018 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,22 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
-#include "src/cpp/ext/filters/census/channel_filter.h"
-
-#include "absl/status/status.h"
-
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include "test/cpp/ext/filters/census/library.h"
 
 namespace grpc {
-namespace internal {
+namespace testing {
 
-grpc_error_handle OpenCensusChannelData::Init(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  OpenCensusRegistry::Get().RunFunctionsPostInit();
-  return absl::OkStatus();
-}
+const auto TEST_TAG_KEY = ::opencensus::tags::TagKey::Register("my_key");
+const char* TEST_TAG_VALUE = "my_value";
+const char* kExpectedTraceIdKey = "expected_trace_id";
 
-}  // namespace internal
+ExportedTracesRecorder* StatsPluginEnd2EndTest::traces_recorder_ =
+    new ExportedTracesRecorder();
+
+}  // namespace testing
 }  // namespace grpc

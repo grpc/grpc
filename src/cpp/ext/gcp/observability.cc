@@ -89,7 +89,7 @@ absl::Status GcpObservabilityInit() {
   grpc::RegisterOpenCensusPlugin();
   RegisterOpenCensusViewsForGcpObservability();
   if (config->cloud_trace.has_value()) {
-    grpc::internal::OpenCensusExporterRegistry::Get().Register(
+    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
         [cloud_trace = config->cloud_trace.value(),
          project_id = config->project_id]() mutable {
           opencensus::trace::TraceConfig::SetCurrentTraceParams(
@@ -112,7 +112,7 @@ absl::Status GcpObservabilityInit() {
     grpc::internal::EnableOpenCensusTracing(false);
   }
   if (config->cloud_monitoring.has_value()) {
-    grpc::internal::OpenCensusExporterRegistry::Get().Register(
+    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
         [project_id = config->project_id]() mutable {
           opencensus::exporters::stats::StackdriverOptions stats_opts;
           stats_opts.project_id = std::move(project_id);
