@@ -35,7 +35,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "test/core/filters/filter_test.h"
 
 namespace grpc_core {
 
