@@ -23,10 +23,14 @@
 
 #include <algorithm>
 #include <functional>
+#include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/base/call_once.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
 
 #include <grpcpp/opencensus.h>
 
@@ -133,34 +137,57 @@ void EnableOpenCensusTracing(bool enable);
 bool OpenCensusStatsEnabled();
 bool OpenCensusTracingEnabled();
 
-// Registers a function that would initialize an OpenCensus exporter. This
-// function would be run before the first time the OpenCensus plugin is run.
-class OpenCensusExporterRegistry {
+// Registers various things for the OpenCensus plugin.
+class OpenCensusRegistry {
  public:
-  static OpenCensusExporterRegistry& Get();
+  struct Label {
+    std::string key;
+    opencensus::tags::TagKey tag_key;
+    std::string value;
+  };
+
+  static OpenCensusRegistry& Get();
 
   // Registers the functions to be run post-init.
-  void Register(std::function<void()> f) {
+  void RegisterFunctions(std::function<void()> f) {
     exporter_registry_.push_back(std::move(f));
   }
 
   // Runs the registry post-init exactly once. Protected with an absl::CallOnce.
-  void RunRegistryPostInit() {
-    absl::call_once(
-        once_, &OpenCensusExporterRegistry::RunRegistryPostInitHelper, this);
+  void RunFunctionsPostInit() {
+    absl::call_once(once_, &OpenCensusRegistry::RunFunctionsPostInitHelper,
+                    this);
   }
 
+  void RegisterConstantLabels(
+      const std::map<std::string, std::string>& labels) {
+    constant_labels_.reserve(labels.size());
+    for (const auto& label : labels) {
+      auto tag_key = opencensus::tags::TagKey::Register(label.first);
+      constant_labels_.emplace_back(Label{label.first, tag_key, label.second});
+    }
+  }
+
+  ::opencensus::tags::TagMap PopulateTagMapWithConstantLabels(
+      const ::opencensus::tags::TagMap& tag_map);
+
+  void PopulateCensusContextWithConstantAttributes(
+      grpc::experimental::CensusContext* context);
+
+  const std::vector<Label>& constant_labels() const { return constant_labels_; }
+
  private:
-  void RunRegistryPostInitHelper() {
+  void RunFunctionsPostInitHelper() {
     for (const auto& f : exporter_registry_) {
       f();
     }
   }
 
-  OpenCensusExporterRegistry() = default;
+  OpenCensusRegistry() = default;
 
   std::vector<std::function<void()>> exporter_registry_;
   absl::once_flag once_;
+  std::vector<Label> constant_labels_;
 };
 
 }  // namespace internal
