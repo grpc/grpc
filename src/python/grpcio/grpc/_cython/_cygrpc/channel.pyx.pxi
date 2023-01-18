@@ -396,7 +396,9 @@ cdef _close(Channel channel, grpc_status_code code, object details,
   cdef _ChannelState state = channel._state
   cdef _CallState call_state
   encoded_details = _encode(details)
+  import sys; sys.stderr.write("AAAAAAAAAAAAAAAA Calling _close on channel\n"); sys.stderr.flush()
   with state.condition:
+    import sys; sys.stderr.write("AAAAAAAAAAAAAAAA Calling Acquired state.condition\n"); sys.stderr.flush()
     if state.open:
       state.open = False
       state.closed_reason = details
@@ -421,17 +423,23 @@ cdef _close(Channel channel, grpc_status_code code, object details,
         while state.connectivity_due:
           state.condition.wait()
 
+      import sys; sys.stderr.write("AAAAAAAAAAAAAAAA About to destroy things\n"); sys.stderr.flush()
       _destroy_c_completion_queue(state.c_call_completion_queue)
       _destroy_c_completion_queue(state.c_connectivity_completion_queue)
       grpc_channel_destroy(state.c_channel)
       state.c_channel = NULL
+      import sys; sys.stderr.write("AAAAAAAAAAAAAAAA Calling grpc_shutdown from Channel._close\n"); sys.stderr.flush()
+      import traceback; traceback.print_exc()
       grpc_shutdown()
       state.condition.notify_all()
+      import sys; sys.stderr.write("AAAAAAAAAAAAAAAA Destroyed things\n"); sys.stderr.flush()
     else:
+      import sys; sys.stderr.write("AAAAAAAAAAAAAAAA channel was not open\n"); sys.stderr.flush()
       # Another call to close already completed in the past or is currently
       # being executed in another thread.
       while state.c_channel != NULL:
         state.condition.wait()
+  import sys; sys.stderr.write("AAAAAAAAAAAAAAAA Called _close on channel\n"); sys.stderr.flush()
 
 
 cdef _calls_drained(_ChannelState state):

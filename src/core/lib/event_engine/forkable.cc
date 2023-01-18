@@ -55,10 +55,11 @@ void RegisterForkHandlers() {
 void PrepareFork() {
   std::cerr << "AAAAAAAAAAAAAAAAAAa Entering PrepareFork" << std::endl << std::flush;
   grpc_core::MutexLock lock(g_mu.get());
-  for (auto* forkable : *g_forkables) {
-    std::cerr << "AAAAAAAAAAAAAAAAAAa Calling forkable->PrepareFork " << forkable << std::endl << std::flush;
-    forkable->PrepareFork();
-    std::cerr << "AAAAAAAAAAAAAAAAAAa Called forkable->PrepareFork " << forkable << std::endl << std::flush;
+  // for (auto* forkable : *g_forkables) {
+  for (auto forkable_iter = g_forkables->rbegin(); forkable_iter != g_forkables->rend(); ++forkable_iter) {
+    std::cerr << "AAAAAAAAAAAAAAAAAAa Calling forkable->PrepareFork " << *forkable_iter << std::endl << std::flush;
+    (*forkable_iter)->PrepareFork();
+    std::cerr << "AAAAAAAAAAAAAAAAAAa Called forkable->PrepareFork " << *forkable_iter << std::endl << std::flush;
   }
   std::cerr << "AAAAAAAAAAAAAAAAAAa Exiting PrepareFork" << std::endl << std::flush;
 }

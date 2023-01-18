@@ -24,6 +24,7 @@ import sys
 import tempfile
 import threading
 import time
+import traceback
 
 import grpc
 
@@ -31,6 +32,7 @@ from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
+ 
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
@@ -68,9 +70,14 @@ def _async_unary(stub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
         payload=messages_pb2.Payload(body=b'\x00' * 271828))
+
+    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Creating async_unary future\n".format(os.getpid())); sys.stderr.flush()
     response_future = stub.UnaryCall.future(request, timeout=_RPC_TIMEOUT_S)
+    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Created async_unary future\n".format(os.getpid())); sys.stderr.flush()
     response = response_future.result()
+    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Got result\n".format(os.getpid())); sys.stderr.flush()
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
+    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Validated result\n".format(os.getpid())); sys.stderr.flush()
 
 
 def _blocking_unary(stub):
@@ -132,6 +139,7 @@ class _ChildProcess(object):
         self._stderr_path = tempfile.mkstemp()[1]
         self._child_pid = None
         self._rc = None
+        self._args = args
         # self._stdout = tempfile.TemporaryFile()
         # self._stderr = tempfile.TemporaryFile()
 
@@ -142,6 +150,9 @@ class _ChildProcess(object):
         # self._process = multiprocessing.Process(target=record_exceptions)
 
     def _child_main(self):
+        import faulthandler
+        faulthandler.enable(all_threads=True)
+
         try:
             sys.stderr.write("In _child_main\n"); sys.stderr.flush()
             # stdout = open(self._stdout_path, 'w')
@@ -149,18 +160,42 @@ class _ChildProcess(object):
             # # stdout_copy = os.dup(sys.stdout.fileno())
             # os.dup2(stdout.fileno(), sys.stdout.fileno())
             # os.dup2(stderr.fileno(), sys.stderr.fileno())
-            self._task(*args)
+            self._task(*self._args)
         except grpc.RpcError as rpc_error:
+            traceback.print_exc()
             self._exceptions.put('RpcError: %s' % rpc_error)
         except Exception as e:  # pylint: disable=broad-except
+            traceback.print_exc()
             self._exceptions.put(e)
         # finally:
         #     stdout.close()
         #     stderr.close()
         sys.exit(0)
 
+    def _orchestrate_child_gdb(self):
+        cmd = [
+            "gdb",
+            "-ex", "set confirm off",
+            "-ex", "attach {}".format(os.getpid()),
+            # "-ex", "set follow-fork-mode child",
+            "-ex", "set follow-fork-mode parent",
+            "-ex", "continue",
+            "-ex", "bt",
+            # "-ex", "echo done_with_bt",
+            # "-ex", "frame 1",
+            # "-ex", "p *poller_",
+        ]
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
+        sys.stderr.write("Invoking gdb\n")
+        sys.stderr.flush()
+        process = subprocess.Popen(cmd,
+                                   stdout=sys.stderr,
+                                   stderr=sys.stderr)
+        time.sleep(5)
+
     def start(self):
         import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forking\n")
+        # self._orchestrate_child_gdb()
         ret = os.fork()
         # The child process is seemingly never reaching this line. It also doesn't
         # like either the core postfork handlers or the Python-level postfork
@@ -178,8 +213,11 @@ class _ChildProcess(object):
         total = 0.0
         wait_interval = 1.0
         while total < timeout:
-            self._rc, termination = os.waitpid(self._child_pid, os.WNOHANG)
-            if os.WIFEXITED(termination) or os.WIFSIGNALED(termination):
+            # self._rc, termination = os.waitpid(self._child_pid, os.WNOHANG)
+            ret, termination = os.waitpid(self._child_pid, os.WNOHANG)
+            # if os.WIFEXITED(termination) or os.WIFSIGNALED(termination):
+            if ret == self._child_pid:
+                self._rc = os.waitstatus_to_exitcode(termination)
                 return True
             time.sleep(wait_interval)
             total += wait_interval
@@ -220,6 +258,7 @@ class _ChildProcess(object):
         import sys; sys.stderr.write("Joining process\n"); sys.stderr.flush()
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
         sys.stderr.write("Joined process\n"); sys.stderr.flush()
+        sys.stderr.write("Exit code: {}\n".format(self._rc))
         try:
             # TODO: This method seems to be giving bad results. Fix.
             if not terminated:
@@ -323,6 +362,7 @@ def _close_channel_before_fork(channel, args):
 
     def child_target():
         new_channel.close()
+        sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA In child_target\n"); sys.stderr.flush()
         with _channel(args) as child_channel:
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
             _blocking_unary(child_stub)
@@ -555,3 +595,10 @@ class TestCase(enum.Enum):
             raise NotImplementedError('Test case "%s" not implemented!' %
                                       self.name)
         channel.close()
+
+def dump_object_map():
+    with open("/proc/self/maps", "r") as f:
+        sys.stderr.write("=============== /proc/self/maps ===============\n")
+        sys.stderr.write(f.read())
+        sys.stderr.write("\n")
+        sys.stderr.flush()

@@ -39,6 +39,10 @@ from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
 import grpc.experimental  # pytype: disable=pyi-error
 
+def _log(msg):
+    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA {} ".format(os.getpid()) + msg + "\n")
+    sys.stderr.flush()
+
 _LOGGER = logging.getLogger(__name__)
 
 _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
@@ -1435,9 +1439,11 @@ def _channel_managed_call_management(state: _ChannelCallState):
             event_handler,
         ) for operation in operations)
         with state.lock:
+            _log("Creating integrated call")
             call = state.channel.integrated_call(flags, method, host, deadline,
                                                  metadata, credentials,
                                                  operations_and_tags, context)
+            _log("Created integrated call")
             if state.managed_calls == 0:
                 state.managed_calls = 1
                 _run_channel_spin_thread(state)

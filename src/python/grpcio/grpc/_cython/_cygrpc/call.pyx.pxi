@@ -83,6 +83,7 @@ cdef class Call:
     return result
 
   def __dealloc__(self):
+    import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAa grpc_shutdown from Cal.__dealloc__\n"); sys.stderr.flush()
     with nogil:
       if self.c_call != NULL:
         grpc_call_unref(self.c_call)

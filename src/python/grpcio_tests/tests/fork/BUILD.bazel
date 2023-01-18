@@ -1,4 +1,11 @@
 # TODO: Flowerbox
+load("//bazel:cython_library.bzl", "pyx_library")
+
+pyx_library(
+    name = "native_debug",
+    srcs = ["native_debug.pyx"],
+    deps = ["@com_google_absl//absl/debugging:failure_signal_handler"],
+)
 
 py_test(
 	name = "fork_test",
@@ -8,12 +15,23 @@ py_test(
 	srcs = glob(["*.py"]),
 	main = "_fork_interop_test.py",
 	imports = ["../.."],
-        deps = [
+  deps = [
 		"//src/python/grpcio/grpc:grpcio",
 		"//src/proto/grpc/testing:empty_py_pb2",
 		"//src/proto/grpc/testing:py_messages_proto",
 		"//src/proto/grpc/testing:test_py_pb2_grpc",
 		"//src/python/grpcio_tests/tests/interop:service",
 		"//src/python/grpcio_tests/tests/unit:test_common",
+    ":native_debug",
 	],
 )
+
+cc_binary(
+  name = "native_debug_test",
+  deps = [
+    "@com_google_absl//absl/debugging:failure_signal_handler",
+    "@com_google_absl//absl/debugging:symbolize",
+  ],
+  srcs = ["native_debug_test.cc"],
+)
+

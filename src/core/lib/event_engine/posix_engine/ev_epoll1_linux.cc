@@ -251,7 +251,7 @@ void ResetEventManagerOnFork() {
   while (!fork_poller_list.empty()) {
     Epoll1Poller* poller = fork_poller_list.front();
     fork_poller_list.pop_front();
-    delete poller;
+    poller->Close();
   }
   gpr_mu_unlock(&fork_fd_list_mu);
   if (grpc_core::Fork::Enabled()) {
@@ -344,7 +344,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
 }
 
 Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
-    : scheduler_(scheduler), was_kicked_(false) {
+    : scheduler_(scheduler), was_kicked_(false), closed_(false) {
   g_epoll_set_.epfd = EpollCreateAndCloexec();
   wakeup_fd_ = *CreateWakeupFd();
   GPR_ASSERT(wakeup_fd_ != nullptr);
@@ -366,8 +366,9 @@ void Epoll1Poller::Shutdown() {
   delete this;
 }
 
-Epoll1Poller::~Epoll1Poller() {
-  std::cerr <<  "AAAAAAAAAAAAAAAAAAAAA Destroying Epoll1Poller " << this << std::endl << std::flush;
+void Epoll1Poller::Close() {
+  if (closed_) return;
+
   if (g_epoll_set_.epfd >= 0) {
     close(g_epoll_set_.epfd);
     g_epoll_set_.epfd = -1;
@@ -381,6 +382,12 @@ Epoll1Poller::~Epoll1Poller() {
       delete handle;
     }
   }
+  closed_ = true;
+}
+
+Epoll1Poller::~Epoll1Poller() {
+  std::cerr <<  "AAAAAAAAAAAAAAAAAAAAA Destroying Epoll1Poller " << this << std::endl << std::flush;
+  Close();
 }
 
 EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
@@ -548,12 +555,14 @@ Poller::WorkResult Epoll1Poller::Work(
 }
 
 void Epoll1Poller::Kick() {
+  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Entering Epoll1Poller::Kick");
   grpc_core::MutexLock lock(&mu_);
-  if (was_kicked_) {
+  if (was_kicked_ || closed_) {
     return;
   }
   was_kicked_ = true;
   GPR_ASSERT(wakeup_fd_->Wakeup().ok());
+  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Exiting Epoll1Poller::Kick");
 }
 
 Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
@@ -567,9 +576,9 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
 void Epoll1Poller::PrepareFork() {
   // Set forking flag.
   // Kick the event loop.
-  std::cerr << "AAAAAAAAAAAAAAAAAAAAAAA Kicking event loop" << std::endl << std::flush;
+  gpr_log(GPR_INFO, "AAAAAAAAAAAAAAAAAAAAAAA Kicking event loop");
   Kick();
-  std::cerr << "AAAAAAAAAAAAAAAAAAAAAAA Kicked event loop" << std::endl << std::flush;
+  gpr_log(GPR_INFO, "AAAAAAAAAAAAAAAAAAAAAAA Kicked event loop");
 }
 
 void Epoll1Poller::PostforkParent() {
@@ -625,7 +634,7 @@ Poller::WorkResult Epoll1Poller::Work(
 void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
 
-
+  std::cerr << "BBBBBBBBBBBBBBBBBBBBB Entering Epoll1Poller::Kick" << std::endl << std::flush;
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
 Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }

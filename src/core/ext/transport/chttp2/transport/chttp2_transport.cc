@@ -564,6 +564,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
 }
 
 static void destroy_transport(grpc_transport* gt) {
+  // TODO: Dump stacktrace here.
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   t->combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, t, nullptr),
                    absl::OkStatus());

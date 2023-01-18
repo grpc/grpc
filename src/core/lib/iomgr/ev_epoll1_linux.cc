@@ -403,6 +403,7 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
 
 // Might be called multiple times
 static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
+  gpr_log(GPR_ERROR, "Shutting down fd %d", fd->fd);
   fd_shutdown_internal(fd, why, false);
 }
 
@@ -1279,6 +1280,7 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
 // the global epoll fd. This allows gRPC to shutdown in the child process
 // without interfering with connections or RPCs ongoing in the parent.
 static void reset_event_manager_on_fork() {
+  std::cerr << "AAAAAAAAAAAAAAAAAAAA Calling reset_event_manager_on_fork" << std::endl << std::flush;
   gpr_mu_lock(&fork_fd_list_mu);
   while (fork_fd_list_head != nullptr) {
     close(fork_fd_list_head->fd);
@@ -1288,6 +1290,7 @@ static void reset_event_manager_on_fork() {
   gpr_mu_unlock(&fork_fd_list_mu);
   shutdown_engine();
   init_epoll1_linux();
+  std::cerr << "AAAAAAAAAAAAAAAAAAAA Called reset_event_manager_on_fork" << std::endl << std::flush;
 }
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
@@ -1311,7 +1314,9 @@ static bool init_epoll1_linux() {
     return false;
   }
 
+  std::cerr << "AAAAAAAAAAAAAAAAAAAA In init_epoll1_linux" << std::endl << std::flush;
   if (grpc_core::Fork::Enabled()) {
+    std::cerr << "AAAAAAAAAAAAAAAAAAAA Registering fork handler: " << (void*)&reset_event_manager_on_fork << std::endl << std::flush;
     gpr_mu_init(&fork_fd_list_mu);
     grpc_core::Fork::SetResetChildPollingEngineFunc(
         reset_event_manager_on_fork);

@@ -1562,6 +1562,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "forkable",
         "event_engine_poller",
         "event_engine_time_util",
         "iomgr_port",

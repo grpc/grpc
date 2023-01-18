@@ -29,6 +29,15 @@ def mark():
     import sys; sys.stderr.write("BBBBBBBBBBBBBBBBBBBBB {}\n".format(_COUNTER)); sys.stderr.flush()
     _COUNTER += 1
 
+def _dump_streams(name, streams):
+    assert len(streams) == 2
+    for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
+        stream.seek(0)
+        sys.stderr.write("{} {}:\n{}\n".format(name, stream_name, stream.read().decode("ascii")))
+        stream.close()
+    sys.stderr.flush()
+
+# TODO: Parameterize over epoll1 and poll.
 # New instance of multiprocessing.Process using fork without exec can and will
 # freeze if the Python process has any other threads running. This includes the
 # additional thread spawned by our _runner.py class. So in order to test our
@@ -39,6 +48,13 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     import sys
     from grpc._cython import cygrpc
     from tests.fork import methods
+
+    # TODO: Better import path for this.
+    from src.python.grpcio_tests.tests.fork import native_debug
+
+    native_debug.install_failure_signal_handler()
+
+    # methods.dump_object_map()
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
     os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
@@ -114,42 +130,42 @@ class ForkInteropTest(unittest.TestCase):
         finally:
             timer.cancel()
 
-    # def testConnectivityWatch(self):
-    #     self._verifyTestCase(methods.TestCase.CONNECTIVITY_WATCH)
+    def testConnectivityWatch(self):
+        self._verifyTestCase(methods.TestCase.CONNECTIVITY_WATCH)
 
     def testCloseChannelBeforeFork(self):
         self._verifyTestCase(methods.TestCase.CLOSE_CHANNEL_BEFORE_FORK)
 
-    # def testAsyncUnarySameChannel(self):
-    #     self._verifyTestCase(methods.TestCase.ASYNC_UNARY_SAME_CHANNEL)
+    def testAsyncUnarySameChannel(self):
+        self._verifyTestCase(methods.TestCase.ASYNC_UNARY_SAME_CHANNEL)
 
-    # def testAsyncUnaryNewChannel(self):
-    #     self._verifyTestCase(methods.TestCase.ASYNC_UNARY_NEW_CHANNEL)
+    def testAsyncUnaryNewChannel(self):
+        self._verifyTestCase(methods.TestCase.ASYNC_UNARY_NEW_CHANNEL)
 
-    # def testBlockingUnarySameChannel(self):
-    #     self._verifyTestCase(methods.TestCase.BLOCKING_UNARY_SAME_CHANNEL)
+    def testBlockingUnarySameChannel(self):
+        self._verifyTestCase(methods.TestCase.BLOCKING_UNARY_SAME_CHANNEL)
 
-    # def testBlockingUnaryNewChannel(self):
-    #     self._verifyTestCase(methods.TestCase.BLOCKING_UNARY_NEW_CHANNEL)
+    def testBlockingUnaryNewChannel(self):
+        self._verifyTestCase(methods.TestCase.BLOCKING_UNARY_NEW_CHANNEL)
 
-    # def testInProgressBidiContinueCall(self):
-    #     self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_CONTINUE_CALL)
+    def testInProgressBidiContinueCall(self):
+        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_CONTINUE_CALL)
 
-    # def testInProgressBidiSameChannelAsyncCall(self):
-    #     self._verifyTestCase(
-    #         methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL)
+    def testInProgressBidiSameChannelAsyncCall(self):
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL)
 
-    # def testInProgressBidiSameChannelBlockingCall(self):
-    #     self._verifyTestCase(
-    #         methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL)
+    def testInProgressBidiSameChannelBlockingCall(self):
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL)
 
-    # def testInProgressBidiNewChannelAsyncCall(self):
-    #     self._verifyTestCase(
-    #         methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL)
+    def testInProgressBidiNewChannelAsyncCall(self):
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL)
 
-    # def testInProgressBidiNewChannelBlockingCall(self):
-    #     self._verifyTestCase(
-    #         methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL)
+    def testInProgressBidiNewChannelBlockingCall(self):
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL)
 
     def tearDown(self):
         self._server_process.kill()
@@ -198,15 +214,8 @@ class ForkInteropTest(unittest.TestCase):
             process.kill()
             self.assertTrue(False, "Parent process timed out.")
         finally:
-            outputs = []
-            for stream in streams:
-                stream.seek(0)
-                outputs.append(stream.read())
-            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
-                stream.seek(0)
-                sys.stderr.write("Parent {}:\n{}\n".format(stream_name, stream.read().decode("ascii")))
-                stream.close()
-            sys.stderr.flush()
+            _dump_streams("Parent", streams)
+            # _dump_streams("Server", self._streams)
 
 
 if __name__ == '__main__':

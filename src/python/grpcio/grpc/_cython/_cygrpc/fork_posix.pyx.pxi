@@ -57,6 +57,7 @@ cdef void __postfork_parent() nogil:
 
 cdef void __postfork_child() nogil:
     with gil:
+        import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAA in __postfork_child\n"); sys.stderr.flush()
         try:
             if _fork_handler_failed:
                 return
@@ -71,13 +72,17 @@ cdef void __postfork_child() nogil:
             _fork_state.postfork_states_to_reset = []
             _fork_state.fork_epoch += 1
             for channel in _fork_state.channels:
+                sys.stderr.write('  Closing channel {}\n'.format(channel))
                 channel._close_on_fork()
+                sys.stderr.write('  Closed channel {}\n'.format(channel))
             with _fork_state.fork_in_progress_condition:
                 _fork_state.fork_in_progress = False
         except:
-            _LOGGER.error('Exiting child due to raised exception')
-            _LOGGER.error(sys.exc_info()[0])
+            sys.stderr.write('Exiting child due to raised exception\n')
+            sys.stderr.write("{}\n".format(sys.exc_info()[0]))
+            sys.stderr.flush()
             os._exit(os.EX_USAGE)
+        import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAA Exiting  __postfork_child\n"); sys.stderr.flush()
 
     if grpc_is_initialized() > 0:
         with gil:

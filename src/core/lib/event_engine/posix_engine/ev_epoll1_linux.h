@@ -73,6 +73,8 @@ class Epoll1Poller : public PosixEventPoller, public grpc_event_engine::experime
   void PostforkParent() override;
   void PostforkChild() override;
 
+  void Close();
+
  private:
   // This initial vector size may need to be tuned
   using Events = absl::InlinedVector<Epoll1EventHandle*, 5>;
@@ -85,6 +87,7 @@ class Epoll1Poller : public PosixEventPoller, public grpc_event_engine::experime
   // on file descriptors that became readable/writable.
   bool ProcessEpollEvents(int max_epoll_events_to_handle,
                           Events& pending_events);
+
   //  Do epoll_wait and store the events in g_epoll_set.events field. This does
   //  not "process" any of the events yet; that is done in ProcessEpollEvents().
   //  See ProcessEpollEvents() function for more details. It returns the number
@@ -123,6 +126,7 @@ class Epoll1Poller : public PosixEventPoller, public grpc_event_engine::experime
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
+  bool closed_;
 };
 
 // Return an instance of a epoll1 based poller tied to the specified event
