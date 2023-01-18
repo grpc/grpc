@@ -100,11 +100,12 @@ grpc_cc_library(
         "observability_logging_sink.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "googleapis_logging_cc_proto",
         "googleapis_logging_grpc_service",
-        "googleapis_logging_proto",
         "protobuf_headers",
     ],
     language = "c++",

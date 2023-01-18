@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.52.0-dev'
+  version = '1.53.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -265,6 +265,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -727,6 +728,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/poller.h',
+                      'src/core/lib/event_engine/posix.h',
                       'src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h',
                       'src/core/lib/event_engine/posix_engine/ev_poll_posix.h',
                       'src/core/lib/event_engine/posix_engine/event_poller.h',
@@ -755,6 +757,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/utils.h',
                       'src/core/lib/event_engine/windows/iocp.h',
                       'src/core/lib/event_engine/windows/win_socket.h',
+                      'src/core/lib/event_engine/windows/windows_endpoint.h',
                       'src/core/lib/event_engine/windows/windows_engine.h',
                       'src/core/lib/experiments/config.h',
                       'src/core/lib/experiments/experiments.h',
@@ -769,6 +772,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/chunked_vector.h',
                       'src/core/lib/gprpp/construct_destruct.h',
                       'src/core/lib/gprpp/cpp_impl_of.h',
+                      'src/core/lib/gprpp/crash.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/dual_ref_counted.h',
                       'src/core/lib/gprpp/env.h',
@@ -1193,6 +1197,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
+                              'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -1637,6 +1642,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/poller.h',
+                              'src/core/lib/event_engine/posix.h',
                               'src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h',
                               'src/core/lib/event_engine/posix_engine/ev_poll_posix.h',
                               'src/core/lib/event_engine/posix_engine/event_poller.h',
@@ -1665,6 +1671,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/utils.h',
                               'src/core/lib/event_engine/windows/iocp.h',
                               'src/core/lib/event_engine/windows/win_socket.h',
+                              'src/core/lib/event_engine/windows/windows_endpoint.h',
                               'src/core/lib/event_engine/windows/windows_engine.h',
                               'src/core/lib/experiments/config.h',
                               'src/core/lib/experiments/experiments.h',
@@ -1679,6 +1686,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/chunked_vector.h',
                               'src/core/lib/gprpp/construct_destruct.h',
                               'src/core/lib/gprpp/cpp_impl_of.h',
+                              'src/core/lib/gprpp/crash.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/dual_ref_counted.h',
                               'src/core/lib/gprpp/env.h',

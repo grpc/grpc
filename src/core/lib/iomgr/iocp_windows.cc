@@ -32,6 +32,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -78,8 +79,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
       // We were awoken from a kick.
       return GRPC_IOCP_WORK_KICK;
     }
-    gpr_log(GPR_ERROR, "Unknown custom completion key.");
-    abort();
+    grpc_core::Crash("Unknown custom completion key.");
   }
 
   socket = (grpc_winsocket*)completion_key;

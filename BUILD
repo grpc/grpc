@@ -149,6 +149,11 @@ config_setting(
 )
 
 config_setting(
+    name = "mac_arm64",
+    values = {"cpu": "darwin_arm64"},
+)
+
+config_setting(
     name = "use_strict_warning",
     values = {"define": "use_strict_warning=true"},
 )
@@ -156,11 +161,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gribkoff"  # @unused
+g_stands_for = "glockenspiel"  # @unused
 
-core_version = "29.0.0"  # @unused
+core_version = "30.0.0"  # @unused
 
-version = "1.52.0-dev"  # @unused
+version = "1.53.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -643,6 +648,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/tmpfile_posix.cc",
         "//src/core:lib/gpr/tmpfile_windows.cc",
         "//src/core:lib/gpr/wrap_memcpy.cc",
+        "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
         "//src/core:lib/gprpp/global_config_env.cc",
         "//src/core:lib/gprpp/host_port.cc",
@@ -658,6 +664,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/string.h",
         "//src/core:lib/gpr/time_precise.h",
         "//src/core:lib/gpr/tmpfile.h",
+        "//src/core:lib/gprpp/crash.h",
         "//src/core:lib/gprpp/fork.h",
         "//src/core:lib/gprpp/global_config.h",
         "//src/core:lib/gprpp/global_config_custom.h",
@@ -691,6 +698,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "debug_location",
         "//src/core:construct_destruct",
         "//src/core:env",
         "//src/core:examine_stack",
@@ -1002,6 +1010,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
+        "//src/core:default_event_engine",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:slice",
@@ -1175,7 +1184,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/compression_internal.cc",
         "//src/core:lib/compression/message_compress.cc",
-        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
         "//src/core:lib/iomgr/buffer_list.cc",
         "//src/core:lib/iomgr/call_combiner.cc",
         "//src/core:lib/iomgr/cfstream_handle.cc",
@@ -1280,7 +1288,6 @@ grpc_cc_library(
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/compression_internal.h",
         "//src/core:lib/compression/message_compress.h",
-        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
         "//src/core:lib/iomgr/block_annotate.h",
         "//src/core:lib/iomgr/buffer_list.h",
         "//src/core:lib/iomgr/call_combiner.h",
@@ -1403,6 +1410,7 @@ grpc_cc_library(
         "//src/core:atomic_utils",
         "//src/core:bitset",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -1746,6 +1754,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/synchronization",
         "absl/memory",
         "absl/types:optional",
@@ -1817,6 +1826,7 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/memory",
         "upb_lib",
+        "absl/strings:str_format",
         "protobuf_headers",
     ],
     language = "c++",
@@ -2371,6 +2381,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/executor.h",
         "//src/core:lib/iomgr/iomgr_internal.h",
     ],
+    external_deps = ["absl/strings:str_format"],
     visibility = [
         "@grpc:alt_grpc_base_legacy",
         "@grpc:exec_ctx",
@@ -2432,6 +2443,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:iomgr_timer"],
@@ -3437,12 +3449,14 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "hpack_parser_table",
+        "stats",
         "//src/core:decode_huff",
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:hpack_constants",
         "//src/core:slice",
         "//src/core:slice_refcount",
+        "//src/core:stats_data",
         "//src/core:status_helper",
     ],
 )
