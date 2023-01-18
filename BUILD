@@ -1375,6 +1375,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:any",
         "absl/types:optional",
         "absl/types:variant",
         "absl/utility",

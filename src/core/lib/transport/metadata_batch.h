@@ -33,6 +33,7 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/any.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/compression_types.h>
@@ -48,6 +49,43 @@
 #include "src/core/lib/transport/parsed_metadata.h"
 
 namespace grpc_core {
+
+class CustomMetadataType {
+ public:
+  using MementoType = absl::any;
+
+  struct ValueType {
+    CustomMetadataType* metadata_type;
+    std::aligned_storage<sizeof(Slice), alignof(Slice)> storage;
+  };
+
+  class Value {
+   public:
+    Value(CustomMetadataType* metadata_type, const MementoType& memento) {
+      metadata_type->MementoToValue(memento, &value_);
+    }
+    ~Value() { value_.metadata_type->DestroyValue(&value_); }
+    Value(const Value&) = delete;
+    Value& operator=(const Value&) = delete;
+
+   private:
+    ValueType value_;
+  };
+
+  absl::string_view key() const { return key_; }
+  virtual MementoType ParseMemento(Slice value,
+                                   MetadataParseErrorFn on_error) = 0;
+  virtual void MementoToValue(const MementoType& memento, ValueType* value) = 0;
+  virtual Slice Encode(const ValueType& value) = 0;
+  virtual std::string DisplayValue(const ValueType& value) = 0;
+  virtual void DestroyValue(ValueType* value) = 0;
+
+ protected:
+  explicit CustomMetadataType(absl::string_view key) : key_(key) {}
+
+ private:
+  const absl::string_view key_;
+};
 
 // grpc-timeout metadata trait.
 // ValueType is defined as Timestamp - an absolute timestamp (i.e. a
