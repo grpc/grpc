@@ -17,14 +17,13 @@ The package [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools) is used auto
 This package is optional. You may instead choose to generate the C# source files from
 `.proto` files by running the `protoc` compiler manually or from a script.
 However this package helps to simplify generating the C# source files by
-integrating the code generation into the build process.
-
-This package can be used when building both the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
+integrating the code generation into the build process. It can be used when building both
+the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
 * The `Grpc.AspNetCore` metapackage already includes a reference to `Grpc.Tools`. 
-* Client projects and projects using `Grpc.Core` need to reference `Grpc.Tools` explicity if you want code generation for those projects
+* gRPC for .NET client projects and projects using `Grpc.Core` need to reference `Grpc.Tools` explicity if you want code generation for those projects
 
 `Grpc.Tools` is only used at build-time and has no runtime components.
-It should be marked with `PrivateAssets="All"` to exclude it from being included at runtime, e.g.
+It should be marked with `PrivateAssets="All"` to prevent it from being included at runtime, e.g.
 ```xml
 <PackageReference Include="Grpc.Tools" Version="2.50.0">
   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -75,7 +74,7 @@ For `.proto` files that are outside of the project directory a link can be added
 </ItemGroup>
 ```
 
-See also the example project files in https://github.com/grpc/grpc-dotnet/tree/master/examples
+For more examples see the example project files in GitHub: https://github.com/grpc/grpc-dotnet/tree/master/examples
 
 # Reference
 
@@ -94,7 +93,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 | OutputOptions  | | arbitrary options                  | Extra options passed to C# codegen as `--csharp_opt=opt1,opt2` |
 | GrpcOutputDir  | See notes | A directory                        | Directory for generated gRPC stubs    |
 | GrpcOutputOptions | | arbitrary options                  | Extra options passed to gRPC codegen as `--grpc_opt=opt1,opt2` |
-| GrpcServices   | `both`    | `none`, `client`, `server`, `both` | Generated gRPC stubs             |
+| GrpcServices   | `Both`    | `None`, `Client`, `Server`, `Both` | Generated gRPC stubs             |
 | AdditionalImportDirs | See notes | Directories                        | Specify additional directories in which to search for imports `.proto` files |
 
 __Notes__
@@ -139,7 +138,7 @@ to explicitly pass some otherwise unsupported (e.g. experimental) options to the
 `grpc_csharp_plugin`.
 
 * __AdditionalImportDirs__
-Specify additional directories in which to search for imports in `.proto files`. The directories are searched in the order given. You may specify directories _outside_ of the 
+Specify additional directories in which to search for imports in `.proto` files. The directories are searched in the order given. You may specify directories _outside_ of the 
 project directory. The directories are passed to the `protoc` code generator via the `-I/--proto_path` option
 together with `Protobuf_StandardImportsPath` and `ProtoRoot` directories.
 
@@ -210,7 +209,8 @@ following properties change the behavior of `Grpc.Tools`:
 | `gRPC_PluginFullPath` | Same as `GRPC_PROTOC_PLUGIN` environment variable                           |
 | `Protobuf_NoWarnMissingExpected` | Default: `false`. If `true` then no warnings are given if expected files not generated. See example below for an explanation. |
 | `Protobuf_OutputPath`| Default: `IntermediateOutputPath` - ususally the `obj` directory. Sets the default value for `OutputDir` on `<Protobuf>` items.|
-| `EnableDefaultProtobufItems` | Default: `false`. If `true` then `.proto` files under the project are automatically included without the need to specify any `<Protobuf>` items.
+| `EnableDefaultProtobufItems` | Default: `false`. If `true` then `.proto` files under the project are automatically included without the need to specify any `<Protobuf>` items. |
+| `Protobuf_StandardImportsPath` | The path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) included in the NuGet package. It is automcatically passed to `protoc`  via the `-I/--proto_path` option. |
 
 # Scenarios and Examples
 
@@ -242,8 +242,9 @@ These are explained in an example below.
 For `.proto` files under the project directory `ProtoRoot` is by default set to `.`.
 It can also be explicitly set.
 
-For `.proto` files outside of the project then you must set `ProtoRoot` to give the 
-location of the files.
+For `.proto` files outside of the project the value is set to the file's containing directory name.
+If you include a subtree of `.proto` files then you must set `ProtoRoot` to give the 
+parent of the directory tree.
 
 In either case if you are importing a `.proto` file from within another file then you should set
 `ProtoRoot` so that the import paths can be found. (See also `AdditionalImportDirs` below.)
@@ -259,13 +260,17 @@ Specifying:
           ProtoRoot="Protos" />
 <Protobuf Include="Protos\Messages\**\*.proto"
           ProtoRoot="Protos"
-          GrpcServices="none" />
+          GrpcServices="None" />
+<Protobuf Include="..\OutsideProjectProtos\**\*.proto"
+          ProtoRoot="..\OutsideProjectProtos" />
 ```
 for files:
 ```
 	ProjectFolder\Protos\Services\v1\hello.proto
 	ProjectFolder\Protos\Services\v2\hello.proto
 	ProjectFolder\Protos\Messages\v1\message.proto
+	..\OutsideProjectProtos\MyApi\alpha.proto
+	..\OutsideProjectProtos\MyApi\beta.proto
 ```
 will generate files:
 ```
@@ -274,25 +279,34 @@ will generate files:
   ProjectFolder\obj\Debug\net6.0\Services\v2\Hello.cs
   ProjectFolder\obj\Debug\net6.0\Services\v2\HelloGrpc.cs
   ProjectFolder\obj\Debug\net6.0\Messages\v1\Message.cs
+  ProjectFolder\obj\Debug\net6.0\MyApi\Alpha.cs
+  ProjectFolder\obj\Debug\net6.0\MyApi\AlphaGrpc.cs
+  ProjectFolder\obj\Debug\net6.0\MyApi\Beta.cs
+  ProjectFolder\obj\Debug\net6.0\MyApi\BetaGrpc.cs
+
 ```
-Notes:
-* the structure under `ProjectFolder\Protos\` is mirrored in the output directory.
-* if one of the files has `import "Messages\v1\message.proto"` then this will be found since
-`ProjectFolder\Protos` will have been added to the import search path.
+Things to notes:
+* the directory structures under `ProjectFolder\Protos\` and `..\OutsideProjectProtos\` are mirrored in the output directory.
+* the import search paths passed to `protoc` via `-I/--proto_path` option will include
+ `ProjectFolder\Protos` and `..\OutsideProjectProtos`
 ---
 ## <a name="AdditionalImportDirs"></a>AdditionalImportDirs - Setting location of imported `.proto` files
 
 In addition to specifying `ProtoRoot` other import directories can be specified for
 directories to search when importing `.proto` files by specifying `AdditionalImportDirs` 
-and provide a list of directories. The directories are searched in the order given. E.g.:
+and provide a list of directories. The directories are searched in the order given.
+
+You would use this when you want to import `.proto` files that you don't need to 
+separately compile as they are only used in import statements. E.g.:
 
 ```xml
-  <Protobuf Include="protos/*.proto" ProtoRoot="protos"
-      AdditionalImportDirs="/folder/protos/myapis/;/another/folder/"
+  <Protobuf Include="protos/*.proto"
+            ProtoRoot="protos"
+            AdditionalImportDirs="/folder/protos/mytypes/;/another/folder/"
       ... />
 ```
 
-Note: the path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) is automatically included. E.g. the `import` below will work without having to explicity specifying the path in `AdditionalImportDirs`:
+Note: The path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) is automatically included. E.g. the `import` below will work without having to explicity specifying the path in `AdditionalImportDirs`:
 ```protobuf
 import "google/protobuf/wrappers.proto";
 ```
@@ -311,14 +325,14 @@ the gRPC plugin to generate gRPC client and/or server stub code. Whether or not 
 is generated and what it contains is controlled by the `GrpcServices` metadata
 on the `<Protobuf>` item.
 
-* `GrpcServices="both"` (the default) - `Myfile.cs` and `MyfileGrpc.cs` generated
-* `GrpcServices="none"` - just `Myfile.cs` generated
-* `GrpcServices="client"` - `Myfile.cs` and `MyfileGrpc.cs` (just client code)
-* `GrpcServices="server"` - `Myfile.cs` and `MyfileGrpc.cs` (just server code)
+* `GrpcServices="Both"` (the default) - `Myfile.cs` and `MyfileGrpc.cs` generated
+* `GrpcServices="None"` - just `Myfile.cs` generated
+* `GrpcServices="Client"` - `Myfile.cs` and `MyfileGrpc.cs` (just client code)
+* `GrpcServices="Server"` - `Myfile.cs` and `MyfileGrpc.cs` (just server code)
 
 However when a `.proto` **does not file contains any service definitions** but only contains
 message definitions then an empty (zero length) `MyfileGrpc.cs` may still be created
-by `Grpc.Tools` unless the `.proto` file is specified with `GrpcServices="none"` in the project file.
+by `Grpc.Tools` unless the `.proto` file is specified with `GrpcServices="None"` in the project file.
 
 This is because `Grpc.Tools` has no way of knowing in advanced of running the protocol buffers
 compiler whether a `.proto` file has a service clause. It creates the empty files as a marker
@@ -345,21 +359,29 @@ as `Update="**/*_service.proto"` to set the attribute `GrpcServices="Both"` only
 
 ### Seeing a warning about a missing expected file
 
-If a `*Grpc.cs` file is not generated because the `.proto` file does not contain a service clause
-(see above) then `Grpc.Tools` only creates empty files for files generated in the intermediate
-`obj` directory. If the files are configured to be generated elsewhere then empty files are not
- created so as not to pollute non-intermediate directories. In this case a warning is output:
+You will see the warning message:
  ```
  Some expected protoc outputs were not generated
  ```
-The warning can be suppressed by setting the MSBuild property:
+ if all these are true:
+ * the location for the generated files is configured to a directory outside of the project, e.g. `OutputDir="..\outside-project\"`
+ * `*Grpc.cs` files have not been created because the `.proto` file does not contain a
+service definintion
+* you have not specified `GrpcServices="None"`
+
+This is because `Grpc.Tools` only creates empty `*Grpc.cs` files in directories
+within the project (such as the intermediate `obj` directory). Empty files are not created
+outside of the project directory so as not to pollute non-project directories.
+
+This warning can be suppressed by setting the MSBuild property:
 ```xml
 <PropertyGroup>
   <Protobuf_NoWarnMissingExpected>true</Protobuf_NoWarnMissingExpected>
 </PropertyGroup>
 ```
-but it is better to set `GrpcServices="None"` on the `.proto` files affected to avoid
+however it is better to set `GrpcServices="None"` on the `.proto` files affected to avoid
 unnecessary rebuilds. 
+
 
 ---
 ## <a name="autoinclude"></a>Automatically including `.proto` files
@@ -368,8 +390,12 @@ For SDK projects it is possible to automatically include `.proto` files found in
 directory or sub-directories, without having to specify them with a `<Protobuf>` item.
 To do this the property `EnableDefaultProtobufItems` has be set to `true` in the project file or on the MSBuild command line.
 
-By default it is not set and `<Protobuf>` items must be included in the project for
-the `.proto` files to be compiled.
+It is recommended that you do not rely on automatic inclusion of `.proto` files except for
+the simplest of projects since it does not allow you to control other settings such as
+`GrpcServices`.
+
+By default `EnableDefaultProtobufItems` is not set and `<Protobuf>` items must be included 
+in the project for the `.proto` files to be compiled.  
 
 ---
 
