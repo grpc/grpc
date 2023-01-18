@@ -102,7 +102,7 @@
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 grpc_core::TraceFlag grpc_call_trace(false, "call");
-grpc_core::TraceFlag grpc_call_refcount_trace(false, "call_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_call_refcount_trace(false, "call_refcount");
 
 namespace grpc_core {
 
@@ -1905,11 +1905,22 @@ class PromiseBasedCall : public Call,
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
   void ExternalRef() final {
-    refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
+    const uint64_t prev_ref_pair =
+        refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s EXTERNAL_REF: %d:%d->%d:%d", DebugTag().c_str(),
+              GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair),
+              GetStrongRefs(prev_ref_pair) + 1, GetWeakRefs(prev_ref_pair));
+    }
   }
   void ExternalUnref() final {
     const uint64_t prev_ref_pair =
         refs_.fetch_add(MakeRefPair(-1, 1), std::memory_order_acq_rel);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s EXTERNAL_UNREF: %d:%d->%d:%d", DebugTag().c_str(),
+              GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair),
+              GetStrongRefs(prev_ref_pair) - 1, GetWeakRefs(prev_ref_pair) + 1);
+    }
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (GPR_UNLIKELY(strong_refs == 1)) {
       Orphan();
@@ -1917,12 +1928,22 @@ class PromiseBasedCall : public Call,
     // Now drop the weak ref.
     InternalUnref("external_ref");
   }
-  void InternalRef(const char*) final {
-    refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
+  void InternalRef(const char* reason) final {
+    uint64_t n = refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s REF: %s %d:%d->%d:%d", DebugTag().c_str(), reason,
+              GetStrongRefs(n), GetWeakRefs(n), GetStrongRefs(n),
+              GetWeakRefs(n) + 1);
+    }
   }
-  void InternalUnref(const char*) final {
+  void InternalUnref(const char* reason) final {
     const uint64_t prev_ref_pair =
         refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s UNREF: %s %d:%d->%d:%d", DebugTag().c_str(),
+              reason, GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair),
+              GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair) - 1);
+    }
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
       DeleteThis();
     }

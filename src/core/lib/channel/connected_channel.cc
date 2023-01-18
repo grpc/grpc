@@ -1084,11 +1084,8 @@ class ServerStream final : public ConnectedChannelStream {
       }
     }
     if (auto* p = absl::get_if<Complete>(&client_initial_metadata_state_)) {
-      if (absl::holds_alternative<ServerMetadataHandle>(
-              server_initial_metadata_)) {
-        set_finished();
-        return std::move(p->result);
-      }
+      set_finished();
+      return std::move(p->result);
     }
     return Pending{};
   }
