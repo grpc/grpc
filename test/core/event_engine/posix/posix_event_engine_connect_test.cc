@@ -162,8 +162,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
         EXPECT_EQ(status.status().code(), absl::StatusCode::kUnknown);
         signal.Notify();
       },
-      *URIToResolvedAddress(target_addr), config,
-      memory_quota->CreateMemoryAllocator("conn-1"), 3s);
+      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
+      3s);
   signal.WaitForNotification();
   for (auto sock : sockets) {
     close(sock);
@@ -190,8 +190,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
         FAIL() << "The on_connect callback should not have run since the "
                   "connection attempt was cancelled.";
       },
-      *URIToResolvedAddress(target_addr), config,
-      memory_quota->CreateMemoryAllocator("conn-2"), 3s);
+      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-2"),
+      3s);
   if (connection_handle.keys[0] > 0) {
     ASSERT_TRUE(posix_ee->CancelConnect(connection_handle));
   }

@@ -295,7 +295,7 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
             why.ToString().c_str());
   }
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Shutdown:%s", eeep->wrapper,
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Shutdown:%s", eeep->wrapper,
                           why.ToString().c_str());
   eeep->wrapper->TriggerShutdown();
 }
@@ -306,7 +306,7 @@ void EndpointDestroy(grpc_endpoint* ep) {
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   eeep->wrapper->Unref();
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Destroy", eeep->wrapper);
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Destroy", eeep->wrapper);
 }
 
 absl::string_view EndpointGetPeerAddress(grpc_endpoint* ep) {
@@ -365,7 +365,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 #else   // GRPC_POSIX_SOCKET_TCP
   fd_ = -1;
 #endif  // GRPC_POSIX_SOCKET_TCP
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Create", eeep_->wrapper);
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
 }
 
 }  // namespace
