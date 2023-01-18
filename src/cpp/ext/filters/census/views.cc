@@ -74,7 +74,6 @@ ViewDescriptor MinuteDescriptor() {
   auto descriptor = DefaultViewDescriptor();
   SetAggregationWindow(AggregationWindow::Interval(absl::Minutes(1)),
                        &descriptor);
-  SetConstantLabels(&descriptor);
   return descriptor;
 }
 
@@ -82,7 +81,6 @@ ViewDescriptor HourDescriptor() {
   auto descriptor = DefaultViewDescriptor();
   SetAggregationWindow(AggregationWindow::Interval(absl::Hours(1)),
                        &descriptor);
-  SetConstantLabels(&descriptor);
   return descriptor;
 }
 
