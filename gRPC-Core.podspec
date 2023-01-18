@@ -198,6 +198,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
+    ss.dependency 'abseil/types/any', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.dependency 'abseil/types/span', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version

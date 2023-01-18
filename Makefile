@@ -2903,6 +2903,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
+    third_party/abseil-cpp/absl/types/bad_any_cast.cc \
     third_party/abseil-cpp/absl/types/bad_optional_access.cc \
     third_party/abseil-cpp/absl/types/bad_variant_access.cc \
 
