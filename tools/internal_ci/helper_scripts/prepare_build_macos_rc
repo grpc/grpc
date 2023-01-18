@@ -80,7 +80,7 @@ then
   set +x
   source $HOME/.rvm/scripts/rvm
 
-  RUBY_VERSION=3.2.0
+  RUBY_VERSION=3.1.3
   echo "Installing ruby-${RUBY_VERSION}"
   time rvm install "ruby-${RUBY_VERSION}"
   echo "Setting default ruby version."
