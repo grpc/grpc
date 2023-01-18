@@ -26,7 +26,6 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
-#include "opencensus/tags/with_tag_map.h"
 
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
@@ -42,13 +41,8 @@ namespace testing {
 
 namespace {
 
-using ::opencensus::stats::Aggregation;
-using ::opencensus::stats::Distribution;
 using ::opencensus::stats::View;
-using ::opencensus::stats::ViewDescriptor;
 using ::opencensus::stats::testing::TestUtils;
-using ::opencensus::tags::TagKey;
-using ::opencensus::tags::WithTagMap;
 
 class ConstantLabelsTest : public StatsPluginEnd2EndTest {
  protected:

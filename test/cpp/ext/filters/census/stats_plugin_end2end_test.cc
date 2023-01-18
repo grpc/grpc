@@ -48,7 +48,6 @@ using ::opencensus::stats::Distribution;
 using ::opencensus::stats::View;
 using ::opencensus::stats::ViewDescriptor;
 using ::opencensus::stats::testing::TestUtils;
-using ::opencensus::tags::TagKey;
 using ::opencensus::tags::WithTagMap;
 
 TEST_F(StatsPluginEnd2EndTest, ErrorCount) {

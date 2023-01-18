@@ -27,9 +27,8 @@
 #include "opencensus/trace/context_util.h"
 #include "opencensus/trace/propagation/grpc_trace_bin.h"
 
-#include "grpc_plugin.h"
-
 #include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/rpc_encoding.h"
 
 namespace grpc {

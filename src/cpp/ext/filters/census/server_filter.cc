@@ -16,13 +16,12 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/cpp/ext/filters/census/server_filter.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <utility>
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 #include "absl/meta/type_traits.h"
@@ -34,6 +33,11 @@
 #include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
@@ -41,7 +45,6 @@
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
-#include "opencensus/tags/tag_map.h"
 
 namespace grpc {
 namespace internal {
