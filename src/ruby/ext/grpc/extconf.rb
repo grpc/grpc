@@ -45,7 +45,7 @@ grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
-ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
+ENV['MACOSX_DEPLOYMENT_TARGET'] = '11.7'
 
 def env_unset?(name)
   ENV[name].nil? || ENV[name].size == 0
@@ -187,21 +187,21 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-#strip_tool = RbConfig::CONFIG['STRIP']
-#strip_tool += ' -x' if apple_toolchain
-#
-#if grpc_config == 'opt'
-#p "apolcyn ext adding strip to Makefile"
-#File.open('Makefile.new', 'w') do |o|
-#  o.puts 'hijack: all strip'
-#  o.puts
-#  File.foreach('Makefile') do |i|
-#    o.puts i
-#  end
-#  o.puts
-#  o.puts 'strip: $(DLLIB)'
-#  o.puts "\t$(ECHO) Stripping $(DLLIB)"
-#  o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
-#end
-#File.rename('Makefile.new', 'Makefile')
-#end
+strip_tool = RbConfig::CONFIG['STRIP']
+strip_tool += ' -x' if apple_toolchain
+
+if grpc_config == 'opt'
+  p "apolcyn ext adding strip to Makefile"
+  File.open('Makefile.new', 'w') do |o|
+    o.puts 'hijack: all strip'
+    o.puts
+    File.foreach('Makefile') do |i|
+      o.puts i
+    end
+    o.puts
+    o.puts 'strip: $(DLLIB)'
+    o.puts "\t$(ECHO) Stripping $(DLLIB)"
+    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
+  end
+  File.rename('Makefile.new', 'Makefile')
+end
