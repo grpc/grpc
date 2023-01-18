@@ -22,6 +22,7 @@ grpc_package(name = "test/core/event_engine/test_suite/tools")
 
 grpc_cc_binary(
     name = "windows_event_engine_echo_client",
+    testonly = True,
     srcs = ["windows_event_engine_factory.cc"],
     tags = [
         "bazel_only",
