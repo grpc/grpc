@@ -39,6 +39,7 @@ original_deps = {}
 original_external_deps = {}
 skip_headers = collections.defaultdict(set)
 canonical_deps = {}
+alwayslink_targets = set()
 
 # TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
 # We can likely parse out BUILD files from dependencies to generate this index.
@@ -299,6 +300,7 @@ def grpc_cc_library(name,
                     deps=[],
                     external_deps=[],
                     proto=None,
+                    alwayslink=False,
                     **kwargs):
     global args
     global num_cc_libraries
@@ -312,6 +314,8 @@ def grpc_cc_library(name,
             num_opted_out_cc_libraries += 1
             print("Not opted in: {}".format(name))
         no_update.add(name)
+    if alwayslink:
+        alwayslink_targets.add(name)
     scores[name] = len(public_hdrs + hdrs)
     # avoid_dep is the internal way of saying prefer something else
     # we add grpc_avoid_dep to allow internal grpc-only stuff to avoid each
@@ -563,6 +567,9 @@ def make_library(library):
     deps = Choices(library, {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']}
                    if library.startswith('//test/') else {})
     external_deps = Choices(None, {})
+    for dep in original_deps[library]:
+        if dep in alwayslink_targets:
+            deps.add(dep, 'alwayslink:' + dep)
     for hdr in hdrs:
         if hdr in skip_headers[library]:
             continue
