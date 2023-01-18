@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <new>
 #include <string>
@@ -102,7 +103,7 @@
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 grpc_core::TraceFlag grpc_call_trace(false, "call");
-grpc_core::TraceFlag grpc_call_refcount_trace(false, "call_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_call_refcount_trace(false, "call_refcount");
 
 namespace grpc_core {
 
@@ -1876,7 +1877,8 @@ class PromiseBasedCall : public Call,
                          public grpc_event_engine::experimental::EventEngine::
                              Closure /* for deadlines */ {
  public:
-  PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
+  PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+                   const grpc_call_create_args& args);
 
   void ContextSet(grpc_context_index elem, void* value,
                   void (*destroy)(void* value)) override;
@@ -1905,11 +1907,22 @@ class PromiseBasedCall : public Call,
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
   void ExternalRef() final {
-    refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
+    const uint64_t prev_ref_pair =
+        refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s EXTERNAL_REF: %d:%d->%d:%d", DebugTag().c_str(),
+              GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair),
+              GetStrongRefs(prev_ref_pair) + 1, GetWeakRefs(prev_ref_pair));
+    }
   }
   void ExternalUnref() final {
     const uint64_t prev_ref_pair =
         refs_.fetch_add(MakeRefPair(-1, 1), std::memory_order_acq_rel);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s EXTERNAL_UNREF: %d:%d->%d:%d", DebugTag().c_str(),
+              GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair),
+              GetStrongRefs(prev_ref_pair) - 1, GetWeakRefs(prev_ref_pair) + 1);
+    }
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (GPR_UNLIKELY(strong_refs == 1)) {
       Orphan();
@@ -1917,12 +1930,22 @@ class PromiseBasedCall : public Call,
     // Now drop the weak ref.
     InternalUnref("external_ref");
   }
-  void InternalRef(const char*) final {
-    refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
+  void InternalRef(const char* reason) final {
+    uint64_t n = refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s REF: %s %d:%d->%d:%d", DebugTag().c_str(), reason,
+              GetStrongRefs(n), GetWeakRefs(n), GetStrongRefs(n),
+              GetWeakRefs(n) + 1);
+    }
   }
-  void InternalUnref(const char*) final {
+  void InternalUnref(const char* reason) final {
     const uint64_t prev_ref_pair =
         refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s UNREF: %s %d:%d->%d:%d", DebugTag().c_str(),
+              reason, GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair),
+              GetStrongRefs(prev_ref_pair), GetWeakRefs(prev_ref_pair) - 1);
+    }
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
       DeleteThis();
     }
@@ -2314,7 +2337,7 @@ class PromiseBasedCall : public Call,
   }
 
   mutable Mutex mu_;
-  std::atomic<uint64_t> refs_{MakeRefPair(1, 0)};
+  std::atomic<uint64_t> refs_;
   CallContext call_context_{this};
   bool keep_polling_ ABSL_GUARDED_BY(mu()) = false;
 
@@ -2351,10 +2374,11 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
   return absl::OkStatus();
 }
 
-PromiseBasedCall::PromiseBasedCall(Arena* arena,
+PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
+      refs_(MakeRefPair(initial_external_refs, 0)),
       cq_(args.cq) {
   if (args.cq != nullptr) {
     GPR_ASSERT(args.pollset_set_alternative == nullptr &&
@@ -2463,7 +2487,8 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
       }
     }
     gpr_log(
-        GPR_INFO, "%s[call] FinishOpOnCompletion %s %s %s", DebugTag().c_str(),
+        GPR_INFO, "%s[call] FinishOpOnCompletion tag:%p %s %s %s",
+        DebugTag().c_str(), completion_info_[completion->index()].pending.tag,
         completion->ToString().c_str(), PendingOpString(reason),
         (pending.empty()
              ? (success ? std::string("done") : std::string("failed"))
@@ -2685,7 +2710,7 @@ void PublishMetadataArray(grpc_metadata_array* array, grpc_metadata_batch* md) {
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
-      : PromiseBasedCall(arena, *args) {
+      : PromiseBasedCall(arena, 1, *args) {
     global_stats().IncrementClientCallsCreated();
     ScopedContext context(this);
     send_initial_metadata_ =
@@ -3096,7 +3121,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  private:
   struct Uninitialized {};
 
-  class RecvCloseState {
+  class RecvCloseOpCancelState {
    public:
     // Request that receiver be filled in per grpc_op_recv_close_on_server.
     // Returns true if the request can be fulfilled immediately.
@@ -3178,7 +3203,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
-  RecvCloseState recv_close_state_ ABSL_GUARDED_BY(mu());
+  RecvCloseOpCancelState recv_close_op_cancel_state_ ABSL_GUARDED_BY(mu());
   Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
   Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
@@ -3200,6 +3225,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
       std::move(call_args.client_initial_metadata);
   PublishMetadataArray(publish_initial_metadata,
                        call_->client_initial_metadata_.get());
+  call_->ExternalRef();
   publish(call_->c_ptr());
   return [this]() {
     call_->mu()->AssertHeld();
@@ -3209,7 +3235,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
 
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
-    : PromiseBasedCall(arena, *args),
+    : PromiseBasedCall(arena, 0, *args),
       call_context_(this, args->server_transport_data),
       server_(args->server) {
   global_stats().IncrementServerCallsCreated();
@@ -3242,13 +3268,19 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 
 void ServerPromiseBasedCall::UpdateOnce() {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %shas_promise=%s",
-            DebugTag().c_str(), recv_close_state_.ToString().c_str(),
-            recv_close_completion_.has_value()
-                ? absl::StrCat(":", recv_close_completion_.ToString()).c_str()
-                : "",
-            PollStateDebugString().c_str(),
-            promise_.has_value() ? "true" : "false");
+    gpr_log(
+        GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %s%shas_promise=%s",
+        DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
+        recv_close_completion_.has_value()
+            ? absl::StrCat(":", recv_close_completion_.ToString()).c_str()
+            : "",
+        send_status_from_server_completion_.has_value()
+            ? absl::StrCat("send_status:",
+                           send_status_from_server_completion_.ToString(), " ")
+                  .c_str()
+            : "",
+        PollStateDebugString().c_str(),
+        promise_.has_value() ? "true" : "false");
   }
   if (auto* p =
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
@@ -3269,10 +3301,11 @@ void ServerPromiseBasedCall::UpdateOnce() {
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
-                DebugTag().c_str(), recv_close_state_.ToString().c_str(),
+                DebugTag().c_str(),
+                recv_close_op_cancel_state_.ToString().c_str(),
                 (*result)->DebugString().c_str());
       }
-      if (recv_close_state_.CompleteCall(
+      if (recv_close_op_cancel_state_.CompleteCall(
               (*result)->get(GrpcStatusFromWire()).value_or(false))) {
         FinishOpOnCompletion(&recv_close_completion_,
                              PendingOp::kReceiveCloseOnServer);
@@ -3380,9 +3413,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%s[call] StartBatch: RecvClose %s",
-                  DebugTag().c_str(), recv_close_state_.ToString().c_str());
+                  DebugTag().c_str(),
+                  recv_close_op_cancel_state_.ToString().c_str());
         }
-        if (!recv_close_state_.RequestReceiveCloseOnServer(
+        if (!recv_close_op_cancel_state_.RequestReceiveCloseOnServer(
                 op.data.recv_close_on_server.cancelled)) {
           recv_close_completion_ =
               AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);

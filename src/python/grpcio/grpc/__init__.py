@@ -1084,7 +1084,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def invocation_metadata(self):
-        """Accesses the metadata from the sent by the client.
+        """Accesses the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.

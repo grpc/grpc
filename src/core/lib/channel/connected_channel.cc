@@ -1063,6 +1063,10 @@ class ServerStream final : public ConnectedChannelStream {
         memset(&op, 0, sizeof(op));
         op.payload = batch_payload();
         op.on_complete = &completing.on_complete;
+        // If we've gotten initial server metadata, we can send trailing
+        // metadata.
+        // Otherwise we need to cancel the call.
+        // There could be an unlucky ordering, so we poll here to make sure.
         if (poll_send_initial_metadata()) {
           op.send_trailing_metadata = true;
           batch_payload()->send_trailing_metadata.send_trailing_metadata =
@@ -1084,11 +1088,8 @@ class ServerStream final : public ConnectedChannelStream {
       }
     }
     if (auto* p = absl::get_if<Complete>(&client_initial_metadata_state_)) {
-      if (absl::holds_alternative<ServerMetadataHandle>(
-              server_initial_metadata_)) {
-        set_finished();
-        return std::move(p->result);
-      }
+      set_finished();
+      return std::move(p->result);
     }
     return Pending{};
   }

@@ -1241,6 +1241,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   grpc_error_handle error = grpc_call_create(&args, &call);
   grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
   if (call_stack == nullptr) {  // Promise based calls do not have a call stack
+    GPR_ASSERT(error.ok());
     GPR_ASSERT(IsPromiseBasedServerCallEnabled());
     return;
   } else {
