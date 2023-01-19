@@ -28,13 +28,24 @@ tools/bazel version
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
 
+# Print disk usage
+df -h
+du -h --max-depth=1 | sort -rh | head -100
+
+# Protect block with `set +e` and `set -e` to avoid exit on bazel test failures.
+set +e
 bazel_rbe/bazel_wrapper \
   --bazelrc=tools/remote_build/linux_kokoro.bazelrc \
   test \
   $BAZEL_FLAGS \
   "$@" \
   -- ${BAZEL_TESTS:-//test/...}
+# Save exit code of bazel RBE command
+status=$?
+set -e
 
 # Print disk usage
 df -h
 du -h --max-depth=1 | sort -rh | head -100
+
+exit $status
