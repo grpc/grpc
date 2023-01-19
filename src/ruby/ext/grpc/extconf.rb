@@ -38,7 +38,7 @@ p "apolcyn ext ENV[CXX]: |#{ENV['CXX']}|"
 p "apolcyn ext ENV[LD]: |#{ENV['LD']}|"
 p "apolcyn ext ENV[LDFLAGS]: |#{ENV['LDFLAGS']}|"
 p "apolcyn macos version BEGIN"
-p `sw_vers`
+p `sw_vers || true`
 p "apolcyn macos version END"
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
@@ -208,7 +208,20 @@ if grpc_config == 'opt'
   end
   File.rename('Makefile.new', 'Makefile')
 end
-
+# Add workaround for 
+if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
+  puts 'Overriding the generated make install target to use cp'
+  File.open('Makefile.new', 'w') do |o|
+    File.foreach('Makefile') do |i|
+      if i.start_with?('INSTALL_PROG = ')
+        o.puts 'INSTALL_PROG = cp'
+      else
+        o.puts i
+      end
+    end
+  end
+  File.rename('Makefile.new', 'Makefile')
+end
 p "apolcyn BEGIN dump new Makefile"
 File.foreach('Makefile') do |i|
   p i
