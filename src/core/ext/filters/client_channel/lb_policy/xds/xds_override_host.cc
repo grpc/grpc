@@ -142,10 +142,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return connectivity_state_.load();
     }
 
-    XdsHealthStatus health_status() { return health_status_; }
-
-    Handle UpdateHealthStatus(XdsHealthStatus health_status);
-
     void Shutdown();
 
     RefCountedPtr<XdsOverrideHostLb> policy() { return policy_; }
@@ -177,7 +173,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
         watchers_;
     std::atomic<grpc_connectivity_state> connectivity_state_ = {
         GRPC_CHANNEL_IDLE};
-    XdsHealthStatus health_status_;
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -250,21 +245,20 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   class SubchannelEntry {
    public:
-    explicit SubchannelEntry(SubchannelWrapper::Handle subchannel)
-        : subchannel_(std::move(subchannel)) {}
+    explicit SubchannelEntry(XdsHealthStatus eds_health_status)
+        : eds_health_status_(eds_health_status) {}
 
     ~SubchannelEntry() {
       SubchannelWrapper* subchannel = GetSubchannel();
       if (subchannel != nullptr) subchannel->Shutdown();
     }
 
-    void SetSubchannel(SubchannelWrapper::Handle subchannel) {
-      SubchannelWrapper* current = GetSubchannel();
-      SubchannelWrapper* next = SubchannelWrapper::FromHandle(subchannel);
-      if (current != nullptr && current != next) {
-        current->Shutdown();
+    void SetSubchannel(RefCountedPtr<SubchannelWrapper> subchannel) {
+      if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
+        subchannel_ = subchannel;
+      } else {
+        subchannel_ = subchannel.get();
       }
-      std::swap(subchannel_, subchannel);
     }
 
     void ResetSubchannel(SubchannelWrapper* expected) {
@@ -277,8 +271,24 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return SubchannelWrapper::FromHandle(subchannel_);
     }
 
+    void SetEdsHealthStatus(XdsHealthStatus eds_health_status) {
+      eds_health_status_ = eds_health_status;
+      auto subchannel = GetSubchannel();
+      if (subchannel == nullptr) {
+        return;
+      }
+      if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
+        subchannel_ = subchannel->Ref();
+      } else {
+        subchannel_ = subchannel;
+      }
+    }
+
+    XdsHealthStatus eds_health_status() { return eds_health_status_; }
+
    private:
     SubchannelWrapper::Handle subchannel_;
+    XdsHealthStatus eds_health_status_;
   };
 
   void ShutdownLocked() override;
@@ -301,6 +311,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
       absl::string_view address,
       const XdsHealthStatusSet& override_host_status_set);
+
+  void OnSubchannelConnectivityStateChange(absl::string_view subchannel_key)
+      ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -524,23 +537,20 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
   {
     MutexLock lock(&subchannel_map_mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
-      auto key_status = addresses_for_map.find(it->first);
-      SubchannelWrapper* subchannel = it->second.GetSubchannel();
-      if (key_status == addresses_for_map.end()) {
+      if (addresses_for_map.find(it->first) == addresses_for_map.end()) {
         it = subchannel_map_.erase(it);
       } else {
-        if (subchannel != nullptr) {
-          it->second.SetSubchannel(
-              subchannel->UpdateHealthStatus(key_status->second));
-        } else {
-          it->second.SetSubchannel(nullptr);
-        }
-        addresses_for_map.erase(key_status);
         ++it;
       }
     }
     for (const auto& key_status : addresses_for_map) {
-      subchannel_map_.emplace(key_status.first, SubchannelEntry(nullptr));
+      auto it = subchannel_map_.find(key_status.first);
+      if (it == subchannel_map_.end()) {
+        it = subchannel_map_
+                 .emplace(key_status.first, SubchannelEntry(key_status.second))
+                 .first;
+      }
+      it->second.SetEdsHealthStatus(key_status.second);
     }
   }
   return return_value;
@@ -559,7 +569,7 @@ XdsOverrideHostLb::AdoptSubchannel(
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(*key);
   if (it != subchannel_map_.end()) {
-    it->second.SetSubchannel(wrapper->UpdateHealthStatus(status));
+    it->second.SetSubchannel(wrapper);
   }
   return wrapper;
 }
@@ -580,14 +590,20 @@ XdsOverrideHostLb::GetSubchannelByAddress(
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
   if (it != subchannel_map_.end()) {
-    auto subchannel = it->second.GetSubchannel();
-    if (subchannel == nullptr ||
-        !override_host_status_set.Contains(subchannel->health_status())) {
-      return nullptr;
-    }
-    return subchannel->Ref();
+    return it->second.GetSubchannel()->Ref();
   }
   return nullptr;
+}
+
+void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
+    absl::string_view subchannel_key) {
+  auto it = subchannel_map_.find(subchannel_key);
+  if (it == subchannel_map_.end()) {
+    return;
+  }
+  if (it->second.eds_health_status().status() == XdsHealthStatus::kDraining) {
+    MaybeUpdatePickerLocked();
+  }
 }
 
 //
@@ -645,8 +661,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     XdsHealthStatus health_status)
     : DelegatingSubchannel(std::move(subchannel)),
       key_(std::move(key)),
-      policy_(std::move(policy)),
-      health_status_(health_status) {
+      policy_(std::move(policy)) {
   auto watcher = std::make_unique<ConnectivityStateWatcher>(Ref());
   watcher_ = watcher.get();
   wrapped_subchannel()->WatchConnectivityState(std::move(watcher));
@@ -684,27 +699,14 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
       watcher->OnConnectivityStateChange(state, status);
     }
   }
-  if (key_.has_value() &&
-      policy_->config_->override_host_status_set().Contains(health_status_) &&
-      health_status_.status() == XdsHealthStatus::kDraining) {
-    policy_->MaybeUpdatePickerLocked();
+  if (key_.has_value()) {
+    policy_->OnSubchannelConnectivityStateChange(*key_);
   }
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::Shutdown() {
   key_.reset();
   wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
-}
-
-XdsOverrideHostLb::SubchannelWrapper::Handle
-XdsOverrideHostLb::SubchannelWrapper::UpdateHealthStatus(
-    XdsHealthStatus health_status) {
-  health_status_ = health_status;
-  if (health_status_.status() == XdsHealthStatus::kDraining) {
-    return Ref();
-  } else {
-    return this;
-  }
 }
 
 XdsOverrideHostLb::SubchannelWrapper*
