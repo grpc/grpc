@@ -521,10 +521,6 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       }
     }
   }
-  // Channels going from DRAINING to other state might only be retained
-  // by the policy. This makes sure their removal is processed after the
-  // mutex is released.
-  std::vector<RefCountedPtr<SubchannelWrapper>> retained;
   {
     MutexLock lock(&subchannel_map_mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
@@ -536,7 +532,6 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
         if (subchannel != nullptr) {
           it->second.SetSubchannel(
               subchannel->UpdateHealthStatus(key_status->second));
-          retained.push_back(subchannel->Ref());
         } else {
           it->second.SetSubchannel(nullptr);
         }
