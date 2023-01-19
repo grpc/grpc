@@ -17,7 +17,7 @@
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 
 find_latest() {
-  gcloud container images list-tags --filter=tags\~v1\.\\d\\d\.x "${IMAGE_REPO}/${1}-${2}" '--format=table[no-heading](tags)' | awk -F, '{print $2}' | sort | tail -n 1
+  gcloud container images list-tags --filter='tags~v1\.\d+\.x' --flatten='tags[]' --format='value(tags)' | sort --version-sort | tail -n 1
 }
 
 if [ "${LATEST_BRANCH}" == "" ]; then
