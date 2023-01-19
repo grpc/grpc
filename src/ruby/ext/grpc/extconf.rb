@@ -190,7 +190,7 @@ create_makefile(output)
 strip_tool = RbConfig::CONFIG['STRIP']
 strip_tool += ' -x' if apple_toolchain
 
-if grpc_config == 'opt' || grpc_config == 'dbg'
+if grpc_config == 'opt'
   p "apolcyn adding strip to Makefile"
   File.open('Makefile.new', 'w') do |o|
     o.puts 'hijack: all strip'
@@ -204,9 +204,10 @@ if grpc_config == 'opt' || grpc_config == 'dbg'
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
   end
   File.rename('Makefile.new', 'Makefile')
-  p "apolcyn BEGIN dump new Makefile"
-  File.foreach('Makefile') do |i|
-    p i
-  end
-  p "apolcyn END dump new Makefile"
 end
+
+p "apolcyn BEGIN dump new Makefile"
+File.foreach('Makefile') do |i|
+  p i
+end
+p "apolcyn END dump new Makefile"

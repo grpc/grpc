@@ -16,11 +16,9 @@
 
 set -ex
 
-EXIT=0
 export GRPC_CONFIG=${CONFIG:-opt}
 if [ "${GRPC_CONFIG}" == "dbg" ]
 then
-  EXIT=1
   CMAKE_CONFIG=Debug
 else
   CMAKE_CONFIG=Release
@@ -44,4 +42,4 @@ popd
 (cd third_party/zlib; git checkout zconf.h)
 ls -l src/ruby/lib/grpc/grpc_c.bundle
 file src/ruby/lib/grpc/grpc_c.bundle
-exit $EXIT
+exit 1
