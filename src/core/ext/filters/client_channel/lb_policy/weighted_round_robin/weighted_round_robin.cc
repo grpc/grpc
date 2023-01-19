@@ -317,7 +317,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     // Builds a new scheduler and swaps it into place, then starts a
     // timer for the next update.
     void BuildSchedulerAndStartTimerLocked()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&timer_mu_);
 
     RefCountedPtr<WeightedRoundRobin> wrr_;
     const bool use_per_rpc_utilization_;
@@ -326,10 +326,13 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     const Duration blackout_period_;
     std::vector<SubchannelInfo> subchannels_;
 
-    Mutex mu_;
-    std::shared_ptr<StaticStrideScheduler> scheduler_ ABSL_GUARDED_BY(&mu_);
+    Mutex scheduler_mu_;
+    std::shared_ptr<StaticStrideScheduler> scheduler_
+        ABSL_GUARDED_BY(&scheduler_mu_);
+
+    Mutex timer_mu_ ABSL_ACQUIRED_BEFORE(&scheduler_mu_);
     absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-        timer_handle_ ABSL_GUARDED_BY(&mu_);
+        timer_handle_ ABSL_GUARDED_BY(&timer_mu_);
 
     // Used when falling back to RR.
     std::atomic<size_t> last_picked_index_;
@@ -496,7 +499,7 @@ WeightedRoundRobin::Picker::~Picker() {
 }
 
 void WeightedRoundRobin::Picker::Orphan() {
-  MutexLock lock(&mu_);
+  MutexLock lock(&timer_mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
   }
@@ -528,7 +531,7 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
   // Grab a ref to the scheduler.
   std::shared_ptr<StaticStrideScheduler> scheduler;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(&scheduler_mu_);
     scheduler = scheduler_;
   }
   // If we have a scheduler, use it to do a WRR pick.
@@ -555,12 +558,16 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
             absl::StrJoin(weights, " ").c_str());
   }
-  auto scheduler = StaticStrideScheduler::Make(
+  auto scheduler_or = StaticStrideScheduler::Make(
       weights, [this]() { return wrr_->scheduler_state_.fetch_add(1); });
-  if (scheduler.has_value()) {
-    scheduler_ = std::make_shared<StaticStrideScheduler>(std::move(*scheduler));
-  } else {
-    scheduler_.reset();
+  std::shared_ptr<StaticStrideScheduler> scheduler;
+  if (scheduler_or.has_value()) {
+    scheduler =
+        std::make_shared<StaticStrideScheduler>(std::move(*scheduler_or));
+  }
+  {
+    MutexLock lock(&scheduler_mu_);
+    scheduler_ = std::move(scheduler);
   }
   // Start timer.
   WeakRefCountedPtr<Picker> self = WeakRef();
@@ -569,7 +576,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
-          MutexLock lock(&self->mu_);
+          MutexLock lock(&self->timer_mu_);
           if (self->timer_handle_.has_value()) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
               gpr_log(GPR_INFO, "[WRR %p picker %p] timer fired",
