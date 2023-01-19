@@ -34,3 +34,7 @@ bazel_rbe/bazel_wrapper \
   $BAZEL_FLAGS \
   "$@" \
   -- ${BAZEL_TESTS:-//test/...}
+
+# Print disk usage
+df -h
+du -hs * | sort -rh | head -100
