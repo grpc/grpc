@@ -28,8 +28,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
@@ -56,6 +56,7 @@
 #define GRPC_ARG_ENABLE_OBSERVABILITY "grpc.experimental.enable_observability"
 
 namespace grpc {
+namespace internal {
 
 class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
@@ -81,6 +82,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
         const grpc_transport_stream_stats* transport_stream_stats) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
+    void RecordAnnotation(absl::string_view annotation) override;
 
     experimental::CensusContext* context() { return &context_; }
 
@@ -108,6 +110,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   void GenerateContext();
   OpenCensusCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
+  void RecordAnnotation(absl::string_view annotation) override;
 
  private:
   experimental::CensusContext CreateCensusContextForCallAttempt();
@@ -130,6 +133,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   uint64_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
 };
 
-};  // namespace grpc
+}  // namespace internal
+}  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_OPEN_CENSUS_CALL_TRACER_H

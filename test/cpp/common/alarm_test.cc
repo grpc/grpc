@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <condition_variable>
 #include <memory>
@@ -260,6 +260,30 @@ TEST(AlarmTest, NegativeExpiry) {
   bool ok;
   const CompletionQueue::NextStatus status =
       cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
+// Infinite past or unix epoch should fire immediately.
+TEST(AlarmTest, InfPastExpiry) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm;
+  alarm.Set(&cq, gpr_inf_past(GPR_CLOCK_REALTIME), junk);
+
+  void* output_tag;
+  bool ok;
+  CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+
+  alarm.Set(&cq, std::chrono::system_clock::time_point(), junk);
+  status = cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);

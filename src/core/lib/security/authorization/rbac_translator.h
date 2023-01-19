@@ -19,22 +19,26 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
 namespace grpc_core {
 
 struct RbacPolicies {
-  Rbac deny_policy;
+  absl::optional<Rbac> deny_policy;
   Rbac allow_policy;
 };
 
-// Translates SDK authorization policy to Envoy RBAC policies. Returns error on
-// failure.
+// Translates SDK authorization policy to Envoy RBAC policies. On success, will
+// return one of the following -
+// 1. One allow RBAC policy or,
+// 2. Two RBAC policies: one deny policy and one allow policy.
+// Returns error on failure.
 // authz_policy: Authorization Policy string in JSON format.
 absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     absl::string_view authz_policy);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_TRANSLATOR_H */
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_TRANSLATOR_H

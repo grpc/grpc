@@ -1,26 +1,26 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -149,14 +149,14 @@ static void test_early_server_shutdown_finishes_inflight_calls(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  /* Make sure we don't shutdown the server while HTTP/2 PING frames are still
-   * being exchanged on the newly established connection. It can lead to
-   * failures when testing with HTTP proxy. See
-   * https://github.com/grpc/grpc/issues/14471
-   */
+  // Make sure we don't shutdown the server while HTTP/2 PING frames are still
+  // being exchanged on the newly established connection. It can lead to
+  // failures when testing with HTTP proxy. See
+  // https://github.com/grpc/grpc/issues/14471
+  //
   gpr_sleep_until(n_seconds_from_now(1));
 
-  /* shutdown and destroy the server */
+  // shutdown and destroy the server
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
   grpc_server_cancel_all_calls(f.server);
 

@@ -51,9 +51,11 @@ grpc_cc_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "observability_config",
+        "observability_logging_sink",
         "//:gpr",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
+        "//src/cpp/ext/filters/logging:logging_filter",
     ],
 )
 
@@ -98,19 +100,25 @@ grpc_cc_library(
         "observability_logging_sink.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "googleapis_logging_cc_proto",
         "googleapis_logging_grpc_service",
+        "protobuf_headers",
     ],
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
         "observability_config",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
         "//src/core:env",
+        "//src/core:json",
+        "//src/core:time",
         "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )

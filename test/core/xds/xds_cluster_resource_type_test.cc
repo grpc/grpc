@@ -24,14 +24,15 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "upb/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -39,8 +40,10 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,6 +55,7 @@
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
@@ -105,13 +109,13 @@ class XdsClusterTest : public ::testing::Test {
         "  }\n"
         "}");
     if (!bootstrap.ok()) {
-      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              bootstrap.status().ToString().c_str());
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr);
+                                     /*event_engine=*/nullptr, "foo agent",
+                                     "foo version");
   }
 
   RefCountedPtr<XdsClient> xds_client_;
@@ -153,8 +157,9 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "");
+  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  ASSERT_NE(eds, nullptr);
+  EXPECT_EQ(eds->eds_service_name, "");
   // Check defaults.
   EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
             "[{\"xds_wrr_locality_experimental\":{\"childPolicy\":"
@@ -184,8 +189,9 @@ TEST_F(ClusterTypeTest, EdsConfigSourceAds) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "");
+  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  ASSERT_NE(eds, nullptr);
+  EXPECT_EQ(eds->eds_service_name, "");
 }
 
 TEST_F(ClusterTypeTest, EdsServiceName) {
@@ -204,8 +210,9 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "bar");
+  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  ASSERT_NE(eds, nullptr);
+  EXPECT_EQ(eds->eds_service_name, "bar");
 }
 
 TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
@@ -307,8 +314,10 @@ TEST_F(ClusterTypeTest, LogicalDnsValid) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.LOGICAL_DNS);
-  EXPECT_EQ(resource.dns_hostname, "server.example.com:443");
+  auto* logical_dns =
+      absl::get_if<XdsClusterResource::LogicalDns>(&resource.type);
+  ASSERT_NE(logical_dns, nullptr);
+  EXPECT_EQ(logical_dns->hostname, "server.example.com:443");
 }
 
 TEST_F(ClusterTypeTest, LogicalDnsMissingLoadAssignment) {
@@ -539,8 +548,9 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.AGGREGATE);
-  EXPECT_THAT(resource.prioritized_cluster_names,
+  auto* aggregate = absl::get_if<XdsClusterResource::Aggregate>(&resource.type);
+  ASSERT_NE(aggregate, nullptr);
+  EXPECT_THAT(aggregate->prioritized_cluster_names,
               ::testing::ElementsAre("bar", "baz", "quux"));
 }
 
@@ -1278,6 +1288,64 @@ TEST_F(OutlierDetectionTest, InvalidValues) {
             "field:outlier_detection.max_ejection_time.seconds "
             "error:value must be in the range [0, 315576000000]]")
       << decode_result.resource.status();
+}
+
+//
+// host override status tests
+//
+
+using HostOverrideStatusTest = XdsClusterTest;
+
+TEST_F(HostOverrideStatusTest, IgnoredWhenNotEnabled) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* status_set =
+      cluster.mutable_common_lb_config()->mutable_override_host_status();
+  status_set->add_statuses(envoy::config::core::v3::UNKNOWN);
+  status_set->add_statuses(envoy::config::core::v3::HEALTHY);
+  status_set->add_statuses(envoy::config::core::v3::DRAINING);
+  status_set->add_statuses(envoy::config::core::v3::UNHEALTHY);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.host_override_statuses, ::testing::ElementsAre());
+}
+
+TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* status_set =
+      cluster.mutable_common_lb_config()->mutable_override_host_status();
+  status_set->add_statuses(envoy::config::core::v3::UNKNOWN);
+  status_set->add_statuses(envoy::config::core::v3::HEALTHY);
+  status_set->add_statuses(envoy::config::core::v3::DRAINING);
+  status_set->add_statuses(envoy::config::core::v3::UNHEALTHY);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.host_override_statuses,
+              ::testing::UnorderedElementsAre(
+                  XdsHealthStatus(XdsHealthStatus::kUnknown),
+                  XdsHealthStatus(XdsHealthStatus::kHealthy),
+                  XdsHealthStatus(XdsHealthStatus::kDraining)));
 }
 
 }  // namespace

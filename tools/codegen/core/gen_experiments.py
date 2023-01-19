@@ -39,7 +39,7 @@ if sys.argv[1:] == ["--check"]:
     check_dates = False  # for formatting checks we don't verify expiry dates
 
 with open('src/core/lib/experiments/experiments.yaml') as f:
-    attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
+    attrs = yaml.safe_load(f.read())
 
 DEFAULTS = {
     'broken': 'false',

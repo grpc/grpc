@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -32,10 +32,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;
   if (sizeof(time_t) < sizeof(int64_t)) {
-    /* fine to assert, as this is only used in gpr_sleep_until */
+    // fine to assert, as this is only used in gpr_sleep_until
     GPR_ASSERT(gts.tv_sec <= INT32_MAX && gts.tv_sec >= INT32_MIN);
   }
   rv.tv_sec = static_cast<time_t>(gts.tv_sec);
@@ -46,11 +48,11 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
 #if _POSIX_TIMERS > 0 || defined(__OpenBSD__)
 static gpr_timespec gpr_from_timespec(struct timespec ts,
                                       gpr_clock_type clock_type) {
-  /*
-   * timespec.tv_sec can have smaller size than gpr_timespec.tv_sec,
-   * but we are only using this function to implement gpr_now
-   * so there's no need to handle "infinity" values.
-   */
+  //
+  // timespec.tv_sec can have smaller size than gpr_timespec.tv_sec,
+  // but we are only using this function to implement gpr_now
+  // so there's no need to handle "infinity" values.
+  //
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
   rv.tv_nsec = static_cast<int32_t>(ts.tv_nsec);
@@ -58,7 +60,7 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
   return rv;
 }
 
-/** maps gpr_clock_type --> clockid_t for clock_gettime */
+/// maps gpr_clock_type --> clockid_t for clock_gettime
 static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC,
                                                   CLOCK_REALTIME};
 
@@ -73,7 +75,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
     return ret;
   } else {
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE) && defined(__linux__)
-    /* avoid ABI problems by invoking syscalls directly */
+    // avoid ABI problems by invoking syscalls directly
     syscall(SYS_clock_gettime, clockid_for_gpr_clock[clock_type], &now);
 #else
     clock_gettime(clockid_for_gpr_clock[clock_type], &now);
@@ -82,7 +84,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   }
 }
 #else
-/* For some reason Apple's OSes haven't implemented clock_gettime. */
+// For some reason Apple's OSes haven't implemented clock_gettime.
 
 #include <mach/mach.h>
 #include <mach/mach_time.h>
@@ -113,7 +115,10 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
       now.tv_nsec = now_tv.tv_usec * 1000;
       break;
     case GPR_CLOCK_MONOTONIC:
-      now_dbl = ((double)(mach_absolute_time() - g_time_start)) * g_time_scale;
+      // Add 5 seconds arbitrarily: avoids weird conditions in gprpp/time.cc
+      // when there's a small number of seconds returned.
+      now_dbl = 5.0e9 +
+                ((double)(mach_absolute_time() - g_time_start)) * g_time_scale;
       now.tv_sec = (int64_t)(now_dbl * 1e-9);
       now.tv_nsec = (int32_t)(now_dbl - ((double)now.tv_sec) * 1e9);
       break;
@@ -158,8 +163,8 @@ void gpr_sleep_until(gpr_timespec until) {
   int ns_result;
 
   for (;;) {
-    /* We could simplify by using clock_nanosleep instead, but it might be
-     * slightly less portable. */
+    // We could simplify by using clock_nanosleep instead, but it might be
+    // slightly less portable.
     now = gpr_now(until.clock_type);
     if (gpr_time_cmp(until, now) <= 0) {
       return;
@@ -174,4 +179,4 @@ void gpr_sleep_until(gpr_timespec until) {
   }
 }
 
-#endif /* GPR_POSIX_TIME */
+#endif  // GPR_POSIX_TIME

@@ -20,10 +20,14 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 using ResolvedAddress =
     grpc_event_engine::experimental::EventEngine::ResolvedAddress;
@@ -53,12 +57,12 @@ int ConnectToServerOrDie(const ResolvedAddress& server_address) {
         abort();
       }
     } else {
-      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-      abort();
+      grpc_core::Crash(
+          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
     }
   }
   return client_fd;
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

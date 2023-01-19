@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -32,7 +32,7 @@
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
 static const double kAddDeadlineScale = 0.33;
@@ -67,7 +67,7 @@ TimerList::TimerList(TimerListHost* host)
 }
 
 namespace {
-/* returns true if the first element in the list */
+// returns true if the first element in the list
 void ListJoin(Timer* head, Timer* timer) {
   timer->next = head;
   timer->prev = head->prev;
@@ -134,17 +134,17 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
     }
   }
 
-  /* Deadline may have decreased, we need to adjust the main queue.  Note
-     that there is a potential racy unlocked region here.  There could be a
-     reordering of multiple TimerInit calls, at this point, but the < test
-     below should ensure that we err on the side of caution.  There could
-     also be a race with TimerCheck, which might beat us to the lock.  In
-     that case, it is possible that the timer that we added will have already
-     run by the time we hold the lock, but that too is a safe error.
-     Finally, it's possible that the TimerCheck that intervened failed to
-     trigger the new timer because the min_deadline hadn't yet been reduced.
-     In that case, the timer will simply have to wait for the next
-     TimerCheck. */
+  // Deadline may have decreased, we need to adjust the main queue.  Note
+  // that there is a potential racy unlocked region here.  There could be a
+  // reordering of multiple TimerInit calls, at this point, but the < test
+  // below should ensure that we err on the side of caution.  There could
+  // also be a race with TimerCheck, which might beat us to the lock.  In
+  // that case, it is possible that the timer that we added will have already
+  // run by the time we hold the lock, but that too is a safe error.
+  // Finally, it's possible that the TimerCheck that intervened failed to
+  // trigger the new timer because the min_deadline hadn't yet been reduced.
+  // In that case, the timer will simply have to wait for the next
+  // TimerCheck.
   if (is_first_timer) {
     grpc_core::MutexLock lock(&mu_);
     if (deadline < shard->min_deadline) {
@@ -177,19 +177,19 @@ bool TimerList::TimerCancel(Timer* timer) {
   return false;
 }
 
-/* Rebalances the timer shard by computing a new 'queue_deadline_cap' and moving
-   all relevant timers in shard->list (i.e timers with deadlines earlier than
-   'queue_deadline_cap') into into shard->heap.
-   Returns 'true' if shard->heap has at least ONE element */
+// Rebalances the timer shard by computing a new 'queue_deadline_cap' and moving
+// all relevant timers in shard->list (i.e timers with deadlines earlier than
+// 'queue_deadline_cap') into into shard->heap.
+// Returns 'true' if shard->heap has at least ONE element
 bool TimerList::Shard::RefillHeap(grpc_core::Timestamp now) {
-  /* Compute the new queue window width and bound by the limits: */
+  // Compute the new queue window width and bound by the limits:
   double computed_deadline_delta = stats.UpdateAverage() * kAddDeadlineScale;
   double deadline_delta =
       grpc_core::Clamp(computed_deadline_delta, kMinQueueWindowDuration,
                        kMaxQueueWindowDuration);
   Timer *timer, *next;
 
-  /* Compute the new cap and put all timers under it into the queue: */
+  // Compute the new cap and put all timers under it into the queue:
   queue_deadline_cap = std::max(now, queue_deadline_cap) +
                        grpc_core::Duration::FromSecondsAsDouble(deadline_delta);
 
@@ -207,8 +207,8 @@ bool TimerList::Shard::RefillHeap(grpc_core::Timestamp now) {
   return !heap.is_empty();
 }
 
-/* This pops the next non-cancelled timer with deadline <= now from the
-   queue, or returns NULL if there isn't one. */
+// This pops the next non-cancelled timer with deadline <= now from the
+// queue, or returns NULL if there isn't one.
 Timer* TimerList::Shard::PopOne(grpc_core::Timestamp now) {
   Timer* timer;
   for (;;) {
@@ -256,16 +256,16 @@ std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
           shard_queue_[0]->min_deadline == now)) {
     grpc_core::Timestamp new_min_deadline;
 
-    /* For efficiency, we pop as many available timers as we can from the
-       shard.  This may violate perfect timer deadline ordering, but that
-       shouldn't be a big deal because we don't make ordering guarantees. */
+    // For efficiency, we pop as many available timers as we can from the
+    // shard.  This may violate perfect timer deadline ordering, but that
+    // shouldn't be a big deal because we don't make ordering guarantees.
     shard_queue_[0]->PopTimers(now, &new_min_deadline, &done);
 
-    /* An TimerInit() on the shard could intervene here, adding a new
-       timer that is earlier than new_min_deadline.  However,
-       TimerInit() will block on the mutex before it can call
-       set_min_deadline, so this one will complete first and then the Addtimer
-       will reduce the min_deadline (perhaps unnecessarily). */
+    // An TimerInit() on the shard could intervene here, adding a new
+    // timer that is earlier than new_min_deadline.  However,
+    // TimerInit() will block on the mutex before it can call
+    // set_min_deadline, so this one will complete first and then the Addtimer
+    // will reduce the min_deadline (perhaps unnecessarily).
     shard_queue_[0]->min_deadline = new_min_deadline;
     NoteDeadlineChange(shard_queue_[0]);
   }
@@ -286,8 +286,8 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   // prelude
   grpc_core::Timestamp now = host_->Now();
 
-  /* fetch from a thread-local first: this avoids contention on a globally
-     mutable cacheline in the common case */
+  // fetch from a thread-local first: this avoids contention on a globally
+  // mutable cacheline in the common case
   grpc_core::Timestamp min_timer =
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
           min_timer_.load(std::memory_order_relaxed));
@@ -307,5 +307,5 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   return std::move(run);
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

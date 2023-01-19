@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* This benchmark exists to ensure that the benchmark integration is
- * working */
+// This benchmark exists to ensure that the benchmark integration is
+// working
 
 #include <string.h>
 
@@ -52,10 +52,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 void BM_Zalloc(benchmark::State& state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
@@ -381,45 +377,45 @@ static const grpc_channel_filter phony_filter = {
 
 namespace phony_transport {
 
-/* Memory required for a single stream element - this is allocated by upper
-   layers and initialized by the transport */
-size_t sizeof_stream; /* = sizeof(transport stream) */
+// Memory required for a single stream element - this is allocated by upper
+// layers and initialized by the transport
+size_t sizeof_stream;  // = sizeof(transport stream)
 
-/* name of this transport implementation */
+// name of this transport implementation
 const char* name;
 
-/* implementation of grpc_transport_init_stream */
+// implementation of grpc_transport_init_stream
 int InitStream(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                grpc_stream_refcount* /*refcount*/, const void* /*server_data*/,
                grpc_core::Arena* /*arena*/) {
   return 0;
 }
 
-/* implementation of grpc_transport_set_pollset */
+// implementation of grpc_transport_set_pollset
 void SetPollset(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                 grpc_pollset* /*pollset*/) {}
 
-/* implementation of grpc_transport_set_pollset */
+// implementation of grpc_transport_set_pollset
 void SetPollsetSet(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                    grpc_pollset_set* /*pollset_set*/) {}
 
-/* implementation of grpc_transport_perform_stream_op */
+// implementation of grpc_transport_perform_stream_op
 void PerformStreamOp(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                      grpc_transport_stream_op_batch* op) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, absl::OkStatus());
 }
 
-/* implementation of grpc_transport_perform_op */
+// implementation of grpc_transport_perform_op
 void PerformOp(grpc_transport* /*self*/, grpc_transport_op* /*op*/) {}
 
-/* implementation of grpc_transport_destroy_stream */
+// implementation of grpc_transport_destroy_stream
 void DestroyStream(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                    grpc_closure* /*then_sched_closure*/) {}
 
-/* implementation of grpc_transport_destroy */
+// implementation of grpc_transport_destroy
 void Destroy(grpc_transport* /*self*/) {}
 
-/* implementation of grpc_transport_get_endpoint */
+// implementation of grpc_transport_get_endpoint
 grpc_endpoint* GetEndpoint(grpc_transport* /*self*/) { return nullptr; }
 
 static const grpc_transport_vtable phony_transport_vtable = {0,
@@ -540,6 +536,10 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   TestOp test_op_data;
   const int kArenaSize = 32 * 1024 * 1024;
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_call_element_args call_args{
       call_stack,
       nullptr,
@@ -547,7 +547,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       method,
       start_time,
       deadline,
-      grpc_core::Arena::Create(kArenaSize, g_memory_allocator),
+      grpc_core::Arena::Create(kArenaSize, &memory_allocator),
       nullptr};
   while (state.KeepRunning()) {
     (void)grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr,
@@ -559,8 +559,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     // recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
       call_args.arena->Destroy();
-      call_args.arena =
-          grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
+      call_args.arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
     }
   }
   call_args.arena->Destroy();

@@ -33,7 +33,6 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -433,7 +432,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 
 }  // namespace grpc_core
 
-/** -- Wrapper APIs declared in grpc_security.h -- **/
+/// -- Wrapper APIs declared in grpc_security.h -- *
 
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {

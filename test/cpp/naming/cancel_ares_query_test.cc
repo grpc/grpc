@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdio.h>
 #include <string.h>
@@ -38,7 +38,9 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -63,6 +65,8 @@
 #endif
 
 namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 void* Tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -148,7 +152,7 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 
   void ReportResult(grpc_core::Resolver::Result /*result*/) override {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 
  private:
@@ -166,8 +170,9 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
-          client_target.c_str(), grpc_core::ChannelArgs(), args->pollset_set,
-          args->lock,
+          client_target.c_str(),
+          grpc_core::ChannelArgs().SetObject(GetDefaultEventEngine()),
+          args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();
@@ -194,8 +199,7 @@ class CancelDuringAresQuery : public ::testing::Test {
   static void TearDownTestSuite() {
     grpc_shutdown();
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      gpr_log(GPR_ERROR, "Test took too long");
-      abort();
+      grpc_core::Crash("Test took too long");
     }
   }
 

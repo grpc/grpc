@@ -76,6 +76,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
@@ -111,6 +112,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -208,7 +211,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
@@ -275,6 +280,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/xds/annotations/v3/status.upb.c \
     src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c \
     src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/cidr.upb.c \
     src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
     src/core/ext/upb-generated/xds/core/v3/context_params.upb.c \
     src/core/ext/upb-generated/xds/core/v3/extension.upb.c \
@@ -283,9 +289,16 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
     src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
     src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c \
+    src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c \
+    src/core/ext/upb-generated/xds/type/v3/cel.upb.c \
+    src/core/ext/upb-generated/xds/type/v3/range.upb.c \
     src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c \
@@ -355,7 +368,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
@@ -414,15 +429,23 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -438,9 +461,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
     src/core/ext/xds/xds_common_types.cc \
     src/core/ext/xds/xds_endpoint.cc \
+    src/core/ext/xds/xds_health_status.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_http_rbac_filter.cc \
+    src/core/ext/xds/xds_http_stateful_session_filter.cc \
     src/core/ext/xds/xds_lb_policy_registry.cc \
     src/core/ext/xds/xds_listener.cc \
     src/core/ext/xds/xds_route_config.cc \
@@ -502,6 +527,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
+    src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
@@ -532,6 +558,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/crash.cc \
     src/core/lib/gprpp/env_linux.cc \
     src/core/lib/gprpp/env_posix.cc \
     src/core/lib/gprpp/env_windows.cc \
@@ -608,6 +635,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/socket_utils_posix.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/systemd_utils.cc \
     src/core/lib/iomgr/tcp_client.cc \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
@@ -1213,7 +1241,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.52.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.53.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
@@ -1247,6 +1275,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/rbac)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/stateful_session)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server)
@@ -1272,7 +1301,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3)
@@ -1321,7 +1352,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/service/discovery/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/service/load_stats/v3)

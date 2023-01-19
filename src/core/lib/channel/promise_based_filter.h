@@ -31,6 +31,7 @@
 #include <memory>
 #include <new>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -40,7 +41,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
@@ -319,6 +320,8 @@ class BaseCallData : public Activity, private Wakeable {
       // We've got the completion callback, we'll close things out during poll
       // and then forward completion callbacks up and transition back to idle.
       kBatchCompleted,
+      // We're almost done, but need to poll first.
+      kCancelledButNotYetPolled,
       // We're done.
       kCancelled,
     };

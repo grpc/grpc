@@ -569,8 +569,8 @@ class XdsClientTest : public ::testing::Test {
     transport_factory_ = transport_factory->Ref();
     xds_client_ = MakeRefCounted<XdsClient>(
         bootstrap_builder.Build(), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine(),
-        resource_request_timeout * grpc_test_slowdown_factor());
+        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
+        "foo version", resource_request_timeout * grpc_test_slowdown_factor());
   }
 
   // Starts and cancels a watch for a Foo resource.
@@ -721,12 +721,9 @@ class XdsClientTest : public ::testing::Test {
           << Json{xds_client_->bootstrap().node()->metadata()}.Dump()
           << "\nactual: " << metadata_json->Dump();
     }
-    // These are hard-coded by XdsClient.
-    EXPECT_EQ(request.node().user_agent_name(),
-              absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING))
+    EXPECT_EQ(request.node().user_agent_name(), "foo agent")
         << location.file() << ":" << location.line();
-    EXPECT_EQ(request.node().user_agent_version(),
-              absl::StrCat("C-core ", grpc_version_string()))
+    EXPECT_EQ(request.node().user_agent_version(), "foo version")
         << location.file() << ":" << location.line();
   }
 
@@ -1161,7 +1158,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   CheckRequest(
       *request, XdsFooResourceType::Get()->type_url(),
       /*version_info=*/"", /*response_nonce=*/"A",
-      /*error_detail=*/
+      // error_detail=
       absl::InvalidArgumentError(
           "xDS response validation errors: ["
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
@@ -1308,7 +1305,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/
+               // error_detail=
                absl::InvalidArgumentError(
                    "xDS response validation errors: ["
                    // foo1
@@ -1398,7 +1395,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   CheckRequest(
       *request, XdsFooResourceType::Get()->type_url(),
       /*version_info=*/"1", /*response_nonce=*/"B",
-      /*error_detail=*/
+      // error_detail=
       absl::InvalidArgumentError(
           "xDS response validation errors: ["
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "

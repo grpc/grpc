@@ -22,13 +22,16 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/time_util.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This polling engine is only relevant on linux kernels supporting epoll
@@ -46,21 +49,14 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
-
-using ::grpc_event_engine::posix_engine::LockfreeEvent;
-using ::grpc_event_engine::posix_engine::WakeupFd;
 
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::posix_engine::LockfreeEvent;
-using ::grpc_event_engine::posix_engine::WakeupFd;
+namespace experimental {
 
 class Epoll1EventHandle : public EventHandle {
  public:
@@ -268,7 +264,7 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 bool InitEpoll1PollerLinux() {
-  if (!grpc_event_engine::posix_engine::SupportsWakeupFd()) {
+  if (!grpc_event_engine::experimental::SupportsWakeupFd()) {
     return false;
   }
   int fd = EpollCreateAndCloexec();
@@ -329,6 +325,8 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
 // shutdown() syscall on that fd)
 void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
                                                bool releasing_fd) {
+  grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
+                          GRPC_STATUS_UNAVAILABLE);
   if (read_closure_->SetShutdown(why)) {
     if (!releasing_fd) {
       shutdown(fd_, SHUT_RDWR);
@@ -467,10 +465,9 @@ int Epoll1Poller::DoEpollWait(EventEngine::Duration timeout) {
                        grpc_event_engine::experimental::Milliseconds(timeout)));
   } while (r < 0 && errno == EINTR);
   if (r < 0) {
-    gpr_log(GPR_ERROR,
-            "(event_engine) Epoll1Poller:%p encountered epoll_wait error: %s",
-            this, grpc_core::StrError(errno).c_str());
-    GPR_ASSERT(false);
+    grpc_core::Crash(absl::StrFormat(
+        "(event_engine) Epoll1Poller:%p encountered epoll_wait error: %s", this,
+        grpc_core::StrError(errno).c_str()));
   }
   g_epoll_set_.num_events = r;
   g_epoll_set_.cursor = 0;
@@ -564,54 +561,54 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
   return nullptr;
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* defined(GRPC_LINUX_EPOLL) */
+#else  // defined(GRPC_LINUX_EPOLL)
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 
 Epoll1Poller::Epoll1Poller(Scheduler* /* engine */) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-void Epoll1Poller::Shutdown() { GPR_ASSERT(false && "unimplemented"); }
+void Epoll1Poller::Shutdown() { grpc_core::Crash("unimplemented"); }
 
-Epoll1Poller::~Epoll1Poller() { GPR_ASSERT(false && "unimplemented"); }
+Epoll1Poller::~Epoll1Poller() { grpc_core::Crash("unimplemented"); }
 
 EventHandle* Epoll1Poller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
                                         bool /*track_err*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool Epoll1Poller::ProcessEpollEvents(int /*max_epoll_events_to_handle*/,
                                       Events& /*pending_events*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 int Epoll1Poller::DoEpollWait(EventEngine::Duration /*timeout*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 Poller::WorkResult Epoll1Poller::Work(
     EventEngine::Duration /*timeout*/,
     absl::FunctionRef<void()> /*schedule_poll_again*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
+void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
 Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif  // defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
+#endif  // !defined(GRPC_LINUX_EPOLL)

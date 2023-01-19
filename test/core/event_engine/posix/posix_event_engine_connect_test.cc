@@ -32,6 +32,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -42,7 +43,8 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/experiments/config.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -51,14 +53,8 @@
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
-using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::PosixEventEngine;
-using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
-using ::grpc_event_engine::experimental::URIToResolvedAddress;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 using namespace std::chrono_literals;
 
 namespace {
@@ -78,33 +74,29 @@ std::vector<int> CreateConnectedSockets(
   std::vector<int> ret_sockets;
   // Creating a new socket file descriptor.
   if ((server_socket = socket(AF_INET6, SOCK_STREAM, 0)) <= 0) {
-    gpr_log(GPR_ERROR, "Error creating socket: %s", std::strerror(errno));
-    abort();
+    grpc_core::Crash(
+        absl::StrFormat("Error creating socket: %s", std::strerror(errno)));
   }
   // MacOS builds fail if SO_REUSEADDR and SO_REUSEPORT are set in the same
   // setsockopt syscall. So they are set separately one after the other.
   if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-    gpr_log(GPR_ERROR, "Error setsockopt(SO_REUSEADDR): %s",
-            std::strerror(errno));
-    abort();
+    grpc_core::Crash(absl::StrFormat("Error setsockopt(SO_REUSEADDR): %s",
+                                     std::strerror(errno)));
   }
   if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
-    gpr_log(GPR_ERROR, "Error setsockopt(SO_REUSEPORT): %s",
-            std::strerror(errno));
-    abort();
+    grpc_core::Crash(absl::StrFormat("Error setsockopt(SO_REUSEPORT): %s",
+                                     std::strerror(errno)));
   }
 
   // Bind the new socket to server address.
   if (bind(server_socket, resolved_addr.address(), resolved_addr.size()) < 0) {
-    gpr_log(GPR_ERROR, "Error bind: %s", std::strerror(errno));
-    abort();
+    grpc_core::Crash(absl::StrFormat("Error bind: %s", std::strerror(errno)));
   }
   // Set the new socket to listen for one active connection at a time.
   // accept() is intentionally not called on the socket. This allows the
   // connection queue to build up.
   if (listen(server_socket, 1) < 0) {
-    gpr_log(GPR_ERROR, "Error listen: %s", std::strerror(errno));
-    abort();
+    grpc_core::Crash(absl::StrFormat("Error listen: %s", std::strerror(errno)));
   }
   ret_sockets.push_back(server_socket);
   // Create and connect client sockets until the connection attempt times out.
@@ -140,8 +132,8 @@ std::vector<int> CreateConnectedSockets(
           return ret_sockets;
         }
       } else {
-        gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-        abort();
+        grpc_core::Crash(absl::StrFormat(
+            "Failed to connect to the server (errno=%d)", errno));
       }
     }
     ret_sockets.push_back(client_socket);
@@ -167,7 +159,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   posix_ee->Connect(
       [&signal](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
-        EXPECT_EQ(status.status().code(), absl::StatusCode::kCancelled);
+        EXPECT_EQ(status.status().code(), absl::StatusCode::kUnknown);
         signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
@@ -208,15 +200,14 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   WaitForSingleOwner(std::move(posix_ee));
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  if (!grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
-    return 0;
-  }
+  // TODO(vigneshbabu): remove when the experiment is over
+  grpc_core::ForceEnableExperiment("event_engine_client", true);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

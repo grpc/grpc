@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -45,7 +45,7 @@ static const char* stream_list_id_string(grpc_chttp2_stream_list_id id) {
 
 grpc_core::TraceFlag grpc_trace_http2_stream_state(false, "http2_stream_state");
 
-/* core list management */
+// core list management
 
 static bool stream_list_empty(grpc_chttp2_transport* t,
                               grpc_chttp2_stream_list_id id) {
@@ -138,7 +138,7 @@ static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   return true;
 }
 
-/* wrappers for specializations */
+// wrappers for specializations
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s) {

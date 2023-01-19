@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/surface/completion_queue.h"
 
@@ -39,7 +39,7 @@ static void* create_test_tag(void) {
   return reinterpret_cast<void*>(++i);
 }
 
-/* helper for tests to shutdown correctly and tersely */
+// helper for tests to shutdown correctly and tersely
 static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_event ev;
   grpc_completion_queue_shutdown(cc);
@@ -71,7 +71,7 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_completion_queue_destroy(cc);
 }
 
-/* ensure we can create and destroy a completion channel */
+// ensure we can create and destroy a completion channel
 TEST(GrpcCompletionQueueTest, TestNoOp) {
   grpc_cq_completion_type completion_types[] = {GRPC_CQ_NEXT, GRPC_CQ_PLUCK};
   grpc_cq_polling_type polling_types[] = {

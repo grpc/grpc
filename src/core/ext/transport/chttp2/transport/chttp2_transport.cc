@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
@@ -39,13 +38,14 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -64,6 +64,7 @@
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -97,13 +98,13 @@
 #define DEFAULT_MAX_HEADER_LIST_SIZE (8 * 1024)
 
 #define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
-#define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
-#define DEFAULT_SERVER_KEEPALIVE_TIME_MS 7200000  /* 2 hours */
-#define DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
+#define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
+#define DEFAULT_SERVER_KEEPALIVE_TIME_MS 7200000   // 2 hours
+#define DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
-#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
+#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000  // 5 minutes
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
 #define DEFAULT_MAX_PING_STRIKES 2
 
@@ -696,9 +697,9 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (GPR_UNLIKELY(included.is_set(i))) {
-      gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
-              t->is_client ? "client" : "server", id, i);
-      abort();
+      grpc_core::Crash(absl::StrFormat("%s stream %d still included in list %d",
+                                       t->is_client ? "client" : "server", id,
+                                       i));
     }
   }
 
@@ -2090,6 +2091,8 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     grpc_chttp2_maybe_complete_recv_message(t, s);
   }
   if (became_closed) {
+    s->stats.latency =
+        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), s->creation_time);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
@@ -2175,8 +2178,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
   status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
   p = GRPC_SLICE_START_PTR(status_hdr);
-  *p++ = 0x00; /* literal header, not indexed */
-  *p++ = 11;   /* len(grpc-status) */
+  *p++ = 0x00;  // literal header, not indexed
+  *p++ = 11;    // len(grpc-status)
   *p++ = 'g';
   *p++ = 'r';
   *p++ = 'p';
@@ -2204,8 +2207,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_core::VarintWriter<1> msg_len_writer(static_cast<uint32_t>(msg_len));
   message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
   p = GRPC_SLICE_START_PTR(message_pfx);
-  *p++ = 0x00; /* literal header, not indexed */
-  *p++ = 12;   /* len(grpc-message) */
+  *p++ = 0x00;  // literal header, not indexed
+  *p++ = 12;    // len(grpc-message)
   *p++ = 'g';
   *p++ = 'r';
   *p++ = 'p';
@@ -2388,8 +2391,6 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
       errors[2] = try_http_parsing(t);
       error = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
                                             GPR_ARRAY_SIZE(errors));
-    }
-    for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
     }
 
     if (t->initial_window_update != 0) {
@@ -2980,7 +2981,7 @@ void grpc_chttp2_transport_start_reading(
   grpc_chttp2_transport* t =
       reinterpret_cast<grpc_chttp2_transport*>(transport);
   GRPC_CHTTP2_REF_TRANSPORT(
-      t, "reading_action"); /* matches unref inside reading_action */
+      t, "reading_action");  // matches unref inside reading_action
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);

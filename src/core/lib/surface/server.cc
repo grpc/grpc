@@ -34,7 +34,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -45,6 +45,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -231,8 +232,8 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       RequestedCall* call) override {
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
-      /* this was the first queued request: we need to lock and start
-         matching calls */
+      // this was the first queued request: we need to lock and start
+      // matching calls
       struct PendingCall {
         RequestedCall* rc = nullptr;
         CallData* calld;
@@ -341,7 +342,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t /*request_queue_index*/,
                                       RequestedCall* /*call*/) final {
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   Server* server() const override { return server_; }
@@ -1059,8 +1060,8 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
 Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     const grpc_slice& host, const grpc_slice& path) {
   if (registered_methods_ == nullptr) return nullptr;
-  /* TODO(ctiller): unify these two searches */
-  /* check for an exact match with host */
+  // TODO(ctiller): unify these two searches
+  // check for an exact match with host
   uint32_t hash = MixHash32(grpc_slice_hash(host), grpc_slice_hash(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
@@ -1071,7 +1072,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     if (rm->method != path) continue;
     return rm;
   }
-  /* check for a wildcard method definition (no host set) */
+  // check for a wildcard method definition (no host set)
   hash = MixHash32(0, grpc_slice_hash(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
@@ -1087,7 +1088,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
 void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
                                        const void* transport_server_data) {
   auto* chand = static_cast<Server::ChannelData*>(arg);
-  /* create a call */
+  // create a call
   grpc_call_create_args args;
   args.channel = chand->channel_;
   args.server = chand->server_.get();
@@ -1357,9 +1358,9 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     calld->deadline_ = *op_deadline;
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
-    /* do nothing */
+    // do nothing
   } else if (error.ok()) {
-    /* Pass the error reference to calld->recv_initial_metadata_error */
+    // Pass the error reference to calld->recv_initial_metadata_error
     grpc_error_handle src_error = error;
     error = absl::UnknownError("Missing :authority or :path");
     calld->recv_initial_metadata_error_ = error;
@@ -1444,8 +1445,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
             "Completion queue of type %d is being registered as a "
             "server-completion-queue",
             static_cast<int>(cq_type));
-    /* Ideally we should log an error and abort but ruby-wrapped-language API
-       calls grpc_completion_queue_pluck() on server completion queues */
+    // Ideally we should log an error and abort but ruby-wrapped-language API
+    // calls grpc_completion_queue_pluck() on server completion queues
   }
   grpc_core::Server::FromC(server)->RegisterCompletionQueue(cq);
 }

@@ -24,6 +24,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -42,12 +43,13 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/gprpp/unique_type_name.h"
 
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -371,7 +373,7 @@ class XdsResolver : public Resolver {
 
   std::string route_config_name_;
   RouteConfigWatcher* route_config_watcher_ = nullptr;
-  XdsRouteConfigResource::VirtualHost current_virtual_host_;
+  absl::optional<XdsRouteConfigResource::VirtualHost> current_virtual_host_;
   std::map<std::string /*cluster_specifier_plugin_name*/,
            std::string /*LB policy config*/>
       cluster_specifier_plugin_map_;
@@ -441,8 +443,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   // weighted_cluster_state field points to the memory in the route field, so
   // moving the entry in a reallocation will cause the string_view to point to
   // invalid data.
-  route_table_.reserve(resolver_->current_virtual_host_.routes.size());
-  for (auto& route : resolver_->current_virtual_host_.routes) {
+  route_table_.reserve(resolver_->current_virtual_host_->routes.size());
+  for (auto& route : resolver_->current_virtual_host_->routes) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
               resolver_.get(), this, route.ToString().c_str());
@@ -581,7 +583,7 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
     retry_parts.push_back(
         absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
                         absl::StrJoin(code_parts, ",\n")));
-    retry_parts.push_back(absl::StrFormat("    }"));
+    retry_parts.push_back("    }");
     fields.emplace_back(absl::StrJoin(retry_parts, ""));
   }
   // Set timeout.
@@ -596,7 +598,7 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
       static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry(),
       resolver_->current_listener_.http_filters,
-      resolver_->current_virtual_host_, route, cluster_weight,
+      resolver_->current_virtual_host_.value(), route, cluster_weight,
       resolver_->args_);
   if (!result.ok()) return result.status();
   for (const auto& p : result->per_filter_configs) {
@@ -997,7 +999,7 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
   if (xds_client_ == nullptr) {
     return;
   }
-  current_virtual_host_.routes.clear();
+  current_virtual_host_.reset();
   Result result;
   result.addresses.emplace();
   result.service_config = ServiceConfigImpl::Create(args_, "{}");
@@ -1049,7 +1051,7 @@ XdsResolver::CreateServiceConfig() {
 }
 
 void XdsResolver::GenerateResult() {
-  if (current_virtual_host_.routes.empty()) return;
+  if (!current_virtual_host_.has_value()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   absl::Status status;

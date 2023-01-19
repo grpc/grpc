@@ -39,10 +39,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -128,6 +130,8 @@ class RingHashLbConfig : public LoadBalancingPolicy::Config {
 //
 // ring_hash LB policy
 //
+
+constexpr size_t kRingSizeCapDefault = 4096;
 
 class RingHash : public LoadBalancingPolicy {
  public:
@@ -227,13 +231,6 @@ class RingHash : public LoadBalancingPolicy {
                                                absl::Status status);
 
    private:
-    bool AllSubchannelsSeenInitialState() {
-      for (size_t i = 0; i < num_subchannels(); ++i) {
-        if (!subchannel(i)->connectivity_state().has_value()) return false;
-      }
-      return true;
-    }
-
     size_t num_idle_;
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
@@ -291,7 +288,7 @@ class RingHash : public LoadBalancingPolicy {
 
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
+        auto* self = static_cast<WorkSerializerRunner*>(arg);
         self->ring_hash_lb()->work_serializer()->Run(
             [self]() {
               self->Run();
@@ -518,8 +515,12 @@ RingHash::RingHashSubchannelList::RingHashSubchannelList(
   // weights aren't provided, all hosts should get an equal number of hashes. In
   // the case where this number exceeds the max_ring_size, it's scaled back down
   // to fit.
-  const size_t min_ring_size = policy->config_->min_ring_size();
-  const size_t max_ring_size = policy->config_->max_ring_size();
+  const size_t ring_size_cap = args.GetInt(GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP)
+                                   .value_or(kRingSizeCapDefault);
+  const size_t min_ring_size =
+      std::min(policy->config_->min_ring_size(), ring_size_cap);
+  const size_t max_ring_size =
+      std::min(policy->config_->max_ring_size(), ring_size_cap);
   const double scale = std::min(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));

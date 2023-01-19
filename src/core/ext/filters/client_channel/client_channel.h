@@ -33,13 +33,14 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
+#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -390,7 +391,7 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
-  class LbCallState : public LoadBalancingPolicy::CallState {
+  class LbCallState : public LbCallStateInternal {
    public:
     explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
 
@@ -398,7 +399,7 @@ class ClientChannel::LoadBalancedCall
 
     // Internal API to allow first-party LB policies to access per-call
     // attributes set by the ConfigSelector.
-    absl::string_view GetCallAttribute(UniqueTypeName type);
+    absl::string_view GetCallAttribute(UniqueTypeName type) override;
 
    private:
     LoadBalancedCall* lb_call_;

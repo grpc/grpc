@@ -18,18 +18,6 @@
 
 EXPERIMENTS = {
     "dbg": {
-        "core_end2end_tests": [
-            "new_hpack_huffman_decoder",
-        ],
-        "event_engine_client_test": [
-            "posix_event_engine_enable_polling",
-        ],
-        "flow_control_test": [
-            "flow_control_fixes",
-        ],
-        "hpack_test": [
-            "new_hpack_huffman_decoder",
-        ],
     },
     "off": {
         "core_end2end_test": [
@@ -51,16 +39,20 @@ EXPERIMENTS = {
             "promise_based_client_call",
         ],
         "resource_quota_test": [
+            "free_large_allocator",
             "memory_pressure_controller",
             "unconstrained_max_quota_buffer_size",
         ],
     },
     "on": {
-        "endpoint_test": [
-            "tcp_read_chunks",
+        "core_end2end_tests": [
+            "new_hpack_huffman_decoder",
         ],
         "flow_control_test": [
-            "tcp_read_chunks",
+            "flow_control_fixes",
+        ],
+        "hpack_test": [
+            "new_hpack_huffman_decoder",
         ],
     },
     "opt": {

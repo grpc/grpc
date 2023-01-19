@@ -29,6 +29,7 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
 // TODO(yihuazhang): remove the forward declaration here and include
@@ -140,8 +141,6 @@ class ExternalCertificateVerifier {
   // Subclass.
   template <typename Subclass, typename... Args>
   static std::shared_ptr<CertificateVerifier> Create(Args&&... args) {
-    grpc::internal::GrpcLibraryInitializer g_gli_initializer;
-    g_gli_initializer.summon();
     auto* external_verifier = new Subclass(std::forward<Args>(args)...);
     return std::make_shared<CertificateVerifier>(
         grpc_tls_certificate_verifier_external_create(

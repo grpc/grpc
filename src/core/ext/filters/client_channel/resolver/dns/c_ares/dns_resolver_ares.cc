@@ -34,7 +34,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -853,7 +853,7 @@ void grpc_resolver_dns_ares_shutdown() {
   }
 }
 
-#else /* GRPC_ARES == 1 */
+#else  // GRPC_ARES == 1
 
 namespace grpc_core {
 bool UseAresDnsResolver() { return false; }
@@ -864,4 +864,4 @@ void grpc_resolver_dns_ares_init() {}
 
 void grpc_resolver_dns_ares_shutdown() {}
 
-#endif /* GRPC_ARES == 1 */
+#endif  // GRPC_ARES == 1

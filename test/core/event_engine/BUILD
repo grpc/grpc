@@ -72,8 +72,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr_platform",
-        "//:grpc",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
     ],
 )
 
@@ -176,6 +176,7 @@ grpc_cc_test(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "gtest",
     ],
     language = "C++",

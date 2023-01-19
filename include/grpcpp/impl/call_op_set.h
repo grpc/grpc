@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_IMPL_CALL_OP_SET_H
 #define GRPCPP_IMPL_CALL_OP_SET_H
@@ -23,8 +23,10 @@
 #include <map>
 #include <memory>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
@@ -32,7 +34,6 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_hook.h>
 #include <grpcpp/impl/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/interceptor_common.h>
@@ -43,8 +44,6 @@
 #include <grpcpp/support/string_ref.h>
 
 namespace grpc {
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 class Call;
@@ -67,9 +66,8 @@ inline grpc_metadata* FillMetadataArray(
     metadata_array[i].value = SliceReferencingString(iter->second);
   }
   if (!optional_error_details.empty()) {
-    metadata_array[i].key =
-        g_core_codegen_interface->grpc_slice_from_static_buffer(
-            kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
+    metadata_array[i].key = grpc_slice_from_static_buffer(
+        kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
     metadata_array[i].value = SliceReferencingString(optional_error_details);
   }
   return metadata_array;
@@ -318,7 +316,7 @@ class CallOpSendMessage {
       return;
     }
     if (msg_ != nullptr) {
-      GPR_CODEGEN_ASSERT(serializer_(msg_).ok());
+      GPR_ASSERT(serializer_(msg_).ok());
     }
     serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
@@ -777,7 +775,7 @@ class CallOpClientRecvStatus {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
-    error_message_ = g_core_codegen_interface->grpc_empty_slice();
+    error_message_ = grpc_empty_slice();
   }
 
  protected:
@@ -797,7 +795,7 @@ class CallOpClientRecvStatus {
     if (recv_status_ == nullptr || hijacked_) return;
     if (static_cast<StatusCode>(status_code_) == StatusCode::OK) {
       *recv_status_ = Status();
-      GPR_CODEGEN_DEBUG_ASSERT(debug_error_string_ == nullptr);
+      GPR_DEBUG_ASSERT(debug_error_string_ == nullptr);
     } else {
       *recv_status_ =
           Status(static_cast<StatusCode>(status_code_),
@@ -813,7 +811,7 @@ class CallOpClientRecvStatus {
     }
     // TODO(soheil): Find callers that set debug string even for status OK,
     //               and fix them.
-    g_core_codegen_interface->grpc_slice_unref(error_message_);
+    grpc_slice_unref(error_message_);
   }
 
   void SetInterceptionHookPoint(
@@ -892,7 +890,7 @@ class CallOpSet : public CallOpSetInterface,
 
   void FillOps(Call* call) override {
     done_intercepting_ = false;
-    g_core_codegen_interface->grpc_call_ref(call->call());
+    grpc_call_ref(call->call());
     call_ =
         *call;  // It's fine to create a copy of call since it's just pointers
 
@@ -913,7 +911,7 @@ class CallOpSet : public CallOpSetInterface,
       // run
       *tag = return_tag_;
       *status = saved_status_;
-      g_core_codegen_interface->grpc_call_unref(call_.call());
+      grpc_call_unref(call_.call());
       return true;
     }
 
@@ -926,7 +924,7 @@ class CallOpSet : public CallOpSetInterface,
     saved_status_ = *status;
     if (RunInterceptorsPostRecv()) {
       *tag = return_tag_;
-      g_core_codegen_interface->grpc_call_unref(call_.call());
+      grpc_call_unref(call_.call());
       return true;
     }
     // Interceptors are going to be run, so we can't return the tag just yet.
@@ -967,16 +965,16 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
 
-    grpc_call_error err = g_core_codegen_interface->grpc_call_start_batch(
-        call_.call(), ops, nops, core_cq_tag(), nullptr);
+    grpc_call_error err =
+        grpc_call_start_batch(call_.call(), ops, nops, core_cq_tag(), nullptr);
 
     if (err != GRPC_CALL_OK) {
       // A failure here indicates an API misuse; for example, doing a Write
       // while another Write is already pending on the same RPC or invoking
       // WritesDone multiple times
       gpr_log(GPR_ERROR, "API misuse of type %s observed",
-              g_core_codegen_interface->grpc_call_error_to_string(err));
-      GPR_CODEGEN_ASSERT(false);
+              grpc_call_error_to_string(err));
+      GPR_ASSERT(false);
     }
   }
 
@@ -986,9 +984,8 @@ class CallOpSet : public CallOpSetInterface,
     done_intercepting_ = true;
     // The following call_start_batch is internally-generated so no need for an
     // explanatory log on failure.
-    GPR_CODEGEN_ASSERT(g_core_codegen_interface->grpc_call_start_batch(
-                           call_.call(), nullptr, 0, core_cq_tag(), nullptr) ==
-                       GRPC_CALL_OK);
+    GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag(),
+                                     nullptr) == GRPC_CALL_OK);
   }
 
  private:

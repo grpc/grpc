@@ -32,6 +32,7 @@
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
+#include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -44,16 +45,10 @@ namespace experimental {
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
  public:
-  class WindowsEndpoint : public EventEngine::Endpoint {
-   public:
-    ~WindowsEndpoint() override;
-    void Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs* args) override;
-    void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* args) override;
-    const ResolvedAddress& GetPeerAddress() const override;
-    const ResolvedAddress& GetLocalAddress() const override;
-  };
+  constexpr static TaskHandle invalid_handle{-1, -1};
+  constexpr static EventEngine::ConnectionHandle invalid_connection_handle{-1,
+                                                                           -1};
+
   class WindowsListener : public EventEngine::Listener {
    public:
     ~WindowsListener() override;
@@ -104,16 +99,64 @@ class WindowsEventEngine : public EventEngine,
   bool Cancel(TaskHandle handle) override;
 
  private:
-  struct Closure;
+  // State of an active connection.
+  // Managed by a shared_ptr, owned exclusively by the timeout callback and the
+  // OnConnectCompleted callback herein.
+  struct ConnectionState {
+    // everything is guarded by mu;
+    grpc_core::Mutex mu
+        ABSL_ACQUIRED_BEFORE(WindowsEventEngine::connection_mu_);
+    EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
+    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu);
+    EventEngine::OnConnectCallback on_connected_user_callback
+        ABSL_GUARDED_BY(mu);
+    EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);
+    std::unique_ptr<WinSocket> socket ABSL_GUARDED_BY(mu);
+    EventEngine::ResolvedAddress address ABSL_GUARDED_BY(mu);
+    MemoryAllocator allocator ABSL_GUARDED_BY(mu);
+  };
+
+  // A poll worker which schedules itself unless kicked
+  class IOCPWorkClosure : public EventEngine::Closure {
+   public:
+    explicit IOCPWorkClosure(Executor* executor, IOCP* iocp);
+    void Run() override;
+    void WaitForShutdown();
+
+   private:
+    std::atomic<int> workers_{1};
+    grpc_core::Notification done_signal_;
+    Executor* executor_;
+    IOCP* iocp_;
+  };
+
+  void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
+
+  // CancelConnect called from within the deadline timer.
+  // In this case, the connection_state->mu is already locked, and timer
+  // cancellation is not possible.
+  bool CancelConnectFromDeadlineTimer(ConnectionState* connection_state)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
+
+  // Completes the connection cancellation logic after checking handle validity
+  // and optionally cancelling deadline timers.
+  bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
+
+  class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
-  grpc_core::Mutex mu_;
-  TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
+  grpc_core::Mutex task_mu_;
+  TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
+  grpc_core::Mutex connection_mu_ ABSL_ACQUIRED_AFTER(ConnectionState::mu);
+  grpc_core::CondVar connection_cv_;
+  ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
   std::atomic<intptr_t> aba_token_{0};
 
   std::shared_ptr<ThreadPool> executor_;
   IOCP iocp_;
-  posix_engine::TimerManager timer_manager_;
+  TimerManager timer_manager_;
+  IOCPWorkClosure iocp_worker_;
 };
 
 }  // namespace experimental

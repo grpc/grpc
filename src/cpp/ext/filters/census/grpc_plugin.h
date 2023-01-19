@@ -1,25 +1,32 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 #define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
+
+#include <algorithm>
+#include <functional>
+#include <utility>
+#include <vector>
+
+#include "absl/base/call_once.h"
 
 #include <grpcpp/opencensus.h>
 
@@ -116,6 +123,8 @@ using experimental::ServerSentMessagesPerRpcHour;      // NOLINT
 using experimental::ServerServerLatencyHour;           // NOLINT
 using experimental::ServerStartedRpcsHour;             // NOLINT
 
+namespace internal {
+
 // Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
 // of a program, before any channels/servers are built.
 void EnableOpenCensusStats(bool enable);
@@ -124,6 +133,38 @@ void EnableOpenCensusTracing(bool enable);
 bool OpenCensusStatsEnabled();
 bool OpenCensusTracingEnabled();
 
+// Registers a function that would initialize an OpenCensus exporter. This
+// function would be run before the first time the OpenCensus plugin is run.
+class OpenCensusExporterRegistry {
+ public:
+  static OpenCensusExporterRegistry& Get();
+
+  // Registers the functions to be run post-init.
+  void Register(std::function<void()> f) {
+    exporter_registry_.push_back(std::move(f));
+  }
+
+  // Runs the registry post-init exactly once. Protected with an absl::CallOnce.
+  void RunRegistryPostInit() {
+    absl::call_once(
+        once_, &OpenCensusExporterRegistry::RunRegistryPostInitHelper, this);
+  }
+
+ private:
+  void RunRegistryPostInitHelper() {
+    for (const auto& f : exporter_registry_) {
+      f();
+    }
+  }
+
+  OpenCensusExporterRegistry() = default;
+
+  std::vector<std::function<void()>> exporter_registry_;
+  absl::once_flag once_;
+};
+
+}  // namespace internal
+
 }  // namespace grpc
 
-#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H */
+#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H

@@ -113,7 +113,7 @@ def main(argv: List[str]) -> None:
     for arg in args:
         got_input = True
         with open(arg) as f:
-            srcs = list(yaml.load_all(f.read(), Loader=yaml.FullLoader))
+            srcs = list(yaml.safe_load_all(f.read()))
         for src in srcs:
             if isinstance(src, str):
                 assert len(srcs) == 1

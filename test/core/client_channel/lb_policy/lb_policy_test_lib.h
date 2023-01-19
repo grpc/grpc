@@ -21,11 +21,13 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <deque>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -33,10 +35,13 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "absl/types/variant.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -44,6 +49,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -55,6 +61,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -154,10 +161,49 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     const std::string& address() const { return address_; }
 
+    void AssertValidConnectivityStateTransition(
+        grpc_connectivity_state from_state, grpc_connectivity_state to_state,
+        SourceLocation location = SourceLocation()) {
+      switch (from_state) {
+        case GRPC_CHANNEL_IDLE:
+          ASSERT_EQ(to_state, GRPC_CHANNEL_CONNECTING)
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        case GRPC_CHANNEL_CONNECTING:
+          ASSERT_THAT(to_state,
+                      ::testing::AnyOf(GRPC_CHANNEL_READY,
+                                       GRPC_CHANNEL_TRANSIENT_FAILURE))
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        case GRPC_CHANNEL_READY:
+          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        case GRPC_CHANNEL_TRANSIENT_FAILURE:
+          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        default:
+          FAIL() << ConnectivityStateName(from_state) << "=>"
+                 << ConnectivityStateName(to_state) << "\n"
+                 << location.file() << ":" << location.line();
+          break;
+      }
+    }
+
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
     void SetConnectivityState(grpc_connectivity_state state,
-                              const absl::Status& status = absl::OkStatus()) {
+                              const absl::Status& status = absl::OkStatus(),
+                              SourceLocation location = SourceLocation()) {
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())
             << "bug in test: TRANSIENT_FAILURE must have non-OK status";
@@ -167,6 +213,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << " must have OK status: " << status;
       }
       MutexLock lock(&mu_);
+      AssertValidConnectivityStateTransition(state_tracker_.state(), state,
+                                             location);
       state_tracker_.SetState(state, status, "set from test");
     }
 
@@ -220,9 +268,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     // Called at test tear-down time to ensure that we have not left any
     // unexpected events in the queue.
-    void ExpectQueueEmpty() {
+    void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
-      EXPECT_TRUE(queue_.empty());
+      EXPECT_TRUE(queue_.empty()) << location.file() << ":" << location.line();
       for (const Event& event : queue_) {
         gpr_log(GPR_ERROR, "UNEXPECTED EVENT LEFT IN QUEUE: %s",
                 EventString(event).c_str());
@@ -354,8 +402,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake CallState implementation, for use in PickArgs.
-  class FakeCallState : public LoadBalancingPolicy::CallState {
+  class FakeCallState : public LbCallStateInternal {
    public:
+    explicit FakeCallState(std::map<UniqueTypeName, std::string> attributes)
+        : attributes_(attributes) {}
+
     ~FakeCallState() override {
       for (void* allocation : allocations_) {
         gpr_free(allocation);
@@ -369,13 +420,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return allocation;
     }
 
+    absl::string_view GetCallAttribute(UniqueTypeName type) override {
+      return attributes_[type];
+    }
+
     std::vector<void*> allocations_;
+    std::map<UniqueTypeName, std::string> attributes_;
   };
 
   LoadBalancingPolicyTest()
       : work_serializer_(std::make_shared<WorkSerializer>()) {}
 
-  ~LoadBalancingPolicyTest() override {
+  void TearDown() override {
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
@@ -400,11 +456,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Creates an LB policy config from json.
   static RefCountedPtr<LoadBalancingPolicy::Config> MakeConfig(
-      const Json& json) {
-    return CoreConfiguration::Get()
-        .lb_policy_registry()
-        .ParseLoadBalancingConfig(json)
-        .value();
+      const Json& json, SourceLocation location = SourceLocation()) {
+    auto status_or_config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            json);
+    EXPECT_TRUE(status_or_config.ok())
+        << status_or_config.status() << "\n"
+        << location.file() << ":" << location.line();
+    return status_or_config.value();
   }
 
   // Converts an address URI into a grpc_resolved_address.
@@ -444,6 +503,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return status;
   }
 
+  void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
+    helper_->ExpectQueueEmpty(location);
+  }
+
   // Keeps reading state updates until continue_predicate() returns false.
   // Returns false if the helper reports no events or if the event is
   // not a state update; otherwise (if continue_predicate() tells us to
@@ -456,6 +519,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (!update.has_value()) return false;
       if (!continue_predicate(std::move(*update))) return true;
     }
+  }
+
+  void ExpectReresolutionRequest(SourceLocation location = SourceLocation()) {
+    ASSERT_TRUE(helper_->GetNextReresolution(location))
+        << location.file() << ":" << location.line();
   }
 
   // Expects that the LB policy has reported the specified connectivity
@@ -485,20 +553,22 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
-    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
-      if (update.state == GRPC_CHANNEL_CONNECTING) {
-        EXPECT_TRUE(update.status.ok())
-            << update.status << " at " << location.file() << ":"
-            << location.line();
-        ExpectPickQueued(update.picker.get(), location);
-        return true;  // Keep going.
-      }
-      EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
-          << ConnectivityStateName(update.state) << " at " << location.file()
-          << ":" << location.line();
-      final_picker = std::move(update.picker);
-      return false;  // Stop.
-    });
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          if (update.state == GRPC_CHANNEL_CONNECTING) {
+            EXPECT_TRUE(update.status.ok())
+                << update.status << " at " << location.file() << ":"
+                << location.line();
+            ExpectPickQueued(update.picker.get(), {}, location);
+            return true;  // Keep going.
+          }
+          EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
+              << ConnectivityStateName(update.state) << " at "
+              << location.file() << ":" << location.line();
+          final_picker = std::move(update.picker);
+          return false;  // Stop.
+        },
+        location);
     return final_picker;
   }
 
@@ -512,22 +582,68 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::function<void(const absl::Status&)> check_status,
       SourceLocation location = SourceLocation()) {
     bool retval = false;
-    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
-      if (update.state == GRPC_CHANNEL_CONNECTING) {
-        EXPECT_TRUE(update.status.ok())
-            << update.status << " at " << location.file() << ":"
-            << location.line();
-        ExpectPickQueued(update.picker.get(), location);
-        return true;  // Keep going.
-      }
-      EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
-          << ConnectivityStateName(update.state) << " at " << location.file()
-          << ":" << location.line();
-      check_status(update.status);
-      ExpectPickFail(update.picker.get(), check_status, location);
-      retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
-      return false;  // Stop.
-    });
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          if (update.state == GRPC_CHANNEL_CONNECTING) {
+            EXPECT_TRUE(update.status.ok())
+                << update.status << " at " << location.file() << ":"
+                << location.line();
+            ExpectPickQueued(update.picker.get(), {}, location);
+            return true;  // Keep going.
+          }
+          EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
+              << ConnectivityStateName(update.state) << " at "
+              << location.file() << ":" << location.line();
+          check_status(update.status);
+          ExpectPickFail(update.picker.get(), check_status, location);
+          retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+          return false;  // Stop.
+        },
+        location);
+    return retval;
+  }
+
+  // Waits for the round_robin policy to start using an updated address list.
+  // There can be any number of READY updates where the picker is still using
+  // the old list followed by one READY update where the picker is using the
+  // new list.  Returns a picker if the reported states match expectations.
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+  WaitForRoundRobinListChange(
+      absl::Span<const absl::string_view> old_addresses,
+      absl::Span<const absl::string_view> new_addresses,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "Waiting for expected RR addresses...");
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
+    size_t num_picks =
+        std::max(new_addresses.size(), old_addresses.size()) * num_iterations;
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
+              << location.file() << ":" << location.line();
+          if (update.state != GRPC_CHANNEL_READY) return false;
+          // Get enough picks to round-robin num_iterations times across all
+          // expected addresses.
+          auto picks = GetCompletePicks(update.picker.get(), num_picks,
+                                        call_attributes, location);
+          EXPECT_TRUE(picks.has_value())
+              << location.file() << ":" << location.line();
+          if (!picks.has_value()) return false;
+          gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
+          // If the picks still match the old list, then keep going.
+          if (PicksAreRoundRobin(old_addresses, *picks)) return true;
+          // Otherwise, the picks should match the new list.
+          bool matches = PicksAreRoundRobin(new_addresses, *picks);
+          EXPECT_TRUE(matches)
+              << "Expected: " << absl::StrJoin(new_addresses, ", ")
+              << "\nActual: " << absl::StrJoin(*picks, ", ") << "\nat "
+              << location.file() << ":" << location.line();
+          if (matches) {
+            retval = std::move(update.picker);
+          }
+          return false;  // Stop.
+        },
+        location);
     return retval;
   }
 
@@ -538,7 +654,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    ExpectPickQueued(picker.get(), location);
+    ExpectPickQueued(picker.get(), {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
@@ -547,22 +663,31 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                 location);
   }
 
+  static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
+      std::map<std::string, std::string> init = {}) {
+    return std::make_unique<FakeMetadata>(init);
+  }
+
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
-      LoadBalancingPolicy::SubchannelPicker* picker) {
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<UniqueTypeName, std::string>& call_attributes = {}) {
     ExecCtx exec_ctx;
     FakeMetadata metadata({});
-    FakeCallState call_state;
+    FakeCallState call_state(call_attributes);
     return picker->Pick({"/service/method", &metadata, &call_state});
   }
 
   // Requests a pick on picker and expects a Queue result.
-  void ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
-                        SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker);
+  void ExpectPickQueued(
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      SourceLocation location = SourceLocation()) {
+    ASSERT_NE(picker, nullptr);
+    auto pick_result = DoPick(picker, call_attributes);
     ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
-        << PickResultString(pick_result) << " at " << location.file() << ":"
+        << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
   }
 
@@ -571,8 +696,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // the result was something other than Complete.
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
       SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker);
+    auto pick_result = DoPick(picker, call_attributes);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
@@ -581,6 +707,58 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
     return subchannel->state()->address();
+  }
+
+  // Gets num_picks complete picks from picker and returns the resulting
+  // list of addresses, or nullopt if a non-complete pick was returned.
+  absl::optional<std::vector<std::string>> GetCompletePicks(
+      LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      SourceLocation location = SourceLocation()) {
+    EXPECT_NE(picker, nullptr);
+    if (picker == nullptr) {
+      return absl::nullopt;
+    }
+    std::vector<std::string> results;
+    for (size_t i = 0; i < num_picks; ++i) {
+      auto address = ExpectPickComplete(picker, call_attributes, location);
+      if (!address.has_value()) return absl::nullopt;
+      results.emplace_back(std::move(*address));
+    }
+    return results;
+  }
+
+  // Returns true if the list of actual pick result addresses matches the
+  // list of expected addresses for round_robin.  Note that the actual
+  // addresses may start anywhere in the list of expected addresses but
+  // must then continue in round-robin fashion, with wrap-around.
+  bool PicksAreRoundRobin(absl::Span<const absl::string_view> expected,
+                          absl::Span<const std::string> actual) {
+    absl::optional<size_t> expected_index;
+    for (const auto& address : actual) {
+      auto it = std::find(expected.begin(), expected.end(), address);
+      if (it == expected.end()) return false;
+      size_t index = it - expected.begin();
+      if (expected_index.has_value() && index != *expected_index) return false;
+      expected_index = (index + 1) % expected.size();
+    }
+    return true;
+  }
+
+  // Checks that the picker has round-robin behavior over the specified
+  // set of addresses.
+  void ExpectRoundRobinPicks(
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      absl::Span<const absl::string_view> addresses,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+    auto picks = GetCompletePicks(picker, num_iterations * addresses.size(),
+                                  call_attributes, location);
+    ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
+    EXPECT_TRUE(PicksAreRoundRobin(addresses, *picks))
+        << "  Actual: " << absl::StrJoin(*picks, ", ")
+        << "\n  Expected: " << absl::StrJoin(addresses, ", ") << "\n"
+        << location.file() << ":" << location.line();
   }
 
   // Requests a picker on picker and expects a Fail result.

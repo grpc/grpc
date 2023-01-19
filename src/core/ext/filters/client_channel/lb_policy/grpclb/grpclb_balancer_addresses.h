@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -36,6 +36,4 @@ const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
 
 }  // namespace grpc_core
 
-#endif /*                                                                         \
-GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H \
-        */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H

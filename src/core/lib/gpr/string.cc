@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -35,6 +35,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 
 char* gpr_strdup(const char* src) {
   char* dst;
@@ -151,12 +152,12 @@ int gpr_parse_bytes_to_uint32(const char* buf, size_t len, uint32_t* result) {
   uint32_t new_val;
   size_t i;
 
-  if (len == 0) return 0; /* must have some bytes */
+  if (len == 0) return 0;  // must have some bytes
 
   for (i = 0; i < len; i++) {
-    if (buf[i] < '0' || buf[i] > '9') return 0; /* bad char */
+    if (buf[i] < '0' || buf[i] > '9') return 0;  // bad char
     new_val = 10 * out + static_cast<uint32_t>(buf[i] - '0');
-    if (new_val < out) return 0; /* overflow */
+    if (new_val < out) return 0;  // overflow
     out = new_val;
   }
 
@@ -245,9 +246,9 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
   for (i = 0; i < nstrs; i++) {
     out_length += strlen(strs[i]);
   }
-  out_length += 1; /* null terminator */
+  out_length += 1;  // null terminator
   if (nstrs > 0) {
-    out_length += sep_len * (nstrs - 1); /* separators */
+    out_length += sep_len * (nstrs - 1);  // separators
   }
   out = static_cast<char*>(gpr_malloc(out_length));
   out_length = 0;

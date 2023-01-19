@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -34,7 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
   cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_core::CqVerifier cqv(cq);
 
-  /* reserve two ports */
+  // reserve two ports
   int port1 = grpc_pick_unused_port_or_die();
   int port2 = grpc_pick_unused_port_or_die();
 
@@ -256,26 +256,26 @@ int main(int argc, char** argv) {
           .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
           .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
           .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
-          /* When this test brings down server1 and then brings up server2,
-           * the targetted server port number changes, and the client channel
-           * needs to re-resolve to pick this up. This test requires that
-           * happen within 10 seconds, but gRPC's DNS resolvers rate limit
-           * resolution attempts to at most once every 30 seconds by default.
-           * So we tweak it for this test. */
+          // When this test brings down server1 and then brings up server2,
+          // the targetted server port number changes, and the client channel
+          // needs to re-resolve to pick this up. This test requires that
+          // happen within 10 seconds, but gRPC's DNS resolvers rate limit
+          // resolution attempts to at most once every 30 seconds by default.
+          // So we tweak it for this test.
           .Set(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS, 1000)
           .ToC();
 
-  /* create a channel that picks first amongst the servers */
+  // create a channel that picks first amongst the servers
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* chan = grpc_channel_create("test", creds, client_args.get());
   grpc_channel_credentials_release(creds);
-  /* and an initial call to them */
+  // and an initial call to them
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
   grpc_call* call1 =
       grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
                                grpc_timeout_seconds_to_deadline(20), nullptr);
-  /* send initial metadata to probe connectivity */
+  // send initial metadata to probe connectivity
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -286,7 +286,7 @@ int main(int argc, char** argv) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
                                                    (size_t)(op - ops),
                                                    tag(0x101), nullptr));
-  /* and receive status to probe termination */
+  // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -300,7 +300,7 @@ int main(int argc, char** argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x102), nullptr));
 
-  /* bring a server up on the first port */
+  // bring a server up on the first port
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
   addr = absl::StrCat("127.0.0.1:", port1);
   grpc_server_credentials* server_creds =
@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
   grpc_server_register_completion_queue(server1, cq, nullptr);
   grpc_server_start(server1);
 
-  /* request a call to the server */
+  // request a call to the server
   grpc_call* server_call1;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server1, &server_call1, &request_details1,
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
 
   set_resolve_port(port1);
 
-  /* first call should now start */
+  // first call should now start
   cqv.Expect(tag(0x101), true);
   cqv.Expect(tag(0x301), true);
   cqv.Verify();
@@ -329,7 +329,7 @@ int main(int argc, char** argv) {
                                         gpr_inf_future(GPR_CLOCK_REALTIME), cq,
                                         tag(0x9999));
 
-  /* listen for close on the server call to probe for finishing */
+  // listen for close on the server call to probe for finishing
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -340,20 +340,20 @@ int main(int argc, char** argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x302), nullptr));
 
-  /* shutdown first server:
-   * we should see a connectivity change and then nothing */
+  // shutdown first server:
+  // we should see a connectivity change and then nothing
   set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
   cqv.Expect(tag(0x9999), true);
   cqv.Verify();
   cqv.VerifyEmpty();
 
-  /* and a new call: should go through to server2 when we start it */
+  // and a new call: should go through to server2 when we start it
   grpc_call* call2 =
       grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
                                grpc_timeout_seconds_to_deadline(20), nullptr);
-  /* send initial metadata to probe connectivity */
+  // send initial metadata to probe connectivity
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -364,7 +364,7 @@ int main(int argc, char** argv) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
                                                    (size_t)(op - ops),
                                                    tag(0x201), nullptr));
-  /* and receive status to probe termination */
+  // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -378,7 +378,7 @@ int main(int argc, char** argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x202), nullptr));
 
-  /* and bring up second server */
+  // and bring up second server
   set_resolve_port(port2);
   grpc_server* server2 = grpc_server_create(nullptr, nullptr);
   addr = absl::StrCat("127.0.0.1:", port2);
@@ -389,18 +389,18 @@ int main(int argc, char** argv) {
   grpc_server_register_completion_queue(server2, cq, nullptr);
   grpc_server_start(server2);
 
-  /* request a call to the server */
+  // request a call to the server
   grpc_call* server_call2;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server2, &server_call2, &request_details2,
                                       &request_metadata2, cq, cq, tag(0x401)));
 
-  /* second call should now start */
+  // second call should now start
   cqv.Expect(tag(0x201), true);
   cqv.Expect(tag(0x401), true);
   cqv.Verify();
 
-  /* listen for close on the server call to probe for finishing */
+  // listen for close on the server call to probe for finishing
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -411,14 +411,14 @@ int main(int argc, char** argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x402), nullptr));
 
-  /* shutdown second server: we should see nothing */
+  // shutdown second server: we should see nothing
   grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));
   cqv.VerifyEmpty();
 
   grpc_call_cancel(call1, nullptr);
   grpc_call_cancel(call2, nullptr);
 
-  /* now everything else should finish */
+  // now everything else should finish
   cqv.Expect(tag(0x102), true);
   cqv.Expect(tag(0x202), true);
   cqv.Expect(tag(0x302), true);
