@@ -185,7 +185,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(RefCountedPtr<XdsOverrideHostLb> xds_override_host_lb,
-           RefCountedPtr<SubchannelPicker> picker);
+           RefCountedPtr<SubchannelPicker> picker,
+           XdsHealthStatusSet override_host_health_status_set);
 
     PickResult Pick(PickArgs args) override;
 
@@ -221,6 +222,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
     RefCountedPtr<SubchannelPicker> picker_;
+    XdsHealthStatusSet override_host_health_status_set_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -292,7 +294,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   void ResetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
 
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
-      absl::string_view address);
+      absl::string_view address,
+      const XdsHealthStatusSet& override_host_status_set);
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -317,8 +320,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
 XdsOverrideHostLb::Picker::Picker(
     RefCountedPtr<XdsOverrideHostLb> xds_override_host_lb,
-    RefCountedPtr<SubchannelPicker> picker)
-    : policy_(std::move(xds_override_host_lb)), picker_(std::move(picker)) {
+    RefCountedPtr<SubchannelPicker> picker,
+    XdsHealthStatusSet override_host_health_status_set)
+    : policy_(std::move(xds_override_host_lb)),
+      picker_(std::move(picker)),
+      override_host_health_status_set_(override_host_health_status_set) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO, "[xds_override_host_lb %p] constructed new picker %p",
             policy_.get(), this);
@@ -330,7 +336,8 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
   if (override_host.length() == 0) {
     return absl::nullopt;
   }
-  auto subchannel = policy_->GetSubchannelByAddress(override_host);
+  auto subchannel = policy_->GetSubchannelByAddress(
+      override_host, override_host_health_status_set_);
   if (subchannel == nullptr) {
     return absl::nullopt;
   }
@@ -453,7 +460,8 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
 
 void XdsOverrideHostLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
-    auto xds_override_host_picker = MakeRefCounted<Picker>(Ref(), picker_);
+    auto xds_override_host_picker = MakeRefCounted<Picker>(
+        Ref(), picker_, config_->override_host_status_set());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
       gpr_log(GPR_INFO,
               "[xds_override_host_lb %p] updating connectivity: state=%s "
@@ -529,7 +537,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
           it->second.SetSubchannel(nullptr);
         }
         addresses_for_map.erase(key_status);
-        it++;
+        ++it;
       }
     }
     for (const auto& key_status : addresses_for_map) {
@@ -543,19 +551,18 @@ RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
     ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel) {
   auto key = grpc_sockaddr_to_string(&address.address(), false);
-  if (key.ok()) {
-    auto status = GetAddressHealthStatus(address);
-    auto wrapper = MakeRefCounted<SubchannelWrapper>(std::move(subchannel),
-                                                     Ref(), *key, status);
-    MutexLock lock(&subchannel_map_mu_);
-    auto it = subchannel_map_.find(*key);
-    if (it != subchannel_map_.end()) {
-      it->second.SetSubchannel(wrapper->UpdateHealthStatus(status));
-    }
-    return wrapper;
-  } else {
+  if (!key.ok()) {
     return subchannel;
   }
+  auto status = GetAddressHealthStatus(address);
+  auto wrapper = MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(),
+                                                   *key, status);
+  MutexLock lock(&subchannel_map_mu_);
+  auto it = subchannel_map_.find(*key);
+  if (it != subchannel_map_.end()) {
+    it->second.SetSubchannel(wrapper->UpdateHealthStatus(status));
+  }
+  return wrapper;
 }
 
 void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
@@ -568,13 +575,15 @@ void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
-XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
+XdsOverrideHostLb::GetSubchannelByAddress(
+    absl::string_view address,
+    const XdsHealthStatusSet& override_host_status_set) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
   if (it != subchannel_map_.end()) {
     auto subchannel = it->second.GetSubchannel();
-    if (subchannel == nullptr || !config_->override_host_status_set().Contains(
-                                     subchannel->health_status())) {
+    if (subchannel == nullptr ||
+        !override_host_status_set.Contains(subchannel->health_status())) {
       return nullptr;
     }
     return subchannel->Ref();
@@ -636,8 +645,8 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     RefCountedPtr<XdsOverrideHostLb> policy, absl::string_view key,
     XdsHealthStatus health_status)
     : DelegatingSubchannel(std::move(subchannel)),
-      key_(key),
-      policy_(policy),
+      key_(std::move(key)),
+      policy_(std::move(policy)),
       health_status_(health_status) {
   auto watcher = std::make_unique<ConnectivityStateWatcher>(Ref());
   watcher_ = watcher.get();
@@ -713,9 +722,6 @@ XdsOverrideHostLb::SubchannelWrapper::FromHandle(const Handle& handle) {
 
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
     ConnectivityStateWatcher::interested_parties() {
-  if (subchannel_ == nullptr) {
-    return nullptr;
-  }
   return subchannel_->policy_->interested_parties();
 }
 
