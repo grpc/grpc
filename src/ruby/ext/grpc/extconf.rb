@@ -98,6 +98,7 @@ if apple_toolchain && !cross_compiling
     ENV['ARCH_FLAGS'] = '-arch arm64'
   else
     ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64'
+    $LDFLAGS << ' -no_fixup_chains'
   end
 end
 
