@@ -36,7 +36,7 @@ du -h --max-depth=1 | sort -rh | head -100
 set +e
 bazel_rbe/bazel_wrapper \
   --bazelrc=tools/remote_build/linux_kokoro.bazelrc \
-  --output_user_root=/tmpfs/bazel
+  --output_user_root=/tmpfs/bazel \
   test \
   $BAZEL_FLAGS \
   "$@" \
