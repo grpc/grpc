@@ -102,10 +102,10 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> call_attributes{
-      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
-  call_attributes[XdsHostOverrideTypeName()] = std::string("127.0.0.1:441");
+  call_attributes[XdsOverrideHostTypeName()] = std::string("127.0.0.1:441");
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
 }
@@ -117,7 +117,7 @@ TEST_F(XdsOverrideHostTest, SubchannelNotFound) {
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
   std::map<UniqueTypeName, std::string> call_attributes{
-      {XdsHostOverrideTypeName(), "no such host"}};
+      {XdsOverrideHostTypeName(), "no such host"}};
   ExpectRoundRobinPicks(picker.get(), kAddresses, call_attributes);
 }
 
@@ -128,7 +128,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> call_attributes{
-      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
   ExpectRoundRobinPicks(picker.get(), {kAddresses[1]}, call_attributes);
   // Some other address is gone
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[1]},
@@ -174,7 +174,7 @@ TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
@@ -200,7 +200,7 @@ TEST_F(XdsOverrideHostTest, ConnectingSubchannelIsQueued) {
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
   std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
