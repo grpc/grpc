@@ -68,9 +68,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
                               RefCountedPtr<LoadBalancingPolicy::Config>
                                   config = MakeXdsOverrideHostConfig()) {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-    EXPECT_EQ(
-        ApplyUpdate(BuildUpdate(addresses, std::move(config)), policy_.get()),
-        absl::OkStatus());
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, config), policy_.get()),
+              absl::OkStatus());
     ExpectConnectingUpdate();
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
@@ -300,20 +299,20 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_READY, absl::OkStatus(), pick_arg);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ExpectPickQueued(picker.get(), pick_arg);
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), pick_arg);
-  ExpectRoundRobinPicks(picker.get(),
-                        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
-  ExpectRoundRobinPicks(picker.get(),
-                        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"});
+  ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
 }
 
 TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
