@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
