@@ -251,7 +251,12 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   class SubchannelEntry {
    public:
     explicit SubchannelEntry(SubchannelWrapper::Handle subchannel)
-        : subchannel_(subchannel) {}
+        : subchannel_(std::move(subchannel)) {}
+
+    ~SubchannelEntry() {
+      SubchannelWrapper* subchannel = GetSubchannel();
+      if (subchannel != nullptr) subchannel->Shutdown();
+    }
 
     void SetSubchannel(SubchannelWrapper::Handle subchannel) {
       SubchannelWrapper* current = GetSubchannel();
@@ -273,7 +278,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
    private:
-    SubchannelWrapper::Handle subchannel_ = nullptr;
+    SubchannelWrapper::Handle subchannel_;
   };
 
   void ShutdownLocked() override;
@@ -506,12 +511,14 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
   std::map<const std::string, XdsHealthStatus> addresses_for_map;
   for (const auto& address : *addresses) {
     XdsHealthStatus status = GetAddressHealthStatus(address);
-    auto key = grpc_sockaddr_to_string(&address.address(), false);
-    if (key.ok()) {
-      addresses_for_map.insert({std::move(*key), status});
-    }
     if (status.status() != XdsHealthStatus::kDraining) {
       return_value.push_back(address);
+    }
+    if (config_->override_host_status_set().Contains(XdsHealthStatus(status))) {
+      auto key = grpc_sockaddr_to_string(&address.address(), false);
+      if (key.ok()) {
+        addresses_for_map.emplace(std::move(*key), status);
+      }
     }
   }
   // Channels going from DRAINING to other state might only be retained
@@ -524,9 +531,6 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       auto key_status = addresses_for_map.find(it->first);
       SubchannelWrapper* subchannel = it->second.GetSubchannel();
       if (key_status == addresses_for_map.end()) {
-        if (subchannel != nullptr) {
-          subchannel->Shutdown();
-        }
         it = subchannel_map_.erase(it);
       } else {
         if (subchannel != nullptr) {
