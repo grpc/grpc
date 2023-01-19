@@ -58,7 +58,6 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 #include <inttypes.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
@@ -66,6 +65,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -107,6 +107,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -606,8 +607,8 @@ void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
   memset(addr, 0, sizeof(*addr));
   if (server.drop) return;
   const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(server.port));
-  /* the addresses are given in binary format (a in(6)_addr struct) in
-   * server->ip_address.bytes. */
+  // the addresses are given in binary format (a in(6)_addr struct) in
+  // server->ip_address.bytes.
   if (server.ip_size == 4) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
@@ -791,10 +792,9 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
       static_cast<const TokenAndClientStatsAttribute*>(
           address.GetAttribute(kGrpcLbAddressAttributeKey));
   if (attribute == nullptr) {
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
-            parent_.get(), address.ToString().c_str());
-    abort();
+    Crash(absl::StrFormat(
+        "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
+        parent_.get(), address.ToString().c_str()));
   }
   std::string lb_token = attribute->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = attribute->client_stats();
@@ -1377,13 +1377,13 @@ ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
   return ServerAddressList();
 }
 
-/* Returns the channel args for the LB channel, used to create a bidirectional
- * stream for the reception of load balancing updates.
- *
- * Inputs:
- *   - \a response_generator: in order to propagate updates from the resolver
- *   above the grpclb policy.
- *   - \a args: other args inherited from the grpclb policy. */
+// Returns the channel args for the LB channel, used to create a bidirectional
+// stream for the reception of load balancing updates.
+//
+// Inputs:
+//   - \a response_generator: in order to propagate updates from the resolver
+//   above the grpclb policy.
+//   - \a args: other args inherited from the grpclb policy.
 ChannelArgs BuildBalancerChannelArgs(
     FakeResolverResponseGenerator* response_generator,
     const ChannelArgs& args) {

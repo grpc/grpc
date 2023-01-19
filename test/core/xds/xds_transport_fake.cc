@@ -22,6 +22,7 @@
 
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include <grpc/event_engine/event_engine.h>

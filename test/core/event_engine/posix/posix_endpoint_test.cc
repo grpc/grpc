@@ -21,6 +21,7 @@
 #include <ratio>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include "absl/status/statusor.h"

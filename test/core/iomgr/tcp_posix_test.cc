@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -39,6 +39,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
@@ -51,21 +52,21 @@
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
 
-/*
-   General test notes:
+//
+// General test notes:
 
-   All tests which write data into a socket write i%256 into byte i, which is
-   verified by readers.
+// All tests which write data into a socket write i%256 into byte i, which is
+// verified by readers.
 
-   In general there are a few interesting things to vary which may lead to
-   exercising different codepaths in an implementation:
-   1. Total amount of data written to the socket
-   2. Size of slice allocations
-   3. Amount of data we read from or write to the socket at once
+// In general there are a few interesting things to vary which may lead to
+// exercising different codepaths in an implementation:
+// 1. Total amount of data written to the socket
+// 2. Size of slice allocations
+// 3. Amount of data we read from or write to the socket at once
 
-   The tests here tend to parameterize these where applicable.
+// The tests here tend to parameterize these where applicable.
 
- */
+//
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -77,7 +78,7 @@ static void create_sockets(int sv[2]) {
 }
 
 static void create_inet_sockets(int sv[2]) {
-  /* Prepare listening socket */
+  // Prepare listening socket
   struct sockaddr_in addr;
   memset(&addr, 0, sizeof(struct sockaddr_in));
   addr.sin_family = AF_INET;
@@ -86,7 +87,7 @@ static void create_inet_sockets(int sv[2]) {
   GPR_ASSERT(bind(sock, (sockaddr*)&addr, sizeof(sockaddr_in)) == 0);
   listen(sock, 1);
 
-  /* Prepare client socket and connect to server */
+  // Prepare client socket and connect to server
   socklen_t len = sizeof(sockaddr_in);
   GPR_ASSERT(getsockname(sock, (sockaddr*)&addr, &len) == 0);
 
@@ -98,7 +99,7 @@ static void create_inet_sockets(int sv[2]) {
                   sizeof(sockaddr_in));
   } while (ret == -1 && errno == EINTR);
 
-  /* Accept client connection */
+  // Accept client connection
   len = sizeof(socklen_t);
   int server;
   do {
@@ -210,7 +211,7 @@ static void read_cb(void* user_data, grpc_error_handle error) {
   }
 }
 
-/* Write to a socket, then read from it using the grpc_tcp API. */
+// Write to a socket, then read from it using the grpc_tcp API.
 static void read_test(size_t num_bytes, size_t slice_size,
                       int min_progress_size) {
   int sv[2];
@@ -275,8 +276,8 @@ static void read_test(size_t num_bytes, size_t slice_size,
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 }
 
-/* Write to a socket until it fills up, then read from it using the grpc_tcp
-   API. */
+// Write to a socket until it fills up, then read from it using the grpc_tcp
+// API.
 static void large_read_test(size_t slice_size, int min_progress_size) {
   int sv[2];
   grpc_endpoint* ep;
@@ -420,7 +421,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   gpr_free(buf);
 }
 
-/* Verifier for timestamps callback for write_test */
+// Verifier for timestamps callback for write_test
 void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
                          grpc_error_handle error) {
   GPR_ASSERT(error.ok());
@@ -432,10 +433,10 @@ void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
   gpr_atm_rel_store(done_timestamps, gpr_atm{1});
 }
 
-/* Write to a socket using the grpc_tcp API, then drain it directly.
-   Note that if the write does not complete immediately we need to drain the
-   socket in parallel with the read. If collect_timestamps is true, it will
-   try to get timestamps for the write. */
+// Write to a socket using the grpc_tcp API, then drain it directly.
+// Note that if the write does not complete immediately we need to drain the
+// socket in parallel with the read. If collect_timestamps is true, it will
+// try to get timestamps for the write.
 static void write_test(size_t num_bytes, size_t slice_size,
                        bool collect_timestamps) {
   int sv[2];
@@ -530,8 +531,8 @@ void on_fd_released(void* arg, grpc_error_handle /*errors*/) {
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
 }
 
-/* Do a read_test, then release fd and try to read/write again. Verify that
-   grpc_tcp_fd() is available before the fd is released. */
+// Do a read_test, then release fd and try to read/write again. Verify that
+// grpc_tcp_fd() is available before the fd is released.
 static void release_fd_test(size_t num_bytes, size_t slice_size) {
   int sv[2];
   grpc_endpoint* ep;
@@ -719,8 +720,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET_TCP */
+#else  // GRPC_POSIX_SOCKET_TCP
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET_TCP */
+#endif  // GRPC_POSIX_SOCKET_TCP

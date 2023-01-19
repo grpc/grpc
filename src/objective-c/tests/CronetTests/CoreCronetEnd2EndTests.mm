@@ -35,6 +35,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/gprpp/crash.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -30,6 +30,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 
 static long ncpus = 0;
 
@@ -60,10 +61,10 @@ static void init_thread_id_key(void) {
 }
 
 unsigned gpr_cpu_current_cpu(void) {
-  /* NOTE: there's no way I know to return the actual cpu index portably...
-     most code that's using this is using it to shard across work queues though,
-     so here we use thread identity instead to achieve a similar though not
-     identical effect */
+  // NOTE: there's no way I know to return the actual cpu index portably...
+  // most code that's using this is using it to shard across work queues though,
+  // so here we use thread identity instead to achieve a similar though not
+  // identical effect
   static gpr_once once = GPR_ONCE_INIT;
   gpr_once_init(&once, init_thread_id_key);
 
@@ -80,4 +81,4 @@ unsigned gpr_cpu_current_cpu(void) {
   return (unsigned)grpc_core::HashPointer(thread_id, gpr_cpu_num_cores());
 }
 
-#endif /* GPR_CPU_POSIX */
+#endif  // GPR_CPU_POSIX

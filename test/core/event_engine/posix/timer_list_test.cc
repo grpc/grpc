@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <cstdint>
 #include <limits>
@@ -78,7 +78,7 @@ TEST(TimerListTest, Add) {
   EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
   TimerList timer_list(&host);
 
-  /* 10 ms timers.  will expire in the current epoch */
+  // 10 ms timers.  will expire in the current epoch
   for (int i = 0; i < 10; i++) {
     EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
     timer_list.TimerInit(&timers[i],
@@ -86,7 +86,7 @@ TEST(TimerListTest, Add) {
                          &closures[i]);
   }
 
-  /* 1010 ms timers.  will expire in the next epoch */
+  // 1010 ms timers.  will expire in the next epoch
   for (int i = 10; i < 20; i++) {
     EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
     timer_list.TimerInit(&timers[i],
@@ -94,7 +94,7 @@ TEST(TimerListTest, Add) {
                          &closures[i]);
   }
 
-  /* collect timers.  Only the first batch should be ready. */
+  // collect timers.  Only the first batch should be ready.
   EXPECT_CALL(host, Now())
       .WillOnce(Return(kStart + grpc_core::Duration::Milliseconds(500)));
   for (int i = 0; i < 10; i++) {
@@ -111,7 +111,7 @@ TEST(TimerListTest, Add) {
   EXPECT_EQ(FinishCheck(timer_list.TimerCheck(nullptr)),
             CheckResult::kCheckedAndEmpty);
 
-  /* collect the rest of the timers */
+  // collect the rest of the timers
   EXPECT_CALL(host, Now())
       .WillOnce(Return(kStart + grpc_core::Duration::Milliseconds(1500)));
   for (int i = 10; i < 20; i++) {
@@ -129,7 +129,7 @@ TEST(TimerListTest, Add) {
             CheckResult::kCheckedAndEmpty);
 }
 
-/* Cleaning up a list with pending timers. */
+// Cleaning up a list with pending timers.
 TEST(TimerListTest, Destruction) {
   Timer timers[5];
   StrictMock<MockClosure> closures[5];
@@ -184,18 +184,18 @@ TEST(TimerListTest, Destruction) {
   EXPECT_TRUE(timer_list.TimerCancel(&timers[2]));
 }
 
-/* Cleans up a list with pending timers that simulate long-running-services.
-   This test does the following:
-    1) Simulates grpc server start time to 25 days in the past (completed in
-        `main` using TestOnlyGlobalInit())
-    2) Creates 4 timers - one with a deadline 25 days in the future, one just
-        3 milliseconds in future, one way out in the future, and one using the
-        Timestamp::FromTimespecRoundUp function to compute a deadline of 25
-        days in the future
-    3) Simulates 4 milliseconds of elapsed time by changing `now` (cached at
-        step 1) to `now+4`
-    4) Shuts down the timer list
-   https://github.com/grpc/grpc/issues/15904 */
+// Cleans up a list with pending timers that simulate long-running-services.
+// This test does the following:
+//  1) Simulates grpc server start time to 25 days in the past (completed in
+//      `main` using TestOnlyGlobalInit())
+//  2) Creates 4 timers - one with a deadline 25 days in the future, one just
+//      3 milliseconds in future, one way out in the future, and one using the
+//      Timestamp::FromTimespecRoundUp function to compute a deadline of 25
+//      days in the future
+//  3) Simulates 4 milliseconds of elapsed time by changing `now` (cached at
+//      step 1) to `now+4`
+//  4) Shuts down the timer list
+// https://github.com/grpc/grpc/issues/15904
 TEST(TimerListTest, LongRunningServiceCleanup) {
   Timer timers[4];
   StrictMock<MockClosure> closures[4];
@@ -221,8 +221,8 @@ TEST(TimerListTest, LongRunningServiceCleanup) {
   gpr_timespec deadline_spec =
       (kStart + k25Days).as_timespec(gpr_clock_type::GPR_CLOCK_MONOTONIC);
 
-  /* Timestamp::FromTimespecRoundUp is how users usually compute a millisecond
-    input value into grpc_timer_init, so we mimic that behavior here */
+  // Timestamp::FromTimespecRoundUp is how users usually compute a millisecond
+  // input value into grpc_timer_init, so we mimic that behavior here
   EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
   timer_list.TimerInit(&timers[3],
                        grpc_core::Timestamp::FromTimespecRoundUp(deadline_spec),

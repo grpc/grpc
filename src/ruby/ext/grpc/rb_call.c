@@ -973,6 +973,7 @@ void Init_grpc_call() {
   grpc_rb_cCall = rb_define_class_under(grpc_rb_mGrpcCore, "Call", rb_cObject);
   grpc_rb_cMdAry =
       rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cMdAry);
 
   /* Prevent allocation or inialization of the Call class */
   rb_define_alloc_func(grpc_rb_cCall, grpc_rb_cannot_alloc);

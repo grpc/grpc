@@ -23,16 +23,17 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <google/protobuf/struct.pb.h>
 
+#include "absl/base/call_once.h"
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
-
-#include <grpcpp/channel.h>
 
 #include "src/cpp/ext/filters/logging/logging_sink.h"
 #include "src/cpp/ext/gcp/observability_config.h"
@@ -44,12 +45,13 @@ namespace internal {
 class ObservabilityLoggingSink : public LoggingSink {
  public:
   ObservabilityLoggingSink(GcpObservabilityConfig::CloudLogging logging_config,
-                           std::string project_id);
+                           std::string project_id,
+                           std::map<std::string, std::string> labels);
 
   ~ObservabilityLoggingSink() override = default;
 
-  LoggingSink::Config FindMatch(bool is_client,
-                                absl::string_view path) override;
+  LoggingSink::Config FindMatch(bool is_client, absl::string_view service,
+                                absl::string_view method) override;
 
   void LogEntry(Entry entry) override;
 
@@ -71,9 +73,10 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::vector<Configuration> client_configs_;
   std::vector<Configuration> server_configs_;
   std::string project_id_;
-  std::shared_ptr<grpc::Channel> channel_;
-  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
   std::string authority_;
+  std::vector<std::pair<std::string, std::string>> labels_;
+  absl::once_flag once_;
+  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
 };
 
 // Exposed for just for testing purposes

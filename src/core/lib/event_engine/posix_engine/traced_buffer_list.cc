@@ -314,17 +314,19 @@ void TcpSetWriteTimestampsCallback(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* GRPC_LINUX_ERRQUEUE */
+#else  // GRPC_LINUX_ERRQUEUE
+
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> /*fn*/) {
-  GPR_ASSERT(false && "Timestamps callback is not enabled for this platform");
+  grpc_core::Crash("Timestamps callback is not enabled for this platform");
 }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE

@@ -41,6 +41,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -160,10 +161,49 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     const std::string& address() const { return address_; }
 
+    void AssertValidConnectivityStateTransition(
+        grpc_connectivity_state from_state, grpc_connectivity_state to_state,
+        SourceLocation location = SourceLocation()) {
+      switch (from_state) {
+        case GRPC_CHANNEL_IDLE:
+          ASSERT_EQ(to_state, GRPC_CHANNEL_CONNECTING)
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        case GRPC_CHANNEL_CONNECTING:
+          ASSERT_THAT(to_state,
+                      ::testing::AnyOf(GRPC_CHANNEL_READY,
+                                       GRPC_CHANNEL_TRANSIENT_FAILURE))
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        case GRPC_CHANNEL_READY:
+          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        case GRPC_CHANNEL_TRANSIENT_FAILURE:
+          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+              << ConnectivityStateName(from_state) << "=>"
+              << ConnectivityStateName(to_state) << "\n"
+              << location.file() << ":" << location.line();
+          break;
+        default:
+          FAIL() << ConnectivityStateName(from_state) << "=>"
+                 << ConnectivityStateName(to_state) << "\n"
+                 << location.file() << ":" << location.line();
+          break;
+      }
+    }
+
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
     void SetConnectivityState(grpc_connectivity_state state,
-                              const absl::Status& status = absl::OkStatus()) {
+                              const absl::Status& status = absl::OkStatus(),
+                              SourceLocation location = SourceLocation()) {
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())
             << "bug in test: TRANSIENT_FAILURE must have non-OK status";
@@ -173,6 +213,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << " must have OK status: " << status;
       }
       MutexLock lock(&mu_);
+      AssertValidConnectivityStateTransition(state_tracker_.state(), state,
+                                             location);
       state_tracker_.SetState(state, status, "set from test");
     }
 
@@ -479,6 +521,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
   }
 
+  void ExpectReresolutionRequest(SourceLocation location = SourceLocation()) {
+    ASSERT_TRUE(helper_->GetNextReresolution(location))
+        << location.file() << ":" << location.line();
+  }
+
   // Expects that the LB policy has reported the specified connectivity
   // state to helper_.  Returns the picker from the state update.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectState(
@@ -512,7 +559,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), location);
+            ExpectPickQueued(update.picker.get(), {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -541,7 +588,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), location);
+            ExpectPickQueued(update.picker.get(), {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
@@ -607,7 +654,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    ExpectPickQueued(picker.get(), location);
+    ExpectPickQueued(picker.get(), {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
@@ -632,12 +679,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Requests a pick on picker and expects a Queue result.
-  void ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
-                        SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker);
+  void ExpectPickQueued(
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      SourceLocation location = SourceLocation()) {
+    ASSERT_NE(picker, nullptr);
+    auto pick_result = DoPick(picker, call_attributes);
     ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
-        << PickResultString(pick_result) << " at " << location.file() << ":"
+        << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
   }
 

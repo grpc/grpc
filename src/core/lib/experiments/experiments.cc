@@ -24,9 +24,6 @@ const char* const description_tcp_frame_size_tuning =
     "would not indicate completion of a read operation until a specified "
     "number of bytes have been read over the socket. Buffers are also "
     "allocated according to estimated RPC sizes.";
-const char* const description_tcp_read_chunks =
-    "Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on "
-    "malloc to recycle arbitrary large blocks.";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const description_peer_state_based_framing =
@@ -49,8 +46,6 @@ const char* const description_monitoring_experiment =
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
-const char* const description_posix_event_engine_enable_polling =
-    "If set, enables polling on the default posix event engine.";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 }  // namespace
@@ -59,7 +54,6 @@ namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_read_chunks", description_tcp_read_chunks, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
     {"peer_state_based_framing", description_peer_state_based_framing, false},
     {"flow_control_fixes", description_flow_control_fixes, true},
@@ -71,8 +65,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_client", description_event_engine_client, false},
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
-    {"posix_event_engine_enable_polling",
-     description_posix_event_engine_enable_polling, true},
     {"free_large_allocator", description_free_large_allocator, false},
 };
 

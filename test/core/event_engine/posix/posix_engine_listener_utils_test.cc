@@ -152,8 +152,8 @@ int main(int argc, char** argv) {
   return RUN_ALL_TESTS();
 }
 
-#else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 int main(int argc, char** argv) { return 0; }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
