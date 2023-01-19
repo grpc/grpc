@@ -40,7 +40,7 @@
 
   # Install ndk-bundle and cmake using sdkmanager
   RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
-  RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.22.1'
+  RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.10.2.4988404'
 
   # Install Android NDK
   RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip && ${'\\'}
