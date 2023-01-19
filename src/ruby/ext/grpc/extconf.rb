@@ -183,6 +183,8 @@ $CFLAGS << ' -std=c11 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
+$INSTALL = 'cp'
+$INSTALL_PROG = 'cp'
 
 output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
