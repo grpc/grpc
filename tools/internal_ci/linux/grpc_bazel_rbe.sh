@@ -37,4 +37,4 @@ bazel_rbe/bazel_wrapper \
 
 # Print disk usage
 df -h
-du -h --max-depth=1 * | sort -rh | head -100
+du -h --max-depth=1 | sort -rh | head -100
