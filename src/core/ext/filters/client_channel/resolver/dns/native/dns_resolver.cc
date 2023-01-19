@@ -183,18 +183,13 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
 }  // namespace
 
 void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
-  static const char* const resolver =
+  static absl::string_view resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver).release();
-  if (gpr_stricmp(resolver, "native") == 0) {
+  if (resolver == "native" ||
+      !builder->resolver_registry()->HasResolverFactory("dns")) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(
         std::make_unique<NativeClientChannelDNSResolverFactory>());
-  } else {
-    if (!builder->resolver_registry()->HasResolverFactory("dns")) {
-      gpr_log(GPR_DEBUG, "Using native dns resolver");
-      builder->resolver_registry()->RegisterResolverFactory(
-          std::make_unique<NativeClientChannelDNSResolverFactory>());
-    }
   }
 }
 

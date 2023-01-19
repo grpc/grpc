@@ -24,15 +24,18 @@
 namespace grpc_core {
 
 void RegisterAppropriateDnsResolver(CoreConfiguration::Builder* builder) {
+  if (IsEventEngineDnsEnabled()) {
+    builder->resolver_registry()->RegisterResolverFactory(std::make_unique<EventEngineClientChannelResolver>());
+  }
   // ---- Ares resolver ----
   if (UseAresDnsResolver()) {
     RegisterAresDnsResolver(builder);
     return;
   }
-  
+
   // ---- EventEngine resolver ----
   // TODO(hork): change this logic when an EE resolver is available.
-  
+
   // ---- Native resolver ----
   static const char* const resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver).release();

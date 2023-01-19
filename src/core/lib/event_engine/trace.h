@@ -21,6 +21,7 @@
 #include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_event_engine_trace;
+extern grpc_core::TraceFlag grpc_event_engine_dns_trace;
 
 #define GRPC_EVENT_ENGINE_TRACE(format, ...)                   \
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {      \

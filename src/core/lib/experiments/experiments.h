@@ -40,6 +40,7 @@ inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(7); }
 inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(8); }
 inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(9); }
 inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(10); }
+inline bool IsEventEngineDnsEnabled() { return IsExperimentEnabled(11); }
 
 struct ExperimentMetadata {
   const char* name;
@@ -47,7 +48,7 @@ struct ExperimentMetadata {
   bool default_value;
 };
 
-constexpr const size_t kNumExperiments = 11;
+constexpr const size_t kNumExperiments = 12;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core

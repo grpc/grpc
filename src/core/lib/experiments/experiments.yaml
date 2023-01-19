@@ -119,4 +119,12 @@
   expiry: 2023/04/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: event_engine_dns
+  description:
+    If set, use EventEngine DNSResolver for client channel resolution
+  default: false
+  expiry: 2023/06/01
+  owner: yijiem@google.com
+  test_tags: []
+
 

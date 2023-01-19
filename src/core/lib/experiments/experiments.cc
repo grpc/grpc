@@ -48,6 +48,8 @@ const char* const description_promise_based_client_call =
     "(ie when all filters in a stack are promise based)";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
+const char* const description_event_engine_dns =
+    "If set, use EventEngine DNSResolver for client channel resolution";
 }  // namespace
 
 namespace grpc_core {
@@ -66,6 +68,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
     {"free_large_allocator", description_free_large_allocator, false},
+    {"event_engine_dns", description_event_engine_dns, false},
 };
 
 }  // namespace grpc_core
