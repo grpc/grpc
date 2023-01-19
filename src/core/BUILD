@@ -3450,6 +3450,8 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "latch",
+        "race",
         "service_config_parser",
         "slice_buffer",
         "status_helper",
