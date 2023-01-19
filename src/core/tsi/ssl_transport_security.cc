@@ -144,6 +144,7 @@ struct tsi_ssl_frame_protector {
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
+static int g_ssl_ex_ca_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
@@ -193,6 +194,10 @@ static void init_openssl(void) {
   g_ssl_ctx_ex_factory_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(g_ssl_ctx_ex_factory_index != -1);
+
+  g_ssl_ex_ca_cert_index =
+      SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  GPR_ASSERT(g_ssl_ex_ca_cert_index != -1);
 }
 
 // --- Ssl utils. ---
@@ -306,7 +311,8 @@ static tsi_result peer_property_from_x509_common_name(
 
 // Gets the subject of an X509 cert as a tsi_peer_property.
 static tsi_result peer_property_from_x509_subject(X509* cert,
-                                                  tsi_peer_property* property) {
+                                                  tsi_peer_property* property,
+                                                  bool is_ca_cert) {
   X509_NAME* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
     gpr_log(GPR_INFO, "Could not get subject name from certificate.");
@@ -321,9 +327,16 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
     BIO_free(bio);
     return TSI_INTERNAL_ERROR;
   }
-  tsi_result result = tsi_construct_string_peer_property(
-      TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
-      property);
+  tsi_result result;
+  if (!is_ca_cert) {
+    result = tsi_construct_string_peer_property(
+        TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
+        property);
+  } else {
+    result = tsi_construct_string_peer_property(
+        TSI_X509_CA_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
+        property);
+  }
   BIO_free(bio);
   return result;
 }
@@ -472,7 +485,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
     }
 
     result = peer_property_from_x509_subject(
-        cert, &peer->properties[current_insert_index++]);
+        cert, &peer->properties[current_insert_index++], false);
     if (result != TSI_OK) break;
 
     result = peer_property_from_x509_common_name(
@@ -853,6 +866,28 @@ static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
   return 1;
 }
 
+static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
+  if (preverify_ok == 0) {
+    return 0;
+  }
+
+  // If we're here, verification was successful
+  // Get the verified chain from the X509_STORE_CTX and put it on the SSL object
+  // so that we have access to it when populating the tsi_peer
+  STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
+  if (chain == nullptr) {
+    return 1;
+  }
+
+  // The ca cert is the last in the chain
+  X509* ca_cert = sk_X509_value(chain, sk_X509_num(chain) - 1);
+
+  SSL* ssl = static_cast<SSL*>(
+      X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  SSL_set_ex_data(ssl, g_ssl_ex_ca_cert_index, ca_cert);
+  return 1;
+}
+
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
 // |max_tls_version|, respectively. Calling this method is a no-op when using
 // OpenSSL versions < 1.1.
@@ -1107,10 +1142,14 @@ static tsi_result ssl_handshaker_result_extract_peer(
   // peer's certificate; When called on the server side,
   // the peer's certificate is not present in the stack
   STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
+
+  X509* ca_cert =
+      static_cast<X509*>(SSL_get_ex_data(impl->ssl, g_ssl_ex_ca_cert_index));
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
+  if (ca_cert != nullptr) new_property_count++;
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer->property_count; i++) {
@@ -1146,6 +1185,14 @@ static tsi_result ssl_handshaker_result_extract_peer(
       &peer->properties[peer->property_count]);
   if (result != TSI_OK) return result;
   peer->property_count++;
+
+  if (ca_cert != nullptr) {
+    result = peer_property_from_x509_subject(
+        ca_cert, &peer->properties[peer->property_count], true);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
+
   return result;
 }
 
@@ -1957,7 +2004,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->skip_server_certificate_verification) {
     SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
   } else {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, RootCertExtractCallback);
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2139,7 +2186,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             nullptr);
+                             RootCertExtractCallback);
           break;
       }
 
