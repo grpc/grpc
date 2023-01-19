@@ -22,6 +22,8 @@ pushd third_party/protobuf
 
 version1=$(git describe --tags | cut -f 1 -d'-')
 v1=${version1:1}
+# in case we got a 2-part "x.y" version number from the tag, convert it to version number in "3.x.y" format.
+v1=$(echo "$v1" | sed 's/^\([0-9]*\)\.\([0-9]*\)$/3.\1.\2/')
 
 popd
 
@@ -33,12 +35,12 @@ v3=$(cat src/objective-c/\!ProtoCompiler-gRPCPlugin.podspec | egrep 'dependency.
 
 # compare and emit error
 ret=0
-if [ $v1 != $v2 ]; then
+if [ "$v1" != "$v2" ]; then
   echo 'Protobuf version in src/objective-c/!ProtoCompiler.podspec does not match protobuf version in third_party/protobuf.'
   ret=1
 fi
 
-if [ $v1 != $v3 ]; then
+if [ "$v1" != "$v3" ]; then
   echo 'Protobuf version in src/objective-c/!ProtoCompiler-gRPCPlugin.podspec does not match protobuf version in third_party/protobuf.'
   ret=1
 fi
