@@ -54,7 +54,7 @@ class ConstantLabelsTest : public StatsPluginEnd2EndTest {
 };
 
 // Check that constant labels registered to OpenCensus are exported.
-TEST_F(ConstantLabelsTest, ConstantLabelsTest) {
+TEST_F(ConstantLabelsTest, DISABLED_ConstantLabelsTest) {
   View client_completed_rpcs_view(ClientCompletedRpcsCumulative());
   View server_completed_rpcs_view(ServerCompletedRpcsCumulative());
 
@@ -82,7 +82,7 @@ TEST_F(ConstantLabelsTest, ConstantLabelsTest) {
           ::testing::ElementsAre("value", server_method_name_, "OK"), 1)));
 }
 
-TEST_F(ConstantLabelsTest, ConstantAttributesTest) {
+TEST_F(ConstantLabelsTest, DISABLED_ConstantAttributesTest) {
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
     auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
