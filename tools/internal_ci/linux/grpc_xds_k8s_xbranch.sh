@@ -55,8 +55,6 @@ main() {
     exit 0
   fi
 
-  source ${script_dir}/grpc_xds_k8s_run_xtest.sh
-
   activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
   set -x
@@ -67,6 +65,8 @@ main() {
     local_setup_test_driver "${script_dir}"
     cd "${SRC_DIR}/${TEST_DRIVER_PATH}"
   fi
+
+  source ${script_dir}/grpc_xds_k8s_run_xtest.sh
 
   local failed_tests=0
   local successful_string
