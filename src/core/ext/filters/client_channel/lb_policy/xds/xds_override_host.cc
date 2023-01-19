@@ -108,7 +108,6 @@ XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
 class XdsOverrideHostLb : public LoadBalancingPolicy {
  public:
   explicit XdsOverrideHostLb(Args args);
-  ~XdsOverrideHostLb() override;
 
   absl::string_view name() const override {
     return XdsOverrideHostLbConfig::Name();
@@ -121,16 +120,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
  private:
   class SubchannelWrapper : public DelegatingSubchannel {
    public:
-    using Handle =
-        absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>;
-
     SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel,
                       RefCountedPtr<XdsOverrideHostLb> policy,
                       absl::string_view key, XdsHealthStatus health_status);
 
     ~SubchannelWrapper() override;
-
-    static SubchannelWrapper* FromHandle(const Handle& handle);
 
     void WatchConnectivityState(
         std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override;
@@ -268,7 +262,14 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
     SubchannelWrapper* GetSubchannel() const {
-      return SubchannelWrapper::FromHandle(subchannel_);
+      return Match(
+          subchannel_,
+          [](XdsOverrideHostLb::SubchannelWrapper* subchannel) {
+            return subchannel;
+          },
+          [](RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper> subchannel) {
+            return subchannel.get();
+          });
     }
 
     void SetEdsHealthStatus(XdsHealthStatus eds_health_status) {
@@ -287,9 +288,12 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     XdsHealthStatus eds_health_status() { return eds_health_status_; }
 
    private:
-    SubchannelWrapper::Handle subchannel_;
+    absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
+        subchannel_;
     XdsHealthStatus eds_health_status_;
   };
+
+  ~XdsOverrideHostLb() override;
 
   void ShutdownLocked() override;
 
@@ -707,18 +711,6 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
 void XdsOverrideHostLb::SubchannelWrapper::Shutdown() {
   key_.reset();
   wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
-}
-
-XdsOverrideHostLb::SubchannelWrapper*
-XdsOverrideHostLb::SubchannelWrapper::FromHandle(const Handle& handle) {
-  return Match(
-      handle,
-      [](XdsOverrideHostLb::SubchannelWrapper* subchannel) {
-        return subchannel;
-      },
-      [](RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper> subchannel) {
-        return subchannel.get();
-      });
 }
 
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
