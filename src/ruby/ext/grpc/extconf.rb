@@ -188,9 +188,10 @@ if grpc_config == 'opt'
   File.rename('Makefile.new', 'Makefile')
 end
 if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
-  # This env var setting is intended to work around a problem observed with the
-  # ginstall command on grpc's macos automated test infrastructure, and is
-  # not  guaranteed to work in the wild.
+  # Note: this env var setting is intended to work around a problem observed
+  # with the ginstall command on grpc's macos automated test infrastructure,
+  # and is not  guaranteed to work in the wild.
+  # Also see https://github.com/rake-compiler/rake-compiler/issues/210.
   puts 'Overriding the generated Makefile install target to use cp'
   File.open('Makefile.new', 'w') do |o|
     File.foreach('Makefile') do |i|
