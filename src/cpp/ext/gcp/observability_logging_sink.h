@@ -23,8 +23,10 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <google/protobuf/struct.pb.h>
@@ -43,7 +45,8 @@ namespace internal {
 class ObservabilityLoggingSink : public LoggingSink {
  public:
   ObservabilityLoggingSink(GcpObservabilityConfig::CloudLogging logging_config,
-                           std::string project_id);
+                           std::string project_id,
+                           std::map<std::string, std::string> labels);
 
   ~ObservabilityLoggingSink() override = default;
 
@@ -71,6 +74,7 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::vector<Configuration> server_configs_;
   std::string project_id_;
   std::string authority_;
+  std::vector<std::pair<std::string, std::string>> labels_;
   absl::once_flag once_;
   std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
 };
