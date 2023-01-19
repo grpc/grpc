@@ -142,7 +142,8 @@ typedef struct {
 /** If non-zero, enable load reporting. */
 #define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
 /** If non-zero, call metric recording is enabled. */
-#define GRPC_ARG_CALL_METRIC_RECORDING "grpc.call_metric_recording"
+#define GRPC_ARG_SERVER_CALL_METRIC_RECORDING \
+  "grpc.server_call_metric_recording"
 /** Request that optional features default to off (regardless of what they
     usually default to) - to enable tight control over what gets enabled */
 #define GRPC_ARG_MINIMAL_STACK "grpc.minimal_stack"

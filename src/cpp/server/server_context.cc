@@ -39,6 +39,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
@@ -52,13 +54,15 @@
 #include <grpcpp/support/server_interceptor.h>
 #include <grpcpp/support/string_ref.h>
 
+#include "src/core/ext/filters/backend_metrics/backend_metric_data.h"
+#include "src/core/ext/filters/backend_metrics/backend_metric_provider.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/ext/filters/load_reporting/backend_metric_data.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/call.h"
 
-grpc_core::TraceFlag grpc_backend_metric_state_trace(false, "backend_metric_state");
+grpc_core::TraceFlag grpc_backend_metric_state_trace(false,
+                                                     "backend_metric_state");
 
 namespace grpc {
 namespace {
@@ -68,23 +72,24 @@ bool IsUtilizationValid(double utilization) {
 }
 
 // QPS must be in [0, infy).
-bool IsQpsValid(double utilization) {
-  return utilization >= 0.0;
-}
+bool IsQpsValid(double qps) { return qps >= 0.0; }
 }  // namespace
 
-class BackendMetricState : public CallMetricRecorder,
+class BackendMetricState : public experimental::CallMetricRecorder,
                            public grpc_core::BackendMetricProvider {
  public:
   // `server_metric_recorder` is optional. When set, GetBackendMetricData()
   // merges metrics from `server_metric_recorder` with metrics recorded to this.
-  explicit BackendMetricState(grpc_core::ServerMetricRecorder* server_metric_recorder)
+  explicit BackendMetricState(
+      experimental::ServerMetricRecorder* server_metric_recorder)
       : server_metric_recorder_(server_metric_recorder) {}
   ~BackendMetricState() override = default;
-  CallMetricRecorder& RecordCpuUtilizationMetric(double value) override {
+  experimental::CallMetricRecorder& RecordCpuUtilizationMetric(
+      double value) override {
     if (!IsUtilizationValid(value)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_state_trace)) {
-        gpr_log(GPR_INFO, "[%p] CPU utilization value rejected: %f", this, value);
+        gpr_log(GPR_INFO, "[%p] CPU utilization value rejected: %f", this,
+                value);
       }
       return *this;
     }
@@ -94,10 +99,12 @@ class BackendMetricState : public CallMetricRecorder,
     }
     return *this;
   }
-  CallMetricRecorder& RecordMemoryUtilizationMetric(double value) override {
+  experimental::CallMetricRecorder& RecordMemoryUtilizationMetric(
+      double value) override {
     if (!IsUtilizationValid(value)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_state_trace)) {
-        gpr_log(GPR_INFO, "[%p] Mem utilization value rejected: %f", this, value);
+        gpr_log(GPR_INFO, "[%p] Mem utilization value rejected: %f", this,
+                value);
       }
       return *this;
     }
@@ -107,7 +114,7 @@ class BackendMetricState : public CallMetricRecorder,
     }
     return *this;
   }
-  CallMetricRecorder& RecordQpsMetric(double value) override {
+  experimental::CallMetricRecorder& RecordQpsMetric(double value) override {
     if (!IsQpsValid(value)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_state_trace)) {
         gpr_log(GPR_INFO, "[%p] QPS value rejected: %f", this, value);
@@ -120,8 +127,8 @@ class BackendMetricState : public CallMetricRecorder,
     }
     return *this;
   }
-  CallMetricRecorder& RecordUtilizationMetric(string_ref name,
-                                              double value) override {
+  experimental::CallMetricRecorder& RecordUtilizationMetric(
+      string_ref name, double value) override {
     if (!IsUtilizationValid(value)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_state_trace)) {
         gpr_log(GPR_INFO, "[%p] Utilization value rejected: %s %f", this,
@@ -138,8 +145,8 @@ class BackendMetricState : public CallMetricRecorder,
     }
     return *this;
   }
-  CallMetricRecorder& RecordRequestCostMetric(string_ref name,
-                                              double value) override {
+  experimental::CallMetricRecorder& RecordRequestCostMetric(
+      string_ref name, double value) override {
     internal::MutexLock lock(&mu_);
     absl::string_view name_sv(name.data(), name.length());
     request_cost_[name_sv] = value;
@@ -151,49 +158,50 @@ class BackendMetricState : public CallMetricRecorder,
   }
 
  private:
-  void GetBackendMetricData(grpc_core::BackendMetricData* data) override {
+  grpc_core::BackendMetricData GetBackendMetricData() override
+      ABSL_NO_THREAD_SAFETY_ANALYSIS {
+    grpc_core::BackendMetricData data;
     // Merge metrics from the ServerMetricRecorder first since metrics recorded
     // to this (CallMetricRecorder) takes a higher precedence.
-    if (server_metric_recorder_) {
-      server_metric_recorder_->GetMetrics(data);
+    if (server_metric_recorder_ != nullptr) {
+      server_metric_recorder_->GetMetrics(&data);
     }
     // Only overwrite if the value is set i.e. in the valid range.
     const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
     if (IsUtilizationValid(cpu)) {
-      data->cpu_utilization = cpu;
+      data.cpu_utilization = cpu;
     }
     const double mem = mem_utilization_.load(std::memory_order_relaxed);
     if (IsUtilizationValid(mem)) {
-      data->mem_utilization = mem;
+      data.mem_utilization = mem;
     }
     const double qps = qps_.load(std::memory_order_relaxed);
     if (IsQpsValid(qps)) {
-      data->qps = qps;
+      data.qps = qps;
     }
-    {
+    if (!utilization_.empty() || !request_cost_.empty()) {
       internal::MutexLock lock(&mu_);
-      if (!utilization_.empty() || !request_cost_.empty()) {
-        for (const auto& v : utilization_) {
-          if (IsUtilizationValid(v.second)) {
-            data->utilization[v.first] = v.second;
-          }
+      for (const auto& v : utilization_) {
+        if (IsUtilizationValid(v.second)) {
+          data.utilization[v.first] = v.second;
         }
-        for (const auto& v : request_cost_) {
-          data->request_cost[v.first] = v.second;
-        }
+      }
+      for (const auto& v : request_cost_) {
+        data.request_cost[v.first] = v.second;
       }
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_state_trace)) {
       gpr_log(GPR_INFO,
               "[%p] Backend metric data returned: cpu:%f mem:%f qps:%f "
               "utilization "
-              "size:%zu request_cost size:%zu",
-              this, data->cpu_utilization, data->mem_utilization, data->qps,
-              data->utilization.size(), data->request_cost.size());
+              "size:%" PRIuPTR " request_cost size:%" PRIuPTR,
+              this, data.cpu_utilization, data.mem_utilization, data.qps,
+              data.utilization.size(), data.request_cost.size());
     }
+    return data;
   }
 
-  grpc_core::ServerMetricRecorder* server_metric_recorder_;
+  experimental::ServerMetricRecorder* server_metric_recorder_;
   std::atomic<double> cpu_utilization_{-1.0};
   std::atomic<double> mem_utilization_{-1.0};
   std::atomic<double> qps_{-1.0};
@@ -539,17 +547,16 @@ void ServerContextBase::SetLoadReportingCosts(
 }
 
 void ServerContextBase::CreateCallMetricRecorder(
-    grpc_core::ServerMetricRecorder* server_metric_recorder) {
-  if (call_metric_recorder_ == nullptr) {
-    grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
-    auto* backend_metric_state =
-        arena->New<BackendMetricState>(server_metric_recorder);
-    call_metric_recorder_ = backend_metric_state;
-    grpc_call_context_set(
-        call_.call, GRPC_CONTEXT_BACKEND_METRICS,
-        static_cast<grpc_core::BackendMetricProvider*>(backend_metric_state),
-        nullptr);
-  }
+    experimental::ServerMetricRecorder* server_metric_recorder) {
+  GPR_ASSERT(call_metric_recorder_ == nullptr);
+  grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
+  auto* backend_metric_state =
+      arena->New<BackendMetricState>(server_metric_recorder);
+  call_metric_recorder_ = backend_metric_state;
+  grpc_call_context_set(
+      call_.call, GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
+      static_cast<grpc_core::BackendMetricProvider*>(backend_metric_state),
+      nullptr);
 }
 
 grpc::string_ref ServerContextBase::ExperimentalGetAuthority() const {

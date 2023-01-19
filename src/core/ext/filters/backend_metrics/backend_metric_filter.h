@@ -1,5 +1,5 @@
-#ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_BACKEND_METRIC_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_BACKEND_METRIC_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -10,7 +10,8 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
-#include "src/core/ext/filters/load_reporting/backend_metric_data.h"
+#include "src/core/ext/filters/backend_metrics/backend_metric_data.h"
+#include "src/core/ext/filters/backend_metrics/backend_metric_provider.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 
@@ -33,4 +34,4 @@ class BackendMetricFilter : public ChannelFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_BACKEND_METRIC_FILTER_H
+#endif  // GRPC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_FILTER_H

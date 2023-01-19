@@ -32,7 +32,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/load_reporting/backend_metric_filter.h"
+#include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -97,7 +97,7 @@ static bool maybe_prepend_grpc_server_authz_filter(
 
 static bool maybe_prepend_grpc_backend_metric_filter(
     grpc_core::ChannelStackBuilder* builder) {
-  if (builder->channel_args().Contains(GRPC_ARG_CALL_METRIC_RECORDING)) {
+  if (builder->channel_args().Contains(GRPC_ARG_SERVER_CALL_METRIC_RECORDING)) {
     builder->PrependFilter(&grpc_core::BackendMetricFilter::kFilter);
   }
   return true;
@@ -120,6 +120,9 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   // depends on to be higher on the channel stack.
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, INT_MAX - 2, maybe_prepend_grpc_server_authz_filter);
+}
+
+void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, INT_MAX, maybe_prepend_grpc_backend_metric_filter);
 }

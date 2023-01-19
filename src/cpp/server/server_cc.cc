@@ -889,7 +889,7 @@ Server::Server(
     std::vector<
         std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
         interceptor_creators,
-    grpc_core::ServerMetricRecorder* server_metric_recorder)
+    experimental::ServerMetricRecorder* server_metric_recorder)
     : acceptors_(std::move(acceptors)),
       interceptor_creators_(std::move(interceptor_creators)),
       max_receive_message_size_(INT_MIN),
@@ -947,7 +947,8 @@ Server::Server(
         strcmp(channel_args.args[i].key, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)) {
       max_receive_message_size_ = channel_args.args[i].value.integer;
     }
-    if (0 == strcmp(channel_args.args[i].key, GRPC_ARG_CALL_METRIC_RECORDING)) {
+    if (0 == strcmp(channel_args.args[i].key,
+                    GRPC_ARG_SERVER_CALL_METRIC_RECORDING)) {
       call_metric_recording_enabled_ = channel_args.args[i].value.integer;
     }
   }

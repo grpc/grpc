@@ -1,4 +1,4 @@
-#include "src/core/ext/filters/load_reporting/backend_metric_filter.h"
+#include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -6,7 +6,7 @@
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
-#include "src/core/ext/filters/load_reporting/backend_metric_data.h"
+#include "src/core/ext/filters/backend_metrics/backend_metric_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -18,10 +18,7 @@ TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) const {
   if (provider == nullptr) return absl::nullopt;
-
-  BackendMetricData d;
-  provider->GetBackendMetricData(&d);
-
+  BackendMetricData d = provider->GetBackendMetricData();
   upb::Arena arena;
   xds_data_orca_v3_OrcaLoadReport* response =
       xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
@@ -49,7 +46,6 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
         p.second, arena.ptr());
   }
-
   size_t len;
   char* buf =
       xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(), &len);
@@ -71,7 +67,7 @@ ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
       next_promise_factory(std::move(call_args)),
       [this](ServerMetadataHandle trailing_metadata) {
         auto* ctx = &GetContext<
-            grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRICS];
+            grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
         if (ctx == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
             gpr_log(GPR_INFO, "[%p] No BackendMetricProvider.", this);
@@ -82,8 +78,9 @@ ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
             reinterpret_cast<BackendMetricProvider*>(ctx->value));
         if (serialized.has_value() && !serialized->empty()) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
-            gpr_log(GPR_INFO, "[%p] Backend metrics serialized. size: %zu",
-                    this, serialized->size());
+            gpr_log(GPR_INFO,
+                    "[%p] Backend metrics serialized. size: %" PRIuPTR, this,
+                    serialized->size());
           }
           trailing_metadata->Set(
               EndpointLoadMetricsBinMetadata(),

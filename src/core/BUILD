@@ -3589,11 +3589,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_backend_metric_data",
-    srcs = [
-        "ext/filters/load_reporting/backend_metric_data.cc",
-    ],
     hdrs = [
-        "ext/filters/load_reporting/backend_metric_data.h",
+        "ext/filters/backend_metrics/backend_metric_data.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -3602,6 +3599,14 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_trace",
     ],
+)
+
+grpc_cc_library(
+    name = "grpc_backend_metric_provider",
+    hdrs = [
+        "ext/filters/backend_metrics/backend_metric_provider.h",
+    ],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -4587,10 +4592,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "backend_metric_filter",
     srcs = [
-        "ext/filters/load_reporting/backend_metric_filter.cc",
+        "ext/filters/backend_metrics/backend_metric_filter.cc",
     ],
     hdrs = [
-        "ext/filters/load_reporting/backend_metric_filter.h",
+        "ext/filters/backend_metrics/backend_metric_filter.h",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -4603,6 +4608,7 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "grpc_backend_metric_data",
+        "grpc_backend_metric_provider",
         "map",
         "xds_orca_service_upb",
         "xds_orca_upb",

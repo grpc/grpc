@@ -39,6 +39,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/sync.h>
@@ -427,7 +428,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
-      builder.EnableCallMetricRecording();
+      grpc::ServerBuilder::experimental_type(&builder)
+          .EnableCallMetricRecording();
       server_ = builder.BuildAndStart();
       grpc_core::MutexLock lock(&mu_);
       server_ready_ = true;

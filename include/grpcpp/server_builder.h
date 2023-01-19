@@ -251,16 +251,6 @@ class ServerBuilder {
   /// doc/workarounds.md.
   ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
-  // Enables per-call load reporting. The server will automatically send the
-  // load metrics after each RPC. The caller can report load metrics for the
-  // current call to what \a ServerContext::GetCallMetricRecorder() returns.
-  // The server merges metrics from the optional \a server_metric_recorder when
-  // provided where the call metric recorder take a higher precedence.
-  // The caller owns and must ensure the server metric recorder outlives the
-  // server.
-  ServerBuilder& EnableCallMetricRecording(
-      grpc_core::ServerMetricRecorder* server_metric_recorder = nullptr);
-
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
   /// experimental.
@@ -292,6 +282,16 @@ class ServerBuilder {
     void SetAuthorizationPolicyProvider(
         std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
             provider);
+
+    // Enables per-call load reporting. The server will automatically send the
+    // load metrics after each RPC. The caller can report load metrics for the
+    // current call to what \a ServerContext::GetCallMetricRecorder() returns.
+    // The server merges metrics from the optional \a server_metric_recorder
+    // when provided where the call metric recorder take a higher precedence.
+    // The caller owns and must ensure the server metric recorder outlives the
+    // server.
+    void EnableCallMetricRecording(
+        experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
 
    private:
     ServerBuilder* builder_;
@@ -416,15 +416,12 @@ class ServerBuilder {
   std::vector<
       std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
-  std::vector<
-      std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
-      internal_interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
   std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
       authorization_provider_;
-  grpc_core::ServerMetricRecorder* server_metric_recorder_ = nullptr;
+  experimental::ServerMetricRecorder* server_metric_recorder_ = nullptr;
 };
 
 }  // namespace grpc

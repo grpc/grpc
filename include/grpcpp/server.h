@@ -184,7 +184,7 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
              std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
              interceptor_creators = std::vector<std::unique_ptr<
                  experimental::ServerInterceptorFactoryInterface>>(),
-         grpc_core::ServerMetricRecorder* server_metric_recorder = nullptr);
+         experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
 
   /// Start the server.
   ///
@@ -260,7 +260,7 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
     return call_metric_recording_enabled_;
   }
 
-  grpc_core::ServerMetricRecorder* server_metric_recorder() const override {
+  experimental::ServerMetricRecorder* server_metric_recorder() const override {
     return server_metric_recorder_;
   }
 
@@ -352,7 +352,7 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   bool call_metric_recording_enabled_ = false;
 
   // Interface to read or update server-wide metrics. Optional.
-  grpc_core::ServerMetricRecorder* server_metric_recorder_ = nullptr;
+  experimental::ServerMetricRecorder* server_metric_recorder_ = nullptr;
 };
 
 }  // namespace grpc

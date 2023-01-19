@@ -37,13 +37,13 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/atm.h>
 
+#include "src/core/ext/filters/backend_metrics/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 #include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
-#include "src/core/ext/filters/load_reporting/backend_metric_data.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
