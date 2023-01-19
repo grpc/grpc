@@ -38,17 +38,6 @@
   ENV ANDROID_HOME /opt/android-sdk
   RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
 
-  # Install ndk-bundle and cmake using sdkmanager
-  RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
-  RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.10.2.4988404'
-
-  # Install Android NDK
-  RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip && ${'\\'}
-      unzip -q android-ndk.zip -d /opt && ${'\\'}
-      rm -f android-ndk.zip
-  ENV ANDROID_NDK_PATH /opt/android-ndk-r16b
-  ENV ANDROID_NDK_HOME /opt/android-ndk-r16b
-
   # Install gcloud
   RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
       tar -xf google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
