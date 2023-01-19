@@ -45,13 +45,3 @@ popd
 # unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake build)
 # see https://github.com/madler/zlib/issues/133
 (cd third_party/zlib; git checkout zconf.h)
-ls -l src/ruby/lib/grpc/grpc_c.bundle
-ls -l src/ruby/lib/grpc/
-file src/ruby/lib/grpc/grpc_c.bundle
-ls -l tmp/x86_64-darwin21/grpc_c/2.7.7/grpc_c.bundle
-ls -l tmp/x86_64-darwin21/grpc_c/2.7.7/
-file tmp/x86_64-darwin21/grpc_c/2.7.7/grpc_c.bundle
-whoami
-diff src/ruby/lib/grpc/grpc_c.bundle tmp/x86_64-darwin21/grpc_c/2.7.7/grpc_c.bundle || true
-cmp -l src/ruby/lib/grpc/grpc_c.bundle tmp/x86_64-darwin21/grpc_c/2.7.7/grpc_c.bundle || true
-exit 1

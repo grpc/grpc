@@ -80,12 +80,13 @@ then
   set +x
   source $HOME/.rvm/scripts/rvm
 
-  RUBY_VERSION=2.7.7
+  RUBY_VERSION=3.2.0
   echo "Installing ruby-${RUBY_VERSION}"
   time rvm install "ruby-${RUBY_VERSION}"
   echo "Setting default ruby version."
   rvm use "$RUBY_VERSION" --default
   echo "Updating osx-ssl-certs."
+  gem install bundler -v 2.4
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
 

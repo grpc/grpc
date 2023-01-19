@@ -23,23 +23,6 @@ linux = RUBY_PLATFORM =~ /linux/
 cross_compiling = ENV['RCD_HOST_RUBY_VERSION'] # set by rake-compiler-dock in build containers
 # TruffleRuby uses the Sulong LLVM runtime, which is different from Apple's.
 apple_toolchain = darwin && RUBY_ENGINE != 'truffleruby'
-p "apolcyn ext darwin: |#{darwin}|"
-p "apolcyn ext cross_compiling: |#{cross_compiling}|"
-p "apolcyn ext RUBY_ENGINE: |#{RUBY_ENGINE}|"
-p "apolcyn ext apple_toolchain: |#{apple_toolchain}|"
-p "apolcyn ext RbConfig[CC]: |#{RbConfig::CONFIG['CC']}|"
-p "apolcyn ext RbConfig[LD]: |#{RbConfig::CONFIG['LD']}|"
-p "apolcyn ext RbConfig[CXX]: |#{RbConfig::CONFIG['CXX']}|"
-p "apolcyn ext RbConfig[LDXX]: |#{RbConfig::CONFIG['LDXX']}|"
-p "apolcyn ext RbConfig[STRIP]: |#{RbConfig::CONFIG['STRIP']}|"
-p "apolcyn ext RbConfig[STRIP]: |#{RbConfig::CONFIG['LDFLAGS']}|"
-p "apolcyn ext ENV[CC]: |#{ENV['CC']}|"
-p "apolcyn ext ENV[CXX]: |#{ENV['CXX']}|"
-p "apolcyn ext ENV[LD]: |#{ENV['LD']}|"
-p "apolcyn ext ENV[LDFLAGS]: |#{ENV['LDFLAGS']}|"
-p "apolcyn macos version BEGIN"
-p `sw_vers || true`
-p "apolcyn macos version END"
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
@@ -98,7 +81,6 @@ if apple_toolchain && !cross_compiling
     ENV['ARCH_FLAGS'] = '-arch arm64'
   else
     ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64'
-    $LDFLAGS << ' -Wl,-no_fixup_chains'
   end
 end
 
@@ -158,9 +140,9 @@ def ext_export_filename()
   name
 end
 
-#ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', ext_export_filename())
-#$LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
-#$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if apple_toolchain
+ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', ext_export_filename())
+$LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
+$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if apple_toolchain
 
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
@@ -183,8 +165,6 @@ $CFLAGS << ' -std=c11 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
-$INSTALL = 'cp'
-$INSTALL_PROG = 'cp'
 
 output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
@@ -194,7 +174,6 @@ strip_tool = RbConfig::CONFIG['STRIP']
 strip_tool += ' -x' if apple_toolchain
 
 if grpc_config == 'opt'
-  p "apolcyn adding strip to Makefile"
   File.open('Makefile.new', 'w') do |o|
     o.puts 'hijack: all strip'
     o.puts
@@ -208,13 +187,17 @@ if grpc_config == 'opt'
   end
   File.rename('Makefile.new', 'Makefile')
 end
-# Add workaround for 
 if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
-  puts 'Overriding the generated make install target to use cp'
+  # This env var setting is intended to work around a problem observed with the
+  # ginstall command on grpc's macos automated test infrastructure, and is
+  # not  guaranteed to work in the wild.
+  puts 'Overriding the generated Makefile install target to use cp'
   File.open('Makefile.new', 'w') do |o|
     File.foreach('Makefile') do |i|
       if i.start_with?('INSTALL_PROG = ')
-        o.puts 'INSTALL_PROG = cp'
+        override = 'INSTALL_PROG = cp'
+        puts "Replacing generated Makefile line: |#{i}|, with: |#{override}|"
+        o.puts override
       else
         o.puts i
       end
@@ -222,8 +205,3 @@ if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
   end
   File.rename('Makefile.new', 'Makefile')
 end
-p "apolcyn BEGIN dump new Makefile"
-File.foreach('Makefile') do |i|
-  p i
-end
-p "apolcyn END dump new Makefile"
