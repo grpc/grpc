@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-UniqueTypeName XdsHostOverrideTypeName();
+UniqueTypeName XdsOverrideHostTypeName();
 
 // A filter to provide cookie-based stateful session affinity.
 class StatefulSessionFilter : public ChannelFilter {
@@ -51,7 +51,7 @@ class StatefulSessionFilter : public ChannelFilter {
  private:
   explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
 
-  absl::optional<absl::string_view> GetHostOverrideFromCookie(
+  absl::optional<absl::string_view> GetOverrideHostFromCookie(
       const ClientMetadataHandle& initial_metadata,
       absl::string_view cookie_name);
 
