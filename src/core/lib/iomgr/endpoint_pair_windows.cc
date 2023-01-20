@@ -63,8 +63,16 @@ static void create_sockets(SOCKET sv[2]) {
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
-  GPR_ASSERT(grpc_tcp_prepare_socket(cli_sock).ok());
-  GPR_ASSERT(grpc_tcp_prepare_socket(svr_sock).ok());
+  grpc_error_handle error = grpc_tcp_prepare_socket(cli_sock);
+  if (!error.ok()) {
+    gpr_log(GPR_ERROR, "Prepare cli_sock failed with error: %s",
+            grpc_core::StatusToString(error).c_str());
+  }
+  error = grpc_tcp_prepare_socket(svr_sock);
+  if (!error.ok()) {
+    gpr_log(GPR_ERROR, "Prepare svr_sock failed with error: %s",
+            grpc_core::StatusToString(error).c_str());
+  }
 
   sv[1] = cli_sock;
   sv[0] = svr_sock;
