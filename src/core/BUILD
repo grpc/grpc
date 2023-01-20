@@ -2410,6 +2410,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "dual_ref_counted",
         "error",
         "grpc_backend_metric_data",
         "iomgr_fwd",
@@ -4363,6 +4364,49 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = ["//:gpr"],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_weighted_round_robin",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/random",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "grpc_backend_metric_data",
+        "grpc_lb_subchannel_list",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "ref_counted",
+        "resolved_address",
+        "static_stride_scheduler",
+        "subchannel_interface",
+        "time",
+        "validation_errors",
+        "//:config",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:server_address",
+        "//:sockaddr_utils",
+    ],
 )
 
 grpc_cc_library(
