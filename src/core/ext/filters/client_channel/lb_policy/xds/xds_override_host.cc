@@ -565,7 +565,6 @@ XdsOverrideHostLb::AdoptSubchannel(
   if (!key.ok()) {
     return subchannel;
   }
-  auto status = GetAddressHealthStatus(address);
   auto wrapper =
       MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(), *key);
   MutexLock lock(&subchannel_map_mu_);
