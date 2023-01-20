@@ -22,7 +22,15 @@ pushd third_party/protobuf
 
 version1=$(git describe --tags | cut -f 1 -d'-')
 v1=${version1:1}
-# in case we got a 2-part "x.y" version number from the tag, convert it to version number in "3.x.y" format.
+# Protobuf has recently changed the versioning of the release branches/tags
+# and the same release commit can be tagged with mutliple tag names
+# (e.g. v3.21.12 is also tagged as v21.12), which ultimately confuses
+# the output of "git describe --tags" and makes it non-deterministic.
+# The hack below converts the version number to always become 3.x.y
+# regardless of what tag name we get back from "git describe --tags".
+# Hack: In case we got a 2-part "x.y" version number from the tag,
+# convert it to version number in "3.x.y" format.
+# TODO(jtattermusch): find a better workaround for this.
 v1=$(echo "$v1" | sed 's/^\([0-9]*\)\.\([0-9]*\)$/3.\1.\2/')
 
 popd
