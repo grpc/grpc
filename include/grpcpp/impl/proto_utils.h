@@ -94,7 +94,7 @@ Status GenericDeserialize(ByteBuffer* buffer,
 #ifdef GRPC_OPEN_SOURCE_PROTO
 // This class provides a protobuf serializer. It translates between protobuf
 // objects and grpc_byte_buffers. More information about SerializationTraits can
-// be found in include/grpcpp/impl/codegen/serialization_traits.h.
+// be found in include/grpcpp/impl/serialization_traits.h.
 template <class T>
 class SerializationTraits<
     T, typename std::enable_if<

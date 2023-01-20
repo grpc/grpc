@@ -22,7 +22,6 @@
 #include <iostream>
 
 #include <grpc/grpc.h>
-#include <grpcpp/impl/codegen/config.h>
 
 namespace grpc {
 

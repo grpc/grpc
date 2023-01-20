@@ -27,7 +27,7 @@
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

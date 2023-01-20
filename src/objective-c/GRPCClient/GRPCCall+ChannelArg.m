@@ -21,7 +21,7 @@
 #import "private/GRPCCore/GRPCChannelPool.h"
 #import "private/GRPCCore/GRPCHost.h"
 
-#import <grpc/impl/codegen/compression_types.h>
+#import <grpc/impl/compression_types.h>
 
 @implementation GRPCCall (ChannelArg)
 
