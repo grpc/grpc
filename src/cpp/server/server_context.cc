@@ -63,7 +63,6 @@
 
 grpc_core::TraceFlag grpc_backend_metric_state_trace(false,
                                                      "backend_metric_state");
-
 namespace grpc {
 namespace {
 // All utilization values must be in [0, 1].

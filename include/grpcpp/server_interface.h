@@ -33,7 +33,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
 
-
 namespace grpc {
 
 class AsyncGenericService;

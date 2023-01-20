@@ -118,7 +118,7 @@ class InteropServerContextInspector;
 class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
-   //
+
 namespace experimental {
 class CallMetricRecorder;
 class ServerMetricRecorder;
