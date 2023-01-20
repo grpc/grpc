@@ -633,21 +633,27 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[WRR %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    // Weed out duplicate addresses.
+    // Weed out duplicate addresses.  Also sort the addresses so that if
+    // the set of the addresses don't change, their indexes in the
+    // subchannel list don't change, since this avoids unnecessary churn
+    // in the picker.  Note that this does not ensure that if a given
+    // address remains present that it will have the same index; if,
+    // for example, an address at the end of the list is replaced with one
+    // that sorts much earlier in the list, then all of the addresses in
+    // between those two positions will have changed indexes.
     struct AddressLessThan {
-      bool operator()(const grpc_resolved_address& addr1,
-                      const grpc_resolved_address& addr2) const {
+      bool operator()(const ServerAddress& address1,
+                      const ServerAddress& address2) const {
+        const grpc_resolved_address& addr1 = address1.address();
+        const grpc_resolved_address& addr2 = address2.address();
         if (addr1.len != addr2.len) return addr1.len < addr2.len;
         return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
       }
     };
-    std::set<grpc_resolved_address, AddressLessThan> seen_addresses;
-    for (ServerAddress& address : *args.addresses) {
-      auto it = seen_addresses.find(address.address());
-      if (it != seen_addresses.end()) continue;
-      seen_addresses.insert(address.address());
-      addresses.emplace_back(std::move(address));
-    }
+    std::set<ServerAddress, AddressLessThan> ordered_addresses(
+        args.addresses->begin(), args.addresses->end());
+    addresses =
+        ServerAddressList(ordered_addresses.begin(), ordered_addresses.end());
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] received update with address error: %s", this,
