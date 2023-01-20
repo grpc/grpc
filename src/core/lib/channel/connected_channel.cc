@@ -771,11 +771,16 @@ class ClientStream : public ConnectedChannelStream {
   }
 
   void RecvInitialMetadataReady(grpc_error_handle error) {
-    GPR_ASSERT(error == absl::OkStatus());
     {
       MutexLock lock(mu());
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_DEBUG, "%s[connected] RecvInitialMetadataReady: error=%s",
+                initial_metadata_waker_.ActivityDebugTag().c_str(),
+                error.ToString().c_str());
+      }
       server_initial_metadata_state_ =
-          ServerInitialMetadataState::kReceivedButNotPushed;
+          error.ok() ? ServerInitialMetadataState::kReceivedButNotPushed
+                     : ServerInitialMetadataState::kError;
       initial_metadata_waker_.Wakeup();
     }
     Unref("initial_metadata_ready");
@@ -827,6 +832,8 @@ class ClientStream : public ConnectedChannelStream {
     // has been pushed on the pipe to publish it up the call stack AND removed
     // by the call at the top.
     kPushed,
+    // Received initial metadata with an error status.
+    kError,
   };
 
   std::string ActiveOpsString() const override
