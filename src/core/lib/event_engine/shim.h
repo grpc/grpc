@@ -24,4 +24,4 @@ bool UseEventEngineClient();
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_SHIM_H
