@@ -29,6 +29,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -45,6 +46,7 @@ int64_t event_engine_tcp_client_connect(
   EventEngine::ConnectionHandle handle = GetDefaultEventEngine()->Connect(
       [on_connect,
        endpoint](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
+        grpc_core::ApplicationCallbackExecCtx app_ctx;
         grpc_core::ExecCtx exec_ctx;
         absl::Status conn_status = ep.ok() ? absl::OkStatus() : ep.status();
         if (ep.ok()) {

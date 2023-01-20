@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -191,6 +192,8 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   eeep->wrapper->Ref();
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
+
+  // TODO(vigneshbabu): Use SliceBufferCast<> here.
   SliceBuffer* read_buffer = new (&eeep->read_buffer)
       SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   read_buffer->Clear();
@@ -214,6 +217,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
           }
         }
         {
+          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
         }
@@ -253,6 +257,8 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
       }
     }
   }
+
+  // TODO(vigneshbabu): Use SliceBufferCast<> here.
   SliceBuffer* write_buffer = new (&eeep->write_buffer)
       SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   eeep->wrapper->Write(
@@ -266,6 +272,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
                   status.ToString().c_str());
         }
         {
+          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
         }
