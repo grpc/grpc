@@ -348,9 +348,11 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h
@@ -1110,6 +1112,8 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
@@ -1984,9 +1988,11 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -2366,6 +2372,8 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -12292,6 +12300,28 @@ targets:
   - linux
   - posix
   - mac
+- name: weighted_round_robin_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: weighted_round_robin_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
+  src:
+  - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: win_socket_test
   gtest: true
   build: test
