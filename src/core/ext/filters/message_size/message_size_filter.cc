@@ -18,30 +18,35 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
-#include <new>
+#include <inttypes.h>
 
-#include "absl/status/status.h"
+#include <functional>
+#include <string>
+#include <utility>
+
 #include "absl/strings/str_format.h"
-#include "message_size_filter.h"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -202,8 +207,8 @@ ArenaPromise<ServerMetadataHandle> ClientMessageSizeFilter::MakeCallPromise(
   // apply the max request size to the send limit and the max response
   // size to the receive limit.
   MessageSizeParsedConfig limits = this->limits();
-  const grpc_core::MessageSizeParsedConfig* config_from_call_context =
-      grpc_core::MessageSizeParsedConfig::GetFromCallContext(
+  const MessageSizeParsedConfig* config_from_call_context =
+      MessageSizeParsedConfig::GetFromCallContext(
           GetContext<grpc_call_context_element>(),
           service_config_parser_index_);
   if (config_from_call_context != nullptr) {
@@ -219,7 +224,7 @@ ArenaPromise<ServerMetadataHandle> ClientMessageSizeFilter::MakeCallPromise(
          *config_from_call_context->max_recv_size() < *max_recv_size)) {
       max_recv_size = *config_from_call_context->max_recv_size();
     }
-    limits = grpc_core::MessageSizeParsedConfig(max_send_size, max_recv_size);
+    limits = MessageSizeParsedConfig(max_send_size, max_recv_size);
   }
 
   CallBuilder b(limits);
@@ -238,8 +243,7 @@ ArenaPromise<ServerMetadataHandle> ServerMessageSizeFilter::MakeCallPromise(
 
 namespace {
 // Used for GRPC_CLIENT_SUBCHANNEL
-bool MaybeAddMessageSizeFilterToSubchannel(
-    grpc_core::ChannelStackBuilder* builder) {
+bool MaybeAddMessageSizeFilterToSubchannel(ChannelStackBuilder* builder) {
   if (builder->channel_args().WantMinimalStack()) {
     return true;
   }
@@ -250,13 +254,13 @@ bool MaybeAddMessageSizeFilterToSubchannel(
 // Used for GRPC_CLIENT_DIRECT_CHANNEL and GRPC_SERVER_CHANNEL. Adds the
 // filter only if message size limits or service config is specified.
 auto MaybeAddMessageSizeFilter(const grpc_channel_filter* filter) {
-  return [filter](grpc_core::ChannelStackBuilder* builder) {
+  return [filter](ChannelStackBuilder* builder) {
     auto channel_args = builder->channel_args();
     if (channel_args.WantMinimalStack()) {
       return true;
     }
-    grpc_core::MessageSizeParsedConfig limits =
-        grpc_core::MessageSizeParsedConfig::GetFromChannelArgs(channel_args);
+    MessageSizeParsedConfig limits =
+        MessageSizeParsedConfig::GetFromChannelArgs(channel_args);
     const bool enable =
         limits.max_send_size().has_value() ||
         limits.max_recv_size().has_value() ||

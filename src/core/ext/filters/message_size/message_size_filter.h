@@ -24,12 +24,12 @@
 
 #include <memory>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -37,8 +37,9 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -125,8 +126,7 @@ class ClientMessageSizeFilter final : public MessageSizeFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  const size_t service_config_parser_index_{
-      grpc_core::MessageSizeParser::ParserIndex()};
+  const size_t service_config_parser_index_{MessageSizeParser::ParserIndex()};
   using MessageSizeFilter::MessageSizeFilter;
 };
 
