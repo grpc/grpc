@@ -1316,12 +1316,12 @@ TEST_F(HostOverrideStatusTest, IgnoredWhenNotEnabled) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses, ::testing::ElementsAre());
+  EXPECT_THAT(resource.override_host_statuses, ::testing::ElementsAre());
 }
 
 TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1341,7 +1341,7 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses,
+  EXPECT_THAT(resource.override_host_statuses,
               ::testing::UnorderedElementsAre(
                   XdsHealthStatus(XdsHealthStatus::kUnknown),
                   XdsHealthStatus(XdsHealthStatus::kHealthy),

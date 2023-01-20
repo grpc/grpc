@@ -743,8 +743,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   // Check the type_url of the resource.
   if (result_.type_url != type_url) {
     result_.errors.emplace_back(
-        absl::StrCat(error_prefix, "incorrect resource type ", type_url,
-                     " (should be ", result_.type_url, ")"));
+        absl::StrCat(error_prefix, "incorrect resource type \"", type_url,
+                     "\" (should be \"", result_.type_url, "\")"));
     return;
   }
   // Parse the resource.

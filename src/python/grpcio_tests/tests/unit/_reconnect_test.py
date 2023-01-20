@@ -48,20 +48,20 @@ class ReconnectTest(unittest.TestCase):
             server = grpc.server(server_pool, (handler,), options=options)
             server.add_insecure_port(addr)
             server.start()
-            channel = grpc.insecure_channel(addr)
-            multi_callable = channel.unary_unary(_UNARY_UNARY)
-            self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
-            server.stop(None)
-            # By default, the channel connectivity is checked every 5s
-            # GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS can be set to change
-            # this.
-            time.sleep(5.1)
-            server = grpc.server(server_pool, (handler,), options=options)
-            server.add_insecure_port(addr)
-            server.start()
-            self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
-            server.stop(None)
-            channel.close()
+        channel = grpc.insecure_channel(addr)
+        multi_callable = channel.unary_unary(_UNARY_UNARY)
+        self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
+        server.stop(None)
+        # By default, the channel connectivity is checked every 5s
+        # GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS can be set to change
+        # this.
+        time.sleep(5.1)
+        server = grpc.server(server_pool, (handler,), options=options)
+        server.add_insecure_port(addr)
+        server.start()
+        self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
+        server.stop(None)
+        channel.close()
 
 
 if __name__ == '__main__':
