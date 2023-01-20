@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 26
     ndkVersion "25.1.8937393"
     defaultConfig {
         applicationId "io.grpc.android.cpp.helloworldexample"
