@@ -14,7 +14,10 @@
 // limitations under the License.
 //
 
+#include <stdint.h>
+
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
@@ -28,6 +31,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -39,7 +43,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -48,6 +51,7 @@
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -97,9 +101,8 @@ class XdsRouteConfigTest : public ::testing::Test {
         "  ]\n"
         "}");
     if (!bootstrap.ok()) {
-      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              bootstrap.status().ToString().c_str());
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
@@ -344,7 +347,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    GPR_ASSERT(false && "unknown typed_per_filter_config scope");
+    Crash("unknown typed_per_filter_config scope");
   }
 
   static const XdsRouteConfigResource::TypedPerFilterConfig&
@@ -365,7 +368,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   static absl::string_view FieldName() {
@@ -380,7 +383,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   RouteConfiguration route_config_;
@@ -714,7 +717,7 @@ class RetryPolicyTest : public XdsRouteConfigTest,
       default:
         break;
     }
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   RouteConfiguration route_config_;
@@ -1624,6 +1627,36 @@ TEST_F(WeightedClusterTest, Invalid) {
             "error:field not present; "
             "field:virtual_hosts[0].routes[1].route.weighted_clusters "
             "error:no valid clusters specified]")
+      << decode_result.resource.status();
+}
+
+TEST_F(WeightedClusterTest, TotalWeightExceedsUint32Max) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* weighted_clusters_proto =
+      route_proto->mutable_route()->mutable_weighted_clusters();
+  auto* cluster_weight_proto = weighted_clusters_proto->add_clusters();
+  cluster_weight_proto->set_name("cluster1");
+  cluster_weight_proto->mutable_weight()->set_value(
+      std::numeric_limits<uint32_t>::max());
+  cluster_weight_proto = weighted_clusters_proto->add_clusters();
+  cluster_weight_proto->set_name("cluster2");
+  cluster_weight_proto->mutable_weight()->set_value(1);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].route.weighted_clusters "
+            "error:sum of cluster weights exceeds uint32 max]")
       << decode_result.resource.status();
 }
 

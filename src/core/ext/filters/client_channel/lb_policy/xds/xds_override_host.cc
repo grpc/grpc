@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
+
 #include <atomic>
 #include <functional>
 #include <map>
@@ -72,40 +74,13 @@ namespace {
 //
 // xds_override_host LB policy
 //
-
-constexpr absl::string_view kXdsOverrideHost = "xds_override_host_experimental";
-
-// Config for stateful session LB policy.
-class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
- public:
-  XdsOverrideHostLbConfig() = default;
-
-  XdsOverrideHostLbConfig(const XdsOverrideHostLbConfig&) = delete;
-  XdsOverrideHostLbConfig& operator=(const XdsOverrideHostLbConfig&) = delete;
-
-  XdsOverrideHostLbConfig(XdsOverrideHostLbConfig&& other) = delete;
-  XdsOverrideHostLbConfig& operator=(XdsOverrideHostLbConfig&& other) = delete;
-
-  absl::string_view name() const override { return kXdsOverrideHost; }
-
-  RefCountedPtr<LoadBalancingPolicy::Config> child_config() const {
-    return child_config_;
-  }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
-
- private:
-  RefCountedPtr<LoadBalancingPolicy::Config> child_config_;
-};
-
-// xDS Cluster Impl LB policy.
 class XdsOverrideHostLb : public LoadBalancingPolicy {
  public:
   explicit XdsOverrideHostLb(Args args);
 
-  absl::string_view name() const override { return kXdsOverrideHost; }
+  absl::string_view name() const override {
+    return XdsOverrideHostLbConfig::Name();
+  }
 
   absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -330,7 +305,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   auto* call_state = static_cast<LbCallStateInternal*>(args.call_state);
-  auto override_host = call_state->GetCallAttribute(XdsHostOverrideTypeName());
+  auto override_host = call_state->GetCallAttribute(XdsOverrideHostTypeName());
   auto overridden_host_pick = PickOverridenHost(override_host);
   if (overridden_host_pick.has_value()) {
     return std::move(*overridden_host_pick);
@@ -610,6 +585,42 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
 //
 // factory
 //
+class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
+ public:
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<XdsOverrideHostLb>(std::move(args));
+  }
+
+  absl::string_view name() const override {
+    return XdsOverrideHostLbConfig::Name();
+  }
+
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
+    if (json.type() == Json::Type::JSON_NULL) {
+      // This policy was configured in the deprecated loadBalancingPolicy
+      // field or in the client API.
+      return absl::InvalidArgumentError(
+          "field:loadBalancingPolicy error:xds_override_host policy requires "
+          "configuration. Please use loadBalancingConfig field of service "
+          "config instead.");
+    }
+    return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
+        json, JsonArgs(),
+        "errors validating xds_override_host LB policy config");
+  }
+};
+
+}  // namespace
+
+void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<XdsOverrideHostLbFactory>());
+}
+
+// XdsOverrideHostLbConfig
+
 const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
     const JsonArgs&) {
   static const auto kJsonLoader =
@@ -637,35 +648,4 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   }
 }
 
-class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
- public:
-  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<XdsOverrideHostLb>(std::move(args));
-  }
-
-  absl::string_view name() const override { return kXdsOverrideHost; }
-
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_override_host policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
-        json, JsonArgs(),
-        "errors validating xds_override_host LB policy config");
-  }
-};
-
-}  // namespace
-
-void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
-  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      std::make_unique<XdsOverrideHostLbFactory>());
-}
 }  // namespace grpc_core

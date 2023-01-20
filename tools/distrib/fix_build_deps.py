@@ -141,9 +141,9 @@ EXTERNAL_DEPS = {
     'google/logging/v2/logging.grpc.pb.h':
         'googleapis_logging_grpc_service',
     'google/logging/v2/logging.pb.h':
-        'googleapis_logging_proto',
+        'googleapis_logging_cc_proto',
     'google/logging/v2/log_entry.pb.h':
-        'googleapis_logging_proto',
+        'googleapis_logging_cc_proto',
     'google/monitoring/v3/metric_service.grpc.pb.h':
         'googleapis_monitoring_grpc_service',
     'gmock/gmock.h':
@@ -640,7 +640,7 @@ def make_library(library):
     return (library, error, deps, external_deps)
 
 
-if __name__ == "__main__":
+def main() -> None:
     update_libraries = []
     for library in sorted(consumes.keys()):
         if library in no_update:
@@ -663,3 +663,7 @@ if __name__ == "__main__":
 
     if error:
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

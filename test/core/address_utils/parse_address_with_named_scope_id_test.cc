@@ -19,7 +19,6 @@
 #include <inttypes.h>
 #include <net/if.h>
 #include <netdb.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -38,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -89,10 +89,9 @@ struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
   struct addrinfo* result;
   int res = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   if (res != 0) {
-    gpr_log(GPR_ERROR,
-            "getaddrinfo failed to resolve host:%s port:%s. Error: %d.",
-            host.c_str(), port.c_str(), res);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "getaddrinfo failed to resolve host:%s port:%s. Error: %d.",
+        host.c_str(), port.c_str(), res));
   }
   size_t num_addrs_from_getaddrinfo = 0;
   for (struct addrinfo* resp = result; resp != nullptr; resp = resp->ai_next) {

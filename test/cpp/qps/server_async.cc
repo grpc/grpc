@@ -34,6 +34,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"

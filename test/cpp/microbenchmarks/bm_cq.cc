@@ -26,6 +26,7 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"

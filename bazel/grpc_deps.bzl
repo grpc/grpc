@@ -206,7 +206,7 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "googleapis_logging_proto",
+        name = "googleapis_logging_cc_proto",
         actual = "@com_google_googleapis//google/logging/v2:logging_cc_proto",
     )
 

@@ -38,6 +38,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -411,11 +412,9 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
                &AcceptEx, sizeof(AcceptEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
-    char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
-    gpr_free(utf8_message);
+    error = GRPC_WSA_ERROR(WSAGetLastError(), "AcceptEx pointer retrieval");
     closesocket(sock);
-    return absl::OkStatus();
+    return error;
   }
 
   error = prepare_socket(sock, addr, &port);
