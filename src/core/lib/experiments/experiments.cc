@@ -24,9 +24,6 @@ const char* const description_tcp_frame_size_tuning =
     "would not indicate completion of a read operation until a specified "
     "number of bytes have been read over the socket. Buffers are also "
     "allocated according to estimated RPC sizes.";
-const char* const description_tcp_read_chunks =
-    "Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on "
-    "malloc to recycle arbitrary large blocks.";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const description_peer_state_based_framing =
@@ -57,7 +54,6 @@ namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_read_chunks", description_tcp_read_chunks, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
     {"peer_state_based_framing", description_peer_state_based_framing, false},
     {"flow_control_fixes", description_flow_control_fixes, true},

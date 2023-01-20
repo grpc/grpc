@@ -86,43 +86,55 @@ absl::Status GcpObservabilityInit() {
       !config->cloud_logging.has_value()) {
     return absl::OkStatus();
   }
+  grpc::internal::OpenCensusRegistry::Get().RegisterConstantLabels(
+      config->labels);
   grpc::RegisterOpenCensusPlugin();
   RegisterOpenCensusViewsForGcpObservability();
-  ChannelArguments args;
-  args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
   if (config->cloud_trace.has_value()) {
-    opencensus::trace::TraceConfig::SetCurrentTraceParams(
-        {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
-         opencensus::trace::ProbabilitySampler(
-             config->cloud_trace->sampling_rate)});
-    opencensus::exporters::trace::StackdriverOptions trace_opts;
-    trace_opts.project_id = config->project_id;
-    trace_opts.trace_service_stub =
-        ::google::devtools::cloudtrace::v2::TraceService::NewStub(
-            CreateCustomChannel(kGoogleStackdriverTraceAddress,
-                                GoogleDefaultCredentials(), args));
-    opencensus::exporters::trace::StackdriverExporter::Register(
-        std::move(trace_opts));
+    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
+        [cloud_trace = config->cloud_trace.value(),
+         project_id = config->project_id]() mutable {
+          opencensus::trace::TraceConfig::SetCurrentTraceParams(
+              {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
+               opencensus::trace::ProbabilitySampler(
+                   cloud_trace.sampling_rate)});
+          opencensus::exporters::trace::StackdriverOptions trace_opts;
+          trace_opts.project_id = std::move(project_id);
+          ChannelArguments args;
+          args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+          trace_opts.trace_service_stub =
+              ::google::devtools::cloudtrace::v2::TraceService::NewStub(
+                  CreateCustomChannel(kGoogleStackdriverTraceAddress,
+                                      GoogleDefaultCredentials(), args));
+          opencensus::exporters::trace::StackdriverExporter::Register(
+              std::move(trace_opts));
+        });
   } else {
     // Disable OpenCensus tracing
-    EnableOpenCensusTracing(false);
+    grpc::internal::EnableOpenCensusTracing(false);
   }
   if (config->cloud_monitoring.has_value()) {
-    opencensus::exporters::stats::StackdriverOptions stats_opts;
-    stats_opts.project_id = config->project_id;
-    stats_opts.metric_service_stub =
-        google::monitoring::v3::MetricService::NewStub(CreateCustomChannel(
-            kGoogleStackdriverStatsAddress, GoogleDefaultCredentials(), args));
-    opencensus::exporters::stats::StackdriverExporter::Register(
-        std::move(stats_opts));
+    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
+        [project_id = config->project_id]() mutable {
+          opencensus::exporters::stats::StackdriverOptions stats_opts;
+          stats_opts.project_id = std::move(project_id);
+          ChannelArguments args;
+          args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+          stats_opts.metric_service_stub =
+              google::monitoring::v3::MetricService::NewStub(
+                  CreateCustomChannel(kGoogleStackdriverStatsAddress,
+                                      GoogleDefaultCredentials(), args));
+          opencensus::exporters::stats::StackdriverExporter::Register(
+              std::move(stats_opts));
+        });
   } else {
     // Disable OpenCensus stats
-    EnableOpenCensusStats(false);
+    grpc::internal::EnableOpenCensusStats(false);
   }
   if (config->cloud_logging.has_value()) {
     grpc::internal::RegisterLoggingFilter(
         new grpc::internal::ObservabilityLoggingSink(
-            config->cloud_logging.value(), config->project_id));
+            config->cloud_logging.value(), config->project_id, config->labels));
   }
   return absl::OkStatus();
 }

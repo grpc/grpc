@@ -243,8 +243,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     def set_compression(self, compression: grpc.Compression) -> None:
         """Set the compression algorithm to be used for the entire call.
 
-        This is an EXPERIMENTAL method.
-
         Args:
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip.
@@ -253,8 +251,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     @abc.abstractmethod
     def disable_next_message_compression(self) -> None:
         """Disables compression for the next response message.
-
-        This is an EXPERIMENTAL method.
 
         This method will override any compression configuration set during
         server creation or set on the call.
