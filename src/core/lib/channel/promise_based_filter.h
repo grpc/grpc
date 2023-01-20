@@ -215,7 +215,11 @@ class BaseCallData : public Activity, private Wakeable {
 
     void Resume(grpc_transport_stream_op_batch* batch) {
       GPR_ASSERT(!call_->is_last());
-      release_.push_back(batch);
+      if (batch->HasOp()) {
+        release_.push_back(batch);
+      } else if (batch->on_complete != nullptr) {
+        Complete(batch);
+      }
     }
 
     void Cancel(grpc_transport_stream_op_batch* batch,

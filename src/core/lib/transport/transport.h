@@ -329,6 +329,12 @@ struct grpc_transport_stream_op_batch {
   /// Is this stream traced
   bool is_traced : 1;
 
+  bool HasOp() const {
+    return send_initial_metadata || send_trailing_metadata || send_message ||
+           recv_initial_metadata || recv_message || recv_trailing_metadata ||
+           cancel_stream;
+  }
+
   //**************************************************************************
   // remaining fields are initialized and used at the discretion of the
   // current handler of the op

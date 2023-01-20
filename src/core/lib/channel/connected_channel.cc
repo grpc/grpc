@@ -782,7 +782,15 @@ class ClientStream : public ConnectedChannelStream {
   }
 
   void RecvTrailingMetadataReady(grpc_error_handle error) {
-    GPR_ASSERT(error == absl::OkStatus());
+    if (!error.ok()) {
+      server_trailing_metadata_->Clear();
+      server_trailing_metadata_->Set(
+          GrpcStatusMetadata(), static_cast<grpc_status_code>(error.code()));
+      server_trailing_metadata_->Set(
+          GrpcMessageMetadata(),
+          Slice::FromCopiedString(
+              absl::StrCat("Error received from peer: ", error.message())));
+    }
     {
       MutexLock lock(mu());
       queued_trailing_metadata_ = true;
@@ -800,7 +808,6 @@ class ClientStream : public ConnectedChannelStream {
   }
 
   void MetadataBatchDone(grpc_error_handle error) {
-    GPR_ASSERT(error == absl::OkStatus());
     Unref("metadata_batch_done");
   }
 

@@ -508,13 +508,20 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
                   "result.has_value=%s",
                   base_->LogTag().c_str(), p->has_value() ? "true" : "false");
         }
-        GPR_ASSERT(p->has_value());
-        batch_->payload->send_message.send_message->Swap((**p)->payload());
-        batch_->payload->send_message.flags = (**p)->flags();
-        state_ = State::kForwardedBatch;
-        batch_.ResumeWith(flusher);
-        next_.reset();
-        if (!absl::holds_alternative<Pending>((*push_)())) push_.reset();
+        if (p->has_value()) {
+          batch_->payload->send_message.send_message->Swap((**p)->payload());
+          batch_->payload->send_message.flags = (**p)->flags();
+          state_ = State::kForwardedBatch;
+          batch_.ResumeWith(flusher);
+          next_.reset();
+          if (!absl::holds_alternative<Pending>((*push_)())) push_.reset();
+        } else {
+          batch_->send_message = false;
+          state_ = State::kCancelled;
+          batch_.ResumeWith(flusher);
+          next_.reset();
+          push_.reset();
+        }
       }
     } break;
     case State::kForwardedBatch:

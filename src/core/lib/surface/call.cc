@@ -3101,7 +3101,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
   ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args);
 
-  void CancelWithErrorLocked(grpc_error_handle) override { abort(); }
+  void CancelWithErrorLocked(grpc_error_handle) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
   bool failed_before_recv_message() const override { abort(); }
@@ -3186,6 +3187,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   void CommitBatch(const grpc_op* ops, size_t nops,
                    const Completion& completion)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  void Finish(ServerMetadataHandle result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
   friend class ServerCallContext;
   ServerCallContext call_context_;
@@ -3299,37 +3301,39 @@ void ServerPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
-                DebugTag().c_str(),
-                recv_close_op_cancel_state_.ToString().c_str(),
-                (*result)->DebugString().c_str());
-      }
-      if (recv_close_op_cancel_state_.CompleteCall(
-              (*result)->get(GrpcStatusFromWire()).value_or(false))) {
-        FinishOpOnCompletion(&recv_close_completion_,
-                             PendingOp::kReceiveCloseOnServer);
-      }
-      channelz::ServerNode* channelz_node = server_->channelz_node();
-      if (channelz_node != nullptr) {
-        if ((*result)
-                ->get(GrpcStatusMetadata())
-                .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
-          channelz_node->RecordCallSucceeded();
-        } else {
-          channelz_node->RecordCallFailed();
-        }
-      }
-      if (send_status_from_server_completion_.has_value()) {
-        FinishOpOnCompletion(&send_status_from_server_completion_,
-                             PendingOp::kSendStatusFromServer);
-      }
-      CancelSendMessage();
-      CancelRecvMessage();
-      set_completed();
-      promise_ = ArenaPromise<ServerMetadataHandle>();
+      Finish(std::move(*result));
     }
   }
+}
+
+void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
+            DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
+            result->DebugString().c_str());
+  }
+  if (recv_close_op_cancel_state_.CompleteCall(
+          result->get(GrpcStatusFromWire()).value_or(false))) {
+    FinishOpOnCompletion(&recv_close_completion_,
+                         PendingOp::kReceiveCloseOnServer);
+  }
+  channelz::ServerNode* channelz_node = server_->channelz_node();
+  if (channelz_node != nullptr) {
+    if (result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+        GRPC_STATUS_OK) {
+      channelz_node->RecordCallSucceeded();
+    } else {
+      channelz_node->RecordCallFailed();
+    }
+  }
+  if (send_status_from_server_completion_.has_value()) {
+    FinishOpOnCompletion(&send_status_from_server_completion_,
+                         PendingOp::kSendStatusFromServer);
+  }
+  CancelSendMessage();
+  CancelRecvMessage();
+  set_completed();
+  promise_ = ArenaPromise<ServerMetadataHandle>();
 }
 
 grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
@@ -3450,6 +3454,12 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
   Update();
   FinishOpOnCompletion(&completion, PendingOp::kStartingBatch);
   return GRPC_CALL_OK;
+}
+
+void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
+  if (!promise_.has_value()) return;
+  ScopedContext context(this);
+  Finish(ServerMetadataFromStatus(error));
 }
 
 }  // namespace grpc_core
