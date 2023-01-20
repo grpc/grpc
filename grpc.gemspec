@@ -38,8 +38,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
+  s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.3'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -163,6 +163,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )
@@ -172,6 +173,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/cds.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc )

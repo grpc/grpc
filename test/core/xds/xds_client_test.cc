@@ -538,6 +538,11 @@ class XdsClientTest : public ::testing::Test {
       return *this;
     }
 
+    ResponseBuilder& AddEmptyResource() {
+      response_.add_resources();
+      return *this;
+    }
+
     std::string Serialize() {
       std::string serialized_response;
       EXPECT_TRUE(response_.SerializeToString(&serialized_response));
@@ -1268,6 +1273,9 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
           // wrapper, so we don't actually know the resource's name.
           .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
                               "{\"name\":\"foo2,\"value\":6}")
+          // Empty resource.  Will be included in NACK but will not
+          // affect any watchers.
+          .AddEmptyResource()
           // foo3: JSON parsing fails, but it is wrapped in a Resource
           // wrapper, so we do know the resource's name.
           .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
@@ -1306,7 +1314,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
                // error_detail=
-               absl::InvalidArgumentError(
+               absl::InvalidArgumentError(absl::StrCat(
                    "xDS response validation errors: ["
                    // foo1
                    "resource index 0: foo1: "
@@ -1315,16 +1323,21 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                    // foo2 (name not known)
                    "resource index 1: INVALID_ARGUMENT: JSON parsing failed: "
                    "[JSON parse error at index 15]; "
+                   // empty resource
+                   "resource index 2: incorrect resource type \"\" "
+                   "(should be \"",
+                   XdsFooResourceType::Get()->type_url(),
+                   "\"); "
                    // foo3
-                   "resource index 2: foo3: "
+                   "resource index 3: foo3: "
                    "INVALID_ARGUMENT: JSON parsing failed: "
-                   "[JSON parse error at index 15]]"),
+                   "[JSON parse error at index 15]]")),
                /*resource_names=*/{"foo1", "foo2", "foo3", "foo4"});
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
-  CancelFooWatch(watcher.get(), "foo2", /*delay_unsubscription=*/true);
-  CancelFooWatch(watcher.get(), "foo3", /*delay_unsubscription=*/true);
-  CancelFooWatch(watcher.get(), "foo4");
+  CancelFooWatch(watcher2.get(), "foo2", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher3.get(), "foo3", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher4.get(), "foo4");
   // The XdsClient may or may not send an unsubscription message
   // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
@@ -1423,6 +1436,62 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   if (request.has_value()) {
     CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                  /*version_info=*/"1", /*response_nonce=*/"B",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
+TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
+  InitXdsClient();
+  // Start a watch for "wc1".
+  auto watcher = StartWildcardCapableWatch("wc1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Server sends a response containing the requested resources plus an
+  // empty resource.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 6))
+          .AddEmptyResource()
+          .Serialize());
+  // XdsClient will delivery a valid resource update for wc1.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should NACK the update.
+  // There was one good resource, so the version will be updated.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               // error_detail=
+               absl::InvalidArgumentError(absl::StrCat(
+                   "xDS response validation errors: ["
+                   "resource index 1: incorrect resource type \"\" "
+                   "(should be \"",
+                   XdsWildcardCapableResourceType::Get()->type_url(), "\")]")),
+               /*resource_names=*/{"wc1"});
+  // Cancel watch.
+  CancelWildcardCapableWatch(watcher.get(), "wc1");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = WaitForRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
                  /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   }
 }
