@@ -272,19 +272,17 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
           });
     }
 
-    RefCountedPtr<SubchannelWrapper> SetEdsHealthStatus(
-        XdsHealthStatus eds_health_status) {
+    void SetEdsHealthStatus(XdsHealthStatus eds_health_status) {
       eds_health_status_ = eds_health_status;
       auto subchannel = GetSubchannel();
       if (subchannel == nullptr) {
-        return nullptr;
+        return;
       }
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
         subchannel_ = subchannel->Ref();
       } else {
         subchannel_ = subchannel;
       }
-      return subchannel->Ref();
     }
 
     XdsHealthStatus eds_health_status() { return eds_health_status_; }
@@ -537,7 +535,6 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       }
     }
   }
-  std::vector<RefCountedPtr<SubchannelWrapper>> subchannels_locked;
   {
     MutexLock lock(&subchannel_map_mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
@@ -554,8 +551,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
                  .emplace(key_status.first, SubchannelEntry(key_status.second))
                  .first;
       }
-      subchannels_locked.push_back(
-          it->second.SetEdsHealthStatus(key_status.second));
+      it->second.SetEdsHealthStatus(key_status.second);
     }
   }
   return return_value;
