@@ -26,6 +26,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
+#include "measures.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
 
@@ -64,6 +65,7 @@ void RegisterOpenCensusPlugin() {
   RpcClientRetriesPerCall();
   RpcClientTransparentRetriesPerCall();
   RpcClientRetryDelayPerCall();
+  RpcClientTransportLatency();
 
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
@@ -145,6 +147,9 @@ ABSL_CONST_INIT const absl::string_view
 
 ABSL_CONST_INIT const absl::string_view kRpcClientRetryDelayPerCallMeasureName =
     "grpc.io/client/retry_delay_per_call";
+
+ABSL_CONST_INIT const absl::string_view kRpcClientTransportLatencyMeasureName =
+    "grpc.io/client/transport_latency";
 
 // Server
 ABSL_CONST_INIT const absl::string_view

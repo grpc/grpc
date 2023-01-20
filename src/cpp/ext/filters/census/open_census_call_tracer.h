@@ -101,8 +101,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     uint64_t sent_message_count_ = 0;
     // End status code
     absl::StatusCode status_code_;
-    // Transport supplied latency.
-    absl::optional<double> transport_stream_stats_latency_ms_;
   };
 
   explicit OpenCensusCallTracer(const grpc_call_element_args* args,

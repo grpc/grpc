@@ -98,6 +98,15 @@ MeasureInt64 RpcClientStartedRpcs() {
   return measure;
 }
 
+MeasureDouble RpcClientTransportLatency() {
+  static const auto measure = MeasureDouble::Register(
+      experimental::kRpcClientTransportLatencyMeasureName,
+      "Time between first byte of request sent to last byte of response "
+      "received, or terminal error",
+      kUnitMilliseconds);
+  return measure;
+}
+
 // Client per-overall-client-call measures
 MeasureInt64 RpcClientRetriesPerCall() {
   static const auto measure =
