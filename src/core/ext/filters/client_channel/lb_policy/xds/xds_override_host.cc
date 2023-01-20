@@ -122,7 +122,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
    public:
     SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel,
                       RefCountedPtr<XdsOverrideHostLb> policy,
-                      absl::string_view key, XdsHealthStatus health_status);
+                      absl::string_view key);
 
     ~SubchannelWrapper() override;
 
@@ -313,8 +313,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   void ResetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
 
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
-      absl::string_view address,
-      const XdsHealthStatusSet& override_host_status_set);
+      absl::string_view address);
 
   void OnSubchannelConnectivityStateChange(absl::string_view subchannel_key)
       ABSL_NO_THREAD_SAFETY_ANALYSIS;
@@ -358,8 +357,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
   if (override_host.length() == 0) {
     return absl::nullopt;
   }
-  auto subchannel = policy_->GetSubchannelByAddress(
-      override_host, override_host_health_status_set_);
+  auto subchannel = policy_->GetSubchannelByAddress(override_host);
   if (subchannel == nullptr) {
     return absl::nullopt;
   }
@@ -568,8 +566,8 @@ XdsOverrideHostLb::AdoptSubchannel(
     return subchannel;
   }
   auto status = GetAddressHealthStatus(address);
-  auto wrapper = MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(),
-                                                   *key, status);
+  auto wrapper =
+      MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref(), *key);
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(*key);
   if (it != subchannel_map_.end()) {
@@ -588,9 +586,7 @@ void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
-XdsOverrideHostLb::GetSubchannelByAddress(
-    absl::string_view address,
-    const XdsHealthStatusSet& override_host_status_set) {
+XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
   if (it != subchannel_map_.end()) {
@@ -661,8 +657,7 @@ void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
 
 XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     RefCountedPtr<SubchannelInterface> subchannel,
-    RefCountedPtr<XdsOverrideHostLb> policy, absl::string_view key,
-    XdsHealthStatus health_status)
+    RefCountedPtr<XdsOverrideHostLb> policy, absl::string_view key)
     : DelegatingSubchannel(std::move(subchannel)),
       key_(std::move(key)),
       policy_(std::move(policy)) {
