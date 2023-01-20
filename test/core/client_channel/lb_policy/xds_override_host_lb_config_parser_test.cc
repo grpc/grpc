@@ -52,7 +52,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
       "}\n";
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
-  ASSERT_TRUE(service_config.ok());
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_NE(*service_config, nullptr);
   auto global_config = static_cast<ClientChannelGlobalParsedConfig*>(
       (*service_config)
