@@ -538,11 +538,7 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
   if (scheduler != nullptr) return scheduler->Pick();
   // We don't have a scheduler (i.e., either all of the weights are 0 or
   // there is only one subchannel), so fall back to RR.
-  size_t index = last_picked_index_.fetch_add(1);
-  if (index > 0 && index % subchannels_.size() == 0) {
-    last_picked_index_.fetch_sub(subchannels_.size());
-  }
-  return index % subchannels_.size();
+  return last_picked_index_.fetch_add(1) % subchannels_.size();
 }
 
 void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
