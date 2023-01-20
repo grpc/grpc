@@ -1966,11 +1966,6 @@ grpc_cc_library(
     srcs = [
         "src/cpp/server/orca/server_metric_recorder.cc",
     ],
-#    external_deps = [
-#        "absl/strings",
-#        "absl/types:optional",
-#        "upb_lib",
-#    ],
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/server_metric_recorder.h",
@@ -1978,9 +1973,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "grpc_trace",
-#        "grpc++_public_hdrs",
-#        "xds_orca_upb",
-#        "//src/core:arena",
         "//src/core:grpc_backend_metric_data",
     ],
 )

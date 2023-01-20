@@ -295,7 +295,9 @@ class ServerContextBase {
   /// client in order to make load balancing decisions. This will
   /// return nullptr if the feature hasn't been enabled using
   /// \a EnableCallMetricRecording.
-  experimental::CallMetricRecorder* GetCallMetricRecorder() { return call_metric_recorder_; }
+  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder() {
+    return call_metric_recorder_;
+  }
 
   /// EXPERIMENTAL API
   /// Returns the call's authority.
@@ -419,7 +421,13 @@ class ServerContextBase {
   /// Return the tag queued by BeginCompletionOp()
   grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
-  void set_call(grpc_call* call) { call_.call = call; }
+  void set_call(grpc_call* call, bool call_metric_recording_enabled,
+                experimental::ServerMetricRecorder* server_metric_recorder) {
+    call_.call = call;
+    if (call_metric_recording_enabled) {
+      CreateCallMetricRecorder(server_metric_recorder);
+    }
+  }
 
   void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
 

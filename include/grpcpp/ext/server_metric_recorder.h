@@ -39,7 +39,8 @@ namespace experimental {
 
 /// Records server wide metrics for the purpose of load balancing.
 /// Server implementation creates an instance and reports server metrics to it,
-/// and then passes it to experimental::EnableCallMetricRecording or
+/// and then passes it to
+/// ServerBuilder::experimental_type::EnableCallMetricRecording or
 /// experimental::OrcaService that read metrics to include in the report.
 class ServerMetricRecorder {
  public:

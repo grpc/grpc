@@ -285,11 +285,11 @@ class ServerBuilder {
 
     // Enables per-call load reporting. The server will automatically send the
     // load metrics after each RPC. The caller can report load metrics for the
-    // current call to what \a ServerContext::GetCallMetricRecorder() returns.
-    // The server merges metrics from the optional \a server_metric_recorder
-    // when provided where the call metric recorder take a higher precedence.
-    // The caller owns and must ensure the server metric recorder outlives the
-    // server.
+    // current call to what ServerContext::ExperimentalGetCallMetricRecorder()
+    // returns. The server merges metrics from the optional
+    // server_metric_recorder when provided where the call metric recorder take
+    // a higher precedence. The caller owns and must ensure the server metric
+    // recorder outlives the server.
     void EnableCallMetricRecording(
         experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
 
