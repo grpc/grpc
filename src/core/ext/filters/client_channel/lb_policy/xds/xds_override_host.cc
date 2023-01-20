@@ -658,7 +658,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     RefCountedPtr<SubchannelInterface> subchannel,
     RefCountedPtr<XdsOverrideHostLb> policy, absl::string_view key)
     : DelegatingSubchannel(std::move(subchannel)),
-      key_(std::move(key)),
+      key_(key),
       policy_(std::move(policy)) {
   auto watcher = std::make_unique<ConnectivityStateWatcher>(Ref());
   watcher_ = watcher.get();
