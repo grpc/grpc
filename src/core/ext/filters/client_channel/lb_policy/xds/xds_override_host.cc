@@ -138,7 +138,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     void Shutdown();
 
-    RefCountedPtr<XdsOverrideHostLb> policy() { return policy_; }
+    XdsOverrideHostLb* policy() { return policy_.get(); }
 
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
