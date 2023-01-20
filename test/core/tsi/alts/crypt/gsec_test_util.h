@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H_
-#define GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H_
+#ifndef GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H
+#define GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -86,4 +86,4 @@ int gsec_test_expect_compare_code_and_substr(grpc_status_code status1,
                                              const char* msg1,
                                              const char* msg2);
 
-#endif  // GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H_ */
+#endif  // GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H */

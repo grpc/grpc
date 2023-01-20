@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef PASSTHRU_ENDPOINT_H
-#define PASSTHRU_ENDPOINT_H
+#ifndef GRPC_TEST_CORE_UTIL_PASSTHRU_ENDPOINT_H
+#define GRPC_TEST_CORE_UTIL_PASSTHRU_ENDPOINT_H
 
 #include <stdint.h>
 
@@ -55,4 +55,4 @@ void start_scheduling_grpc_passthru_endpoint_channel_effects(
     grpc_endpoint* ep,
     const std::vector<grpc_passthru_endpoint_channel_action>& actions);
 
-#endif  // PASSTHRU_ENDPOINT_H
+#endif  // GRPC_TEST_CORE_UTIL_PASSTHRU_ENDPOINT_H

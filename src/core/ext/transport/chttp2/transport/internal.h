@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -807,4 +807,4 @@ void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 
 uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H

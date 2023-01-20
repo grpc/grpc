@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
-#define GRPC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
+#define GRPC_SRC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
 
 // manually construct a region of memory with some type
 
@@ -144,4 +144,4 @@ class ManualConstructor {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
