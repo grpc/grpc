@@ -58,8 +58,10 @@ COMMIT_HASH_PREFIX = 'PROTOBUF_SUBMODULE_VERSION="'
 COMMIT_HASH_SUFFIX = '"'
 
 # Bazel query result prefix for expected source files in protobuf.
-PROTOBUF_CC_PREFIX = '//:src/'
-PROTOBUF_PROTO_PREFIX = '//:src/'
+PROTOBUF_CC_PREFIX = '//src/'
+PROTOBUF_CC_PREFIX_PRE_22_X = '//:src/'
+PROTOBUF_PROTO_PREFIX = '//src/'
+PROTOBUF_PROTO_PREFIX_PRE_22_X = '//:src/'
 
 GRPC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
@@ -88,7 +90,8 @@ BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools', 'distrib', 'python',
 BAZEL_DEPS_PROTOC_LIB_QUERY = '//:protoc_lib'
 BAZEL_DEPS_COMMON_PROTOS_QUERIES = [
     '//:well_known_type_protos',
-    '//:built_in_runtime_protos',
+    # has both plugin.proto and descriptor.proto
+    '//:compiler_plugin_proto',
 ]
 
 
@@ -124,18 +127,30 @@ def get_deps():
     """Write the result of the bazel query `query` against protobuf to
      `out_file`."""
     cc_files_output = bazel_query(BAZEL_DEPS_PROTOC_LIB_QUERY)
+
     cc_files = [
-        name[len(PROTOBUF_CC_PREFIX):]
+        name[len(PROTOBUF_CC_PREFIX):].replace(':', '/')
         for name in cc_files_output
         if name.endswith('.cc') and name.startswith(PROTOBUF_CC_PREFIX)
+    ] + [
+        # compatibility with versions of protobuf 21.x and older
+        name[len(PROTOBUF_CC_PREFIX_PRE_22_X):]
+        for name in cc_files_output
+        if name.endswith('.cc') and name.startswith(PROTOBUF_CC_PREFIX_PRE_22_X)
     ]
     raw_proto_files = []
     for target in BAZEL_DEPS_COMMON_PROTOS_QUERIES:
         raw_proto_files += bazel_query(target)
     proto_files = [
-        name[len(PROTOBUF_PROTO_PREFIX):]
+        name[len(PROTOBUF_PROTO_PREFIX):].replace(':', '/')
         for name in raw_proto_files
         if name.endswith('.proto') and name.startswith(PROTOBUF_PROTO_PREFIX)
+    ] + [
+        # compatibility with versions of protobuf 21.x and older
+        name[len(PROTOBUF_PROTO_PREFIX_PRE_22_X):]
+        for name in raw_proto_files
+        if name.endswith('.proto') and
+        name.startswith(PROTOBUF_PROTO_PREFIX_PRE_22_X)
     ]
     commit_hash = protobuf_submodule_commit_hash()
     deps_file_content = DEPS_FILE_CONTENT.format(
