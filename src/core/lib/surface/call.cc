@@ -2484,7 +2484,8 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
       }
     }
     gpr_log(
-        GPR_INFO, "%s[call] FinishOpOnCompletion tag:%p %s %s %s",
+        GPR_INFO,
+        "%s[call] FinishOpOnCompletion tag:%p completion:%s finish:%s %s",
         DebugTag().c_str(), completion_info_[completion->index()].pending.tag,
         completion->ToString().c_str(), PendingOpString(reason),
         (pending.empty()
@@ -3194,6 +3195,9 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   void CommitBatch(const grpc_op* ops, size_t nops,
                    const Completion& completion)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  void CommitBatchAfterCompletion(const grpc_op* ops, size_t nops,
+                                  const Completion& completion)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
   void Finish(ServerMetadataHandle result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
   friend class ServerCallContext;
@@ -3286,7 +3290,10 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 
   if (force_metadata_send_) GPR_ASSERT(!is_sending());
 
-  if (is_sending() && send_trailing_metadata_ != nullptr) {
+  gpr_log(GPR_INFO, "%s[call] PollTopOfCall: is_sending=%s", DebugTag().c_str(),
+          is_sending() ? "yes" : "no");
+
+  if (!is_sending() && send_trailing_metadata_ != nullptr) {
     server_to_client_messages_->Close();
     return std::move(send_trailing_metadata_);
   }
@@ -3404,19 +3411,17 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        if (!completed()) {
-          auto metadata = arena()->MakePooled<ServerMetadata>(arena());
-          PrepareOutgoingInitialMetadata(op, *metadata);
-          CToMetadata(op.data.send_initial_metadata.metadata,
-                      op.data.send_initial_metadata.count, metadata.get());
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%s[call] Send initial metadata",
-                    DebugTag().c_str());
-          }
-          auto* pipe = absl::get<PipeSender<ServerMetadataHandle>*>(
-              send_initial_metadata_state_);
-          send_initial_metadata_state_ = pipe->Push(std::move(metadata));
+        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        PrepareOutgoingInitialMetadata(op, *metadata);
+        CToMetadata(op.data.send_initial_metadata.metadata,
+                    op.data.send_initial_metadata.count, metadata.get());
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[call] Send initial metadata",
+                  DebugTag().c_str());
         }
+        auto* pipe = absl::get<PipeSender<ServerMetadataHandle>*>(
+            send_initial_metadata_state_);
+        send_initial_metadata_state_ = pipe->Push(std::move(metadata));
       } break;
       case GRPC_OP_SEND_MESSAGE:
         StartSendMessage(op, completion, server_to_client_messages_);
@@ -3458,6 +3463,34 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
   }
 }
 
+void ServerPromiseBasedCall::CommitBatchAfterCompletion(
+    const grpc_op* ops, size_t nops, const Completion& completion) {
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+      case GRPC_OP_SEND_MESSAGE:
+      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        FailCompletion(completion);
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[call] StartBatch: RecvClose %s",
+                  DebugTag().c_str(),
+                  recv_close_op_cancel_state_.ToString().c_str());
+        }
+        GPR_ASSERT(recv_close_op_cancel_state_.RequestReceiveCloseOnServer(
+            op.data.recv_close_on_server.cancelled));
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        abort();  // unreachable
+    }
+  }
+}
+
 grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
                                                    size_t nops,
                                                    void* notify_tag,
@@ -3474,8 +3507,12 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
   }
   Completion completion =
       StartCompletion(notify_tag, is_notify_tag_closure, ops);
-  CommitBatch(ops, nops, completion);
-  Update();
+  if (!completed()) {
+    CommitBatch(ops, nops, completion);
+    Update();
+  } else {
+    CommitBatchAfterCompletion(ops, nops, completion);
+  }
   FinishOpOnCompletion(&completion, PendingOp::kStartingBatch);
   return GRPC_CALL_OK;
 }
