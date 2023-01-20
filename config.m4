@@ -518,6 +518,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/shim.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \

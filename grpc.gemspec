@@ -1069,6 +1069,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h )
   s.files += %w( src/core/lib/event_engine/resolved_address.cc )
   s.files += %w( src/core/lib/event_engine/resolved_address_internal.h )
+  s.files += %w( src/core/lib/event_engine/shim.cc )
+  s.files += %w( src/core/lib/event_engine/shim.h )
   s.files += %w( src/core/lib/event_engine/slice.cc )
   s.files += %w( src/core/lib/event_engine/slice_buffer.cc )
   s.files += %w( src/core/lib/event_engine/socket_notifier.h )

@@ -1051,6 +1051,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/shim.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/shim.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
