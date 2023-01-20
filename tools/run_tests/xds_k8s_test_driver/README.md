@@ -180,7 +180,7 @@ python3.7 -m venv venv
 . ./venv/bin/activate
 
 # Install requirements
-pip install -r requirements.txt
+pip install -r requirements.lock
 
 # Generate protos
 python -m grpc_tools.protoc --proto_path=../../../ \
@@ -206,6 +206,22 @@ from your dev environment. You need:
 ### Making changes to the driver
 1. Install additional dev packages: `pip install -r requirements-dev.txt`
 2. Use `./bin/yapf.sh` and `./bin/isort.sh` helpers to auto-format code.
+
+### Updating Python Dependencies
+
+We track our Python-level dependencies using three different files:
+
+- `requirements.txt`
+- `dev-requirements.txt`
+- `requirements.lock`
+
+`requirements.txt` lists modules without specific versions supplied, though
+versions ranges may be specified. `requirements.lock` is generated from
+`requirements.txt` and _does_ specify versions for every dependency in the
+transitive dependency tree.
+
+When updating `requirements.txt`, you must also update `requirements.lock`. To
+do this, navigate to this directory and run `./freeze.sh`.
 
 ### Setup test configuration
 
