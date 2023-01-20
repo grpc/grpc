@@ -145,7 +145,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
      public:
       explicit ConnectivityStateWatcher(
           RefCountedPtr<SubchannelWrapper> subchannel)
-          : subchannel_(subchannel) {}
+          : subchannel_(std::move(subchannel)) {}
 
       void OnConnectivityStateChange(grpc_connectivity_state state,
                                      absl::Status status) override;
@@ -247,11 +247,15 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       if (subchannel != nullptr) subchannel->Shutdown();
     }
 
-    void SetSubchannel(RefCountedPtr<SubchannelWrapper> subchannel) {
+    void SetSubchannel(SubchannelWrapper* subchannel) {
+      SubchannelWrapper* old_subchannel = GetSubchannel();
+      if (old_subchannel != nullptr) {
+        old_subchannel->Shutdown();
+      }
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
-        subchannel_ = subchannel;
+        subchannel_ = subchannel->Ref();
       } else {
-        subchannel_ = subchannel.get();
+        subchannel_ = subchannel;
       }
     }
 
@@ -531,12 +535,13 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     XdsHealthStatus status = GetAddressHealthStatus(address);
     if (status.status() != XdsHealthStatus::kDraining) {
       return_value.push_back(address);
+    } else if (!config_->override_host_status_set().Contains(
+                   XdsHealthStatus(status))) {
+      continue;
     }
-    if (config_->override_host_status_set().Contains(XdsHealthStatus(status))) {
-      auto key = grpc_sockaddr_to_string(&address.address(), false);
-      if (key.ok()) {
-        addresses_for_map.emplace(std::move(*key), status);
-      }
+    auto key = grpc_sockaddr_to_string(&address.address(), false);
+    if (key.ok()) {
+      addresses_for_map.emplace(std::move(*key), status);
     }
   }
   {
@@ -574,7 +579,7 @@ XdsOverrideHostLb::AdoptSubchannel(
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(*key);
   if (it != subchannel_map_.end()) {
-    it->second.SetSubchannel(wrapper);
+    it->second.SetSubchannel(wrapper.get());
   }
   return wrapper;
 }
