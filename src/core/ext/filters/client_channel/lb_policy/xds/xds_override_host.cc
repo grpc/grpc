@@ -313,10 +313,12 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   void ResetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
 
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
-      absl::string_view address);
+      absl::string_view address, XdsHealthStatusSet overriden_health_statuses);
 
   void OnSubchannelConnectivityStateChange(absl::string_view subchannel_key)
-      ABSL_NO_THREAD_SAFETY_ANALYSIS;
+      ABSL_NO_THREAD_SAFETY_ANALYSIS;  // Called from within the worker
+                                       // serializer and does not require
+                                       // additional synchronization
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -357,7 +359,8 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
   if (override_host.length() == 0) {
     return absl::nullopt;
   }
-  auto subchannel = policy_->GetSubchannelByAddress(override_host);
+  auto subchannel = policy_->GetSubchannelByAddress(
+      override_host, override_host_health_status_set_);
   if (subchannel == nullptr) {
     return absl::nullopt;
   }
@@ -548,11 +551,12 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     for (const auto& key_status : addresses_for_map) {
       auto it = subchannel_map_.find(key_status.first);
       if (it == subchannel_map_.end()) {
-        it = subchannel_map_
-                 .emplace(key_status.first, SubchannelEntry(key_status.second))
-                 .first;
+        subchannel_map_.emplace(std::piecewise_construct,
+                                std::forward_as_tuple(key_status.first),
+                                std::forward_as_tuple(key_status.second));
+      } else {
+        it->second.SetEdsHealthStatus(key_status.second);
       }
-      it->second.SetEdsHealthStatus(key_status.second);
     }
   }
   return return_value;
@@ -585,10 +589,12 @@ void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
-XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
+XdsOverrideHostLb::GetSubchannelByAddress(
+    absl::string_view address, XdsHealthStatusSet overriden_health_statuses) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
-  if (it != subchannel_map_.end()) {
+  if (it != subchannel_map_.end() &&
+      overriden_health_statuses.Contains(it->second.eds_health_status())) {
     return it->second.GetSubchannel()->Ref();
   }
   return nullptr;
@@ -687,12 +693,14 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
 void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
     grpc_connectivity_state state, absl::Status status) {
   connectivity_state_.store(state);
-  // Assumption is that watchers may come and go as the events are processed
+  // Sending connectivity state notifications to the watchers may cause the set
+  // of watchers to change, so we can't be iterating over the set of watchers
+  // while we send the notifications
   std::vector<ConnectivityStateWatcherInterface*> watchers(watchers_.size());
   for (const auto& watcher : watchers_) {
     watchers.push_back(watcher.get());
   }
-  for (auto watcher : watchers) {
+  for (const auto& watcher : watchers) {
     if (watchers_.find(watcher) != watchers_.end()) {
       watcher->OnConnectivityStateChange(state, status);
     }
