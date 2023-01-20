@@ -68,7 +68,7 @@
 #ifndef GRPC_CUSTOM_JSONUTIL
 #include <google/protobuf/util/json_util.h>
 #include <google/protobuf/util/type_resolver_util.h>
-#include <absl/status/status.h>
+#include "absl/status/status.h"
 #define GRPC_CUSTOM_JSONUTIL ::google::protobuf::util
 #define GRPC_CUSTOM_UTIL_STATUS ::absl::Status
 #endif
