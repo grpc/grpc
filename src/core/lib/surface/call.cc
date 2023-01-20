@@ -134,11 +134,13 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual void InternalRef(const char* reason) = 0;
   virtual void InternalUnref(const char* reason) = 0;
 
-  virtual grpc_compression_algorithm test_only_compression_algorithm() = 0;
-  virtual uint32_t test_only_message_flags() = 0;
-  virtual uint32_t test_only_encodings_accepted_by_peer() = 0;
-  virtual grpc_compression_algorithm compression_for_level(
-      grpc_compression_level level) = 0;
+  grpc_compression_algorithm test_only_compression_algorithm() {
+    return incoming_compression_algorithm_;
+  }
+  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
+  CompressionAlgorithmSet encodings_accepted_by_peer() {
+    return encodings_accepted_by_peer_;
+  }
 
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
@@ -205,6 +207,29 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   void ClearPeerString() { gpr_atm_rel_store(&peer_string_, 0); }
 
+  // Fixup outgoing metadata before sending - adds compression, protects
+  // internal headers against external modification.
+  // TODO(ctiller): cancel_func is for cancellation of the call - filter stack
+  // holds no mutexes here, promise stack does, and so locking is different.
+  // Remove this and cancel directly once promise conversion is done.
+  void ProcessIncomingInitialMetadata(
+      grpc_metadata_batch& md,
+      absl::FunctionRef<void(absl::Status)> cancel_func);
+  void PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                      grpc_metadata_batch& md);
+  void NoteLastMessageFlags(uint32_t flags) {
+    test_only_last_message_flags_ = flags;
+  }
+  grpc_compression_algorithm incoming_compression_algorithm() const {
+    return incoming_compression_algorithm_;
+  }
+
+  static void HandleCompressionAlgorithmDisabled(
+      grpc_compression_algorithm compression_algorithm,
+      absl::FunctionRef<void(absl::Status)> cancel_func) GPR_ATTRIBUTE_NOINLINE;
+  void HandleCompressionAlgorithmNotAccepted(
+      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
+
  private:
   RefCountedPtr<Channel> channel_;
   Arena* const arena_;
@@ -216,6 +241,13 @@ class Call : public CppImplOf<Call, grpc_call> {
   bool cancellation_is_inherited_ = false;
   // A char* indicating the peer name.
   gpr_atm peer_string_ = 0;
+  // Compression algorithm for *incoming* data
+  grpc_compression_algorithm incoming_compression_algorithm_ =
+      GRPC_COMPRESS_NONE;
+  // Supported encodings (compression algorithms), a bitset.
+  // Always support no compression.
+  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
+  uint32_t test_only_last_message_flags_ = 0;
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -351,6 +383,92 @@ void Call::DeleteThis() {
   channel->UpdateCallSizeEstimate(arena->Destroy());
 }
 
+void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                          grpc_metadata_batch& md) {
+  // TODO(juanlishen): If the user has already specified a compression
+  // algorithm by setting the initial metadata with key of
+  // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
+  // with the compression algorithm mapped from compression level.
+  // process compression level
+  grpc_compression_level effective_compression_level = GRPC_COMPRESS_LEVEL_NONE;
+  bool level_set = false;
+  if (op.data.send_initial_metadata.maybe_compression_level.is_set) {
+    effective_compression_level =
+        op.data.send_initial_metadata.maybe_compression_level.level;
+    level_set = true;
+  } else {
+    const grpc_compression_options copts = channel()->compression_options();
+    if (copts.default_level.is_set) {
+      level_set = true;
+      effective_compression_level = copts.default_level.level;
+    }
+  }
+  // Currently, only server side supports compression level setting.
+  if (level_set && !is_client()) {
+    const grpc_compression_algorithm calgo =
+        encodings_accepted_by_peer().CompressionAlgorithmForLevel(
+            effective_compression_level);
+    // The following metadata will be checked and removed by the message
+    // compression filter. It will be used as the call's compression
+    // algorithm.
+    md.Set(GrpcInternalEncodingRequest(), calgo);
+  }
+  // Ignore any te metadata key value pairs specified.
+  md.Remove(TeMetadata());
+}
+
+void Call::ProcessIncomingInitialMetadata(
+    grpc_metadata_batch& md,
+    absl::FunctionRef<void(absl::Status)> cancel_func) {
+  incoming_compression_algorithm_ =
+      md.Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  encodings_accepted_by_peer_ =
+      md.Take(GrpcAcceptEncodingMetadata())
+          .value_or(CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
+
+  const grpc_compression_options compression_options =
+      channel_->compression_options();
+  const grpc_compression_algorithm compression_algorithm =
+      incoming_compression_algorithm_;
+  if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
+                        compression_options.enabled_algorithms_bitset)
+                        .IsSet(compression_algorithm))) {
+    // check if algorithm is supported by current channel config
+    HandleCompressionAlgorithmDisabled(compression_algorithm, cancel_func);
+  }
+  // GRPC_COMPRESS_NONE is always set.
+  GPR_DEBUG_ASSERT(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
+  if (GPR_UNLIKELY(!encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+      HandleCompressionAlgorithmNotAccepted(compression_algorithm);
+    }
+  }
+}
+
+void Call::HandleCompressionAlgorithmNotAccepted(
+    grpc_compression_algorithm compression_algorithm) {
+  const char* algo_name = nullptr;
+  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
+  gpr_log(GPR_ERROR,
+          "Compression algorithm ('%s') not present in the "
+          "accepted encodings (%s)",
+          algo_name,
+          std::string(encodings_accepted_by_peer_.ToString()).c_str());
+}
+
+void Call::HandleCompressionAlgorithmDisabled(
+    grpc_compression_algorithm compression_algorithm,
+    absl::FunctionRef<void(absl::Status)> cancel_func) {
+  const char* algo_name = nullptr;
+  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
+  std::string error_msg =
+      absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
+  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
+  cancel_func(grpc_error_set_int(absl::UnimplementedError(error_msg),
+                                 StatusIntProperty::kRpcStatus,
+                                 GRPC_STATUS_UNIMPLEMENTED));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // FilterStackCall
 // To be removed once promise conversion is complete
@@ -409,11 +527,6 @@ class FilterStackCall final : public Call {
     return context_[elem].value;
   }
 
-  grpc_compression_algorithm compression_for_level(
-      grpc_compression_level level) override {
-    return encodings_accepted_by_peer_.CompressionAlgorithmForLevel(level);
-  }
-
   bool is_trailers_only() const override {
     bool result = is_trailers_only_;
     GPR_DEBUG_ASSERT(!result || recv_initial_metadata_.TransportSize() == 0);
@@ -429,18 +542,6 @@ class FilterStackCall final : public Call {
         recv_initial_metadata_.get_pointer(HttpAuthorityMetadata());
     if (authority_metadata == nullptr) return "";
     return authority_metadata->as_string_view();
-  }
-
-  grpc_compression_algorithm test_only_compression_algorithm() override {
-    return incoming_compression_algorithm_;
-  }
-
-  uint32_t test_only_message_flags() override {
-    return test_only_last_message_flags_;
-  }
-
-  uint32_t test_only_encodings_accepted_by_peer() override {
-    return encodings_accepted_by_peer_.ToLegacyBitmask();
   }
 
   static size_t InitialSizeEstimate() {
@@ -523,7 +624,6 @@ class FilterStackCall final : public Call {
     void FinishStep(PendingOp op);
     void ProcessDataAfterMetadata();
     void ReceivingStreamReady(grpc_error_handle error);
-    void ValidateFilteredMetadata();
     void ReceivingInitialMetadataReady(grpc_error_handle error);
     void ReceivingTrailingMetadataReady(grpc_error_handle error);
     void FinishBatch(grpc_error_handle error);
@@ -548,10 +648,6 @@ class FilterStackCall final : public Call {
                     grpc_closure* start_batch_closure);
   void SetFinalStatus(grpc_error_handle error);
   BatchControl* ReuseOrAllocateBatchControl(const grpc_op* ops);
-  void HandleCompressionAlgorithmDisabled(
-      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
-  void HandleCompressionAlgorithmNotAccepted(
-      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
   bool PrepareApplicationMetadata(size_t count, grpc_metadata* metadata,
                                   bool is_trailing);
   void PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing);
@@ -595,13 +691,6 @@ class FilterStackCall final : public Call {
   // completed
   grpc_call_final_info final_info_;
 
-  // Compression algorithm for *incoming* data
-  grpc_compression_algorithm incoming_compression_algorithm_ =
-      GRPC_COMPRESS_NONE;
-  // Supported encodings (compression algorithms), a bitset.
-  // Always support no compression.
-  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
-
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
@@ -615,7 +704,6 @@ class FilterStackCall final : public Call {
   grpc_closure receiving_stream_ready_;
   grpc_closure receiving_initial_metadata_ready_;
   grpc_closure receiving_trailing_metadata_ready_;
-  uint32_t test_only_last_message_flags_ = 0;
   // Status about operation of call
   bool sent_server_trailing_metadata_ = false;
   gpr_atm cancelled_with_error_ = 0;
@@ -1032,11 +1120,8 @@ void FilterStackCall::PublishAppMetadata(grpc_metadata_batch* b,
 }
 
 void FilterStackCall::RecvInitialFilter(grpc_metadata_batch* b) {
-  incoming_compression_algorithm_ =
-      b->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
-  encodings_accepted_by_peer_ =
-      b->Take(GrpcAcceptEncodingMetadata())
-          .value_or(CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
+  ProcessIncomingInitialMetadata(
+      *b, [this](absl::Status err) { CancelWithError(std::move(err)); });
   PublishAppMetadata(b, false);
 }
 
@@ -1203,11 +1288,11 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
     call->receiving_message_ = false;
     FinishStep(PendingOp::kRecvMessage);
   } else {
-    call->test_only_last_message_flags_ = call->receiving_stream_flags_;
+    call->NoteLastMessageFlags(call->receiving_stream_flags_);
     if ((call->receiving_stream_flags_ & GRPC_WRITE_INTERNAL_COMPRESS) &&
-        (call->incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
+        (call->incoming_compression_algorithm() != GRPC_COMPRESS_NONE)) {
       *call->receiving_buffer_ = grpc_raw_compressed_byte_buffer_create(
-          nullptr, 0, call->incoming_compression_algorithm_);
+          nullptr, 0, call->incoming_compression_algorithm());
     } else {
       *call->receiving_buffer_ = grpc_raw_byte_buffer_create(nullptr, 0);
     }
@@ -1248,50 +1333,6 @@ void FilterStackCall::BatchControl::ReceivingStreamReady(
   }
 }
 
-void FilterStackCall::HandleCompressionAlgorithmDisabled(
-    grpc_compression_algorithm compression_algorithm) {
-  const char* algo_name = nullptr;
-  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  std::string error_msg =
-      absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
-  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
-  CancelWithStatus(GRPC_STATUS_UNIMPLEMENTED, error_msg.c_str());
-}
-
-void FilterStackCall::HandleCompressionAlgorithmNotAccepted(
-    grpc_compression_algorithm compression_algorithm) {
-  const char* algo_name = nullptr;
-  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  gpr_log(GPR_ERROR,
-          "Compression algorithm ('%s') not present in the "
-          "accepted encodings (%s)",
-          algo_name,
-          std::string(encodings_accepted_by_peer_.ToString()).c_str());
-}
-
-void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
-  FilterStackCall* call = call_;
-
-  const grpc_compression_options compression_options =
-      call->channel()->compression_options();
-  const grpc_compression_algorithm compression_algorithm =
-      call->incoming_compression_algorithm_;
-  if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
-                        compression_options.enabled_algorithms_bitset)
-                        .IsSet(compression_algorithm))) {
-    // check if algorithm is supported by current channel config
-    call->HandleCompressionAlgorithmDisabled(compression_algorithm);
-  }
-  // GRPC_COMPRESS_NONE is always set.
-  GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
-  if (GPR_UNLIKELY(
-          !call->encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-      call->HandleCompressionAlgorithmNotAccepted(compression_algorithm);
-    }
-  }
-}
-
 void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_error_handle error) {
   FilterStackCall* call = call_;
@@ -1301,9 +1342,6 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
   if (error.ok()) {
     grpc_metadata_batch* md = &call->recv_initial_metadata_;
     call->RecvInitialFilter(md);
-
-    // TODO(ctiller): this could be moved into recv_initial_filter now
-    ValidateFilteredMetadata();
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
@@ -1453,36 +1491,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        // TODO(juanlishen): If the user has already specified a compression
-        // algorithm by setting the initial metadata with key of
-        // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
-        // with the compression algorithm mapped from compression level.
-        // process compression level
-        grpc_compression_level effective_compression_level =
-            GRPC_COMPRESS_LEVEL_NONE;
-        bool level_set = false;
-        if (op->data.send_initial_metadata.maybe_compression_level.is_set) {
-          effective_compression_level =
-              op->data.send_initial_metadata.maybe_compression_level.level;
-          level_set = true;
-        } else {
-          const grpc_compression_options copts =
-              channel()->compression_options();
-          if (copts.default_level.is_set) {
-            level_set = true;
-            effective_compression_level = copts.default_level.level;
-          }
-        }
-        // Currently, only server side supports compression level setting.
-        if (level_set && !is_client()) {
-          const grpc_compression_algorithm calgo =
-              encodings_accepted_by_peer_.CompressionAlgorithmForLevel(
-                  effective_compression_level);
-          // The following metadata will be checked and removed by the message
-          // compression filter. It will be used as the call's compression
-          // algorithm.
-          send_initial_metadata_.Set(GrpcInternalEncodingRequest(), calgo);
-        }
         if (op->data.send_initial_metadata.count > INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
@@ -1495,8 +1503,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
-        // Ignore any te metadata key value pairs specified.
-        send_initial_metadata_.Remove(TeMetadata());
+        PrepareOutgoingInitialMetadata(*op, send_initial_metadata_);
         // TODO(ctiller): just make these the same variable?
         if (is_client() && send_deadline() != Timestamp::InfFuture()) {
           send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
@@ -2027,16 +2034,6 @@ class PromiseBasedCall : public Call,
         InternalUnref("in_context");
       });
     }
-  }
-
-  grpc_compression_algorithm test_only_compression_algorithm() override {
-    abort();
-  }
-  uint32_t test_only_message_flags() override { abort(); }
-  uint32_t test_only_encodings_accepted_by_peer() override { abort(); }
-  grpc_compression_algorithm compression_for_level(
-      grpc_compression_level) override {
-    abort();
   }
 
   // This should return nullptr for the promise stack (and alternative means
@@ -2616,6 +2613,7 @@ void PromiseBasedCall::PollRecvMessage(
     outstanding_recv_.reset();
     if (result->has_value()) {
       MessageHandle& message = **result;
+      NoteLastMessageFlags(message->flags());
       if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
           (incoming_compression_algorithm != GRPC_COMPRESS_NONE)) {
         *recv_message_ = grpc_raw_compressed_byte_buffer_create(
@@ -2863,13 +2861,20 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        // compression not implemented
-        GPR_ASSERT(
-            !op.data.send_initial_metadata.maybe_compression_level.is_set);
         if (!completed()) {
           CToMetadata(op.data.send_initial_metadata.metadata,
                       op.data.send_initial_metadata.count,
                       send_initial_metadata_.get());
+          PrepareOutgoingInitialMetadata(op, *send_initial_metadata_);
+          if (send_deadline() != Timestamp::InfFuture()) {
+            send_initial_metadata_->Set(GrpcTimeoutMetadata(), send_deadline());
+          }
+          send_initial_metadata_->Set(
+              WaitForReady(),
+              WaitForReady::ValueType{
+                  (op.flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) != 0,
+                  (op.flags &
+                   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) != 0});
           StartPromise(std::move(send_initial_metadata_));
         }
       } break;
@@ -2933,8 +2938,10 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 }
 
 void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
-  incoming_compression_algorithm_ =
-      metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  ProcessIncomingInitialMetadata(*metadata, [this](absl::Status status) {
+    mu()->AssertHeld();
+    CancelWithErrorLocked(std::move(status));
+  });
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
   PublishMetadataArray(std::exchange(recv_initial_metadata_, nullptr),
@@ -3205,6 +3212,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
+  bool force_metadata_send_ ABSL_GUARDED_BY(mu()) = false;
   RecvCloseOpCancelState recv_close_op_cancel_state_ ABSL_GUARDED_BY(mu());
   Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
   Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
@@ -3225,9 +3233,14 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
           .value_or(GRPC_COMPRESS_NONE);
   call_->client_initial_metadata_ =
       std::move(call_args.client_initial_metadata);
+  call_->ExternalRef();
+  call_->ProcessIncomingInitialMetadata(
+      *call_->client_initial_metadata_, [this](absl::Status status) {
+        call_->mu()->AssertHeld();
+        call_->CancelWithErrorLocked(std::move(status));
+      });
   PublishMetadataArray(publish_initial_metadata,
                        call_->client_initial_metadata_.get());
-  call_->ExternalRef();
   publish(call_->c_ptr());
   return [this]() {
     call_->mu()->AssertHeld();
@@ -3253,14 +3266,27 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] PollTopOfCall: %s", DebugTag().c_str(),
+    gpr_log(GPR_INFO, "%s[call] PollTopOfCall: %s%s%s", DebugTag().c_str(),
+            force_metadata_send_ ? "force-" : "",
+            send_trailing_metadata_ != nullptr
+                ? absl::StrCat("send-metadata:",
+                               send_trailing_metadata_->DebugString())
+                      .c_str()
+                : " ",
             PollStateDebugString().c_str());
+  }
+
+  if (force_metadata_send_) {
+    CancelSendMessage();
+    CancelRecvMessage();
   }
 
   PollSendMessage();
   PollRecvMessage(incoming_compression_algorithm_);
 
-  if (!is_sending() && send_trailing_metadata_ != nullptr) {
+  if (force_metadata_send_) GPR_ASSERT(!is_sending());
+
+  if (is_sending() && send_trailing_metadata_ != nullptr) {
     server_to_client_messages_->Close();
     return std::move(send_trailing_metadata_);
   }
@@ -3302,6 +3328,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
       Finish(std::move(*result));
+      promise_ = ArenaPromise<ServerMetadataHandle>();
     }
   }
 }
@@ -3333,7 +3360,6 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
   CancelSendMessage();
   CancelRecvMessage();
   set_completed();
-  promise_ = ArenaPromise<ServerMetadataHandle>();
 }
 
 grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
@@ -3378,11 +3404,9 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        // compression not implemented
-        GPR_ASSERT(
-            !op.data.send_initial_metadata.maybe_compression_level.is_set);
         if (!completed()) {
           auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+          PrepareOutgoingInitialMetadata(op, *metadata);
           CToMetadata(op.data.send_initial_metadata.metadata,
                       op.data.send_initial_metadata.count, metadata.get());
           if (grpc_call_trace.enabled()) {
@@ -3458,8 +3482,9 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
 
 void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
   if (!promise_.has_value()) return;
-  ScopedContext context(this);
-  Finish(ServerMetadataFromStatus(error));
+  force_metadata_send_ = true;
+  send_trailing_metadata_ = ServerMetadataFromStatus(error);
+  ForceWakeup();
 }
 
 }  // namespace grpc_core
@@ -3549,7 +3574,9 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call* call) {
 }
 
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call) {
-  return grpc_core::Call::FromC(call)->test_only_encodings_accepted_by_peer();
+  return grpc_core::Call::FromC(call)
+      ->encodings_accepted_by_peer()
+      .ToLegacyBitmask();
 }
 
 grpc_core::Arena* grpc_call_get_arena(grpc_call* call) {
@@ -3598,7 +3625,9 @@ uint8_t grpc_call_is_client(grpc_call* call) {
 
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level) {
-  return grpc_core::Call::FromC(call)->compression_for_level(level);
+  return grpc_core::Call::FromC(call)
+      ->encodings_accepted_by_peer()
+      .CompressionAlgorithmForLevel(level);
 }
 
 bool grpc_call_is_trailers_only(const grpc_call* call) {
