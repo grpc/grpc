@@ -44,6 +44,11 @@ namespace grpc_core {
 //
 
 FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
+  // Tests should not fail to read any messages from the client.
+  {
+    MutexLock lock(&mu_);
+    GPR_ASSERT(from_client_messages_.empty());
+  }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
   // synchronously, since those operations will trigger code in
   // XdsClient that acquires its mutex, but it was already holding its
@@ -57,6 +62,10 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
+  {
+    MutexLock lock(&mu_);
+    orphaned_ = true;
+  }
   transport_->RemoveStream(method_, this);
   Unref();
 }
@@ -64,6 +73,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
+  GPR_ASSERT(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   cv_.Signal();
   if (transport_->auto_complete_messages_from_client()) {
@@ -132,6 +142,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
     event_handler = event_handler_->Ref();
   }
   event_handler->OnStatusReceived(std::move(status));
+}
+
+bool FakeXdsTransportFactory::FakeStreamingCall::Orphaned() {
+  MutexLock lock(&mu_);
+  return orphaned_;
 }
 
 //

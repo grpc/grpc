@@ -82,6 +82,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void SendMessageToClient(absl::string_view payload);
     void MaybeSendStatusToClient(absl::Status status);
 
+    bool Orphaned();
+
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
      public:
@@ -114,6 +116,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
+    bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
   FakeXdsTransportFactory() = default;
