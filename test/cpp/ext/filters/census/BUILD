@@ -56,7 +56,7 @@ grpc_cc_test(
     flaky = True,
     language = "C++",
     linkstatic = True,
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+    tags = ["no_windows", "census_test"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "library",
         "//:grpc++",
@@ -82,7 +82,7 @@ grpc_cc_test(
     flaky = True,
     language = "C++",
     linkstatic = True,
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+    tags = ["no_windows", "census_test"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "library",
         "//:grpc++",

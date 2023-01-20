@@ -197,6 +197,14 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
   if (recv_trailing_metadata == nullptr || transport_stream_stats == nullptr) {
     return;
   }
+  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
+    if (gpr_time_cmp(transport_stream_stats->latency,
+                     gpr_inf_future(GPR_TIMESPAN)) != 0) {
+      transport_stream_stats_latency_ms_ =
+          absl::ToDoubleMilliseconds(absl::Microseconds(
+              gpr_timespec_to_micros(transport_stream_stats->latency)));
+    }
+  }
   if (OpenCensusStatsEnabled()) {
     uint64_t elapsed_time = 0;
     FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time);
@@ -225,6 +233,9 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
   if (OpenCensusStatsEnabled()) {
     double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);
+    if (transport_stream_stats_latency_ms_.has_value()) {
+      latency_ms = *transport_stream_stats_latency_ms_;
+    }
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();
     tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
