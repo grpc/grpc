@@ -310,7 +310,6 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  ASSERT_NE(picker, nullptr);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
 }
