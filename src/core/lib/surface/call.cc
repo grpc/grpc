@@ -3007,6 +3007,8 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
             trailing_metadata->DebugString().c_str());
   }
   promise_ = ArenaPromise<ServerMetadataHandle>();
+  CancelSendMessage();
+  CancelRecvMessage();
   ResetDeadline();
   set_completed();
   if (recv_initial_metadata_ != nullptr) {
