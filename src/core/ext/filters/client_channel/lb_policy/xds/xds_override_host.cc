@@ -315,8 +315,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
       absl::string_view address);
 
-  void OnSubchannelConnectivityStateChange(absl::string_view subchannel_key)
-      ABSL_NO_THREAD_SAFETY_ANALYSIS;
+  void OnSubchannelConnectivityStateChange(absl::string_view subchannel_key);
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -596,6 +595,7 @@ XdsOverrideHostLb::GetSubchannelByAddress(absl::string_view address) {
 
 void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
     absl::string_view subchannel_key) {
+  MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(subchannel_key);
   if (it == subchannel_map_.end()) {
     return;
