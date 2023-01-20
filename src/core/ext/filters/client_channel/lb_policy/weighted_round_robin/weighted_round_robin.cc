@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
@@ -316,7 +317,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     // Builds a new scheduler and swaps it into place, then starts a
     // timer for the next update.
     void BuildSchedulerAndStartTimerLocked()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&timer_mu_);
 
     RefCountedPtr<WeightedRoundRobin> wrr_;
     const bool use_per_rpc_utilization_;
@@ -325,14 +326,16 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     const Duration blackout_period_;
     std::vector<SubchannelInfo> subchannels_;
 
-    Mutex mu_;
-    uint32_t scheduler_state_ ABSL_GUARDED_BY(&mu_);
-    absl::optional<StaticStrideScheduler> scheduler_ ABSL_GUARDED_BY(&mu_);
+    Mutex scheduler_mu_;
+    std::shared_ptr<StaticStrideScheduler> scheduler_
+        ABSL_GUARDED_BY(&scheduler_mu_);
+
+    Mutex timer_mu_ ABSL_ACQUIRED_BEFORE(&scheduler_mu_);
     absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-        timer_handle_ ABSL_GUARDED_BY(&mu_);
+        timer_handle_ ABSL_GUARDED_BY(&timer_mu_);
 
     // Used when falling back to RR.
-    size_t last_picked_index_;
+    std::atomic<size_t> last_picked_index_;
   };
 
   ~WeightedRoundRobin() override;
@@ -360,6 +363,9 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
   bool shutdown_ = false;
 
   absl::BitGen bit_gen_;
+
+  // Accessed by picker.
+  std::atomic<uint32_t> scheduler_state_{absl::Uniform<uint32_t>(bit_gen_)};
 };
 
 //
@@ -470,7 +476,6 @@ WeightedRoundRobin::Picker::Picker(
       weight_update_period_(wrr_->config_->weight_update_period()),
       weight_expiration_period_(wrr_->config_->weight_expiration_period()),
       blackout_period_(wrr_->config_->blackout_period()),
-      scheduler_state_(absl::Uniform<uint32_t>(wrr_->bit_gen_)),
       last_picked_index_(absl::Uniform<size_t>(wrr_->bit_gen_)) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     WeightedRoundRobinSubchannelData* sd = subchannel_list->subchannel(i);
@@ -494,7 +499,7 @@ WeightedRoundRobin::Picker::~Picker() {
 }
 
 void WeightedRoundRobin::Picker::Orphan() {
-  MutexLock lock(&mu_);
+  MutexLock lock(&timer_mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
   }
@@ -523,17 +528,17 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(
 }
 
 size_t WeightedRoundRobin::Picker::PickIndex() {
-  // Grab the mutex and do WRR pick if we have a scheduler.
+  // Grab a ref to the scheduler.
+  std::shared_ptr<StaticStrideScheduler> scheduler;
   {
-    MutexLock lock(&mu_);
-    if (scheduler_.has_value()) {
-      return scheduler_->Pick();
-    }
+    MutexLock lock(&scheduler_mu_);
+    scheduler = scheduler_;
   }
+  // If we have a scheduler, use it to do a WRR pick.
+  if (scheduler != nullptr) return scheduler->Pick();
   // We don't have a scheduler (i.e., either all of the weights are 0 or
   // there is only one subchannel), so fall back to RR.
-  last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
-  return last_picked_index_;
+  return last_picked_index_.fetch_add(1) % subchannels_.size();
 }
 
 void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
@@ -549,11 +554,17 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
             absl::StrJoin(weights, " ").c_str());
   }
-  scheduler_ = StaticStrideScheduler::Make(
-      weights,
-      // This requires holding mu_, but we don't have a way to plumb the
-      // annotation through absl::AnyInvocable<>.
-      [this]() ABSL_NO_THREAD_SAFETY_ANALYSIS { return scheduler_state_++; });
+  auto scheduler_or = StaticStrideScheduler::Make(
+      weights, [this]() { return wrr_->scheduler_state_.fetch_add(1); });
+  std::shared_ptr<StaticStrideScheduler> scheduler;
+  if (scheduler_or.has_value()) {
+    scheduler =
+        std::make_shared<StaticStrideScheduler>(std::move(*scheduler_or));
+  }
+  {
+    MutexLock lock(&scheduler_mu_);
+    scheduler_ = std::move(scheduler);
+  }
   // Start timer.
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
@@ -561,7 +572,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
-          MutexLock lock(&self->mu_);
+          MutexLock lock(&self->timer_mu_);
           if (self->timer_handle_.has_value()) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
               gpr_log(GPR_INFO, "[WRR %p picker %p] timer fired",
@@ -618,21 +629,27 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[WRR %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    // Weed out duplicate addresses.
+    // Weed out duplicate addresses.  Also sort the addresses so that if
+    // the set of the addresses don't change, their indexes in the
+    // subchannel list don't change, since this avoids unnecessary churn
+    // in the picker.  Note that this does not ensure that if a given
+    // address remains present that it will have the same index; if,
+    // for example, an address at the end of the list is replaced with one
+    // that sorts much earlier in the list, then all of the addresses in
+    // between those two positions will have changed indexes.
     struct AddressLessThan {
-      bool operator()(const grpc_resolved_address& addr1,
-                      const grpc_resolved_address& addr2) const {
+      bool operator()(const ServerAddress& address1,
+                      const ServerAddress& address2) const {
+        const grpc_resolved_address& addr1 = address1.address();
+        const grpc_resolved_address& addr2 = address2.address();
         if (addr1.len != addr2.len) return addr1.len < addr2.len;
         return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
       }
     };
-    std::set<grpc_resolved_address, AddressLessThan> seen_addresses;
-    for (ServerAddress& address : *args.addresses) {
-      auto it = seen_addresses.find(address.address());
-      if (it != seen_addresses.end()) continue;
-      seen_addresses.insert(address.address());
-      addresses.emplace_back(std::move(address));
-    }
+    std::set<ServerAddress, AddressLessThan> ordered_addresses(
+        args.addresses->begin(), args.addresses->end());
+    addresses =
+        ServerAddressList(ordered_addresses.begin(), ordered_addresses.end());
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] received update with address error: %s", this,
