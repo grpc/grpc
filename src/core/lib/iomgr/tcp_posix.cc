@@ -835,17 +835,18 @@ static void update_rcvlowat(grpc_tcp* tcp)
 
   int remaining = std::min(static_cast<int>(tcp->incoming_buffer->length),
                            tcp->min_progress_size);
+
   remaining = std::min(remaining, kRcvLowatMax);
 
   // Setting SO_RCVLOWAT for small quantities does not save on CPU.
-  if (remaining < kRcvLowatThreshold) {
+  if (remaining < 2 * kRcvLowatThreshold) {
     remaining = 0;
   }
 
-  // If zerocopy is off, wake shortly before the full RPC is here. More can
-  // show up partway through recvmsg() since it takes a while to copy data.
-  // So an early wakeup aids latency.
-  if (!tcp->tcp_zerocopy_send_ctx.enabled() && remaining > 0) {
+  // Decrement remaining by kRcvLowatThreshold. This would have the effect of
+  // waking up a little early. It would help with latency because some bytes
+  // may arrive while we execute the recvmsg syscall after waking up.
+  if (remaining > 0) {
     remaining -= kRcvLowatThreshold;
   }
 
@@ -1044,66 +1045,38 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  if (grpc_core::IsTcpReadChunksEnabled()) {
-    static const int kBigAlloc = 64 * 1024;
-    static const int kSmallAlloc = 8 * 1024;
-    if (tcp->incoming_buffer->length <
-        static_cast<size_t>(tcp->min_progress_size)) {
-      size_t allocate_length = tcp->min_progress_size;
-      const size_t target_length = static_cast<size_t>(tcp->target_length);
-      // If memory pressure is low and we think there will be more than
-      // min_progress_size bytes to read, allocate a bit more.
-      const bool low_memory_pressure =
-          tcp->memory_owner.GetPressureInfo().pressure_control_value < 0.8;
-      if (low_memory_pressure && target_length > allocate_length) {
-        allocate_length = target_length;
-      }
-      int extra_wanted =
-          allocate_length - static_cast<int>(tcp->incoming_buffer->length);
-      if (extra_wanted >=
-          (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
-        while (extra_wanted > 0) {
-          extra_wanted -= kBigAlloc;
-          grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
-                                        tcp->memory_owner.MakeSlice(kBigAlloc));
-          grpc_core::global_stats().IncrementTcpReadAlloc64k();
-        }
-      } else {
-        while (extra_wanted > 0) {
-          extra_wanted -= kSmallAlloc;
-          grpc_slice_buffer_add_indexed(
-              tcp->incoming_buffer, tcp->memory_owner.MakeSlice(kSmallAlloc));
-          grpc_core::global_stats().IncrementTcpReadAlloc8k();
-        }
-      }
-      maybe_post_reclaimer(tcp);
+  static const int kBigAlloc = 64 * 1024;
+  static const int kSmallAlloc = 8 * 1024;
+  if (tcp->incoming_buffer->length <
+      static_cast<size_t>(tcp->min_progress_size)) {
+    size_t allocate_length = tcp->min_progress_size;
+    const size_t target_length = static_cast<size_t>(tcp->target_length);
+    // If memory pressure is low and we think there will be more than
+    // min_progress_size bytes to read, allocate a bit more.
+    const bool low_memory_pressure =
+        tcp->memory_owner.GetPressureInfo().pressure_control_value < 0.8;
+    if (low_memory_pressure && target_length > allocate_length) {
+      allocate_length = target_length;
     }
-  } else {
-    if (tcp->incoming_buffer->length <
-            static_cast<size_t>(tcp->min_progress_size) &&
-        tcp->incoming_buffer->count < MAX_READ_IOVEC) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-        gpr_log(GPR_INFO,
-                "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d target=%lf "
-                "buf_len=%" PRIdPTR,
-                tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
-                tcp->target_length, tcp->incoming_buffer->length);
+    int extra_wanted =
+        allocate_length - static_cast<int>(tcp->incoming_buffer->length);
+    if (extra_wanted >=
+        (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
+      while (extra_wanted > 0) {
+        extra_wanted -= kBigAlloc;
+        grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
+                                      tcp->memory_owner.MakeSlice(kBigAlloc));
+        grpc_core::global_stats().IncrementTcpReadAlloc64k();
       }
-      int target_length = std::max(static_cast<int>(tcp->target_length),
-                                   tcp->min_progress_size);
-      int extra_wanted =
-          target_length - static_cast<int>(tcp->incoming_buffer->length);
-      int min_read_chunk_size =
-          std::max(tcp->min_read_chunk_size, tcp->min_progress_size);
-      int max_read_chunk_size =
-          std::max(tcp->max_read_chunk_size, tcp->min_progress_size);
-      grpc_slice slice = tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-          min_read_chunk_size,
-          grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                           max_read_chunk_size)));
-      grpc_slice_buffer_add_indexed(tcp->incoming_buffer, slice);
-      maybe_post_reclaimer(tcp);
+    } else {
+      while (extra_wanted > 0) {
+        extra_wanted -= kSmallAlloc;
+        grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
+                                      tcp->memory_owner.MakeSlice(kSmallAlloc));
+        grpc_core::global_stats().IncrementTcpReadAlloc8k();
+      }
     }
+    maybe_post_reclaimer(tcp);
   }
 }
 
@@ -1118,9 +1091,11 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   if (GPR_LIKELY(error.ok())) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
-      // We've consumed the edge, request a new one
+      // Maybe update rcv lowat value based on the number of bytes read in this
+      // round.
       update_rcvlowat(tcp);
       tcp->read_mu.Unlock();
+      // We've consumed the edge, request a new one
       notify_on_read(tcp);
       return;
     }
@@ -1130,6 +1105,12 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   }
+  // Update rcv lowat needs to be called at the end of the current read
+  // operation to ensure the right SO_RCVLOWAT value is set for the next read.
+  // Otherwise the next endpoint read operation may get stuck indefinitely
+  // because the previously set rcv lowat value will persist and the socket may
+  // erroneously considered to not be ready for read.
+  update_rcvlowat(tcp);
   grpc_closure* cb = tcp->read_cb;
   tcp->read_cb = nullptr;
   tcp->incoming_buffer = nullptr;
@@ -1152,14 +1133,12 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
-    update_rcvlowat(tcp);
     tcp->read_mu.Unlock();
     // Endpoint read called for the very first time. Register read callback with
     // the polling engine
     tcp->is_first_read = false;
     notify_on_read(tcp);
   } else if (!urgent && tcp->inq == 0) {
-    update_rcvlowat(tcp);
     tcp->read_mu.Unlock();
     // Upper layer asked to read more but we know there is no pending data
     // to read from previous reads. So, wait for POLLIN.

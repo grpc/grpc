@@ -31,7 +31,7 @@ namespace gcp {
 // will track the number of concurrent RPCs that it handles and abort
 // if if ever exceeds that number.
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs);
+    int expected_max_concurrent_rpcs, const std::string& peer_identity);
 
 }  // namespace gcp
 }  // namespace grpc

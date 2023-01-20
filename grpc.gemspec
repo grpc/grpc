@@ -38,8 +38,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
+  s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.3'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -1029,6 +1029,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
   s.files += %w( src/core/lib/event_engine/memory_allocator.cc )
   s.files += %w( src/core/lib/event_engine/poller.h )
+  s.files += %w( src/core/lib/event_engine/posix.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_poll_posix.cc )
@@ -1084,6 +1085,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/windows/iocp.h )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.cc )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.h )
+  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.cc )
+  s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.h )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.cc )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.h )
   s.files += %w( src/core/lib/experiments/config.cc )

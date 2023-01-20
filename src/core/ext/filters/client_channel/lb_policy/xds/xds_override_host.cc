@@ -377,7 +377,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   auto* call_state = static_cast<LbCallStateInternal*>(args.call_state);
-  auto override_host = call_state->GetCallAttribute(XdsHostOverrideTypeName());
+  auto override_host = call_state->GetCallAttribute(XdsOverrideHostTypeName());
   auto overridden_host_pick = PickOverridenHost(override_host);
   if (overridden_host_pick.has_value()) {
     return std::move(*overridden_host_pick);
