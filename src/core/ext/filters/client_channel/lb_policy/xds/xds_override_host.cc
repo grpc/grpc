@@ -249,10 +249,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
     void SetSubchannel(SubchannelWrapper* subchannel) {
-      SubchannelWrapper* old_subchannel = GetSubchannel();
-      if (old_subchannel != nullptr) {
-        old_subchannel->Shutdown();
-      }
+      ResetSubchannel();
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
         subchannel_ = subchannel->Ref();
       } else {
@@ -260,8 +257,10 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       }
     }
 
-    void ResetSubchannel(SubchannelWrapper* expected) {
-      if (GetSubchannel() == expected) {
+    void ResetSubchannel() {
+      SubchannelWrapper* subchannel = GetSubchannel();
+      if (subchannel != nullptr) {
+        subchannel->Shutdown();
         subchannel_ = nullptr;
       }
     }
@@ -430,12 +429,6 @@ void XdsOverrideHostLb::ShutdownLocked() {
   shutting_down_ = true;
   {
     MutexLock lock(&subchannel_map_mu_);
-    for (const auto& key_subchannel : subchannel_map_) {
-      SubchannelWrapper* subchannel = key_subchannel.second.GetSubchannel();
-      if (subchannel != nullptr) {
-        subchannel->Shutdown();
-      }
-    }
     subchannel_map_.clear();
   }
   // Remove the child policy's interested_parties pollset_set from the
@@ -590,7 +583,9 @@ void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
-    it->second.ResetSubchannel(subchannel);
+    if (subchannel == it->second.GetSubchannel()) {
+      it->second.ResetSubchannel();
+    }
   }
 }
 
