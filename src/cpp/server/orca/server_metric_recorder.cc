@@ -49,7 +49,7 @@ void ServerMetricRecorder::SetCpuUtilization(double value) {
   cpu_utilization_.store(value, std::memory_order_relaxed);
 }
 
-void ServerMetricRecorder::SetMemUtilization(double value) {
+void ServerMetricRecorder::SetMemoryUtilization(double value) {
   if (!IsUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_server_metric_recorder_trace)) {
       gpr_log(GPR_INFO, "[%p] Mem utilization rejected: %f", this, value);
@@ -82,7 +82,7 @@ void ServerMetricRecorder::ClearCpuUtilization() {
   }
 }
 
-void ServerMetricRecorder::ClearMemUtilization() {
+void ServerMetricRecorder::ClearMemoryUtilization() {
   mem_utilization_.store(-1.0, std::memory_order_relaxed);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_server_metric_recorder_trace)) {
     gpr_log(GPR_INFO, "[%p] Mem utilization cleared.", this);
@@ -96,23 +96,25 @@ void ServerMetricRecorder::ClearQps() {
   }
 }
 
-void ServerMetricRecorder::GetMetrics(grpc_core::BackendMetricData* data) {
+grpc_core::BackendMetricData ServerMetricRecorder::GetMetrics() const {
+  grpc_core::BackendMetricData data;
   const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
   if (IsUtilizationValid(cpu)) {
-    data->cpu_utilization = cpu;
+    data.cpu_utilization = cpu;
   }
   const double mem = mem_utilization_.load(std::memory_order_relaxed);
   if (IsUtilizationValid(mem)) {
-    data->mem_utilization = mem;
+    data.mem_utilization = mem;
   }
   const double qps = qps_.load(std::memory_order_relaxed);
   if (IsQpsValid(qps)) {
-    data->qps = qps;
+    data.qps = qps;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_server_metric_recorder_trace)) {
     gpr_log(GPR_INFO, "[%p] GetMetrics() returned: cpu:%f mem:%f qps:%f", this,
-            data->cpu_utilization, data->mem_utilization, data->qps);
+            data.cpu_utilization, data.mem_utilization, data.qps);
   }
+  return data;
 }
 
 }  // namespace experimental

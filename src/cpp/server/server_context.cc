@@ -159,12 +159,12 @@ class BackendMetricState : public experimental::CallMetricRecorder,
  private:
   grpc_core::BackendMetricData GetBackendMetricData() override
       ABSL_NO_THREAD_SAFETY_ANALYSIS {
-    grpc_core::BackendMetricData data;
     // Merge metrics from the ServerMetricRecorder first since metrics recorded
-    // to this (CallMetricRecorder) takes a higher precedence.
-    if (server_metric_recorder_ != nullptr) {
-      server_metric_recorder_->GetMetrics(&data);
-    }
+    // to CallMetricRecorder takes a higher precedence.
+    grpc_core::BackendMetricData data =
+        server_metric_recorder_ == nullptr
+            ? grpc_core::BackendMetricData()
+            : server_metric_recorder_->GetMetrics();
     // Only overwrite if the value is set i.e. in the valid range.
     const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
     if (IsUtilizationValid(cpu)) {

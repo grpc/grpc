@@ -41,6 +41,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
@@ -394,7 +395,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
-    experimental::OrcaService orca_service_;
+    experimental::ServerMetricRecorder server_metric_recorder_;
+    std::unique_ptr<experimental::OrcaService> orca_service_;
     std::unique_ptr<std::thread> thread_;
 
     grpc_core::Mutex mu_;
@@ -404,7 +406,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(int port = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
-          orca_service_(experimental::OrcaService::Options()) {}
+          orca_service_(std::make_unique<experimental::OrcaService>(
+              server_metric_recorder_, experimental::OrcaService::Options())) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
@@ -427,7 +430,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
-      builder.RegisterService(&orca_service_);
+      builder.RegisterService(orca_service_.get());
       grpc::ServerBuilder::experimental_type(&builder)
           .EnableCallMetricRecording();
       server_ = builder.BuildAndStart();
@@ -2697,11 +2700,9 @@ OobBackendMetricTest* OobBackendMetricTest::current_test_instance_ = nullptr;
 TEST_F(OobBackendMetricTest, Basic) {
   StartServers(1);
   // Set initial backend metric data on server.
-  constexpr char kMetricName[] = "foo";
-  servers_[0]->orca_service_.SetCpuUtilization(0.1);
-  servers_[0]->orca_service_.SetMemoryUtilization(0.2);
-  servers_[0]->orca_service_.SetQps(0.3);
-  servers_[0]->orca_service_.SetNamedUtilization(kMetricName, 0.4);
+  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.1);
+  servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.2);
+  servers_[0]->server_metric_recorder_.SetQps(0.3);
   // Start client.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("oob_backend_metric_test_lb", response_generator);
@@ -2720,9 +2721,6 @@ TEST_F(OobBackendMetricTest, Basic) {
       EXPECT_EQ(report->second.cpu_utilization(), 0.1);
       EXPECT_EQ(report->second.mem_utilization(), 0.2);
       EXPECT_EQ(report->second.rps_fractional(), 0.3);
-      EXPECT_THAT(
-          report->second.utilization(),
-          ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.4)));
       break;
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
@@ -2731,10 +2729,9 @@ TEST_F(OobBackendMetricTest, Basic) {
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
   // data once we see a report with the new CPU utilization value.
-  servers_[0]->orca_service_.SetNamedUtilization(kMetricName, 0.7);
-  servers_[0]->orca_service_.SetQps(0.6);
-  servers_[0]->orca_service_.SetMemoryUtilization(0.5);
-  servers_[0]->orca_service_.SetCpuUtilization(0.4);
+  servers_[0]->server_metric_recorder_.SetQps(0.6);
+  servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.5);
+  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.4);
   // Wait for client to see new report.
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
@@ -2744,9 +2741,6 @@ TEST_F(OobBackendMetricTest, Basic) {
         EXPECT_EQ(report->second.cpu_utilization(), 0.4);
         EXPECT_EQ(report->second.mem_utilization(), 0.5);
         EXPECT_EQ(report->second.rps_fractional(), 0.6);
-        EXPECT_THAT(
-            report->second.utilization(),
-            ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.7)));
         break;
       }
     }

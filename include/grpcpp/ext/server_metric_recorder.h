@@ -51,7 +51,7 @@ class ServerMetricRecorder {
   // Records the server memory utilization in the range [0, 1].
   // Values outside of the valid range are rejected.
   // Overrides the stored value when called again with a valid value.
-  void SetMemUtilization(double value);
+  void SetMemoryUtilization(double value);
   // Records number of queries per second to the server in the range [0, infy).
   // Values outside of the valid range are rejected.
   // Overrides the stored value when called again with a valid value.
@@ -60,13 +60,13 @@ class ServerMetricRecorder {
   // Clears the server CPU utilization if recorded.
   void ClearCpuUtilization();
   // Clears the server memory utilization if recorded.
-  void ClearMemUtilization();
+  void ClearMemoryUtilization();
   // Clears number of queries per second to the server if recorded.
   void ClearQps();
 
  private:
   // Only populates fields in `data` that this has recorded metrics.
-  void GetMetrics(grpc_core::BackendMetricData* data);
+  grpc_core::BackendMetricData GetMetrics() const;
 
   // Defaults to -1.0 (unset).
   std::atomic<double> cpu_utilization_{-1.0};
@@ -75,6 +75,7 @@ class ServerMetricRecorder {
 
   // To access GetMetrics().
   friend class grpc::BackendMetricState;
+  friend class OrcaService;
 };
 
 }  // namespace experimental
