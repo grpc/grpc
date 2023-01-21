@@ -157,6 +157,7 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
   }
 
  private:
+  // Once returned metrics recorded with CallMetricRecorder APIs are cleared.
   grpc_core::BackendMetricData GetBackendMetricData() override
       ABSL_NO_THREAD_SAFETY_ANALYSIS {
     // Merge metrics from the ServerMetricRecorder first since metrics recorded
@@ -180,14 +181,8 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
     }
     if (!utilization_.empty() || !request_cost_.empty()) {
       internal::MutexLock lock(&mu_);
-      for (const auto& v : utilization_) {
-        if (IsUtilizationValid(v.second)) {
-          data.utilization[v.first] = v.second;
-        }
-      }
-      for (const auto& v : request_cost_) {
-        data.request_cost[v.first] = v.second;
-      }
+      data.utilization = std::move(utilization_);
+      data.request_cost = std::move(request_cost_);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_state_trace)) {
       gpr_log(GPR_INFO,

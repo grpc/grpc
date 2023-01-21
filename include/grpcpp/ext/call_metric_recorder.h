@@ -28,14 +28,7 @@
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/slice.h>
 
-namespace grpc_core {
-class Arena;
-struct BackendMetricData;
-}  // namespace grpc_core
-
 namespace grpc {
-class ServerBuilder;
-
 namespace experimental {
 
 /// Records call metrics for the purpose of load balancing.
