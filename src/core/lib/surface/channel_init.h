@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
-#define GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
+#define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -81,4 +81,4 @@ class ChannelInit {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H

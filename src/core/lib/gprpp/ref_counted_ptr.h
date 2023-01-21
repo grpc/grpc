@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
-#define GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
+#define GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -335,4 +335,4 @@ bool operator<(const WeakRefCountedPtr<T>& p1, const WeakRefCountedPtr<T>& p2) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H

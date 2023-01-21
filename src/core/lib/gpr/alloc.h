@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPR_ALLOC_H
-#define GRPC_CORE_LIB_GPR_ALLOC_H
+#ifndef GRPC_SRC_CORE_LIB_GPR_ALLOC_H
+#define GRPC_SRC_CORE_LIB_GPR_ALLOC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,4 +25,4 @@
 #define GPR_ROUND_UP_TO_ALIGNMENT_SIZE(x) \
   (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
 
-#endif  // GRPC_CORE_LIB_GPR_ALLOC_H
+#endif  // GRPC_SRC_CORE_LIB_GPR_ALLOC_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
-#define GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -1042,4 +1042,4 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error);
 grpc_status_code cronet_net_error_to_grpc_error(
     cronet_net_error_code net_error);
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
