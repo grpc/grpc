@@ -1972,6 +1972,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "gpr",
         "grpc_trace",
         "//src/core:grpc_backend_metric_data",
     ],

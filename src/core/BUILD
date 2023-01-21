@@ -3605,15 +3605,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_backend_metric_data",
     hdrs = [
-        "ext/filters/backend_metrics/backend_metric_data.h",
+        "ext/filters/client_channel/lb_policy/backend_metric_data.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
-    deps = [
-        "//:gpr",
-        "//:gpr_platform",
-        "//:grpc_trace",
-    ],
+    deps = [ "//:gpr_platform", ],
 )
 
 grpc_cc_library(

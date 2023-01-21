@@ -6,7 +6,7 @@
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
-#include "src/core/ext/filters/backend_metrics/backend_metric_data.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/arena.h"

@@ -26,7 +26,7 @@ class BackendMetricProvider {
  public:
   virtual ~BackendMetricProvider() = default;
   // Only populates fields in `data` that this has recorded metrics.
-  virtual void GetBackendMetricData(BackendMetricData* data) = 0;
+  virtual BackendMetricData GetBackendMetricData() = 0;
 };
 
 }  // namespace grpc_core

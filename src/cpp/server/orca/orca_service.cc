@@ -43,7 +43,7 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/ext/filters/backend_metrics/backend_metric_data.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"

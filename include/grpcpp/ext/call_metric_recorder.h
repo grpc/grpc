@@ -38,13 +38,6 @@ class ServerBuilder;
 
 namespace experimental {
 
-// Registers the per-rpc orca load reporter into the \a ServerBuilder.
-// Once this is done, the server will automatically send the load metrics
-// after each RPC as they were reported. In order to report load metrics,
-// call the \a ServerContext::ExperimentalGetCallMetricRecorder() method to
-// retrieve the recorder for the current call.
-void EnableCallMetricRecording(ServerBuilder*);
-
 /// Records call metrics for the purpose of load balancing.
 /// During an RPC, call \a ServerContext::ExperimentalGetCallMetricRecorder()
 /// method to retrive the recorder for the current call.
@@ -52,39 +45,39 @@ class CallMetricRecorder {
  public:
   virtual ~CallMetricRecorder() = default;
 
-  // Records a call metric measurement for CPU utilization.
-  // Multiple calls to this method will override the stored value.
-  // Values outside of the valid range [0, 1] are ignored.
+  /// Records a call metric measurement for CPU utilization.
+  /// Multiple calls to this method will override the stored value.
+  /// Values outside of the valid range [0, 1] are ignored.
   virtual CallMetricRecorder& RecordCpuUtilizationMetric(double value) = 0;
 
-  // Records a call metric measurement for memory utilization.
-  // Multiple calls to this method will override the stored value.
-  // Values outside of the valid range [0, 1] are ignored.
+  /// Records a call metric measurement for memory utilization.
+  /// Multiple calls to this method will override the stored value.
+  /// Values outside of the valid range [0, 1] are ignored.
   virtual CallMetricRecorder& RecordMemoryUtilizationMetric(double value) = 0;
 
-  // Records a call metric measurement for queries per second.
-  // Multiple calls to this method will override the stored value.
-  // Values outside of the valid range [0, infy) are ignored.
+  /// Records a call metric measurement for queries per second.
+  /// Multiple calls to this method will override the stored value.
+  /// Values outside of the valid range [0, infy) are ignored.
   virtual CallMetricRecorder& RecordQpsMetric(double value) = 0;
 
-  // Records a call metric measurement for utilization.
-  // Multiple calls to this method with the same name will
-  // override the corresponding stored value. The lifetime of the
-  // name string needs to be longer than the lifetime of the RPC
-  // itself, since it's going to be sent as trailers after the RPC
-  // finishes. It is assumed the strings are common names that
-  // are global constants.
-  // Values outside of the valid range [0, 1] are ignored.
+  /// Records a call metric measurement for utilization.
+  /// Multiple calls to this method with the same name will
+  /// override the corresponding stored value. The lifetime of the
+  /// name string needs to be longer than the lifetime of the RPC
+  /// itself, since it's going to be sent as trailers after the RPC
+  /// finishes. It is assumed the strings are common names that
+  /// are global constants.
+  /// Values outside of the valid range [0, 1] are ignored.
   virtual CallMetricRecorder& RecordUtilizationMetric(string_ref name,
                                                       double value) = 0;
 
-  // Records a call metric measurement for request cost.
-  // Multiple calls to this method with the same name will
-  // override the corresponding stored value. The lifetime of the
-  // name string needs to be longer than the lifetime of the RPC
-  // itself, since it's going to be sent as trailers after the RPC
-  // finishes. It is assumed the strings are common names that
-  // are global constants.
+  /// Records a call metric measurement for request cost.
+  /// Multiple calls to this method with the same name will
+  /// override the corresponding stored value. The lifetime of the
+  /// name string needs to be longer than the lifetime of the RPC
+  /// itself, since it's going to be sent as trailers after the RPC
+  /// finishes. It is assumed the strings are common names that
+  /// are global constants.
   virtual CallMetricRecorder& RecordRequestCostMetric(string_ref name,
                                                       double value) = 0;
 };

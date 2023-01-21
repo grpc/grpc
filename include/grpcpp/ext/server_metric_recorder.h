@@ -33,35 +33,34 @@ struct BackendMetricData;
 
 namespace grpc {
 class BackendMetricState;
-class ServerBuilder;
 
 namespace experimental {
 
-/// Records server wide metrics for the purpose of load balancing.
+/// Records server wide metrics to be reported to the client.
 /// Server implementation creates an instance and reports server metrics to it,
 /// and then passes it to
 /// ServerBuilder::experimental_type::EnableCallMetricRecording or
 /// experimental::OrcaService that read metrics to include in the report.
 class ServerMetricRecorder {
  public:
-  // Records the server CPU utilization in the range [0, 1].
-  // Values outside of the valid range are rejected.
-  // Overrides the stored value when called again with a valid value.
+  /// Records the server CPU utilization in the range [0, 1].
+  /// Values outside of the valid range are rejected.
+  /// Overrides the stored value when called again with a valid value.
   void SetCpuUtilization(double value);
-  // Records the server memory utilization in the range [0, 1].
-  // Values outside of the valid range are rejected.
-  // Overrides the stored value when called again with a valid value.
+  /// Records the server memory utilization in the range [0, 1].
+  /// Values outside of the valid range are rejected.
+  /// Overrides the stored value when called again with a valid value.
   void SetMemoryUtilization(double value);
-  // Records number of queries per second to the server in the range [0, infy).
-  // Values outside of the valid range are rejected.
-  // Overrides the stored value when called again with a valid value.
+  /// Records number of queries per second to the server in the range [0, infy).
+  /// Values outside of the valid range are rejected.
+  /// Overrides the stored value when called again with a valid value.
   void SetQps(double value);
 
-  // Clears the server CPU utilization if recorded.
+  /// Clears the server CPU utilization if recorded.
   void ClearCpuUtilization();
-  // Clears the server memory utilization if recorded.
+  /// Clears the server memory utilization if recorded.
   void ClearMemoryUtilization();
-  // Clears number of queries per second to the server if recorded.
+  /// Clears number of queries per second to the server if recorded.
   void ClearQps();
 
  private:
