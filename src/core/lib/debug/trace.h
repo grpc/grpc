@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_DEBUG_TRACE_H
-#define GRPC_CORE_LIB_DEBUG_TRACE_H
+#ifndef GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
+#define GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
 
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
@@ -130,4 +130,4 @@ class DebugOnlyTraceFlag {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_DEBUG_TRACE_H
+#endif  // GRPC_SRC_CORE_LIB_DEBUG_TRACE_H

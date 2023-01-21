@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef MOCK_ENDPOINT_H
-#define MOCK_ENDPOINT_H
+#ifndef GRPC_TEST_CORE_UTIL_MOCK_ENDPOINT_H
+#define GRPC_TEST_CORE_UTIL_MOCK_ENDPOINT_H
 
 #include <grpc/slice.h>
 
@@ -26,4 +26,4 @@
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice));
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice);
 
-#endif
+#endif  // GRPC_TEST_CORE_UTIL_MOCK_ENDPOINT_H

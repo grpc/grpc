@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_H
-#define GRPC_CORE_LIB_IOMGR_EXECUTOR_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_EXECUTOR_H
+#define GRPC_SRC_CORE_LIB_IOMGR_EXECUTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -116,4 +116,4 @@ class Executor {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_EXECUTOR_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_EXECUTOR_H

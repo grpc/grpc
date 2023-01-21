@@ -16,6 +16,9 @@
 //
 //
 
+#ifndef GRPC_TEST_CORE_END2END_FIXTURES_LOCAL_UTIL_H
+#define GRPC_TEST_CORE_END2END_FIXTURES_LOCAL_UTIL_H
+
 #include <string>
 
 #include <grpc/grpc.h>
@@ -40,3 +43,5 @@ void grpc_end2end_local_chttp2_init_server_fullstack(
 
 void grpc_end2end_local_chttp2_tear_down_fullstack(
     grpc_end2end_test_fixture* f);
+
+#endif  // GRPC_TEST_CORE_END2END_FIXTURES_LOCAL_UTIL_H
