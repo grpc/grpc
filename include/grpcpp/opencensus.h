@@ -183,6 +183,13 @@ class CensusContext {
             name, parent_ctxt)),
         tags_({}) {}
 
+  CensusContext(absl::string_view name,
+                const ::opencensus::trace::SpanContext& parent_ctxt,
+                const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
+            name, parent_ctxt)),
+        tags_(tags) {}
+
   void AddSpanAttribute(absl::string_view key,
                         opencensus::trace::AttributeValueRef attribute) {
     span_.AddAttribute(key, attribute);

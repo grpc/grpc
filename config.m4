@@ -70,6 +70,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
     src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
@@ -518,6 +520,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/shim.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
@@ -1244,7 +1247,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.52.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.53.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
@@ -1258,6 +1261,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/ring_hash)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/rls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/round_robin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/weighted_round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/weighted_target)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver)

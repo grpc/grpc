@@ -42,7 +42,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix.h"
-#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/buffer_list.h"
@@ -573,7 +573,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     // Create an event engine wrapped endpoint to test release_fd operations.
     auto eeep =
         reinterpret_cast<

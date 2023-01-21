@@ -178,12 +178,30 @@ std::atomic<bool> g_open_census_tracing_enabled(true);
 }  // namespace
 
 //
-// OpenCensusExporterRegistry
+// OpenCensusRegistry
 //
 
-OpenCensusExporterRegistry& OpenCensusExporterRegistry::Get() {
-  static OpenCensusExporterRegistry* registry = new OpenCensusExporterRegistry;
+OpenCensusRegistry& OpenCensusRegistry::Get() {
+  static OpenCensusRegistry* registry = new OpenCensusRegistry;
   return *registry;
+}
+
+::opencensus::tags::TagMap OpenCensusRegistry::PopulateTagMapWithConstantLabels(
+    const ::opencensus::tags::TagMap& tag_map) {
+  std::vector<std::pair<::opencensus::tags::TagKey, std::string>> tags =
+      tag_map.tags();
+  for (const auto& label : constant_labels_) {
+    tags.emplace_back(label.tag_key, label.value);
+  }
+  return ::opencensus::tags::TagMap(std::move(tags));
+}
+
+void OpenCensusRegistry::PopulateCensusContextWithConstantAttributes(
+    grpc::experimental::CensusContext* context) {
+  // We reuse the constant labels for the attributes
+  for (const auto& label : constant_labels_) {
+    context->AddSpanAttribute(label.key, label.value);
+  }
 }
 
 void EnableOpenCensusStats(bool enable) {

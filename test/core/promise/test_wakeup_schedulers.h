@@ -80,4 +80,4 @@ struct UseMockCallbackScheduler {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_PROMISE_TEST_WAKEUP_SCHEDULERS_H

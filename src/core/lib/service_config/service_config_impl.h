@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
-#define GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
+#ifndef GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
+#define GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -122,4 +122,4 @@ class ServiceConfigImpl final : public ServiceConfig {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
+#endif  // GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H

@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -212,6 +213,8 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   eeep->wrapper->Ref();
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
+
+  // TODO(vigneshbabu): Use SliceBufferCast<> here.
   SliceBuffer* read_buffer = new (&eeep->read_buffer)
       SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   read_buffer->Clear();
@@ -235,6 +238,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
           }
         }
         {
+          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
         }
@@ -274,6 +278,8 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
       }
     }
   }
+
+  // TODO(vigneshbabu): Use SliceBufferCast<> here.
   SliceBuffer* write_buffer = new (&eeep->write_buffer)
       SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
   eeep->wrapper->Write(
@@ -287,6 +293,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
                   status.ToString().c_str());
         }
         {
+          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
         }
@@ -316,7 +323,7 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
             why.ToString().c_str());
   }
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Shutdown:%s", eeep->wrapper,
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Shutdown:%s", eeep->wrapper,
                           why.ToString().c_str());
   eeep->wrapper->TriggerShutdown(nullptr);
 }
@@ -326,8 +333,8 @@ void EndpointDestroy(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Destroy", eeep->wrapper);
   eeep->wrapper->Unref();
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Destroy", eeep->wrapper);
 }
 
 absl::string_view EndpointGetPeerAddress(grpc_endpoint* ep) {
@@ -386,7 +393,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 #else   // GRPC_POSIX_SOCKET_TCP
   fd_ = -1;
 #endif  // GRPC_POSIX_SOCKET_TCP
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint%p Create", eeep_->wrapper);
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
 }
 
 }  // namespace

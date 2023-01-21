@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.52.0dev</release>
-  <api>1.52.0dev</api>
+  <release>1.53.0dev</release>
+  <api>1.53.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.52.0 update
+- gRPC Core 1.53.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -145,6 +145,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
@@ -154,6 +155,9 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/rls/rls.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/cds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc" role="src" />
@@ -1051,6 +1055,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/shim.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/shim.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />

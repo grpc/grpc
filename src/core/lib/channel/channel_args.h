@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -542,4 +542,4 @@ void grpc_channel_args_set_client_channel_creation_mutator(
 grpc_channel_args_client_channel_creation_mutator
 grpc_channel_args_get_client_channel_creation_mutator();
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H

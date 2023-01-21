@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.52.0-dev'
+  version = '1.53.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -260,9 +260,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
+                      'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h',
                       'src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h',
                       'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
+                      'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
@@ -750,6 +752,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
                       'src/core/lib/event_engine/resolved_address_internal.h',
+                      'src/core/lib/event_engine/shim.h',
                       'src/core/lib/event_engine/socket_notifier.h',
                       'src/core/lib/event_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/thread_pool.h',
@@ -1196,9 +1199,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
+                              'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h',
                               'src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h',
                               'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
+                              'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
@@ -1668,6 +1673,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
                               'src/core/lib/event_engine/resolved_address_internal.h',
+                              'src/core/lib/event_engine/shim.h',
                               'src/core/lib/event_engine/socket_notifier.h',
                               'src/core/lib/event_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/thread_pool.h',

@@ -53,6 +53,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -118,7 +119,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown = false;
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
-  if (!grpc_core::IsEventEngineServerEnabled()) {
+  if (!grpc_event_engine::experimental::UseEventEngineServer()) {
     s->shutdown_complete = shutdown_complete;
   } else {
     s->shutdown_complete = nullptr;
@@ -138,7 +139,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->n_bind_ports = 0;
   new (&s->listen_fd_to_index_map)
       absl::flat_hash_map<int, std::tuple<int, int>>();
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     PosixEventEngineWithFdSupport::PosixAcceptCallback accept_cb =
         [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
             bool is_external, MemoryAllocator /*allocator*/,
@@ -247,7 +248,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     // This will trigger asynchronous execution of the on_shutdown_complete
     // callback when appropriate. That callback will delete the server
     s->ee_listener.reset();
@@ -553,7 +554,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
 static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
                                              const grpc_resolved_address* addr,
                                              int* out_port) {
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     gpr_mu_lock(&s->mu);
     if (s->shutdown_listeners) {
       gpr_mu_unlock(&s->mu);
@@ -654,7 +655,7 @@ static grpc_tcp_listener* get_port_index(grpc_tcp_server* s,
 unsigned tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index) {
   unsigned num_fds = 0;
   gpr_mu_lock(&s->mu);
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     // This doesn't need to be very fast. Used in tests.
     for (auto it = s->listen_fd_to_index_map.begin();
          it != s->listen_fd_to_index_map.end(); it++) {
@@ -676,7 +677,7 @@ unsigned tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index) {
 static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
                               unsigned fd_index) {
   gpr_mu_lock(&s->mu);
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     // This doesn't need to be very fast. Used in tests.
     for (auto it = s->listen_fd_to_index_map.begin();
          it != s->listen_fd_to_index_map.end(); it++) {
@@ -708,7 +709,7 @@ static void tcp_server_start(grpc_tcp_server* s,
   GPR_ASSERT(s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
   s->pollsets = pollsets;
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     GPR_ASSERT(!s->shutdown_listeners);
     (void)s->ee_listener->Start();
     gpr_mu_unlock(&s->mu);
@@ -768,7 +769,7 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
-  if (grpc_core::IsEventEngineServerEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineServer()) {
     s->ee_listener->ShutdownListeningFds();
   }
   /* shutdown all fd's */
@@ -798,7 +799,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
 
   // TODO(yangg) resolve duplicate code with on_read
   void Handle(int listener_fd, int fd, grpc_byte_buffer* buf) override {
-    if (grpc_core::IsEventEngineServerEnabled()) {
+    if (grpc_event_engine::experimental::UseEventEngineServer()) {
       grpc_event_engine::experimental::SliceBuffer pending_data;
       if (buf != nullptr) {
         pending_data =

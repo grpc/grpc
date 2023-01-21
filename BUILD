@@ -161,11 +161,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gribkoff"  # @unused
+g_stands_for = "glockenspiel"  # @unused
 
 core_version = "30.0.0"  # @unused
 
-version = "1.52.0-dev"  # @unused
+version = "1.53.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -751,6 +751,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_priority",
         "//src/core:grpc_lb_policy_ring_hash",
         "//src/core:grpc_lb_policy_round_robin",
+        "//src/core:grpc_lb_policy_weighted_round_robin",
         "//src/core:grpc_lb_policy_weighted_target",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_message_size_filter",
@@ -1434,6 +1435,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:error",
         "//src/core:event_engine_common",
+        "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_engine_trace",
         "//src/core:event_log",
@@ -1646,6 +1648,7 @@ grpc_cc_library(
         "handshaker",
         "promise",
         "ref_counted_ptr",
+        "stats",
         "tsi_base",
         "//src/core:activity",
         "//src/core:arena",
@@ -1669,6 +1672,7 @@ grpc_cc_library(
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_refcount",
+        "//src/core:stats_data",
         "//src/core:status_helper",
         "//src/core:try_seq",
         "//src/core:unique_type_name",
@@ -2339,7 +2343,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:error",
-        "//src/core:experiments",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -2721,6 +2724,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/lb_call_state_internal.h",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
+        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/retry_filter.h",
         "//src/core:ext/filters/client_channel/retry_service_config.h",

@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_TCP_CLIENT_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_TCP_CLIENT_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_TCP_CLIENT_H
+#define GRPC_SRC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_TCP_CLIENT_H
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
@@ -41,4 +41,4 @@ bool event_engine_tcp_client_cancel_connect(int64_t connection_handle);
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_TCP_CLIENT_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_TCP_CLIENT_H

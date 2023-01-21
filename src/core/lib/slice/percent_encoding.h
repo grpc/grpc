@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SLICE_PERCENT_ENCODING_H
-#define GRPC_CORE_LIB_SLICE_PERCENT_ENCODING_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_PERCENT_ENCODING_H
+#define GRPC_SRC_CORE_LIB_SLICE_PERCENT_ENCODING_H
 
 // Percent encoding and decoding of slices.
 // Transforms arbitrary strings into safe-for-transmission strings by using
@@ -51,4 +51,4 @@ Slice PermissivePercentDecodeSlice(Slice slice_in);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SLICE_PERCENT_ENCODING_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_PERCENT_ENCODING_H

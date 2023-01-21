@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.52.0-dev")
+set(PACKAGE_VERSION       "1.53.0-dev")
 set(gRPC_CORE_VERSION     "30.0.0")
 set(gRPC_CORE_SOVERSION   "30")
-set(gRPC_CPP_VERSION      "1.52.0-dev")
-set(gRPC_CPP_SOVERSION    "1.52")
-set(gRPC_CSHARP_VERSION   "2.52.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.52")
+set(gRPC_CPP_VERSION      "1.53.0-dev")
+set(gRPC_CPP_SOVERSION    "1.53")
+set(gRPC_CSHARP_VERSION   "2.53.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.53")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -299,7 +299,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.52.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.53.0-dev\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
@@ -1268,6 +1268,8 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx wakeup_fd_posix_test)
   endif()
+  add_dependencies(buildtests_cxx weighted_round_robin_config_test)
+  add_dependencies(buildtests_cxx weighted_round_robin_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     add_dependencies(buildtests_cxx win_socket_test)
   endif()
@@ -1723,6 +1725,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
@@ -2171,6 +2175,7 @@ add_library(grpc
   src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
@@ -2722,6 +2727,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -2845,6 +2852,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
@@ -4336,6 +4344,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
@@ -11399,6 +11408,7 @@ add_executable(frame_test
   src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
@@ -21894,6 +21904,80 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(weighted_round_robin_config_test
+  test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(weighted_round_robin_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(weighted_round_robin_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(weighted_round_robin_test
+  test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(weighted_round_robin_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(weighted_round_robin_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)

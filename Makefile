@@ -411,8 +411,8 @@ Q = @
 endif
 
 CORE_VERSION = 30.0.0
-CPP_VERSION = 1.52.0-dev
-CSHARP_VERSION = 2.52.0-dev
+CPP_VERSION = 1.53.0-dev
+CSHARP_VERSION = 2.53.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -988,6 +988,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
     src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
@@ -1436,6 +1438,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/shim.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
@@ -1846,6 +1849,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
     src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
@@ -1969,6 +1974,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/shim.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -122,4 +122,4 @@ DWORD grpc_get_default_wsa_socket_flags();
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H

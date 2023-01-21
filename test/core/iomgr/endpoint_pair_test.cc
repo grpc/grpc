@@ -31,8 +31,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -41,8 +41,6 @@
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#ifdef GRPC_POSIX_SOCKET_TCP
 
 using namespace std::chrono_literals;
 
@@ -60,6 +58,8 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  auto resolved_addr = URIToResolvedAddress(target_addr);
+  GPR_ASSERT(resolved_addr.ok());
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;
@@ -81,7 +81,7 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
-  GPR_ASSERT(listener->Bind(*URIToResolvedAddress(target_addr)).ok());
+  GPR_ASSERT(listener->Bind(*resolved_addr).ok());
   GPR_ASSERT(listener->Start().ok());
 
   ee->Connect(
@@ -91,8 +91,8 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
-      *URIToResolvedAddress(target_addr), config,
-      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
+      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
+      24h);
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
@@ -105,8 +105,6 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
 }
 
 }  // namespace
-
-#endif  // GRPC_POSIX_SOCKET_TCP
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -122,16 +120,12 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-#ifdef GRPC_POSIX_SOCKET_TCP
   grpc_endpoint_pair p;
-  if (grpc_core::IsEventEngineClientEnabled()) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
     p = grpc_iomgr_event_engine_shim_endpoint_pair(&args);
   } else {
     p = grpc_iomgr_create_endpoint_pair("test", &args);
   }
-#else
-  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", &args);
-#endif
   f.client_ep = p.client;
   f.server_ep = p.server;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
