@@ -79,6 +79,11 @@ absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
 absl::StatusOr<std::string> ResolvedAddressToURI(
     const EventEngine::ResolvedAddress& resolved_address);
 
+// Given a URI string, returns the corresponding resolved address if the URI
+// is valid. Otherwise it returns an appropriate error.
+absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
+    std::string address_str);
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

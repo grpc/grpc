@@ -684,14 +684,13 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   }
 
   int GetWrappedFd() override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetWrappedFd not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetWrappedFd not supported on this platform");
   }
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::Shutdown not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Shutdown not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;
