@@ -47,7 +47,9 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
   // Tests should not fail to read any messages from the client.
   {
     MutexLock lock(&mu_);
-    GPR_ASSERT(from_client_messages_.empty());
+    if (transport_->abort_on_undrained_messages()) {
+      GPR_ASSERT(from_client_messages_.empty());
+    }
   }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
   // synchronously, since those operations will trigger code in
@@ -232,7 +234,8 @@ FakeXdsTransportFactory::Create(
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
-      std::move(on_connectivity_failure), auto_complete_messages_from_client_);
+      std::move(on_connectivity_failure), auto_complete_messages_from_client_,
+      abort_on_undrained_messages_);
   entry = transport->Ref();
   return transport;
 }
@@ -247,6 +250,11 @@ void FakeXdsTransportFactory::TriggerConnectionFailure(
 void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
   MutexLock lock(&mu_);
   auto_complete_messages_from_client_ = value;
+}
+
+void FakeXdsTransportFactory::SetAbortOnUndrainedMessages(bool value) {
+  MutexLock lock(&mu_);
+  abort_on_undrained_messages_ = value;
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>

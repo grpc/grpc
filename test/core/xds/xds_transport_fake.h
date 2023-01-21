@@ -137,6 +137,16 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   // will not be affected.
   void SetAutoCompleteMessagesFromClient(bool value);
 
+  // By default, FakeStreamingCall will automatically crash on
+  // destruction if there are messages from the client that have not
+  // been drained from the queue.  If this is set to false, that
+  // behavior will be inhibited.
+  //
+  // This value affects all transports created after this call is
+  // complete.  Any transport that already exists prior to this call
+  // will not be affected.
+  void SetAbortOnUndrainedMessages(bool value);
+
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServer& server, const char* method,
       absl::Duration timeout);
@@ -147,9 +157,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   class FakeXdsTransport : public XdsTransport {
    public:
     FakeXdsTransport(std::function<void(absl::Status)> on_connectivity_failure,
-                     bool auto_complete_messages_from_client)
+                     bool auto_complete_messages_from_client,
+                     bool abort_on_undrained_messages)
         : auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
+          abort_on_undrained_messages_(abort_on_undrained_messages),
           on_connectivity_failure_(
               MakeRefCounted<RefCountedOnConnectivityFailure>(
                   std::move(on_connectivity_failure))) {}
@@ -158,6 +170,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool auto_complete_messages_from_client() const {
       return auto_complete_messages_from_client_;
+    }
+
+    bool abort_on_undrained_messages() const {
+      return abort_on_undrained_messages_;
     }
 
     using XdsTransport::Ref;  // Make it public.
@@ -192,6 +208,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void ResetBackoff() override {}
 
     const bool auto_complete_messages_from_client_;
+    const bool abort_on_undrained_messages_;
 
     Mutex mu_;
     CondVar cv_;
@@ -213,6 +230,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
+  bool abort_on_undrained_messages_ ABSL_GUARDED_BY(&mu_) = true;
 };
 
 }  // namespace grpc_core
