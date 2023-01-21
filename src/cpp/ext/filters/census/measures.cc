@@ -102,7 +102,7 @@ MeasureDouble RpcClientTransportLatency() {
   static const auto measure = MeasureDouble::Register(
       experimental::kRpcClientTransportLatencyMeasureName,
       "Time between first byte of request sent to last byte of response "
-      "received, or terminal error",
+      "received on the transport",
       kUnitMilliseconds);
   return measure;
 }
