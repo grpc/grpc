@@ -48,6 +48,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
