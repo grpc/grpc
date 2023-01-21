@@ -35,9 +35,11 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -75,6 +77,8 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  auto resolved_addr = URIToResolvedAddress(target_addr);
+  GPR_ASSERT(resolved_addr.ok());
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;
@@ -96,7 +100,7 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
-  ASSERT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
+  ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
 
   oracle_ee->Connect(
@@ -106,8 +110,8 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
-      URIToResolvedAddress(target_addr), config,
-      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
+      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
+      24h);
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
@@ -169,7 +173,7 @@ TEST_F(EventEngineServerTest,
   for (int i = 0; i < kNumListenerAddresses; i++) {
     std::string target_addr = absl::StrCat(
         "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-    ASSERT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
+    ASSERT_TRUE(listener->Bind(*URIToResolvedAddress(target_addr)).ok());
     target_addrs.push_back(target_addr);
   }
   ASSERT_TRUE(listener->Start().ok());
@@ -191,7 +195,7 @@ TEST_F(EventEngineServerTest,
           client_endpoint = std::move(*endpoint);
           client_signal.Notify();
         },
-        URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
+        *URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
         client_config,
         memory_quota->CreateMemoryAllocator(
             absl::StrCat("conn-", std::to_string(i))),

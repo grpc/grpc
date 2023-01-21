@@ -43,8 +43,6 @@ void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data);
 
 std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 
-EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str);
-
 // Returns a random message with bounded length.
 std::string GetNextSendMessage();
 

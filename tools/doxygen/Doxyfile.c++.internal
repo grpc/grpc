@@ -2066,6 +2066,9 @@ src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h \
 src/core/lib/event_engine/resolved_address.cc \
+src/core/lib/event_engine/resolved_address_internal.h \
+src/core/lib/event_engine/shim.cc \
+src/core/lib/event_engine/shim.h \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
@@ -2233,6 +2236,10 @@ src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.cc \
 src/core/lib/iomgr/ev_posix.h \
 src/core/lib/iomgr/ev_windows.cc \
+src/core/lib/iomgr/event_engine_shims/endpoint.cc \
+src/core/lib/iomgr/event_engine_shims/endpoint.h \
+src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
+src/core/lib/iomgr/event_engine_shims/tcp_client.h \
 src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
