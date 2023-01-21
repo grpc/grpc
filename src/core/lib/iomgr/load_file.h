@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_LOAD_FILE_H
-#define GRPC_CORE_LIB_IOMGR_LOAD_FILE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_LOAD_FILE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_LOAD_FILE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -32,4 +32,4 @@
 grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
                                  grpc_slice* output);
 
-#endif  // GRPC_CORE_LIB_IOMGR_LOAD_FILE_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_LOAD_FILE_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CONTEXT_H
-#define GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -60,4 +60,4 @@ template <>
 struct ContextType<grpc_call_context_element> {};
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_IF_H
-#define GRPC_CORE_LIB_PROMISE_IF_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_IF_H
+#define GRPC_SRC_CORE_LIB_PROMISE_IF_H
 
 #include <grpc/support/port_platform.h>
 
@@ -131,4 +131,4 @@ promise_detail::If<C, T, F> If(C condition, T if_true, F if_false) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_IF_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_IF_H

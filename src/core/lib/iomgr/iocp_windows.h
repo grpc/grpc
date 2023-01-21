@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_IOCP_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_IOCP_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,4 +45,4 @@ void grpc_iocp_add_socket(grpc_winsocket*);
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_IOCP_WINDOWS_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
-#define GRPC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
 
 void gpr_thd_start_blocking_region();
 void gpr_thd_end_blocking_region();
@@ -54,4 +54,4 @@ void gpr_thd_end_blocking_region();
   } while (0)
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H

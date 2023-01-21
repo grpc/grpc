@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_H
-#define GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_HANDSHAKER_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_HANDSHAKER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -169,4 +169,4 @@ typedef grpc_core::Handshaker grpc_handshaker;
 void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
                                 grpc_handshaker* handshaker);
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_HANDSHAKER_H

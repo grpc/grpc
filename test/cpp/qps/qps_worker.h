@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef QPS_WORKER_H
-#define QPS_WORKER_H
+#ifndef GRPC_TEST_CPP_QPS_QPS_WORKER_H
+#define GRPC_TEST_CPP_QPS_QPS_WORKER_H
 
 #include <memory>
 
@@ -59,4 +59,4 @@ class QpsWorker {
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_QPS_WORKER_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_STATS_UTILS_H
-#define TEST_QPS_STATS_UTILS_H
+#ifndef GRPC_TEST_CPP_QPS_STATS_H
+#define GRPC_TEST_CPP_QPS_STATS_H
 
 #include <string>
 
@@ -43,4 +43,4 @@ double average(const T& container, F functor) {
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_STATS_H

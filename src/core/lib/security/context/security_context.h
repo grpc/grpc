@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
-#define GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -178,4 +178,4 @@ grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* args);
 
-#endif  // GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H

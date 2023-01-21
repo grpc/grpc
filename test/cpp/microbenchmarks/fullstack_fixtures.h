@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -324,4 +324,4 @@ typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H

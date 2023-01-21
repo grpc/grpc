@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_TRANSPORT_FAKE_H
-#define GRPC_CORE_EXT_XDS_XDS_TRANSPORT_FAKE_H
+#ifndef GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
+#define GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -214,4 +214,4 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_TRANSPORT_FAKE_H
+#endif  // GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -134,4 +134,4 @@ class ThreadPool final : public Forkable, public Executor {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H

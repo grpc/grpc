@@ -16,6 +16,9 @@
 //
 //
 
+#ifndef GRPC_TEST_CPP_EXT_FILTERS_CENSUS_LIBRARY_H
+#define GRPC_TEST_CPP_EXT_FILTERS_CENSUS_LIBRARY_H
+
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
@@ -192,3 +195,5 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_EXT_FILTERS_CENSUS_LIBRARY_H

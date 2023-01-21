@@ -13,6 +13,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+#define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+
 #include <memory>
 #include <set>
 #include <string>
@@ -1064,3 +1067,5 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H
-#define GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H
+#ifndef GRPC_SRC_CPP_SERVER_THREAD_POOL_INTERFACE_H
+#define GRPC_SRC_CPP_SERVER_THREAD_POOL_INTERFACE_H
 
 #include <functional>
 
@@ -40,4 +40,4 @@ ThreadPoolInterface* CreateDefaultThreadPool();
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H
+#endif  // GRPC_SRC_CPP_SERVER_THREAD_POOL_INTERFACE_H

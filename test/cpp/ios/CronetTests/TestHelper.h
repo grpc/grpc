@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef TESTHELPER_H
-#define TESTHELPER_H
+#ifndef GRPC_TEST_CPP_IOS_CRONETTESTS_TESTHELPER_H
+#define GRPC_TEST_CPP_IOS_CRONETTESTS_TESTHELPER_H
 
 #import <XCTest/XCTest.h>
 
@@ -80,4 +80,4 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
                                grpc::testing::EchoRequest>* stream);
 };
 
-#endif /* TESTHELPER_H */
+#endif /* GRPC_TEST_CPP_IOS_CRONETTESTS_TESTHELPER_H */

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
-#define GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
+#define GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -57,4 +57,4 @@ struct grpc_slice_refcount {
   DestroyerFn destroyer_fn_ = nullptr;
 };
 
-#endif  // GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H

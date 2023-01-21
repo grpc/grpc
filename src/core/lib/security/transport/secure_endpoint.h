@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
+#define GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,4 +40,4 @@ grpc_endpoint* grpc_secure_endpoint_create(
     grpc_endpoint* to_wrap, grpc_slice* leftover_slices,
     const grpc_channel_args* channel_args, size_t leftover_nslices);
 
-#endif  // GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H

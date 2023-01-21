@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -403,4 +403,4 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
 
-#endif  // GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H

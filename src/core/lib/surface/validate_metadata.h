@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
-#define GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#define GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,4 +45,4 @@ inline int grpc_is_refcounted_slice_binary_header(const grpc_slice& slice) {
                                    slice.data.refcounted.length);
 }
 
-#endif  // GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H

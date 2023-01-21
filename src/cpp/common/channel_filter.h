@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPCXX_CHANNEL_FILTER_H
-#define GRPCXX_CHANNEL_FILTER_H
+#ifndef GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H
+#define GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H
 
 #include <stddef.h>
 
@@ -353,4 +353,4 @@ void RegisterChannelFilter(
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CHANNEL_FILTER_H
+#endif  // GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPR_STRING_H
-#define GRPC_CORE_LIB_GPR_STRING_H
+#ifndef GRPC_SRC_CORE_LIB_GPR_STRING_H
+#define GRPC_SRC_CORE_LIB_GPR_STRING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -109,4 +109,4 @@ void* gpr_memrchr(const void* s, int c, size_t n);
 // Otherwise, it returns false.
 bool gpr_parse_bool_value(const char* value, bool* dst);
 
-#endif  // GRPC_CORE_LIB_GPR_STRING_H
+#endif  // GRPC_SRC_CORE_LIB_GPR_STRING_H

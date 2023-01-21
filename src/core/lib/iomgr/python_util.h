@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H
-#define GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_PYTHON_UTIL_H
+#define GRPC_SRC_CORE_LIB_IOMGR_PYTHON_UTIL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -44,4 +44,4 @@ inline int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i) {
   return GRPC_SLICE_LENGTH(buffer->slices[i]);
 }
 
-#endif  // GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_PYTHON_UTIL_H

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
 
 // Scaffolding to allow the per-call part of a filter to be authored in a
 // promise-style. Most of this will be removed once the promises conversion is
@@ -854,4 +854,4 @@ MakePromiseBasedFilter(const char* name) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H

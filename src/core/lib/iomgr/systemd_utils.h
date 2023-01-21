@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_SYSTEMD_UTILS_H
-#define GRPC_CORE_LIB_IOMGR_SYSTEMD_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SYSTEMD_UTILS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SYSTEMD_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,4 +30,4 @@
 void set_matching_sd_fds(grpc_tcp_server* s, const grpc_resolved_address* addr,
                          int requested_port);
 
-#endif /* GRPC_CORE_LIB_IOMGR_SYSTEMD_UTILS_H */
+#endif /* GRPC_SRC_CORE_LIB_IOMGR_SYSTEMD_UTILS_H */
