@@ -92,4 +92,17 @@ ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
       }));
 }
 
+static bool maybe_prepend_grpc_backend_metric_filter(
+    grpc_core::ChannelStackBuilder* builder) {
+  if (builder->channel_args().Contains(GRPC_ARG_SERVER_CALL_METRIC_RECORDING)) {
+    builder->PrependFilter(&grpc_core::BackendMetricFilter::kFilter);
+  }
+  return true;
+}
+
+void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
+  builder->channel_init()->RegisterStage(
+      GRPC_SERVER_CHANNEL, INT_MAX, maybe_prepend_grpc_backend_metric_filter);
+}
+
 }  // namespace grpc_core

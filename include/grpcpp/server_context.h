@@ -51,10 +51,6 @@ struct grpc_metadata;
 struct grpc_call;
 struct census_context;
 
-namespace grpc_core {
-struct BackendMetricData;
-}  // namespace grpc_core
-
 namespace grpc {
 template <class W, class R>
 class ServerAsyncReader;

@@ -74,8 +74,8 @@ bool IsUtilizationValid(double utilization) {
 bool IsQpsValid(double qps) { return qps >= 0.0; }
 }  // namespace
 
-class BackendMetricState : public experimental::CallMetricRecorder,
-                           public grpc_core::BackendMetricProvider {
+class BackendMetricState : public grpc_core::BackendMetricProvider,
+                           public experimental::CallMetricRecorder {
  public:
   // `server_metric_recorder` is optional. When set, GetBackendMetricData()
   // merges metrics from `server_metric_recorder` with metrics recorded to this.
@@ -192,8 +192,7 @@ class BackendMetricState : public experimental::CallMetricRecorder,
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_state_trace)) {
       gpr_log(GPR_INFO,
               "[%p] Backend metric data returned: cpu:%f mem:%f qps:%f "
-              "utilization "
-              "size:%" PRIuPTR " request_cost size:%" PRIuPTR,
+              "utilization size:%" PRIuPTR " request_cost size:%" PRIuPTR,
               this, data.cpu_utilization, data.mem_utilization, data.qps,
               data.utilization.size(), data.request_cost.size());
     }
@@ -552,10 +551,8 @@ void ServerContextBase::CreateCallMetricRecorder(
   auto* backend_metric_state =
       arena->New<BackendMetricState>(server_metric_recorder);
   call_metric_recorder_ = backend_metric_state;
-  grpc_call_context_set(
-      call_.call, GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
-      static_cast<grpc_core::BackendMetricProvider*>(backend_metric_state),
-      nullptr);
+  grpc_call_context_set(call_.call, GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
+                        backend_metric_state, nullptr);
 }
 
 grpc::string_ref ServerContextBase::ExperimentalGetAuthority() const {

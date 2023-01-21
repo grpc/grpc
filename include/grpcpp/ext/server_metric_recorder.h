@@ -27,7 +27,6 @@
 #include "absl/types/optional.h"
 
 namespace grpc_core {
-class Arena;
 struct BackendMetricData;
 }  // namespace grpc_core
 
@@ -64,6 +63,10 @@ class ServerMetricRecorder {
   void ClearQps();
 
  private:
+  // To access GetMetrics().
+  friend class grpc::BackendMetricState;
+  friend class OrcaService;
+
   // Only populates fields in `data` that this has recorded metrics.
   grpc_core::BackendMetricData GetMetrics() const;
 
@@ -71,10 +74,6 @@ class ServerMetricRecorder {
   std::atomic<double> cpu_utilization_{-1.0};
   std::atomic<double> mem_utilization_{-1.0};
   std::atomic<double> qps_{-1.0};
-
-  // To access GetMetrics().
-  friend class grpc::BackendMetricState;
-  friend class OrcaService;
 };
 
 }  // namespace experimental
