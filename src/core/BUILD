@@ -1742,7 +1742,6 @@ grpc_cc_library(
         "strerror",
         "time",
         "//:event_engine_base_hdrs",
-        "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
         "//:ref_counted_ptr",

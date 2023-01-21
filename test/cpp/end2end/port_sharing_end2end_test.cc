@@ -320,7 +320,6 @@ std::vector<TestScenario> CreateTestScenarios() {
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   // Only allow insecure credentials type when it is registered with the
   // provider. User may create providers that do not have insecure.
-
   if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
                                                       nullptr) != nullptr) {
     credentials_types.push_back(kInsecureCredentialsType);

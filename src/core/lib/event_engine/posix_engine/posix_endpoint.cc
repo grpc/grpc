@@ -49,7 +49,6 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -572,11 +571,6 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
   read_cb_ = nullptr;
   incoming_buffer_ = nullptr;
   read_mu_.Unlock();
-  // TODO(vigneshbabu): Remove this ExecCtx usage.
-  // Flush the ExecCtx here to execute any pending work scheduled by
-  // memory_owner_.MakeSlice and memory_owner_.PostReclamation. By flushing it
-  // here, we avoid data races with callbacks enqueued further down the line.
-  grpc_core::ExecCtx::Get()->Flush();
   cb(status);
   Unref();
 }
@@ -1196,8 +1190,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      const PosixTcpOptions& options)
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
-      peer_address_(),
-      local_address_(),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
@@ -1269,15 +1261,8 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   inq_capable_ = false;
 #endif  // GRPC_HAVE_TCP_INQ
 
-  on_read_ =
-      PosixEngineClosure::ToPermanentClosure([this](absl::Status status) {
-        // TODO(vigneshbabu): Remove this exec_ctx.
-        // We are forced to temporarily include an exec_ctx here. This is
-        // because, memory_allocator.MakeSlice may schedule a reclamation on the
-        // ExecCtxWakeupScheduler which requires an active exec_ctx.
-        grpc_core::ExecCtx exec_ctx;
-        HandleRead(std::move(status));
-      });
+  on_read_ = PosixEngineClosure::ToPermanentClosure(
+      [this](absl::Status status) { HandleRead(std::move(status)); });
   on_write_ = PosixEngineClosure::ToPermanentClosure(
       [this](absl::Status status) { HandleWrite(std::move(status)); });
   on_error_ = PosixEngineClosure::ToPermanentClosure(
