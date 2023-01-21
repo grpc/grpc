@@ -73,23 +73,15 @@ Histogram_80_10 operator-(const Histogram_80_10& left,
 }
 const absl::string_view
     GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
-        "client_calls_created",
-        "server_calls_created",
-        "client_channels_created",
-        "client_subchannels_created",
-        "server_channels_created",
-        "syscall_write",
-        "syscall_read",
-        "tcp_read_alloc_8k",
-        "tcp_read_alloc_64k",
-        "http2_settings_writes",
-        "http2_pings_sent",
-        "http2_writes_begun",
-        "http2_transport_stalls",
-        "http2_stream_stalls",
-        "cq_pluck_creates",
-        "cq_next_creates",
-        "cq_callback_creates",
+        "client_calls_created",    "server_calls_created",
+        "client_channels_created", "client_subchannels_created",
+        "server_channels_created", "insecure_connections_created",
+        "syscall_write",           "syscall_read",
+        "tcp_read_alloc_8k",       "tcp_read_alloc_64k",
+        "http2_settings_writes",   "http2_pings_sent",
+        "http2_writes_begun",      "http2_transport_stalls",
+        "http2_stream_stalls",     "cq_pluck_creates",
+        "cq_next_creates",         "cq_callback_creates",
 };
 const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     Counter::COUNT)] = {
@@ -98,6 +90,7 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of client channels created",
     "Number of client subchannels created",
     "Number of server channels created",
+    "Number of insecure connections created",
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
     "process",
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
@@ -219,6 +212,7 @@ GlobalStats::GlobalStats()
       client_channels_created{0},
       client_subchannels_created{0},
       server_channels_created{0},
+      insecure_connections_created{0},
       syscall_write{0},
       syscall_read{0},
       tcp_read_alloc_8k{0},
@@ -274,6 +268,8 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.client_subchannels_created.load(std::memory_order_relaxed);
     result->server_channels_created +=
         data.server_channels_created.load(std::memory_order_relaxed);
+    result->insecure_connections_created +=
+        data.insecure_connections_created.load(std::memory_order_relaxed);
     result->syscall_write += data.syscall_write.load(std::memory_order_relaxed);
     result->syscall_read += data.syscall_read.load(std::memory_order_relaxed);
     result->tcp_read_alloc_8k +=
@@ -319,6 +315,8 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       client_subchannels_created - other.client_subchannels_created;
   result->server_channels_created =
       server_channels_created - other.server_channels_created;
+  result->insecure_connections_created =
+      insecure_connections_created - other.insecure_connections_created;
   result->syscall_write = syscall_write - other.syscall_write;
   result->syscall_read = syscall_read - other.syscall_read;
   result->tcp_read_alloc_8k = tcp_read_alloc_8k - other.tcp_read_alloc_8k;

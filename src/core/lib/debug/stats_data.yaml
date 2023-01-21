@@ -30,6 +30,8 @@
   doc: Number of client subchannels created
 - counter: server_channels_created
   doc: Number of server channels created
+- counter: insecure_connections_created
+  doc: Number of insecure connections created
 # tcp
 - counter: syscall_write
   doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
