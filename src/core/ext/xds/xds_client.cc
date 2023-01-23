@@ -982,7 +982,12 @@ void XdsClient::ChannelState::AdsCallState::UnsubscribeLocked(
   if (authority_map.empty()) {
     type_state_map.subscribed_resources.erase(name.authority);
   }
-  if (!delay_unsubscription) SendMessageLocked(type);
+  // Don't need to send unsubscription message if this was the last
+  // resource we were subscribed to, since we'll be closing the stream
+  // immediately in that case.
+  if (!delay_unsubscription && HasSubscribedResources()) {
+    SendMessageLocked(type);
+  }
 }
 
 bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
