@@ -294,8 +294,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void MaybeUpdatePickerLocked();
 
-  RefCountedPtr<SubchannelWrapper> LookupSubchannel(absl::string_view address);
-
   absl::StatusOr<ServerAddressList> UpdateAddressMap(
       absl::StatusOr<ServerAddressList> addresses);
 
