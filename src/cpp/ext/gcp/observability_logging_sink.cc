@@ -29,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "google/api/monitored_resource.pb.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/logging/v2/logging.grpc.pb.h"
 #include "google/logging/v2/logging.pb.h"
@@ -249,10 +250,12 @@ void ObservabilityLoggingSink::LogEntry(Entry entry) {
   CallContext* call = new CallContext;
   call->context.set_authority(authority_);
   call->request.set_log_name(
-      absl::StrFormat("projects/{%s}/logs/"
+      absl::StrFormat("projects/%s/logs/"
                       "microservices.googleapis.com%%2Fobservability%%2fgrpc",
                       project_id_));
   (*call->request.mutable_labels()).insert(labels_.begin(), labels_.end());
+  // TODO(yashykt): Figure out the proper resource type and labels.
+  call->request.mutable_resource()->set_type("global");
   auto* proto_entry = call->request.add_entries();
   // Fill the current timestamp
   gpr_timespec timespec =
