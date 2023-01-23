@@ -244,7 +244,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
         : eds_health_status_(eds_health_status) {}
 
     void SetSubchannel(SubchannelWrapper* subchannel) {
-      ResetSubchannel();
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
         subchannel_ = subchannel->Ref();
       } else {
@@ -252,12 +251,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       }
     }
 
-    void ResetSubchannel() {
-      SubchannelWrapper* subchannel = GetSubchannel();
-      if (subchannel != nullptr) {
-        subchannel_ = nullptr;
-      }
-    }
+    void UnsetSubchannel() { subchannel_ = nullptr; }
 
     SubchannelWrapper* GetSubchannel() const {
       return Match(
@@ -283,7 +277,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       }
     }
 
-    XdsHealthStatus eds_health_status() { return eds_health_status_; }
+    XdsHealthStatus eds_health_status() const { return eds_health_status_; }
 
    private:
     absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
@@ -308,7 +302,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
       ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel);
 
-  void ResetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
+  void UnsetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
 
   RefCountedPtr<SubchannelWrapper> GetSubchannelByAddress(
       absl::string_view address, XdsHealthStatusSet overriden_health_statuses);
@@ -523,8 +517,8 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     XdsHealthStatus status = GetAddressHealthStatus(address);
     if (status.status() != XdsHealthStatus::kDraining) {
       return_value.push_back(address);
-    } else if (!config_->override_host_status_set().Contains(
-                   XdsHealthStatus(status))) {
+    } else if (!config_->override_host_status_set().Contains(status)) {
+      // Skip draining hosts if not in the override status set.
       continue;
     }
     auto key = grpc_sockaddr_to_string(&address.address(), false);
@@ -572,13 +566,13 @@ XdsOverrideHostLb::AdoptSubchannel(
   return wrapper;
 }
 
-void XdsOverrideHostLb::ResetSubchannel(absl::string_view key,
+void XdsOverrideHostLb::UnsetSubchannel(absl::string_view key,
                                         SubchannelWrapper* subchannel) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
     if (subchannel == it->second.GetSubchannel()) {
-      it->second.ResetSubchannel();
+      it->second.UnsetSubchannel();
     }
   }
 }
@@ -668,7 +662,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
 
 XdsOverrideHostLb::SubchannelWrapper::~SubchannelWrapper() {
   if (key_.has_value()) {
-    policy_->ResetSubchannel(*key_, this);
+    policy_->UnsetSubchannel(*key_, this);
   }
 }
 
