@@ -120,5 +120,6 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:time",
         "//src/cpp/ext/filters/logging:logging_sink",
+        "@com_google_googleapis//google/api:monitored_resource_cc_proto",
     ],
 )

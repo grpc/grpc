@@ -219,6 +219,8 @@ EXTERNAL_DEPS = {
 INTERNAL_DEPS = {
     'google/api/expr/v1alpha1/syntax.upb.h':
         'google_type_expr_upb',
+    'google/api/monitored_resource.pb.h':
+        '@com_google_googleapis//google/api:monitored_resource_cc_proto',
     'google/rpc/status.upb.h':
         'google_rpc_status_upb',
     'google/protobuf/any.upb.h':
@@ -563,7 +565,7 @@ def make_library(library):
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not dep.startswith('//'):
+            if not ('//' in dep):
                 dep = '//:' + dep
             deps.add(dep, hdr)
             continue
