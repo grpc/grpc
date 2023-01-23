@@ -3805,6 +3805,7 @@ grpc_cc_library(
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
         "envoy_extensions_http_stateful_session_cookie_upb",
         "envoy_extensions_http_stateful_session_cookie_upbdefs",
+        "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
@@ -5311,6 +5312,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
 )
 
 grpc_upb_proto_library(

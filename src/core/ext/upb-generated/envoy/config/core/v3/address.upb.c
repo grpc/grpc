@@ -11,6 +11,7 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/socket_option.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
@@ -28,14 +29,15 @@ const upb_MiniTable envoy_config_core_v3_Pipe_msginit = {
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_MiniTable_Field envoy_config_core_v3_EnvoyInternalAddress__fields[1] = {
+static const upb_MiniTable_Field envoy_config_core_v3_EnvoyInternalAddress__fields[2] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_EnvoyInternalAddress_msginit = {
   NULL,
   &envoy_config_core_v3_EnvoyInternalAddress__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_SocketAddress__fields[6] = {
@@ -71,22 +73,42 @@ const upb_MiniTable envoy_config_core_v3_TcpKeepalive_msginit = {
   UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_config_core_v3_BindConfig_submsgs[3] = {
+static const upb_MiniTable_Sub envoy_config_core_v3_ExtraSourceAddress_submsgs[2] = {
+  {.submsg = &envoy_config_core_v3_SocketAddress_msginit},
+  {.submsg = &envoy_config_core_v3_SocketOptionsOverride_msginit},
+};
+
+static const upb_MiniTable_Field envoy_config_core_v3_ExtraSourceAddress__fields[2] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_config_core_v3_ExtraSourceAddress_msginit = {
+  &envoy_config_core_v3_ExtraSourceAddress_submsgs[0],
+  &envoy_config_core_v3_ExtraSourceAddress__fields[0],
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+};
+
+static const upb_MiniTable_Sub envoy_config_core_v3_BindConfig_submsgs[5] = {
   {.submsg = &envoy_config_core_v3_SocketAddress_msginit},
   {.submsg = &google_protobuf_BoolValue_msginit},
   {.submsg = &envoy_config_core_v3_SocketOption_msginit},
+  {.submsg = &envoy_config_core_v3_SocketAddress_msginit},
+  {.submsg = &envoy_config_core_v3_ExtraSourceAddress_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_core_v3_BindConfig__fields[3] = {
+static const upb_MiniTable_Field envoy_config_core_v3_BindConfig__fields[5] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 2, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 32), UPB_SIZE(0, 0), 3, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), UPB_SIZE(0, 0), 4, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_BindConfig_msginit = {
   &envoy_config_core_v3_BindConfig_submsgs[0],
   &envoy_config_core_v3_BindConfig__fields[0],
-  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_Address_submsgs[3] = {
@@ -122,11 +144,12 @@ const upb_MiniTable envoy_config_core_v3_CidrRange_msginit = {
   UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[7] = {
+static const upb_MiniTable *messages_layout[8] = {
   &envoy_config_core_v3_Pipe_msginit,
   &envoy_config_core_v3_EnvoyInternalAddress_msginit,
   &envoy_config_core_v3_SocketAddress_msginit,
   &envoy_config_core_v3_TcpKeepalive_msginit,
+  &envoy_config_core_v3_ExtraSourceAddress_msginit,
   &envoy_config_core_v3_BindConfig_msginit,
   &envoy_config_core_v3_Address_msginit,
   &envoy_config_core_v3_CidrRange_msginit,
@@ -136,7 +159,7 @@ const upb_MiniTable_File envoy_config_core_v3_address_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  7,
+  8,
   0,
   0,
 };
