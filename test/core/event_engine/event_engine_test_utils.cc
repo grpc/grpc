@@ -216,21 +216,6 @@ ConnectionManager::CreateConnection(std::string target_addr,
   return absl::CancelledError("Failed to create connection.");
 }
 
-void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data) {
-  buf->Append(Slice::FromCopiedString(data));
-}
-
-std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
-  if (!buf->Length()) {
-    return std::string();
-  }
-  std::string tmp(buf->Length(), '\0');
-  char* bytes = const_cast<char*>(tmp.c_str());
-  grpc_slice_buffer_move_first_into_buffer(buf->c_slice_buffer(), buf->Length(),
-                                           bytes);
-  return tmp;
-}
-
 // Returns a random message with bounded length.
 std::string GetNextSendMessage() {
   static const char alphanum[] =
