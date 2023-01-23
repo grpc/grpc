@@ -38,13 +38,6 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
-<<<<<<< HEAD:test/core/event_engine/event_engine_test_utils.cc
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/resolved_address.h"
-||||||| 7fd808f6f9:test/core/event_engine/test_suite/event_engine_test_utils.cc
-#include "src/core/lib/iomgr/resolved_address.h"
-=======
->>>>>>> master:test/core/event_engine/test_suite/event_engine_test_utils.cc
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 // IWYU pragma: no_include <sys/socket.h>
