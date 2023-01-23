@@ -137,15 +137,13 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return connectivity_state_.load();
     }
 
-    void Shutdown();
-
     XdsOverrideHostLb* policy() { return policy_.get(); }
 
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
      public:
       explicit ConnectivityStateWatcher(
-          RefCountedPtr<SubchannelWrapper> subchannel)
+          WeakRefCountedPtr<SubchannelWrapper> subchannel)
           : subchannel_(std::move(subchannel)) {}
 
       void OnConnectivityStateChange(grpc_connectivity_state state,
@@ -154,8 +152,10 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       grpc_pollset_set* interested_parties() override;
 
      private:
-      RefCountedPtr<SubchannelWrapper> subchannel_;
+      WeakRefCountedPtr<SubchannelWrapper> subchannel_;
     };
+
+    void Orphan() override;
 
     void UpdateConnectivityState(grpc_connectivity_state state,
                                  absl::Status status);
@@ -243,11 +243,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     explicit SubchannelEntry(XdsHealthStatus eds_health_status)
         : eds_health_status_(eds_health_status) {}
 
-    ~SubchannelEntry() {
-      SubchannelWrapper* subchannel = GetSubchannel();
-      if (subchannel != nullptr) subchannel->Shutdown();
-    }
-
     void SetSubchannel(SubchannelWrapper* subchannel) {
       ResetSubchannel();
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
@@ -260,7 +255,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     void ResetSubchannel() {
       SubchannelWrapper* subchannel = GetSubchannel();
       if (subchannel != nullptr) {
-        subchannel->Shutdown();
         subchannel_ = nullptr;
       }
     }
@@ -667,7 +661,7 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     : DelegatingSubchannel(std::move(subchannel)),
       key_(key),
       policy_(std::move(policy)) {
-  auto watcher = std::make_unique<ConnectivityStateWatcher>(Ref());
+  auto watcher = std::make_unique<ConnectivityStateWatcher>(WeakRef());
   watcher_ = watcher.get();
   wrapped_subchannel()->WatchConnectivityState(std::move(watcher));
 }
@@ -711,7 +705,7 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
   }
 }
 
-void XdsOverrideHostLb::SubchannelWrapper::Shutdown() {
+void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
   key_.reset();
   wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
 }
