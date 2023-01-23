@@ -449,6 +449,24 @@ UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_default_regex_engine(c
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_default_regex_engine(const envoy_config_bootstrap_v3_Bootstrap* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(140, 272), const struct envoy_config_core_v3_TypedExtensionConfig*);
 }
+UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_xds_delegate_extension(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return _upb_hasbit(msg, 19);
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_xds_delegate_extension(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(144, 280), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_xds_delegate_extension(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(144, 280), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
+UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_xds_config_tracker_extension(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return _upb_hasbit(msg, 20);
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_xds_config_tracker_extension(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(148, 288), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_xds_config_tracker_extension(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(148, 288), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
 
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_node(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_Node* value) {
   _upb_sethas(msg, 1);
@@ -781,6 +799,32 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootst
     sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_config_bootstrap_v3_Bootstrap_set_default_regex_engine(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_xds_delegate_extension(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 19);
+  *UPB_PTR_AT(msg, UPB_SIZE(144, 280), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_mutable_xds_delegate_extension(envoy_config_bootstrap_v3_Bootstrap* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_bootstrap_v3_Bootstrap_xds_delegate_extension(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_bootstrap_v3_Bootstrap_set_xds_delegate_extension(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_xds_config_tracker_extension(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 20);
+  *UPB_PTR_AT(msg, UPB_SIZE(148, 288), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_mutable_xds_config_tracker_extension(envoy_config_bootstrap_v3_Bootstrap* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_bootstrap_v3_Bootstrap_xds_config_tracker_extension(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_bootstrap_v3_Bootstrap_set_xds_config_tracker_extension(msg, sub);
   }
   return sub;
 }

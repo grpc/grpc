@@ -217,14 +217,15 @@ const upb_MiniTable envoy_service_discovery_v3_DynamicParameterConstraints_Const
   UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_service_discovery_v3_Resource_submsgs[4] = {
+static const upb_MiniTable_Sub envoy_service_discovery_v3_Resource_submsgs[5] = {
   {.submsg = &google_protobuf_Any_msginit},
   {.submsg = &google_protobuf_Duration_msginit},
   {.submsg = &envoy_service_discovery_v3_Resource_CacheControl_msginit},
   {.submsg = &envoy_service_discovery_v3_ResourceName_msginit},
+  {.submsg = &envoy_config_core_v3_Metadata_msginit},
 };
 
-static const upb_MiniTable_Field envoy_service_discovery_v3_Resource__fields[7] = {
+static const upb_MiniTable_Field envoy_service_discovery_v3_Resource__fields[8] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 24), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 32), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -232,12 +233,13 @@ static const upb_MiniTable_Field envoy_service_discovery_v3_Resource__fields[7] 
   {6, UPB_SIZE(28, 56), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(32, 64), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(36, 72), UPB_SIZE(4, 4), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(40, 80), UPB_SIZE(5, 5), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_service_discovery_v3_Resource_msginit = {
   &envoy_service_discovery_v3_Resource_submsgs[0],
   &envoy_service_discovery_v3_Resource__fields[0],
-  UPB_SIZE(40, 80), 7, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(48, 88), 8, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_service_discovery_v3_Resource_CacheControl__fields[1] = {
