@@ -136,6 +136,8 @@ EXTERNAL_DEPS = {
         'address_sorting',
     'ares.h':
         'cares',
+    'google/api/monitored_resource.pb.h':
+        'google/api:monitored_resource_cc_proto',
     'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
         'googleapis_trace_grpc_service',
     'google/logging/v2/logging.grpc.pb.h':
@@ -219,8 +221,6 @@ EXTERNAL_DEPS = {
 INTERNAL_DEPS = {
     'google/api/expr/v1alpha1/syntax.upb.h':
         'google_type_expr_upb',
-    'google/api/monitored_resource.pb.h':
-        '@com_google_googleapis//google/api:monitored_resource_cc_proto',
     'google/rpc/status.upb.h':
         'google_rpc_status_upb',
     'google/protobuf/any.upb.h':
