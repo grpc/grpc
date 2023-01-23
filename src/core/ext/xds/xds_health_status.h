@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
-#define GRPC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -106,4 +106,4 @@ class XdsEndpointHealthStatusAttribute
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H

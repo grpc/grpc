@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -684,14 +684,13 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   }
 
   int GetWrappedFd() override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetWrappedFd not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetWrappedFd not supported on this platform");
   }
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::Shutdown not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Shutdown not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;
@@ -712,4 +711,4 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

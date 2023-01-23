@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -60,4 +60,4 @@ class HttpServerFilter : public ChannelFilter {
   "grpc.http.do_not_use_unless_you_have_permission_from_grpc_team_allow_"                       \
   "broken_put_requests"
 
-#endif  // GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H

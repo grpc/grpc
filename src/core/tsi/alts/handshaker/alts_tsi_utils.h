@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H
-#define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H
+#ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H
+#define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -50,4 +50,4 @@ tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code);
 grpc_gcp_HandshakerResp* alts_tsi_utils_deserialize_response(
     grpc_byte_buffer* resp_buffer, upb_Arena* arena);
 
-#endif  // GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H
+#endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H

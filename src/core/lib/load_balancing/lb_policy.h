@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
-#define GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
+#ifndef GRPC_SRC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
+#define GRPC_SRC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -439,4 +439,4 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
+#endif  // GRPC_SRC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H

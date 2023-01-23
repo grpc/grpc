@@ -403,7 +403,6 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print(file=C)
     print("#include \"src/core/lib/debug/stats_data.h\"", file=C)
     print("#include <stdint.h>", file=C)
-    print("#include \"absl/memory/memory.h\"", file=C)
     print(file=C)
 
     histo_code = []

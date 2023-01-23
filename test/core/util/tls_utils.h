@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef TLS_UTILS_H
-#define TLS_UTILS_H
+#ifndef GRPC_TEST_CORE_UTIL_TLS_UTILS_H
+#define GRPC_TEST_CORE_UTIL_TLS_UTILS_H
 
 #include <deque>
 #include <string>
@@ -146,4 +146,4 @@ class AsyncExternalVerifier {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_UTIL_TLS_UTILS_H

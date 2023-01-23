@@ -60,6 +60,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "lib/event_engine/handle_containers.h",
+        "lib/event_engine/resolved_address_internal.h",
         "//:include/grpc/event_engine/slice.h",
         "//:include/grpc/event_engine/slice_buffer.h",
     ],
@@ -70,6 +71,7 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
+        "resolved_address",
         "slice",
         "slice_buffer",
         "slice_cast",
@@ -953,6 +955,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:handshaker",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:uri_parser",
     ],
@@ -1872,11 +1875,11 @@ grpc_cc_library(
     deps = [
         "event_engine_common",
         "event_engine_poller",
+        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
-        "experiments",
         "init_internally",
         "iomgr_port",
         "posix_event_engine_base_hdrs",
@@ -2011,10 +2014,12 @@ grpc_cc_library(
     ],
     deps = [
         "iomgr_port",
+        "resolved_address",
         "status_helper",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+        "//:parse_address",
         "//:uri_parser",
     ],
 )
@@ -2031,6 +2036,21 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_shim",
+    srcs = [
+        "lib/event_engine/shim.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/shim.h",
+    ],
+    deps = [
+        "experiments",
+        "iomgr_port",
+        "//:gpr_platform",
     ],
 )
 
@@ -2634,6 +2654,7 @@ grpc_cc_library(
         "//:grpc_credentials_util",
         "//:grpc_security_base",
         "//:grpc_trace",
+        "//:parse_address",
         "//:promise",
         "//:ref_counted_ptr",
         "//:uri_parser",
@@ -2768,6 +2789,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_security_base",
         "//:handshaker",
+        "//:parse_address",
         "//:promise",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
@@ -3153,6 +3175,7 @@ grpc_cc_library(
         "resolved_address",
         "//:gpr",
         "//:grpc_base",
+        "//:parse_address",
         "//:sockaddr_utils",
     ],
 )
@@ -3782,6 +3805,7 @@ grpc_cc_library(
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
         "envoy_extensions_http_stateful_session_cookie_upb",
         "envoy_extensions_http_stateful_session_cookie_upbdefs",
+        "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
@@ -3848,6 +3872,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:iomgr_timer",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
@@ -3921,6 +3946,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:uri_parser",
@@ -4632,6 +4658,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
+        "//:parse_address",
         "//:promise",
         "//:uri_parser",
     ],
@@ -4733,9 +4760,9 @@ grpc_cc_library(
         "resolved_address",
         "//:config",
         "//:gpr",
-        "//:grpc_base",
         "//:grpc_resolver",
         "//:orphanable",
+        "//:parse_address",
         "//:server_address",
         "//:uri_parser",
     ],
@@ -5287,6 +5314,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
 )
 
 grpc_upb_proto_library(

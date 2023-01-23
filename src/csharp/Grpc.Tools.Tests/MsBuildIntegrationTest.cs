@@ -94,11 +94,12 @@ namespace Grpc.Tools.Tests
             SetUpForTest(nameof(TestMultipleProtos));
 
             var expectedFiles = new ExpectedFilesBuilder();
-            // TODO(jtattermusch): add test that "duplicate" .proto file
-            // name (under different directories) is allowed. See https://github.com/grpc/grpc/issues/17672
             expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs")
                 .Add("protos/another.proto", "Another.cs", "AnotherGrpc.cs")
-                .Add("second.proto", "Second.cs", "SecondGrpc.cs");
+                .Add("second.proto", "Second.cs", "SecondGrpc.cs")
+                // Test duplicate name under different directories is allowed.
+                // See https://github.com/grpc/grpc/issues/17672
+                .Add("protos/file.proto", "File.cs", "FileGrpc.cs"); 
 
             TryRunMsBuild("TestMultipleProtos", expectedFiles.ToString());
         }
