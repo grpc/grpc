@@ -40,8 +40,6 @@ using EventEngineFactory = std::function<
 namespace grpc_event_engine {
 namespace experimental {
 
-void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data);
-
 std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 
 // Returns a random message with bounded length.

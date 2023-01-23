@@ -57,7 +57,7 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   }
 }
 
-void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data) {
+void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data) {
   buf->Append(Slice::FromCopiedString(data));
 }
 
@@ -72,7 +72,7 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
   return tmp;
 }
 
-absl::Status SendValidatePayload(std::string data,
+absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
                                  EventEngine::Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
