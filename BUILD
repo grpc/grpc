@@ -3798,11 +3798,6 @@ grpc_upb_proto_library(
 )
 
 grpc_upb_proto_library(
-    name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
-)
-
-grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_ring_hash_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
 )
