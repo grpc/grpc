@@ -22,8 +22,8 @@
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
 
-#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
-#define GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -292,4 +292,4 @@ struct ContextType<Arena> {};
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#endif  // GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H

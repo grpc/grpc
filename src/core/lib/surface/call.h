@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_CALL_H
-#define GRPC_CORE_LIB_SURFACE_CALL_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_H
+#define GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -210,4 +210,4 @@ absl::string_view grpc_call_server_authority(const grpc_call* call);
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;
 
-#endif  // GRPC_CORE_LIB_SURFACE_CALL_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_CALL_H

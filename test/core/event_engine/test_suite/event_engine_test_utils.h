@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H_
-#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H_
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
 
 #include <functional>
 #include <map>
@@ -42,8 +42,6 @@ namespace experimental {
 void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data);
 
 std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
-
-EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str);
 
 // Returns a random message with bounded length.
 std::string GetNextSendMessage();
@@ -137,4 +135,4 @@ class ConnectionManager {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H_
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H
+#ifndef GRPC_TEST_CORE_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H
+#define GRPC_TEST_CORE_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -50,6 +51,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
+#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -61,6 +65,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -91,6 +96,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       FakeSubchannel(SubchannelState* state,
                      std::shared_ptr<WorkSerializer> work_serializer)
           : state_(state), work_serializer_(std::move(work_serializer)) {}
+
+      ~FakeSubchannel() override {
+        if (orca_watcher_ != nullptr) {
+          MutexLock lock(&state_->backend_metric_watcher_mu_);
+          state_->watchers_.erase(orca_watcher_.get());
+        }
+      }
 
       SubchannelState* state() const { return state_; }
 
@@ -145,15 +157,23 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         state_->requested_connection_ = true;
       }
 
-      // Don't need these methods here, so they're no-ops.
+      void AddDataWatcher(
+          std::unique_ptr<DataWatcherInterface> watcher) override {
+        MutexLock lock(&state_->backend_metric_watcher_mu_);
+        GPR_ASSERT(orca_watcher_ == nullptr);
+        orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
+        state_->watchers_.insert(orca_watcher_.get());
+      }
+
+      // Don't need this method, so it's a no-op.
       void ResetBackoff() override {}
-      void AddDataWatcher(std::unique_ptr<DataWatcherInterface>) override {}
 
       SubchannelState* state_;
       std::shared_ptr<WorkSerializer> work_serializer_;
       std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
                WatcherWrapper*>
           watcher_map_;
+      std::unique_ptr<OrcaWatcher> orca_watcher_;
     };
 
     explicit SubchannelState(absl::string_view address)
@@ -232,13 +252,37 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return MakeRefCounted<FakeSubchannel>(this, std::move(work_serializer));
     }
 
+    // Sends an OOB backend metric report to all watchers.
+    void SendOobBackendMetricReport(const BackendMetricData& backend_metrics) {
+      MutexLock lock(&backend_metric_watcher_mu_);
+      for (const auto* watcher : watchers_) {
+        watcher->watcher()->OnBackendMetricReport(backend_metrics);
+      }
+    }
+
+    // Checks that all OOB watchers have the expected reporting period.
+    void CheckOobReportingPeriod(Duration expected,
+                                 SourceLocation location = SourceLocation()) {
+      MutexLock lock(&backend_metric_watcher_mu_);
+      for (const auto* watcher : watchers_) {
+        EXPECT_EQ(watcher->report_interval(), expected)
+            << location.file() << ":" << location.line();
+      }
+    }
+
    private:
     const std::string address_;
+
     Mutex mu_;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(&mu_);
+
     Mutex requested_connection_mu_;
     bool requested_connection_ ABSL_GUARDED_BY(&requested_connection_mu_) =
         false;
+
+    Mutex backend_metric_watcher_mu_;
+    std::set<OrcaWatcher*> watchers_
+        ABSL_GUARDED_BY(&backend_metric_watcher_mu_);
   };
 
   // A fake helper to be passed to the LB policy.
@@ -263,8 +307,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     };
 
     FakeHelper(LoadBalancingPolicyTest* test,
-               std::shared_ptr<WorkSerializer> work_serializer)
-        : test_(test), work_serializer_(std::move(work_serializer)) {}
+               std::shared_ptr<WorkSerializer> work_serializer,
+               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                   event_engine)
+        : test_(test),
+          work_serializer_(std::move(work_serializer)),
+          event_engine_(std::move(event_engine)) {}
+
+    bool QueueEmpty() {
+      MutexLock lock(&mu_);
+      return queue_.empty();
+    }
 
     // Called at test tear-down time to ensure that we have not left any
     // unexpected events in the queue.
@@ -293,6 +346,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << location.file() << ":" << location.line();
       if (update == nullptr) return absl::nullopt;
       StateUpdate result = std::move(*update);
+      gpr_log(GPR_INFO, "got next state update: %s", result.ToString().c_str());
       queue_.pop_front();
       return std::move(result);
     }
@@ -349,7 +403,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         grpc_connectivity_state state, const absl::Status& status,
         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
       MutexLock lock(&mu_);
-      queue_.push_back(StateUpdate{state, status, std::move(picker)});
+      StateUpdate update{state, status, std::move(picker)};
+      gpr_log(GPR_INFO, "state update from LB policy: %s",
+              update.ToString().c_str());
+      queue_.push_back(std::move(update));
     }
 
     void RequestReresolution() override {
@@ -360,13 +417,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     absl::string_view GetAuthority() override { return "server.example.com"; }
 
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-      return grpc_event_engine::experimental::GetDefaultEventEngine().get();
+      return event_engine_.get();
     }
 
     void AddTraceEvent(TraceSeverity, absl::string_view) override {}
 
     LoadBalancingPolicyTest* test_;
     std::shared_ptr<WorkSerializer> work_serializer_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+
     Mutex mu_;
     std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
   };
@@ -428,6 +487,24 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     std::map<UniqueTypeName, std::string> attributes_;
   };
 
+  // A fake BackendMetricAccessor implementation, for passing to
+  // SubchannelCallTrackerInterface::Finish().
+  class FakeBackendMetricAccessor
+      : public LoadBalancingPolicy::BackendMetricAccessor {
+   public:
+    explicit FakeBackendMetricAccessor(
+        absl::optional<BackendMetricData> backend_metric_data)
+        : backend_metric_data_(std::move(backend_metric_data)) {}
+
+    const BackendMetricData* GetBackendMetricData() override {
+      if (backend_metric_data_.has_value()) return &*backend_metric_data_;
+      return nullptr;
+    }
+
+   private:
+    const absl::optional<BackendMetricData> backend_metric_data_;
+  };
+
   LoadBalancingPolicyTest()
       : work_serializer_(std::make_shared<WorkSerializer>()) {}
 
@@ -445,7 +522,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Creates a new FakeHelper for the new LB policy, and sets helper_ to
   // point to the FakeHelper.
   OrphanablePtr<LoadBalancingPolicy> MakeLbPolicy(absl::string_view name) {
-    auto helper = std::make_unique<FakeHelper>(this, work_serializer_);
+    auto helper =
+        std::make_unique<FakeHelper>(this, work_serializer_, event_engine_);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
                                       ChannelArgs()};
@@ -514,10 +592,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool WaitForStateUpdate(
       std::function<bool(FakeHelper::StateUpdate update)> continue_predicate,
       SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "==> WaitForStateUpdate()");
     while (true) {
       auto update = helper_->GetNextStateUpdate(location);
-      if (!update.has_value()) return false;
-      if (!continue_predicate(std::move(*update))) return true;
+      if (!update.has_value()) {
+        gpr_log(GPR_INFO, "WaitForStateUpdate() returning false");
+        return false;
+      }
+      if (!continue_predicate(std::move(*update))) {
+        gpr_log(GPR_INFO, "WaitForStateUpdate() returning true");
+        return true;
+      }
     }
   }
 
@@ -552,6 +637,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // update for state READY, whose picker is returned.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "==> WaitForConnected()");
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
@@ -611,7 +697,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   WaitForRoundRobinListChange(
       absl::Span<const absl::string_view> old_addresses,
       absl::Span<const absl::string_view> new_addresses,
-      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      const std::map<UniqueTypeName, std::string>& call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Waiting for expected RR addresses...");
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
@@ -625,7 +711,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           // Get enough picks to round-robin num_iterations times across all
           // expected addresses.
           auto picks = GetCompletePicks(update.picker.get(), num_picks,
-                                        call_attributes, location);
+                                        call_attributes, nullptr, location);
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
@@ -681,7 +767,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Requests a pick on picker and expects a Queue result.
   void ExpectPickQueued(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      const std::map<UniqueTypeName, std::string>& call_attributes = {},
       SourceLocation location = SourceLocation()) {
     ASSERT_NE(picker, nullptr);
     auto pick_result = DoPick(picker, call_attributes);
@@ -694,9 +780,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Requests a pick on picker and expects a Complete result.
   // The address of the resulting subchannel is returned, or nullopt if
   // the result was something other than Complete.
+  // If the complete pick includes a SubchannelCallTrackerInterface, then if
+  // subchannel_call_tracker is non-null, it will be set to point to the
+  // call tracker; otherwise, the call tracker will be invoked
+  // automatically to represent a complete call with no backend metric data.
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      const std::map<UniqueTypeName, std::string>& call_attributes = {},
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
+          subchannel_call_tracker = nullptr,
       SourceLocation location = SourceLocation()) {
     auto pick_result = DoPick(picker, call_attributes);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
@@ -706,14 +798,30 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (complete == nullptr) return absl::nullopt;
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
-    return subchannel->state()->address();
+    std::string address = subchannel->state()->address();
+    if (complete->subchannel_call_tracker != nullptr) {
+      if (subchannel_call_tracker != nullptr) {
+        *subchannel_call_tracker = std::move(complete->subchannel_call_tracker);
+      } else {
+        complete->subchannel_call_tracker->Start();
+        FakeMetadata metadata({});
+        FakeBackendMetricAccessor backend_metric_accessor({});
+        LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+            address, absl::OkStatus(), &metadata, &backend_metric_accessor};
+        complete->subchannel_call_tracker->Finish(args);
+      }
+    }
+    return address;
   }
 
   // Gets num_picks complete picks from picker and returns the resulting
   // list of addresses, or nullopt if a non-complete pick was returned.
   absl::optional<std::vector<std::string>> GetCompletePicks(
       LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
-      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      const std::map<UniqueTypeName, std::string>& call_attributes = {},
+      std::vector<
+          std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>>*
+          subchannel_call_trackers = nullptr,
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
@@ -721,9 +829,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
     std::vector<std::string> results;
     for (size_t i = 0; i < num_picks; ++i) {
-      auto address = ExpectPickComplete(picker, call_attributes, location);
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+          subchannel_call_tracker;
+      auto address = ExpectPickComplete(picker, call_attributes,
+                                        subchannel_call_trackers == nullptr
+                                            ? nullptr
+                                            : &subchannel_call_tracker,
+                                        location);
       if (!address.has_value()) return absl::nullopt;
       results.emplace_back(std::move(*address));
+      if (subchannel_call_trackers != nullptr) {
+        subchannel_call_trackers->emplace_back(
+            std::move(subchannel_call_tracker));
+      }
     }
     return results;
   }
@@ -750,10 +868,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void ExpectRoundRobinPicks(
       LoadBalancingPolicy::SubchannelPicker* picker,
       absl::Span<const absl::string_view> addresses,
-      const std::map<UniqueTypeName, std::string> call_attributes = {},
+      const std::map<UniqueTypeName, std::string>& call_attributes = {},
       size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
     auto picks = GetCompletePicks(picker, num_iterations * addresses.size(),
-                                  call_attributes, location);
+                                  call_attributes, nullptr, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
     EXPECT_TRUE(PicksAreRoundRobin(addresses, *picks))
         << "  Actual: " << absl::StrJoin(*picks, ", ")
@@ -823,6 +941,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   std::shared_ptr<WorkSerializer> work_serializer_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
 };
@@ -830,4 +950,4 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H
+#endif  // GRPC_TEST_CORE_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H

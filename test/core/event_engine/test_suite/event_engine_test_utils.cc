@@ -35,12 +35,10 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -82,19 +80,6 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
     absl::SleepFor(absl::Milliseconds(100));
   }
-}
-
-EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
-  grpc_resolved_address addr;
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse. Error: %s",
-            uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
 
 void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data) {
@@ -201,7 +186,7 @@ absl::Status ConnectionManager::BindAndStartListener(
 
   std::shared_ptr<EventEngine::Listener> listener((*status).release());
   for (auto& addr : addrs) {
-    auto bind_status = listener->Bind(URIToResolvedAddress(addr));
+    auto bind_status = listener->Bind(*URIToResolvedAddress(addr));
     if (!bind_status.ok()) {
       gpr_log(GPR_ERROR, "Binding listener failed: %s",
               bind_status.status().ToString().c_str());
@@ -239,7 +224,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
           last_in_progress_connection_.SetClientEndpoint(std::move(*status));
         }
       },
-      URIToResolvedAddress(target_addr), config,
+      *URIToResolvedAddress(target_addr), config,
       memory_quota_->CreateMemoryAllocator(conn_name), timeout);
 
   auto client_endpoint = last_in_progress_connection_.GetClientEndpoint();

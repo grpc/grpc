@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H
-#define GRPC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H
+#define GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H
 //
 // Low level TCP "bottom half" implementation, for use by transports built on
 // top of a TCP connection.
@@ -46,4 +46,4 @@ grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
 
 #endif  // GRPC_CFSTREAM
 
-#endif  // GRPC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H

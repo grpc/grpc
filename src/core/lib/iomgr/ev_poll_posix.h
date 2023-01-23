@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,4 +26,4 @@
 extern const grpc_event_engine_vtable grpc_ev_poll_posix;
 extern const grpc_event_engine_vtable grpc_ev_none_posix;
 
-#endif  // GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_EV_POLL_POSIX_H

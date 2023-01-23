@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
+#ifndef GRPC_SRC_CPP_SERVER_DYNAMIC_THREAD_POOL_H
+#define GRPC_SRC_CPP_SERVER_DYNAMIC_THREAD_POOL_H
 
 #include <functional>
 #include <memory>
@@ -42,4 +42,4 @@ class DynamicThreadPool final : public ThreadPoolInterface {
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
+#endif  // GRPC_SRC_CPP_SERVER_DYNAMIC_THREAD_POOL_H

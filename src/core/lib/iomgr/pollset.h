@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLSET_H
-#define GRPC_CORE_LIB_IOMGR_POLLSET_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_POLLSET_H
+#define GRPC_SRC_CORE_LIB_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
 
@@ -96,4 +96,4 @@ grpc_error_handle grpc_pollset_kick(grpc_pollset* pollset,
                                     grpc_pollset_worker* specific_worker)
     GRPC_MUST_USE_RESULT;
 
-#endif  // GRPC_CORE_LIB_IOMGR_POLLSET_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_POLLSET_H

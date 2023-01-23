@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_FORK_H
-#define GRPC_CORE_LIB_GPRPP_FORK_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_FORK_H
+#define GRPC_SRC_CORE_LIB_GPRPP_FORK_H
 
 #include <grpc/support/port_platform.h>
 
@@ -92,4 +92,4 @@ class Fork {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_FORK_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_FORK_H
