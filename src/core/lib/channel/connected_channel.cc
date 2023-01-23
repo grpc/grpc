@@ -1010,6 +1010,8 @@ class ServerStream final : public ConnectedChannelStream {
 
     if (auto* p = absl::get_if<GotClientHalfClose>(
             &client_trailing_metadata_state_)) {
+      pipes_.client_to_server.sender.Close();
+      /*
       if (absl::holds_alternative<Uninitialized>(call_state_) ||
           absl::holds_alternative<GotInitialMetadata>(call_state_) ||
           absl::holds_alternative<Running>(call_state_)) {
@@ -1020,6 +1022,7 @@ class ServerStream final : public ConnectedChannelStream {
         call_state_.emplace<Complete>(
             Complete{ServerMetadataFromStatus(p->result)});
       }
+*/
     }
 
     if (auto* p = absl::get_if<GotInitialMetadata>(&call_state_)) {
@@ -1182,7 +1185,7 @@ class ServerStream final : public ConnectedChannelStream {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     std::vector<std::string> ops;
     ops.push_back(absl::StrCat(
-        "client_initial_metadata_state:",
+        "call_state:",
         Match(
             call_state_, [](const Uninitialized&) { return "UNINITIALIZED"; },
             [](const GettingInitialMetadata&) { return "GETTING"; },
