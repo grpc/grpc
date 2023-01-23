@@ -208,5 +208,6 @@ grpc_cc_library(
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:memory_quota",
         "//src/core:notification",
+        "//src/core:time",
     ],
 )
