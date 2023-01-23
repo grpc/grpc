@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
-#define GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -90,4 +90,4 @@ class BdpEstimator {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H
-#define GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H
+#define GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -90,4 +90,4 @@
 #include "src/core/lib/gprpp/global_config_custom.h"  // IWYU pragma: export
 #include "src/core/lib/gprpp/global_config_env.h"     // IWYU pragma: export
 
-#endif  // GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H

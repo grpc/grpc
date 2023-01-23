@@ -16,8 +16,8 @@
 // is % allowed in string
 //
 
-#ifndef GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
-#define GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
+#ifndef GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H
 
 #include <memory>
 #include <string>
@@ -116,4 +116,4 @@ class StressTestInteropClient {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
+#endif  // GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H

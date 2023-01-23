@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
-#define GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
+#define GRPC_SRC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 
 #if defined(__has_builtin)
 #if __has_builtin(__builtin_FILE)
@@ -84,4 +84,4 @@ class DebugLocation {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_DEBUG_LOCATION_H

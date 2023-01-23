@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H
-#define GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_TIMER_HEAP_H
+#define GRPC_SRC_CORE_LIB_IOMGR_TIMER_HEAP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,4 +40,4 @@ void grpc_timer_heap_pop(grpc_timer_heap* heap);
 
 bool grpc_timer_heap_is_empty(grpc_timer_heap* heap);
 
-#endif  // GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_TIMER_HEAP_H
