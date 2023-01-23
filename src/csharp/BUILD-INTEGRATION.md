@@ -492,7 +492,7 @@ Do not include any `<Protobuf>` items in the project file as that will invoke th
 gRPC project documentation:
 * [gRPC for .NET](https://github.com/grpc/grpc-dotnet)
 * [gRPC C# (legacy implementation using gRPC Core library)](https://github.com/grpc/grpc/blob/master/src/csharp/README.md)
-* [Grpc.Tools internal documentation](Grpc.Tools/implementation_notes.md) - implementation notes for how `Grpc.Tools` works
+* [Grpc.Tools internals](Grpc.Tools/implementation_notes.md) - implementation notes for how `Grpc.Tools` works
 
 Microsoft documentation:
 * [Microsoft: Overview for gRPC on .NET](https://learn.microsoft.com/en-us/aspnet/core/grpc/)
