@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:10
 
 # gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y build-essential autoconf libtool pkg-config && apt-get clean
-
-# debian stretch has cmake 3.7: https://packages.debian.org/stretch/cmake
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool pkg-config && apt-get clean
 
 # C++ distribtests are setup in a way that requires git
 RUN apt-get update && apt-get install -y git && apt-get clean
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
+
 
 CMD ["bash"]
