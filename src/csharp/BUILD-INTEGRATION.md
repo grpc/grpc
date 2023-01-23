@@ -252,7 +252,7 @@ In either case if you are importing a `.proto` file from within another file the
 Generated files in the output directory will have the same directory structure as the
 `.proto` files under `ProtoRoot`.
 
-By default the output directory for generated files is `obj\RELEASE\FRAMEWORK\` (e.g. `obj\Debug\net6.0\`) unless `OutputDir` or `GrpcOutputDir` are specified.
+By default the output directory for generated files is `obj\CONFIGURATION\FRAMEWORK\` (e.g. `obj\Debug\net6.0\`) unless `OutputDir` or `GrpcOutputDir` are specified.
 ### Example use of `ProtoRoot`
 Specifying:
 ```xml

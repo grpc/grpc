@@ -35,14 +35,7 @@
     <PackageId>Grpc.Tools</PackageId>
     <Authors>The gRPC Authors</Authors>
     <Copyright>Copyright 2018 The gRPC Authors</Copyright>
-    <Description>gRPC and Protocol Buffer compiler for C# projects.
-
-        This package provides C# tooling support for generating C# code from ".proto" files.
-        - It contains protocol buffers compiler and gRPC plugin to generate C# code.
-        - It can be used in building both grpc-dotnet projects and legacy c-core C# projects.
-        For more information see: https://github.com/grpc/grpc/blob/master/src/csharp/BUILD-INTEGRATION.md
-
-    </Description>
+    <Description>gRPC and Protocol Buffer compiler for C# projects</Description>
     <PackageIcon>packageIcon.png</PackageIcon>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
