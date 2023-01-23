@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:10
 
 RUN apt-get update && apt-get install -y php php-dev php-pear wget zlib1g-dev
 
