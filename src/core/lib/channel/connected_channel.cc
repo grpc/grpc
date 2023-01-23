@@ -947,8 +947,7 @@ class ServerStream final : public ConnectedChannelStream {
     SchedulePush(&gim.recv_initial_metadata);
 
     // Fetch trailing metadata (to catch cancellations)
-    auto& gtm =
-        client_trailing_metadata_state_.emplace<WaitingForTrailingMetadata>();
+    auto& gtm = call_state_.emplace<WaitingForTrailingMetadata>();
     gtm.recv_trailing_metadata_ready =
         MakeMemberClosure<ServerStream,
                           &ServerStream::RecvTrailingMetadataReady>(this);
@@ -1009,8 +1008,7 @@ class ServerStream final : public ConnectedChannelStream {
 
     poll_send_initial_metadata();
 
-    if (auto* p = absl::get_if<GotTrailingMetadata>(
-            &client_trailing_metadata_state_)) {
+    if (auto* p = absl::get_if<GotTrailingMetadata>(&call_state_)) {
       if (absl::holds_alternative<Uninitialized>(
               client_initial_metadata_state_) ||
           absl::holds_alternative<GotInitialMetadata>(
@@ -1199,7 +1197,7 @@ class ServerStream final : public ConnectedChannelStream {
     ops.push_back(absl::StrCat(
         "client_trailing_metadata_state:",
         Match(
-            client_trailing_metadata_state_,
+            call_state_,
             [](const Uninitialized&) -> std::string { return "UNINITIALIZED"; },
             [](const WaitingForTrailingMetadata&) -> std::string {
               return "WAITING";
@@ -1234,8 +1232,7 @@ class ServerStream final : public ConnectedChannelStream {
 
   void RecvTrailingMetadataReady(absl::Status error) {
     MutexLock lock(mu());
-    auto& state =
-        absl::get<WaitingForTrailingMetadata>(client_trailing_metadata_state_);
+    auto& state = absl::get<WaitingForTrailingMetadata>(call_state_);
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO,
               "%sRecvTrailingMetadataReady: error:%s metadata:%s state:%s",
@@ -1251,8 +1248,7 @@ class ServerStream final : public ConnectedChannelStream {
               result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN)),
           message == nullptr ? "" : message->as_string_view());
     }
-    client_trailing_metadata_state_.emplace<GotTrailingMetadata>(
-        GotTrailingMetadata{});
+    call_state_.emplace<GotTrailingMetadata>(GotTrailingMetadata{});
     waker.Wakeup();
   }
 
@@ -1267,11 +1263,9 @@ class ServerStream final : public ConnectedChannelStream {
                     Running, Completing, Complete>;
   ClientInitialMetadataState client_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = Uninitialized{};
-  using ClientTrailingMetadataState =
-      absl::variant<Uninitialized, WaitingForTrailingMetadata,
-                    GotTrailingMetadata>;
-  ClientTrailingMetadataState client_trailing_metadata_state_
-      ABSL_GUARDED_BY(mu()) = Uninitialized{};
+  using CallState = absl::variant<Uninitialized, WaitingForTrailingMetadata,
+                                  GotTrailingMetadata>;
+  CallState call_state_ ABSL_GUARDED_BY(mu()) = Uninitialized{};
   absl::variant<Uninitialized, PipeReceiverNextType<ServerMetadataHandle>,
                 ServerMetadataHandle>
       ABSL_GUARDED_BY(mu()) server_initial_metadata_ = Uninitialized{};
