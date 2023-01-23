@@ -22,7 +22,6 @@
 #include <string>
 
 #include <google/protobuf/any.pb.h>
-#include <google/protobuf/duration.pb.h>
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
@@ -43,14 +42,12 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ring_hash.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -59,8 +56,6 @@ namespace {
 
 using LoadBalancingPolicyProto =
     ::envoy::config::cluster::v3::LoadBalancingPolicy;
-using ::envoy::extensions::load_balancing_policies::
-    client_side_weighted_round_robin::v3::ClientSideWeightedRoundRobin;
 using ::envoy::extensions::load_balancing_policies::ring_hash::v3::RingHash;
 using ::envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
@@ -118,100 +113,6 @@ TEST(RoundRobin, Basic) {
   auto result = ConvertXdsPolicy(policy);
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(*result, "{\"round_robin\":{}}");
-}
-
-//
-// ClientSideWeightedRoundRobin
-//
-
-TEST(ClientSideWeightedRoundRobinTest, DefaultConfig) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(ClientSideWeightedRoundRobin());
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"weighted_round_robin_experimental\":{}}");
-}
-
-TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
-  ClientSideWeightedRoundRobin wrr;
-  wrr.mutable_enable_oob_load_report()->set_value(true);
-  wrr.mutable_oob_reporting_period()->set_seconds(1);
-  wrr.mutable_blackout_period()->set_seconds(2);
-  wrr.mutable_weight_expiration_period()->set_seconds(3);
-  wrr.mutable_weight_update_period()->set_seconds(4);
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(wrr);
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result,
-            "{\"weighted_round_robin_experimental\":{"
-            "\"blackoutPeriod\":\"2.000000000s\","
-            "\"enableOobLoadReport\":true,"
-            "\"oobReportingPeriod\":\"1.000000000s\","
-            "\"weightExpirationPeriod\":\"3.000000000s\","
-            "\"weightUpdatePeriod\":\"4.000000000s\""
-            "}}");
-}
-
-TEST(ClientSideWeightedRoundRobinTest, InvalidDurations) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
-  ClientSideWeightedRoundRobin wrr;
-  wrr.mutable_oob_reporting_period()->set_seconds(-1);
-  wrr.mutable_blackout_period()->set_seconds(-2);
-  wrr.mutable_weight_expiration_period()->set_seconds(-3);
-  wrr.mutable_weight_update_period()->set_seconds(-4);
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(wrr);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(),
-            "validation errors: ["
-            "field:load_balancing_policy.policies[0].typed_extension_config"
-            ".typed_config.value[envoy.extensions.load_balancing_policies"
-            ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
-            ".blackout_period.seconds "
-            "error:value must be in the range [0, 315576000000]; "
-            "field:load_balancing_policy.policies[0].typed_extension_config"
-            ".typed_config.value[envoy.extensions.load_balancing_policies"
-            ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
-            ".oob_reporting_period.seconds "
-            "error:value must be in the range [0, 315576000000]; "
-            "field:load_balancing_policy.policies[0].typed_extension_config"
-            ".typed_config.value[envoy.extensions.load_balancing_policies"
-            ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
-            ".weight_expiration_period.seconds "
-            "error:value must be in the range [0, 315576000000]; "
-            "field:load_balancing_policy.policies[0].typed_extension_config"
-            ".typed_config.value[envoy.extensions.load_balancing_policies"
-            ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
-            ".weight_update_period.seconds "
-            "error:value must be in the range [0, 315576000000]]")
-      << result.status();
-}
-
-TEST(ClientSideWeightedRoundRobinTest, EnvVarNotEnabled) {
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(ClientSideWeightedRoundRobin());
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(),
-            "validation errors: [field:load_balancing_policy "
-            "error:no supported load balancing policy config found]")
-      << result.status();
 }
 
 //
