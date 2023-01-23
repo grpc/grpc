@@ -26,14 +26,14 @@
 
 #include <grpc/impl/connectivity_state.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
 
 // The interface for subchannels that is exposed to LB policy implementations.
-class SubchannelInterface : public RefCounted<SubchannelInterface> {
+class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
  public:
   class ConnectivityStateWatcherInterface {
    public:
@@ -59,9 +59,11 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   };
 
   explicit SubchannelInterface(const char* trace = nullptr)
-      : RefCounted<SubchannelInterface>(trace) {}
+      : DualRefCounted<SubchannelInterface>(trace) {}
 
   ~SubchannelInterface() override = default;
+
+  void Orphan() override {}
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
