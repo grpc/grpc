@@ -35,13 +35,17 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
+<<<<<<< HEAD:test/core/event_engine/event_engine_test_utils.cc
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+||||||| 7fd808f6f9:test/core/event_engine/test_suite/event_engine_test_utils.cc
+#include "src/core/lib/iomgr/resolved_address.h"
+=======
+>>>>>>> master:test/core/event_engine/test_suite/event_engine_test_utils.cc
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -60,7 +64,22 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   }
 }
 
-absl::Status SendValidatePayload(absl::string_view data,
+void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data) {
+  buf->Append(Slice::FromCopiedString(data));
+}
+
+std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
+  if (!buf->Length()) {
+    return std::string();
+  }
+  std::string tmp(buf->Length(), '\0');
+  char* bytes = const_cast<char*>(tmp.c_str());
+  grpc_slice_buffer_move_first_into_buffer(buf->c_slice_buffer(), buf->Length(),
+                                           bytes);
+  return tmp;
+}
+
+absl::Status SendValidatePayload(std::string data,
                                  EventEngine::Endpoint* send_endpoint,
                                  EventEngine::Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
@@ -149,7 +168,7 @@ absl::Status ConnectionManager::BindAndStartListener(
 
   std::shared_ptr<EventEngine::Listener> listener((*status).release());
   for (auto& addr : addrs) {
-    auto bind_status = listener->Bind(URIToResolvedAddress(addr));
+    auto bind_status = listener->Bind(*URIToResolvedAddress(addr));
     if (!bind_status.ok()) {
       gpr_log(GPR_ERROR, "Binding listener failed: %s",
               bind_status.status().ToString().c_str());
@@ -187,7 +206,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
           last_in_progress_connection_.SetClientEndpoint(std::move(*status));
         }
       },
-      URIToResolvedAddress(target_addr), config,
+      *URIToResolvedAddress(target_addr), config,
       memory_quota_->CreateMemoryAllocator(conn_name), timeout);
 
   auto client_endpoint = last_in_progress_connection_.GetClientEndpoint();

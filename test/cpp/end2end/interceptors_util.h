@@ -16,6 +16,9 @@
 //
 //
 
+#ifndef GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H
+#define GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H
+
 #include <condition_variable>
 
 #include <gtest/gtest.h>
@@ -354,3 +357,5 @@ class Verifier {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H

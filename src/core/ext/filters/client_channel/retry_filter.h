@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,4 +28,4 @@ extern const grpc_channel_filter kRetryFilterVtable;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H

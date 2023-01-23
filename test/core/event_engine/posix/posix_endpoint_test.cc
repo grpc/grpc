@@ -41,6 +41,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -81,8 +82,8 @@ std::list<Connection> CreateConnectedEndpoints(
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-  EventEngine::ResolvedAddress resolved_addr =
-      URIToResolvedAddress(target_addr);
+  auto resolved_addr = URIToResolvedAddress(target_addr);
+  GPR_ASSERT(resolved_addr.ok());
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification* server_signal = new grpc_core::Notification();
 
@@ -108,12 +109,12 @@ std::list<Connection> CreateConnectedEndpoints(
       std::make_unique<grpc_core::MemoryQuota>("foo"));
   GPR_ASSERT(listener.ok());
 
-  EXPECT_TRUE((*listener)->Bind(resolved_addr).ok());
+  EXPECT_TRUE((*listener)->Bind(*resolved_addr).ok());
   EXPECT_TRUE((*listener)->Start().ok());
 
   // Create client socket and connect to the target address.
   for (int i = 0; i < num_connections; ++i) {
-    int client_fd = ConnectToServerOrDie(resolved_addr);
+    int client_fd = ConnectToServerOrDie(*resolved_addr);
     EventHandle* handle =
         poller.CreateHandle(client_fd, "test", poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);

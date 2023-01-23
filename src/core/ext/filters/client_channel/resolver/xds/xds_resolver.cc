@@ -688,11 +688,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
       [&](const std::vector<
           XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
           /*weighted_clusters*/) {
-        const uint32_t key =
-            rand() %
-            entry
-                .weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
-                .range_end;
+        const uint32_t key = absl::Uniform<uint32_t>(
+            absl::BitGen(), 0, entry.weighted_cluster_state.back().range_end);
         // Find the index in weighted clusters corresponding to key.
         size_t mid = 0;
         size_t start_index = 0;

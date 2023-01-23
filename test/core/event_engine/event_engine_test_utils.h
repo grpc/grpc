@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H_
-#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H_
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
 
 #include <functional>
 #include <map>
@@ -39,6 +39,13 @@ using EventEngineFactory = std::function<
 
 namespace grpc_event_engine {
 namespace experimental {
+
+void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data);
+
+std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
+
+// Returns a random message with bounded length.
+std::string GetNextSendMessage();
 
 // Waits until the use_count of the event engine shared_ptr has reached 1
 // and returns.
@@ -164,4 +171,4 @@ EventEngine::ResolvedAddress URIToResolvedAddress(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H_
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H

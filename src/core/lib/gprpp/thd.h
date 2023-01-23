@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_THD_H
-#define GRPC_CORE_LIB_GPRPP_THD_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_THD_H
+#define GRPC_SRC_CORE_LIB_GPRPP_THD_H
 
 /// Internal thread interface.
 
@@ -168,4 +168,4 @@ class Thread {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_THD_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_THD_H

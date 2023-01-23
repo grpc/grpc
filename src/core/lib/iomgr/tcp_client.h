@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
-#define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_H
+#define GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -63,4 +63,4 @@ extern void grpc_tcp_client_global_init();
 
 void grpc_set_tcp_client_impl(grpc_tcp_client_vtable* impl);
 
-#endif  // GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_H

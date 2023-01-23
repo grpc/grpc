@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -129,4 +129,4 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
 // Ruturn true if the platform supports ifaddrs
 bool grpc_tcp_server_have_ifaddrs(void);
 
-#endif  // GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
