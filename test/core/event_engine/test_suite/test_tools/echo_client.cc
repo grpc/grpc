@@ -43,7 +43,6 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "test/core/event_engine/event_engine_test_utils.h"
 
 extern absl::AnyInvocable<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
@@ -106,6 +105,7 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
+  GPR_ASSERT(addr.ok());
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
@@ -116,7 +116,7 @@ void RunUntilInterrupted() {
         endpoint = std::move(*ep);
         connected.Notify();
       },
-      addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
+      *addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
   GPR_ASSERT(endpoint.get() != nullptr);
   gpr_log(GPR_DEBUG, "peer addr: %s",

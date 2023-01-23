@@ -262,19 +262,5 @@ std::string GetNextSendMessage() {
   return tmp_s;
 }
 
-EventEngine::ResolvedAddress URIToResolvedAddress(
-    absl::string_view address_str) {
-  grpc_resolved_address addr;
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failedtoparse.Error:%s",
-            uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
-#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 
 #include <functional>
 #include <map>
@@ -164,11 +164,7 @@ class NotifyOnDelete {
   grpc_core::Notification* signal_;
 };
 
-// TODO(hork): move to src/core/ EE utils
-EventEngine::ResolvedAddress URIToResolvedAddress(
-    absl::string_view address_str);
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
