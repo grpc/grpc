@@ -41,6 +41,11 @@
 #if defined(__APPLE__)
 // This is disabled on Apple platforms because macos/grpc_basictests_c_cpp
 // fails with this. https://github.com/grpc/grpc/issues/23661
+#elif defined(__linux__)
+// This is disabled on Linux as Abseil's time is exclusively based on the system time
+// which leads to gRPC being completely blocked in case the system clock is set back.
+// On linux we need to use SYNC_POSIX which uses the monotonic clock.
+// https://github.com/grpc/grpc/issues/32176
 #else
 #define GPR_ABSEIL_SYNC 1
 #endif
