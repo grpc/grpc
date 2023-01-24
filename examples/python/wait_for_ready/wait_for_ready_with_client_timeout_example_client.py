@@ -43,28 +43,26 @@ def check_status(response_future, wait_success):
 
 def main():
     # Create gRPC channel
-    channel = grpc.insecure_channel('localhost:50051')
-    stub = helloworld_pb2_grpc.GreeterStub(channel)
+    with grpc.insecure_channel('localhost:50051') as channel:
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
 
-    event_for_delay = threading.Event()
+        event_for_delay = threading.Event()
 
-    # Server will delay send initial metadata back for this RPC
-    response_future_delay = stub.SayHelloStreamReply(
-        helloworld_pb2.HelloRequest(name='you'), wait_for_ready=True)
+        # Server will delay send initial metadata back for this RPC
+        response_future_delay = stub.SayHelloStreamReply(
+            helloworld_pb2.HelloRequest(name='you'), wait_for_ready=True)
 
-    # Fire RPC and wait for metadata
-    thread_with_delay = threading.Thread(target=wait_for_metadata,
-        args=(response_future_delay, event_for_delay))
-    thread_with_delay.start()
+        # Fire RPC and wait for metadata
+        thread_with_delay = threading.Thread(target=wait_for_metadata,
+            args=(response_future_delay, event_for_delay))
+        thread_with_delay.start()
 
-    # Wait on client side with timeout
-    timeout = 3
-    check_status(response_future_delay, event_for_delay.wait(timeout))
+        # Wait on client side with timeout
+        timeout = 3
+        check_status(response_future_delay, event_for_delay.wait(timeout))
 
-    # Expected to timeout.
-    thread_with_delay.join()
-
-    channel.close()
+        # Expected to timeout.
+        thread_with_delay.join()
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
