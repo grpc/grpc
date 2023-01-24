@@ -345,14 +345,13 @@ class PipeSender {
   PushType Push(T value);
 
   template <typename Fn>
-  void InterceptAndMap(Fn f, SourceLocation from = {}) {
-    center_->AppendMap(std::move(f), DebugLocation(from));
+  void InterceptAndMap(Fn f, DebugLocation from = {}) {
+    center_->AppendMap(std::move(f), from);
   }
 
   template <typename Fn, typename OnHalfClose>
-  void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, SourceLocation from = {}) {
-    center_->AppendMapWithCleanup(std::move(f), std::move(cleanup_fn),
-                                  DebugLocation(from));
+  void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, DebugLocation from = {}) {
+    center_->AppendMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
   }
 
  private:
@@ -388,15 +387,14 @@ class PipeReceiver {
   auto Next();
 
   template <typename Fn>
-  void InterceptAndMap(Fn f, SourceLocation from = {}) {
-    center_->PrependMap(std::move(f), DebugLocation(from));
+  void InterceptAndMap(Fn f, DebugLocation from = {}) {
+    center_->PrependMap(std::move(f), from);
   }
 
   template <typename Fn, typename OnHalfClose>
   void InterceptAndMapWithHalfClose(Fn f, OnHalfClose cleanup_fn,
-                                    SourceLocation from = {}) {
-    center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn),
-                                   DebugLocation(from));
+                                    DebugLocation from = {}) {
+    center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
   }
 
  private:
