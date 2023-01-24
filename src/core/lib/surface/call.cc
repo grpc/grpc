@@ -2048,6 +2048,8 @@ class PromiseBasedCall : public Call,
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() override;
 
+  virtual ServerCallContext* server_call_context() { return nullptr; }
+
  protected:
   class ScopedContext
       : public ScopedActivity,
@@ -2681,6 +2683,10 @@ void CallContext::UpdateDeadline(Timestamp deadline) {
   call_->UpdateDeadline(deadline);
 }
 
+ServerCallContext* CallContext::server_call_context() {
+  return call_->server_call_context();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PublishMetadataArray
 
@@ -3129,6 +3135,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   std::string DebugTag() const override {
     return absl::StrFormat("SERVER_CALL[%p]: ", this);
   }
+
+  ServerCallContext* server_call_context() override { return &call_context_; }
 
  private:
   class RecvCloseOpCancelState {
