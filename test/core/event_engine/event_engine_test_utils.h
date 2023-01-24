@@ -133,11 +133,6 @@ class ConnectionManager {
 
 void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data);
 
-std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
-
-// Returns a random message with bounded length.
-std::string GetNextSendMessage();
-
 class NotifyOnDelete {
  public:
   explicit NotifyOnDelete(grpc_core::Notification* signal) : signal_(signal) {}

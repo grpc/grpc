@@ -3,8 +3,8 @@ A reusable test suite for EventEngine implementations.
 # Customizing tests for your EventEngine implementation
 
 To exercise a custom EventEngine, create a new bazel test target that links
-against the `//test/core/event_engine/test_suite:complete` library, and provide
-a testing `main` function that sets a custom EventEngine factory.
+against some set of targets in the `//test/core/event_engine/test_suite/tests/...` 
+folder, and provide a testing `main` function that sets a custom EventEngine factory.
 
 Your custom test target will look something like:
 

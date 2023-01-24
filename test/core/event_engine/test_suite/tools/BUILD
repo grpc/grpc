@@ -29,7 +29,10 @@ grpc_cc_binary(
         "no_linux",
         "no_mac",
     ],
-    deps = ["echo_client"],
+    deps = [
+        "echo_client",
+        "//src/core:windows_event_engine",
+    ],
 )
 
 # TODO(hork): this needs to reuse the same configuration in the test suite.
@@ -41,7 +44,10 @@ grpc_cc_binary(
         "bazel_only",
         "no_windows",
     ],
-    deps = ["echo_client"],
+    deps = [
+        "echo_client",
+        "//src/core:posix_event_engine",
+    ],
 )
 
 # -- Testing tools --
@@ -58,7 +64,6 @@ grpc_cc_library(
     deps = [
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
-        "//src/core:windows_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],

@@ -51,6 +51,30 @@ constexpr int kMinMessageSize = 1024;
 constexpr int kMaxMessageSize = 4096;
 }  // namespace
 
+// Returns a random message with bounded length.
+std::string GetNextSendMessage() {
+  static const char alphanum[] =
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
+  static std::random_device rd;
+  static std::seed_seq seed{rd()};
+  static std::mt19937 gen(seed);
+  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
+  static grpc_core::Mutex g_mu;
+  std::string tmp_s;
+  int len;
+  {
+    grpc_core::MutexLock lock(&g_mu);
+    len = dis(gen);
+  }
+  tmp_s.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+  return tmp_s;
+}
+
 void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
     GRPC_LOG_EVERY_N_SEC(2, "engine.use_count() = %ld", engine.use_count());
@@ -215,30 +239,6 @@ ConnectionManager::CreateConnection(std::string target_addr,
                            std::move(server_endpoint));
   }
   return absl::CancelledError("Failed to create connection.");
-}
-
-// Returns a random message with bounded length.
-std::string GetNextSendMessage() {
-  static const char alphanum[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-  static std::random_device rd;
-  static std::seed_seq seed{rd()};
-  static std::mt19937 gen(seed);
-  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
-  static grpc_core::Mutex g_mu;
-  std::string tmp_s;
-  int len;
-  {
-    grpc_core::MutexLock lock(&g_mu);
-    len = dis(gen);
-  }
-  tmp_s.reserve(len);
-  for (int i = 0; i < len; ++i) {
-    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-  }
-  return tmp_s;
 }
 
 }  // namespace experimental
