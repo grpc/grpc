@@ -3101,6 +3101,27 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   bool is_trailers_only() const override { abort(); }
   absl::string_view GetServerAuthority() const override { return ""; }
 
+  // Polling order for the server promise stack:
+  //
+  // │ ┌───────────────────────────────────────┐
+  // │ │ ServerPromiseBasedCall::UpdateOnce    ├──► Lifetime management,
+  // │ ├───────────────────────────────────────┤    signal call end to app
+  // │ │ ConnectedChannel                      ├─┐
+  // │ ├───────────────────────────────────────┤ └► Interactions with the
+  // │ │ ... closest to transport filter       │    transport - send/recv msgs
+  // │ ├───────────────────────────────────────┤    and metadata, call phase
+  // │ │ ...                                   │    ordering
+  // │ ├───────────────────────────────────────┤
+  // │ │ ... closest to app filter             │ ┌► Request matching, initial
+  // │ ├───────────────────────────────────────┤ │  setup, publishing call to
+  // │ │ Server::ChannelData::MakeCallPromise  ├─┘  application
+  // │ ├───────────────────────────────────────┤
+  // │ │ ServerPromiseBasedCall::PollTopOfCall ├──► Application interactions,
+  // ▼ └───────────────────────────────────────┘    forwarding messages,
+  // Polling &                                      sending trailing metadata
+  // instantiation
+  // order
+
   void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) override;
   Poll<ServerMetadataHandle> PollTopOfCall()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
