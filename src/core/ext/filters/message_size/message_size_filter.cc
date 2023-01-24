@@ -135,7 +135,7 @@ const grpc_channel_filter ClientMessageSizeFilter::kFilter =
                            kFilterExaminesOutboundMessages |
                                kFilterExaminesInboundMessages>("message_size");
 const grpc_channel_filter ServerMessageSizeFilter::kFilter =
-    MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kClient,
+    MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kServer,
                            kFilterExaminesOutboundMessages |
                                kFilterExaminesInboundMessages>("message_size");
 
@@ -181,7 +181,7 @@ class MessageSizeFilter::CallBuilder {
 
   ArenaPromise<ServerMetadataHandle> Run(
       CallArgs call_args, NextPromiseFactory next_promise_factory) {
-    return Race(next_promise_factory(std::move(call_args)), err_->Wait());
+    return Race(err_->Wait(), next_promise_factory(std::move(call_args)));
   }
 
  private:

@@ -269,8 +269,8 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
   // - call the next filter
   // - wait for initial metadata from the server and then commence decompression
   // - compress outgoing messages
-  return Race(next_promise_factory(std::move(call_args)),
-              decompress_err->Wait());
+  return Race(decompress_err->Wait(),
+              next_promise_factory(std::move(call_args)));
 }
 
 ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
@@ -313,8 +313,8 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
   // - decompress incoming messages
   // - wait for initial metadata to be sent, and then commence compression of
   //   outgoing messages
-  return Race(next_promise_factory(std::move(call_args)),
-              decompress_err->Wait());
+  return Race(decompress_err->Wait(),
+              next_promise_factory(std::move(call_args)));
 }
 
 }  // namespace grpc_core

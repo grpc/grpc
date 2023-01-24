@@ -443,6 +443,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
     case State::kIdle:
     case State::kForwardedBatch:
       state_ = State::kCancelledButNotYetPolled;
+      if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
     case State::kGotBatchNoPipe:
     case State::kGotBatch:
@@ -453,6 +454,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
       push_.reset();
       next_.reset();
       state_ = State::kCancelledButNotYetPolled;
+      if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
   }
 }
@@ -1829,8 +1831,15 @@ struct ServerCallData::SendInitialMetadata {
 
 class ServerCallData::PollContext {
  public:
-  explicit PollContext(ServerCallData* self, Flusher* flusher)
-      : self_(self), flusher_(flusher) {
+  explicit PollContext(ServerCallData* self, Flusher* flusher,
+                       DebugLocation created = DebugLocation())
+      : self_(self), flusher_(flusher), created_(created) {
+    if (self_->poll_ctx_ != nullptr) {
+      Crash(absl::StrCat(
+          "PollContext: disallowed recursion. New: ", created_.file(), ":",
+          created_.line(), "; Old: ", self_->poll_ctx_->created_.file(), ":",
+          self_->poll_ctx_->created_.line()));
+    }
     GPR_ASSERT(self_->poll_ctx_ == nullptr);
     self_->poll_ctx_ = this;
     scoped_activity_.Init(self_);
@@ -1842,6 +1851,9 @@ class ServerCallData::PollContext {
 
   ~PollContext() {
     self_->poll_ctx_ = nullptr;
+    gpr_log(GPR_DEBUG, "PollContextDone: have_scoped_activity=%s repoll=%s",
+            have_scoped_activity_ ? "true" : "false",
+            repoll_ ? "true" : "false");
     if (have_scoped_activity_) scoped_activity_.Destroy();
     if (repoll_) {
       struct NextPoll : public grpc_closure {
@@ -1875,6 +1887,7 @@ class ServerCallData::PollContext {
   Flusher* const flusher_;
   bool repoll_ = false;
   bool have_scoped_activity_;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation created_;
 };
 
 const char* ServerCallData::StateString(RecvInitialState state) {
@@ -2103,6 +2116,7 @@ void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
       if (!error.ok()) {
         auto* batch = grpc_make_transport_stream_op(
             NewClosure([call_combiner = call_combiner()](absl::Status) {
+              gpr_log(GPR_DEBUG, "ON COMPLETE DONE");
               GRPC_CALL_COMBINER_STOP(call_combiner, "done-cancel");
             }));
         batch->cancel_stream = true;
