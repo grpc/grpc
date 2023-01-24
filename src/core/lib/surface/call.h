@@ -125,9 +125,6 @@ class CallContext {
 
   ServerCallContext* server_call_context();
 
- protected:
-  PromiseBasedCall* call() { return call_; }
-
  private:
   friend class PromiseBasedCall;
   // Call final info.

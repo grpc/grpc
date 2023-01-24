@@ -70,7 +70,7 @@ ArenaPromise<ServerMetadataHandle> ClientLoadReportingFilter::MakeCallPromise(
         return md;
       });
 
-  return Seq(next_promise_factory(std::move(call_args)),
+  return Map(next_promise_factory(std::move(call_args)),
              [saw_initial_metadata, client_stats = std::move(client_stats)](
                  ServerMetadataHandle trailing_metadata) {
                if (client_stats != nullptr) {
