@@ -32,7 +32,6 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport_impl.h"
 
