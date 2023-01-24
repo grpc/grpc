@@ -65,6 +65,7 @@ extern const absl::string_view kRpcClientStartedRpcsMeasureName;
 extern const absl::string_view kRpcClientRetriesPerCallMeasureName;
 extern const absl::string_view kRpcClientTransparentRetriesPerCallMeasureName;
 extern const absl::string_view kRpcClientRetryDelayPerCallMeasureName;
+extern const absl::string_view kRpcClientTransportLatencyMeasureName;
 
 extern const absl::string_view kRpcServerSentMessagesPerRpcMeasureName;
 extern const absl::string_view kRpcServerSentBytesPerRpcMeasureName;
@@ -81,6 +82,7 @@ const ::opencensus::stats::ViewDescriptor&
 ClientSentCompressedMessageBytesPerRpc();
 const ::opencensus::stats::ViewDescriptor&
 ClientReceivedCompressedMessageBytesPerRpc();
+const ::opencensus::stats::ViewDescriptor& ClientTransportLatency();
 
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcs();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcs();

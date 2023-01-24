@@ -216,6 +216,7 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   View client_latency_view(ClientRoundtripLatencyCumulative());
   View client_server_latency_view(ClientServerLatencyCumulative());
   View server_server_latency_view(ServerServerLatencyCumulative());
+  View client_transport_latency_view(experimental::ClientTransportLatency());
 
   const absl::Time start_time = absl::Now();
   {
@@ -258,6 +259,25 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
               ::testing::Property(&Distribution::mean, ::testing::Gt(0.0)),
               ::testing::Property(&Distribution::mean,
                                   ::testing::Lt(client_latency))))));
+
+  // Transport time is a subinterval of total latency.
+  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
+    const auto client_transport_latency =
+        client_transport_latency_view.GetData()
+            .distribution_data()
+            .find({client_method_name_})
+            ->second.mean();
+    EXPECT_THAT(
+        client_server_latency_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::AllOf(
+                ::testing::Property(&Distribution::count, 1),
+                ::testing::Property(&Distribution::mean, ::testing::Gt(0.0)),
+                ::testing::Property(
+                    &Distribution::mean,
+                    ::testing::Lt(client_transport_latency))))));
+  }
 
   // client server elapsed time should be the same value propagated to the
   // client.

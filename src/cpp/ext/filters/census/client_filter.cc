@@ -48,6 +48,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -213,6 +214,15 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
          {RpcClientServerLatency(),
           ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))}},
         tags);
+    if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
+      if (gpr_time_cmp(transport_stream_stats->latency,
+                       gpr_inf_future(GPR_TIMESPAN)) != 0) {
+        double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
+            gpr_timespec_to_micros(transport_stream_stats->latency)));
+        ::opencensus::stats::Record({{RpcClientTransportLatency(), latency_ms}},
+                                    tags);
+      }
+    }
   }
 }
 
