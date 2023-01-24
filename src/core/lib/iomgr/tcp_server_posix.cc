@@ -98,8 +98,7 @@ class MemoryAllocatorFactoryWrapper
 
 static grpc_error_handle CreateEventEngineListener(
     grpc_tcp_server* s, grpc_closure* shutdown_complete,
-    const EndpointConfig& config, grpc_tcp_server_cb on_accept_cb,
-    void* on_accept_cb_arg, grpc_tcp_server** server) {
+    const EndpointConfig& config, grpc_tcp_server** server) {
   PosixEventEngineWithFdSupport::PosixAcceptCallback accept_cb =
       [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
           bool is_external, MemoryAllocator /*allocator*/,
@@ -239,8 +238,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
       absl::flat_hash_map<int, std::tuple<int, int>>();
   *server = s;
   if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    return CreateEventEngineListener(s, shutdown_complete, config, on_accept_cb,
-                                     on_accept_cb_arg, server);
+    return CreateEventEngineListener(s, shutdown_complete, config, server);
   }
   return absl::OkStatus();
 }
