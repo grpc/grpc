@@ -43,15 +43,15 @@
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
   default: false
-  expiry: 2023/01/01
-  owner: ctiller@google.com
+  expiry: 2023/03/01
+  owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description:
     Use SO_RCVLOWAT to avoid wakeups on the read path.
   default: false
-  expiry: 2023/01/01
-  owner: ctiller@google.com
+  expiry: 2023/03/01
+  owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: peer_state_based_framing
   description:
@@ -59,7 +59,7 @@
     on the peer's memory pressure which is reflected in its max http2 frame
     size.
   default: false
-  expiry: 2023/01/01
+  expiry: 2023/03/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
 - name: flow_control_fixes
@@ -73,14 +73,14 @@
   description:
     New memory pressure controller
   default: false
-  expiry: 2023/01/01
+  expiry: 2023/03/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size
   description:
     Discard the cap on the max free pool size for one memory allocator
   default: false
-  expiry: 2023/01/01
+  expiry: 2023/03/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: new_hpack_huffman_decoder
@@ -101,7 +101,7 @@
   description:
     Placeholder experiment to prove/disprove our monitoring is working
   default: true
-  expiry: 2023/01/01
+  expiry: 2023/06/01
   owner: ctiller@google.com
   test_tags: []
 - name: promise_based_client_call
@@ -109,7 +109,7 @@
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
   default: false
-  expiry: 2023/01/01
+  expiry: 2023/03/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
 - name: free_large_allocator
@@ -119,4 +119,10 @@
   expiry: 2023/04/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
-
+- name: transport_supplies_client_latency
+  description:
+    If set, use the transport represented value for client latency in opencensus
+  default: false
+  expiry: 2023/06/01
+  owner: ctiller@google.com
+  test_tags: [census_test]

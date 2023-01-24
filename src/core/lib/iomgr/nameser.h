@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_NAMESER_H
-#define GRPC_CORE_LIB_IOMGR_NAMESER_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_NAMESER_H
+#define GRPC_SRC_CORE_LIB_IOMGR_NAMESER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -103,4 +103,4 @@ typedef enum __ns_type {
 
 #endif  // GRPC_HAVE_ARPA_NAMESER
 
-#endif  // GRPC_CORE_LIB_IOMGR_NAMESER_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_NAMESER_H

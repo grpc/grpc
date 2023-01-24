@@ -12,6 +12,7 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/type/matcher/v3/filter_state.upb.h"
 #include "envoy/type/matcher/v3/metadata.upb.h"
 #include "envoy/type/matcher/v3/path.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
@@ -124,7 +125,7 @@ const upb_MiniTable envoy_config_rbac_v3_Permission_Set_msginit = {
   UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_config_rbac_v3_Principal_submsgs[10] = {
+static const upb_MiniTable_Sub envoy_config_rbac_v3_Principal_submsgs[11] = {
   {.submsg = &envoy_config_rbac_v3_Principal_Set_msginit},
   {.submsg = &envoy_config_rbac_v3_Principal_Set_msginit},
   {.submsg = &envoy_config_rbac_v3_Principal_Authenticated_msginit},
@@ -135,9 +136,10 @@ static const upb_MiniTable_Sub envoy_config_rbac_v3_Principal_submsgs[10] = {
   {.submsg = &envoy_type_matcher_v3_PathMatcher_msginit},
   {.submsg = &envoy_config_core_v3_CidrRange_msginit},
   {.submsg = &envoy_config_core_v3_CidrRange_msginit},
+  {.submsg = &envoy_type_matcher_v3_FilterStateMatcher_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_rbac_v3_Principal__fields[11] = {
+static const upb_MiniTable_Field envoy_config_rbac_v3_Principal__fields[12] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -149,12 +151,13 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_Principal__fields[11] = {
   {9, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 7, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {10, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 8, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {11, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 9, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 10, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_rbac_v3_Principal_msginit = {
   &envoy_config_rbac_v3_Principal_submsgs[0],
   &envoy_config_rbac_v3_Principal__fields[0],
-  UPB_SIZE(8, 16), 11, kUpb_ExtMode_NonExtendable, 11, 255, 0,
+  UPB_SIZE(8, 16), 12, kUpb_ExtMode_NonExtendable, 12, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_Principal_Set_submsgs[1] = {

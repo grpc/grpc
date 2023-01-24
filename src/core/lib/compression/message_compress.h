@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
-#define GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
+#ifndef GRPC_SRC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
+#define GRPC_SRC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,4 +36,4 @@ int grpc_msg_compress(grpc_compression_algorithm algorithm,
 int grpc_msg_decompress(grpc_compression_algorithm algorithm,
                         grpc_slice_buffer* input, grpc_slice_buffer* output);
 
-#endif  // GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
+#endif  // GRPC_SRC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H

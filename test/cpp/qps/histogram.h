@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_HISTOGRAM_H
-#define TEST_QPS_HISTOGRAM_H
+#ifndef GRPC_TEST_CPP_QPS_HISTOGRAM_H
+#define GRPC_TEST_CPP_QPS_HISTOGRAM_H
 
 #include "src/proto/grpc/testing/stats.pb.h"
 #include "test/core/util/histogram.h"
@@ -80,4 +80,4 @@ class Histogram {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_QPS_HISTOGRAM_H
+#endif  // GRPC_TEST_CPP_QPS_HISTOGRAM_H

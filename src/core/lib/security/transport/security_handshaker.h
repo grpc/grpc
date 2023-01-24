@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#define GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -48,4 +48,4 @@ grpc_handshaker* grpc_security_handshaker_create(
     tsi_handshaker* handshaker, grpc_security_connector* connector,
     const grpc_channel_args* args);
 
-#endif  // GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H

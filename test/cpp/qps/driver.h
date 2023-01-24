@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_DRIVER_H
-#define TEST_QPS_DRIVER_H
+#ifndef GRPC_TEST_CPP_QPS_DRIVER_H
+#define GRPC_TEST_CPP_QPS_DRIVER_H
 
 #include <memory>
 
@@ -42,4 +42,4 @@ bool RunQuit(
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_DRIVER_H

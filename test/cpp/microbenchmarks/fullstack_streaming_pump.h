@@ -18,8 +18,8 @@
 
 // Benchmark gRPC end2end in various configurations
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
 
 #include <sstream>
 
@@ -163,4 +163,4 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H

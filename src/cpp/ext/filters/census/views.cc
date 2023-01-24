@@ -135,6 +135,16 @@ const ViewDescriptor& ClientRoundtripLatency() {
   return descriptor;
 }
 
+const ViewDescriptor& ClientTransportLatency() {
+  const static ViewDescriptor descriptor =
+      DefaultViewDescriptor()
+          .set_name("grpc.io/client/transport_latency")
+          .set_measure(kRpcClientTransportLatencyMeasureName)
+          .set_aggregation(MillisDistributionAggregation())
+          .add_column(ClientMethodTagKey());
+  return descriptor;
+}
+
 const ViewDescriptor& ClientSentCompressedMessageBytesPerRpc() {
   const static ViewDescriptor descriptor =
       DefaultViewDescriptor()

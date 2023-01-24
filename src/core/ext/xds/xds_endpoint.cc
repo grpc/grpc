@@ -157,7 +157,7 @@ absl::optional<ServerAddress> ServerAddressParse(
   // health_status
   const int32_t health_status =
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
-  if (!XdsHostOverrideEnabled() &&
+  if (!XdsOverrideHostEnabled() &&
       health_status != envoy_config_core_v3_UNKNOWN &&
       health_status != envoy_config_core_v3_HEALTHY) {
     return absl::nullopt;

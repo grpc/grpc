@@ -192,6 +192,12 @@ UPB_INLINE void envoy_admin_v3_ClusterStatus_clear_observability_name(const envo
 UPB_INLINE upb_StringView envoy_admin_v3_ClusterStatus_observability_name(const envoy_admin_v3_ClusterStatus* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), upb_StringView);
 }
+UPB_INLINE void envoy_admin_v3_ClusterStatus_clear_eds_service_name(const envoy_admin_v3_ClusterStatus* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 72), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_admin_v3_ClusterStatus_eds_service_name(const envoy_admin_v3_ClusterStatus* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(36, 72), upb_StringView);
+}
 
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_name(envoy_admin_v3_ClusterStatus *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
@@ -252,6 +258,9 @@ UPB_INLINE struct envoy_config_cluster_v3_CircuitBreakers* envoy_admin_v3_Cluste
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_observability_name(envoy_admin_v3_ClusterStatus *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(28, 56), upb_StringView) = value;
+}
+UPB_INLINE void envoy_admin_v3_ClusterStatus_set_eds_service_name(envoy_admin_v3_ClusterStatus *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 72), upb_StringView) = value;
 }
 
 /* envoy.admin.v3.HostStatus */

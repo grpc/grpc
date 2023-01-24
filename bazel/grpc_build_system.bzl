@@ -70,6 +70,8 @@ def _get_external_deps(external_deps):
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
+        elif dep.startswith("google/"):
+            ret.append("@com_google_googleapis//" + dep)
         else:
             ret.append("//external:" + dep)
     return ret
@@ -457,7 +459,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkstatic": linkstatic,
     }
 
-    if "grpc-fuzzer" not in tags:
+    if "grpc-fuzzer" not in tags and "no_test_ios" not in tags:
         ios_cc_test(
             name = name,
             srcs = srcs,

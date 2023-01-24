@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_GENERIC_H
-#define GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_GENERIC_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_GENERIC_H
+#define GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_GENERIC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -37,4 +37,4 @@
   extern grpc_core::UniquePtr<char> gpr_global_config_get_##name(); \
   extern void gpr_global_config_set_##name(const char* value)
 
-#endif  // GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_GENERIC_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_GENERIC_H
