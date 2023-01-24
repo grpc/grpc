@@ -14,8 +14,8 @@
 """The Python serer of utilizing wait-for-ready flag with client time out."""
 
 from concurrent import futures
-from time import sleep
 import logging
+from time import sleep
 
 import grpc
 
@@ -24,7 +24,9 @@ helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
 
 _INITIAL_METADATA = ((b'initial-md', 'initial-md-value'),)
 
+
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
+
     def SayHelloStreamReply(self, request, servicer_context):
         # Send initial metadata back to indicate server is ready and running.
         print("sleeping 5s before sending metadata back")
@@ -36,6 +38,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
         # Server can do whatever it wants here before send actual response.
         yield helloworld_pb2.HelloReply(message='Hello, %s!' % (request.name))
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

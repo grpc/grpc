@@ -24,11 +24,13 @@ helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
+
 def wait_for_metadata(response_future, event):
     for key, value in response_future.initial_metadata():
         print('Greeter client received initial metadata: key=%s value=%s' %
-            (key, value))
+              (key, value))
     event.set()
+
 
 def check_status(response_future, wait_success):
     if wait_success:
@@ -54,7 +56,8 @@ def main():
 
         # Fire RPC and wait for metadata
         thread_with_delay = threading.Thread(target=wait_for_metadata,
-            args=(response_future_delay, event_for_delay))
+                                             args=(response_future_delay,
+                                                   event_for_delay))
         thread_with_delay.start()
 
         # Wait on client side with timeout
@@ -63,6 +66,7 @@ def main():
 
         # Expected to timeout.
         thread_with_delay.join()
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
