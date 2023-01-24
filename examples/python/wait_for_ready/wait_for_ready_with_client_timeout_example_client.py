@@ -11,10 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Python client of utilizing wait-for-ready flag with client time out."""
+"""The Python client of utilizing wait-for-ready flag with client time out.
 
+For stream server, if client set wait_for_ready but server never actually starts,
+client will wait indefinitely, this example will do the following steps to set a
+timeout on client side:
+1. Set server to return initial_metadata once it receives request.
+2. Client will set a timer (customized client timeout) waiting for initial_metadata.
+3. Client will timeout if it didn't receive initial_metadata.
+"""
 import logging
 import threading
+from typing import Sequence, Tuple
 
 import grpc
 
@@ -26,7 +34,8 @@ _LOGGER.setLevel(logging.INFO)
 
 
 def wait_for_metadata(response_future, event):
-    for key, value in response_future.initial_metadata():
+    metadata: Sequence[Tuple[str, str]] = response_future.initial_metadata()
+    for key, value in metadata:
         print('Greeter client received initial metadata: key=%s value=%s' %
               (key, value))
     event.set()
@@ -37,7 +46,7 @@ def check_status(response_future, wait_success):
         print("received initial metadata before time out!")
         for response in response_future:
             message = response.message
-        print("Greeter client received: " + message)
+            print("Greeter client received: " + message)
     else:
         print("Timed out before receiving any initial metadata!")
         response_future.cancel()
@@ -61,7 +70,7 @@ def main():
         thread_with_delay.start()
 
         # Wait on client side with timeout
-        timeout = 3
+        timeout = 7
         check_status(response_future_delay, event_for_delay.wait(timeout))
 
         # Expected to timeout.
