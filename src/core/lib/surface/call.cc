@@ -2086,11 +2086,6 @@ class PromiseBasedCall : public Call,
     uint8_t TakeIndex() { return std::exchange(index_, kNullIndex); }
     bool has_value() const { return index_ != kNullIndex; }
 
-    std::string ToString() const {
-      return index_ == kNullIndex ? "null"
-                                  : std::to_string(static_cast<int>(index_));
-    }
-
    private:
     enum : uint8_t { kNullIndex = 0xff };
     uint8_t index_;
@@ -2146,6 +2141,14 @@ class PromiseBasedCall : public Call,
   // Add one pending op to the completion, and return it.
   Completion AddOpToCompletion(const Completion& completion, PendingOp reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Stringify a completion
+  std::string CompletionString(const Completion& completion) const {
+    return completion.has_value()
+               ? absl::StrFormat(
+                     "%d:tag=%p", static_cast<int>(completion.index()),
+                     completion_info_[completion.index()].pending.tag)
+               : "no-completion";
+  }
   // Finish one op on the completion. Must have been previously been added.
   // The completion as a whole finishes when all pending ops finish.
   void FinishOpOnCompletion(Completion* completion, PendingOp reason)
@@ -2183,12 +2186,11 @@ class PromiseBasedCall : public Call,
     finalization_.Run(&final_info);
   }
 
-  static std::string PresentAndCompletionText(const char* caption, bool has,
-                                              const Completion& completion) {
+  std::string PresentAndCompletionText(const char* caption, bool has,
+                                       const Completion& completion) const {
     if (has) {
       if (completion.has_value()) {
-        return absl::StrCat(caption, ":", static_cast<int>(completion.index()),
-                            " ");
+        return absl::StrCat(caption, ":", CompletionString(completion), " ");
       } else {
         return absl::StrCat(caption,
                             ":!!BUG:operation is present, no completion!! ");
@@ -2197,8 +2199,8 @@ class PromiseBasedCall : public Call,
       if (!completion.has_value()) {
         return "";
       } else {
-        return absl::StrCat(
-            caption, ":no-op:", static_cast<int>(completion.index()), " ");
+        return absl::StrCat(caption, ":no-op:", CompletionString(completion),
+                            " ");
       }
     }
   }
@@ -2435,7 +2437,7 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
   Completion c(BatchSlotForOp(ops[0].op));
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] StartCompletion %s tag=%p", DebugTag().c_str(),
-            c.ToString().c_str(), tag);
+            CompletionString(c).c_str(), tag);
   }
   if (!is_closure) {
     grpc_cq_begin_op(cq(), tag);
@@ -2449,7 +2451,7 @@ PromiseBasedCall::Completion PromiseBasedCall::AddOpToCompletion(
     const Completion& completion, PendingOp reason) {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] AddOpToCompletion %s %s", DebugTag().c_str(),
-            completion.ToString().c_str(), PendingOpString(reason));
+            CompletionString(completion).c_str(), PendingOpString(reason));
   }
   GPR_ASSERT(completion.has_value());
   auto& pending_op_bits =
@@ -2464,7 +2466,7 @@ void PromiseBasedCall::FailCompletion(const Completion& completion,
   if (grpc_call_trace.enabled()) {
     gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_ERROR,
             "%s[call] FailCompletion %s", DebugTag().c_str(),
-            completion.ToString().c_str());
+            CompletionString(completion).c_str());
   }
   completion_info_[completion.index()].pending.success = false;
 }
@@ -2486,7 +2488,7 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
         GPR_INFO,
         "%s[call] FinishOpOnCompletion tag:%p completion:%s finish:%s %s",
         DebugTag().c_str(), completion_info_[completion->index()].pending.tag,
-        completion->ToString().c_str(), PendingOpString(reason),
+        CompletionString(*completion).c_str(), PendingOpString(reason),
         (pending.empty()
              ? (success ? std::string("done") : std::string("failed"))
              : absl::StrFormat("pending_ops={%s}", absl::StrJoin(pending, ",")))
@@ -3220,6 +3222,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   bool force_metadata_send_ ABSL_GUARDED_BY(mu()) = false;
   RecvCloseOpCancelState recv_close_op_cancel_state_ ABSL_GUARDED_BY(mu());
   Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
+  bool cancel_send_and_receive_ ABSL_GUARDED_BY(mu()) = false;
   Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
@@ -3272,7 +3275,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] PollTopOfCall: %s%s%s", DebugTag().c_str(),
-            force_metadata_send_ ? "force-" : "",
+            cancel_send_and_receive_ ? "force-" : "",
             send_trailing_metadata_ != nullptr
                 ? absl::StrCat("send-metadata:",
                                send_trailing_metadata_->DebugString())
@@ -3281,7 +3284,7 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
             PollStateDebugString().c_str());
   }
 
-  if (force_metadata_send_) {
+  if (cancel_send_and_receive_) {
     CancelSendMessage();
     CancelRecvMessage();
   }
@@ -3308,11 +3311,13 @@ void ServerPromiseBasedCall::UpdateOnce() {
         GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %s%shas_promise=%s",
         DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
         recv_close_completion_.has_value()
-            ? absl::StrCat(":", recv_close_completion_.ToString()).c_str()
+            ? absl::StrCat(":", CompletionString(recv_close_completion_))
+                  .c_str()
             : "",
         send_status_from_server_completion_.has_value()
-            ? absl::StrCat("send_status:",
-                           send_status_from_server_completion_.ToString(), " ")
+            ? absl::StrCat(
+                  "send_status:",
+                  CompletionString(send_status_from_server_completion_), " ")
                   .c_str()
             : "",
         PollStateDebugString().c_str(),
@@ -3520,8 +3525,8 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
 
 void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
   if (!promise_.has_value()) return;
-  force_metadata_send_ = true;
-  send_trailing_metadata_ = ServerMetadataFromStatus(error);
+  cancel_send_and_receive_ = true;
+  send_trailing_metadata_ = ServerMetadataFromStatus(error, arena());
   ForceWakeup();
 }
 
