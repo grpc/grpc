@@ -459,7 +459,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkstatic": linkstatic,
     }
 
-    if "grpc-fuzzer" not in tags:
+    if "grpc-fuzzer" not in tags and "no_test_ios" not in tags:
         ios_cc_test(
             name = name,
             srcs = srcs,

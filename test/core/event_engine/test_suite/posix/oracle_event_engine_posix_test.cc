@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
+#include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 
 #include <gtest/gtest.h>
 
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {

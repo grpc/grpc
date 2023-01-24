@@ -36,10 +36,18 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
 using ::testing::ElementsAre;
 using namespace std::chrono_literals;
+
+namespace grpc_event_engine {
+namespace experimental {
+
+void InitTimerTests() {}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
 class EventEngineTimerTest : public EventEngineTest {
  public:
