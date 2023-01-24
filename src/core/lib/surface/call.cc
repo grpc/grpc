@@ -3136,7 +3136,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     // Request that receiver be filled in per grpc_op_recv_close_on_server.
     // Returns true if the request can be fulfilled immediately.
     // Returns false if the request will be fulfilled later.
-    bool RequestReceiveCloseOnServer(int* receiver) {
+    bool ReceiveCloseOnServerOpStarted(int* receiver) {
       switch (state_) {
         case kUnset:
           state_ = reinterpret_cast<uintptr_t>(receiver);
@@ -3220,7 +3220,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
 
-ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
+ArenaPromise<ServerMetadataHandle>
+ServerCallContext::MakeTopOfServerCallPromise(
     CallArgs call_args, grpc_completion_queue* cq,
     grpc_metadata_array* publish_initial_metadata,
     absl::FunctionRef<void(grpc_call* call)> publish) {
@@ -3440,7 +3441,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   DebugTag().c_str(),
                   recv_close_op_cancel_state_.ToString().c_str());
         }
-        if (!recv_close_op_cancel_state_.RequestReceiveCloseOnServer(
+        if (!recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
                 op.data.recv_close_on_server.cancelled)) {
           recv_close_completion_ =
               AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
