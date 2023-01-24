@@ -2971,7 +2971,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
         absl::StatusCode::kInternal, "Failed to send message to server")));
   }
   if (!is_sending() && close_send_completion_.has_value()) {
-    client_to_server_messages_.sender.Close();
+    client_to_server_messages_.sender.Close(true);
     FinishOpOnCompletion(&close_send_completion_,
                          PendingOp::kSendCloseFromClient);
   }
@@ -3122,65 +3122,10 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  private:
   struct Uninitialized {};
 
-  class RecvCloseOpCancelState {
-   public:
-    // Request that receiver be filled in per grpc_op_recv_close_on_server.
-    // Returns true if the request can be fulfilled immediately.
-    // Returns false if the request will be fulfilled later.
-    bool RequestReceiveCloseOnServer(int* receiver) {
-      switch (state_) {
-        case kUnset:
-          state_ = reinterpret_cast<uintptr_t>(receiver);
-          return false;
-        case kFinishedWithFailure:
-          *receiver = 1;
-          return true;
-        case kFinishedWithSuccess:
-          *receiver = 0;
-          return true;
-        default:
-          abort();  // unreachable
-      }
-    }
-
-    // Mark the call as having completed.
-    // Returns true if this finishes a previous RequestReceiveCloseOnServer.
-    bool ReadClosed(bool success) {
-      switch (state_) {
-        case kUnset:
-          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
-          return false;
-        case kFinishedWithFailure:
-        case kFinishedWithSuccess:
-          abort();  // unreachable
-        default:
-          *reinterpret_cast<int*>(state_) = success ? 0 : 1;
-          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
-          return true;
-      }
-    }
-
-    std::string ToString() const {
-      switch (state_) {
-        case kUnset:
-          return "Unset";
-        case kFinishedWithFailure:
-          return "FinishedWithFailure";
-        case kFinishedWithSuccess:
-          return "FinishedWithSuccess";
-        default:
-          return absl::StrFormat("WaitingForReceiver(%p)",
-                                 reinterpret_cast<void*>(state_));
-      }
-    }
-
-   private:
-    static constexpr uintptr_t kUnset = 0;
-    static constexpr uintptr_t kFinishedWithFailure = 1;
-    static constexpr uintptr_t kFinishedWithSuccess = 2;
-    // Holds one of kUnset, kFinishedWithFailure, or kFinishedWithSuccess
-    // OR an int* that wants to receive the final status.
-    uintptr_t state_ = kUnset;
+  struct RecvCloseState {
+    int* was_cancelled;
+    PipeReceiver<MessageHandle>::ClosedType closed_promise;
+    Completion completion;
   };
 
   grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops) const;
@@ -3204,8 +3149,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
-  RecvCloseOpCancelState recv_close_op_cancel_state_ ABSL_GUARDED_BY(mu());
-  Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
+  absl::optional<RecvCloseState> recv_close_op_state_ ABSL_GUARDED_BY(mu());
   Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
@@ -3256,11 +3200,8 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
             PollStateDebugString().c_str());
   }
 
-  PollSendMessage();
-  PollRecvMessage(incoming_compression_algorithm_);
-
   if (!is_sending() && send_trailing_metadata_ != nullptr) {
-    server_to_client_messages_->Close();
+    server_to_client_messages_->Close(true);
     return std::move(send_trailing_metadata_);
   }
 
@@ -3270,10 +3211,12 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 void ServerPromiseBasedCall::UpdateOnce() {
   if (grpc_call_trace.enabled()) {
     gpr_log(
-        GPR_INFO, "%s[call] UpdateOnce: recv_close:%s%s %s%shas_promise=%s",
-        DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
-        recv_close_completion_.has_value()
-            ? absl::StrCat(":", CompletionString(recv_close_completion_))
+        GPR_INFO, "%s[call] UpdateOnce: %s%s%shas_promise=%s",
+        DebugTag().c_str(),
+        recv_close_op_state_.has_value()
+            ? absl::StrCat("recv_close:",
+                           CompletionString(recv_close_op_state_->completion),
+                           " ")
                   .c_str()
             : "",
         send_status_from_server_completion_.has_value()
@@ -3285,6 +3228,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
         PollStateDebugString().c_str(),
         promise_.has_value() ? "true" : "false");
   }
+  PollSendMessage();
   if (auto* p =
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
               &send_initial_metadata_state_)) {
@@ -3303,15 +3247,8 @@ void ServerPromiseBasedCall::UpdateOnce() {
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
-                DebugTag().c_str(),
-                recv_close_op_cancel_state_.ToString().c_str(),
-                (*result)->DebugString().c_str());
-      }
-      if (recv_close_op_cancel_state_.CompleteCall(
-              (*result)->get(GrpcStatusFromWire()).value_or(false))) {
-        FinishOpOnCompletion(&recv_close_completion_,
-                             PendingOp::kReceiveCloseOnServer);
+        gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult result:%s",
+                DebugTag().c_str(), (*result)->DebugString().c_str());
       }
       channelz::ServerNode* channelz_node = server_->channelz_node();
       if (channelz_node != nullptr) {
@@ -3331,6 +3268,17 @@ void ServerPromiseBasedCall::UpdateOnce() {
       CancelRecvMessage();
       set_completed();
       promise_ = ArenaPromise<ServerMetadataHandle>();
+    }
+  }
+  PollRecvMessage(incoming_compression_algorithm_);
+  if (recv_close_op_state_.has_value()) {
+    auto r = recv_close_op_state_->closed_promise();
+    auto* p = absl::get_if<bool>(&r);
+    if (p != nullptr) {
+      *recv_close_op_state_->was_cancelled = (*p ? 0 : 1);
+      auto completion = std::move(recv_close_op_state_->completion);
+      recv_close_op_state_.reset();
+      FinishOpOnCompletion(&completion, PendingOp::kReceiveCloseOnServer);
     }
   }
 }
@@ -3414,16 +3362,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             AddOpToCompletion(completion, PendingOp::kSendStatusFromServer);
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%s[call] StartBatch: RecvClose %s",
-                  DebugTag().c_str(),
-                  recv_close_op_cancel_state_.ToString().c_str());
-        }
-        if (!recv_close_op_cancel_state_.RequestReceiveCloseOnServer(
-                op.data.recv_close_on_server.cancelled)) {
-          recv_close_completion_ =
-              AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
-        }
+        recv_close_op_state_.emplace(RecvCloseState{
+            op.data.recv_close_on_server.cancelled,
+            client_to_server_messages_->Closed(),
+            AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer)});
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:

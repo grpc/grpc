@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
@@ -67,7 +68,9 @@ class NextResult final {
  public:
   NextResult() : center_(nullptr) {}
   explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
-      : center_(std::move(center)) {}
+      : center_(std::move(center)) {
+    GPR_ASSERT(center_ != nullptr);
+  }
   ~NextResult();
   NextResult(const NextResult&) = delete;
   NextResult& operator=(const NextResult&) = delete;
@@ -99,6 +102,8 @@ template <typename T>
 class Push;
 template <typename T>
 class Next;
+template <typename T>
+class Closed;
 
 // Center sits between a sender and a receiver to provide a one-deep buffer of
 // Ts
@@ -151,6 +156,8 @@ class Center : public InterceptorList<T> {
     switch (value_state_) {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
+      case ValueState::kClosedWithError:
+      case ValueState::kReadyClosedWithError:
         return false;
       case ValueState::kReady:
       case ValueState::kAcked:
@@ -172,6 +179,8 @@ class Center : public InterceptorList<T> {
     switch (value_state_) {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
+      case ValueState::kClosedWithError:
+      case ValueState::kReadyClosedWithError:
         return false;
       case ValueState::kReady:
       case ValueState::kEmpty:
@@ -200,10 +209,15 @@ class Center : public InterceptorList<T> {
       case ValueState::kReadyClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
-        ABSL_FALLTHROUGH_INTENDED;
+        return std::move(value_);
+      case ValueState::kReadyClosedWithError:
+        this->ResetInterceptorList();
+        value_state_ = ValueState::kClosedWithError;
+        return std::move(value_);
       case ValueState::kReady:
         return std::move(value_);
       case ValueState::kClosed:
+      case ValueState::kClosedWithError:
         return absl::nullopt;
     }
     GPR_UNREACHABLE_CODE(return absl::nullopt);
@@ -222,7 +236,12 @@ class Center : public InterceptorList<T> {
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
         break;
+      case ValueState::kReadyClosedWithError:
+        this->ResetInterceptorList();
+        value_state_ = ValueState::kClosedWithError;
+        break;
       case ValueState::kClosed:
+      case ValueState::kClosedWithError:
         break;
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -230,30 +249,73 @@ class Center : public InterceptorList<T> {
     }
   }
 
-  void MarkClosed() {
+  void MarkClosed(bool success) {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("MarkClosed").c_str());
+      gpr_log(GPR_INFO, "%s",
+              DebugOpString(success ? "MarkClosed Successful"
+                                    : "MarkClosed WithError")
+                  .c_str());
     }
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
         this->ResetInterceptorList();
-        value_state_ = ValueState::kClosed;
+        value_state_ =
+            success ? ValueState::kClosed : ValueState::kClosedWithError;
         on_full_.Wake();
         break;
       case ValueState::kReady:
-        value_state_ = ValueState::kReadyClosed;
+        value_state_ = success ? ValueState::kReadyClosed
+                               : ValueState::kReadyClosedWithError;
         break;
       case ValueState::kReadyClosed:
       case ValueState::kClosed:
+      case ValueState::kReadyClosedWithError:
+      case ValueState::kClosedWithError:
+        // First close wins the status.
         break;
+    }
+  }
+
+  // If closed, return true if closed with error.
+  bool ClosedWithError() const {
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+      case ValueState::kReady:
+      case ValueState::kReadyClosed:
+      case ValueState::kReadyClosedWithError:
+        Crash("Pipe is not closed");
+        break;
+      case ValueState::kClosed:
+        return false;
+      case ValueState::kClosedWithError:
+        return true;
+    }
+  }
+
+  Poll<bool> PollClosed() const {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosed").c_str());
+    }
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+      case ValueState::kReady:
+      case ValueState::kReadyClosedWithError:
+      case ValueState::kReadyClosed:
+        return Pending{};
+      case ValueState::kClosed:
+        return true;
+      case ValueState::kClosedWithError:
+        return false;
     }
   }
 
   T& value() { return value_; }
   const T& value() const { return value_; }
 
-  std::string DebugTag() {
+  std::string DebugTag() const {
     return absl::StrCat(Activity::current()->DebugTag(), " PIPE[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
@@ -270,12 +332,14 @@ class Center : public InterceptorList<T> {
     kAcked,
     // Pipe is closed, no more values can be sent
     kClosed,
+    kClosedWithError,
     // Pipe is closed, no more values can be sent
     // (but one value is queued and ready to be received)
     kReadyClosed,
+    kReadyClosedWithError,
   };
 
-  std::string DebugOpString(std::string op) {
+  std::string DebugOpString(std::string op) const {
     return absl::StrCat(DebugTag(), op, " refs=", refs_,
                         " value_state=", ValueStateName(value_state_),
                         " on_empty=", on_empty_.DebugString().c_str(),
@@ -292,17 +356,21 @@ class Center : public InterceptorList<T> {
         return "Acked";
       case ValueState::kClosed:
         return "Closed";
+      case ValueState::kClosedWithError:
+        return "ClosedWithError";
       case ValueState::kReadyClosed:
         return "ReadyClosed";
+      case ValueState::kReadyClosedWithError:
+        return "ReadyClosedWithError";
     }
     GPR_UNREACHABLE_CODE(return "unknown");
   }
 
   T value_;
   // Number of refs
-  uint8_t refs_ : 5;
+  uint8_t refs_;
   // Current state of the value.
-  ValueState value_state_ : 3;
+  ValueState value_state_;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
 
@@ -326,12 +394,12 @@ class PipeSender {
   PipeSender& operator=(PipeSender&& other) noexcept = default;
 
   ~PipeSender() {
-    if (center_ != nullptr) center_->MarkClosed();
+    if (center_ != nullptr) center_->MarkClosed(false);
   }
 
-  void Close() {
+  void Close(bool success) {
     if (center_ != nullptr) {
-      center_->MarkClosed();
+      center_->MarkClosed(success);
       center_.reset();
     }
   }
@@ -370,12 +438,13 @@ class PipeSender {
 template <typename T>
 class PipeReceiver {
  public:
+  using ClosedType = pipe_detail::Closed<T>;
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
   PipeReceiver(PipeReceiver&& other) noexcept = default;
   PipeReceiver& operator=(PipeReceiver&& other) noexcept = default;
   ~PipeReceiver() {
-    if (center_ != nullptr) center_->MarkClosed();
+    if (center_ != nullptr) center_->MarkClosed(false);
   }
 
   void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
@@ -386,6 +455,14 @@ class PipeReceiver {
   // Blocks the promise until the receiver is either closed or a message is
   // available.
   auto Next();
+
+  // Poll for closure of the pipe.
+  // Returns a promise that will resolve to a bool - true if the pipe is closed
+  // successfully, false if not.
+  ClosedType Closed();
+
+  // Return true if the pipe is closed with an error.
+  bool ClosedWithError() const { return center_->ClosedWithError(); }
 
   template <typename Fn>
   void InterceptAndMap(Fn f, SourceLocation from = {}) {
@@ -464,6 +541,25 @@ class Next {
   RefCountedPtr<Center<T>> center_;
 };
 
+// Implementation of PipeReceiver::Next promise.
+template <typename T>
+class Closed {
+ public:
+  Closed(const Closed&) = delete;
+  Closed& operator=(const Closed&) = delete;
+  Closed(Closed&& other) noexcept = default;
+  Closed& operator=(Closed&& other) noexcept = default;
+
+  Poll<bool> operator()() { return center_->PollClosed(); }
+
+ private:
+  friend class PipeReceiver<T>;
+  explicit Closed(RefCountedPtr<Center<T>> center)
+      : center_(std::move(center)) {}
+
+  RefCountedPtr<Center<T>> center_;
+};
+
 }  // namespace pipe_detail
 
 template <typename T>
@@ -486,6 +582,11 @@ auto PipeReceiver<T>::Next() {
                             }
                           });
              });
+}
+
+template <typename T>
+pipe_detail::Closed<T> PipeReceiver<T>::Closed() {
+  return pipe_detail::Closed<T>(center_->Ref());
 }
 
 template <typename T>

@@ -77,7 +77,7 @@ ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
   // TODO(ctiller): remove if check once promise_based_filter is removed (Close
   // is still needed)
   if (args.server_to_client_messages != nullptr) {
-    args.server_to_client_messages->Close();
+    args.server_to_client_messages->Close(false);
   }
   return Immediate(ServerMetadataFromStatus(error_));
 }
