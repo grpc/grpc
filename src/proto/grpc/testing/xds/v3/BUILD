@@ -386,6 +386,14 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "client_side_weighted_round_robin_proto",
+    srcs = [
+        "client_side_weighted_round_robin.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
     name = "ring_hash_proto",
     srcs = [
         "ring_hash.proto",

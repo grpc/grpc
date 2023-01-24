@@ -774,14 +774,7 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, UpdateFromServer) {
@@ -841,14 +834,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
@@ -926,14 +912,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   ASSERT_FALSE(WaitForRequest(stream.get()));
   // Now cancel the second watcher.
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, SubscribeToMultipleResources) {
@@ -1010,14 +989,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  // The XdsClient may or may not send another unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
@@ -1113,14 +1085,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  // The XdsClient may or may not send another unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"C",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailure) {
@@ -1205,14 +1170,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
@@ -1338,14 +1296,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   CancelFooWatch(watcher2.get(), "foo2", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher3.get(), "foo3", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher4.get(), "foo4");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
@@ -1428,16 +1379,9 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Cancel watches.
-  CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
@@ -1486,14 +1430,7 @@ TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
                /*resource_names=*/{"wc1"});
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 // This tests resource removal triggered by the server when using a
@@ -1581,14 +1518,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
-                 /*version_info=*/"3", /*response_nonce=*/"C",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 // This tests that when we ignore resource deletions from the server
@@ -1679,14 +1609,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
-                 /*version_info=*/"3", /*response_nonce=*/"C",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServer) {
@@ -1729,6 +1652,8 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   stream->MaybeSendStatusToClient(absl::OkStatus());
   // XdsClient should NOT report error to watcher, because we saw a
   // response on the stream before it failed.
+  // Stream should be orphaned.
+  EXPECT_TRUE(stream->Orphaned());
   // XdsClient should create a new stream.
   stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1768,14 +1693,8 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  CancelFooWatch(watcher2.get(), "foo1");
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
@@ -1838,14 +1757,7 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ConnectionFails) {
@@ -1926,15 +1838,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-    stream->CompleteSendMessageFromClient();
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
@@ -1987,14 +1891,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
@@ -2061,14 +1958,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
@@ -2125,15 +2015,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   stream->CompleteSendMessageFromClient();
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-    stream->CompleteSendMessageFromClient();
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 // In https://github.com/grpc/grpc/issues/29583, we ran into a case
@@ -2238,15 +2120,7 @@ TEST_F(XdsClientTest,
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher2.get(), "foo2");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-    stream->CompleteSendMessageFromClient();
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
@@ -2325,14 +2199,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
@@ -2374,14 +2241,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, MultipleResourceTypes) {
@@ -2460,14 +2320,7 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   // Now cancel watch for "bar1".
   CancelBarWatch(watcher2.get(), "bar1");
-  // The XdsClient may or may not send another unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsBarResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, Federation) {
@@ -2553,24 +2406,10 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream2.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream2->Orphaned());
 }
 
 TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
@@ -2659,14 +2498,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
                /*resource_names=*/{kXdstpResourceName});
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
@@ -2745,14 +2577,7 @@ TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch.
   CancelFooWatch(watcher.get(), kXdstpResourceName);
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
 }
 
 TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
@@ -2851,24 +2676,10 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_FALSE(watcher->HasEvent());
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream->Orphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  // The XdsClient may or may not send the unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream2.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-                 /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
+  EXPECT_TRUE(stream2->Orphaned());
 }
 
 }  // namespace

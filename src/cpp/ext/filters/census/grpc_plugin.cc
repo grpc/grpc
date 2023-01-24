@@ -64,6 +64,7 @@ void RegisterOpenCensusPlugin() {
   RpcClientRetriesPerCall();
   RpcClientTransparentRetriesPerCall();
   RpcClientRetryDelayPerCall();
+  RpcClientTransportLatency();
 
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
@@ -145,6 +146,9 @@ ABSL_CONST_INIT const absl::string_view
 
 ABSL_CONST_INIT const absl::string_view kRpcClientRetryDelayPerCallMeasureName =
     "grpc.io/client/retry_delay_per_call";
+
+ABSL_CONST_INIT const absl::string_view kRpcClientTransportLatencyMeasureName =
+    "grpc.io/client/transport_latency";
 
 // Server
 ABSL_CONST_INIT const absl::string_view

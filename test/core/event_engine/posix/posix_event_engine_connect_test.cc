@@ -48,7 +48,7 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/event_engine/test_suite/event_engine_test_utils.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

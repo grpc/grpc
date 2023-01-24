@@ -119,6 +119,13 @@
   expiry: 2023/04/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: transport_supplies_client_latency
+  description:
+    If set, use the transport represented value for client latency in opencensus
+  default: false
+  expiry: 2023/06/01
+  owner: ctiller@google.com
+  test_tags: [census_test]
 - name: event_engine_listener
   description:
     Use EventEngine listeners instead of iomgr's grpc_tcp_server
@@ -126,4 +133,3 @@
   expiry: 2023/02/13
   owner: vigneshbabu@google.com
   test_tags: ["event_engine_listener_test"]
-
