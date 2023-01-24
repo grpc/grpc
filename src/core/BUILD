@@ -3761,6 +3761,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/synchronization",
         "absl/types:optional",
+        "absl/types:span",
         "absl/types:variant",
         "upb_lib",
         "upb_textformat_lib",
