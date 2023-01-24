@@ -523,6 +523,8 @@ class Server::AllocatingRequestMatcherRegistered
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
     if (server()->ShutdownRefOnRequest()) {
       RegisteredCallAllocation call_info = allocator_();
       GPR_ASSERT(server()->ValidateServerRequest(
@@ -537,7 +539,6 @@ class Server::AllocatingRequestMatcherRegistered
     } else {
       calld->FailCallCreation();
     }
-    server()->ShutdownUnrefOnRequest();
   }
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(

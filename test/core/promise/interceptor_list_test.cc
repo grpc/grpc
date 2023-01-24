@@ -78,6 +78,35 @@ TEST_F(InterceptorListTest, CanRunManyWithCaptures) {
   EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run("")()).value(), expected);
 }
 
+TEST_F(InterceptorListTest, CanRunOnePrepended) {
+  InterceptorList<std::string> list;
+  list.PrependMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
+  EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloa"));
+}
+
+TEST_F(InterceptorListTest, CanRunTwoPrepended) {
+  InterceptorList<std::string> list;
+  list.PrependMap([](std::string s) { return s + "a"; }, DEBUG_LOCATION);
+  list.PrependMap([](std::string s) { return s + "b"; }, DEBUG_LOCATION);
+  EXPECT_EQ(list.Run("hello")(), Poll<absl::optional<std::string>>("helloba"));
+}
+
+TEST_F(InterceptorListTest, CanRunManyWithCapturesPrepended) {
+  InterceptorList<std::string> list;
+  for (size_t i = 0; i < 26 * 1000; i++) {
+    list.PrependMap(
+        [i = std::make_shared<size_t>(i)](std::string s) {
+          return s + static_cast<char>((*i % 26) + 'a');
+        },
+        DEBUG_LOCATION);
+  }
+  std::string expected;
+  for (size_t i = 0; i < 1000; i++) {
+    expected += "zyxwvutsrqponmlkjihgfedcba";
+  }
+  EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run("")()).value(), expected);
+}
+
 TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
   InterceptorList<std::string> list;
   for (size_t i = 0; i < 26 * 1000; i++) {

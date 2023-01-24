@@ -150,6 +150,9 @@ class InvalidChannelFilter : public ChannelFilter {
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
  protected:
+  // Hook to allow interception of messages on the send/receive path by
+  // PipeSender and PipeReceiver, as appropriate according to whether we're
+  // client or server.
   class Interceptor {
    public:
     virtual PipeSender<MessageHandle>* Push() = 0;

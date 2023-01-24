@@ -42,35 +42,38 @@
 
 namespace grpc_core {
 
+// Tracks a list of maps of T -> T via promises.
+// When Run, runs each transformation in order, and resolves to the ulimate
+// result.
 template <typename T>
 class InterceptorList {
- public:
-  class MapFactory {
+ private:
+  class Map {
    public:
-    explicit MapFactory(DebugLocation from) : from_(from) {}
+    explicit Map(DebugLocation from) : from_(from) {}
     virtual void MakePromise(T x, void* memory) = 0;
     virtual void Destroy(void* memory) = 0;
     virtual Poll<absl::optional<T>> PollOnce(void* memory) = 0;
-    virtual ~MapFactory() = default;
+    virtual ~Map() = default;
 
-    void SetNext(MapFactory* next) {
+    void SetNext(Map* next) {
       GPR_DEBUG_ASSERT(next_ == nullptr);
       next_ = next;
     }
 
     DebugLocation from() { return from_; }
 
-    MapFactory* next() const { return next_; }
+    Map* next() const { return next_; }
 
    private:
     GPR_NO_UNIQUE_ADDRESS const DebugLocation from_;
-    MapFactory* next_ = nullptr;
+    Map* next_ = nullptr;
   };
 
+ public:
   class RunPromise {
    public:
-    RunPromise(size_t memory_required, MapFactory* factory,
-               absl::optional<T> value) {
+    RunPromise(size_t memory_required, Map* factory, absl::optional<T> value) {
       if (!value.has_value() || factory == nullptr) {
         is_running_ = false;
         Construct(&result_, std::move(value));
@@ -150,7 +153,7 @@ class InterceptorList {
       Running(Running&& other) noexcept
           : current_factory(std::exchange(other.current_factory, nullptr)),
             space(std::move(other.space)) {}
-      MapFactory* current_factory;
+      Map* current_factory;
       Arena::PoolPtr<char[]> space;
     };
     union {
@@ -202,16 +205,14 @@ class InterceptorList {
 
  private:
   template <typename Fn, typename CleanupFn>
-  class MapFactoryImpl final : public MapFactory {
+  class MapImpl final : public Map {
    public:
     using PromiseFactory = promise_detail::RepeatedPromiseFactory<T, Fn>;
     using Promise = typename PromiseFactory::Promise;
 
-    explicit MapFactoryImpl(Fn fn, CleanupFn cleanup_fn, DebugLocation from)
-        : MapFactory(from),
-          fn_(std::move(fn)),
-          cleanup_fn_(std::move(cleanup_fn)) {}
-    ~MapFactoryImpl() override { cleanup_fn_(); }
+    explicit MapImpl(Fn fn, CleanupFn cleanup_fn, DebugLocation from)
+        : Map(from), fn_(std::move(fn)), cleanup_fn_(std::move(cleanup_fn)) {}
+    ~MapImpl() override { cleanup_fn_(); }
     void MakePromise(T x, void* memory) override {
       new (memory) Promise(fn_.Make(std::move(x)));
     }
@@ -228,16 +229,15 @@ class InterceptorList {
   };
 
   template <typename Fn, typename CleanupFn>
-  MapFactory* MakeFactoryToAdd(Fn fn, CleanupFn cleanup_fn,
-                               DebugLocation from) {
-    using FactoryType = MapFactoryImpl<Fn, CleanupFn>;
+  Map* MakeFactoryToAdd(Fn fn, CleanupFn cleanup_fn, DebugLocation from) {
+    using FactoryType = MapImpl<Fn, CleanupFn>;
     promise_memory_required_ = std::max(promise_memory_required_,
                                         sizeof(typename FactoryType::Promise));
     return GetContext<Arena>()->New<FactoryType>(std::move(fn),
                                                  std::move(cleanup_fn), from);
   }
 
-  void Append(MapFactory* f) {
+  void Append(Map* f) {
     if (first_map_ == nullptr) {
       first_map_ = f;
       last_map_ = f;
@@ -247,7 +247,7 @@ class InterceptorList {
     }
   }
 
-  void Prepend(MapFactory* f) {
+  void Prepend(Map* f) {
     if (first_map_ == nullptr) {
       first_map_ = f;
       last_map_ = f;
@@ -260,13 +260,13 @@ class InterceptorList {
   void DeleteFactories() {
     for (auto* f = first_map_; f != nullptr;) {
       auto* next = f->next();
-      f->~MapFactory();
+      f->~Map();
       f = next;
     }
   }
 
-  MapFactory* first_map_ = nullptr;
-  MapFactory* last_map_ = nullptr;
+  Map* first_map_ = nullptr;
+  Map* last_map_ = nullptr;
   size_t promise_memory_required_ = 0;
 };
 
