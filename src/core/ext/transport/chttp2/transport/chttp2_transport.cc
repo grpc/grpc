@@ -750,7 +750,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
   t->accept_stream_cb(t->accept_stream_cb_user_data, &t->base,
-                      reinterpret_cast<void*>(static_cast<uintptr_t>(id)));
+                      reinterpret_cast<void*>(id));
   t->accepting_stream = nullptr;
   return accepting;
 }
@@ -1848,10 +1848,12 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
           int64_t min_progress_size;
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
-          gpr_log(GPR_DEBUG, "Deframe data frame: %s",
-                  grpc_core::PollToString(r, [](absl::Status r) {
-                    return r.ToString();
-                  }).c_str());
+          if (grpc_http_trace.enabled()) {
+            gpr_log(GPR_DEBUG, "Deframe data frame: %s",
+                    grpc_core::PollToString(r, [](absl::Status r) {
+                      return r.ToString();
+                    }).c_str());
+          }
           if (absl::holds_alternative<grpc_core::Pending>(r)) {
             if (s->read_closed) {
               grpc_slice_buffer_reset_and_unref(&s->frame_storage);
