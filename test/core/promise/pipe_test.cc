@@ -70,6 +70,92 @@ TEST_F(PipeTest, CanSendAndReceive) {
       MakeScopedArena(1024, &memory_allocator_));
 }
 
+TEST_F(PipeTest, CanInterceptAndMapAtSender) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        pipe->sender.InterceptAndMap([](int value) { return value / 2; });
+        return Seq(
+            // Concurrently: send 42 into the pipe, and receive from the pipe.
+            Join(pipe->sender.Push(42),
+                 Map(pipe->receiver.Next(),
+                     [](NextResult<int> r) { return r.value(); })),
+            // Once complete, verify successful sending and the received value
+            // is 21.
+            [](std::tuple<bool, int> result) {
+              EXPECT_TRUE(std::get<0>(result));
+              EXPECT_EQ(21, std::get<1>(result));
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
+TEST_F(PipeTest, CanInterceptAndMapAtReceiver) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        pipe->receiver.InterceptAndMap([](int value) { return value / 2; });
+        return Seq(
+            // Concurrently: send 42 into the pipe, and receive from the pipe.
+            Join(pipe->sender.Push(42),
+                 Map(pipe->receiver.Next(),
+                     [](NextResult<int> r) { return r.value(); })),
+            // Once complete, verify successful sending and the received value
+            // is 21.
+            [](std::tuple<bool, int> result) {
+              EXPECT_TRUE(std::get<0>(result));
+              EXPECT_EQ(21, std::get<1>(result));
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
+TEST_F(PipeTest, InterceptionOrderingIsCorrect) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<std::string>>();
+        auto appender = [](char c) {
+          return [c](std::string value) {
+            value += c;
+            return value;
+          };
+        };
+        // Interception get added outwardly from the center, and run from sender
+        // to receiver, so the following should result in append "abcd".
+        pipe->receiver.InterceptAndMap(appender('c'));
+        pipe->sender.InterceptAndMap(appender('b'));
+        pipe->receiver.InterceptAndMap(appender('d'));
+        pipe->sender.InterceptAndMap(appender('a'));
+        return Seq(
+            // Concurrently: send "" into the pipe, and receive from the pipe.
+            Join(pipe->sender.Push(""),
+                 Map(pipe->receiver.Next(),
+                     [](NextResult<std::string> r) { return r.value(); })),
+            // Once complete, verify successful sending and the received value
+            // is 21.
+            [](std::tuple<bool, std::string> result) {
+              EXPECT_TRUE(std::get<0>(result));
+              EXPECT_EQ("abcd", std::get<1>(result));
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
 TEST_F(PipeTest, CanReceiveAndSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
