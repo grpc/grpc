@@ -2559,8 +2559,8 @@ grpc_cc_library(
     hdrs = ["lib/load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
     deps = [
+        "dual_ref_counted",
         "iomgr_fwd",
-        "ref_counted",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:ref_counted_ptr",
