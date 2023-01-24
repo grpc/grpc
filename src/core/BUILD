@@ -3633,7 +3633,15 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     language = "c++",
-    deps = ["//:gpr_platform"],
+    deps = [ "//:gpr_platform", ],
+)
+
+grpc_cc_library(
+    name = "grpc_backend_metric_provider",
+    hdrs = [
+        "ext/filters/backend_metrics/backend_metric_provider.h",
+    ],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -4659,6 +4667,37 @@ grpc_cc_library(
         "//:parse_address",
         "//:promise",
         "//:uri_parser",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "backend_metric_filter",
+    srcs = [
+        "ext/filters/backend_metrics/backend_metric_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/backend_metrics/backend_metric_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/types:optional",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "arena",
+        "arena_promise",
+        "channel_args",
+        "grpc_backend_metric_data",
+        "grpc_backend_metric_provider",
+        "map",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:promise",
     ],
     alwayslink = 1,
 )

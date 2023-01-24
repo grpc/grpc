@@ -495,7 +495,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//:grpcpp_orca_interceptor",
+        "//:grpcpp_backend_metric_recorder",
+        "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
         "//src/core:channel_args",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -946,6 +947,8 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//:grpcpp_backend_metric_recorder",
+        "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
         "//src/proto/grpc/testing/xds/v3:orca_service_proto",
         "//test/core/util:grpc_test_util",

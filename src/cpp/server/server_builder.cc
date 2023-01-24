@@ -158,6 +158,13 @@ void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
   builder_->authorization_provider_ = std::move(provider);
 }
 
+void ServerBuilder::experimental_type::EnableCallMetricRecording(
+    experimental::ServerMetricRecorder* server_metric_recorder) {
+  builder_->AddChannelArgument(GRPC_ARG_SERVER_CALL_METRIC_RECORDING, 1);
+  GPR_ASSERT(builder_->server_metric_recorder_ == nullptr);
+  builder_->server_metric_recorder_ = server_metric_recorder;
+}
+
 ServerBuilder& ServerBuilder::SetOption(
     std::unique_ptr<ServerBuilderOption> option) {
   options_.push_back(std::move(option));
@@ -355,18 +362,11 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     gpr_log(GPR_INFO, "Callback server.");
   }
 
-  // Merge the application and internal interceptors together.
-  // Internal interceptors go first.
-  auto creators = std::move(internal_interceptor_creators_);
-  creators.insert(creators.end(),
-                  std::make_move_iterator(interceptor_creators_.begin()),
-                  std::make_move_iterator(interceptor_creators_.end()));
-
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
       std::move(acceptors_), server_config_fetcher_, resource_quota_,
-      std::move(creators)));
+      std::move(interceptor_creators_), server_metric_recorder_));
 
   ServerInitializer* initializer = server->initializer();
 

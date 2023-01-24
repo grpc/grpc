@@ -509,6 +509,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "//src/core:backend_metric_filter",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -590,6 +591,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "tsi_base",
         "uri_parser",
+        "//src/core:backend_metric_filter",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -1799,6 +1801,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpcpp_call_metric_recorder",
+        "grpcpp_backend_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1813,6 +1816,8 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
@@ -1866,6 +1871,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_unsecure",
         "grpcpp_call_metric_recorder",
+        "grpcpp_backend_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1876,6 +1882,8 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
@@ -1953,9 +1961,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpcpp_call_metric_recorder",
-    srcs = [
-        "src/cpp/server/orca/call_metric_recorder.cc",
-    ],
     external_deps = [
         "absl/strings",
         "absl/types:optional",
@@ -1975,23 +1980,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpcpp_orca_interceptor",
+    name = "grpcpp_backend_metric_recorder",
     srcs = [
-        "src/cpp/server/orca/orca_interceptor.cc",
+        "src/cpp/server/orca/backend_metric_recorder.cc",
     ],
     hdrs = [
-        "src/cpp/server/orca/orca_interceptor.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/types:optional",
+        "src/cpp/server/backend_metric_recorder.h"
     ],
     language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/server_metric_recorder.h",
+    ],
     visibility = ["@grpc:public"],
     deps = [
-        "grpc++",
-        "grpc_base",
+        "gpr",
         "grpcpp_call_metric_recorder",
+        "grpc++_public_hdrs",
+        "grpc_trace",
+        "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_backend_metric_provider",
     ],
 )
 
@@ -2017,11 +2024,13 @@ grpc_cc_library(
         "gpr",
         "grpc++",
         "grpc_base",
+        "grpcpp_backend_metric_recorder",
         "protobuf_duration_upb",
         "ref_counted_ptr",
         "xds_orca_service_upb",
         "xds_orca_upb",
         "//src/core:default_event_engine",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:ref_counted",
         "//src/core:time",
     ],

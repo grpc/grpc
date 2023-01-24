@@ -28,43 +28,30 @@
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/slice.h>
 
-namespace grpc_core {
-class Arena;
-struct BackendMetricData;
-}  // namespace grpc_core
-
 namespace grpc {
-class ServerBuilder;
-
 namespace experimental {
-class OrcaServerInterceptor;
-
-// Registers the per-rpc orca load reporter into the \a ServerBuilder.
-// Once this is done, the server will automatically send the load metrics
-// after each RPC as they were reported. In order to report load metrics,
-// call the \a ServerContext::ExperimentalGetCallMetricRecorder() method to
-// retrieve the recorder for the current call.
-void EnableCallMetricRecording(ServerBuilder*);
 
 /// Records call metrics for the purpose of load balancing.
 /// During an RPC, call \a ServerContext::ExperimentalGetCallMetricRecorder()
 /// method to retrive the recorder for the current call.
 class CallMetricRecorder {
  public:
-  explicit CallMetricRecorder(grpc_core::Arena* arena);
-  ~CallMetricRecorder();
+  virtual ~CallMetricRecorder() = default;
 
   /// Records a call metric measurement for CPU utilization.
   /// Multiple calls to this method will override the stored value.
-  CallMetricRecorder& RecordCpuUtilizationMetric(double value);
+  /// Values outside of the valid range [0, 1] are ignored.
+  virtual CallMetricRecorder& RecordCpuUtilizationMetric(double value) = 0;
 
   /// Records a call metric measurement for memory utilization.
   /// Multiple calls to this method will override the stored value.
-  CallMetricRecorder& RecordMemoryUtilizationMetric(double value);
+  /// Values outside of the valid range [0, 1] are ignored.
+  virtual CallMetricRecorder& RecordMemoryUtilizationMetric(double value) = 0;
 
-  /// Records a call metric measurement for QPS.
+  /// Records a call metric measurement for queries per second.
   /// Multiple calls to this method will override the stored value.
-  CallMetricRecorder& RecordQpsMetric(double value);
+  /// Values outside of the valid range [0, infy) are ignored.
+  virtual CallMetricRecorder& RecordQpsMetric(double value) = 0;
 
   /// Records a call metric measurement for utilization.
   /// Multiple calls to this method with the same name will
@@ -73,7 +60,9 @@ class CallMetricRecorder {
   /// itself, since it's going to be sent as trailers after the RPC
   /// finishes. It is assumed the strings are common names that
   /// are global constants.
-  CallMetricRecorder& RecordUtilizationMetric(string_ref name, double value);
+  /// Values outside of the valid range [0, 1] are ignored.
+  virtual CallMetricRecorder& RecordUtilizationMetric(string_ref name,
+                                                      double value) = 0;
 
   /// Records a call metric measurement for request cost.
   /// Multiple calls to this method with the same name will
@@ -82,14 +71,8 @@ class CallMetricRecorder {
   /// itself, since it's going to be sent as trailers after the RPC
   /// finishes. It is assumed the strings are common names that
   /// are global constants.
-  CallMetricRecorder& RecordRequestCostMetric(string_ref name, double value);
-
- private:
-  absl::optional<std::string> CreateSerializedReport();
-
-  internal::Mutex mu_;
-  grpc_core::BackendMetricData* backend_metric_data_ ABSL_GUARDED_BY(&mu_);
-  friend class experimental::OrcaServerInterceptor;
+  virtual CallMetricRecorder& RecordRequestCostMetric(string_ref name,
+                                                      double value) = 0;
 };
 
 }  // namespace experimental

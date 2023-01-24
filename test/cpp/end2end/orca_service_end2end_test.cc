@@ -24,7 +24,9 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
@@ -44,6 +46,7 @@ namespace testing {
 namespace {
 
 using experimental::OrcaService;
+using experimental::ServerMetricRecorder;
 
 class OrcaServiceEnd2endTest : public ::testing::Test {
  protected:
@@ -91,13 +94,15 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
   };
 
   OrcaServiceEnd2endTest()
-      : orca_service_(OrcaService::Options().set_min_report_duration(
-            absl::ZeroDuration())) {
+      : orca_service_(std::make_unique<OrcaService>(
+            &server_metric_recorder_,
+            OrcaService::Options().set_min_report_duration(
+                absl::ZeroDuration()))) {
     std::string server_address =
         absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     ServerBuilder builder;
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    builder.RegisterService(&orca_service_);
+    builder.RegisterService(orca_service_.get());
     server_ = builder.BuildAndStart();
     gpr_log(GPR_INFO, "server started on %s", server_address_.c_str());
     auto channel = CreateChannel(server_address, InsecureChannelCredentials());
@@ -107,7 +112,8 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
   ~OrcaServiceEnd2endTest() override { server_->Shutdown(); }
 
   std::string server_address_;
-  OrcaService orca_service_;
+  ServerMetricRecorder server_metric_recorder_;
+  std::unique_ptr<OrcaService> orca_service_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<OpenRcaService::Stub> stub_;
 };
@@ -140,24 +146,24 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
   // Now set CPU utilization on the server.
-  orca_service_.SetCpuUtilization(0.5);
+  server_metric_recorder_.SetCpuUtilization(0.5);
   ReadResponses([](const OrcaLoadReport& response) {
     EXPECT_EQ(response.cpu_utilization(), 0.5);
     EXPECT_EQ(response.mem_utilization(), 0);
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
   // Update CPU utilization and set memory utilization.
-  orca_service_.SetCpuUtilization(0.8);
-  orca_service_.SetMemoryUtilization(0.4);
+  server_metric_recorder_.SetCpuUtilization(0.8);
+  server_metric_recorder_.SetMemoryUtilization(0.4);
   ReadResponses([](const OrcaLoadReport& response) {
     EXPECT_EQ(response.cpu_utilization(), 0.8);
     EXPECT_EQ(response.mem_utilization(), 0.4);
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
   // Unset CPU and memory utilization and set a named utilization.
-  orca_service_.DeleteCpuUtilization();
-  orca_service_.DeleteMemoryUtilization();
-  orca_service_.SetNamedUtilization(kMetricName1, 0.3);
+  server_metric_recorder_.ClearCpuUtilization();
+  server_metric_recorder_.ClearMemoryUtilization();
+  server_metric_recorder_.SetNamedUtilization(kMetricName1, 0.3);
   ReadResponses([&](const OrcaLoadReport& response) {
     EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
@@ -166,9 +172,9 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
         ::testing::UnorderedElementsAre(::testing::Pair(kMetricName1, 0.3)));
   });
   // Unset the previous named utilization and set two new ones.
-  orca_service_.DeleteNamedUtilization(kMetricName1);
-  orca_service_.SetNamedUtilization(kMetricName2, 0.2);
-  orca_service_.SetNamedUtilization(kMetricName3, 0.1);
+  server_metric_recorder_.ClearNamedUtilization(kMetricName1);
+  server_metric_recorder_.SetNamedUtilization(kMetricName2, 0.2);
+  server_metric_recorder_.SetNamedUtilization(kMetricName3, 0.1);
   ReadResponses([&](const OrcaLoadReport& response) {
     EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
@@ -178,7 +184,7 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
                                         ::testing::Pair(kMetricName3, 0.1)));
   });
   // Replace the entire named metric map at once.
-  orca_service_.SetAllNamedUtilization(
+  server_metric_recorder_.SetAllNamedUtilization(
       {{kMetricName2, 0.5}, {kMetricName4, 0.9}});
   ReadResponses([&](const OrcaLoadReport& response) {
     EXPECT_EQ(response.cpu_utilization(), 0);

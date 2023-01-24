@@ -170,7 +170,8 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
     }
     return true;
   }
-  context_->set_call(call_);
+  context_->set_call(call_, server_->call_metric_recording_enabled(),
+                     server_->server_metric_recorder());
   context_->cq_ = call_cq_;
   if (call_wrapper_.call() == nullptr) {
     // Fill it since it is empty.
@@ -408,7 +409,8 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
         call_, server_, &cq_, server_->max_receive_message_size(),
         ctx_->ctx.set_server_rpc_info(method_->name(), method_->method_type(),
                                       server_->interceptor_creators_));
-    ctx_->ctx.set_call(call_);
+    ctx_->ctx.set_call(call_, server_->call_metric_recording_enabled(),
+                       server_->server_metric_recorder());
     ctx_->ctx.cq_ = &cq_;
     request_metadata_.count = 0;
 
@@ -636,7 +638,9 @@ class Server::CallbackRequest final
       }
 
       // Bind the call, deadline, and metadata from what we got
-      req_->ctx_->set_call(req_->call_);
+      req_->ctx_->set_call(req_->call_,
+                           req_->server_->call_metric_recording_enabled(),
+                           req_->server_->server_metric_recorder());
       req_->ctx_->cq_ = req_->cq_;
       req_->ctx_->BindDeadlineAndMetadata(req_->deadline_,
                                           &req_->request_metadata_);
@@ -878,7 +882,8 @@ Server::Server(
     grpc_resource_quota* server_rq,
     std::vector<
         std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
-        interceptor_creators)
+        interceptor_creators,
+    experimental::ServerMetricRecorder* server_metric_recorder)
     : acceptors_(std::move(acceptors)),
       interceptor_creators_(std::move(interceptor_creators)),
       max_receive_message_size_(INT_MIN),
@@ -888,7 +893,8 @@ Server::Server(
       shutdown_notified_(false),
       server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
-      health_check_service_disabled_(false) {
+      health_check_service_disabled_(false),
+      server_metric_recorder_(server_metric_recorder) {
   gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
   global_callbacks_ = grpc::g_callbacks;
   global_callbacks_->UpdateArguments(args);
@@ -934,6 +940,10 @@ Server::Server(
     if (0 ==
         strcmp(channel_args.args[i].key, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)) {
       max_receive_message_size_ = channel_args.args[i].value.integer;
+    }
+    if (0 == strcmp(channel_args.args[i].key,
+                    GRPC_ARG_SERVER_CALL_METRIC_RECORDING)) {
+      call_metric_recording_enabled_ = channel_args.args[i].value.integer;
     }
   }
   server_ = grpc_server_create(&channel_args, nullptr);

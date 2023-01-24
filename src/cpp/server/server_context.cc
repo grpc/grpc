@@ -40,6 +40,7 @@
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
@@ -53,11 +54,12 @@
 #include <grpcpp/support/server_interceptor.h>
 #include <grpcpp/support/string_ref.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
+#include "src/cpp/server/backend_metric_recorder.h"
 
 namespace grpc {
 
@@ -397,10 +399,15 @@ void ServerContextBase::SetLoadReportingCosts(
   }
 }
 
-void ServerContextBase::CreateCallMetricRecorder() {
+void ServerContextBase::CreateCallMetricRecorder(
+    experimental::ServerMetricRecorder* server_metric_recorder) {
   GPR_ASSERT(call_metric_recorder_ == nullptr);
   grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
-  call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
+  auto* backend_metric_state =
+      arena->New<BackendMetricState>(server_metric_recorder);
+  call_metric_recorder_ = backend_metric_state;
+  grpc_call_context_set(call_.call, GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
+                        backend_metric_state, nullptr);
 }
 
 grpc::string_ref ServerContextBase::ExperimentalGetAuthority() const {
