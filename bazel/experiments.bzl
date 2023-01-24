@@ -30,8 +30,8 @@ EXPERIMENTS = {
         "event_engine_client_test": [
             "event_engine_client",
         ],
-        "event_engine_server_test": [
-            "event_engine_server",
+        "event_engine_listener_test": [
+            "event_engine_listener",
         ],
         "flow_control_test": [
             "peer_state_based_framing",

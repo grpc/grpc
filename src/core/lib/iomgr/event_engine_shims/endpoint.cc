@@ -129,7 +129,7 @@ class EventEngineEndpointWrapper {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-      if (on_release_fd_ != nullptr) {
+      if (fd_ > 0 && on_release_fd_) {
         reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
             ->Shutdown(std::move(on_release_fd_));
       }
@@ -161,7 +161,7 @@ class EventEngineEndpointWrapper {
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-          if (on_release_fd_ != nullptr) {
+          if (fd_ > 0 && on_release_fd_) {
             reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
                 ->Shutdown(std::move(on_release_fd_));
           }
@@ -190,7 +190,7 @@ class EventEngineEndpointWrapper {
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
 #ifdef GRPC_POSIX_SOCKET_TCP
-  absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
+  absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_;
 #endif  // GRPC_POSIX_SOCKET_TCP
   grpc_core::Mutex mu_;
   std::string peer_address_;

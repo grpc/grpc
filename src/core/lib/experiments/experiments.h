@@ -40,7 +40,7 @@ inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(7); }
 inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(8); }
 inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(9); }
 inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(10); }
-inline bool IsEventEngineServerEnabled() { return IsExperimentEnabled(11); }
+inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(11); }
 
 struct ExperimentMetadata {
   const char* name;

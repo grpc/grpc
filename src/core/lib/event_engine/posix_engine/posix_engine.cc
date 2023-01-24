@@ -67,7 +67,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 bool NeedPosixEngine() {
-  return UseEventEngineClient() || UseEventEngineServer();
+  return UseEventEngineClient() || UseEventEngineListener();
 }
 
 #ifdef GRPC_POSIX_SOCKET_TCP

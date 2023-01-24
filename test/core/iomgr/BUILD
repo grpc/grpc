@@ -266,7 +266,7 @@ grpc_cc_test(
     language = "C++",
     tags = [
         "endpoint_test",
-        "event_engine_server_test",
+        "event_engine_listener_test",
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
         "no_windows",
     ],
@@ -315,7 +315,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     tags = [
-        "event_engine_server_test",
+        "event_engine_listener_test",
         "no_windows",
     ],
     deps = [

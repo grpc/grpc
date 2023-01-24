@@ -463,14 +463,13 @@ void PosixEndpointImpl::PerformReclamation() {
 void PosixEndpointImpl::MaybePostReclaimer() {
   if (!has_posted_reclaimer_) {
     has_posted_reclaimer_ = true;
-    Ref().release();
     memory_owner_.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [this](absl::optional<grpc_core::ReclamationSweep> sweep) {
+        [self = Ref(DEBUG_LOCATION, "Posix Reclaimer")](
+            absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            PerformReclamation();
+            self->PerformReclamation();
           }
-          Unref();
         });
   }
 }
