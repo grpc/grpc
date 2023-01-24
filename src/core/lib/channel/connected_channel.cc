@@ -1013,7 +1013,7 @@ class ServerStream final : public ConnectedChannelStream {
       pipes_.client_to_server.sender.Close();
       if (!p->result.ok()) {
         // client cancelled, we should cancel too
-        if (absl::holds_alternative<Uninitialized>(call_state_) ||
+        if (absl::holds_alternative<absl::monostate>(call_state_) ||
             absl::holds_alternative<GotInitialMetadata>(call_state_) ||
             absl::holds_alternative<Running>(call_state_)) {
           if (!absl::holds_alternative<ServerMetadataHandle>(
@@ -1099,8 +1099,6 @@ class ServerStream final : public ConnectedChannelStream {
   }
 
  private:
-  struct Uninitialized {};
-
   struct GettingInitialMetadata {
     explicit GettingInitialMetadata(ServerStream* stream)
         : recv_initial_metadata_ready(
@@ -1192,33 +1190,36 @@ class ServerStream final : public ConnectedChannelStream {
     ops.push_back(absl::StrCat(
         "call_state:",
         Match(
-            call_state_, [](const Uninitialized&) { return "UNINITIALIZED"; },
+            call_state_,
+            [](const absl::monostate&) { return "absl::monostate"; },
             [](const GettingInitialMetadata&) { return "GETTING"; },
             [](const GotInitialMetadata&) { return "GOT"; },
             [](const Running&) { return "RUNNING"; },
             [](const Completing&) { return "COMPLETING"; },
             [](const Complete&) { return "COMPLETE"; })));
-    ops.push_back(absl::StrCat(
-        "client_trailing_metadata_state:",
-        Match(
-            client_trailing_metadata_state_,
-            [](const Uninitialized&) -> std::string { return "UNINITIALIZED"; },
-            [](const WaitingForTrailingMetadata&) -> std::string {
-              return "WAITING";
-            },
-            [](const GotClientHalfClose& got) -> std::string {
-              return absl::StrCat("GOT:", got.result.ToString());
-            })));
-    // Send initial metadata
     ops.push_back(
-        absl::StrCat("server_initial_metadata_state:",
+        absl::StrCat("client_trailing_metadata_state:",
                      Match(
-                         server_initial_metadata_,
-                         [](const Uninitialized&) { return "UNINITIALIZED"; },
-                         [](const PipeReceiverNextType<ServerMetadataHandle>&) {
+                         client_trailing_metadata_state_,
+                         [](const absl::monostate&) -> std::string {
+                           return "absl::monostate";
+                         },
+                         [](const WaitingForTrailingMetadata&) -> std::string {
                            return "WAITING";
                          },
-                         [](const ServerMetadataHandle&) { return "GOT"; })));
+                         [](const GotClientHalfClose& got) -> std::string {
+                           return absl::StrCat("GOT:", got.result.ToString());
+                         })));
+    // Send initial metadata
+    ops.push_back(absl::StrCat(
+        "server_initial_metadata_state:",
+        Match(
+            server_initial_metadata_,
+            [](const absl::monostate&) { return "absl::monostate"; },
+            [](const PipeReceiverNextType<ServerMetadataHandle>&) {
+              return "WAITING";
+            },
+            [](const ServerMetadataHandle&) { return "GOT"; })));
     // Send message
     std::string send_message_state = SendMessageString();
     if (send_message_state != "WAITING") {
@@ -1265,17 +1266,17 @@ class ServerStream final : public ConnectedChannelStream {
   };
 
   using CallState =
-      absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,
+      absl::variant<absl::monostate, GettingInitialMetadata, GotInitialMetadata,
                     Running, Completing, Complete>;
-  CallState call_state_ ABSL_GUARDED_BY(mu()) = Uninitialized{};
+  CallState call_state_ ABSL_GUARDED_BY(mu()) = absl::monostate{};
   using ClientTrailingMetadataState =
-      absl::variant<Uninitialized, WaitingForTrailingMetadata,
+      absl::variant<absl::monostate, WaitingForTrailingMetadata,
                     GotClientHalfClose>;
   ClientTrailingMetadataState client_trailing_metadata_state_
-      ABSL_GUARDED_BY(mu()) = Uninitialized{};
-  absl::variant<Uninitialized, PipeReceiverNextType<ServerMetadataHandle>,
+      ABSL_GUARDED_BY(mu()) = absl::monostate{};
+  absl::variant<absl::monostate, PipeReceiverNextType<ServerMetadataHandle>,
                 ServerMetadataHandle>
-      ABSL_GUARDED_BY(mu()) server_initial_metadata_ = Uninitialized{};
+      ABSL_GUARDED_BY(mu()) server_initial_metadata_ = absl::monostate{};
   PipeSender<MessageHandle>* incoming_messages_ = nullptr;
   grpc_transport_stream_op_batch send_initial_metadata_;
   grpc_closure send_initial_metadata_done_ =

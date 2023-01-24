@@ -3131,8 +3131,6 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   }
 
  private:
-  struct Uninitialized {};
-
   class RecvCloseOpCancelState {
    public:
     // Request that receiver be filled in per grpc_op_recv_close_on_server.
@@ -3208,10 +3206,10 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   PipeReceiver<MessageHandle>* client_to_server_messages_
       ABSL_GUARDED_BY(mu()) = nullptr;
   using SendInitialMetadataState =
-      absl::variant<Uninitialized, PipeSender<ServerMetadataHandle>*,
+      absl::variant<absl::monostate, PipeSender<ServerMetadataHandle>*,
                     typename PipeSender<ServerMetadataHandle>::PushType>;
   SendInitialMetadataState send_initial_metadata_state_ ABSL_GUARDED_BY(mu()) =
-      Uninitialized{};
+      absl::monostate{};
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
@@ -3312,7 +3310,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
               &send_initial_metadata_state_)) {
     if (!absl::holds_alternative<Pending>((*p)())) {
-      send_initial_metadata_state_ = Uninitialized{};
+      send_initial_metadata_state_ = absl::monostate{};
     }
   }
   if (promise_.has_value()) {
