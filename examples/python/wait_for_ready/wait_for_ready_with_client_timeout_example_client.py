@@ -66,15 +66,13 @@ def main():
         # Fire RPC and wait for metadata
         thread_with_delay = threading.Thread(target=wait_for_metadata,
                                              args=(response_future_delay,
-                                                   event_for_delay))
+                                                   event_for_delay),
+                                             daemon=True)
         thread_with_delay.start()
 
         # Wait on client side with timeout
         timeout = 7
         check_status(response_future_delay, event_for_delay.wait(timeout))
-
-        # Expected to timeout.
-        thread_with_delay.join()
 
 
 if __name__ == '__main__':

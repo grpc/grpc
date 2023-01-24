@@ -32,13 +32,16 @@ helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
 
 _INITIAL_METADATA = ((b'initial-md', 'initial-md-value'),)
 
+
 def starting_up_server():
     print("sleeping 5s before sending metadata back")
     sleep(5)
 
+
 def do_work():
     print("server is processing the request")
     sleep(5)
+
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
@@ -56,7 +59,8 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
         # Sending actual response.
         for i in range(3):
-            yield helloworld_pb2.HelloReply(message='Hello %s times %s' % (request.name, i))
+            yield helloworld_pb2.HelloReply(message='Hello %s times %s' %
+                                            (request.name, i))
 
 
 def serve():
