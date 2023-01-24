@@ -292,12 +292,6 @@ class ClientChannel {
                                 grpc_polling_entity* pollent)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(resolution_mu_);
 
-  // These methods require holding lb_mu_.
-  void AddLbQueuedCall(LbQueuedCall* call, grpc_polling_entity* pollent)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(lb_mu_);
-  void RemoveLbQueuedCall(LbQueuedCall* to_remove, grpc_polling_entity* pollent)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(lb_mu_);
-
   //
   // Fields set at construction and never modified.
   //
@@ -421,22 +415,13 @@ class ClientChannel::LoadBalancedCall
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
-  // Helper function for performing an LB pick with a specified picker.
-  // Returns true if the pick is complete, in which case the caller
-  // must ensure that the pick is no longer queued and then invoke
-  // either PickDone() or AsyncPickDone() with the returned error.
-  // Otherwise, returns false, in which case the caller must ensure that
-  // the pick is queued.
-  bool PickSubchannelImpl(LoadBalancingPolicy::SubchannelPicker* picker,
-                          grpc_error_handle* error);
+  void PickSubchannel(
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>* picker,
+      bool was_queued);
 
-  // Removes the call from the channel's list of queued picks if present.
-  void MaybeRemoveCallFromLbQueuedCallsLocked()
+  // Called by channel when removing a call from the list of queued calls.
+  void RemoveCallFromLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
-
-  // Schedules a callback to process the completed pick.  The callback
-  // will not run until after this method returns.
-  void AsyncPickDone(grpc_error_handle error);
 
   RefCountedPtr<SubchannelCall> subchannel_call() const {
     return subchannel_call_;
@@ -484,11 +469,22 @@ class ClientChannel::LoadBalancedCall
   void RecordCallCompletion(absl::Status status);
 
   void CreateSubchannelCall();
-  void PickSubchannel();
   // Invoked when a pick is completed, on both success or failure.
   static void PickDone(void* arg, grpc_error_handle error);
+  // Schedules a callback to process the completed pick.  The callback
+  // will not run until after this method returns.
+  void AsyncPickDone(grpc_error_handle error);
+
+  // Helper function for performing an LB pick with a specified picker.
+  // Returns true if the pick is complete, in which case the caller
+  // must ensure that the pick is no longer queued and then invoke
+  // either PickDone() or AsyncPickDone() with the returned error.
+  // Otherwise, returns false, in which case the caller must ensure that
+  // the pick is queued.
+  bool PickSubchannelImpl(LoadBalancingPolicy::SubchannelPicker* picker,
+                          grpc_error_handle* error);
   // Adds the call to the channel's list of queued picks if not already present.
-  void MaybeAddCallToLbQueuedCallsLocked()
+  void AddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
 
   ClientChannel* chand_;
