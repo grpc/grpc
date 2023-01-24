@@ -643,7 +643,7 @@ TEST(EntryToJsonStructTest, ClientMessage) {
       "    string_value: \"CLIENT_MESSAGE\"\n"
       "  }\n"
       "}\n",
-      absl::WebSafeBase64Escape("hello"));
+      absl::Base64Escape("hello"));
   EXPECT_EQ(output, pb_str);
 }
 
@@ -753,7 +753,7 @@ TEST(EntryToJsonStructTest, ServerMessage) {
       "    string_value: \"SERVER_MESSAGE\"\n"
       "  }\n"
       "}\n",
-      absl::WebSafeBase64Escape("world"));
+      absl::Base64Escape("world"));
   EXPECT_EQ(output, pb_str);
 }
 
