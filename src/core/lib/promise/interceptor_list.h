@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
-#define GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#define GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 
 #include <grpc/support/port_platform.h>
 
@@ -272,4 +272,4 @@ class InterceptorList {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
