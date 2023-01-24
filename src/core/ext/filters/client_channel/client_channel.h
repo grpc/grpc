@@ -417,7 +417,10 @@ class ClientChannel::LoadBalancedCall
 
   void PickSubchannel(
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>* picker,
-      bool was_queued);
+      bool was_queued,
+      absl::FunctionRef<
+          void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
+          unref_picker);
 
   // Called by channel when removing a call from the list of queued calls.
   void RemoveCallFromLbQueuedCallsLocked()

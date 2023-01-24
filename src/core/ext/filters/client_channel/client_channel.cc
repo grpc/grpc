@@ -523,20 +523,18 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   }
 
  private:
-  // Subchannel and SubchannelInterface have different interfaces for
-  // their respective ConnectivityStateWatcherInterface classes.
-  // The one in Subchannel updates the ConnectedSubchannel along with
-  // the state, whereas the one in SubchannelInterface does not expose
-  // the ConnectedSubchannel.
-  //
-  // This wrapper provides a bridge between the two.  It implements
-  // Subchannel::ConnectivityStateWatcherInterface and wraps
+  // This wrapper provides a bridge between the internal Subchannel API
+  // and the SubchannelInterface API that we expose to LB policies.
+  // It implements Subchannel::ConnectivityStateWatcherInterface and wraps
   // the instance of SubchannelInterface::ConnectivityStateWatcherInterface
   // that was passed in by the LB policy.  We pass an instance of this
   // class to the underlying Subchannel, and when we get updates from
   // the subchannel, we pass those on to the wrapped watcher to return
-  // the update to the LB policy.  This allows us to set the connected
-  // subchannel before passing the result back to the LB policy.
+  // the update to the LB policy.
+  //
+  // This class handles things like hopping into the WorkSerializer
+  // before passing notifications to the LB policy and propagating
+  // keepalive information betwen subchannels.
   class WatcherWrapper : public Subchannel::ConnectivityStateWatcherInterface {
    public:
     WatcherWrapper(
@@ -574,16 +572,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     }
 
     grpc_pollset_set* interested_parties() override {
-      SubchannelInterface::ConnectivityStateWatcherInterface* watcher =
-          watcher_.get();
-      if (watcher_ == nullptr) watcher = replacement_->watcher_.get();
-      return watcher->interested_parties();
-    }
-
-    WatcherWrapper* MakeReplacement() {
-      auto* replacement = new WatcherWrapper(std::move(watcher_), parent_);
-      replacement_ = replacement;
-      return replacement;
+      return watcher_->interested_parties();
     }
 
    private:
@@ -641,7 +630,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher_;
     RefCountedPtr<SubchannelWrapper> parent_;
-    WatcherWrapper* replacement_ = nullptr;
   };
 
   ClientChannel* chand_;
@@ -1595,7 +1583,11 @@ void ClientChannel::UpdateStateAndPickerLocked(
     // on the stale value, which results in the timer firing too early. To
     // avoid this, we invalidate the cached value for each call we process.
     ExecCtx::Get()->InvalidateNow();
-    call->lb_call->PickSubchannel(&picker, /*was_queued=*/true);
+    call->lb_call->PickSubchannel(
+        &picker, /*was_queued=*/true,
+        // No-op function to immediately unref pickers, since we're
+        // already running in the WorkSerializer.
+        [](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {});
   }
 }
 
@@ -2817,7 +2809,22 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
       MutexLock lock(&chand_->lb_mu_);
       picker = chand_->picker_;
     }
-    PickSubchannel(&picker, /*was_queued=*/false);
+    // We need to unref the pickers in the WorkSerializer.
+    std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
+        pickers_to_unref;
+    PickSubchannel(
+        &picker, /*was_queued=*/false,
+        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+          pickers_to_unref.emplace_back(std::move(picker));
+        });
+    pickers_to_unref.emplace_back(std::move(picker));
+    chand_->work_serializer_->Run(
+        [pickers_to_unref = std::move(pickers_to_unref)]() mutable {
+          for (auto& picker : pickers_to_unref) {
+            picker.reset(DEBUG_LOCATION, "PickSubchannel");
+          }
+        },
+        DEBUG_LOCATION);
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3081,7 +3088,10 @@ void ClientChannel::LoadBalancedCall::PickDone(void* arg,
 
 void ClientChannel::LoadBalancedCall::PickSubchannel(
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>* picker,
-    bool was_queued) {
+    bool was_queued,
+    absl::FunctionRef<
+        void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
+        unref_picker) {
   while (true) {
     grpc_error_handle error;
     bool pick_complete = PickSubchannelImpl(picker->get(), &error);
@@ -3094,6 +3104,7 @@ void ClientChannel::LoadBalancedCall::PickSubchannel(
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
         }
+        unref_picker(std::move(*picker));
         *picker = chand_->picker_;
         continue;
       }
@@ -3113,7 +3124,6 @@ void ClientChannel::LoadBalancedCall::PickSubchannel(
     }
     break;
   }
-// FIXME: picker can be unreffed while outside the WorkSerializer!
 }
 
 bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
