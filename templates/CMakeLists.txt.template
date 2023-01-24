@@ -220,6 +220,9 @@
   set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
   set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
 
+  set(gRPC_OPENCENSUS_PROVIDER "module" CACHE STRING "Provider of opencensus library")
+  set_property(CACHE gRPC_OPENCENSUS_PROVIDER PROPERTY STRINGS "module" "package")
+
   if(gRPC_BUILD_TESTS)
     set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
     set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
@@ -359,6 +362,7 @@
   include(cmake/ccache.cmake)
 
   include(cmake/abseil-cpp.cmake)
+  include(cmake/opencensus-cpp.cmake) # must after abseil
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)

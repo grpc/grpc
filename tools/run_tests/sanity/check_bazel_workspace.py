@@ -59,7 +59,6 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'upb',  # third_party/upb is checked in locally
     'rules_cc',
     'com_google_absl',
-    'io_opencensus_cpp',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,

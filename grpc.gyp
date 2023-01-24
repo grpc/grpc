@@ -2024,6 +2024,31 @@
       ],
     },
     {
+      'target_name': 'grpc_opencensus_plugin',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'opencensus-cpp::context',
+        'opencensus-cpp::stats',
+        'opencensus-cpp::tags',
+        'opencensus-cpp::tags_context_util',
+        'opencensus-cpp::trace',
+        'opencensus-cpp::trace_context_util',
+        'opencensus-cpp::trace_grpc_trace_bin',
+        'opencensus-cpp::trace_span_context',
+      ],
+      'sources': [
+        'src/cpp/ext/filters/census/channel_filter.cc',
+        'src/cpp/ext/filters/census/client_filter.cc',
+        'src/cpp/ext/filters/census/context.cc',
+        'src/cpp/ext/filters/census/grpc_plugin.cc',
+        'src/cpp/ext/filters/census/measures.cc',
+        'src/cpp/ext/filters/census/rpc_encoding.cc',
+        'src/cpp/ext/filters/census/server_filter.cc',
+        'src/cpp/ext/filters/census/views.cc',
+      ],
+    },
+    {
       'target_name': 'grpc_plugin_support',
       'type': 'static_library',
       'dependencies': [

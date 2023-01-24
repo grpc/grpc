@@ -279,6 +279,17 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return 'benchmark'
     elif bazel_dep == '//external:libssl':
         return 'libssl'
+    elif bazel_dep == '//external:opencensus-trace-propagation':
+        return 'opencensus-cpp::trace_grpc_trace_bin'
+    elif bazel_dep.startswith('//external:opencensus-trace-'):
+        prefixlen = len('//external:opencensus-trace-')
+        return 'opencensus-cpp::trace_' + bazel_dep[prefixlen:]
+    elif bazel_dep.startswith('//external:opencensus-tags-'):
+        prefixlen = len('//external:opencensus-tags-')
+        return 'opencensus-cpp::tags_' + bazel_dep[prefixlen:]
+    elif bazel_dep.startswith('//external:opencensus-'):
+        prefixlen = len('//external:opencensus-')
+        return 'opencensus-cpp::' + bazel_dep[prefixlen:]
     else:
         # all the other external deps such as protobuf, cares, zlib
         # don't need to be listed explicitly, they are handled automatically
@@ -965,6 +976,10 @@ _BUILD_EXTRA_METADATA = {
         'build': 'protoc',
         '_TYPE': 'target',
         '_RENAME': 'grpc_ruby_plugin'
+    },
+    'grpc_opencensus_plugin': {
+        'language': 'c++',
+        'build': 'all',
     },
 
     # TODO(jtattermusch): consider adding grpc++_core_stats

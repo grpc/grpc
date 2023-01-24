@@ -50,3 +50,6 @@
 	# generated file that makes Git consider the submodule dirty. This
 	# state can be ignored for day-to-day development on gRPC.
 	ignore = dirty
+[submodule "third_party/opencensus-cpp"]
+	path = third_party/opencensus-cpp
+	url = https://github.com/census-instrumentation/opencensus-cpp.git
