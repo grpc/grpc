@@ -25551,7 +25551,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_wrr_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_wrr_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
