@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
-#define GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_INTERNAL_H
+#define GRPC_SRC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -94,4 +94,4 @@ inline bool operator==(const grpc_slice& s1, const grpc_slice& s2) {
   return grpc_slice_eq(s1, s2);
 }
 
-#endif  // GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_SLICE_INTERNAL_H

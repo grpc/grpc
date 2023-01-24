@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
-#define GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -70,4 +70,4 @@ struct FrameHeader {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H

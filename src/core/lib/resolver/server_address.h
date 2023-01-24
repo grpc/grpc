@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
-#define GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
+#ifndef GRPC_SRC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
+#define GRPC_SRC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -142,4 +142,4 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
+#endif  // GRPC_SRC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H

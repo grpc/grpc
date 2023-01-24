@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
-#define GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
+#ifndef GRPC_SRC_CPP_SERVER_ORCA_ORCA_INTERCEPTOR_H
+#define GRPC_SRC_CPP_SERVER_ORCA_ORCA_INTERCEPTOR_H
 
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_interceptor.h>
@@ -46,4 +46,4 @@ class OrcaServerInterceptorFactory : public ServerInterceptorFactoryInterface {
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
+#endif  // GRPC_SRC_CPP_SERVER_ORCA_ORCA_INTERCEPTOR_H

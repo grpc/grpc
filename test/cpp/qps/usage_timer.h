@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_USAGE_TIMER_H
-#define TEST_QPS_USAGE_TIMER_H
+#ifndef GRPC_TEST_CPP_QPS_USAGE_TIMER_H
+#define GRPC_TEST_CPP_QPS_USAGE_TIMER_H
 
 class UsageTimer {
  public:
@@ -41,4 +41,4 @@ class UsageTimer {
   const Result start_;
 };
 
-#endif  // TEST_QPS_TIMER_H
+#endif  // GRPC_TEST_CPP_QPS_USAGE_TIMER_H

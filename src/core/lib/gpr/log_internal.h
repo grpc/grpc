@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
-#define GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
+#ifndef GRPC_SRC_CORE_LIB_GPR_LOG_INTERNAL_H
+#define GRPC_SRC_CORE_LIB_GPR_LOG_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -52,4 +52,4 @@
     fprintf(stderr, "%-60s " format "\n", prefix, __VA_ARGS__);   \
   } while (0)
 
-#endif  // GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
+#endif  // GRPC_SRC_CORE_LIB_GPR_LOG_INTERNAL_H

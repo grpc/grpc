@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_JSON_JSON_UTIL_H
-#define GRPC_CORE_LIB_JSON_JSON_UTIL_H
+#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_UTIL_H
+#define GRPC_SRC_CORE_LIB_JSON_JSON_UTIL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -160,4 +160,4 @@ bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_JSON_JSON_UTIL_H
+#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_UTIL_H

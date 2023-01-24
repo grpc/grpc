@@ -182,6 +182,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\http\\stateful_session\\v3\\stateful_session.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3\\http_connection_manager.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\http\\stateful_session\\cookie\\v3\\cookie.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\client_side_weighted_round_robin\\v3\\client_side_weighted_round_robin.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\common\\v3\\common.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\ring_hash\\v3\\ring_hash.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\wrr_locality\\v3\\wrr_locality.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\cert.upb.c " +
@@ -195,12 +197,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\service\\status\\v3\\csds.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\http\\v3\\cookie.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\http\\v3\\path_transformation.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\filter_state.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\http_inputs.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\metadata.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\node.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\number.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\path.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\regex.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\status_code_input.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\string.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\struct.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\type\\matcher\\v3\\value.upb.c " +
@@ -350,12 +354,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-generated\\envoy\\service\\status\\v3\\csds.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\http\\v3\\cookie.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\http\\v3\\path_transformation.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\filter_state.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\http_inputs.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\metadata.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\node.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\number.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\path.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\regex.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\status_code_input.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\string.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\struct.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\value.upbdefs.c " +
@@ -486,6 +492,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\posix_engine\\wakeup_fd_pipe.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\wakeup_fd_posix_default.cc " +
     "src\\core\\lib\\event_engine\\resolved_address.cc " +
+    "src\\core\\lib\\event_engine\\shim.cc " +
     "src\\core\\lib\\event_engine\\slice.cc " +
     "src\\core\\lib\\event_engine\\slice_buffer.cc " +
     "src\\core\\lib\\event_engine\\tcp_socket_utils.cc " +
@@ -569,6 +576,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\ev_poll_posix.cc " +
     "src\\core\\lib\\iomgr\\ev_posix.cc " +
     "src\\core\\lib\\iomgr\\ev_windows.cc " +
+    "src\\core\\lib\\iomgr\\event_engine_shims\\endpoint.cc " +
+    "src\\core\\lib\\iomgr\\event_engine_shims\\tcp_client.cc " +
     "src\\core\\lib\\iomgr\\exec_ctx.cc " +
     "src\\core\\lib\\iomgr\\executor.cc " +
     "src\\core\\lib\\iomgr\\fork_posix.cc " +
@@ -1342,6 +1351,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\http\\stateful_session\\cookie");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\http\\stateful_session\\cookie\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\client_side_weighted_round_robin");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\client_side_weighted_round_robin\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\common");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\common\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\ring_hash");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\ring_hash\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\load_balancing_policies\\wrr_locality");
@@ -1525,6 +1538,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\handshaker");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\event_engine_shims");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\load_balancing");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");

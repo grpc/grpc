@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPR_TMPFILE_H
-#define GRPC_CORE_LIB_GPR_TMPFILE_H
+#ifndef GRPC_SRC_CORE_LIB_GPR_TMPFILE_H
+#define GRPC_SRC_CORE_LIB_GPR_TMPFILE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,4 +29,4 @@
 // unless an error occurs in which case it will be set to NULL.
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename);
 
-#endif  // GRPC_CORE_LIB_GPR_TMPFILE_H
+#endif  // GRPC_SRC_CORE_LIB_GPR_TMPFILE_H

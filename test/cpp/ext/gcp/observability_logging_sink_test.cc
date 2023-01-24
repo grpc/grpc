@@ -16,6 +16,8 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
@@ -554,7 +556,7 @@ TEST(EntryToJsonStructTest, ClientMessage) {
   EntryToJsonStructProto(std::move(entry), &proto);
   std::string output;
   ::google::protobuf::TextFormat::PrintToString(proto, &output);
-  const char* pb_str =
+  std::string pb_str = absl::StrFormat(
       "fields {\n"
       "  key: \"authority\"\n"
       "  value {\n"
@@ -586,7 +588,7 @@ TEST(EntryToJsonStructTest, ClientMessage) {
       "      fields {\n"
       "        key: \"message\"\n"
       "        value {\n"
-      "          string_value: \"hello\"\n"
+      "          string_value: \"%s\"\n"
       "        }\n"
       "      }\n"
       "      fields {\n"
@@ -640,7 +642,8 @@ TEST(EntryToJsonStructTest, ClientMessage) {
       "  value {\n"
       "    string_value: \"CLIENT_MESSAGE\"\n"
       "  }\n"
-      "}\n";
+      "}\n",
+      absl::Base64Escape("hello"));
   EXPECT_EQ(output, pb_str);
 }
 
@@ -663,7 +666,7 @@ TEST(EntryToJsonStructTest, ServerMessage) {
   EntryToJsonStructProto(std::move(entry), &proto);
   std::string output;
   ::google::protobuf::TextFormat::PrintToString(proto, &output);
-  const char* pb_str =
+  std::string pb_str = absl::StrFormat(
       "fields {\n"
       "  key: \"authority\"\n"
       "  value {\n"
@@ -695,7 +698,7 @@ TEST(EntryToJsonStructTest, ServerMessage) {
       "      fields {\n"
       "        key: \"message\"\n"
       "        value {\n"
-      "          string_value: \"world\"\n"
+      "          string_value: \"%s\"\n"
       "        }\n"
       "      }\n"
       "      fields {\n"
@@ -749,7 +752,8 @@ TEST(EntryToJsonStructTest, ServerMessage) {
       "  value {\n"
       "    string_value: \"SERVER_MESSAGE\"\n"
       "  }\n"
-      "}\n";
+      "}\n",
+      absl::Base64Escape("world"));
   EXPECT_EQ(output, pb_str);
 }
 
