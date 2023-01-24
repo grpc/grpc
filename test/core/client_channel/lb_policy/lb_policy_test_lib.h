@@ -790,10 +790,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
           subchannel_call_tracker = nullptr,
       SourceLocation location = SourceLocation()) {
-    EXPECT_NE(picker, nullptr);
-    if (picker == nullptr) {
-      return absl::nullopt;
-    }
     auto pick_result = DoPick(picker, call_attributes);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
