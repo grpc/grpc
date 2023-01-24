@@ -26,6 +26,7 @@
 
 #include <google/protobuf/timestamp.pb.h>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
@@ -134,8 +135,13 @@ void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
     auto* metadata_proto =
         (*payload_proto->mutable_fields())["metadata"].mutable_struct_value();
     for (auto& metadata : payload.metadata) {
-      (*metadata_proto->mutable_fields())[metadata.first].set_string_value(
-          std::move(metadata.second));
+      if (absl::EndsWith(metadata.first, "-bin")) {
+        (*metadata_proto->mutable_fields())[metadata.first].set_string_value(
+            absl::WebSafeBase64Escape(metadata.second));
+      } else {
+        (*metadata_proto->mutable_fields())[metadata.first].set_string_value(
+            std::move(metadata.second));
+      }
     }
   }
   if (payload.timeout != grpc_core::Duration::Zero()) {
@@ -152,7 +158,7 @@ void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
   }
   if (!payload.status_details.empty()) {
     (*payload_proto->mutable_fields())["statusDetails"].set_string_value(
-        std::move(payload.status_details));
+        absl::WebSafeBase64Escape(payload.status_details));
   }
   if (payload.message_length != 0) {
     (*payload_proto->mutable_fields())["messageLength"].set_number_value(
@@ -160,7 +166,7 @@ void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
   }
   if (!payload.message.empty()) {
     (*payload_proto->mutable_fields())["message"].set_string_value(
-        std::move(payload.message));
+        absl::WebSafeBase64Escape(payload.message));
   }
 }
 
@@ -264,14 +270,17 @@ void ObservabilityLoggingSink::LogEntry(Entry entry) {
   proto_entry->mutable_timestamp()->set_nanos(timespec.tv_nsec);
   // TODO(yashykt): Check if we need to fill receive timestamp
   EntryToJsonStructProto(std::move(entry), proto_entry->mutable_json_payload());
-  stub_->async()->WriteLogEntries(&(call->context), &(call->request),
-                                  &(call->response), [call](Status status) {
-                                    if (!status.ok()) {
-                                      // TODO(yashykt): Log the contents of the
-                                      // request on a failure.
-                                    }
-                                    delete call;
-                                  });
+  stub_->async()->WriteLogEntries(
+      &(call->context), &(call->request), &(call->response),
+      [call](Status status) {
+        if (!status.ok()) {
+          // TODO(yashykt): Log the contents of the
+          // request on a failure.
+          gpr_log(GPR_ERROR, "GCP Observability Logging Error %d: %s",
+                  status.error_code(), status.error_message().c_str());
+        }
+        delete call;
+      });
 }
 
 ObservabilityLoggingSink::Configuration::Configuration(
