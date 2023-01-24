@@ -283,7 +283,7 @@ class ConnectedChannelStream : public Orphanable {
     }
     // If we hadn't already observed the stream to be finished, we need to
     // cancel it at the transport.
-    if (stream() && !finished) {
+    if (!finished) {
       IncrementRefCount("shutdown client stream");
       auto* cancel_op =
           GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
