@@ -101,14 +101,14 @@ class InterceptorList {
     }
 
     ~RunPromise() {
-      if (!is_immediately_resolved_) {
+      if (is_immediately_resolved_) {
+        Destruct(&result_);
+      } else {
         if (async_resolution_.current_factory != nullptr) {
           async_resolution_.current_factory->Destroy(
               async_resolution_.space.get());
         }
         Destruct(&async_resolution_);
-      } else {
-        Destruct(&result_);
       }
     }
 
@@ -117,10 +117,10 @@ class InterceptorList {
 
     RunPromise(RunPromise&& other) noexcept
         : is_immediately_resolved_(other.is_immediately_resolved_) {
-      if (!is_immediately_resolved_) {
-        Construct(&async_resolution_, std::move(other.async_resolution_));
-      } else {
+      if (is_immediately_resolved_) {
         Construct(&result_, std::move(other.result_));
+      } else {
+        Construct(&async_resolution_, std::move(other.async_resolution_));
       }
     }
 
@@ -131,32 +131,31 @@ class InterceptorList {
         gpr_log(GPR_DEBUG, "InterceptorList::RunPromise: %s",
                 DebugString().c_str());
       }
-      if (!is_immediately_resolved_) {
-        while (true) {
-          auto r = async_resolution_.current_factory->PollOnce(
+      if (is_immediately_resolved_) return std::move(result_);
+      while (true) {
+        auto r = async_resolution_.current_factory->PollOnce(
+            async_resolution_.space.get());
+        if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+          async_resolution_.current_factory->Destroy(
               async_resolution_.space.get());
-          if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
-            async_resolution_.current_factory->Destroy(
-                async_resolution_.space.get());
-            async_resolution_.current_factory =
-                async_resolution_.current_factory->next();
-            if (async_resolution_.current_factory == nullptr ||
-                !p->has_value()) {
-              return std::move(*p);
-            }
-            async_resolution_.current_factory->MakePromise(
-                std::move(**p), async_resolution_.space.get());
-            continue;
+          async_resolution_.current_factory =
+              async_resolution_.current_factory->next();
+          if (async_resolution_.current_factory == nullptr || !p->has_value()) {
+            return std::move(*p);
           }
-          return Pending{};
+          async_resolution_.current_factory->MakePromise(
+              std::move(**p), async_resolution_.space.get());
+          continue;
         }
+        return Pending{};
       }
-      return std::move(result_);
     }
 
    private:
     std::string DebugString() const {
-      if (!is_immediately_resolved_) {
+      if (is_immediately_resolved_) {
+        return absl::StrFormat("Result:has_value:%d", result_.has_value());
+      } else {
         return absl::StrCat(
             "Running:",
             async_resolution_.current_factory == nullptr
@@ -165,8 +164,6 @@ class InterceptorList {
                     return absl::StrCat(p.file(), ":", p.line());
                   })()
                       .c_str());
-      } else {
-        return absl::StrFormat("Result:has_value:%d", result_.has_value());
       }
     }
     struct AsyncResolution {
