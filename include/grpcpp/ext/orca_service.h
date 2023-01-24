@@ -37,6 +37,8 @@ namespace experimental {
 // utilization metrics to clients.
 class OrcaService : public Service {
  public:
+  OrcaService() = delete;
+
   struct Options {
     // Minimum report interval.  If a client requests an interval lower
     // than this value, this value will be used instead.
@@ -49,16 +51,22 @@ class OrcaService : public Service {
     }
   };
 
-  OrcaService(const ServerMetricRecorder& server_metric_recorder,
+  // ServerMetricRecorder is required.
+  OrcaService(ServerMetricRecorder* const server_metric_recorder,
               Options options);
 
  private:
   class Reactor;
 
-  Slice CreateSerializedResponse();
+  Slice GetOrCreateSerializedResponse();
 
-  const ServerMetricRecorder& server_metric_recorder_;
+  const ServerMetricRecorder* const server_metric_recorder_;
   const absl::Duration min_report_duration_;
+  grpc::internal::Mutex mu_;
+  // Contains the last serialized metrics from server_metric_recorder_.
+  absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(&mu_);
+  // The update sequence number of metrics serialized in response_slice_.
+  uint64_t response_slice_seq_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace experimental

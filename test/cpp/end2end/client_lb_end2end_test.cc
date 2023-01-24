@@ -407,7 +407,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     explicit ServerData(int port = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
           orca_service_(std::make_unique<experimental::OrcaService>(
-              server_metric_recorder_, experimental::OrcaService::Options())) {}
+              &server_metric_recorder_, experimental::OrcaService::Options())) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
@@ -432,7 +432,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.RegisterService(&service_);
       builder.RegisterService(orca_service_.get());
       grpc::ServerBuilder::experimental_type(&builder)
-          .EnableCallMetricRecording();
+          .EnableCallMetricRecording(&server_metric_recorder_);
       server_ = builder.BuildAndStart();
       grpc_core::MutexLock lock(&mu_);
       server_ready_ = true;

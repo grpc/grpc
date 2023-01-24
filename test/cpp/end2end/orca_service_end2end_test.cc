@@ -95,7 +95,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
 
   OrcaServiceEnd2endTest()
       : orca_service_(std::make_unique<OrcaService>(
-            server_metric_recorder_,
+            &server_metric_recorder_,
             OrcaService::Options().set_min_report_duration(
                 absl::ZeroDuration()))) {
     std::string server_address =
@@ -119,6 +119,10 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(OrcaServiceEnd2endTest, Basic) {
+  constexpr char kMetricName1[] = "foo";
+  constexpr char kMetricName2[] = "bar";
+  constexpr char kMetricName3[] = "baz";
+  constexpr char kMetricName4[] = "quux";
   // Start stream1 with 5s interval and stream2 with 2.5s interval.
   // Throughout the test, we should get two responses on stream2 for
   // every one response on stream1.
@@ -159,9 +163,36 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
   // Unset CPU and memory utilization and set a named utilization.
   server_metric_recorder_.ClearCpuUtilization();
   server_metric_recorder_.ClearMemoryUtilization();
+  server_metric_recorder_.SetNamedUtilization(kMetricName1, 0.3);
   ReadResponses([&](const OrcaLoadReport& response) {
     EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
+    EXPECT_THAT(
+        response.utilization(),
+        ::testing::UnorderedElementsAre(::testing::Pair(kMetricName1, 0.3)));
+  });
+  // Unset the previous named utilization and set two new ones.
+  server_metric_recorder_.ClearNamedUtilization(kMetricName1);
+  server_metric_recorder_.SetNamedUtilization(kMetricName2, 0.2);
+  server_metric_recorder_.SetNamedUtilization(kMetricName3, 0.1);
+  ReadResponses([&](const OrcaLoadReport& response) {
+    EXPECT_EQ(response.cpu_utilization(), 0);
+    EXPECT_EQ(response.mem_utilization(), 0);
+    EXPECT_THAT(
+        response.utilization(),
+        ::testing::UnorderedElementsAre(::testing::Pair(kMetricName2, 0.2),
+                                        ::testing::Pair(kMetricName3, 0.1)));
+  });
+  // Replace the entire named metric map at once.
+  server_metric_recorder_.SetAllNamedUtilization(
+      {{kMetricName2, 0.5}, {kMetricName4, 0.9}});
+  ReadResponses([&](const OrcaLoadReport& response) {
+    EXPECT_EQ(response.cpu_utilization(), 0);
+    EXPECT_EQ(response.mem_utilization(), 0);
+    EXPECT_THAT(
+        response.utilization(),
+        ::testing::UnorderedElementsAre(::testing::Pair(kMetricName2, 0.5),
+                                        ::testing::Pair(kMetricName4, 0.9)));
   });
 }
 

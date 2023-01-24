@@ -20,11 +20,14 @@
 #define GRPCPP_EXT_SERVER_METRIC_RECORDER_H
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpcpp/impl/sync.h>
 
 namespace grpc_core {
 struct BackendMetricData;
@@ -54,6 +57,13 @@ class ServerMetricRecorder {
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
   void SetQps(double value);
+  /// Records a named resource utilization value in the range [0, 1].
+  /// Values outside of the valid range are rejected. Consumes `name`.
+  /// Overrides the stored value when called again with the same name.
+  void SetNamedUtilization(std::string name, double value);
+  /// Replaces all named resource utilization values. Consumes
+  /// `named_utilization`. No range validation.
+  void SetAllNamedUtilization(std::map<std::string, double> named_utilization);
 
   /// Clears the server CPU utilization if recorded.
   void ClearCpuUtilization();
@@ -61,19 +71,28 @@ class ServerMetricRecorder {
   void ClearMemoryUtilization();
   /// Clears number of queries per second to the server if recorded.
   void ClearQps();
+  /// Clears a named utilization value if exists.
+  void ClearNamedUtilization(absl::string_view name);
 
  private:
   // To access GetMetrics().
   friend class grpc::BackendMetricState;
   friend class OrcaService;
 
-  // Only populates fields in `data` that this has recorded metrics.
-  grpc_core::BackendMetricData GetMetrics() const;
+  // Returns a pair of backend metrics recorded and the update sequence number.
+  // Returned metrics are guaranteed to be identical between two calls if the
+  // update sequences are identical.
+  std::pair<grpc_core::BackendMetricData, uint64_t> GetMetrics() const;
+
+  // Incremented every time updated.
+  std::atomic<uint64_t> update_seq_{0};
 
   // Defaults to -1.0 (unset).
   std::atomic<double> cpu_utilization_{-1.0};
   std::atomic<double> mem_utilization_{-1.0};
   std::atomic<double> qps_{-1.0};
+  mutable grpc::internal::Mutex mu_;
+  std::map<std::string, double> named_utilization_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental
