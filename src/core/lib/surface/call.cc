@@ -3102,7 +3102,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
   ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args);
 
-  void CancelWithErrorLocked(grpc_error_handle) override { abort(); }
+  void CancelWithErrorLocked(grpc_error_handle) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
   bool failed_before_recv_message() const override { abort(); }
@@ -3150,6 +3151,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
   absl::optional<RecvCloseState> recv_close_op_state_ ABSL_GUARDED_BY(mu());
+  bool cancel_send_and_receive_ ABSL_GUARDED_BY(mu()) = false;
   Completion send_status_from_server_completion_ ABSL_GUARDED_BY(mu());
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
@@ -3196,8 +3198,19 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] PollTopOfCall: %s", DebugTag().c_str(),
+    gpr_log(GPR_INFO, "%s[call] PollTopOfCall: %s%s%s", DebugTag().c_str(),
+            cancel_send_and_receive_ ? "force-" : "",
+            send_trailing_metadata_ != nullptr
+                ? absl::StrCat("send-metadata:",
+                               send_trailing_metadata_->DebugString())
+                      .c_str()
+                : " ",
             PollStateDebugString().c_str());
+  }
+
+  if (cancel_send_and_receive_) {
+    CancelSendMessage();
+    CancelRecvMessage();
   }
 
   if (!is_sending() && send_trailing_metadata_ != nullptr) {
@@ -3395,6 +3408,13 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
   Update();
   FinishOpOnCompletion(&completion, PendingOp::kStartingBatch);
   return GRPC_CALL_OK;
+}
+
+void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
+  if (!promise_.has_value()) return;
+  cancel_send_and_receive_ = true;
+  send_trailing_metadata_ = ServerMetadataFromStatus(error, arena());
+  ForceWakeup();
 }
 
 }  // namespace grpc_core
