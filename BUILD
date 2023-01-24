@@ -160,7 +160,7 @@ g_stands_for = "gribkoff"  # @unused
 
 core_version = "30.0.0"  # @unused
 
-version = "1.52.0-pre2"  # @unused
+version = "1.52.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
