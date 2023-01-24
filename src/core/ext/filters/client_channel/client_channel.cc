@@ -1556,7 +1556,7 @@ void ClientChannel::UpdateStateAndPickerLocked(
   }
   // Grab the LB lock to update the picker and grab the list of queued
   // picks for re-processing.
-  LbQueuedCall* queued_calls;
+  std::set<LoadBalancedCall*> queued_calls;
   {
     // Old picker will be unreffed after releasing the lock.
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_to_swap =
@@ -1564,16 +1564,15 @@ void ClientChannel::UpdateStateAndPickerLocked(
     {
       MutexLock lock(&lb_mu_);
       picker_.swap(picker_to_swap);
-      queued_calls = std::exchange(lb_queued_calls_, nullptr);
+      queued_calls = std::move(lb_queued_calls_);
       // Lame the canceller for all of the queued calls while holding the lock.
-      for (LbQueuedCall* call = queued_calls; call != nullptr;
-           call = call->next) {
-        call->lb_call->RemoveCallFromLbQueuedCallsLocked();
+      for (LoadBalancedCall* call : queued_calls) {
+        call->RemoveCallFromLbQueuedCallsLocked();
       }
     }
   }
   // Use the new picker to re-process queued picks.
-  for (LbQueuedCall* call = queued_calls; call != nullptr; call = call->next) {
+  for (LoadBalancedCall* call : queued_calls) {
     // If there are a lot of queued calls here, resuming them all may cause us
     // to stay inside C-core for a long period of time. All of that work would
     // be done using the same ExecCtx instance and therefore the same cached
@@ -1583,7 +1582,7 @@ void ClientChannel::UpdateStateAndPickerLocked(
     // on the stale value, which results in the timer firing too early. To
     // avoid this, we invalidate the cached value for each call we process.
     ExecCtx::Get()->InvalidateNow();
-    call->lb_call->PickSubchannel(
+    call->PickSubchannel(
         &picker, /*was_queued=*/true,
         // No-op function to immediately unref pickers, since we're
         // already running in the WorkSerializer.
@@ -2536,7 +2535,6 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: created", chand_, this);
   }
-  queued_call_.lb_call = this;
 }
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
@@ -3013,13 +3011,7 @@ class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
         // Remove pick from list of queued picks.
         lb_call->RemoveCallFromLbQueuedCallsLocked();
         // Remove from queued picks list.
-        for (LbQueuedCall** call = &chand->lb_queued_calls_; *call != nullptr;
-             call = &(*call)->next) {
-          if (*call == &lb_call->queued_call_) {
-            *call = lb_call->queued_call_.next;
-            break;
-          }
-        }
+        chand->lb_queued_calls_.erase(lb_call);
         // Fail pending batches on the call.
         lb_call->PendingBatchesFail(error,
                                     YieldCallCombinerIfPendingBatchesFound);
@@ -3058,8 +3050,7 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   // can be done under the call's CQ.
   grpc_polling_entity_add_to_pollset_set(pollent_, chand_->interested_parties_);
   // Add to queue.
-  queued_call_.next = chand_->lb_queued_calls_;
-  chand_->lb_queued_calls_ = &queued_call_;
+  chand_->lb_queued_calls_.insert(this);
   // Register call combiner cancellation callback.
   lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
 }

@@ -226,10 +226,6 @@ class ClientChannel {
     grpc_call_element* elem = nullptr;
     ResolverQueuedCall* next = nullptr;
   };
-  struct LbQueuedCall {
-    LoadBalancedCall* lb_call = nullptr;
-    LbQueuedCall* next = nullptr;
-  };
 
   ClientChannel(grpc_channel_element_args* args, grpc_error_handle* error);
   ~ClientChannel();
@@ -329,7 +325,7 @@ class ClientChannel {
   mutable Mutex lb_mu_;
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
       ABSL_GUARDED_BY(lb_mu_);
-  LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(lb_mu_) = nullptr;
+  std::set<LoadBalancedCall*> lb_queued_calls_ ABSL_GUARDED_BY(lb_mu_);
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
@@ -518,8 +514,6 @@ class ClientChannel::LoadBalancedCall
   grpc_closure pick_closure_;
 
   // Accessed while holding ClientChannel::lb_mu_.
-  ClientChannel::LbQueuedCall queued_call_
-      ABSL_GUARDED_BY(&ClientChannel::lb_mu_);
   LbQueuedCallCanceller* lb_call_canceller_
       ABSL_GUARDED_BY(&ClientChannel::lb_mu_) = nullptr;
 
