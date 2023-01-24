@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"

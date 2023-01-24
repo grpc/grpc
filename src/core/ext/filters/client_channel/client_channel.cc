@@ -25,6 +25,7 @@
 #include <functional>
 #include <new>
 #include <set>
+#include <type_traits>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -1586,7 +1587,7 @@ void ClientChannel::UpdateStateAndPickerLocked(
         &picker, /*was_queued=*/true,
         // No-op function to immediately unref pickers, since we're
         // already running in the WorkSerializer.
-        [](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {});
+        [](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>) {});
   }
 }
 
@@ -2798,8 +2799,8 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   if (GPR_LIKELY(batch->send_initial_metadata)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
       gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: grabbing LB mutex to perform pick",
-              chand_, this);
+              "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand_,
+              this);
     }
     // Get picker.
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
@@ -3138,76 +3139,76 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
       &result,
       // CompletePick
       [this](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-              gpr_log(GPR_INFO,
-                      "chand=%p lb_call=%p: LB pick succeeded: subchannel=%p",
-                      chand_, this, complete_pick->subchannel.get());
-            }
-            GPR_ASSERT(complete_pick->subchannel != nullptr);
-            // Grab a ref to the connected subchannel while we're still
-            // holding the data plane mutex.
-            SubchannelWrapper* subchannel = static_cast<SubchannelWrapper*>(
-                complete_pick->subchannel.get());
-            connected_subchannel_ = subchannel->connected_subchannel();
-            // If the subchannel has no connected subchannel (e.g., if the
-            // subchannel has moved out of state READY but the LB policy hasn't
-            // yet seen that change and given us a new picker), then just
-            // queue the pick.  We'll try again as soon as we get a new picker.
-            if (connected_subchannel_ == nullptr) {
-              if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-                gpr_log(GPR_INFO,
-                        "chand=%p lb_call=%p: subchannel returned by LB picker "
-                        "has no connected subchannel; queueing pick",
-                        chand_, this);
-              }
-              return false;
-            }
-            lb_subchannel_call_tracker_ =
-                std::move(complete_pick->subchannel_call_tracker);
-            if (lb_subchannel_call_tracker_ != nullptr) {
-              lb_subchannel_call_tracker_->Start();
-            }
-            return true;
-          },
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+          gpr_log(GPR_INFO,
+                  "chand=%p lb_call=%p: LB pick succeeded: subchannel=%p",
+                  chand_, this, complete_pick->subchannel.get());
+        }
+        GPR_ASSERT(complete_pick->subchannel != nullptr);
+        // Grab a ref to the connected subchannel while we're still
+        // holding the data plane mutex.
+        SubchannelWrapper* subchannel =
+            static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
+        connected_subchannel_ = subchannel->connected_subchannel();
+        // If the subchannel has no connected subchannel (e.g., if the
+        // subchannel has moved out of state READY but the LB policy hasn't
+        // yet seen that change and given us a new picker), then just
+        // queue the pick.  We'll try again as soon as we get a new picker.
+        if (connected_subchannel_ == nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+            gpr_log(GPR_INFO,
+                    "chand=%p lb_call=%p: subchannel returned by LB picker "
+                    "has no connected subchannel; queueing pick",
+                    chand_, this);
+          }
+          return false;
+        }
+        lb_subchannel_call_tracker_ =
+            std::move(complete_pick->subchannel_call_tracker);
+        if (lb_subchannel_call_tracker_ != nullptr) {
+          lb_subchannel_call_tracker_->Start();
+        }
+        return true;
+      },
       // QueuePick
       [this](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-              gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick queued", chand_,
-                      this);
-            }
-            return false;
-          },
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+          gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick queued", chand_,
+                  this);
+        }
+        return false;
+      },
       // FailPick
       [this, initial_metadata_batch,
        &error](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-              gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick failed: %s",
-                      chand_, this, fail_pick->status.ToString().c_str());
-            }
-            // If wait_for_ready is false, then the error indicates the RPC
-            // attempt's final status.
-            if (!initial_metadata_batch->GetOrCreatePointer(WaitForReady())
-                     ->value) {
-              *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-                  std::move(fail_pick->status), "LB pick"));
-              return true;
-            }
-            // If wait_for_ready is true, then queue to retry when we get a new
-            // picker.
-            return false;
-          },
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+          gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick failed: %s", chand_,
+                  this, fail_pick->status.ToString().c_str());
+        }
+        // If wait_for_ready is false, then the error indicates the RPC
+        // attempt's final status.
+        if (!initial_metadata_batch->GetOrCreatePointer(WaitForReady())
+                 ->value) {
+          *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+              std::move(fail_pick->status), "LB pick"));
+          return true;
+        }
+        // If wait_for_ready is true, then queue to retry when we get a new
+        // picker.
+        return false;
+      },
       // DropPick
       [this, &error](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-              gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick dropped: %s",
-                      chand_, this, drop_pick->status.ToString().c_str());
-            }
-            *error = grpc_error_set_int(
-                absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-                    std::move(drop_pick->status), "LB drop")),
-                StatusIntProperty::kLbPolicyDrop, 1);
-            return true;
-          });
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+          gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick dropped: %s", chand_,
+                  this, drop_pick->status.ToString().c_str());
+        }
+        *error = grpc_error_set_int(
+            absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+                std::move(drop_pick->status), "LB drop")),
+            StatusIntProperty::kLbPolicyDrop, 1);
+        return true;
+      });
 }
 
 }  // namespace grpc_core
