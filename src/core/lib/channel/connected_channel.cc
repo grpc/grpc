@@ -1011,18 +1011,23 @@ class ServerStream final : public ConnectedChannelStream {
     if (auto* p = absl::get_if<GotClientHalfClose>(
             &client_trailing_metadata_state_)) {
       pipes_.client_to_server.sender.Close();
-      /*
-      if (absl::holds_alternative<Uninitialized>(call_state_) ||
-          absl::holds_alternative<GotInitialMetadata>(call_state_) ||
-          absl::holds_alternative<Running>(call_state_)) {
-        if (!absl::holds_alternative<ServerMetadataHandle>(
-                server_initial_metadata_)) {
-          server_initial_metadata_.emplace<ServerMetadataHandle>();
+      if (!p->result.ok()) {
+        // client cancelled, we should cancel too
+        if (absl::holds_alternative<Uninitialized>(call_state_) ||
+            absl::holds_alternative<GotInitialMetadata>(call_state_) ||
+            absl::holds_alternative<Running>(call_state_)) {
+          if (!absl::holds_alternative<ServerMetadataHandle>(
+                  server_initial_metadata_)) {
+            // pretend we've sent initial metadata to stop that op from
+            // progressing if it's stuck somewhere above us in the stack
+            server_initial_metadata_.emplace<ServerMetadataHandle>();
+          }
+          // cancel the call - this status will be returned to the server bottom
+          // promise
+          call_state_.emplace<Complete>(
+              Complete{ServerMetadataFromStatus(p->result)});
         }
-        call_state_.emplace<Complete>(
-            Complete{ServerMetadataFromStatus(p->result)});
       }
-*/
     }
 
     if (auto* p = absl::get_if<GotInitialMetadata>(&call_state_)) {
@@ -1249,7 +1254,7 @@ class ServerStream final : public ConnectedChannelStream {
           message == nullptr ? "" : message->as_string_view());
     }
     client_trailing_metadata_state_.emplace<GotClientHalfClose>(
-        GotClientHalfClose{});
+        GotClientHalfClose{error});
     waker.Wakeup();
   }
 
