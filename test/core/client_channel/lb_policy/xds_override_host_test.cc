@@ -45,9 +45,6 @@
 namespace grpc_core {
 namespace testing {
 namespace {
-using AddressAttributes =
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>;
-
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
   XdsOverrideHostTest()
