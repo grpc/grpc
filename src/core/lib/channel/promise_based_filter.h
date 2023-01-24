@@ -240,6 +240,8 @@ class BaseCallData : public Activity, private Wakeable {
       call_closures_.Add(closure, error, reason);
     }
 
+    BaseCallData* call() const { return call_; }
+
    private:
     absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
     CallCombinerClosureList call_closures_;

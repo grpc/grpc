@@ -213,7 +213,7 @@ void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
     // refcnt==0 ==> cancelled
     if (grpc_trace_channel.enabled()) {
       gpr_log(GPR_INFO, "%sRESUME BATCH REQUEST CANCELLED",
-              Activity::current()->DebugTag().c_str());
+              releaser->call()->DebugTag().c_str());
     }
     return;
   }
