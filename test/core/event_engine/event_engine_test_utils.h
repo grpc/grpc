@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
-#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 
 #include <functional>
 #include <map>
@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -38,8 +39,6 @@ using EventEngineFactory = std::function<
 
 namespace grpc_event_engine {
 namespace experimental {
-
-void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data);
 
 std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 
@@ -55,7 +54,7 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine);
 // written by the sender_endpoint and read by the receiver_endpoint. It
 // returns OK status only if data written == data read. It also blocks the
 // calling thread until said Write and Read operations are complete.
-absl::Status SendValidatePayload(std::string data,
+absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
                                  EventEngine::Endpoint* receive_endpoint);
 
@@ -76,7 +75,7 @@ class ConnectionManager {
   // It creates and starts a listener bound to all the specified list of
   //  addresses.  If successful, return OK status. The type of the listener is
   //  determined by the 2nd argument.
-  absl::Status BindAndStartListener(std::vector<std::string> addrs,
+  absl::Status BindAndStartListener(const std::vector<std::string>& addrs,
                                     bool listener_type_oracle = true);
 
   // If connection is successful, returns a tuple containing:
@@ -132,7 +131,33 @@ class ConnectionManager {
   std::unique_ptr<EventEngine> oracle_event_engine_;
 };
 
+void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data);
+
+class NotifyOnDelete {
+ public:
+  explicit NotifyOnDelete(grpc_core::Notification* signal) : signal_(signal) {}
+  NotifyOnDelete(const NotifyOnDelete&) = delete;
+  NotifyOnDelete& operator=(const NotifyOnDelete&) = delete;
+  NotifyOnDelete(NotifyOnDelete&& other) noexcept {
+    signal_ = other.signal_;
+    other.signal_ = nullptr;
+  }
+  NotifyOnDelete& operator=(NotifyOnDelete&& other) noexcept {
+    signal_ = other.signal_;
+    other.signal_ = nullptr;
+    return *this;
+  }
+  ~NotifyOnDelete() {
+    if (signal_ != nullptr) {
+      signal_->Notify();
+    }
+  }
+
+ private:
+  grpc_core::Notification* signal_;
+};
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
