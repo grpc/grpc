@@ -493,12 +493,10 @@ class ConnectedChannelStream : public Orphanable {
            absl::holds_alternative<PendingReceiveMessage>(recv_message_state_);
   }
 
-  // TODO(ctiller): move to private
-  struct Idle {};
-  struct Closed {};
-
  private:
   struct SendMessageToTransport {};
+  struct Idle {};
+  struct Closed {};
 
   class StreamDeleter {
    public:
