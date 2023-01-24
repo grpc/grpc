@@ -3,6 +3,9 @@
 
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
+# Disable progress bar to avoid getting the script stuck
+# when running on kokoro (in non-interactive mode)
+$global:ProgressPreference = 'SilentlyContinue'
 
 trap {
     $ErrorActionPreference = "Continue"
