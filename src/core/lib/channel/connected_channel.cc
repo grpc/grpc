@@ -411,7 +411,7 @@ class ConnectedChannelStream : public Orphanable {
                     recv_message_waker_.ActivityDebugTag().c_str());
           }
           recv_message_state_ = Closed{};
-          std::exchange(incoming_messages, nullptr)->Close(true);
+          std::exchange(incoming_messages, nullptr)->Close();
         }
       }
     }
@@ -439,11 +439,12 @@ class ConnectedChannelStream : public Orphanable {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
                       "%s[connected] PollRecvMessage: pushed message "
-                      "and finished; marking closed",
+                      "and finished; "
+                      "marking closed",
                       Activity::current()->DebugTag().c_str());
             }
             recv_message_state_ = Closed{};
-            std::exchange(incoming_messages, nullptr)->Close(true);
+            std::exchange(incoming_messages, nullptr)->Close();
           }
         } else {
           if (grpc_call_trace.enabled()) {
@@ -454,7 +455,7 @@ class ConnectedChannelStream : public Orphanable {
                     Activity::current()->DebugTag().c_str());
           }
           recv_message_state_ = Closed{};
-          std::exchange(incoming_messages, nullptr)->Close(true);
+          std::exchange(incoming_messages, nullptr)->Close();
         }
       }
     }
@@ -1009,10 +1010,19 @@ class ServerStream final : public ConnectedChannelStream {
 
     if (auto* p = absl::get_if<GotClientHalfClose>(
             &client_trailing_metadata_state_)) {
-      gpr_log(GPR_DEBUG, "%s[connected] got client half-close: %s",
-              Activity::current()->DebugTag().c_str(),
-              p->result.ToString().c_str());
-      pipes_.client_to_server.sender.Close(p->result.ok());
+      pipes_.client_to_server.sender.Close();
+      /*
+      if (absl::holds_alternative<Uninitialized>(call_state_) ||
+          absl::holds_alternative<GotInitialMetadata>(call_state_) ||
+          absl::holds_alternative<Running>(call_state_)) {
+        if (!absl::holds_alternative<ServerMetadataHandle>(
+                server_initial_metadata_)) {
+          server_initial_metadata_.emplace<ServerMetadataHandle>();
+        }
+        call_state_.emplace<Complete>(
+            Complete{ServerMetadataFromStatus(p->result)});
+      }
+*/
     }
 
     if (auto* p = absl::get_if<GotInitialMetadata>(&call_state_)) {
@@ -1239,7 +1249,7 @@ class ServerStream final : public ConnectedChannelStream {
           message == nullptr ? "" : message->as_string_view());
     }
     client_trailing_metadata_state_.emplace<GotClientHalfClose>(
-        GotClientHalfClose{error});
+        GotClientHalfClose{});
     waker.Wakeup();
   }
 

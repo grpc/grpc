@@ -464,7 +464,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kCancelled:
       break;
     case State::kCancelledButNotYetPolled:
-      interceptor()->Push()->Close(true);
+      interceptor()->Push()->Close();
       state_ = State::kCancelled;
       break;
     case State::kGotBatch: {
@@ -751,12 +751,12 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kBatchCompletedNoPipe:
       break;
     case State::kCancelledWhilstIdle:
-      interceptor_->Push()->Close(true);
+      interceptor_->Push()->Close();
       state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
     case State::kCompletedWhileBatchCompleted:
-      interceptor()->Push()->Close(true);
+      interceptor()->Push()->Close();
       state_ = State::kCancelled;
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                           completed_status_, "recv_message");
@@ -775,7 +775,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
         push_ = interceptor()->Push()->Push(std::move(message));
         next_.emplace(interceptor()->Pull()->Next());
       } else {
-        interceptor()->Push()->Close(true);
+        interceptor()->Push()->Close();
         state_ = State::kCancelled;
         flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                             completed_status_, "recv_message");
@@ -843,7 +843,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                   base_->LogTag().c_str());
         }
         if (state_ == State::kCompletedWhilePulledFromPipe) {
-          interceptor()->Push()->Close(true);
+          interceptor()->Push()->Close();
           state_ = State::kCancelled;
         } else {
           state_ = State::kIdle;
@@ -985,7 +985,7 @@ class ClientCallData::PollContext {
           break;
         case RecvInitialMetadata::kRespondedButNeedToClosePipe:
           self_->recv_initial_metadata_->server_initial_metadata_publisher
-              ->Close(true);
+              ->Close();
           self_->recv_initial_metadata_->state =
               RecvInitialMetadata::kResponded;
           break;
