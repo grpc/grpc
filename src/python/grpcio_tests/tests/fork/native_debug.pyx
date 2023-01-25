@@ -14,10 +14,5 @@ def install_failure_signal_handler(**kwargs):
     cdef FailureSignalHandlerOptions opts = FailureSignalHandlerOptions(
         True, False, -1, False, NULL
     )
-    # opts.symbolize_stacktrace = True
-    # opts.use_alternate_stack = True
-    # opts.alarm_on_failure_secs = -1
-    # opts.call_previous_handler = True
-    # opts.writerfn = NULL
 
     InstallFailureSignalHandler(opts)
