@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Python serer of utilizing wait-for-ready flag with client time out.
+"""An example of setting a server connection timeout independent from the
+overall RPC timeout.
 
 For stream server, if client set wait_for_ready but server never actually starts,
 client will wait indefinitely, this example will do the following steps to set a
