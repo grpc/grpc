@@ -45,7 +45,7 @@ grpc_cc_test(
         "no_test_ios",
         "no_windows",
     ],
-    # TODO(vignesbabu): This is required because the oracle event engine uses
+    # TODO(vignesbabu): This is required because the oracle EventEngine uses
     # poll syscall. If uses_polling is set to False, there will be an attempt
     # to run this test with GRPC_POLL_STRATEGY=none which will hijack the poll
     # c-wrapper causing the test to fail. A more generic posix oracle event

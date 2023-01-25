@@ -48,7 +48,7 @@ namespace experimental {
 ///
 /// The SliceBuffer API is basically a replica of the grpc_slice_buffer's,
 /// and its documentation will move here once we remove the C structure,
-/// which should happen before the Event Engine's API is no longer
+/// which should happen before the EventEngine's API is no longer
 /// an experimental API.
 class SliceBuffer {
  public:

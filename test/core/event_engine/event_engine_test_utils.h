@@ -45,7 +45,7 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 // Returns a random message with bounded length.
 std::string GetNextSendMessage();
 
-// Waits until the use_count of the event engine shared_ptr has reached 1
+// Waits until the use_count of the EventEngine shared_ptr has reached 1
 // and returns.
 void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine);
 
@@ -59,8 +59,8 @@ absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* receive_endpoint);
 
 // A helper class to create clients/listeners and connections between them.
-// The clients and listeners can be created by the oracle event engine
-// or the event engine under test. The class provides handles into the
+// The clients and listeners can be created by the oracle EventEngine
+// or the EventEngine under test. The class provides handles into the
 // connections that are created. Inidividual tests can test expected behavior by
 // exchanging arbitrary data over these connections.
 class ConnectionManager {

@@ -144,7 +144,7 @@ class PosixOracleListener : public EventEngine::Listener {
   std::vector<int> listener_fds_;
 };
 
-// A posix based oracle event engine.
+// A posix based oracle EventEngine.
 class PosixOracleEventEngine final : public EventEngine {
  public:
   PosixOracleEventEngine() = default;

@@ -101,9 +101,9 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
   grpc_core::Notification* signal = new grpc_core::Notification();
   std::atomic_int count{0};
   // Ignore leaks from this closure. For simplicty, this closure is not deleted
-  // because the closure may still be executing after the event engine is
-  // destroyed. This is because the default posix event engine's thread pool may
-  // get destroyed separately from the event engine.
+  // because the closure may still be executing after the EventEngine is
+  // destroyed. This is because the default posix EventEngine's thread pool may
+  // get destroyed separately from the EventEngine.
   AnyInvocableClosure* closure = absl::IgnoreLeak(
       new AnyInvocableClosure([signal_holder = &signal, cb_count, &count]() {
         if (++count == cb_count) {

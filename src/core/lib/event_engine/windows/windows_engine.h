@@ -41,7 +41,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
-// event engine is shut down before we shut down iomgr.
+// EventEngine is shut down before we shut down iomgr.
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
  public:

@@ -703,7 +703,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
 
 // Create a PosixEndpoint.
 // A shared_ptr of the EventEngine is passed to the endpoint to ensure that
-// the event engine is alive for the lifetime of the endpoint. The ownership
+// the EventEngine is alive for the lifetime of the endpoint. The ownership
 // of the EventHandle is transferred to the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
