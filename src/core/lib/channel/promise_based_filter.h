@@ -119,7 +119,7 @@ class ChannelFilter {
   }
 
  private:
-  // TODO(ctiller): remove once per-channel-stack event engines land
+  // TODO(ctiller): remove once per-channel-stack EventEngines land
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };

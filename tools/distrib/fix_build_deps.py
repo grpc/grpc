@@ -541,7 +541,7 @@ def make_library(library):
     hdrs = sorted(consumes[library])
     # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
     # which is in grpc, which is illegal but hard to change
-    # once event engine lands we can clean this up
+    # once EventEngine lands we can clean this up
     deps = Choices(library, {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']}
                    if library.startswith('//test/') else {})
     external_deps = Choices(None, {})

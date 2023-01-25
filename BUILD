@@ -1273,7 +1273,7 @@ grpc_cc_library(
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
-    # removed after landing event engine.
+    # removed after landing EventEngine.
     [
         "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
         "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
@@ -1363,7 +1363,7 @@ grpc_cc_library(
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
-    # removed after landing event engine.
+    # removed after landing EventEngine.
     [
         "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
         "//src/core:lib/iomgr/event_engine_shims/tcp_client.h",
