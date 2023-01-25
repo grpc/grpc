@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <vector>
 
 #include "absl/strings/str_cat.h"

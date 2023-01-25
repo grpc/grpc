@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <initializer_list>
 #include <utility>
 
 #include "absl/status/status.h"

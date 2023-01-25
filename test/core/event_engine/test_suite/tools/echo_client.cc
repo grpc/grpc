@@ -32,6 +32,7 @@
 //    //test/core/event_engine/test_suite/tools:my_event_engine_echo_client
 
 #include <chrono>
+#include <initializer_list>
 #include <memory>
 #include <ratio>
 #include <string>
