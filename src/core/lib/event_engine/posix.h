@@ -30,7 +30,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-/// This defines an interface that posix specific event engines endpoints
+/// This defines an interface that posix specific EventEngines endpoints
 /// may implement to support additional file descriptor related functionality.
 class PosixEndpointWithFdSupport : public EventEngine::Endpoint {
  public:
@@ -52,7 +52,7 @@ class PosixEndpointWithFdSupport : public EventEngine::Endpoint {
                             on_release_fd) = 0;
 };
 
-/// Defines an interface that posix event engine listeners may implement to
+/// Defines an interface that posix EventEngine listeners may implement to
 /// support additional file descriptor related functionality.
 class PosixListenerWithFdSupport : public EventEngine::Listener {
  public:
@@ -98,7 +98,7 @@ class PosixListenerWithFdSupport : public EventEngine::Listener {
   virtual void ShutdownListeningFds() = 0;
 };
 
-/// Defines an interface that posix event engines may implement to
+/// Defines an interface that posix EventEngines may implement to
 /// support additional file descriptor related functionality.
 class PosixEventEngineWithFdSupport : public EventEngine {
  public:
@@ -118,7 +118,7 @@ class PosixEventEngineWithFdSupport : public EventEngine {
   /// new client connection.
   /// \a is_external - A boolean indicating whether the new client connection
   /// is accepted by an external listener_fd or by a listener_fd that is
-  /// managed by the event engine listener.
+  /// managed by the EventEngine listener.
   /// \a memory_allocator - The callback may use the provided memory
   /// allocator to handle memory allocation operations.
   /// \a pending_data - If specified, it holds any pending data that may have

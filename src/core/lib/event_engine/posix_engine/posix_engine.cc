@@ -367,7 +367,7 @@ void PosixEventEngine::PollerWorkInternal(
     });
   });
   if (result == Poller::WorkResult::kDeadlineExceeded) {
-    // The event engine is not shutting down but the next asynchronous
+    // The EventEngine is not shutting down but the next asynchronous
     // PollerWorkInternal did not get scheduled. Schedule it now.
     executor->Run([poller_manager = std::move(poller_manager)]() {
       PollerWorkInternal(poller_manager);
