@@ -45,8 +45,12 @@ int64_t event_engine_tcp_client_connect(
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   EventEngine* engine_ptr = reinterpret_cast<EventEngine*>(
       config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+  // Keeps the engine alive for some tests that have not otherwise instantiated
+  // an EventEngine
+  std::shared_ptr<EventEngine> keeper;
   if (engine_ptr == nullptr) {
-    engine_ptr = GetDefaultEventEngine().get();
+    keeper = GetDefaultEventEngine();
+    engine_ptr = keeper.get();
   }
   EventEngine::ConnectionHandle handle = engine_ptr->Connect(
       [on_connect,

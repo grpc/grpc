@@ -174,9 +174,12 @@ static grpc_error_handle CreateEventEngineListener(
   PosixEventEngineWithFdSupport* engine_ptr =
       reinterpret_cast<PosixEventEngineWithFdSupport*>(
           config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+  // Keeps the engine alive for some tests that have not otherwise instantiated
+  // an EventEngine
+  std::shared_ptr<EventEngine> keeper;
   if (engine_ptr == nullptr) {
-    engine_ptr = reinterpret_cast<PosixEventEngineWithFdSupport*>(
-        grpc_event_engine::experimental::GetDefaultEventEngine().get());
+    keeper = grpc_event_engine::experimental::GetDefaultEventEngine();
+    engine_ptr = reinterpret_cast<PosixEventEngineWithFdSupport*>(keeper.get());
   }
   auto listener = engine_ptr->CreatePosixListener(
       std::move(accept_cb),
