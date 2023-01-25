@@ -2184,10 +2184,9 @@ void ClientChannel::CallData::CheckResolution(grpc_call_element* elem,
       // No result yet, so queue the call if needed.
       AddCallToResolverQueuedCallsLocked(elem);
       return;
-    } else {
-      // We have a result, so remove the call from the queue.
-      RemoveCallFromResolverQueuedCallsLocked(elem);
     }
+    // We have a result, so remove the call from the queue.
+    RemoveCallFromResolverQueuedCallsLocked(elem);
   }
   // We have a result.  Apply service config to call.
   grpc_error_handle error =

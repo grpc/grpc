@@ -310,7 +310,7 @@ class ClientChannel {
       ABSL_GUARDED_BY(resolution_mu_);
 
   //
-  // Fields related to LB picks.  Guarded by mutexes.
+  // Fields related to LB picks.  Guarded by lb_mu_.
   //
   mutable Mutex lb_mu_;
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
