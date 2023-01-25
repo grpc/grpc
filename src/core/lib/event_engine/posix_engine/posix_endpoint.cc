@@ -44,6 +44,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -465,9 +466,11 @@ void PosixEndpointImpl::MaybePostReclaimer() {
     has_posted_reclaimer_ = true;
     memory_owner_.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [this](absl::optional<grpc_core::ReclamationSweep> sweep) {
-          if (!sweep.has_value()) return;
-          PerformReclamation();
+        [self = Ref(DEBUG_LOCATION, "Posix Reclaimer")](
+            absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (sweep.has_value()) {
+            self->PerformReclamation();
+          }
         });
   }
 }
@@ -548,7 +551,7 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
 
 void PosixEndpointImpl::HandleRead(absl::Status status) {
   read_mu_.Lock();
-  if (status.ok()) {
+  if (status.ok() && memory_owner_.is_valid()) {
     MaybeMakeReadSlices();
     if (!TcpDoRead(status)) {
       UpdateRcvLowat();
@@ -558,6 +561,9 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
       return;
     }
   } else {
+    if (!memory_owner_.is_valid()) {
+      status = absl::UnknownError("Shutting down endpoint");
+    }
     incoming_buffer_->Clear();
     last_read_buffer_.Clear();
   }
@@ -1158,6 +1164,9 @@ void PosixEndpointImpl::MaybeShutdown(
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
+  read_mu_.Lock();
+  memory_owner_.Reset();
+  read_mu_.Unlock();
   Unref();
 }
 
@@ -1189,7 +1198,8 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
-  memory_owner_ = options.resource_quota->memory_quota()->CreateMemoryOwner(
+  mem_quota_ = options.resource_quota->memory_quota();
+  memory_owner_ = mem_quota_->CreateMemoryOwner(
       peer_addr_string.ok() ? *peer_addr_string : "");
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
   auto local_address = sock.LocalAddress();

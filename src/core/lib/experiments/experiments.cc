@@ -51,6 +51,8 @@ const char* const description_free_large_allocator =
 const char* const description_transport_supplies_client_latency =
     "If set, use the transport represented value for client latency in "
     "opencensus";
+const char* const description_event_engine_listener =
+    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 }  // namespace
 
 namespace grpc_core {
@@ -71,6 +73,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"free_large_allocator", description_free_large_allocator, false},
     {"transport_supplies_client_latency",
      description_transport_supplies_client_latency, false},
+    {"event_engine_listener", description_event_engine_listener, false},
 };
 
 }  // namespace grpc_core

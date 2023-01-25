@@ -44,7 +44,9 @@
 
 static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);
+  gpr_mu_lock(server->mu);
   server->shutdown = true;
+  gpr_mu_unlock(server->mu);
 }
 
 void test_tcp_server_init(test_tcp_server* server,
@@ -116,10 +118,14 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_seconds(5, GPR_TIMESPAN));
   grpc_core::ExecCtx::Get()->Flush();
+  gpr_mu_lock(server->mu);
   while (!server->shutdown &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
-    test_tcp_server_poll(server, 1000);
+    gpr_mu_unlock(server->mu);
+    test_tcp_server_poll(server, 100);
+    gpr_mu_lock(server->mu);
   }
+  gpr_mu_unlock(server->mu);
   grpc_pollset_shutdown(server->pollset[0],
                         GRPC_CLOSURE_CREATE(finish_pollset, server->pollset[0],
                                             grpc_schedule_on_exec_ctx));

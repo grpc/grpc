@@ -238,8 +238,7 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
 
 #include "src/core/lib/gprpp/crash.h"
 
-class PosixEngineListener
-    : public grpc_event_engine::experimental::EventEngine::Listener {
+class PosixEngineListener : public PosixListenerWithFdSupport {
  public:
   PosixEngineListener() = default;
   ~PosixEngineListener() override = default;

@@ -28,6 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
@@ -38,6 +39,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
@@ -189,6 +191,14 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
         acceptor->pending_data != nullptr) {
       grpc_slice_buffer_swap(args_.read_buffer,
                              &(acceptor->pending_data->data.raw.slice_buffer));
+      // TODO(vigneshbabu): For connections accepted through event engine
+      // listeners, the ownership of the byte buffer received is transferred to
+      // this callback and it is thus this callback's duty to delete it.
+      // Make this hack default once event engine is rolled out.
+      if (grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+              endpoint)) {
+        grpc_byte_buffer_destroy(acceptor->pending_data);
+      }
     }
     // Initialize state needed for calling handshakers.
     acceptor_ = acceptor;

@@ -285,7 +285,9 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
                                      int* release_fd,
                                      absl::string_view reason) {
   bool is_release_fd = (release_fd != nullptr);
+  bool was_shutdown = false;
   if (!read_closure_->IsShutdown()) {
+    was_shutdown = true;
     HandleShutdownInternal(absl::Status(absl::StatusCode::kUnknown, reason),
                            is_release_fd);
   }
@@ -293,8 +295,17 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   // If release_fd is not NULL, we should be relinquishing control of the file
   // descriptor fd->fd (but we still own the grpc_fd structure).
   if (is_release_fd) {
+    if (!was_shutdown) {
+      epoll_event phony_event;
+      if (epoll_ctl(poller_->g_epoll_set_.epfd, EPOLL_CTL_DEL, fd_,
+                    &phony_event) != 0) {
+        gpr_log(GPR_ERROR, "OrphanHandle: epoll_ctl failed: %s",
+                grpc_core::StrError(errno).c_str());
+      }
+    }
     *release_fd = fd_;
   } else {
+    shutdown(fd_, SHUT_RDWR);
     close(fd_);
   }
 
@@ -328,13 +339,11 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   if (read_closure_->SetShutdown(why)) {
-    if (!releasing_fd) {
-      shutdown(fd_, SHUT_RDWR);
-    } else {
+    if (releasing_fd) {
       epoll_event phony_event;
       if (epoll_ctl(poller_->g_epoll_set_.epfd, EPOLL_CTL_DEL, fd_,
                     &phony_event) != 0) {
-        gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
+        gpr_log(GPR_ERROR, "HandleShutdownInternal: epoll_ctl failed: %s",
                 grpc_core::StrError(errno).c_str());
       }
     }
