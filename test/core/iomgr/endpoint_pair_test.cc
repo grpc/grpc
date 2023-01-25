@@ -53,7 +53,14 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
     grpc_channel_args* c_args) {
   grpc_core::ExecCtx ctx;
   grpc_endpoint_pair p;
-  auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+  bool supports_fd = false;
+  auto ee =
+      grpc_event_engine::experimental::GetInternalEventEngineWithFdSupport();
+  if (ee != nullptr) {
+    supports_fd = true;
+  } else {
+    ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+  }
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
@@ -97,9 +104,9 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   server_signal.WaitForNotification();
 
   p.client = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
-      std::move(client_endpoint));
+      std::move(client_endpoint), supports_fd);
   p.server = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
-      std::move(server_endpoint));
+      std::move(server_endpoint), supports_fd);
   return p;
 }
 

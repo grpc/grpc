@@ -572,20 +572,23 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto ee =
+      grpc_event_engine::experimental::GetInternalEventEngineWithFdSupport();
+  GPR_ASSERT(ee != nullptr);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   if (grpc_event_engine::experimental::UseEventEngineListener()) {
     // Create an event engine wrapped endpoint to test release_fd operations.
     auto eeep =
         reinterpret_cast<
             grpc_event_engine::experimental::PosixEventEngineWithFdSupport*>(
-            grpc_event_engine::experimental::GetDefaultEventEngine().get())
+            ee.get())
             ->CreatePosixEndpointFromFd(
                 sv[1],
                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                     grpc_core::ChannelArgs::FromC(&args)),
                 memory_quota->CreateMemoryAllocator("test"));
     ep = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
-        std::move(eeep));
+        std::move(eeep), true);
   } else {
     ep = grpc_tcp_create(
         grpc_fd_create(sv[1], "read_test", false),
