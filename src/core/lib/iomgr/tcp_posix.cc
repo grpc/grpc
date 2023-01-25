@@ -113,7 +113,6 @@ typedef size_t msg_iovlen_type;
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace grpc_core {
-
 class TcpZerocopySendRecord {
  public:
   TcpZerocopySendRecord() { grpc_slice_buffer_init(&buf_); }
@@ -124,8 +123,8 @@ class TcpZerocopySendRecord {
   }
 
   // Given the slices that we wish to send, and the current offset into the
-  //   slice buffer (indicating which have already been sent), populate an iovec
-  //   array that will be used for a zerocopy enabled sendmsg().
+  //   slice buffer (indicating which have already been sent), populate an
+  //   iovec array that will be used for a zerocopy enabled sendmsg().
   msg_iovlen_type PopulateIovs(size_t* unwind_slice_idx,
                                size_t* unwind_byte_idx, size_t* sending_length,
                                iovec* iov);
@@ -138,9 +137,9 @@ class TcpZerocopySendRecord {
     out_offset_.slice_idx = unwind_slice_idx;
   }
 
-  // Update the offset into the slice buffer based on how much we wanted to sent
-  // vs. what sendmsg() actually sent (which may be lower, possibly due to
-  // backpressure).
+  // Update the offset into the slice buffer based on how much we wanted to
+  // sent vs. what sendmsg() actually sent (which may be lower, possibly due
+  // to backpressure).
   void UpdateOffsetForBytesSent(size_t sending_length, size_t actually_sent);
 
   // Indicates whether all underlying data has been sent or not.
@@ -158,7 +157,8 @@ class TcpZerocopySendRecord {
   // References: 1 reference per sendmsg(), and 1 for the tcp_write().
   void Ref() { ref_.fetch_add(1, std::memory_order_relaxed); }
 
-  // Unref: called when we get an error queue notification for a sendmsg(), if a
+  // Unref: called when we get an error queue notification for a sendmsg(), if
+  // a
   //  sendmsg() failed or when tcp_write() is done.
   bool Unref() {
     const intptr_t prior = ref_.fetch_sub(1, std::memory_order_acq_rel);
@@ -183,9 +183,9 @@ class TcpZerocopySendRecord {
   }
 
   // When all sendmsg() calls associated with this tcp_write() have been
-  // completed (ie. we have received the notifications for each sequence number
-  // for each sendmsg()) and all reference counts have been dropped, drop our
-  // reference to the underlying data since we no longer need it.
+  // completed (ie. we have received the notifications for each sequence
+  // number for each sendmsg()) and all reference counts have been dropped,
+  // drop our reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
     GPR_DEBUG_ASSERT(ref_.load(std::memory_order_relaxed) == 0);
     grpc_slice_buffer_reset_and_unref(&buf_);
@@ -243,8 +243,8 @@ class TcpZerocopySendCtx {
   // error queue notification with this sequence number indicating that the
   // underlying data buffers that we sent can now be released. Once that
   // notification is received, we can release the buffers associated with this
-  // zerocopy send record. Here, we associate the sequence number with the data
-  // buffers that were sent with the corresponding call to sendmsg().
+  // zerocopy send record. Here, we associate the sequence number with the
+  // data buffers that were sent with the corresponding call to sendmsg().
   void NoteSend(TcpZerocopySendRecord* record) {
     record->Ref();
     {
@@ -255,13 +255,14 @@ class TcpZerocopySendCtx {
     ++last_send_;
   }
 
-  // If sendmsg() actually failed, though, we need to revert the sequence number
-  // that we speculatively bumped before calling sendmsg(). Note that we bump
-  // this sequence number and perform relevant bookkeeping (see: NoteSend())
-  // *before* calling sendmsg() since, if we called it *after* sendmsg(), then
-  // there is a possible race with the release notification which could occur on
-  // another thread before we do the necessary bookkeeping. Hence, calling
-  // NoteSend() *before* sendmsg() and implementing an undo function is needed.
+  // If sendmsg() actually failed, though, we need to revert the sequence
+  // number that we speculatively bumped before calling sendmsg(). Note that
+  // we bump this sequence number and perform relevant bookkeeping (see:
+  // NoteSend()) *before* calling sendmsg() since, if we called it *after*
+  // sendmsg(), then there is a possible race with the release notification
+  // which could occur on another thread before we do the necessary
+  // bookkeeping. Hence, calling NoteSend() *before* sendmsg() and
+  // implementing an undo function is needed.
   void UndoSend() {
     --last_send_;
     if (ReleaseSendRecord(last_send_)->Unref()) {
@@ -288,10 +289,10 @@ class TcpZerocopySendCtx {
   // data to wire. Each sendmsg() takes a reference on the
   // TcpZerocopySendRecord, and corresponds to a single sequence number.
   // ReleaseSendRecord releases a reference on TcpZerocopySendRecord for a
-  // single sequence number. This is called either when we receive the relevant
-  // error queue notification (saying that we can discard the underlying
-  // buffers for this sendmsg()) is received from the kernel - or, in case
-  // sendmsg() was unsuccessful to begin with.
+  // single sequence number. This is called either when we receive the
+  // relevant error queue notification (saying that we can discard the
+  // underlying buffers for this sendmsg()) is received from the kernel - or,
+  // in case sendmsg() was unsuccessful to begin with.
   TcpZerocopySendRecord* ReleaseSendRecord(uint32_t seq) {
     MutexLock guard(&lock_);
     return ReleaseSendRecordLocked(seq);
@@ -327,8 +328,8 @@ class TcpZerocopySendCtx {
   }
 
   // Only use zerocopy if we are sending at least this many bytes. The
-  // additional overhead of reading the error queue for notifications means that
-  // zerocopy is not useful for small transfers.
+  // additional overhead of reading the error queue for notifications means
+  // that zerocopy is not useful for small transfers.
   size_t threshold_bytes() const { return threshold_bytes_; }
 
   // Expected to be called by handler reading messages from the err queue.
@@ -371,10 +372,10 @@ class TcpZerocopySendCtx {
       // attempt did not encounter ENOBUFS.
       return false;
     } else {
-      // This state should never be reached because it implies that the previous
-      // state was CHECK and is_in_write is false. This means that after the
-      // previous sendmsg returned and set is_in_write to false, it did
-      // not update the z-copy change from CHECK to OPEN.
+      // This state should never be reached because it implies that the
+      // previous state was CHECK and is_in_write is false. This means that
+      // after the previous sendmsg returned and set is_in_write to false, it
+      // did not update the z-copy change from CHECK to OPEN.
       Crash("OMem state error!");
     }
   }
@@ -382,47 +383,26 @@ class TcpZerocopySendCtx {
   // Expected to be called by the thread calling sendmsg after the syscall
   // invocation. is complete. If an ENOBUF is seen, it checks if the error
   // handler (Tx0cp completions) has already run and free'ed up some OMem. It
-  // returns true indicating that the write can be attempted again immediately.
-  // If ENOBUFS was seen but no Tx0cp completions have been received between the
-  // sendmsg() and us taking this lock, then tcp_omem is still full from our
-  // point of view. Therefore, we do not signal that the socket is writeable
-  // with respect to the availability of tcp_omem. Therefore the function
-  // returns false. This indicates that another write should not be attempted
-  // immediately and the calling thread should wait until the socket is writable
-  // again. If ENOBUFS was not seen, then again return false because the next
-  // write should be attempted only when the socket is writable again.
+  // returns true indicating that the write can be attempted again
+  // immediately. If ENOBUFS was seen but no Tx0cp completions have been
+  // received between the sendmsg() and us taking this lock, then tcp_omem is
+  // still full from our point of view. Therefore, we do not signal that the
+  // socket is writeable with respect to the availability of tcp_omem.
+  // Therefore the function returns false. This indicates that another write
+  // should not be attempted immediately and the calling thread should wait
+  // until the socket is writable again. If ENOBUFS was not seen, then again
+  // return false because the next write should be attempted only when the
+  // socket is writable again.
   //
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
-  bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf, bool& constrained) {
-    MutexLock guard(&lock_);
-    is_in_write_ = false;
-    constrained = false;
-    if (seen_enobuf) {
-      if (ctx_lookup_.size() == 1) {
-        // There is no un-acked z-copy record. Set constrained to true to
-        // indicate that we are re-source constrained because we're seeing
-        // ENOBUFS even for the first record. This indicates that either
-        // the process does not have hard memlock ulimit or RLIMIT_MEMLOCK
-        // configured correctly.
-        constrained = true;
-      }
-      if (zcopy_enobuf_state_ == OMemState::CHECK) {
-        zcopy_enobuf_state_ = OMemState::OPEN;
-        return true;
-      } else {
-        zcopy_enobuf_state_ = OMemState::FULL;
-      }
-    } else if (zcopy_enobuf_state_ != OMemState::OPEN) {
-      zcopy_enobuf_state_ = OMemState::OPEN;
-    }
-    return false;
-  }
+  bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf, bool& constrained);
 
  private:
   //                      STATE TRANSITION DIAGRAM
   //
-  // sendmsg succeeds       Tx-zero copy succeeds and there is no active sendmsg
+  // sendmsg succeeds       Tx-zero copy succeeds and there is no active
+  // sendmsg
   //      ----<<--+  +------<<-------------------------------------+
   //      |       |  |                                             |
   //      |       |  v       sendmsg returns ENOBUFS               |
@@ -659,9 +639,56 @@ uint64_t GetRLimitMemLockMax() {
   return kRlimitMemLock;
 }
 
+void MaybeLogTxZeroCopyLimits() {
+  GRPC_LOG_EVERY_N_SEC(
+      1,
+      "Tx0cp encountered an ENOBUFS error possibly because one or "
+      "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
+      "small for the intended user. Current system value of "
+      "RLIMIT_MEMLOCK is %" PRIu64 " and hard memlock ulimit is %" PRIu64
+      ".Consider increasing these values appropriately for the intended "
+      "user.",
+      GetRLimitMemLockMax(), GetUlimitHardMemLock());
+}
+
+#else  // GRPC_LINUX_ERRQUEUE
+
+void MaybeLogTxZeroCopyLimits() {}
+
 #endif  // GRPC_LINUX_ERRQUEUE
 
 }  // namespace
+
+bool TcpZerocopySendCtx::UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf,
+                                                          bool& constrained) {
+  MutexLock guard(&lock_);
+  is_in_write_ = false;
+  constrained = false;
+  if (seen_enobuf) {
+    if (ctx_lookup_.size() == 1) {
+      // If constrained, is true it implies that we received an ENOBUFS error
+      // but there are no un-acked z-copy records. This situation may arise
+      // because the per-process RLIMIT_MEMLOCK limit or the per-socket hard
+      // memlock ulimit on the machine may be very small. These limits control
+      // the max number of bytes a process/socket can respectively pin to RAM.
+      // Tx0cp respects these limits and if a sendmsg tries to send more than
+      // this limit, the kernel may return ENOBUFS error. Print a warning
+      // message here to allow help with debugging. Grpc should not attempt to
+      // raise the limit values.
+      constrained = true;
+      MaybeLogTxZeroCopyLimits();
+    }
+    if (zcopy_enobuf_state_ == OMemState::CHECK) {
+      zcopy_enobuf_state_ = OMemState::OPEN;
+      return true;
+    } else {
+      zcopy_enobuf_state_ = OMemState::FULL;
+    }
+  } else if (zcopy_enobuf_state_ != OMemState::OPEN) {
+    zcopy_enobuf_state_ = OMemState::OPEN;
+  }
+  return false;
+}
 
 static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* tcp);
 
@@ -1697,31 +1724,9 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterSend(
-            saved_errno == ENOBUFS, constrained) ||
-        constrained) {
-      // If constrained, is true it implies that we received an ENOBUFS error
-      // but there are no un-acked z-copy records. This situation may arise
-      // because the per-process RLIMIT_MEMLOCK limit or the per-socket hard
-      // memlock ulimit on the machine may be very small. These limits control
-      // the max number of bytes a process/socket can respectively pin to RAM.
-      // Tx0cp respects these limits and if a sendmsg tries to send more than
-      // this limit, the kernel may return ENOBUFS error. Print a warning
-      // message here to allow help with debugging. Grpc should not attempt to
-      // raise the limit values.
+            saved_errno == ENOBUFS, constrained)) {
       if (!constrained) {
         grpc_fd_set_writable(tcp->em_fd);
-      } else {
-#ifdef GRPC_LINUX_ERRQUEUE
-        GRPC_LOG_EVERY_N_SEC(
-            1,
-            "Tx0cp encountered an ENOBUFS error possibly because one or "
-            "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
-            "small for the intended user. Current system value of "
-            "RLIMIT_MEMLOCK is %" PRIu64 " and hard memlock ulimit is %" PRIu64
-            ".Consider increasing these values appropriately for the intended "
-            "user.",
-            GetRLimitMemLockMax(), GetUlimitHardMemLock());
-#endif
       }
     }
     if (sent_length < 0) {
