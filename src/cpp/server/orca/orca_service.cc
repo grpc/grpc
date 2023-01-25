@@ -183,11 +183,13 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
 }
 
 Slice OrcaService::GetOrCreateSerializedResponse() {
-  auto data_and_seq = server_metric_recorder_->GetMetrics();
   grpc::internal::MutexLock lock(&mu_);
+  std::pair<absl::optional<grpc_core::BackendMetricData>, uint64_t>
+      data_and_seq = server_metric_recorder_->GetMetrics(response_slice_seq_);
   if (!response_slice_.has_value() ||
       data_and_seq.second != response_slice_seq_) {
-    const auto& data = data_and_seq.first;
+    if (!data_and_seq.first.has_value()) return Slice();
+    const auto& data = data_and_seq.first.value();
     upb::Arena arena;
     xds_data_orca_v3_OrcaLoadReport* response =
         xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());

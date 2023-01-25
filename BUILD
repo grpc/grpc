@@ -1984,7 +1984,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpcpp_backend_metric_recorder",
     srcs = [
-        "src/cpp/server/orca/backend_metric_recorder.cc",
+        "src/cpp/server/backend_metric_recorder.cc",
     ],
     hdrs = [
         "src/cpp/server/backend_metric_recorder.h"

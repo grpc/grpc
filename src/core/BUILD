@@ -3639,6 +3639,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_backend_metric_provider",
+    external_deps = [
+        "absl/types:optional",
+    ],
     hdrs = [
         "ext/filters/backend_metrics/backend_metric_provider.h",
     ],

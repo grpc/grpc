@@ -1,5 +1,23 @@
-#ifndef LOCAL_GOOGLE_HOME_YSSEUNG_WORK_GRPC_GIT_GRPC_SRC_CPP_SERVER_BACKEND_METRIC_RECORDER_H_
-#define LOCAL_GOOGLE_HOME_YSSEUNG_WORK_GRPC_GIT_GRPC_SRC_CPP_SERVER_BACKEND_METRIC_RECORDER_H_
+//
+//
+// Copyright 2023 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#ifndef GRPC_SRC_CPP_SERVER_METRIC_RECORDER_H_
+#define GRPC_SRC_CPP_SERVER_METRIC_RECORDER_H_
 
 #include <map>
 
@@ -17,7 +35,6 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
   explicit BackendMetricState(
       experimental::ServerMetricRecorder* server_metric_recorder)
       : server_metric_recorder_(server_metric_recorder) {}
-  ~BackendMetricState() override = default;
   experimental::CallMetricRecorder& RecordCpuUtilizationMetric(
       double value) override;
   experimental::CallMetricRecorder& RecordMemoryUtilizationMetric(
@@ -27,11 +44,11 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
       string_ref name, double value) override;
   experimental::CallMetricRecorder& RecordRequestCostMetric(
       string_ref name, double value) override;
+  // This clears metrics currently recorded. Don't call twice.
+  // Returns nullopt if data is empty.
+  absl::optional<grpc_core::BackendMetricData> GetBackendMetricData() override;
 
  private:
-  // This clears metrics currently recorded. Don't call twice.
-  grpc_core::BackendMetricData GetBackendMetricData() override;
-
   experimental::ServerMetricRecorder* server_metric_recorder_;
   std::atomic<double> cpu_utilization_{-1.0};
   std::atomic<double> mem_utilization_{-1.0};
@@ -43,4 +60,4 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
 
 }  // namespace grpc
 
-#endif  // LOCAL_GOOGLE_HOME_YSSEUNG_WORK_GRPC_GIT_GRPC_SRC_CPP_SERVER_BACKEND_METRIC_RECORDER_H_
+#endif  // GRPC_SRC_CPP_SERVER_METRIC_RECORDER_H_

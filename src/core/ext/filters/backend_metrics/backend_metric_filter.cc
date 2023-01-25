@@ -1,6 +1,6 @@
-#include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
 #include "upb/upb.h"
 #include "upb/upb.hpp"
@@ -18,29 +18,29 @@ TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) const {
   if (provider == nullptr) return absl::nullopt;
-  BackendMetricData d = provider->GetBackendMetricData();
+  absl::optional<BackendMetricData> d = provider->GetBackendMetricData();
+  if (d == absl::nullopt) return absl::nullopt;
   upb::Arena arena;
   xds_data_orca_v3_OrcaLoadReport* response =
       xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
-
-  if (d.cpu_utilization != -1) {
+  if (d->cpu_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(response,
-                                                        d.cpu_utilization);
+                                                        d->cpu_utilization);
   }
-  if (d.mem_utilization != -1) {
+  if (d->mem_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
-                                                        d.mem_utilization);
+                                                        d->mem_utilization);
   }
-  if (d.qps != -1) {
-    xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, d.qps);
+  if (d->qps != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, d->qps);
   }
-  for (const auto& p : d.request_cost) {
+  for (const auto& p : d->request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(
         response,
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
         p.second, arena.ptr());
   }
-  for (const auto& p : d.utilization) {
+  for (const auto& p : d->utilization) {
     xds_data_orca_v3_OrcaLoadReport_utilization_set(
         response,
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),

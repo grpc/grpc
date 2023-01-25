@@ -439,7 +439,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     experimental::ServerMetricRecorder server_metric_recorder_;
-    std::unique_ptr<experimental::OrcaService> orca_service_;
+    experimental::OrcaService orca_service_;
     std::unique_ptr<std::thread> thread_;
 
     grpc_core::Mutex mu_;
@@ -449,8 +449,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(int port = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
-          orca_service_(std::make_unique<experimental::OrcaService>(
-              &server_metric_recorder_, experimental::OrcaService::Options())) {}
+          orca_service_(&server_metric_recorder_,
+                        experimental::OrcaService::Options()) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
@@ -473,7 +473,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
-      builder.RegisterService(orca_service_.get());
+      builder.RegisterService(&orca_service_);
       grpc::ServerBuilder::experimental_type(&builder)
           .EnableCallMetricRecording(&server_metric_recorder_);
       server_ = builder.BuildAndStart();
@@ -2773,10 +2773,12 @@ TEST_F(OobBackendMetricTest, Basic) {
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
+
   // Now update the utilization data on the server.
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
   // data once we see a report with the new CPU utilization value.
+  servers_[0]->server_metric_recorder_.SetNamedUtilization(kMetricName, 0.7);
   servers_[0]->server_metric_recorder_.SetQps(0.6);
   servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.5);
   servers_[0]->server_metric_recorder_.SetCpuUtilization(0.4);

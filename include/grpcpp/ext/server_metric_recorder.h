@@ -27,11 +27,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpcpp/impl/sync.h>
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 
-namespace grpc_core {
-struct BackendMetricData;
-}  // namespace grpc_core
+#include <grpcpp/impl/sync.h>
 
 namespace grpc {
 class BackendMetricState;
@@ -58,11 +56,10 @@ class ServerMetricRecorder {
   /// Overrides the stored value when called again with a valid value.
   void SetQps(double value);
   /// Records a named resource utilization value in the range [0, 1].
-  /// Values outside of the valid range are rejected. Consumes `name`.
+  /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with the same name.
   void SetNamedUtilization(std::string name, double value);
-  /// Replaces all named resource utilization values. Consumes
-  /// `named_utilization`. No range validation.
+  /// Replaces all named resource utilization values. No range validation.
   void SetAllNamedUtilization(std::map<std::string, double> named_utilization);
 
   /// Clears the server CPU utilization if recorded.
@@ -79,20 +76,22 @@ class ServerMetricRecorder {
   friend class grpc::BackendMetricState;
   friend class OrcaService;
 
-  // Returns a pair of backend metrics recorded and the update sequence number.
+  // Returns a pair of backend metrics recorded and the sequence number
+  // associated with the current data. Backend metrics will be nullopt if empty.
   // Returned metrics are guaranteed to be identical between two calls if the
-  // update sequences are identical.
-  std::pair<grpc_core::BackendMetricData, uint64_t> GetMetrics() const;
-
+  // sequence numbers are identical. Returns {nullopt, seq} if the caller sets
+  // `last_seq` and this matches with the current sequence number.
+  std::pair<absl::optional<grpc_core::BackendMetricData>, uint64_t> GetMetrics(
+      absl::optional<uint64_t> last_seq = absl::nullopt) const;
   // Incremented every time updated.
-  std::atomic<uint64_t> update_seq_{0};
-
-  // Defaults to -1.0 (unset).
-  std::atomic<double> cpu_utilization_{-1.0};
-  std::atomic<double> mem_utilization_{-1.0};
-  std::atomic<double> qps_{-1.0};
+  std::atomic<uint64_t> seq_{0};
+ 
   mutable grpc::internal::Mutex mu_;
-  std::map<std::string, double> named_utilization_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, double> named_utilization_ ABSL_GUARDED_BY(&mu_);
+  // Defaults to -1.0 (unset).
+  double cpu_utilization_ ABSL_GUARDED_BY(&mu_) = -1.0;
+  double mem_utilization_ ABSL_GUARDED_BY(&mu_) = -1.0;
+  double qps_ ABSL_GUARDED_BY(&mu_) = -1.0;
 };
 
 }  // namespace experimental

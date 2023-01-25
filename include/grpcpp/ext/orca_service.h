@@ -37,8 +37,6 @@ namespace experimental {
 // utilization metrics to clients.
 class OrcaService : public Service {
  public:
-  OrcaService() = delete;
-
   struct Options {
     // Minimum report interval.  If a client requests an interval lower
     // than this value, this value will be used instead.

@@ -19,14 +19,16 @@
 #ifndef GRPC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_DATA_H
 #define GRPC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_DATA_H
 
+#include "absl/types/optional.h"
+
 namespace grpc_core {
 
 struct BackendMetricData;
 class BackendMetricProvider {
  public:
   virtual ~BackendMetricProvider() = default;
-  // Only populates fields in `data` that this has recorded metrics.
-  virtual BackendMetricData GetBackendMetricData() = 0;
+  // Returns nullopt when empty.
+  virtual absl::optional<BackendMetricData> GetBackendMetricData() = 0;
 };
 
 }  // namespace grpc_core
