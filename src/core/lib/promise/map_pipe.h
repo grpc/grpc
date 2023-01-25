@@ -21,6 +21,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
