@@ -1374,6 +1374,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/interceptor_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/intra_activity_waiter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />

@@ -2386,6 +2386,7 @@ src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
 src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
+src/core/lib/promise/if.h \
 src/core/lib/promise/interceptor_list.h \
 src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \

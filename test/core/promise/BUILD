@@ -397,7 +397,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:gpr",
+        "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:basic_join",
@@ -408,7 +408,6 @@ grpc_cc_test(
         "//src/core:pipe",
         "//src/core:resource_quota",
         "//src/core:seq",
-        "//:grpc",
     ],
 )
 
