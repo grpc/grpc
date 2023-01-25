@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
-#define GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#define GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 
 #include <grpc/support/port_platform.h>
 
@@ -42,65 +42,85 @@
 
 namespace grpc_core {
 
+// Tracks a list of maps of T -> optional<T> via promises.
+// When Run, runs each transformation in order, and resolves to the ulimate
+// result.
+// If a map resolves to nullopt, the chain is terminated and the result is
+// nullopt.
+// Maps can also have synchronous cleanup functions, which are guaranteed to be
+// called at the termination of each run through the chain.
 template <typename T>
 class InterceptorList {
- public:
-  class MapFactory {
+ private:
+  // A map of T -> T via promises.
+  class Map {
    public:
-    explicit MapFactory(DebugLocation from) : from_(from) {}
+    explicit Map(DebugLocation from) : from_(from) {}
+    // Construct a promise to transform x into some other value at memory.
     virtual void MakePromise(T x, void* memory) = 0;
+    // Destroy a promise constructed at memory.
     virtual void Destroy(void* memory) = 0;
+    // Poll a promise constructed at memory.
+    // Resolves to an optional<T> -- if nullopt it means terminate the chain and
+    // resolve.
     virtual Poll<absl::optional<T>> PollOnce(void* memory) = 0;
-    virtual ~MapFactory() = default;
+    virtual ~Map() = default;
 
-    void SetNext(MapFactory* next) {
+    // Update the next pointer stored with this map.
+    // This is only valid to call once, and only before the map is used.
+    void SetNext(Map* next) {
       GPR_DEBUG_ASSERT(next_ == nullptr);
       next_ = next;
     }
 
-    DebugLocation from() { return from_; }
+    // Access the creation location for this map (for debug tracing).
+    DebugLocation from() const { return from_; }
 
-    MapFactory* next() const { return next_; }
+    // Access the next map in the chain (or nullptr if this is the last map).
+    Map* next() const { return next_; }
 
    private:
     GPR_NO_UNIQUE_ADDRESS const DebugLocation from_;
-    MapFactory* next_ = nullptr;
+    Map* next_ = nullptr;
   };
 
+ public:
+  // The result of Run: a promise that will execute the entire chain.
   class RunPromise {
    public:
-    RunPromise(size_t memory_required, MapFactory* factory,
-               absl::optional<T> value) {
+    RunPromise(size_t memory_required, Map* factory, absl::optional<T> value) {
       if (!value.has_value() || factory == nullptr) {
-        is_running_ = false;
+        is_immediately_resolved_ = true;
         Construct(&result_, std::move(value));
       } else {
-        is_running_ = true;
-        Construct(&running_, memory_required);
-        factory->MakePromise(std::move(*value), running_.space.get());
-        running_.current_factory = factory;
+        is_immediately_resolved_ = false;
+        Construct(&async_resolution_, memory_required);
+        factory->MakePromise(std::move(*value), async_resolution_.space.get());
+        async_resolution_.current_factory = factory;
       }
     }
 
     ~RunPromise() {
-      if (is_running_) {
-        if (running_.current_factory != nullptr) {
-          running_.current_factory->Destroy(running_.space.get());
-        }
-        Destruct(&running_);
-      } else {
+      if (is_immediately_resolved_) {
         Destruct(&result_);
+      } else {
+        if (async_resolution_.current_factory != nullptr) {
+          async_resolution_.current_factory->Destroy(
+              async_resolution_.space.get());
+        }
+        Destruct(&async_resolution_);
       }
     }
 
     RunPromise(const RunPromise&) = delete;
     RunPromise& operator=(const RunPromise&) = delete;
 
-    RunPromise(RunPromise&& other) noexcept : is_running_(other.is_running_) {
-      if (is_running_) {
-        Construct(&running_, std::move(other.running_));
-      } else {
+    RunPromise(RunPromise&& other) noexcept
+        : is_immediately_resolved_(other.is_immediately_resolved_) {
+      if (is_immediately_resolved_) {
         Construct(&result_, std::move(other.result_));
+      } else {
+        Construct(&async_resolution_, std::move(other.async_resolution_));
       }
     }
 
@@ -111,53 +131,60 @@ class InterceptorList {
         gpr_log(GPR_DEBUG, "InterceptorList::RunPromise: %s",
                 DebugString().c_str());
       }
-      while (is_running_) {
-        auto r = running_.current_factory->PollOnce(running_.space.get());
+      if (is_immediately_resolved_) return std::move(result_);
+      while (true) {
+        auto r = async_resolution_.current_factory->PollOnce(
+            async_resolution_.space.get());
         if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
-          running_.current_factory->Destroy(running_.space.get());
-          running_.current_factory = running_.current_factory->next();
-          if (running_.current_factory == nullptr || !p->has_value()) {
+          async_resolution_.current_factory->Destroy(
+              async_resolution_.space.get());
+          async_resolution_.current_factory =
+              async_resolution_.current_factory->next();
+          if (async_resolution_.current_factory == nullptr || !p->has_value()) {
             return std::move(*p);
           }
-          running_.current_factory->MakePromise(std::move(**p),
-                                                running_.space.get());
+          async_resolution_.current_factory->MakePromise(
+              std::move(**p), async_resolution_.space.get());
           continue;
         }
         return Pending{};
       }
-      return std::move(result_);
     }
 
    private:
     std::string DebugString() const {
-      if (is_running_) {
-        return absl::StrCat(
-            "Running:", running_.current_factory == nullptr
-                            ? "END"
-                            : ([p = running_.current_factory->from()]() {
-                                return absl::StrCat(p.file(), ":", p.line());
-                              })()
-                                  .c_str());
-      } else {
+      if (is_immediately_resolved_) {
         return absl::StrFormat("Result:has_value:%d", result_.has_value());
+      } else {
+        return absl::StrCat(
+            "Running:",
+            async_resolution_.current_factory == nullptr
+                ? "END"
+                : ([p = async_resolution_.current_factory->from()]() {
+                    return absl::StrCat(p.file(), ":", p.line());
+                  })()
+                      .c_str());
       }
     }
-    struct Running {
-      explicit Running(size_t max_size)
+    struct AsyncResolution {
+      explicit AsyncResolution(size_t max_size)
           : space(GetContext<Arena>()->MakePooledArray<char>(max_size)) {}
-      Running(const Running&) = delete;
-      Running& operator=(const Running&) = delete;
-      Running(Running&& other) noexcept
+      AsyncResolution(const AsyncResolution&) = delete;
+      AsyncResolution& operator=(const AsyncResolution&) = delete;
+      AsyncResolution(AsyncResolution&& other) noexcept
           : current_factory(std::exchange(other.current_factory, nullptr)),
             space(std::move(other.space)) {}
-      MapFactory* current_factory;
+      Map* current_factory;
       Arena::PoolPtr<char[]> space;
     };
     union {
-      Running running_;
+      AsyncResolution async_resolution_;
       absl::optional<T> result_;
     };
-    bool is_running_;
+    // If true, the result_ union is valid, otherwise async_resolution_ is.
+    // Indicates whether the promise resolved immediately at construction or if
+    // additional steps were needed.
+    bool is_immediately_resolved_;
   };
 
   InterceptorList() = default;
@@ -170,29 +197,36 @@ class InterceptorList {
                       std::move(initial_value));
   }
 
+  // Append a new map to the end of the chain.
   template <typename Fn>
   void AppendMap(Fn fn, DebugLocation from) {
-    Append(MakeFactoryToAdd(
+    Append(MakeMapToAdd(
         std::move(fn), [] {}, from));
   }
 
+  // Prepend a new map to the beginning of the chain.
   template <typename Fn>
   void PrependMap(Fn fn, DebugLocation from) {
-    Prepend(MakeFactoryToAdd(
+    Prepend(MakeMapToAdd(
         std::move(fn), [] {}, from));
   }
 
+  // Append a new map to the end of the chain, with a cleanup function to be
+  // called at the end of run promise execution.
   template <typename Fn, typename CleanupFn>
   void AppendMapWithCleanup(Fn fn, CleanupFn cleanup_fn, DebugLocation from) {
-    Append(MakeFactoryToAdd(std::move(fn), std::move(cleanup_fn), from));
+    Append(MakeMapToAdd(std::move(fn), std::move(cleanup_fn), from));
   }
 
+  // Prepend a new map to the beginning of the chain, with a cleanup function to
+  // be called at the end of run promise execution.
   template <typename Fn, typename CleanupFn>
   void PrependMapWithCleanup(Fn fn, CleanupFn cleanup_fn, DebugLocation from) {
-    Prepend(MakeFactoryToAdd(std::move(fn), std::move(cleanup_fn), from));
+    Prepend(MakeMapToAdd(std::move(fn), std::move(cleanup_fn), from));
   }
 
  protected:
+  // Clear the interceptor list
   void ResetInterceptorList() {
     DeleteFactories();
     first_map_ = nullptr;
@@ -202,16 +236,14 @@ class InterceptorList {
 
  private:
   template <typename Fn, typename CleanupFn>
-  class MapFactoryImpl final : public MapFactory {
+  class MapImpl final : public Map {
    public:
     using PromiseFactory = promise_detail::RepeatedPromiseFactory<T, Fn>;
     using Promise = typename PromiseFactory::Promise;
 
-    explicit MapFactoryImpl(Fn fn, CleanupFn cleanup_fn, DebugLocation from)
-        : MapFactory(from),
-          fn_(std::move(fn)),
-          cleanup_fn_(std::move(cleanup_fn)) {}
-    ~MapFactoryImpl() override { cleanup_fn_(); }
+    explicit MapImpl(Fn fn, CleanupFn cleanup_fn, DebugLocation from)
+        : Map(from), fn_(std::move(fn)), cleanup_fn_(std::move(cleanup_fn)) {}
+    ~MapImpl() override { cleanup_fn_(); }
     void MakePromise(T x, void* memory) override {
       new (memory) Promise(fn_.Make(std::move(x)));
     }
@@ -228,16 +260,15 @@ class InterceptorList {
   };
 
   template <typename Fn, typename CleanupFn>
-  MapFactory* MakeFactoryToAdd(Fn fn, CleanupFn cleanup_fn,
-                               DebugLocation from) {
-    using FactoryType = MapFactoryImpl<Fn, CleanupFn>;
+  Map* MakeMapToAdd(Fn fn, CleanupFn cleanup_fn, DebugLocation from) {
+    using FactoryType = MapImpl<Fn, CleanupFn>;
     promise_memory_required_ = std::max(promise_memory_required_,
                                         sizeof(typename FactoryType::Promise));
     return GetContext<Arena>()->New<FactoryType>(std::move(fn),
                                                  std::move(cleanup_fn), from);
   }
 
-  void Append(MapFactory* f) {
+  void Append(Map* f) {
     if (first_map_ == nullptr) {
       first_map_ = f;
       last_map_ = f;
@@ -247,7 +278,7 @@ class InterceptorList {
     }
   }
 
-  void Prepend(MapFactory* f) {
+  void Prepend(Map* f) {
     if (first_map_ == nullptr) {
       first_map_ = f;
       last_map_ = f;
@@ -260,16 +291,19 @@ class InterceptorList {
   void DeleteFactories() {
     for (auto* f = first_map_; f != nullptr;) {
       auto* next = f->next();
-      f->~MapFactory();
+      f->~Map();
       f = next;
     }
   }
 
-  MapFactory* first_map_ = nullptr;
-  MapFactory* last_map_ = nullptr;
+  // The first map in the chain.
+  Map* first_map_ = nullptr;
+  // The last map in the chain.
+  Map* last_map_ = nullptr;
+  // The amount of memory required to store the largest promise in the chain.
   size_t promise_memory_required_ = 0;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H

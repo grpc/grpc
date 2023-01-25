@@ -168,7 +168,6 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
         MaybeUpdateServerInitialMetadata(cookie_config, cookie_value, md.get());
         return md;
       });
-
   return Map(next_promise_factory(std::move(call_args)),
              [cookie_config, cookie_value](ServerMetadataHandle md) {
                // If we got a Trailers-Only response, then add the

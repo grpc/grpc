@@ -191,6 +191,12 @@ class Arena {
   template <typename T>
   using PoolPtr = std::unique_ptr<T, PooledDeleter>;
 
+  // Make a unique_ptr to T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
   template <typename T, typename... Args>
   PoolPtr<T> MakePooled(Args&&... args) {
     auto* free_list =
@@ -202,6 +208,13 @@ class Arena {
         PooledDeleter(free_list));
   }
 
+  // Make a unique_ptr to an array of T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // One can use MakePooledArray<char> to allocate a buffer of bytes.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
   template <typename T>
   PoolPtr<T[]> MakePooledArray(size_t n) {
     auto where =

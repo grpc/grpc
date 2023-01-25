@@ -1237,6 +1237,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/closure.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/tcp_client.cc" role="src" />
@@ -1372,6 +1374,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/interceptor_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/intra_activity_waiter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />

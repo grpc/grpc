@@ -44,11 +44,19 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
-#include "test/core/event_engine/test_suite/event_engine_test_utils.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/port.h"
 
-class EventEngineServerTest : public EventEngineTest {};
+namespace grpc_event_engine {
+namespace experimental {
+
+void InitClientTests() {}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+class EventEngineClientTest : public EventEngineTest {};
 
 using namespace std::chrono_literals;
 
@@ -60,17 +68,43 @@ using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
+using ::grpc_event_engine::experimental::NotifyOnDelete;
 using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
 }  // namespace
 
-// Create a connection using the oracle EventEngine to a listener created
-// by the Test EventEngine and exchange bi-di data over the connection.
+// Create a connection using the test EventEngine to a non-existent listener
+// and verify that the connection fails.
+TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
+  grpc_core::ExecCtx ctx;
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  grpc_core::Notification signal;
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  // Create a test EventEngine client endpoint and connect to a non existent
+  // listener.
+  ChannelArgsEndpointConfig config;
+  test_ee->Connect(
+      [_ = NotifyOnDelete(&signal)](
+          absl::StatusOr<std::unique_ptr<Endpoint>> status) {
+        // Connect should fail.
+        EXPECT_FALSE(status.ok());
+      },
+      *URIToResolvedAddress(target_addr), config,
+      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
+  signal.WaitForNotification();
+  WaitForSingleOwner(std::move(test_ee));
+}
+
+// Create a connection using the test EventEngine to a listener created
+// by the oracle EventEngine and exchange bi-di data over the connection.
 // For each data transfer, verify that data written at one end of the stream
 // equals data read at the other end of the stream.
-TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
+
+TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
   auto oracle_ee = this->NewOracleEventEngine();
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
@@ -96,14 +130,15 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto listener = *test_ee->CreateListener(
-      std::move(accept_cb), [](absl::Status /*status*/) {}, config,
+  auto listener = *oracle_ee->CreateListener(
+      std::move(accept_cb),
+      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
 
-  oracle_ee->Connect(
+  test_ee->Connect(
       [&client_endpoint,
        &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
         ASSERT_TRUE(endpoint.ok());
@@ -133,14 +168,12 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   }
   client_endpoint.reset();
   server_endpoint.reset();
-  listener.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
 // Create 1 listener bound to N IPv6 addresses and M connections where M > N and
 // exchange and verify random number of messages over each connection.
-TEST_F(EventEngineServerTest,
-       ServerMultipleIPv6ConnectionsToOneOracleListenerTest) {
+TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   grpc_core::ExecCtx ctx;
   static constexpr int kNumListenerAddresses = 10;  // N
   static constexpr int kNumConnections = 10;        // M
@@ -165,8 +198,9 @@ TEST_F(EventEngineServerTest,
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto listener = *test_ee->CreateListener(
-      std::move(accept_cb), [](absl::Status /*status*/) {}, config,
+  auto listener = *oracle_ee->CreateListener(
+      std::move(accept_cb),
+      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   target_addrs.reserve(kNumListenerAddresses);
@@ -181,14 +215,14 @@ TEST_F(EventEngineServerTest,
   for (int i = 0; i < kNumConnections; i++) {
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
     grpc_core::Notification client_signal;
-    // Create an oracle EventEngine client and connect to a one of the
-    // addresses bound to the test EventEngine listener. Verify that the
-    // connection succeeds.
+    // Create a test EventEngine client endpoint and connect to a one of the
+    // addresses bound to the oracle listener. Verify that the connection
+    // succeeds.
     grpc_core::ChannelArgs client_args;
     auto client_quota = grpc_core::ResourceQuota::Default();
     client_args = client_args.Set(GRPC_ARG_RESOURCE_QUOTA, client_quota);
     ChannelArgsEndpointConfig client_config(client_args);
-    oracle_ee->Connect(
+    test_ee->Connect(
         [&client_endpoint,
          &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
           ASSERT_TRUE(endpoint.ok());
@@ -259,7 +293,6 @@ TEST_F(EventEngineServerTest,
     t.join();
   }
   server_endpoint.reset();
-  listener.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 

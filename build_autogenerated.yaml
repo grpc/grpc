@@ -868,6 +868,7 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -936,6 +937,7 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/latch.h
@@ -1621,6 +1623,7 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -2198,6 +2201,7 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -2264,6 +2268,7 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/latch.h
@@ -2565,6 +2570,7 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -3645,6 +3651,7 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -3709,6 +3716,7 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/loop.h
@@ -3893,6 +3901,7 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -5502,15 +5511,17 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/cf_event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -7368,6 +7379,7 @@ targets:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -7431,6 +7443,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/loop.h
@@ -7599,6 +7612,7 @@ targets:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -7741,17 +7755,19 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -8627,6 +8643,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
@@ -9134,6 +9151,7 @@ targets:
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
@@ -9533,17 +9551,20 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
-  - test/core/event_engine/test_suite/server_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9799,96 +9820,12 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/lib/debug/trace.h
-  - src/core/lib/experiments/config.h
-  - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/manual_constructor.h
-  - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/gprpp/status_helper.h
-  - src/core/lib/gprpp/time.h
-  - src/core/lib/iomgr/closure.h
-  - src/core/lib/iomgr/combiner.h
-  - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
-  - src/core/lib/resource_quota/arena.h
-  - src/core/lib/resource_quota/memory_quota.h
-  - src/core/lib/resource_quota/periodic_update.h
-  - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
-  - src/core/lib/slice/percent_encoding.h
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/event_engine/memory_allocator.cc
-  - src/core/lib/experiments/config.cc
-  - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gprpp/status_helper.cc
-  - src/core/lib/gprpp/time.cc
-  - src/core/lib/iomgr/closure.cc
-  - src/core/lib/iomgr/combiner.cc
-  - src/core/lib/iomgr/error.cc
-  - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
-  - src/core/lib/resource_quota/arena.cc
-  - src/core/lib/resource_quota/memory_quota.cc
-  - src/core/lib/resource_quota/periodic_update.cc
-  - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
-  - src/core/lib/slice/percent_encoding.cc
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/functional:any_invocable
-  - absl/functional:function_ref
-  - absl/hash:hash
-  - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/utility:utility
-  - gpr
-  - upb
+  - grpc
   uses_polling: false
 - name: poll_test
   gtest: true
@@ -9921,17 +9858,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/posix/posix_engine_test_utils.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9955,15 +9893,16 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_event_engine_connect_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9974,18 +9913,22 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
-  - test/core/event_engine/test_suite/server_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -12212,6 +12155,7 @@ targets:
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/loop.h

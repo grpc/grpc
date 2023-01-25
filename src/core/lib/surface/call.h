@@ -84,7 +84,7 @@ class ServerCallContext {
   ServerCallContext(ServerPromiseBasedCall* call,
                     const void* server_stream_data)
       : call_(call), server_stream_data_(server_stream_data) {}
-  ArenaPromise<ServerMetadataHandle> CompletePromise(
+  ArenaPromise<ServerMetadataHandle> MakeTopOfServerCallPromise(
       CallArgs call_args, grpc_completion_queue* cq,
       grpc_metadata_array* publish_initial_metadata,
       absl::FunctionRef<void(grpc_call* call)> publish);
@@ -124,9 +124,6 @@ class CallContext {
   grpc_polling_entity* polling_entity() { return &pollent_; }
 
   ServerCallContext* server_call_context();
-
- protected:
-  PromiseBasedCall* call() { return call_; }
 
  private:
   friend class PromiseBasedCall;

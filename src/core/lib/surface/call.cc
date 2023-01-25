@@ -2045,9 +2045,7 @@ class PromiseBasedCall : public Call,
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() override;
 
-  Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
-
-  virtual ServerCallContext* server_call_context() = 0;
+  virtual ServerCallContext* server_call_context() { return nullptr; }
 
  protected:
   class ScopedContext
@@ -2132,6 +2130,7 @@ class PromiseBasedCall : public Call,
     return 1 << static_cast<int>(reason);
   }
 
+  Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
   // Begin work on a completion, recording the tag/closure to notify.
   // Use the op selected in \a ops to determine the index to allocate into.
   // Starts the "StartingBatch" PendingOp immediately.
@@ -2581,6 +2580,10 @@ bool PromiseBasedCall::PollSendMessage() {
   if (!outstanding_send_.has_value()) return true;
   Poll<bool> r = (*outstanding_send_)();
   if (const bool* result = absl::get_if<bool>(&r)) {
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%sPollSendMessage completes %s", DebugTag().c_str(),
+              *result ? "successfully" : "with failure");
+    }
     if (!*result) {
       FailCompletion(send_message_completion_);
       return false;
@@ -2626,16 +2629,25 @@ void PromiseBasedCall::PollRecvMessage(
       grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
                                   &(*recv_message_)->data.raw.slice_buffer);
       if (grpc_call_trace.enabled()) {
-        gpr_log(
-            GPR_INFO,
-            "%s[call] UpdateOnce: outstanding_recv finishes: received %" PRIdPTR
-            " byte message",
-            DebugTag().c_str(), (*recv_message_)->data.raw.slice_buffer.length);
+        gpr_log(GPR_INFO,
+                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%" PRIdPTR " byte message",
+                DebugTag().c_str(),
+                (*recv_message_)->data.raw.slice_buffer.length);
       }
+    } else if (result->cancelled()) {
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "end-of-stream with error",
+                DebugTag().c_str());
+      }
+      FailCompletion(recv_message_completion_);
+      *recv_message_ = nullptr;
     } else {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] UpdateOnce: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
                 "end-of-stream",
                 DebugTag().c_str());
       }
@@ -2691,7 +2703,7 @@ ServerCallContext* CallContext::server_call_context() {
 // PublishMetadataArray
 
 namespace {
-void PublishMetadataArray(grpc_metadata_array* array, grpc_metadata_batch* md) {
+void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array) {
   const auto md_count = md->count();
   if (md_count > array->capacity) {
     array->capacity =
@@ -2756,8 +2768,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   std::string DebugTag() const override {
     return absl::StrFormat("CLIENT_CALL[%p]: ", this);
   }
-
-  ServerCallContext* server_call_context() override { return nullptr; }
 
  private:
   // Poll the underlying promise (and sundry objects) once.
@@ -2946,8 +2956,8 @@ void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
   });
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
-  PublishMetadataArray(std::exchange(recv_initial_metadata_, nullptr),
-                       metadata);
+  PublishMetadataArray(metadata,
+                       std::exchange(recv_initial_metadata_, nullptr));
   FinishOpOnCompletion(&recv_initial_metadata_completion_,
                        PendingOp::kReceiveInitialMetadata);
 }
@@ -3097,7 +3107,7 @@ void ClientPromiseBasedCall::PublishStatus(
     *op_args.error_string =
         gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
   }
-  PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
+  PublishMetadataArray(trailing_metadata.get(), op_args.trailing_metadata);
   // Clear state saying we have a RECV_STATUS_ON_CLIENT outstanding
   // (so we don't call through twice)
   recv_status_on_client_ = absl::monostate();
@@ -3118,7 +3128,28 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
                              bool is_notify_tag_closure) override;
   bool failed_before_recv_message() const override { abort(); }
   bool is_trailers_only() const override { abort(); }
-  absl::string_view GetServerAuthority() const override { abort(); }
+  absl::string_view GetServerAuthority() const override { return ""; }
+
+  // Polling order for the server promise stack:
+  //
+  // │ ┌───────────────────────────────────────┐
+  // │ │ ServerPromiseBasedCall::UpdateOnce    ├──► Lifetime management,
+  // │ ├───────────────────────────────────────┤    signal call end to app
+  // │ │ ConnectedChannel                      ├─┐
+  // │ ├───────────────────────────────────────┤ └► Interactions with the
+  // │ │ ... closest to transport filter       │    transport - send/recv msgs
+  // │ ├───────────────────────────────────────┤    and metadata, call phase
+  // │ │ ...                                   │    ordering
+  // │ ├───────────────────────────────────────┤
+  // │ │ ... closest to app filter             │ ┌► Request matching, initial
+  // │ ├───────────────────────────────────────┤ │  setup, publishing call to
+  // │ │ Server::ChannelData::MakeCallPromise  ├─┘  application
+  // │ ├───────────────────────────────────────┤
+  // │ │ ServerPromiseBasedCall::PollTopOfCall ├──► Application interactions,
+  // ▼ └───────────────────────────────────────┘    forwarding messages,
+  // Polling &                                      sending trailing metadata
+  // instantiation
+  // order
 
   void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) override;
   Poll<ServerMetadataHandle> PollTopOfCall()
@@ -3131,14 +3162,12 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ServerCallContext* server_call_context() override { return &call_context_; }
 
  private:
-  struct Uninitialized {};
-
   class RecvCloseOpCancelState {
    public:
     // Request that receiver be filled in per grpc_op_recv_close_on_server.
     // Returns true if the request can be fulfilled immediately.
     // Returns false if the request will be fulfilled later.
-    bool RequestReceiveCloseOnServer(int* receiver) {
+    bool ReceiveCloseOnServerOpStarted(int* receiver) {
       switch (state_) {
         case kUnset:
           state_ = reinterpret_cast<uintptr_t>(receiver);
@@ -3212,10 +3241,10 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   PipeReceiver<MessageHandle>* client_to_server_messages_
       ABSL_GUARDED_BY(mu()) = nullptr;
   using SendInitialMetadataState =
-      absl::variant<Uninitialized, PipeSender<ServerMetadataHandle>*,
+      absl::variant<absl::monostate, PipeSender<ServerMetadataHandle>*,
                     typename PipeSender<ServerMetadataHandle>::PushType>;
   SendInitialMetadataState send_initial_metadata_state_ ABSL_GUARDED_BY(mu()) =
-      Uninitialized{};
+      absl::monostate{};
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
   grpc_compression_algorithm incoming_compression_algorithm_
       ABSL_GUARDED_BY(mu());
@@ -3227,7 +3256,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
 
-ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
+ArenaPromise<ServerMetadataHandle>
+ServerCallContext::MakeTopOfServerCallPromise(
     CallArgs call_args, grpc_completion_queue* cq,
     grpc_metadata_array* publish_initial_metadata,
     absl::FunctionRef<void(grpc_call* call)> publish) {
@@ -3247,8 +3277,8 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::CompletePromise(
         call_->mu()->AssertHeld();
         call_->CancelWithErrorLocked(std::move(status));
       });
-  PublishMetadataArray(publish_initial_metadata,
-                       call_->client_initial_metadata_.get());
+  PublishMetadataArray(call_->client_initial_metadata_.get(),
+                       publish_initial_metadata);
   publish(call_->c_ptr());
   return [this]() {
     call_->mu()->AssertHeld();
@@ -3327,7 +3357,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
               &send_initial_metadata_state_)) {
     if (!absl::holds_alternative<Pending>((*p)())) {
-      send_initial_metadata_state_ = Uninitialized{};
+      send_initial_metadata_state_ = absl::monostate{};
     }
   }
   if (promise_.has_value()) {
@@ -3455,7 +3485,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   DebugTag().c_str(),
                   recv_close_op_cancel_state_.ToString().c_str());
         }
-        if (!recv_close_op_cancel_state_.RequestReceiveCloseOnServer(
+        if (!recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
                 op.data.recv_close_on_server.cancelled)) {
           recv_close_completion_ =
               AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
@@ -3486,7 +3516,7 @@ void ServerPromiseBasedCall::CommitBatchAfterCompletion(
                   DebugTag().c_str(),
                   recv_close_op_cancel_state_.ToString().c_str());
         }
-        GPR_ASSERT(recv_close_op_cancel_state_.RequestReceiveCloseOnServer(
+        GPR_ASSERT(recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
             op.data.recv_close_on_server.cancelled));
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:

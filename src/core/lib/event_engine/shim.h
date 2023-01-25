@@ -21,6 +21,8 @@ namespace experimental {
 
 bool UseEventEngineClient();
 
+bool UseEventEngineListener();
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
