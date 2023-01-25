@@ -116,19 +116,12 @@ class ClientChannel::CallData {
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
   static void SetPollent(grpc_call_element* elem, grpc_polling_entity* pollent);
 
-  // Invoked by channel for queued calls when name resolution is completed.
-  static void CheckResolution(void* arg, grpc_error_handle error);
-  // Helper function for applying the service config to a call while
-  // holding ClientChannel::resolution_mu_.
-  // Returns true if the service config has been applied to the call, in which
-  // case the caller must invoke ResolutionDone() or AsyncResolutionDone()
-  // with the returned error.
-  bool CheckResolutionLocked(grpc_call_element* elem, grpc_error_handle* error)
+  void CheckResolution(grpc_call_element* elem, bool was_queued);
+
+  // Removes the call from the channel's list of calls queued
+  // for name resolution.
+  void RemoveCallFromResolverQueuedCallsLocked(grpc_call_element* elem)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
-  // Schedules a callback to continue processing the call once
-  // resolution is complete.  The callback will not run until after this
-  // method returns.
-  void AsyncResolutionDone(grpc_call_element* elem, grpc_error_handle error);
 
  private:
   class ResolverQueuedCallCanceller;
@@ -167,23 +160,22 @@ class ClientChannel::CallData {
   // Resumes all pending batches on lb_call_.
   void PendingBatchesResume(grpc_call_element* elem);
 
+  // Helper function for CheckResolution().  Returns true if the call
+  // can continue (i.e., there is a valid resolution result, or there is
+  // an invalid resolution result but the call is not wait_for_ready).
+  bool CheckResolutionLocked(
+      grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+      absl::StatusOr<RefCountedPtr<ConfigSelector>>* config_selector)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
   // Applies service config to the call.  Must be invoked once we know
   // that the resolver has returned results to the channel.
   // If an error is returned, the error indicates the status with which
   // the call should be failed.
   grpc_error_handle ApplyServiceConfigToCallLocked(
-      grpc_call_element* elem, grpc_metadata_batch* initial_metadata)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
-  // Invoked when the resolver result is applied to the caller, on both
-  // success or failure.
-  static void ResolutionDone(void* arg, grpc_error_handle error);
-  // Removes the call (if present) from the channel's list of calls queued
-  // for name resolution.
-  void MaybeRemoveCallFromResolverQueuedCallsLocked(grpc_call_element* elem)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
-  // Adds the call (if not already present) to the channel's list of
-  // calls queued for name resolution.
-  void MaybeAddCallToResolverQueuedCallsLocked(grpc_call_element* elem)
+      grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+      const absl::StatusOr<RefCountedPtr<ConfigSelector>>& config_selector);
+  // Adds the call to the channel's list of calls queued for name resolution.
+  void AddCallToResolverQueuedCallsLocked(grpc_call_element* elem)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
 
   static void RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
@@ -209,13 +201,7 @@ class ClientChannel::CallData {
 
   grpc_polling_entity* pollent_ = nullptr;
 
-  grpc_closure resolution_done_closure_;
-
   // Accessed while holding ClientChannel::resolution_mu_.
-  bool service_config_applied_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) =
-      false;
-  ClientChannel::ResolverQueuedCall resolver_queued_call_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
   ResolverQueuedCallCanceller* resolver_call_canceller_
       ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
 
@@ -1091,6 +1077,21 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
       .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
 }
 
+void ClientChannel::ReprocessQueuedResolverCalls() {
+  for (grpc_call_element* elem : resolver_queued_calls_) {
+    CallData* calld = static_cast<CallData*>(elem->call_data);
+    calld->RemoveCallFromResolverQueuedCallsLocked(elem);
+    owning_stack_->EventEngine()->Run(
+        [elem]() {
+          ApplicationCallbackExecCtx application_exec_ctx;
+          ExecCtx exec_ctx;
+          CallData* calld = static_cast<CallData*>(elem->call_data);
+          calld->CheckResolution(elem, /*was_queued=*/true);
+        });
+  }
+  resolver_queued_calls_.clear();
+}
+
 namespace {
 
 RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
@@ -1303,16 +1304,7 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
       // Update resolver transient failure.
       resolver_transient_failure_error_ =
           MaybeRewriteIllegalStatusCode(status, "resolver");
-      // Process calls that were queued waiting for the resolver result.
-      for (ResolverQueuedCall* call = resolver_queued_calls_; call != nullptr;
-           call = call->next) {
-        grpc_call_element* elem = call->elem;
-        CallData* calld = static_cast<CallData*>(elem->call_data);
-        grpc_error_handle error;
-        if (calld->CheckResolutionLocked(elem, &error)) {
-          calld->AsyncResolutionDone(elem, error);
-        }
-      }
+      ReprocessQueuedResolverCalls();
     }
     // Update connectivity state.
     UpdateStateAndPickerLocked(
@@ -1369,30 +1361,6 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties_);
   return lb_policy;
-}
-
-void ClientChannel::AddResolverQueuedCall(ResolverQueuedCall* call,
-                                          grpc_polling_entity* pollent) {
-  // Add call to queued calls list.
-  call->next = resolver_queued_calls_;
-  resolver_queued_calls_ = call;
-  // Add call's pollent to channel's interested_parties, so that I/O
-  // can be done under the call's CQ.
-  grpc_polling_entity_add_to_pollset_set(pollent, interested_parties_);
-}
-
-void ClientChannel::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
-                                             grpc_polling_entity* pollent) {
-  // Remove call's pollent from channel's interested_parties.
-  grpc_polling_entity_del_from_pollset_set(pollent, interested_parties_);
-  // Remove from queued calls list.
-  for (ResolverQueuedCall** call = &resolver_queued_calls_; *call != nullptr;
-       call = &(*call)->next) {
-    if (*call == to_remove) {
-      *call = to_remove->next;
-      return;
-    }
-  }
 }
 
 void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
@@ -1461,25 +1429,8 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     service_config_.swap(service_config);
     config_selector_.swap(config_selector);
     dynamic_filters_.swap(dynamic_filters);
-    // Process calls that were queued waiting for the resolver result.
-    for (ResolverQueuedCall* call = resolver_queued_calls_; call != nullptr;
-         call = call->next) {
-      // If there are a lot of queued calls here, resuming them all may cause us
-      // to stay inside C-core for a long period of time. All of that work would
-      // be done using the same ExecCtx instance and therefore the same cached
-      // value of "now". The longer it takes to finish all of this work and exit
-      // from C-core, the more stale the cached value of "now" may become. This
-      // can cause problems whereby (e.g.) we calculate a timer deadline based
-      // on the stale value, which results in the timer firing too early. To
-      // avoid this, we invalidate the cached value for each call we process.
-      ExecCtx::Get()->InvalidateNow();
-      grpc_call_element* elem = call->elem;
-      CallData* calld = static_cast<CallData*>(elem->call_data);
-      grpc_error_handle error;
-      if (calld->CheckResolutionLocked(elem, &error)) {
-        calld->AsyncResolutionDone(elem, error);
-      }
-    }
+    // Re-process queued calls asynchronously.
+    ReprocessQueuedResolverCalls();
   }
   // Old values will be unreffed after lock is released when they go out
   // of scope.
@@ -1574,6 +1525,8 @@ void ClientChannel::UpdateStateAndPickerLocked(
   }
   // Use the new picker to re-process queued picks.
   for (LoadBalancedCall* call : queued_calls) {
+// FIXME: change this to just call EventEngine::Run() to do a new pick
+// for each call, since that will simplify the code
     // If there are a lot of queued calls here, resuming them all may cause us
     // to stay inside C-core for a long period of time. All of that work would
     // be done using the same ExecCtx instance and therefore the same cached
@@ -1919,7 +1872,23 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
               "config",
               chand, calld);
     }
-    CheckResolution(elem, absl::OkStatus());
+    // If we're still in IDLE, we need to start resolving.
+    if (GPR_UNLIKELY(chand->CheckConnectivityState(false) ==
+        GRPC_CHANNEL_IDLE)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+        gpr_log(GPR_INFO, "chand=%p calld=%p: triggering exit idle", chand,
+                calld);
+      }
+      // Bounce into the control plane work serializer to start resolving.
+      GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "ExitIdle");
+      chand->work_serializer_->Run(
+          [chand]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
+            chand->CheckConnectivityState(/*try_to_connect=*/true);
+            GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "ExitIdle");
+          },
+          DEBUG_LOCATION);
+    }
+    calld->CheckResolution(elem, /*was_queued=*/false);
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1945,8 +1914,7 @@ void ClientChannel::CallData::SetPollent(grpc_call_element* elem,
 size_t ClientChannel::CallData::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in ApplyServiceConfigToCallLocked() and
-  // CheckResolutionLocked() assumes it will be.
+  // here, since the code in CheckResolution() assumes it will be.
   if (batch->send_initial_metadata) return 0;
   if (batch->send_message) return 1;
   if (batch->send_trailing_metadata) return 2;
@@ -2090,7 +2058,8 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
       }
       if (calld->resolver_call_canceller_ == self && !error.ok()) {
         // Remove pick from list of queued picks.
-        calld->MaybeRemoveCallFromResolverQueuedCallsLocked(self->elem_);
+        calld->RemoveCallFromResolverQueuedCallsLocked(self->elem_);
+        chand->resolver_queued_calls_.erase(self->elem_);
         // Fail pending batches on the call.
         calld->PendingBatchesFail(self->elem_, error,
                                   YieldCallCombinerIfPendingBatchesFound);
@@ -2104,97 +2073,92 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
   grpc_closure closure_;
 };
 
-void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
+void ClientChannel::CallData::RemoveCallFromResolverQueuedCallsLocked(
     grpc_call_element* elem) {
-  if (resolver_queued_call_.elem == nullptr) return;
   auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: removing from resolver queued picks list",
             chand, this);
   }
-  chand->RemoveResolverQueuedCall(&resolver_queued_call_, pollent_);
-  resolver_queued_call_.elem = nullptr;
+  // Remove call's pollent from channel's interested_parties.
+  grpc_polling_entity_del_from_pollset_set(pollent_,
+                                           chand->interested_parties_);
   // Lame the call combiner canceller.
   resolver_call_canceller_ = nullptr;
-  // Add trace annotation
-  auto* call_tracer =
-      static_cast<CallTracer*>(call_context_[GRPC_CONTEXT_CALL_TRACER].value);
-  if (call_tracer != nullptr) {
-    call_tracer->RecordAnnotation("Delayed name resolution complete.");
-  }
+  // Note: There's no need to actually remove the call from the queue
+  // here, beacuse that will be done in
+  // ResolverQueuedCallCanceller::CancelLocked() or
+  // ClientChannel::ReprocessQueuedResolverCalls().
 }
 
-void ClientChannel::CallData::MaybeAddCallToResolverQueuedCallsLocked(
+void ClientChannel::CallData::AddCallToResolverQueuedCallsLocked(
     grpc_call_element* elem) {
-  if (resolver_queued_call_.elem != nullptr) return;
   auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: adding to resolver queued picks list",
             chand, this);
   }
-  resolver_queued_call_.elem = elem;
-  chand->AddResolverQueuedCall(&resolver_queued_call_, pollent_);
+  // Add call's pollent to channel's interested_parties, so that I/O
+  // can be done under the call's CQ.
+  grpc_polling_entity_add_to_pollset_set(pollent_, chand->interested_parties_);
+  // Add to queue.
+  chand->resolver_queued_calls_.insert(elem);
   // Register call combiner cancellation callback.
   resolver_call_canceller_ = new ResolverQueuedCallCanceller(elem);
 }
 
 grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
-    grpc_call_element* elem, grpc_metadata_batch* initial_metadata) {
+    grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+    const absl::StatusOr<RefCountedPtr<ConfigSelector>>& config_selector) {
   ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, this);
   }
-  ConfigSelector* config_selector = chand->config_selector_.get();
-  if (config_selector != nullptr) {
-    // Use the ConfigSelector to determine the config for the call.
-    auto call_config =
-        config_selector->GetCallConfig({&path_, initial_metadata, arena_});
-    if (!call_config.ok()) {
-      return absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-          call_config.status(), "ConfigSelector"));
-    }
-    // Create a ClientChannelServiceConfigCallData for the call.  This stores
-    // a ref to the ServiceConfig and caches the right set of parsed configs
-    // to use for the call.  The ClientChannelServiceConfigCallData will store
-    // itself in the call context, so that it can be accessed by filters
-    // below us in the stack, and it will be cleaned up when the call ends.
-    auto* service_config_call_data =
-        arena_->New<ClientChannelServiceConfigCallData>(
-            std::move(call_config->service_config), call_config->method_configs,
-            std::move(call_config->call_attributes),
-            call_config->call_dispatch_controller, call_context_);
-    // Apply our own method params to the call.
-    auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
-        service_config_call_data->GetMethodParsedConfig(
-            chand->service_config_parser_index_));
-    if (method_params != nullptr) {
-      // If the deadline from the service config is shorter than the one
-      // from the client API, reset the deadline timer.
-      if (chand->deadline_checking_enabled_ &&
-          method_params->timeout() != Duration::Zero()) {
-        const Timestamp per_method_deadline =
-            Timestamp::FromCycleCounterRoundUp(call_start_time_) +
-            method_params->timeout();
-        if (per_method_deadline < deadline_) {
-          deadline_ = per_method_deadline;
-          grpc_deadline_state_reset(elem, deadline_);
-        }
-      }
-      // If the service config set wait_for_ready and the application
-      // did not explicitly set it, use the value from the service config.
-      auto* wait_for_ready =
-          pending_batches_[0]
-              ->payload->send_initial_metadata.send_initial_metadata
-              ->GetOrCreatePointer(WaitForReady());
-      if (method_params->wait_for_ready().has_value() &&
-          !wait_for_ready->explicitly_set) {
-        wait_for_ready->value = method_params->wait_for_ready().value();
+  if (!config_selector.ok()) return config_selector.status();
+  // Use the ConfigSelector to determine the config for the call.
+  auto call_config =
+      (*config_selector)->GetCallConfig({&path_, initial_metadata, arena_});
+  if (!call_config.ok()) {
+    return absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+        call_config.status(), "ConfigSelector"));
+  }
+  // Create a ClientChannelServiceConfigCallData for the call.  This stores
+  // a ref to the ServiceConfig and caches the right set of parsed configs
+  // to use for the call.  The ClientChannelServiceConfigCallData will store
+  // itself in the call context, so that it can be accessed by filters
+  // below us in the stack, and it will be cleaned up when the call ends.
+  auto* service_config_call_data =
+      arena_->New<ClientChannelServiceConfigCallData>(
+          std::move(call_config->service_config), call_config->method_configs,
+          std::move(call_config->call_attributes),
+          call_config->call_dispatch_controller, call_context_);
+  // Apply our own method params to the call.
+  auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
+      service_config_call_data->GetMethodParsedConfig(
+          chand->service_config_parser_index_));
+  if (method_params != nullptr) {
+    // If the deadline from the service config is shorter than the one
+    // from the client API, reset the deadline timer.
+    if (chand->deadline_checking_enabled_ &&
+        method_params->timeout() != Duration::Zero()) {
+      const Timestamp per_method_deadline =
+          Timestamp::FromCycleCounterRoundUp(call_start_time_) +
+          method_params->timeout();
+      if (per_method_deadline < deadline_) {
+        deadline_ = per_method_deadline;
+        grpc_deadline_state_reset(elem, deadline_);
       }
     }
-    // Set the dynamic filter stack.
-    dynamic_filters_ = chand->dynamic_filters_;
+    // If the service config set wait_for_ready and the application
+    // did not explicitly set it, use the value from the service config.
+    auto* wait_for_ready =
+        initial_metadata->GetOrCreatePointer(WaitForReady());
+    if (method_params->wait_for_ready().has_value() &&
+        !wait_for_ready->explicitly_set) {
+      wait_for_ready->value = method_params->wait_for_ready().value();
+    }
   }
   return absl::OkStatus();
 }
@@ -2223,80 +2187,63 @@ void ClientChannel::CallData::
                error);
 }
 
-void ClientChannel::CallData::AsyncResolutionDone(grpc_call_element* elem,
-                                                  grpc_error_handle error) {
-  // TODO(roth): Does this callback need to hold a ref to the call stack?
-  GRPC_CLOSURE_INIT(&resolution_done_closure_, ResolutionDone, elem, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &resolution_done_closure_, error);
-}
-
-void ClientChannel::CallData::ResolutionDone(void* arg,
-                                             grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+void ClientChannel::CallData::CheckResolution(grpc_call_element* elem,
+                                              bool was_queued) {
   ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
-  CallData* calld = static_cast<CallData*>(elem->call_data);
+  grpc_metadata_batch* initial_metadata =
+      pending_batches_[0]->payload->send_initial_metadata.send_initial_metadata;
+  // Check if we have a resolver result to use.
+  absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector;
+  {
+    MutexLock lock(&chand->resolution_mu_);
+    bool result_ready =
+        CheckResolutionLocked(elem, initial_metadata, &config_selector);
+    if (!result_ready) {
+      // No result yet, so queue the call if needed.
+      AddCallToResolverQueuedCallsLocked(elem);
+      return;
+    } else {
+      // We have a result, so remove the call from the queue.
+      RemoveCallFromResolverQueuedCallsLocked(elem);
+    }
+  }
+  // We have a result.  Apply service config to call.
+  grpc_error_handle error =
+      ApplyServiceConfigToCallLocked(elem, initial_metadata, config_selector);
+  // ConfigSelector must be unreffed inside the WorkSerializer.
+  if (config_selector.ok()) {
+    chand->work_serializer_->Run(
+        [config_selector = std::move(*config_selector)]() mutable {
+          config_selector.reset();
+        },
+        DEBUG_LOCATION);
+  }
+  // Handle errors.
   if (!error.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: error applying config to call: error=%s",
-              chand, calld, StatusToString(error).c_str());
+              chand, this, StatusToString(error).c_str());
     }
-    calld->PendingBatchesFail(elem, error, YieldCallCombiner);
+    PendingBatchesFail(elem, error, YieldCallCombiner);
     return;
   }
-  calld->CreateDynamicCall(elem);
-}
-
-void ClientChannel::CallData::CheckResolution(void* arg,
-                                              grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  CallData* calld = static_cast<CallData*>(elem->call_data);
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
-  bool resolution_complete;
-  {
-    MutexLock lock(&chand->resolution_mu_);
-    resolution_complete = calld->CheckResolutionLocked(elem, &error);
-  }
-  if (resolution_complete) {
-    ResolutionDone(elem, error);
-  }
-}
-
-bool ClientChannel::CallData::CheckResolutionLocked(grpc_call_element* elem,
-                                                    grpc_error_handle* error) {
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
-  // If we're still in IDLE, we need to start resolving.
-  if (GPR_UNLIKELY(chand->CheckConnectivityState(false) == GRPC_CHANNEL_IDLE)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: triggering exit idle", chand, this);
+  // If the call was queued, add trace annotation.
+  if (was_queued) {
+    auto* call_tracer =
+        static_cast<CallTracer*>(call_context_[GRPC_CONTEXT_CALL_TRACER].value);
+    if (call_tracer != nullptr) {
+      call_tracer->RecordAnnotation("Delayed name resolution complete.");
     }
-    // Bounce into the control plane work serializer to start resolving,
-    // in case we are still in IDLE state.  Since we are holding on to the
-    // resolution mutex here, we offload it on the ExecCtx so that we don't
-    // deadlock with ourselves.
-    GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "CheckResolutionLocked");
-    ExecCtx::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_CREATE(
-            [](void* arg, grpc_error_handle /*error*/) {
-              auto* chand = static_cast<ClientChannel*>(arg);
-              chand->work_serializer_->Run(
-                  [chand]()
-                      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
-                        chand->CheckConnectivityState(/*try_to_connect=*/true);
-                        GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_,
-                                                 "CheckResolutionLocked");
-                      },
-                  DEBUG_LOCATION);
-            },
-            chand, nullptr),
-        absl::OkStatus());
   }
-  // Get send_initial_metadata batch and flags.
-  auto& send_initial_metadata =
-      pending_batches_[0]->payload->send_initial_metadata;
-  grpc_metadata_batch* initial_metadata_batch =
-      send_initial_metadata.send_initial_metadata;
+  // Create dynamic call.
+  CreateDynamicCall(elem);
+}
+
+bool ClientChannel::CallData::CheckResolutionLocked(
+    grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+    absl::StatusOr<RefCountedPtr<ConfigSelector>>* config_selector) {
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   // If we don't yet have a resolver result, we need to queue the call
   // until we get one.
   if (GPR_UNLIKELY(!chand->received_service_config_data_)) {
@@ -2304,31 +2251,26 @@ bool ClientChannel::CallData::CheckResolutionLocked(grpc_call_element* elem,
     // first service config, fail any non-wait_for_ready calls.
     absl::Status resolver_error = chand->resolver_transient_failure_error_;
     if (!resolver_error.ok() &&
-        !initial_metadata_batch->GetOrCreatePointer(WaitForReady())->value) {
+        !initial_metadata->GetOrCreatePointer(WaitForReady())->value) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: resolution failed, failing call",
                 chand, this);
       }
-      MaybeRemoveCallFromResolverQueuedCallsLocked(elem);
-      *error = absl_status_to_grpc_error(resolver_error);
+      *config_selector = absl_status_to_grpc_error(resolver_error);
       return true;
     }
     // Either the resolver has not yet returned a result, or it has
     // returned transient failure but the call is wait_for_ready.  In
     // either case, queue the call.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: queuing to wait for resolution",
-              chand, this);
+      gpr_log(GPR_INFO, "chand=%p calld=%p: no resolver result yet", chand,
+              this);
     }
-    MaybeAddCallToResolverQueuedCallsLocked(elem);
     return false;
   }
-  // Apply service config to call if not yet applied.
-  if (GPR_LIKELY(!service_config_applied_)) {
-    service_config_applied_ = true;
-    *error = ApplyServiceConfigToCallLocked(elem, initial_metadata_batch);
-  }
-  MaybeRemoveCallFromResolverQueuedCallsLocked(elem);
+  // Result found.
+  *config_selector = chand->config_selector_;
+  dynamic_filters_ = chand->dynamic_filters_;
   return true;
 }
 

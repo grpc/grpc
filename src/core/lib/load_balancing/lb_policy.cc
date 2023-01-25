@@ -79,6 +79,8 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   // 2. We are currently running in the data plane mutex, but we
   //    need to bounce into the control plane work_serializer to call
   //    ExitIdleLocked().
+// FIXME: need synchronization for exit_idle_called_
+// -> maybe just use an atomic pointer for parent_?
   if (!exit_idle_called_ && parent_ != nullptr) {
     exit_idle_called_ = true;
     auto* parent = parent_->Ref().release();  // ref held by lambda.

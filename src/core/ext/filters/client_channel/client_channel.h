@@ -223,11 +223,6 @@ class ClientChannel {
     std::atomic<bool> done_{false};
   };
 
-  struct ResolverQueuedCall {
-    grpc_call_element* elem = nullptr;
-    ResolverQueuedCall* next = nullptr;
-  };
-
   ClientChannel(grpc_channel_element_args* args, grpc_error_handle* error);
   ~ClientChannel();
 
@@ -242,6 +237,9 @@ class ClientChannel {
 
   // Note: All methods with "Locked" suffix must be invoked from within
   // work_serializer_.
+
+  void ReprocessQueuedResolverCalls()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&resolution_mu_);
 
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
@@ -281,14 +279,6 @@ class ClientChannel {
 
   void TryToConnectLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  // These methods require holding resolution_mu_.
-  void AddResolverQueuedCall(ResolverQueuedCall* call,
-                             grpc_polling_entity* pollent)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(resolution_mu_);
-  void RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
-                                grpc_polling_entity* pollent)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(resolution_mu_);
-
   //
   // Fields set at construction and never modified.
   //
@@ -307,9 +297,9 @@ class ClientChannel {
   // Fields related to name resolution.  Guarded by resolution_mu_.
   //
   mutable Mutex resolution_mu_;
-  // Linked list of calls queued waiting for resolver result.
-  ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
-      nullptr;
+  // List of calls queued waiting for resolver result.
+  std::set<grpc_call_element*> resolver_queued_calls_
+      ABSL_GUARDED_BY(resolution_mu_);
   // Data from service config.
   absl::Status resolver_transient_failure_error_
       ABSL_GUARDED_BY(resolution_mu_);
