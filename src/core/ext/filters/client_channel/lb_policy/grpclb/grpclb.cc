@@ -714,9 +714,6 @@ bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
 const char* GrpcLb::Serverlist::ShouldDrop() {
   if (serverlist_.empty()) return nullptr;
   size_t index = drop_index_.fetch_add(1, std::memory_order_relaxed);
-  if (index > 0 && index % serverlist_.size() == 0) {
-    drop_index_.fetch_sub(serverlist_.size(), std::memory_order_relaxed);
-  }
   GrpcLbServer& server = serverlist_[index % serverlist_.size()];
   return server.drop ? server.load_balance_token : nullptr;
 }

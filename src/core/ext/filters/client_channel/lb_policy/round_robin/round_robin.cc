@@ -224,12 +224,8 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
 }
 
 RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
-  size_t index = last_picked_index_.fetch_add(1, std::memory_order_relaxed);
-  if (index > 0 && index % subchannels_.size() == 0) {
-    last_picked_index_.fetch_sub(subchannels_.size(),
-                                 std::memory_order_relaxed);
-  }
-  index %= subchannels_.size();
+  size_t index = last_picked_index_.fetch_add(1, std::memory_order_relaxed) %
+                 subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
