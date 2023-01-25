@@ -27,6 +27,11 @@ namespace experimental {
 /// Create an EventEngine using the default factory provided at link time.
 std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 
+/// Create the default internal EventEngine with fd support for the platform of
+/// interest. If the platform does not support file descriptors, the factory
+/// will not return any event engines.
+std::unique_ptr<EventEngine> InternalEventEngineWithFdSupportFactory();
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

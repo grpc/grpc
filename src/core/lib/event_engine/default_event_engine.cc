@@ -39,6 +39,7 @@ std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
 grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_event_engine;
+grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_internal_event_engine;
 }  // namespace
 
 void SetEventEngineFactory(
@@ -73,6 +74,22 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   std::shared_ptr<EventEngine> engine{CreateEventEngine()};
   GRPC_EVENT_ENGINE_TRACE("Created DefaultEventEngine::%p", engine.get());
   *g_event_engine = engine;
+  return engine;
+}
+
+std::shared_ptr<EventEngine> GetInternalEventEngineWithFdSupport() {
+  grpc_core::MutexLock lock(&*g_mu);
+  if (std::shared_ptr<EventEngine> engine = g_internal_event_engine->lock()) {
+    GRPC_EVENT_ENGINE_TRACE(
+        "InternalEventEngineWithFdSupport::%p use_count:%ld", engine.get(),
+        engine.use_count());
+    return engine;
+  }
+  std::shared_ptr<EventEngine> engine{
+      InternalEventEngineWithFdSupportFactory()};
+  GRPC_EVENT_ENGINE_TRACE("Created InternalEventEngineWithFdSupport::%p",
+                          engine.get());
+  *g_internal_event_engine = engine;
   return engine;
 }
 

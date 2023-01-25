@@ -63,8 +63,8 @@ class EventEngineEndpointWrapper {
         write_buffer;
   };
 
-  explicit EventEngineEndpointWrapper(
-      std::unique_ptr<EventEngine::Endpoint> endpoint);
+  EventEngineEndpointWrapper(std::unique_ptr<EventEngine::Endpoint> endpoint,
+                             bool fd_support_exists);
 
   int Fd() {
     grpc_core::MutexLock lock(&mu_);
@@ -374,7 +374,7 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     EndpointCanTrackErr};
 
 EventEngineEndpointWrapper::EventEngineEndpointWrapper(
-    std::unique_ptr<EventEngine::Endpoint> endpoint)
+    std::unique_ptr<EventEngine::Endpoint> endpoint, bool fd_support_exists)
     : endpoint_(std::move(endpoint)),
       eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
   eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
@@ -387,11 +387,13 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   if (peer_addr.ok()) {
     peer_address_ = *peer_addr;
   }
-#ifdef GRPC_POSIX_SOCKET_TCP
-  fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-            ->GetWrappedFd();
-#else   // GRPC_POSIX_SOCKET_TCP
+  // Fd will be set to -1 on platforms without fd_support_exists set to true.
   fd_ = -1;
+#ifdef GRPC_POSIX_SOCKET_TCP
+  if (fd_support_exists) {
+    fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+              ->GetWrappedFd();
+  }
 #endif  // GRPC_POSIX_SOCKET_TCP
   GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
 }
@@ -399,9 +401,11 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 }  // namespace
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+    std::unique_ptr<EventEngine::Endpoint> ee_endpoint,
+    bool fd_support_exists) {
   GPR_DEBUG_ASSERT(ee_endpoint != nullptr);
-  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
+  auto wrapper =
+      new EventEngineEndpointWrapper(std::move(ee_endpoint), fd_support_exists);
   return wrapper->GetGrpcEndpoint();
 }
 

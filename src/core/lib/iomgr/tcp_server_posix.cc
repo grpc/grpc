@@ -19,6 +19,7 @@
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include "absl/status/status.h"
 #endif
 
 #include <grpc/support/port_platform.h>
@@ -165,15 +166,23 @@ static grpc_error_handle CreateEventEngineListener(
         s->on_accept_cb(
             s->on_accept_cb_arg,
             grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
-                std::move(ep)),
+                std::move(ep), /*fd_support_exists=*/true),
             read_notifier_pollset, acceptor);
       };
   auto on_shutdown_complete_cb =
       grpc_event_engine::experimental::GrpcClosureToStatusCallback(
           shutdown_complete);
+  auto ee =
+      grpc_event_engine::experimental::GetInternalEventEngineWithFdSupport();
+  if (!ee) {
+    delete s;
+    *server = nullptr;
+    return absl::FailedPreconditionError(
+        "Attempt to create a server without providing an internal event engine "
+        "with Fd support");
+  }
   auto listener =
-      reinterpret_cast<PosixEventEngineWithFdSupport*>(
-          grpc_event_engine::experimental::GetDefaultEventEngine().get())
+      reinterpret_cast<PosixEventEngineWithFdSupport*>(ee.get())
           ->CreatePosixListener(
               std::move(accept_cb),
               [s, shutdown_complete](absl::Status status) {
