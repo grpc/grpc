@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_PIPE_H
-#define GRPC_CORE_LIB_PROMISE_PIPE_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
+#define GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -38,6 +38,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/interceptor_list.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/map.h"
@@ -67,7 +68,11 @@ class NextResult final {
  public:
   NextResult() : center_(nullptr) {}
   explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
-      : center_(std::move(center)) {}
+      : center_(std::move(center)) {
+    GPR_ASSERT(center_ != nullptr);
+  }
+  explicit NextResult(bool cancelled)
+      : center_(nullptr), cancelled_(cancelled) {}
   ~NextResult();
   NextResult(const NextResult&) = delete;
   NextResult& operator=(const NextResult&) = delete;
@@ -78,6 +83,7 @@ class NextResult final {
 
   void reset();
   bool has_value() const;
+  // Only valid if has_value()
   const T& value() const {
     GPR_ASSERT(has_value());
     return **this;
@@ -88,9 +94,12 @@ class NextResult final {
   }
   const T& operator*() const;
   T& operator*();
+  // Only valid if !has_value()
+  bool cancelled() { return cancelled_; }
 
  private:
   RefCountedPtr<pipe_detail::Center<T>> center_;
+  bool cancelled_;
 };
 
 namespace pipe_detail {
@@ -151,6 +160,7 @@ class Center : public InterceptorList<T> {
     switch (value_state_) {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
+      case ValueState::kCancelled:
         return false;
       case ValueState::kReady:
       case ValueState::kAcked:
@@ -172,6 +182,7 @@ class Center : public InterceptorList<T> {
     switch (value_state_) {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
+      case ValueState::kCancelled:
         return false;
       case ValueState::kReady:
       case ValueState::kEmpty:
@@ -204,6 +215,7 @@ class Center : public InterceptorList<T> {
       case ValueState::kReady:
         return std::move(value_);
       case ValueState::kClosed:
+      case ValueState::kCancelled:
         return absl::nullopt;
     }
     GPR_UNREACHABLE_CODE(return absl::nullopt);
@@ -223,6 +235,7 @@ class Center : public InterceptorList<T> {
         value_state_ = ValueState::kClosed;
         break;
       case ValueState::kClosed:
+      case ValueState::kCancelled:
         break;
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -246,16 +259,44 @@ class Center : public InterceptorList<T> {
         break;
       case ValueState::kReadyClosed:
       case ValueState::kClosed:
+      case ValueState::kCancelled:
         break;
     }
   }
+
+  void MarkCancelled() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("MarkCancelled").c_str());
+    }
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+      case ValueState::kReady:
+      case ValueState::kReadyClosed:
+        this->ResetInterceptorList();
+        value_state_ = ValueState::kCancelled;
+        on_full_.Wake();
+        break;
+      case ValueState::kClosed:
+        value_state_ = ValueState::kCancelled;
+        break;
+      case ValueState::kCancelled:
+        break;
+    }
+  }
+
+  bool cancelled() { return value_state_ == ValueState::kCancelled; }
 
   T& value() { return value_; }
   const T& value() const { return value_; }
 
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " PIPE[0x",
-                        reinterpret_cast<uintptr_t>(this), "]: ");
+    if (auto* activity = Activity::current()) {
+      return absl::StrCat(activity->DebugTag(), " PIPE[0x",
+                          reinterpret_cast<uintptr_t>(this), "]: ");
+    } else {
+      return absl::StrCat("PIPE[0x", reinterpret_cast<uintptr_t>(this), "]: ");
+    }
   }
 
  private:
@@ -268,11 +309,13 @@ class Center : public InterceptorList<T> {
     // Value has been received and acked, we can unblock senders and transition
     // to empty.
     kAcked,
-    // Pipe is closed, no more values can be sent
+    // Pipe is closed successfully, no more values can be sent
     kClosed,
-    // Pipe is closed, no more values can be sent
+    // Pipe is closed successfully, no more values can be sent
     // (but one value is queued and ready to be received)
     kReadyClosed,
+    // Pipe is closed unsuccessfully, no more values can be sent
+    kCancelled,
   };
 
   std::string DebugOpString(std::string op) {
@@ -294,15 +337,17 @@ class Center : public InterceptorList<T> {
         return "Closed";
       case ValueState::kReadyClosed:
         return "ReadyClosed";
+      case ValueState::kCancelled:
+        return "Cancelled";
     }
     GPR_UNREACHABLE_CODE(return "unknown");
   }
 
   T value_;
   // Number of refs
-  uint8_t refs_ : 5;
+  uint8_t refs_;
   // Current state of the value.
-  ValueState value_state_ : 3;
+  ValueState value_state_;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
 
@@ -345,14 +390,13 @@ class PipeSender {
   PushType Push(T value);
 
   template <typename Fn>
-  void InterceptAndMap(Fn f, SourceLocation from = {}) {
-    center_->AppendMap(std::move(f), DebugLocation(from));
+  void InterceptAndMap(Fn f, DebugLocation from = {}) {
+    center_->PrependMap(std::move(f), from);
   }
 
   template <typename Fn, typename OnHalfClose>
-  void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, SourceLocation from = {}) {
-    center_->AppendMapWithCleanup(std::move(f), std::move(cleanup_fn),
-                                  DebugLocation(from));
+  void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, DebugLocation from = {}) {
+    center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
   }
 
  private:
@@ -388,15 +432,14 @@ class PipeReceiver {
   auto Next();
 
   template <typename Fn>
-  void InterceptAndMap(Fn f, SourceLocation from = {}) {
-    center_->PrependMap(std::move(f), DebugLocation(from));
+  void InterceptAndMap(Fn f, DebugLocation from = {}) {
+    center_->AppendMap(std::move(f), from);
   }
 
   template <typename Fn, typename OnHalfClose>
   void InterceptAndMapWithHalfClose(Fn f, OnHalfClose cleanup_fn,
-                                    SourceLocation from = {}) {
-    center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn),
-                                   DebugLocation(from));
+                                    DebugLocation from = {}) {
+    center_->AppendMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
   }
 
  private:
@@ -473,19 +516,28 @@ pipe_detail::Push<T> PipeSender<T>::Push(T value) {
 
 template <typename T>
 auto PipeReceiver<T>::Next() {
-  return Seq(pipe_detail::Next<T>(center_->Ref()),
-             [center = center_->Ref()](absl::optional<T> value) {
-               return Map(center->Run(std::move(value)),
-                          [center = std::move(center)](
-                              absl::optional<T> value) mutable {
-                            if (value.has_value()) {
-                              center->value() = std::move(*value);
-                              return NextResult<T>(std::move(center));
-                            } else {
-                              return NextResult<T>();
-                            }
-                          });
-             });
+  return Seq(
+      pipe_detail::Next<T>(center_->Ref()),
+      [center = center_->Ref()](absl::optional<T> value) {
+        bool open = value.has_value();
+        bool cancelled = center->cancelled();
+        return If(
+            open,
+            [center = std::move(center), value = std::move(value)]() mutable {
+              return Map(center->Run(std::move(value)),
+                         [center = std::move(center)](
+                             absl::optional<T> value) mutable {
+                           if (value.has_value()) {
+                             center->value() = std::move(*value);
+                             return NextResult<T>(std::move(center));
+                           } else {
+                             center->MarkCancelled();
+                             return NextResult<T>(true);
+                           }
+                         });
+            },
+            [cancelled]() { return NextResult<T>(cancelled); });
+      });
 }
 
 template <typename T>
@@ -551,4 +603,4 @@ struct Pipe {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_PIPE_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_PIPE_H

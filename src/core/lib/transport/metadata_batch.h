@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
-#define GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
 #include <grpc/support/port_platform.h>
 
@@ -1331,4 +1331,4 @@ struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;
 };
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H

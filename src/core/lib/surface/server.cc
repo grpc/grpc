@@ -523,6 +523,8 @@ class Server::AllocatingRequestMatcherRegistered
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
     if (server()->ShutdownRefOnRequest()) {
       RegisteredCallAllocation call_info = allocator_();
       GPR_ASSERT(server()->ValidateServerRequest(
@@ -537,7 +539,6 @@ class Server::AllocatingRequestMatcherRegistered
     } else {
       calld->FailCallCreation();
     }
-    server()->ShutdownUnrefOnRequest();
   }
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
@@ -1342,15 +1343,15 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
         }
         return GetContext<CallContext>()
             ->server_call_context()
-            ->CompletePromise(std::move(call_args), rc->cq_bound_to_call,
-                              rc->initial_metadata,
-                              [rc, cq_for_new_request](grpc_call* call) {
-                                *rc->call = call;
-                                grpc_cq_end_op(cq_for_new_request, rc->tag,
-                                               absl::OkStatus(),
-                                               Server::DoneRequestEvent, rc,
-                                               &rc->completion, true);
-                              });
+            ->MakeTopOfServerCallPromise(
+                std::move(call_args), rc->cq_bound_to_call,
+                rc->initial_metadata,
+                [rc, cq_for_new_request](grpc_call* call) {
+                  *rc->call = call;
+                  grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
+                                 Server::DoneRequestEvent, rc, &rc->completion,
+                                 true);
+                });
       });
 }
 

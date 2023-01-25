@@ -28,12 +28,16 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
+#include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 
@@ -56,6 +60,79 @@ class RoundRobinLbPolicyConfigFactory
 
   static absl::string_view Type() {
     return "envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin";
+  }
+};
+
+class ClientSideWeightedRoundRobinLbPolicyConfigFactory
+    : public XdsLbPolicyRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* /*registry*/,
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, ValidationErrors* errors,
+      int /*recursion_depth*/) override {
+    const auto* resource =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_parse(
+            configuration.data(), configuration.size(), context.arena);
+    if (resource == nullptr) {
+      errors->AddError(
+          "can't decode ClientSideWeightedRoundRobin LB policy config");
+      return {};
+    }
+    Json::Object config;
+    // enable_oob_load_report
+    auto* enable_oob_load_report =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_enable_oob_load_report(
+            resource);
+    if (enable_oob_load_report != nullptr &&
+        google_protobuf_BoolValue_value(enable_oob_load_report)) {
+      config["enableOobLoadReport"] = true;
+    }
+    // oob_reporting_period
+    auto* duration_proto =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_oob_reporting_period(
+            resource);
+    if (duration_proto != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".oob_reporting_period");
+      Duration duration = ParseDuration(duration_proto, errors);
+      config["oobReportingPeriod"] = duration.ToJsonString();
+    }
+    // blackout_period
+    duration_proto =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_blackout_period(
+            resource);
+    if (duration_proto != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".blackout_period");
+      Duration duration = ParseDuration(duration_proto, errors);
+      config["blackoutPeriod"] = duration.ToJsonString();
+    }
+    // weight_update_period
+    duration_proto =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_weight_update_period(
+            resource);
+    if (duration_proto != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".weight_update_period");
+      Duration duration = ParseDuration(duration_proto, errors);
+      config["weightUpdatePeriod"] = duration.ToJsonString();
+    }
+    // weight_expiration_period
+    duration_proto =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_weight_expiration_period(
+            resource);
+    if (duration_proto != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".weight_expiration_period");
+      Duration duration = ParseDuration(duration_proto, errors);
+      config["weightExpirationPeriod"] = duration.ToJsonString();
+    }
+    return Json::Object{
+        {"weighted_round_robin_experimental", std::move(config)}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.load_balancing_policies.client_side_weighted_"
+           "round_robin.v3.ClientSideWeightedRoundRobin";
   }
 };
 
@@ -168,6 +245,19 @@ class WrrLocalityLbPolicyConfigFactory
 // XdsLbPolicyRegistry
 //
 
+namespace {
+
+// TODO(roth): Remove this when interop tests pass.
+bool XdsWrrLbEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_WRR_LB");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+}  // namespace
+
 XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RingHashLbPolicyConfigFactory::Type(),
@@ -175,6 +265,11 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RoundRobinLbPolicyConfigFactory::Type(),
       std::make_unique<RoundRobinLbPolicyConfigFactory>());
+  if (XdsWrrLbEnabled()) {
+    policy_config_factories_.emplace(
+        ClientSideWeightedRoundRobinLbPolicyConfigFactory::Type(),
+        std::make_unique<ClientSideWeightedRoundRobinLbPolicyConfigFactory>());
+  }
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());

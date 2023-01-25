@@ -596,7 +596,7 @@ static void test_max_receive_message_length_on_compressed_request(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(102), false);
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
   cqv.Verify();

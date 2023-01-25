@@ -94,8 +94,8 @@ class TestLoggingSink : public grpc::internal::LoggingSink {
 
  private:
   grpc_core::Mutex mu_;
-  std::vector<LoggingSink::Entry> entries_ GUARDED_BY(mu_);
-  Config config_ GUARDED_BY(mu_);
+  std::vector<LoggingSink::Entry> entries_ ABSL_GUARDED_BY(mu_);
+  Config config_ ABSL_GUARDED_BY(mu_);
 };
 
 TestLoggingSink* g_test_logging_sink = nullptr;

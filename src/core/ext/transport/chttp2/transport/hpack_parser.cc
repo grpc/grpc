@@ -1300,6 +1300,7 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
 }
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
+  global_stats().IncrementHttp2MetadataSize(frame_length_);
   if (ParseInputInner(&input)) {
     return absl::OkStatus();
   }
@@ -1311,7 +1312,6 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
     unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
     return absl::OkStatus();
   }
-  global_stats().IncrementHttp2MetadataSize(frame_length_);
   return input.TakeError();
 }
 

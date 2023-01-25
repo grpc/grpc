@@ -32,9 +32,9 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -70,7 +70,7 @@ ArenaPromise<ServerMetadataHandle> ClientLoadReportingFilter::MakeCallPromise(
         return md;
       });
 
-  return Seq(next_promise_factory(std::move(call_args)),
+  return Map(next_promise_factory(std::move(call_args)),
              [saw_initial_metadata, client_stats = std::move(client_stats)](
                  ServerMetadataHandle trailing_metadata) {
                if (client_stats != nullptr) {

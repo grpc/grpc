@@ -943,7 +943,7 @@ TEST_F(XdsStatefulSessionFilterDisabledTest, FilterNotRegistered) {
 class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
  protected:
   void SetUp() override {
-    SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "true");
+    SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST", "true");
     registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
@@ -951,7 +951,7 @@ class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
   }
 
   void TearDown() override {
-    UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+    UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   }
 
   const XdsHttpFilterImpl* filter_;

@@ -22,8 +22,8 @@
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
 
-#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
-#define GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -191,6 +191,12 @@ class Arena {
   template <typename T>
   using PoolPtr = std::unique_ptr<T, PooledDeleter>;
 
+  // Make a unique_ptr to T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
   template <typename T, typename... Args>
   PoolPtr<T> MakePooled(Args&&... args) {
     auto* free_list =
@@ -202,6 +208,13 @@ class Arena {
         PooledDeleter(free_list));
   }
 
+  // Make a unique_ptr to an array of T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // One can use MakePooledArray<char> to allocate a buffer of bytes.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
   template <typename T>
   PoolPtr<T[]> MakePooledArray(size_t n) {
     auto where =
@@ -292,4 +305,4 @@ struct ContextType<Arena> {};
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#endif  // GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H

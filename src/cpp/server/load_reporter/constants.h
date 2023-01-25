@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
-#define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
+#ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_CONSTANTS_H
+#define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_CONSTANTS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -81,4 +81,4 @@ constexpr char kViewOtherCallMetricValue[] =
 }  // namespace load_reporter
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
+#endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_CONSTANTS_H

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_CPP_IMPL_OF_H
-#define GRPC_CORE_LIB_GPRPP_CPP_IMPL_OF_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_CPP_IMPL_OF_H
+#define GRPC_SRC_CORE_LIB_GPRPP_CPP_IMPL_OF_H
 
 namespace grpc_core {
 
@@ -46,4 +46,4 @@ class CppImplOf {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_CPP_IMPL_OF_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_CPP_IMPL_OF_H

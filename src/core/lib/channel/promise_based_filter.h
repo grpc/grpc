@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
 
 // Scaffolding to allow the per-call part of a filter to be authored in a
 // promise-style. Most of this will be removed once the promises conversion is
@@ -116,7 +116,7 @@ class ChannelFilter {
   }
 
  private:
-  // TODO(ctiller): remove once per-channel-stack event engines land
+  // TODO(ctiller): remove once per-channel-stack EventEngines land
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
@@ -150,6 +150,9 @@ class InvalidChannelFilter : public ChannelFilter {
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
  protected:
+  // Hook to allow interception of messages on the send/receive path by
+  // PipeSender and PipeReceiver, as appropriate according to whether we're
+  // client or server.
   class Interceptor {
    public:
     virtual PipeSender<MessageHandle>* Push() = 0;
@@ -474,9 +477,14 @@ class BaseCallData : public Activity, private Wakeable {
       // On the next poll we'll close things out and forward on completions,
       // then transition to cancelled.
       kBatchCompletedButCancelled,
-      // Completed successfully while we're processing a recv message.
+      // Completed successfully while we're processing a recv message - see
+      // kPushedToPipe.
       kCompletedWhilePushedToPipe,
+      // Completed successfully while we're processing a recv message - see
+      // kPulledFromPipe.
       kCompletedWhilePulledFromPipe,
+      // Completed successfully while we were waiting to process
+      // kBatchCompleted.
       kCompletedWhileBatchCompleted,
     };
     static const char* StateString(State);
@@ -916,4 +924,4 @@ MakePromiseBasedFilter(const char* name) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H

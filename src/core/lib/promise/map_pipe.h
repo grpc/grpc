@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_MAP_PIPE_H
-#define GRPC_CORE_LIB_PROMISE_MAP_PIPE_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
+#define GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -21,11 +21,13 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
@@ -45,12 +47,16 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
        dst = std::move(dst)](T t) mutable {
         return TrySeq(
             [] {
-              gpr_log(GPR_DEBUG, "MapPipe: start map");
+              if (grpc_trace_promise_primitives.enabled()) {
+                gpr_log(GPR_DEBUG, "MapPipe: start map");
+              }
               return Empty{};
             },
             filter_factory.Make(std::move(t)),
             [&dst](T t) {
-              gpr_log(GPR_DEBUG, "MapPipe: start push");
+              if (grpc_trace_promise_primitives.enabled()) {
+                gpr_log(GPR_DEBUG, "MapPipe: start push");
+              }
               return Map(dst.Push(std::move(t)), [](bool successful_push) {
                 if (successful_push) {
                   return absl::OkStatus();
@@ -95,4 +101,4 @@ class PipeMapper {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_MAP_PIPE_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H

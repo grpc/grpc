@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -96,7 +96,7 @@ class AsyncConnect {
 };
 
 // A helper class to manager lifetime of the poller associated with the
-// posix event engine.
+// posix EventEngine.
 class PosixEnginePollerManager
     : public grpc_event_engine::experimental::Scheduler {
  public:
@@ -131,7 +131,7 @@ class PosixEnginePollerManager
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
-// event engine is shut down before we shut down iomgr.
+// EventEngine is shut down before we shut down iomgr.
 class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                public grpc_core::KeepsGrpcInitialized {
  public:
@@ -152,7 +152,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   };
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-  // Constructs an event engine which does not own the poller. Do not call this
+  // Constructs an EventEngine which does not own the poller. Do not call this
   // constructor directly. Instead use the MakeTestOnlyPosixEventEngine static
   // method. Its expected to be used only in tests.
   explicit PosixEventEngine(
@@ -201,10 +201,10 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   bool Cancel(TaskHandle handle) override;
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-  // The posix event engine returned by this method would not own the poller
+  // The posix EventEngine returned by this method would not own the poller
   // and would not be in-charge of driving the poller by calling its Work(..)
   // method. Instead its upto the test to drive the poller. The returned posix
-  // event engine will also not attempt to shutdown the poller since it does not
+  // EventEngine will also not attempt to shutdown the poller since it does not
   // own it.
   static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
       grpc_event_engine::experimental::PosixEventPoller* test_only_poller) {
@@ -255,4 +255,4 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H

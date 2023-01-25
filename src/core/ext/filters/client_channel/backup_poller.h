@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -37,4 +37,4 @@ void grpc_client_channel_start_backup_polling(
 void grpc_client_channel_stop_backup_polling(
     grpc_pollset_set* interested_parties);
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H

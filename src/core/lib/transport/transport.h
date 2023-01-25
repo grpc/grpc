@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H
-#define GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -52,6 +52,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -119,7 +120,8 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
          GRPC_STATUS_OK;
 }
 
-ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
+ServerMetadataHandle ServerMetadataFromStatus(
+    const absl::Status& status, Arena* arena = GetContext<Arena>());
 
 template <>
 struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
@@ -595,4 +597,4 @@ constexpr const char* kKeepaliveThrottlingKey =
     "grpc.internal.keepalive_throttling";
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H

@@ -283,7 +283,7 @@ class ConnectedChannelStream : public Orphanable {
     }
     // If we hadn't already observed the stream to be finished, we need to
     // cancel it at the transport.
-    if (stream() && !finished) {
+    if (!finished) {
       IncrementRefCount("shutdown client stream");
       auto* cancel_op =
           GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
@@ -493,12 +493,10 @@ class ConnectedChannelStream : public Orphanable {
            absl::holds_alternative<PendingReceiveMessage>(recv_message_state_);
   }
 
-  // TODO(ctiller): move to private
-  struct Idle {};
-  struct Closed {};
-
  private:
   struct SendMessageToTransport {};
+  struct Idle {};
+  struct Closed {};
 
   class StreamDeleter {
    public:
@@ -931,8 +929,7 @@ class ServerStream final : public ConnectedChannelStream {
                             GetContext<CallContext>()->polling_entity());
 
     // Fetch initial metadata
-    auto& gim =
-        client_initial_metadata_state_.emplace<GettingInitialMetadata>(this);
+    auto& gim = call_state_.emplace<GettingInitialMetadata>(this);
     gim.recv_initial_metadata_ready_waker =
         Activity::current()->MakeOwningWaker();
     memset(&gim.recv_initial_metadata, 0, sizeof(gim.recv_initial_metadata));
@@ -1009,31 +1006,36 @@ class ServerStream final : public ConnectedChannelStream {
 
     poll_send_initial_metadata();
 
-    if (auto* p = absl::get_if<GotTrailingMetadata>(
+    if (auto* p = absl::get_if<GotClientHalfClose>(
             &client_trailing_metadata_state_)) {
-      if (absl::holds_alternative<Uninitialized>(
-              client_initial_metadata_state_) ||
-          absl::holds_alternative<GotInitialMetadata>(
-              client_initial_metadata_state_) ||
-          absl::holds_alternative<Running>(client_initial_metadata_state_)) {
-        if (!absl::holds_alternative<ServerMetadataHandle>(
-                server_initial_metadata_)) {
-          server_initial_metadata_.emplace<ServerMetadataHandle>();
+      pipes_.client_to_server.sender.Close();
+      if (!p->result.ok()) {
+        // client cancelled, we should cancel too
+        if (absl::holds_alternative<absl::monostate>(call_state_) ||
+            absl::holds_alternative<GotInitialMetadata>(call_state_) ||
+            absl::holds_alternative<MessageLoop>(call_state_)) {
+          if (!absl::holds_alternative<ServerMetadataHandle>(
+                  server_initial_metadata_)) {
+            // pretend we've sent initial metadata to stop that op from
+            // progressing if it's stuck somewhere above us in the stack
+            server_initial_metadata_.emplace<ServerMetadataHandle>();
+          }
+          // cancel the call - this status will be returned to the server bottom
+          // promise
+          call_state_.emplace<Complete>(
+              Complete{ServerMetadataFromStatus(p->result)});
         }
-        client_initial_metadata_state_.emplace<Complete>(
-            Complete{ServerMetadataFromStatus(p->result)});
       }
     }
 
-    if (auto* p =
-            absl::get_if<GotInitialMetadata>(&client_initial_metadata_state_)) {
+    if (auto* p = absl::get_if<GotInitialMetadata>(&call_state_)) {
       incoming_messages_ = &pipes_.client_to_server.sender;
       auto promise = p->next_promise_factory(CallArgs{
           std::move(p->client_initial_metadata),
           &pipes_.server_initial_metadata.sender,
           &pipes_.client_to_server.receiver, &pipes_.server_to_client.sender});
-      client_initial_metadata_state_.emplace<Running>(
-          Running{&pipes_.server_to_client.receiver, std::move(promise)});
+      call_state_.emplace<MessageLoop>(
+          MessageLoop{&pipes_.server_to_client.receiver, std::move(promise)});
       server_initial_metadata_
           .emplace<PipeReceiverNextType<ServerMetadataHandle>>(
               pipes_.server_initial_metadata.receiver.Next());
@@ -1041,7 +1043,7 @@ class ServerStream final : public ConnectedChannelStream {
     if (incoming_messages_ != nullptr) {
       PollRecvMessage(incoming_messages_);
     }
-    if (auto* p = absl::get_if<Running>(&client_initial_metadata_state_)) {
+    if (auto* p = absl::get_if<MessageLoop>(&call_state_)) {
       if (absl::holds_alternative<ServerMetadataHandle>(
               server_initial_metadata_)) {
         PollSendMessage(p->outgoing_messages, nullptr);
@@ -1053,7 +1055,7 @@ class ServerStream final : public ConnectedChannelStream {
                   Activity::current()->DebugTag().c_str(),
                   (*r)->DebugString().c_str(), ActiveOpsString().c_str());
         }
-        auto& completing = client_initial_metadata_state_.emplace<Completing>();
+        auto& completing = call_state_.emplace<Completing>();
         completing.server_trailing_metadata = std::move(*r);
         completing.on_complete =
             MakeMemberClosure<ServerStream,
@@ -1087,7 +1089,7 @@ class ServerStream final : public ConnectedChannelStream {
         SchedulePush(&op);
       }
     }
-    if (auto* p = absl::get_if<Complete>(&client_initial_metadata_state_)) {
+    if (auto* p = absl::get_if<Complete>(&call_state_)) {
       set_finished();
       return std::move(p->result);
     }
@@ -1095,32 +1097,43 @@ class ServerStream final : public ConnectedChannelStream {
   }
 
  private:
-  struct Uninitialized {};
-
+  // Call state: we've asked the transport for initial metadata and are
+  // waiting for it before proceeding.
   struct GettingInitialMetadata {
     explicit GettingInitialMetadata(ServerStream* stream)
         : recv_initial_metadata_ready(
               MakeMemberClosure<ServerStream,
                                 &ServerStream::RecvInitialMetadataReady>(
                   stream)) {}
+    // The batch we're using to get initial metadata.
     grpc_transport_stream_op_batch recv_initial_metadata;
+    // Waker to re-enter the activity once the transport returns.
     Waker recv_initial_metadata_ready_waker;
+    // Initial metadata storage for the transport.
     ClientMetadataHandle client_initial_metadata =
         GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+    // Closure for the transport to call when it's ready.
     grpc_closure recv_initial_metadata_ready;
+    // Next promise factory to use once we have initial metadata.
     NextPromiseFactory next_promise_factory;
   };
 
+  // Call state: transport has returned initial metadata, we're waiting to
+  // re-enter the activity to process it.
   struct GotInitialMetadata {
     ClientMetadataHandle client_initial_metadata;
     NextPromiseFactory next_promise_factory;
   };
 
-  struct Running {
+  // Call state: we're sending/receiving messages and processing the filter
+  // stack.
+  struct MessageLoop {
     PipeReceiver<MessageHandle>* outgoing_messages;
     ArenaPromise<ServerMetadataHandle> promise;
   };
 
+  // Call state: promise stack has returned trailing metadata, we're sending it
+  // to the transport to communicate.
   struct Completing {
     ServerMetadataHandle server_trailing_metadata;
     grpc_transport_stream_op_batch send_trailing_metadata;
@@ -1129,10 +1142,16 @@ class ServerStream final : public ConnectedChannelStream {
     Waker waker;
   };
 
+  // Call state: server metadata has been communicated to the transport and sent
+  // to the client.
+  // The metadata will be returned down to the server call to tick the
+  // cancellation bit or not on the originating batch.
   struct Complete {
     ServerMetadataHandle result;
   };
 
+  // Trailing metadata state: we've asked the transport for trailing metadata
+  // and are waiting for it before proceeding.
   struct WaitingForTrailingMetadata {
     ClientMetadataHandle result =
         GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
@@ -1141,14 +1160,17 @@ class ServerStream final : public ConnectedChannelStream {
     Waker waker;
   };
 
-  struct GotTrailingMetadata {
+  // We've received trailing metadata from the transport - which indicates reads
+  // are closed.
+  // We convert to an absl::Status here and use that to drive a decision to
+  // cancel the call (on error) or not.
+  struct GotClientHalfClose {
     absl::Status result;
   };
 
   void RecvInitialMetadataReady(absl::Status status) {
     MutexLock lock(mu());
-    auto& getting =
-        absl::get<GettingInitialMetadata>(client_initial_metadata_state_);
+    auto& getting = absl::get<GettingInitialMetadata>(call_state_);
     auto waker = std::move(getting.recv_initial_metadata_ready_waker);
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%sGOT INITIAL METADATA: err=%s %s",
@@ -1157,13 +1179,13 @@ class ServerStream final : public ConnectedChannelStream {
     }
     GotInitialMetadata got{std::move(getting.client_initial_metadata),
                            std::move(getting.next_promise_factory)};
-    client_initial_metadata_state_.emplace<GotInitialMetadata>(std::move(got));
+    call_state_.emplace<GotInitialMetadata>(std::move(got));
     waker.Wakeup();
   }
 
   void SendTrailingMetadataDone(absl::Status result) {
     MutexLock lock(mu());
-    auto& completing = absl::get<Completing>(client_initial_metadata_state_);
+    auto& completing = absl::get<Completing>(call_state_);
     auto md = std::move(completing.server_trailing_metadata);
     auto waker = std::move(completing.waker);
     if (grpc_call_trace.enabled()) {
@@ -1179,7 +1201,7 @@ class ServerStream final : public ConnectedChannelStream {
       md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(result.message()));
       md->Set(GrpcStatusFromWire(), false);
     }
-    client_initial_metadata_state_.emplace<Complete>(Complete{std::move(md)});
+    call_state_.emplace<Complete>(Complete{std::move(md)});
     waker.Wakeup();
   }
 
@@ -1187,36 +1209,38 @@ class ServerStream final : public ConnectedChannelStream {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     std::vector<std::string> ops;
     ops.push_back(absl::StrCat(
-        "client_initial_metadata_state:",
+        "call_state:",
         Match(
-            client_initial_metadata_state_,
-            [](const Uninitialized&) { return "UNINITIALIZED"; },
+            call_state_,
+            [](const absl::monostate&) { return "absl::monostate"; },
             [](const GettingInitialMetadata&) { return "GETTING"; },
             [](const GotInitialMetadata&) { return "GOT"; },
-            [](const Running&) { return "RUNNING"; },
+            [](const MessageLoop&) { return "RUNNING"; },
             [](const Completing&) { return "COMPLETING"; },
             [](const Complete&) { return "COMPLETE"; })));
-    ops.push_back(absl::StrCat(
-        "client_trailing_metadata_state:",
-        Match(
-            client_trailing_metadata_state_,
-            [](const Uninitialized&) -> std::string { return "UNINITIALIZED"; },
-            [](const WaitingForTrailingMetadata&) -> std::string {
-              return "WAITING";
-            },
-            [](const GotTrailingMetadata& got) -> std::string {
-              return absl::StrCat("GOT:", got.result.ToString());
-            })));
-    // Send initial metadata
     ops.push_back(
-        absl::StrCat("server_initial_metadata_state:",
+        absl::StrCat("client_trailing_metadata_state:",
                      Match(
-                         server_initial_metadata_,
-                         [](const Uninitialized&) { return "UNINITIALIZED"; },
-                         [](const PipeReceiverNextType<ServerMetadataHandle>&) {
+                         client_trailing_metadata_state_,
+                         [](const absl::monostate&) -> std::string {
+                           return "absl::monostate";
+                         },
+                         [](const WaitingForTrailingMetadata&) -> std::string {
                            return "WAITING";
                          },
-                         [](const ServerMetadataHandle&) { return "GOT"; })));
+                         [](const GotClientHalfClose& got) -> std::string {
+                           return absl::StrCat("GOT:", got.result.ToString());
+                         })));
+    // Send initial metadata
+    ops.push_back(absl::StrCat(
+        "server_initial_metadata_state:",
+        Match(
+            server_initial_metadata_,
+            [](const absl::monostate&) { return "absl::monostate"; },
+            [](const PipeReceiverNextType<ServerMetadataHandle>&) {
+              return "WAITING";
+            },
+            [](const ServerMetadataHandle&) { return "GOT"; })));
     // Send message
     std::string send_message_state = SendMessageString();
     if (send_message_state != "WAITING") {
@@ -1251,8 +1275,8 @@ class ServerStream final : public ConnectedChannelStream {
               result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN)),
           message == nullptr ? "" : message->as_string_view());
     }
-    client_trailing_metadata_state_.emplace<GotTrailingMetadata>(
-        GotTrailingMetadata{});
+    client_trailing_metadata_state_.emplace<GotClientHalfClose>(
+        GotClientHalfClose{error});
     waker.Wakeup();
   }
 
@@ -1262,19 +1286,18 @@ class ServerStream final : public ConnectedChannelStream {
     Pipe<ServerMetadataHandle> server_initial_metadata;
   };
 
-  using ClientInitialMetadataState =
-      absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,
-                    Running, Completing, Complete>;
-  ClientInitialMetadataState client_initial_metadata_state_
-      ABSL_GUARDED_BY(mu()) = Uninitialized{};
+  using CallState =
+      absl::variant<absl::monostate, GettingInitialMetadata, GotInitialMetadata,
+                    MessageLoop, Completing, Complete>;
+  CallState call_state_ ABSL_GUARDED_BY(mu()) = absl::monostate{};
   using ClientTrailingMetadataState =
-      absl::variant<Uninitialized, WaitingForTrailingMetadata,
-                    GotTrailingMetadata>;
+      absl::variant<absl::monostate, WaitingForTrailingMetadata,
+                    GotClientHalfClose>;
   ClientTrailingMetadataState client_trailing_metadata_state_
-      ABSL_GUARDED_BY(mu()) = Uninitialized{};
-  absl::variant<Uninitialized, PipeReceiverNextType<ServerMetadataHandle>,
+      ABSL_GUARDED_BY(mu()) = absl::monostate{};
+  absl::variant<absl::monostate, PipeReceiverNextType<ServerMetadataHandle>,
                 ServerMetadataHandle>
-      ABSL_GUARDED_BY(mu()) server_initial_metadata_ = Uninitialized{};
+      ABSL_GUARDED_BY(mu()) server_initial_metadata_ = absl::monostate{};
   PipeSender<MessageHandle>* incoming_messages_ = nullptr;
   grpc_transport_stream_op_batch send_initial_metadata_;
   grpc_closure send_initial_metadata_done_ =
