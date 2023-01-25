@@ -2421,6 +2421,7 @@ grpc_cc_library(
     srcs = ["lib/load_balancing/lb_policy.cc"],
     hdrs = ["lib/load_balancing/lb_policy.h"],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2440,6 +2441,7 @@ grpc_cc_library(
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc_trace",
         "//:orphanable",

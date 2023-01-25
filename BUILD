@@ -2736,7 +2736,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
