@@ -2582,6 +2582,10 @@ bool PromiseBasedCall::PollSendMessage() {
   if (!outstanding_send_.has_value()) return true;
   Poll<bool> r = (*outstanding_send_)();
   if (const bool* result = absl::get_if<bool>(&r)) {
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%sPollSendMessage completes %s", DebugTag().c_str(),
+              *result ? "successfully" : "with failure");
+    }
     if (!*result) {
       FailCompletion(send_message_completion_);
       return false;
@@ -2626,16 +2630,25 @@ void PromiseBasedCall::PollRecvMessage(
       grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
                                   &(*recv_message_)->data.raw.slice_buffer);
       if (grpc_call_trace.enabled()) {
-        gpr_log(
-            GPR_INFO,
-            "%s[call] UpdateOnce: outstanding_recv finishes: received %" PRIdPTR
-            " byte message",
-            DebugTag().c_str(), (*recv_message_)->data.raw.slice_buffer.length);
+        gpr_log(GPR_INFO,
+                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%" PRIdPTR " byte message",
+                DebugTag().c_str(),
+                (*recv_message_)->data.raw.slice_buffer.length);
       }
+    } else if (result->cancelled()) {
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "end-of-stream with error",
+                DebugTag().c_str());
+      }
+      FailCompletion(recv_message_completion_);
+      *recv_message_ = nullptr;
     } else {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] UpdateOnce: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
                 "end-of-stream",
                 DebugTag().c_str());
       }

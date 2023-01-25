@@ -23,6 +23,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -815,8 +816,10 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
           *intercepted_slice_buffer_ = absl::nullopt;
           *intercepted_flags_ = 0;
           state_ = State::kCancelled;
-          flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
-                              absl::OkStatus(), "recv_message");
+          flusher->AddClosure(
+              std::exchange(intercepted_on_complete_, nullptr),
+              p->cancelled() ? absl::CancelledError() : absl::OkStatus(),
+              "recv_message");
         }
         if (grpc_trace_channel.enabled()) {
           gpr_log(GPR_INFO,
