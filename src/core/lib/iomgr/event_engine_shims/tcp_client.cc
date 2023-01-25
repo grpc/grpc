@@ -43,7 +43,12 @@ int64_t event_engine_tcp_client_connect(
   auto resource_quota = reinterpret_cast<grpc_core::ResourceQuota*>(
       config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA));
   auto addr_uri = grpc_sockaddr_to_uri(addr);
-  EventEngine::ConnectionHandle handle = GetDefaultEventEngine()->Connect(
+  EventEngine* engine_ptr = reinterpret_cast<EventEngine*>(
+      config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+  if (engine_ptr == nullptr) {
+    engine_ptr = GetDefaultEventEngine().get();
+  }
+  EventEngine::ConnectionHandle handle = engine_ptr->Connect(
       [on_connect,
        endpoint](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         grpc_core::ApplicationCallbackExecCtx app_ctx;

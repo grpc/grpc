@@ -33,6 +33,9 @@ absl::optional<absl::string_view> ChannelArgsEndpointConfig::GetString(
 }
 
 void* ChannelArgsEndpointConfig::GetVoidPointer(absl::string_view key) const {
+  if (key == GRPC_INTERNAL_ARG_EVENT_ENGINE) {
+    return args_.GetObject<EventEngine>();
+  }
   return args_.GetVoidPointer(key);
 }
 
