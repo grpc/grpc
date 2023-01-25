@@ -1081,13 +1081,12 @@ void ClientChannel::ReprocessQueuedResolverCalls() {
   for (grpc_call_element* elem : resolver_queued_calls_) {
     CallData* calld = static_cast<CallData*>(elem->call_data);
     calld->RemoveCallFromResolverQueuedCallsLocked(elem);
-    owning_stack_->EventEngine()->Run(
-        [elem]() {
-          ApplicationCallbackExecCtx application_exec_ctx;
-          ExecCtx exec_ctx;
-          CallData* calld = static_cast<CallData*>(elem->call_data);
-          calld->CheckResolution(elem, /*was_queued=*/true);
-        });
+    owning_stack_->EventEngine()->Run([elem]() {
+      ApplicationCallbackExecCtx application_exec_ctx;
+      ExecCtx exec_ctx;
+      CallData* calld = static_cast<CallData*>(elem->call_data);
+      calld->CheckResolution(elem, /*was_queued=*/true);
+    });
   }
   resolver_queued_calls_.clear();
 }
@@ -1515,12 +1514,11 @@ void ClientChannel::UpdateStateAndPickerLocked(
     // Reprocess queued picks asynchronously.
     for (LoadBalancedCall* call : lb_queued_calls_) {
       call->RemoveCallFromLbQueuedCallsLocked();
-      owning_stack_->EventEngine()->Run(
-          [call]() {
-            ApplicationCallbackExecCtx application_exec_ctx;
-            ExecCtx exec_ctx;
-            call->PickSubchannel(/*was_queued=*/true);
-          });
+      owning_stack_->EventEngine()->Run([call]() {
+        ApplicationCallbackExecCtx application_exec_ctx;
+        ExecCtx exec_ctx;
+        call->PickSubchannel(/*was_queued=*/true);
+      });
     }
     lb_queued_calls_.clear();
   }
@@ -1856,7 +1854,7 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
     }
     // If we're still in IDLE, we need to start resolving.
     if (GPR_UNLIKELY(chand->CheckConnectivityState(false) ==
-        GRPC_CHANNEL_IDLE)) {
+                     GRPC_CHANNEL_IDLE)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: triggering exit idle", chand,
                 calld);
@@ -2103,8 +2101,8 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
   auto call_config =
       (*config_selector)->GetCallConfig({&path_, initial_metadata, arena_});
   if (!call_config.ok()) {
-    return absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-        call_config.status(), "ConfigSelector"));
+    return absl_status_to_grpc_error(
+        MaybeRewriteIllegalStatusCode(call_config.status(), "ConfigSelector"));
   }
   // Create a ClientChannelServiceConfigCallData for the call.  This stores
   // a ref to the ServiceConfig and caches the right set of parsed configs
@@ -2135,8 +2133,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.
-    auto* wait_for_ready =
-        initial_metadata->GetOrCreatePointer(WaitForReady());
+    auto* wait_for_ready = initial_metadata->GetOrCreatePointer(WaitForReady());
     if (method_params->wait_for_ready().has_value() &&
         !wait_for_ready->explicitly_set) {
       wait_for_ready->value = method_params->wait_for_ready().value();
