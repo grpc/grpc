@@ -408,6 +408,7 @@ grpc_cc_test(
         "//src/core:pipe",
         "//src/core:resource_quota",
         "//src/core:seq",
+        "//:grpc",
     ],
 )
 

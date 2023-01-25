@@ -52,6 +52,18 @@ TEST(IfTest, ChooseFailure) {
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>()));
 }
 
+TEST(IfTest, ImmediateChooseTrue) {
+  EXPECT_EQ(If(
+                true, []() { return 1; }, []() { return 2; })(),
+            Poll<int>(1));
+}
+
+TEST(IfTest, ImmediateChooseFalse) {
+  EXPECT_EQ(If(
+                false, []() { return 1; }, []() { return 2; })(),
+            Poll<int>(2));
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

@@ -416,6 +416,7 @@ grpc_cc_library(
         "pipe",
         "poll",
         "promise_factory",
+        "promise_trace",
         "try_seq",
         "//:gpr",
         "//:gpr_platform",
@@ -529,6 +530,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["lib/promise/if.h"],
     deps = [
+        "construct_destruct",
         "poll",
         "promise_factory",
         "promise_like",
@@ -860,6 +862,7 @@ grpc_cc_library(
         "activity",
         "arena",
         "context",
+        "if",
         "interceptor_list",
         "intra_activity_waiter",
         "map",
