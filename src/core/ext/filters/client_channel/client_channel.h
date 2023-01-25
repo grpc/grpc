@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -402,12 +401,7 @@ class ClientChannel::LoadBalancedCall
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
-  void PickSubchannel(
-      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>* picker,
-      bool was_queued,
-      absl::FunctionRef<
-          void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
-          unref_picker);
+  void PickSubchannel(bool was_queued);
 
   // Called by channel when removing a call from the list of queued calls.
   void RemoveCallFromLbQueuedCallsLocked()
@@ -459,18 +453,9 @@ class ClientChannel::LoadBalancedCall
   void RecordCallCompletion(absl::Status status);
 
   void CreateSubchannelCall();
-  // Invoked when a pick is completed, on both success or failure.
-  static void PickDone(void* arg, grpc_error_handle error);
-  // Schedules a callback to process the completed pick.  The callback
-  // will not run until after this method returns.
-  void AsyncPickDone(grpc_error_handle error);
 
   // Helper function for performing an LB pick with a specified picker.
-  // Returns true if the pick is complete, in which case the caller
-  // must ensure that the pick is no longer queued and then invoke
-  // either PickDone() or AsyncPickDone() with the returned error.
-  // Otherwise, returns false, in which case the caller must ensure that
-  // the pick is queued.
+  // Returns true if the pick is complete.
   bool PickSubchannelImpl(LoadBalancingPolicy::SubchannelPicker* picker,
                           grpc_error_handle* error);
   // Adds the call to the channel's list of queued picks if not already present.
@@ -501,8 +486,6 @@ class ClientChannel::LoadBalancedCall
 
   // Set when we fail inside the LB call.
   grpc_error_handle failure_error_;
-
-  grpc_closure pick_closure_;
 
   // Accessed while holding ClientChannel::lb_mu_.
   LbQueuedCallCanceller* lb_call_canceller_

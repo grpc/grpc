@@ -1506,41 +1506,23 @@ void ClientChannel::UpdateStateAndPickerLocked(
             channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                 state)));
   }
-  // Grab the LB lock to update the picker and grab the list of queued
-  // picks for re-processing.
-  std::set<LoadBalancedCall*> queued_calls;
+  // Grab the LB lock to update the picker and trigger reprocessing of the
+  // queued picks.
+  // Old picker will be unreffed after releasing the lock.
   {
-    // Old picker will be unreffed after releasing the lock.
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_to_swap =
-        picker;
-    {
-      MutexLock lock(&lb_mu_);
-      picker_.swap(picker_to_swap);
-      queued_calls = std::move(lb_queued_calls_);
-      // Lame the canceller for all of the queued calls while holding the lock.
-      for (LoadBalancedCall* call : queued_calls) {
-        call->RemoveCallFromLbQueuedCallsLocked();
-      }
+    MutexLock lock(&lb_mu_);
+    picker_.swap(picker);
+    // Reprocess queued picks asynchronously.
+    for (LoadBalancedCall* call : lb_queued_calls_) {
+      call->RemoveCallFromLbQueuedCallsLocked();
+      owning_stack_->EventEngine()->Run(
+          [call]() {
+            ApplicationCallbackExecCtx application_exec_ctx;
+            ExecCtx exec_ctx;
+            call->PickSubchannel(/*was_queued=*/true);
+          });
     }
-  }
-  // Use the new picker to re-process queued picks.
-  for (LoadBalancedCall* call : queued_calls) {
-// FIXME: change this to just call EventEngine::Run() to do a new pick
-// for each call, since that will simplify the code
-    // If there are a lot of queued calls here, resuming them all may cause us
-    // to stay inside C-core for a long period of time. All of that work would
-    // be done using the same ExecCtx instance and therefore the same cached
-    // value of "now". The longer it takes to finish all of this work and exit
-    // from C-core, the more stale the cached value of "now" may become. This
-    // can cause problems whereby (e.g.) we calculate a timer deadline based
-    // on the stale value, which results in the timer firing too early. To
-    // avoid this, we invalidate the cached value for each call we process.
-    ExecCtx::Get()->InvalidateNow();
-    call->PickSubchannel(
-        &picker, /*was_queued=*/true,
-        // No-op function to immediately unref pickers, since we're
-        // already running in the WorkSerializer.
-        [](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>) {});
+    lb_queued_calls_.clear();
   }
 }
 
@@ -2744,28 +2726,7 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
               "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand_,
               this);
     }
-    // Get picker.
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-    {
-      MutexLock lock(&chand_->lb_mu_);
-      picker = chand_->picker_;
-    }
-    // We need to unref the pickers in the WorkSerializer.
-    std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
-        pickers_to_unref;
-    PickSubchannel(
-        &picker, /*was_queued=*/false,
-        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-          pickers_to_unref.emplace_back(std::move(picker));
-        });
-    pickers_to_unref.emplace_back(std::move(picker));
-    chand_->work_serializer_->Run(
-        [pickers_to_unref = std::move(pickers_to_unref)]() mutable {
-          for (auto& picker : pickers_to_unref) {
-            picker.reset(DEBUG_LOCATION, "PickSubchannel");
-          }
-        },
-        DEBUG_LOCATION);
+    PickSubchannel(/*was_queued=*/false);
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -2998,66 +2959,68 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
 }
 
-void ClientChannel::LoadBalancedCall::AsyncPickDone(grpc_error_handle error) {
-  // TODO(roth): Does this callback need to hold a ref to LoadBalancedCall?
-  GRPC_CLOSURE_INIT(&pick_closure_, PickDone, this, grpc_schedule_on_exec_ctx);
-  ExecCtx::Run(DEBUG_LOCATION, &pick_closure_, error);
-}
-
-void ClientChannel::LoadBalancedCall::PickDone(void* arg,
-                                               grpc_error_handle error) {
-  auto* self = static_cast<LoadBalancedCall*>(arg);
-  if (!error.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: failed to pick subchannel: error=%s",
-              self->chand_, self, StatusToString(error).c_str());
-    }
-    self->PendingBatchesFail(error, YieldCallCombiner);
-    return;
+void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
+  // Grab mutex and take a ref to the picker.
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+  {
+    MutexLock lock(&chand_->lb_mu_);
+    picker = chand_->picker_;
   }
-  self->call_dispatch_controller_->Commit();
-  self->CreateSubchannelCall();
-}
-
-void ClientChannel::LoadBalancedCall::PickSubchannel(
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>* picker,
-    bool was_queued,
-    absl::FunctionRef<
-        void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
-        unref_picker) {
+  // We may accumulate multiple pickers here, because if a picker says
+  // to queue the call, we check again to see if the picker has been
+  // updated before we queue it.
+  std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
+      pickers_to_unref;
   while (true) {
+    // Do pick.
     grpc_error_handle error;
-    bool pick_complete = PickSubchannelImpl(picker->get(), &error);
+    bool pick_complete = PickSubchannelImpl(picker.get(), &error);
     if (!pick_complete) {
       MutexLock lock(&chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
-      if (chand_->picker_ != *picker) {
+      if (chand_->picker_ != picker) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO,
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
         }
-        unref_picker(std::move(*picker));
-        *picker = chand_->picker_;
+        pickers_to_unref.emplace_back(std::move(picker));
+        picker = chand_->picker_;
         continue;
       }
       // Otherwise queue the pick to try again later when we get a new picker.
       AddCallToLbQueuedCallsLocked();
       break;
     }
-    // Pick is complete.  Handle the error or start the subchannel call.
-    // Do this asynchronously if the pick was queued, synchronously otherwise.
-    if (was_queued) {
-      if (call_attempt_tracer_ != nullptr) {
-        call_attempt_tracer_->RecordAnnotation("Delayed LB pick complete.");
-      }
-      AsyncPickDone(error);
-    } else {
-      PickDone(this, error);
+    // Pick is complete.
+    // If it was queued, add a trace annotation.
+    if (was_queued && call_attempt_tracer_ != nullptr) {
+      call_attempt_tracer_->RecordAnnotation("Delayed LB pick complete.");
     }
+    // If the pick failed, fail the call.
+    if (!error.ok()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p lb_call=%p: failed to pick subchannel: error=%s",
+                chand_, this, StatusToString(error).c_str());
+      }
+      PendingBatchesFail(error, YieldCallCombiner);
+      break;
+    }
+    // Pick succeeded.
+    call_dispatch_controller_->Commit();
+    CreateSubchannelCall();
     break;
   }
+  pickers_to_unref.emplace_back(std::move(picker));
+  // Unref pickers in WorkSerializer.
+  chand_->work_serializer_->Run(
+      [pickers_to_unref = std::move(pickers_to_unref)]() mutable {
+        for (auto& picker : pickers_to_unref) {
+          picker.reset(DEBUG_LOCATION, "PickSubchannel");
+        }
+      },
+      DEBUG_LOCATION);
 }
 
 bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
