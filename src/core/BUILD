@@ -420,6 +420,7 @@ grpc_cc_library(
         "try_seq",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -3660,12 +3661,12 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "map",
         "pipe",
         "poll",
         "pollset_set",
         "ref_counted",
         "resolved_address",
-        "seq",
         "slice",
         "slice_refcount",
         "status_helper",
