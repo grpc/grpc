@@ -2177,13 +2177,11 @@ void ClientChannel::CallData::CheckResolution(grpc_call_element* elem,
     MutexLock lock(&chand->resolution_mu_);
     bool result_ready =
         CheckResolutionLocked(elem, initial_metadata, &config_selector);
+    // If no result is available, queue the call.
     if (!result_ready) {
-      // No result yet, so queue the call if needed.
       AddCallToResolverQueuedCallsLocked(elem);
       return;
     }
-    // We have a result, so remove the call from the queue.
-    RemoveCallFromResolverQueuedCallsLocked(elem);
   }
   // We have a result.  Apply service config to call.
   grpc_error_handle error =
