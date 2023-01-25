@@ -32,14 +32,22 @@
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 
-#define GRPC_LOG_EVERY_N_SEC(n, format, ...)                    \
+#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
   do {                                                          \
     static std::atomic<uint64_t> prev{0};                       \
+    static std::atomic<bool> first_call{true};                  \
     uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
                        gpr_now(GPR_CLOCK_MONOTONIC))            \
                        .milliseconds_after_process_epoch();     \
+    bool should_log = false;                                    \
+    if (first_call.exchange(false)) {                           \
+      should_log = true;                                        \
+    }                                                           \
     if ((now - prev.exchange(now)) > (n)*1000) {                \
-      gpr_log(GPR_INFO, format, __VA_ARGS__);                   \
+      should_log = true;                                        \
+    }                                                           \
+    if (should_log) {                                           \
+      gpr_log(severity, format, __VA_ARGS__);                   \
     }                                                           \
   } while (0)
 

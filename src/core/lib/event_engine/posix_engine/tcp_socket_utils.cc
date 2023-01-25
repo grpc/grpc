@@ -30,6 +30,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -96,8 +97,20 @@ absl::Status ErrorForFd(
 
 int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
                  int type, int protocol) {
-  return socket_factory != nullptr ? socket_factory(family, type, protocol)
-                                   : socket(family, type, protocol);
+  int res = socket_factory != nullptr ? socket_factory(family, type, protocol)
+                                      : socket(family, type, protocol);
+  if (res < 0 && errno == EMFILE) {
+    int saved_errno = errno;
+    GRPC_LOG_EVERY_N_SEC(
+        10, GPR_ERROR,
+        "socket(%d, %d, %d) returned %d with error: |%s|. This process "
+        "might not have a sufficient file descriptor limit for the number "
+        "of connections we want to open (which is a function of the LB policy, "
+        "number of channels, and number of backends to load balance across).",
+        family, type, protocol, res, grpc_core::StrError(errno).c_str());
+    errno = saved_errno;
+  }
+  return res;
 }
 
 absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
