@@ -32,7 +32,6 @@ from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
- 
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
@@ -150,22 +149,26 @@ class _ChildProcess(object):
     def _orchestrate_child_gdb(self):
         cmd = [
             "gdb",
-            "-ex", "set confirm off",
-            "-ex", "attach {}".format(os.getpid()),
-            "-ex", "set follow-fork-mode child",
-            "-ex", "continue",
-            "-ex", "bt",
+            "-ex",
+            "set confirm off",
+            "-ex",
+            "attach {}".format(os.getpid()),
+            "-ex",
+            "set follow-fork-mode child",
+            "-ex",
+            "continue",
+            "-ex",
+            "bt",
         ]
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
         sys.stderr.write("Invoking gdb\n")
         sys.stderr.flush()
-        process = subprocess.Popen(cmd,
-                                   stdout=sys.stderr,
-                                   stderr=sys.stderr)
+        process = subprocess.Popen(cmd, stdout=sys.stderr, stderr=sys.stderr)
         time.sleep(5)
 
     def start(self):
-        import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forking\n")
+        import sys
+        sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forking\n")
 
         # NOTE: Try uncommenting the following line if the child is segfaulting.
         # self._orchestrate_child_gdb()
@@ -174,7 +177,6 @@ class _ChildProcess(object):
             self._child_main()
         else:
             self._child_pid = ret
-
 
     def wait(self, timeout):
         total = 0.0
@@ -189,24 +191,28 @@ class _ChildProcess(object):
         else:
             return False
 
-
     def _print_backtraces(self):
         cmd = [
             "gdb",
-            "-ex", "set confirm off",
-            "-ex", "echo attaching",
-            "-ex", "attach {}".format(self._child_pid),
-            "-ex", "echo print_backtrace",
-            "-ex", "thread apply all bt",
-            "-ex", "echo printed_backtrace",
-            "-ex", "quit",
+            "-ex",
+            "set confirm off",
+            "-ex",
+            "echo attaching",
+            "-ex",
+            "attach {}".format(self._child_pid),
+            "-ex",
+            "echo print_backtrace",
+            "-ex",
+            "thread apply all bt",
+            "-ex",
+            "echo printed_backtrace",
+            "-ex",
+            "quit",
         ]
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
         sys.stderr.write("Invoking gdb\n")
         sys.stderr.flush()
-        process = subprocess.Popen(cmd,
-                                   stdout=streams[0],
-                                   stderr=streams[1])
+        process = subprocess.Popen(cmd, stdout=streams[0], stderr=streams[1])
         try:
             process.wait(timeout=_GDB_TIMEOUT_S)
         except subprocess.TimeoutExpired:
@@ -214,15 +220,19 @@ class _ChildProcess(object):
         finally:
             for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
                 stream.seek(0)
-                sys.stderr.write("gdb {}:\n{}\n".format(stream_name, stream.read().decode("ascii")))
+                sys.stderr.write("gdb {}:\n{}\n".format(
+                    stream_name,
+                    stream.read().decode("ascii")))
                 stream.close()
             sys.stderr.flush()
 
-
     def finish(self):
-        import sys; sys.stderr.write("Joining process\n"); sys.stderr.flush()
+        import sys
+        sys.stderr.write("Joining process\n")
+        sys.stderr.flush()
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
-        sys.stderr.write("Joined process\n"); sys.stderr.flush()
+        sys.stderr.write("Joined process\n")
+        sys.stderr.flush()
         sys.stderr.write("Exit code: {}\n".format(self._rc))
         try:
             if not terminated:
@@ -543,6 +553,7 @@ class TestCase(enum.Enum):
             raise NotImplementedError('Test case "%s" not implemented!' %
                                       self.name)
         channel.close()
+
 
 # Useful if needing to find a block of code from an address in an SO.
 def dump_object_map():

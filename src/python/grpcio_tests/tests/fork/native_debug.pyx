@@ -1,5 +1,6 @@
 from libcpp cimport bool
 
+
 cdef extern from "absl/debugging/failure_signal_handler.h" namespace "absl":
     ctypedef struct FailureSignalHandlerOptions "::absl::FailureSignalHandlerOptions":
         bool symbolize_stacktrace

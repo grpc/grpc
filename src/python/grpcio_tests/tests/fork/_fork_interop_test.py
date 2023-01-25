@@ -13,25 +13,28 @@
 # limitations under the License.
 """Client-side fork interop tests as a unit test."""
 
+import os
 import subprocess
 import sys
 import tempfile
-import time
 import threading
+import time
 import unittest
-import os
 
 from grpc._cython import cygrpc
 
 from tests.fork import methods
 
+
 def _dump_streams(name, streams):
     assert len(streams) == 2
     for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
         stream.seek(0)
-        sys.stderr.write("{} {}:\n{}\n".format(name, stream_name, stream.read().decode("ascii")))
+        sys.stderr.write("{} {}:\n{}\n".format(name, stream_name,
+                                               stream.read().decode("ascii")))
         stream.close()
     sys.stderr.flush()
+
 
 # New instance of multiprocessing.Process using fork without exec can and will
 # freeze if the Python process has any other threads running. This includes the
@@ -64,8 +67,9 @@ _GDB_TIMEOUT_S = 40
 @unittest.skipUnless(
     sys.platform.startswith("linux"),
     "not supported on windows, and fork+exec networking blocked on mac")
-@unittest.skipUnless(os.getenv("GRPC_ENABLE_FORK_SUPPORT") is not None,
-                     "Core must be built with fork support to run this test.")
+@unittest.skipUnless(
+    os.getenv("GRPC_ENABLE_FORK_SUPPORT") is not None,
+    "Core must be built with fork support to run this test.")
 class ForkInteropTest(unittest.TestCase):
 
     def setUp(self):
@@ -112,9 +116,11 @@ class ForkInteropTest(unittest.TestCase):
             if self._port is None:
                 # Timeout
                 self._streams[0].seek(0)
-                sys.stderr.write("Server STDOUT:\n{}\n".format(self._streams[0].read()))
+                sys.stderr.write("Server STDOUT:\n{}\n".format(
+                    self._streams[0].read()))
                 self._streams[1].seek(0)
-                sys.stderr.write("Server STDERR:\n{}\n".format(self._streams[1].read()))
+                sys.stderr.write("Server STDERR:\n{}\n".format(
+                    self._streams[1].read()))
                 sys.stderr.flush()
                 raise Exception("Failed to get port from server.")
         except ValueError:
@@ -167,20 +173,25 @@ class ForkInteropTest(unittest.TestCase):
     def _print_backtraces(self, pid):
         cmd = [
             "gdb",
-            "-ex", "set confirm off",
-            "-ex", "echo attaching",
-            "-ex", "attach {}".format(pid),
-            "-ex", "echo print_backtrace",
-            "-ex", "thread apply all bt",
-            "-ex", "echo printed_backtrace",
-            "-ex", "quit",
+            "-ex",
+            "set confirm off",
+            "-ex",
+            "echo attaching",
+            "-ex",
+            "attach {}".format(pid),
+            "-ex",
+            "echo print_backtrace",
+            "-ex",
+            "thread apply all bt",
+            "-ex",
+            "echo printed_backtrace",
+            "-ex",
+            "quit",
         ]
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
         sys.stderr.write("Invoking gdb\n")
         sys.stderr.flush()
-        process = subprocess.Popen(cmd,
-                                   stdout=streams[0],
-                                   stderr=streams[1])
+        process = subprocess.Popen(cmd, stdout=streams[0], stderr=streams[1])
         try:
             process.wait(timeout=_GDB_TIMEOUT_S)
         except subprocess.TimeoutExpired:
@@ -188,7 +199,9 @@ class ForkInteropTest(unittest.TestCase):
         finally:
             for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
                 stream.seek(0)
-                sys.stderr.write("gdb {}:\n{}\n".format(stream_name, stream.read().decode("ascii")))
+                sys.stderr.write("gdb {}:\n{}\n".format(
+                    stream_name,
+                    stream.read().decode("ascii")))
                 stream.close()
             sys.stderr.flush()
 
