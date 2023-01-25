@@ -321,8 +321,8 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
-  if (TaskHandleComparator<ConnectionHandle>::Eq()(handle,
-                                                   EventEngine::kInvalidConnectionHandle)) {
+  if (TaskHandleComparator<ConnectionHandle>::Eq()(
+          handle, EventEngine::kInvalidConnectionHandle)) {
     GRPC_EVENT_ENGINE_TRACE("%s",
                             "Attempted to cancel an invalid connection handle");
     return false;
