@@ -72,8 +72,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr_platform",
-        "//:grpc",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
     ],
 )
 
@@ -187,5 +187,27 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_test_utils",
+    testonly = True,
+    srcs = ["event_engine_test_utils.cc"],
+    hdrs = ["event_engine_test_utils.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:memory_quota",
+        "//src/core:notification",
+        "//src/core:time",
     ],
 )

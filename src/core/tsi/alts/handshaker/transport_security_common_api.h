@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
-#define GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
+#ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
+#define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/gcp/transport_security_common.upb.h"
 
 // C struct coresponding to protobuf message RpcProtocolVersions.Version
@@ -168,4 +169,4 @@ int grpc_gcp_rpc_protocol_version_compare(
 }  // namespace internal
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
+#endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H

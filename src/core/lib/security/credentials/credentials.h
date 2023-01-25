@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -295,4 +296,4 @@ grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args);
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H

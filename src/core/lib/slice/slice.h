@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_H
-#define GRPC_CORE_LIB_SLICE_SLICE_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_H
+#define GRPC_SRC_CORE_LIB_SLICE_SLICE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -418,18 +418,8 @@ template <>
 struct SliceCastable<grpc_core::Slice, Slice> {};
 template <>
 struct SliceCastable<Slice, grpc_core::Slice> {};
-
-template <>
-struct SliceCastable<grpc_core::MutableSlice, grpc_slice> {};
-template <>
-struct SliceCastable<grpc_slice, grpc_core::MutableSlice> {};
-
-template <>
-struct SliceCastable<grpc_core::MutableSlice, grpc_core::Slice> {};
-template <>
-struct SliceCastable<grpc_core::Slice, grpc_core::MutableSlice> {};
 }  // namespace internal
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_SLICE_SLICE_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_SLICE_H

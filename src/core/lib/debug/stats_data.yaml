@@ -21,8 +21,8 @@
 - counter: server_calls_created
   doc: Number of server side calls created by this process
 - histogram: call_initial_size
-  max: 32768
-  buckets: 24
+  max: 65536
+  buckets: 26
   doc: Initial size of the grpc_call arena created at call start
 - counter: client_channels_created
   doc: Number of client channels created
@@ -30,6 +30,8 @@
   doc: Number of client subchannels created
 - counter: server_channels_created
   doc: Number of server channels created
+- counter: insecure_connections_created
+  doc: Number of insecure connections created
 # tcp
 - counter: syscall_write
   doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
@@ -74,6 +76,10 @@
   doc: Number of times sending was completely stalled by the transport flow control window
 - counter: http2_stream_stalls
   doc: Number of times sending was completely stalled by the stream flow control window
+- histogram: http2_metadata_size
+  max: 65536
+  buckets: 26
+  doc: Number of bytes consumed by metadata, according to HPACK accounting rules
 # completion queues
 - counter: cq_pluck_creates
   doc: Number of completion queues created for cq_pluck (indicates sync api usage)

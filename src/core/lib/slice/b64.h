@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SLICE_B64_H
-#define GRPC_CORE_LIB_SLICE_B64_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_B64_H
+#define GRPC_SRC_CORE_LIB_SLICE_B64_H
 
 #include <grpc/support/port_platform.h>
 
@@ -49,4 +49,4 @@ grpc_slice grpc_base64_decode(const char* b64, int url_safe);
 grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
                                        int url_safe);
 
-#endif  // GRPC_CORE_LIB_SLICE_B64_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_B64_H

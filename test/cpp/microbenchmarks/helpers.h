@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_CPP_MICROBENCHMARKS_COUNTERS_H
-#define TEST_CPP_MICROBENCHMARKS_COUNTERS_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_HELPERS_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_HELPERS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -42,4 +42,4 @@ class LibraryInitializer {
   grpc::internal::GrpcLibrary init_lib_;
 };
 
-#endif
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_HELPERS_H

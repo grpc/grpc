@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
-#define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
+#ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
+#define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -157,4 +157,4 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
 void alts_handshaker_client_handle_response(alts_handshaker_client* client,
                                             bool is_ok);
 
-#endif  // GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
+#endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H

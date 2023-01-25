@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_CLOSURE_H
-#define GRPC_CORE_LIB_IOMGR_CLOSURE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,6 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
@@ -307,4 +308,4 @@ class Closure {
 };
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_CLOSURE_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H

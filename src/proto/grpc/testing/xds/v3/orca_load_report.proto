@@ -32,7 +32,7 @@ message OrcaLoadReport {
 
   // Total RPS being served by an endpoint. This should cover all services that an endpoint is
   // responsible for.
-  uint64 rps = 3;
+  uint64 rps = 3 [deprecated = true];
 
   // Application specific requests costs. Each value is an absolute cost (e.g. 3487 bytes of
   // storage) associated with the request.
@@ -41,4 +41,6 @@ message OrcaLoadReport {
   // Resource utilization values. Each value is expressed as a fraction of total resources
   // available, derived from the latest sample or measurement.
   map<string, double> utilization = 5;
+
+  double rps_fractional = 6;
 }

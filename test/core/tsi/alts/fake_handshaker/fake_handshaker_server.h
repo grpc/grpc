@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
-#define TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
+#ifndef GRPC_TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
+#define GRPC_TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
 
 #include <memory>
 #include <string>
@@ -31,9 +31,9 @@ namespace gcp {
 // will track the number of concurrent RPCs that it handles and abort
 // if if ever exceeds that number.
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs);
+    int expected_max_concurrent_rpcs, const std::string& peer_identity);
 
 }  // namespace gcp
 }  // namespace grpc
 
-#endif  // TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
+#endif  // GRPC_TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H

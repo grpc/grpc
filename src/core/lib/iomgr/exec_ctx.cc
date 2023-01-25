@@ -20,9 +20,12 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -85,13 +88,12 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   }
 #ifndef NDEBUG
   if (closure->scheduled) {
-    gpr_log(GPR_ERROR,
-            "Closure already scheduled. (closure: %p, created: [%s:%d], "
-            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
-            closure, closure->file_created, closure->line_created,
-            closure->file_initiated, closure->line_initiated, location.file(),
-            location.line());
-    abort();
+    Crash(absl::StrFormat(
+        "Closure already scheduled. (closure: %p, created: [%s:%d], "
+        "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
+        closure, closure->file_created, closure->line_created,
+        closure->file_initiated, closure->line_initiated, location.file(),
+        location.line()));
   }
   closure->scheduled = true;
   closure->file_initiated = location.file();
@@ -110,12 +112,11 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
     grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
     if (c->scheduled) {
-      gpr_log(GPR_ERROR,
-              "Closure already scheduled. (closure: %p, created: [%s:%d], "
-              "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
-              c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, location.file(), location.line());
-      abort();
+      Crash(absl::StrFormat(
+          "Closure already scheduled. (closure: %p, created: [%s:%d], "
+          "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
+          c, c->file_created, c->line_created, c->file_initiated,
+          c->line_initiated, location.file(), location.line()));
     }
     c->scheduled = true;
     c->file_initiated = location.file();

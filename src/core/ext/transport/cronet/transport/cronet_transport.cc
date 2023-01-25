@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -1109,7 +1110,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         }
       } else {
         // Should never reach here
-        GPR_ASSERT(false);
+        grpc_core::Crash("unreachable");
       }
     }
     stream_state->state_op_done[OP_SEND_MESSAGE] = true;

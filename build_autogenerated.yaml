@@ -176,6 +176,8 @@ libs:
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/crash.h
+  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/env.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
@@ -221,6 +223,7 @@ libs:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/crash.cc
   - src/core/lib/gprpp/env_linux.cc
   - src/core/lib/gprpp/env_posix.cc
   - src/core/lib/gprpp/env_windows.cc
@@ -345,11 +348,14 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -477,6 +483,8 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
@@ -490,12 +498,14 @@ libs:
   - src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h
   - src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.h
   - src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h
@@ -543,6 +553,7 @@ libs:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.h
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.h
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.h
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.h
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.h
@@ -551,9 +562,16 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
   - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.h
   - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.h
@@ -637,12 +655,14 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.h
@@ -684,15 +704,23 @@ libs:
   - src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h
   - src/core/ext/xds/certificate_provider_store.h
   - src/core/ext/xds/file_watcher_certificate_provider_factory.h
@@ -758,6 +786,7 @@ libs:
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
@@ -778,6 +807,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -786,6 +817,7 @@ libs:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -794,7 +826,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -837,6 +868,9 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -869,6 +903,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -1088,6 +1123,8 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
@@ -1232,6 +1269,8 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c
   - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
@@ -1245,12 +1284,14 @@ libs:
   - src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
   - src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.c
   - src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
@@ -1298,6 +1339,7 @@ libs:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.c
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.c
@@ -1306,9 +1348,16 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.c
   - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c
@@ -1392,12 +1441,14 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c
@@ -1439,15 +1490,23 @@ libs:
   - src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
   - src/core/ext/xds/certificate_provider_store.cc
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
@@ -1520,6 +1579,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/shim.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
@@ -1529,6 +1589,7 @@ libs:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
@@ -1559,6 +1620,9 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -1593,6 +1657,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -1944,9 +2009,11 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -2049,6 +2116,7 @@ libs:
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
@@ -2069,6 +2137,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -2077,6 +2147,7 @@ libs:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -2085,7 +2156,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -2127,6 +2197,9 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -2159,6 +2232,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -2324,6 +2398,8 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -2447,6 +2523,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/shim.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
@@ -2456,6 +2533,7 @@ libs:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
@@ -2485,6 +2563,9 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -2519,6 +2600,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -3484,6 +3566,7 @@ libs:
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
@@ -3504,6 +3587,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -3512,6 +3597,7 @@ libs:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -3520,7 +3606,6 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -3558,6 +3643,9 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -3590,6 +3678,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -3762,6 +3851,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/shim.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
@@ -3771,6 +3861,7 @@ libs:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
@@ -3797,6 +3888,9 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -3831,6 +3925,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -4329,7 +4424,6 @@ targets:
   headers:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5188,12 +5282,14 @@ targets:
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.h
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h
@@ -5234,15 +5330,24 @@ targets:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.h
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.h
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.h
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.h
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h
   - src/core/lib/security/authorization/cel_authorization_engine.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
@@ -5286,12 +5391,14 @@ targets:
   - src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
+  - src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
   - src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
@@ -5332,15 +5439,24 @@ targets:
   - src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
   - src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.c
+  - src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
   - src/core/ext/upb-generated/xds/core/v3/extension.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
+  - src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/cel.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/range.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   - test/core/util/cmdline.cc
@@ -5375,6 +5491,29 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
+- name: cf_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
+  src:
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/cf_event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
+  deps:
+  - grpc_unsecure
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: cfstream_test
   gtest: true
   build: test
@@ -5612,7 +5751,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6373,11 +6511,30 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/avl/avl.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/overload.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/time.h
+  - src/core/lib/surface/channel_stack_type.h
   src:
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/event_engine/channel_args_endpoint_config.cc
+  - src/core/lib/gprpp/time.cc
+  - src/core/lib/surface/channel_stack_type.cc
   - test/core/event_engine/endpoint_config_test.cc
   deps:
-  - grpc
+  - absl/functional:any_invocable
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
   uses_polling: false
 - name: endpoint_pair_test
   gtest: true
@@ -6543,6 +6700,17 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: event_engine_wakeup_scheduler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  src:
+  - test/core/promise/event_engine_wakeup_scheduler_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: event_poller_posix_test
   gtest: true
   build: test
@@ -6596,7 +6764,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6873,7 +7040,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6965,7 +7131,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7198,6 +7363,7 @@ targets:
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
@@ -7218,6 +7384,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
@@ -7226,6 +7394,7 @@ targets:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -7234,7 +7403,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -7272,6 +7440,9 @@ targets:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
@@ -7304,6 +7475,7 @@ targets:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -7458,6 +7630,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/shim.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
@@ -7467,6 +7640,7 @@ targets:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
@@ -7493,6 +7667,9 @@ targets:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
@@ -7527,6 +7704,7 @@ targets:
   - src/core/lib/iomgr/socket_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
@@ -7631,17 +7809,19 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -8791,7 +8971,6 @@ targets:
   headers:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -8907,7 +9086,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9200,6 +9378,35 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpsc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/wait_set.h
+  src:
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/mpsc_test.cc
+  deps:
+  - absl/container:flat_hash_set
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
 - name: mpscq_test
   gtest: true
   build: test
@@ -9264,7 +9471,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -9297,17 +9503,20 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
-  - test/core/event_engine/test_suite/server_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9472,7 +9681,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
@@ -9571,7 +9779,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9681,17 +9888,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/posix/posix_engine_test_utils.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9715,15 +9923,16 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_event_engine_connect_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9734,18 +9943,22 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
-  - test/core/event_engine/test_suite/server_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11345,6 +11558,9 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
@@ -11615,7 +11831,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/resource_quota/thread_quota.h
@@ -11943,7 +12158,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -12154,6 +12368,28 @@ targets:
   - linux
   - posix
   - mac
+- name: weighted_round_robin_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: weighted_round_robin_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
+  src:
+  - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: win_socket_test
   gtest: true
   build: test
@@ -12188,10 +12424,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/windows/windows_endpoint.h
   - test/core/event_engine/windows/create_sockpair.h
   src:
-  - src/core/lib/event_engine/windows/windows_endpoint.cc
   - test/core/event_engine/windows/create_sockpair.cc
   - test/core/event_engine/windows/windows_endpoint_test.cc
   deps:
@@ -12517,6 +12751,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -12555,6 +12790,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
@@ -12601,6 +12837,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -12640,6 +12877,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
@@ -12690,6 +12928,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -12728,6 +12967,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_core_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -12794,6 +13034,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -12834,6 +13075,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/cpp/server/csds/csds.cc
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_csds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -12851,6 +13093,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -12892,6 +13135,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -12927,6 +13171,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -12966,6 +13211,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_fault_injection_end2end_test.cc
@@ -13075,6 +13321,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -13085,6 +13332,7 @@ targets:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.proto
   - src/proto/grpc/testing/xds/v3/cluster.proto
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
@@ -13160,6 +13408,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13199,6 +13448,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
@@ -13237,6 +13487,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -13276,6 +13527,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -13293,6 +13545,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
@@ -13334,6 +13587,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -13394,6 +13648,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13433,6 +13688,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_routing_end2end_test.cc
@@ -13444,14 +13700,72 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_wrr_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/server/orca/orca_interceptor.h
+  - test/core/util/scoped_env_var.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - src/proto/grpc/testing/xds/v3/wrr_locality.proto
+  - src/cpp/server/orca/orca_interceptor.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_wrr_end2end_test.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
+  hash: 08f7828a7ae288ef379db9b7f57af73d77a817c22fd0fc42093a95be3e54194a
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
+  strip_prefix: data-plane-api-5962b1204f4b7b0a2ed7622d0149727f602ae74c
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/
@@ -13467,10 +13781,10 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/xds
-  hash: 5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
+  hash: 41ea212940ab44bf7f8a8b4169cfbc612ed2166dafabc0a56a8820ef665fc6a4
   proto_prefix: third_party/xds/
-  strip_prefix: xds-cb28da3451f158a947dfc45090fe92b07b243bc1
+  strip_prefix: xds-06c439db220b89134a8a49bad41994560d6537c6
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
-  - https://github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
+  - https://github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
 tests: []

@@ -36,12 +36,15 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -161,9 +164,8 @@ static void session_read_cb(void* arg,  // session
       // before notify_on_read is called.
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
-      gpr_log(GPR_ERROR, "Unhandled read error %s",
-              grpc_core::StrError(errno).c_str());
-      abort();
+      grpc_core::Crash(absl::StrFormat("Unhandled read error %s",
+                                       grpc_core::StrError(errno).c_str()));
     }
   }
 }
@@ -328,8 +330,8 @@ static void client_session_write(void* arg,  // client
     }
     gpr_mu_unlock(g_mu);
   } else {
-    gpr_log(GPR_ERROR, "unknown errno %s", grpc_core::StrError(errno).c_str());
-    abort();
+    grpc_core::Crash(absl::StrFormat("unknown errno %s",
+                                     grpc_core::StrError(errno).c_str()));
   }
 }
 
@@ -350,8 +352,8 @@ static void client_start(client* cl, int port) {
         abort();
       }
     } else {
-      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-      abort();
+      grpc_core::Crash(
+          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
     }
   }
 

@@ -1,0 +1,103 @@
+{
+    "Files": {
+        "file.proto": {
+            "--csharp_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "REGEX:${TEST_OUT_DIR}/obj/Debug/netstandard2.0/.*_file.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "file.proto"
+            ]
+        },
+        "protos/another.proto": {
+            "--csharp_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "REGEX:${TEST_OUT_DIR}/obj/Debug/netstandard2.0/.*_another.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "protos/another.proto"
+            ]
+        },
+        "protos/file.proto": {
+            "--csharp_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "REGEX:${TEST_OUT_DIR}/obj/Debug/netstandard2.0/.*_file.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "protos/file.proto"
+            ]
+        },
+        "second.proto": {
+            "--csharp_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "REGEX:${TEST_OUT_DIR}/obj/Debug/netstandard2.0/.*_second.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "second.proto"
+            ]
+        }
+    },
+    "Metadata": {
+        "timestamp": "IGNORE:"
+    }
+}

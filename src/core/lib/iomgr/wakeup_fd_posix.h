@@ -44,8 +44,8 @@
 // 2. If the polling thread was awakened by a wakeup_fd event, call
 //    grpc_wakeup_fd_consume_wakeup() on it.
 //
-#ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -93,4 +93,4 @@ void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
 // wakeup_fd_nospecial.c if no such implementation exists.
 extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
 
-#endif  // GRPC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H

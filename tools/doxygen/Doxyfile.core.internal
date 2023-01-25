@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 29.0.0
+PROJECT_NUMBER         = 30.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -926,6 +926,7 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
 src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h \
+src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h \
 src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
 src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
@@ -935,6 +936,9 @@ src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h \
 src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
+src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
+src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h \
+src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
@@ -944,6 +948,7 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
@@ -1216,6 +1221,10 @@ src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_mana
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h \
 src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
 src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
@@ -1242,6 +1251,8 @@ src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.c \
 src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.h \
 src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c \
 src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h \
+src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c \
+src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c \
 src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
@@ -1254,6 +1265,8 @@ src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c \
 src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
 src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h \
+src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c \
+src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
 src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h \
 src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c \
@@ -1348,6 +1361,8 @@ src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c \
 src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h \
 src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
 src/core/ext/upb-generated/xds/core/v3/authority.upb.h \
+src/core/ext/upb-generated/xds/core/v3/cidr.upb.c \
+src/core/ext/upb-generated/xds/core/v3/cidr.upb.h \
 src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
 src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h \
 src/core/ext/upb-generated/xds/core/v3/context_params.upb.c \
@@ -1364,12 +1379,26 @@ src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
 src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h \
 src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c \
 src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h \
+src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c \
+src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.h \
+src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c \
+src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.h \
+src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c \
+src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.h \
+src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c \
+src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.h \
 src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c \
 src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h \
+src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c \
+src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.h \
 src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c \
 src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h \
 src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c \
 src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h \
+src/core/ext/upb-generated/xds/type/v3/cel.upb.c \
+src/core/ext/upb-generated/xds/type/v3/cel.upb.h \
+src/core/ext/upb-generated/xds/type/v3/range.upb.c \
+src/core/ext/upb-generated/xds/type/v3/range.upb.h \
 src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c \
 src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h \
 src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c \
@@ -1536,6 +1565,8 @@ src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c \
@@ -1548,6 +1579,8 @@ src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c \
@@ -1630,6 +1663,8 @@ src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c \
@@ -1642,12 +1677,26 @@ src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.h \
+src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c \
+src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h \
 src/core/ext/xds/certificate_provider_store.cc \
@@ -1769,6 +1818,7 @@ src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/memory_allocator.cc \
 src/core/lib/event_engine/poller.h \
+src/core/lib/event_engine/posix.h \
 src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
 src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h \
 src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
@@ -1807,6 +1857,9 @@ src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h \
 src/core/lib/event_engine/resolved_address.cc \
+src/core/lib/event_engine/resolved_address_internal.h \
+src/core/lib/event_engine/shim.cc \
+src/core/lib/event_engine/shim.h \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
@@ -1824,6 +1877,8 @@ src/core/lib/event_engine/windows/iocp.cc \
 src/core/lib/event_engine/windows/iocp.h \
 src/core/lib/event_engine/windows/win_socket.cc \
 src/core/lib/event_engine/windows/win_socket.h \
+src/core/lib/event_engine/windows/windows_endpoint.cc \
+src/core/lib/event_engine/windows/windows_endpoint.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/experiments/config.cc \
@@ -1870,6 +1925,8 @@ src/core/lib/gprpp/bitset.h \
 src/core/lib/gprpp/chunked_vector.h \
 src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
+src/core/lib/gprpp/crash.cc \
+src/core/lib/gprpp/crash.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
 src/core/lib/gprpp/env.h \
@@ -1973,6 +2030,12 @@ src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.cc \
 src/core/lib/iomgr/ev_posix.h \
 src/core/lib/iomgr/ev_windows.cc \
+src/core/lib/iomgr/event_engine_shims/closure.cc \
+src/core/lib/iomgr/event_engine_shims/closure.h \
+src/core/lib/iomgr/event_engine_shims/endpoint.cc \
+src/core/lib/iomgr/event_engine_shims/endpoint.h \
+src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
+src/core/lib/iomgr/event_engine_shims/tcp_client.h \
 src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
@@ -2039,6 +2102,8 @@ src/core/lib/iomgr/socket_utils_posix.h \
 src/core/lib/iomgr/socket_utils_windows.cc \
 src/core/lib/iomgr/socket_windows.cc \
 src/core/lib/iomgr/socket_windows.h \
+src/core/lib/iomgr/systemd_utils.cc \
+src/core/lib/iomgr/systemd_utils.h \
 src/core/lib/iomgr/tcp_client.cc \
 src/core/lib/iomgr/tcp_client.h \
 src/core/lib/iomgr/tcp_client_cfstream.cc \

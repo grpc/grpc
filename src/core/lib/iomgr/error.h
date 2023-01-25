@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_ERROR_H
-#define GRPC_CORE_LIB_IOMGR_ERROR_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
+#define GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,6 +33,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -164,4 +165,4 @@ class AtomicError {
   gpr_spinlock lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
 };
 
-#endif  // GRPC_CORE_LIB_IOMGR_ERROR_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_ERROR_H

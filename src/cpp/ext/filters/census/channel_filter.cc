@@ -22,11 +22,16 @@
 
 #include "absl/status/status.h"
 
-namespace grpc {
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-grpc_error_handle CensusChannelData::Init(grpc_channel_element* /*elem*/,
-                                          grpc_channel_element_args* /*args*/) {
+namespace grpc {
+namespace internal {
+
+grpc_error_handle OpenCensusChannelData::Init(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+  OpenCensusRegistry::Get().RunFunctionsPostInit();
   return absl::OkStatus();
 }
 
+}  // namespace internal
 }  // namespace grpc

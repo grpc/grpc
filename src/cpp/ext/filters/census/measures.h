@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_MEASURES_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_MEASURES_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,6 +36,7 @@ namespace grpc {
 ::opencensus::stats::MeasureInt64 RpcClientRetriesPerCall();
 ::opencensus::stats::MeasureInt64 RpcClientTransparentRetriesPerCall();
 ::opencensus::stats::MeasureDouble RpcClientRetryDelayPerCall();
+::opencensus::stats::MeasureDouble RpcClientTransportLatency();
 
 ::opencensus::stats::MeasureInt64 RpcServerSentMessagesPerRpc();
 ::opencensus::stats::MeasureDouble RpcServerSentBytesPerRpc();
@@ -47,4 +48,4 @@ namespace grpc {
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_MEASURES_H

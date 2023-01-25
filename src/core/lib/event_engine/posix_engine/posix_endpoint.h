@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,6 +31,7 @@
 #include "absl/hash/hash.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -38,10 +39,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
@@ -344,7 +347,7 @@ class TcpZerocopySendCtx {
       // state was CHECK and is_in_write is false. This means that after the
       // previous sendmsg returned and set is_in_write to false, it did
       // not update the z-copy change from CHECK to OPEN.
-      GPR_ASSERT(false && "OMem state error!");
+      grpc_core::Crash("OMem state error!");
     }
   }
 
@@ -488,7 +491,11 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  void MaybeShutdown(absl::Status why);
+  int GetWrappedFd() { return fd_; }
+
+  void MaybeShutdown(
+      absl::Status why,
+      absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd);
 
  private:
   void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
@@ -557,14 +564,19 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
   grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address_;
 
+  // Maintain a shared_ptr to mem_quota_ to ensure the underlying basic memory
+  // quota is not deleted until the endpoint is destroyed.
+  grpc_core::MemoryQuotaRefPtr mem_quota_;
   grpc_core::MemoryOwner memory_owner_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
 
   void* outgoing_buffer_arg_ = nullptr;
 
-  // A counter which starts at 0. It is initialized the first time the socket
-  // options for collecting timestamps are set, and is incremented with each
-  // byte sent.
+  absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
+
+  // A counter which starts at 0. It is initialized the first time the
+  // socket options for collecting timestamps are set, and is incremented
+  // with each byte sent.
   int bytes_counter_ = -1;
   // True if timestamping options are set on the socket.
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -586,8 +598,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
-class PosixEndpoint
-    : public grpc_event_engine::experimental::EventEngine::Endpoint {
+class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint(
       EventHandle* handle, PosixEngineClosure* on_shutdown,
@@ -622,18 +633,31 @@ class PosixEndpoint
     return impl_->GetLocalAddress();
   }
 
+  int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override {
+    if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
+                           std::move(on_release_fd));
+    }
+  }
+
   ~PosixEndpoint() override {
-    impl_->MaybeShutdown(absl::InternalError("Endpoint closing"));
+    if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
+                           nullptr);
+    }
   }
 
  private:
   PosixEndpointImpl* impl_;
+  std::atomic<bool> shutdown_{false};
 };
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class PosixEndpoint
-    : public grpc_event_engine::experimental::EventEngine::Endpoint {
+class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint() = default;
 
@@ -641,25 +665,35 @@ class PosixEndpoint
             grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
             const grpc_event_engine::experimental::EventEngine::Endpoint::
                 ReadArgs* /*args*/) override {
-    GPR_ASSERT(false && "PosixEndpoint::Read not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Read not supported on this platform");
   }
 
   void Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
              grpc_event_engine::experimental::SliceBuffer* /*data*/,
              const grpc_event_engine::experimental::EventEngine::Endpoint::
                  WriteArgs* /*args*/) override {
-    GPR_ASSERT(false && "PosixEndpoint::Write not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Write not supported on this platform");
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddress() const override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetPeerAddress not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetPeerAddress not supported on this platform");
   }
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetLocalAddress() const override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetLocalAddress not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetLocalAddress not supported on this platform");
+  }
+
+  int GetWrappedFd() override {
+    grpc_core::Crash(
+        "PosixEndpoint::GetWrappedFd not supported on this platform");
+  }
+
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override {
+    grpc_core::Crash("PosixEndpoint::Shutdown not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;
@@ -680,4 +714,4 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

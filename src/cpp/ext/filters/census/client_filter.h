@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,14 +28,15 @@
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
 namespace grpc {
+namespace internal {
 
-class CensusClientChannelData : public ChannelData {
+class OpenCensusClientChannelData : public ChannelData {
  public:
   // A CallData class will be created for every grpc call within a channel. It
   // is used to store data and methods specific to that call.
-  // CensusClientCallData is thread-compatible, however typically only 1 thread
-  // should be interacting with a call at a time.
-  class CensusClientCallData : public CallData {
+  // OpenCensusClientCallData is thread-compatible, however typically only 1
+  // thread should be interacting with a call at a time.
+  class OpenCensusClientCallData : public CallData {
    public:
     grpc_error_handle Init(grpc_call_element* /* elem */,
                            const grpc_call_element_args* args) override;
@@ -53,6 +54,7 @@ class CensusClientChannelData : public ChannelData {
   bool tracing_enabled_ = true;
 };
 
+}  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H

@@ -43,6 +43,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -1298,6 +1300,7 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
 }
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
+  global_stats().IncrementHttp2MetadataSize(frame_length_);
   if (ParseInputInner(&input)) {
     return absl::OkStatus();
   }

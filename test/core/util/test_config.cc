@@ -26,12 +26,14 @@
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
@@ -109,8 +111,7 @@ void ParseTestArgs(int* argc, char** argv) {
           grpc_event_engine::experimental::InitializeTestingEventEngineFactory(
               argv[i] + engine_flag.length());
       if (!engine_set.ok()) {
-        gpr_log(GPR_ERROR, "%s", engine_set.ToString().c_str());
-        GPR_ASSERT(false);
+        grpc_core::Crash(absl::StrFormat("%s", engine_set.ToString().c_str()));
       }
       // remove the spent argv
       RmArg(i, argc, argv);

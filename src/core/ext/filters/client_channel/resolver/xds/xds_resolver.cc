@@ -373,7 +373,7 @@ class XdsResolver : public Resolver {
 
   std::string route_config_name_;
   RouteConfigWatcher* route_config_watcher_ = nullptr;
-  XdsRouteConfigResource::VirtualHost current_virtual_host_;
+  absl::optional<XdsRouteConfigResource::VirtualHost> current_virtual_host_;
   std::map<std::string /*cluster_specifier_plugin_name*/,
            std::string /*LB policy config*/>
       cluster_specifier_plugin_map_;
@@ -443,8 +443,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   // weighted_cluster_state field points to the memory in the route field, so
   // moving the entry in a reallocation will cause the string_view to point to
   // invalid data.
-  route_table_.reserve(resolver_->current_virtual_host_.routes.size());
-  for (auto& route : resolver_->current_virtual_host_.routes) {
+  route_table_.reserve(resolver_->current_virtual_host_->routes.size());
+  for (auto& route : resolver_->current_virtual_host_->routes) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
               resolver_.get(), this, route.ToString().c_str());
@@ -583,7 +583,7 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
     retry_parts.push_back(
         absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
                         absl::StrJoin(code_parts, ",\n")));
-    retry_parts.push_back(absl::StrFormat("    }"));
+    retry_parts.push_back("    }");
     fields.emplace_back(absl::StrJoin(retry_parts, ""));
   }
   // Set timeout.
@@ -598,7 +598,7 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
       static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry(),
       resolver_->current_listener_.http_filters,
-      resolver_->current_virtual_host_, route, cluster_weight,
+      resolver_->current_virtual_host_.value(), route, cluster_weight,
       resolver_->args_);
   if (!result.ok()) return result.status();
   for (const auto& p : result->per_filter_configs) {
@@ -688,11 +688,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
       [&](const std::vector<
           XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
           /*weighted_clusters*/) {
-        const uint32_t key =
-            rand() %
-            entry
-                .weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
-                .range_end;
+        const uint32_t key = absl::Uniform<uint32_t>(
+            absl::BitGen(), 0, entry.weighted_cluster_state.back().range_end);
         // Find the index in weighted clusters corresponding to key.
         size_t mid = 0;
         size_t start_index = 0;
@@ -999,7 +996,7 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
   if (xds_client_ == nullptr) {
     return;
   }
-  current_virtual_host_.routes.clear();
+  current_virtual_host_.reset();
   Result result;
   result.addresses.emplace();
   result.service_config = ServiceConfigImpl::Create(args_, "{}");
@@ -1051,7 +1048,7 @@ XdsResolver::CreateServiceConfig() {
 }
 
 void XdsResolver::GenerateResult() {
-  if (current_virtual_host_.routes.empty()) return;
+  if (!current_virtual_host_.has_value()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   absl::Status status;

@@ -16,12 +16,18 @@
 //
 //
 
+#ifndef GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H
+#define GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H
+
 #include <condition_variable>
 
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpcpp/channel.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
@@ -334,8 +340,7 @@ class Verifier {
           EXPECT_EQ(it2->second.ok, ok);
         }
       } else {
-        gpr_log(GPR_ERROR, "Unexpected tag: %p", got_tag);
-        abort();
+        grpc_core::Crash(absl::StrFormat("Unexpected tag: %p", got_tag));
       }
     }
   }
@@ -352,3 +357,5 @@ class Verifier {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H

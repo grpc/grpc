@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
@@ -60,8 +61,8 @@ namespace grpc_core {
 
 TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 
-UniqueTypeName XdsHostOverrideTypeName() {
-  static UniqueTypeName::Factory kFactory("xds_host_override");
+UniqueTypeName XdsOverrideHostTypeName() {
+  static UniqueTypeName::Factory kFactory("xds_override_host");
   return kFactory.Create();
 }
 
@@ -106,9 +107,7 @@ void MaybeUpdateServerInitialMetadata(
     server_initial_metadata->Append(
         "set-cookie", Slice::FromCopiedString(absl::StrJoin(parts, "; ")),
         [](absl::string_view error, const Slice&) {
-          gpr_log(GPR_ERROR, "ERROR ADDING set-cookie METADATA: %s",
-                  std::string(error).c_str());
-          GPR_ASSERT(false);
+          Crash(absl::StrCat("ERROR ADDING set-cookie METADATA: ", error));
         });
   }
 }
@@ -150,7 +149,7 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     }
   }
   // Check to see if we have a host override cookie.
-  auto cookie_value = GetHostOverrideFromCookie(
+  auto cookie_value = GetOverrideHostFromCookie(
       call_args.client_initial_metadata, *cookie_config->name);
   if (cookie_value.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_stateful_session_filter_trace)) {
@@ -161,7 +160,7 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     }
     // We have a valid cookie, so add the call attribute to be used by the
     // xds_override_host LB policy.
-    service_config_call_data->SetCallAttribute(XdsHostOverrideTypeName(),
+    service_config_call_data->SetCallAttribute(XdsOverrideHostTypeName(),
                                                *cookie_value);
   }
   // Intercept server initial metadata.
@@ -194,7 +193,7 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
 }
 
 absl::optional<absl::string_view>
-StatefulSessionFilter::GetHostOverrideFromCookie(
+StatefulSessionFilter::GetOverrideHostFromCookie(
     const ClientMetadataHandle& client_initial_metadata,
     absl::string_view cookie_name) {
   // Check to see if the cookie header is present.

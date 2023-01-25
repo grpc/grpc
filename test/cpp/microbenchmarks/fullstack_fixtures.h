@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -323,4 +324,4 @@ typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H

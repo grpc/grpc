@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_EV_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -91,6 +91,8 @@ typedef struct grpc_event_engine_vtable {
   void (*shutdown_engine)(void);
   bool (*add_closure_to_background_poller)(grpc_closure* closure,
                                            grpc_error_handle error);
+
+  void (*fd_set_pre_allocated)(grpc_fd* fd);
 } grpc_event_engine_vtable;
 
 // register a new event engine factory
@@ -179,6 +181,9 @@ void grpc_fd_set_writable(grpc_fd* fd);
 //
 void grpc_fd_set_error(grpc_fd* fd);
 
+// Set the fd to be preallocated
+void grpc_fd_set_pre_allocated(grpc_fd* fd);
+
 // pollset_posix functions
 
 // Add an fd to a pollset
@@ -205,4 +210,4 @@ void grpc_shutdown_background_closure();
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 
-#endif  // GRPC_CORE_LIB_IOMGR_EV_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H

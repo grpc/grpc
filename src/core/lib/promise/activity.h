@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_ACTIVITY_H
-#define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
+#define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -387,23 +387,32 @@ class FreestandingActivity : public Activity, private Wakeable {
 };
 
 // Implementation details for an Activity of an arbitrary type of promise.
-// There should exist a static function:
+// There should exist an inner template class `BoundScheduler` that provides
+// the following interface:
 // struct WakeupScheduler {
 //   template <typename ActivityType>
-//   void ScheduleWakeup(ActivityType* activity);
+//   class BoundScheduler {
+//    public:
+//     BoundScheduler(WakeupScheduler);
+//     void ScheduleWakeup();
+//   };
 // };
-// This function should arrange that activity->RunScheduledWakeup() be invoked
-// at the earliest opportunity.
+// The ScheduleWakeup function should arrange that
+// static_cast<ActivityType*>(this)->RunScheduledWakeup() be invoked at the
+// earliest opportunity.
 // It can assume that activity will remain live until RunScheduledWakeup() is
 // invoked, and that a given activity will not be concurrently scheduled again
 // until its RunScheduledWakeup() has been invoked.
-// We use private inheritance here as a way of getting private members for
-// each of the contexts.
+// We use private inheritance here as a way of getting private members for each
+// of the contexts.
 // TODO(ctiller): We can probably reconsider the private inheritance here
 // when we move away from C++11 and have more powerful template features.
 template <class F, class WakeupScheduler, class OnDone, typename... Contexts>
-class PromiseActivity final : public FreestandingActivity,
-                              private ActivityContexts<Contexts...> {
+class PromiseActivity final
+    : public FreestandingActivity,
+      public WakeupScheduler::template BoundScheduler<
+          PromiseActivity<F, WakeupScheduler, OnDone, Contexts...>>,
+      private ActivityContexts<Contexts...> {
  public:
   using Factory = OncePromiseFactory<void, F>;
   using ResultType = typename Factory::Promise::Result;
@@ -411,8 +420,9 @@ class PromiseActivity final : public FreestandingActivity,
   PromiseActivity(F promise_factory, WakeupScheduler wakeup_scheduler,
                   OnDone on_done, Contexts&&... contexts)
       : FreestandingActivity(),
+        WakeupScheduler::template BoundScheduler<PromiseActivity>(
+            std::move(wakeup_scheduler)),
         ActivityContexts<Contexts...>(std::forward<Contexts>(contexts)...),
-        wakeup_scheduler_(std::move(wakeup_scheduler)),
         on_done_(std::move(on_done)) {
     // Lock, construct an initial promise from the factory, and step it.
     // This may hit a waiter, which could expose our this pointer to other
@@ -482,7 +492,7 @@ class PromiseActivity final : public FreestandingActivity,
     }
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
-      wakeup_scheduler_.ScheduleWakeup(this);
+      this->ScheduleWakeup();
     } else {
       // Already a wakeup scheduled for later, drop ref.
       WakeupComplete();
@@ -564,8 +574,6 @@ class PromiseActivity final : public FreestandingActivity,
   }
 
   using Promise = typename Factory::Promise;
-  // Scheduler for wakeups
-  GPR_NO_UNIQUE_ADDRESS WakeupScheduler wakeup_scheduler_;
   // Callback on completion of the promise.
   GPR_NO_UNIQUE_ADDRESS OnDone on_done_;
   // Has execution completed?
@@ -601,4 +609,4 @@ ActivityPtr MakeActivity(Factory promise_factory,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_ACTIVITY_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H

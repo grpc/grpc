@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
+#define GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
 
 #include <grpc/support/port_platform.h>
 
@@ -38,14 +38,17 @@ class LoggingSink {
  public:
   class Config {
    public:
+    // Constructs a default config which has logging disabled
+    Config() {}
     Config(uint32_t max_metadata_bytes, uint32_t max_message_bytes)
-        : max_metadata_bytes_(max_metadata_bytes),
+        : enabled_(true),
+          max_metadata_bytes_(max_metadata_bytes),
           max_message_bytes_(max_message_bytes) {}
-    bool MetadataLoggingEnabled() { return max_metadata_bytes_ != 0; }
-    bool MessageLoggingEnabled() { return max_message_bytes_ != 0; }
-    bool ShouldLog() {
-      return MetadataLoggingEnabled() || MessageLoggingEnabled();
-    }
+    bool ShouldLog() { return enabled_; }
+
+    uint32_t max_metadata_bytes() const { return max_metadata_bytes_; }
+
+    uint32_t max_message_bytes() const { return max_message_bytes_; }
 
     bool operator==(const Config& other) const {
       return max_metadata_bytes_ == other.max_metadata_bytes_ &&
@@ -53,8 +56,9 @@ class LoggingSink {
     }
 
    private:
-    uint32_t max_metadata_bytes_;
-    uint32_t max_message_bytes_;
+    bool enabled_ = false;
+    uint32_t max_metadata_bytes_ = 0;
+    uint32_t max_message_bytes_ = 0;
   };
 
   struct Entry {
@@ -83,9 +87,9 @@ class LoggingSink {
 
     struct Address {
       enum class Type { kUnknown = 0, kIpv4, kIpv6, kUnix };
-      Type type;
+      Type type = LoggingSink::Entry::Address::Type::kUnknown;
       std::string address;
-      uint32_t ip_port;
+      uint32_t ip_port = 0;
     };
 
     uint64_t call_id = 0;
@@ -102,7 +106,8 @@ class LoggingSink {
 
   virtual ~LoggingSink() = default;
 
-  virtual Config FindMatch(bool is_client, absl::string_view path) = 0;
+  virtual Config FindMatch(bool is_client, absl::string_view service,
+                           absl::string_view method) = 0;
 
   virtual void LogEntry(Entry entry) = 0;
 };
@@ -110,4 +115,4 @@ class LoggingSink {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H

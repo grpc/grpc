@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -35,6 +35,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/thread_pool.h"
@@ -132,7 +133,7 @@ class PosixEnginePollerManager
 // All methods require an ExecCtx to already exist on the thread's stack.
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
 // event engine is shut down before we shut down iomgr.
-class PosixEventEngine final : public EventEngine,
+class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                public grpc_core::KeepsGrpcInitialized {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
@@ -164,8 +165,20 @@ class PosixEventEngine final : public EventEngine,
 
   ~PosixEventEngine() override;
 
+  std::unique_ptr<PosixEndpointWithFdSupport> CreatePosixEndpointFromFd(
+      int fd, const EndpointConfig& config,
+      MemoryAllocator memory_allocator) override;
+
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
+      const EndpointConfig& config,
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      override;
+
+  absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
+  CreatePosixListener(
+      PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
@@ -243,4 +256,4 @@ class PosixEventEngine final : public EventEngine,
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H

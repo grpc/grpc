@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
-#define GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_POLLING_ENTITY_H
+#define GRPC_SRC_CORE_LIB_IOMGR_POLLING_ENTITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -71,4 +71,4 @@ template <>
 struct ContextType<grpc_polling_entity> {};
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_POLLING_ENTITY_H
