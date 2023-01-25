@@ -19,6 +19,7 @@ import tempfile
 import time
 import threading
 import unittest
+import os
 
 from grpc._cython import cygrpc
 
@@ -63,6 +64,8 @@ _GDB_TIMEOUT_S = 40
 @unittest.skipUnless(
     sys.platform.startswith("linux"),
     "not supported on windows, and fork+exec networking blocked on mac")
+@unittest.skipUnless(os.getenv("GRPC_ENABLE_FORK_SUPPORT") is not None,
+                     "Core must be built with fork support to run this test.")
 class ForkInteropTest(unittest.TestCase):
 
     def setUp(self):
