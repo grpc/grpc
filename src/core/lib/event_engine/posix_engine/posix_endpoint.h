@@ -564,6 +564,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
   grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address_;
 
+  // Maintain a shared_ptr to mem_quota_ to ensure the underlying basic memory
+  // quota is not deleted until the endpoint is destroyed.
+  grpc_core::MemoryQuotaRefPtr mem_quota_;
   grpc_core::MemoryOwner memory_owner_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
 
@@ -700,7 +703,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
 
 // Create a PosixEndpoint.
 // A shared_ptr of the EventEngine is passed to the endpoint to ensure that
-// the event engine is alive for the lifetime of the endpoint. The ownership
+// the EventEngine is alive for the lifetime of the endpoint. The ownership
 // of the EventHandle is transferred to the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,

@@ -868,6 +868,7 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -1621,6 +1622,7 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -2198,6 +2200,7 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -2565,6 +2568,7 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -3645,6 +3649,7 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -3893,6 +3898,7 @@ libs:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -5502,15 +5508,17 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/cf_event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -7368,6 +7376,7 @@ targets:
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -7599,6 +7608,7 @@ targets:
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -7741,17 +7751,19 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9533,17 +9545,20 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
-  - test/core/event_engine/test_suite/server_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9921,17 +9936,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/posix/posix_engine_test_utils.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9955,15 +9971,16 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_event_engine_connect_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9974,18 +9991,22 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
-  - test/core/event_engine/test_suite/server_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux

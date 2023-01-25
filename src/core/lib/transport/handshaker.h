@@ -75,7 +75,7 @@ struct HandshakerArgs {
   // individual handshakers.
   void* user_data = nullptr;
   // Deadline associated with the handshake.
-  // TODO(anramach): Move this out of handshake args after event engine
+  // TODO(anramach): Move this out of handshake args after EventEngine
   // is the default.
   Timestamp deadline;
 };

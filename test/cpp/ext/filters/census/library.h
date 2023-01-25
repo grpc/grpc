@@ -141,6 +141,7 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
     // the individual tests.
     ::opencensus::trace::exporter::SpanExporter::RegisterHandler(
         absl::WrapUnique(traces_recorder_));
+    grpc_init();
   }
 
   static void TearDownTestSuite() {

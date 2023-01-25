@@ -136,6 +136,8 @@ EXTERNAL_DEPS = {
         'address_sorting',
     'ares.h':
         'cares',
+    'google/api/monitored_resource.pb.h':
+        'google/api:monitored_resource_cc_proto',
     'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
         'googleapis_trace_grpc_service',
     'google/logging/v2/logging.grpc.pb.h':
@@ -539,7 +541,7 @@ def make_library(library):
     hdrs = sorted(consumes[library])
     # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
     # which is in grpc, which is illegal but hard to change
-    # once event engine lands we can clean this up
+    # once EventEngine lands we can clean this up
     deps = Choices(library, {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']}
                    if library.startswith('//test/') else {})
     external_deps = Choices(None, {})
@@ -563,7 +565,7 @@ def make_library(library):
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not dep.startswith('//'):
+            if not ('//' in dep):
                 dep = '//:' + dep
             deps.add(dep, hdr)
             continue

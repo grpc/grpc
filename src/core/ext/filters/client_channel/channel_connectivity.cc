@@ -236,7 +236,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   grpc_closure on_complete_;
 
   // timer_handle_ might be accessed in parallel from multiple threads, e.g.
-  // timer callback fired immediately on an event engine thread before
+  // timer callback fired immediately on an EventEngine thread before
   // RunAfter() returns.
   absl::Mutex mu_;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>

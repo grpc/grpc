@@ -43,6 +43,10 @@ inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(10); }
 inline bool IsPromiseBasedServerCallEnabled() {
   return IsExperimentEnabled(11);
 }
+inline bool IsTransportSuppliesClientLatencyEnabled() {
+  return IsExperimentEnabled(12);
+}
+inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(13); }
 
 struct ExperimentMetadata {
   const char* name;
@@ -50,7 +54,7 @@ struct ExperimentMetadata {
   bool default_value;
 };
 
-constexpr const size_t kNumExperiments = 12;
+constexpr const size_t kNumExperiments = 14;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core
