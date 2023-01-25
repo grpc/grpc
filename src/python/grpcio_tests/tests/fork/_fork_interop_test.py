@@ -23,11 +23,6 @@ import unittest
 from grpc._cython import cygrpc
 
 from tests.fork import methods
-_COUNTER = 0
-def mark():
-    global _COUNTER
-    import sys; sys.stderr.write("BBBBBBBBBBBBBBBBBBBBB {}\n".format(_COUNTER)); sys.stderr.flush()
-    _COUNTER += 1
 
 def _dump_streams(name, streams):
     assert len(streams) == 2
@@ -37,7 +32,6 @@ def _dump_streams(name, streams):
         stream.close()
     sys.stderr.flush()
 
-# TODO: Parameterize over epoll1 and poll.
 # New instance of multiprocessing.Process using fork without exec can and will
 # freeze if the Python process has any other threads running. This includes the
 # additional thread spawned by our _runner.py class. So in order to test our
@@ -49,23 +43,18 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     from grpc._cython import cygrpc
     from tests.fork import methods
 
-    # TODO: Better import path for this.
     from src.python.grpcio_tests.tests.fork import native_debug
 
     native_debug.install_failure_signal_handler()
 
-    # methods.dump_object_map()
-
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
     os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
     os.environ['GRPC_ENABLE_FORK_SUPPORT'] = 'true'
-    sys.stderr.write("Running test case.\\n"); sys.stderr.flush()
     methods.TestCase.%s.run_test({
       'server_host': 'localhost',
       'server_port': %d,
       'use_tls': False
     })
-    sys.stderr.write("Ran test case.\\n"); sys.stderr.flush()
 """
 _SUBPROCESS_TIMEOUT_S = 80
 _GDB_TIMEOUT_S = 40
@@ -215,7 +204,7 @@ class ForkInteropTest(unittest.TestCase):
             self.assertTrue(False, "Parent process timed out.")
         finally:
             _dump_streams("Parent", streams)
-            # _dump_streams("Server", self._streams)
+            _dump_streams("Server", self._streams)
 
 
 if __name__ == '__main__':

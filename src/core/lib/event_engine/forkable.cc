@@ -21,12 +21,9 @@
 #include <pthread.h>
 
 #include "absl/container/flat_hash_set.h"
-// #include "absl/container/btree_set.h"
 
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
-
-#include <iostream>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -53,32 +50,23 @@ void RegisterForkHandlers() {
 };
 
 void PrepareFork() {
-  std::cerr << "AAAAAAAAAAAAAAAAAAa Entering PrepareFork" << std::endl << std::flush;
   grpc_core::MutexLock lock(g_mu.get());
-  // for (auto* forkable : *g_forkables) {
   for (auto forkable_iter = g_forkables->rbegin(); forkable_iter != g_forkables->rend(); ++forkable_iter) {
-    std::cerr << "AAAAAAAAAAAAAAAAAAa Calling forkable->PrepareFork " << *forkable_iter << std::endl << std::flush;
     (*forkable_iter)->PrepareFork();
-    std::cerr << "AAAAAAAAAAAAAAAAAAa Called forkable->PrepareFork " << *forkable_iter << std::endl << std::flush;
   }
-  std::cerr << "AAAAAAAAAAAAAAAAAAa Exiting PrepareFork" << std::endl << std::flush;
 }
 void PostforkParent() {
-  std::cerr << "AAAAAAAAAAAAAAAAAAa Entering PostforkParent" << std::endl << std::flush;
   grpc_core::MutexLock lock(g_mu.get());
   for (auto* forkable : *g_forkables) {
     forkable->PostforkParent();
   }
-  std::cerr << "AAAAAAAAAAAAAAAAAAa Exiting PostforkParent" << std::endl << std::flush;
 }
 
 void PostforkChild() {
-  std::cerr << "AAAAAAAAAAAAAAAAAAa Entering PostforkChild" << std::endl << std::flush;
   grpc_core::MutexLock lock(g_mu.get());
   for (auto* forkable : *g_forkables) {
     forkable->PostforkChild();
   }
-  std::cerr << "AAAAAAAAAAAAAAAAAAa Exiting PostforkChild" << std::endl << std::flush;
 }
 
 void ManageForkable(Forkable* forkable) {
@@ -97,8 +85,6 @@ void StopManagingForkable(Forkable* forkable) {
 }  // namespace grpc_event_engine
 
 #else  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
-#error This isn't working
 
 namespace grpc_event_engine {
 namespace experimental {

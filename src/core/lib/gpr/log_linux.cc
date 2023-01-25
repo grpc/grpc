@@ -95,8 +95,8 @@ void gpr_default_log(gpr_log_func_args* args) {
   }
 
   std::string prefix = absl::StrFormat(
-      "%s%s.%09" PRId32 " pid%d %7ld %s:%d]", gpr_log_severity_string(args->severity),
-      time_buffer, now.tv_nsec, getpid(), tid, display_file, args->line);
+      "%s%s.%09" PRId32 " %7ld %s:%d]", gpr_log_severity_string(args->severity),
+      time_buffer, now.tv_nsec, tid, display_file, args->line);
 
   absl::optional<std::string> stack_trace =
       gpr_should_log_stacktrace(args->severity)

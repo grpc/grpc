@@ -24,8 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include <iostream>
-
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -586,11 +584,7 @@ void PollPoller::KickExternal(bool ext) {
   GPR_ASSERT(wakeup_fd_->Wakeup().ok());
 }
 
-void PollPoller::Kick() {
-  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Entering PollPoller::Kick");
-  KickExternal(true);
-  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Exiting PollPoller::Kick");
-}
+void PollPoller::Kick() { KickExternal(true); }
 
 void PollPoller::PollerHandlesListAddHandle(PollEventHandle* handle) {
   handle->PollerHandlesListPos().next = poll_handles_list_head_;

@@ -73,13 +73,6 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
             srcs = [stem + ".cpp"],
             deps = deps + ["@local_config_python//:python_headers"],
             linkshared = 1,
-	    linkopts = [
-	    	"-lpthread",
-	    ],
-	    defines = [
-	    	"GRPC_ENABLE_FORK_SUPPORT=1",
-		"GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1",
-	    ],
         )
         shared_objects.append(shared_object_name)
 

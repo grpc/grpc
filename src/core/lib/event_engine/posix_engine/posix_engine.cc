@@ -24,8 +24,6 @@
 #include <type_traits>
 #include <utility>
 
-#include <iostream>
-
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
@@ -313,13 +311,10 @@ void PosixEnginePollerManager::Run(absl::AnyInvocable<void()> cb) {
 void PosixEnginePollerManager::TriggerShutdown() {
   GPR_DEBUG_ASSERT(trigger_shutdown_called_ == false);
   trigger_shutdown_called_ = true;
-  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Entering PosixEnginePollerManager::TriggerShutdown");
   // If the poller is external, dont try to shut it down. Otherwise
   // set poller state to PollerState::kShuttingDown.
-  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Resetting poller_state_)");
   if (poller_state_.exchange(PollerState::kShuttingDown) ==
       PollerState::kExternal) {
-    gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Unsetting poller_)");
     poller_ = nullptr;
     return;
   }
@@ -410,7 +405,6 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 
 PosixEventEngine::~PosixEventEngine() {
   {
-    gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Entering ~PosixEventEngine");
     grpc_core::MutexLock lock(&mu_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       for (auto handle : known_handles_) {
@@ -423,14 +417,10 @@ PosixEventEngine::~PosixEventEngine() {
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
-  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Calling timer_manager_.Shutdown()");
   timer_manager_.Shutdown();
-  gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Called timer_manager_.Shutdown()");
 #ifdef GRPC_POSIX_SOCKET_TCP
   if (poller_manager_ != nullptr) {
-    gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Calling poller_manager_->TriggerShutdown()");
     poller_manager_->TriggerShutdown();
-    gpr_log(GPR_INFO, "BBBBBBBBBBBBBBBBBBBBB Called poller_manager_->TriggerShutdown()");
   }
 #endif  // GRPC_POSIX_SOCKET_TCP
   executor_->Quiesce();

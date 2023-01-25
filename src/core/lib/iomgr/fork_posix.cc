@@ -28,8 +28,6 @@
 
 #include <string.h>
 
-#include <iostream>
-
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

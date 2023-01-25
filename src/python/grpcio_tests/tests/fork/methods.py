@@ -38,12 +38,6 @@ _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
 _GDB_TIMEOUT_S = 40
 
-_COUNTER = 0
-def mark():
-    global _COUNTER
-    import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAA {}\n".format(_COUNTER)); sys.stderr.flush()
-    _COUNTER += 1
-
 
 def _channel(args):
     target = '{}:{}'.format(args['server_host'], args['server_port'])
@@ -71,13 +65,9 @@ def _async_unary(stub):
         response_size=size,
         payload=messages_pb2.Payload(body=b'\x00' * 271828))
 
-    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Creating async_unary future\n".format(os.getpid())); sys.stderr.flush()
     response_future = stub.UnaryCall.future(request, timeout=_RPC_TIMEOUT_S)
-    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Created async_unary future\n".format(os.getpid())); sys.stderr.flush()
     response = response_future.result()
-    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Got result\n".format(os.getpid())); sys.stderr.flush()
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
-    sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA {} Validated result\n".format(os.getpid())); sys.stderr.flush()
 
 
 def _blocking_unary(stub):
@@ -140,26 +130,14 @@ class _ChildProcess(object):
         self._child_pid = None
         self._rc = None
         self._args = args
-        # self._stdout = tempfile.TemporaryFile()
-        # self._stderr = tempfile.TemporaryFile()
 
         self._task = task
-
-
-        # self._process = multiprocessing.POpen()
-        # self._process = multiprocessing.Process(target=record_exceptions)
 
     def _child_main(self):
         import faulthandler
         faulthandler.enable(all_threads=True)
 
         try:
-            sys.stderr.write("In _child_main\n"); sys.stderr.flush()
-            # stdout = open(self._stdout_path, 'w')
-            # stderr = open(self._stderr_path, 'w')
-            # # stdout_copy = os.dup(sys.stdout.fileno())
-            # os.dup2(stdout.fileno(), sys.stdout.fileno())
-            # os.dup2(stderr.fileno(), sys.stderr.fileno())
             self._task(*self._args)
         except grpc.RpcError as rpc_error:
             traceback.print_exc()
@@ -167,9 +145,6 @@ class _ChildProcess(object):
         except Exception as e:  # pylint: disable=broad-except
             traceback.print_exc()
             self._exceptions.put(e)
-        # finally:
-        #     stdout.close()
-        #     stderr.close()
         sys.exit(0)
 
     def _orchestrate_child_gdb(self):
@@ -177,13 +152,9 @@ class _ChildProcess(object):
             "gdb",
             "-ex", "set confirm off",
             "-ex", "attach {}".format(os.getpid()),
-            # "-ex", "set follow-fork-mode child",
-            "-ex", "set follow-fork-mode parent",
+            "-ex", "set follow-fork-mode child",
             "-ex", "continue",
             "-ex", "bt",
-            # "-ex", "echo done_with_bt",
-            # "-ex", "frame 1",
-            # "-ex", "p *poller_",
         ]
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
         sys.stderr.write("Invoking gdb\n")
@@ -195,17 +166,13 @@ class _ChildProcess(object):
 
     def start(self):
         import sys; sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forking\n")
+
+        # NOTE: Try uncommenting the following line if the child is segfaulting.
         # self._orchestrate_child_gdb()
         ret = os.fork()
-        # The child process is seemingly never reaching this line. It also doesn't
-        # like either the core postfork handlers or the Python-level postfork
-        # handlers are running. It must be tied up doing something else. Maybe attach
-        # gdb to it?
         if ret == 0:
-            sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forked child\n")
             self._child_main()
         else:
-            sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forked parent\n")
             self._child_pid = ret
 
 
@@ -213,9 +180,7 @@ class _ChildProcess(object):
         total = 0.0
         wait_interval = 1.0
         while total < timeout:
-            # self._rc, termination = os.waitpid(self._child_pid, os.WNOHANG)
             ret, termination = os.waitpid(self._child_pid, os.WNOHANG)
-            # if os.WIFEXITED(termination) or os.WIFSIGNALED(termination):
             if ret == self._child_pid:
                 self._rc = os.waitstatus_to_exitcode(termination)
                 return True
@@ -260,7 +225,6 @@ class _ChildProcess(object):
         sys.stderr.write("Joined process\n"); sys.stderr.flush()
         sys.stderr.write("Exit code: {}\n".format(self._rc))
         try:
-            # TODO: This method seems to be giving bad results. Fix.
             if not terminated:
                 self._print_backtraces()
                 raise RuntimeError('Child process did not terminate')
@@ -274,13 +238,6 @@ class _ChildProcess(object):
             except queue.Empty:
                 pass
         except:
-            # stdout = open(self._stdout_path, 'r')
-            # stderr = open(self._stderr_path, 'r')
-            # sys.stderr.write("STDOUT:\n{}\n".format(stdout.read()))
-            # sys.stderr.write("STDERR:\n{}\n".format(stderr.read()))
-            # sys.stderr.flush()
-            # stdout.close()
-            # stderr.close()
             raise
 
 
@@ -310,19 +267,12 @@ def _async_unary_new_channel(channel, args):
             _async_unary(child_stub)
             child_channel.close()
 
-    mark()
     stub = test_pb2_grpc.TestServiceStub(channel)
-    mark()
     _async_unary(stub)
-    mark()
     child_process = _ChildProcess(child_target)
-    mark()
     child_process.start()
-    mark()
     _async_unary(stub)
-    mark()
     child_process.finish()
-    mark()
 
 
 def _blocking_unary_same_channel(channel):
@@ -362,7 +312,6 @@ def _close_channel_before_fork(channel, args):
 
     def child_target():
         new_channel.close()
-        sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA In child_target\n"); sys.stderr.flush()
         with _channel(args) as child_channel:
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
             _blocking_unary(child_stub)
@@ -386,7 +335,6 @@ def _connectivity_watch(channel, args):
 
     def child_target():
 
-        sys.stderr.write("In child target\n"); sys.stderr.flush()
         child_channel_ready_event = threading.Event()
 
         def child_connectivity_callback(state):
@@ -596,6 +544,7 @@ class TestCase(enum.Enum):
                                       self.name)
         channel.close()
 
+# Useful if needing to find a block of code from an address in an SO.
 def dump_object_map():
     with open("/proc/self/maps", "r") as f:
         sys.stderr.write("=============== /proc/self/maps ===============\n")

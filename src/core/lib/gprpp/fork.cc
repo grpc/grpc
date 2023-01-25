@@ -27,8 +27,6 @@
 #include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
-#include <iostream>
-
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
 //       AROUND VERY SPECIFIC USE CASES.
@@ -192,7 +190,6 @@ void Fork::DoDecExecCtxCount() {
 
 void Fork::SetResetChildPollingEngineFunc(
     Fork::child_postfork_func reset_child_polling_engine) {
-  std::cerr << "AAAAAAAAAAAAAAAAAAAAAAA SetResetChildPollingEngineFunc: " << (void*)reset_child_polling_engine  << std::endl << std::flush;
   if (reset_child_polling_engine_ == nullptr) {
       reset_child_polling_engine_ = new std::vector<Fork::child_postfork_func>();
   }
