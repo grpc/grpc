@@ -85,6 +85,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// caller - the EventEngine will never delete a Closure, and upon
   /// cancellation, the EventEngine will simply forget the Closure exists. The
   /// caller is responsible for all necessary cleanup.
+
   class Closure {
    public:
     Closure() = default;
@@ -103,12 +104,14 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   struct TaskHandle {
     intptr_t keys[2];
   };
+  static constexpr TaskHandle kInvalidTaskHandle{-1, -1};
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
   };
+  static constexpr ConnectionHandle kInvalidConnectionHandle{-1, -1};
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///

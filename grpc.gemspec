@@ -1039,6 +1039,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/default_event_engine.h )
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.cc )
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.h )
+  s.files += %w( src/core/lib/event_engine/event_engine.cc )
   s.files += %w( src/core/lib/event_engine/executor/executor.h )
   s.files += %w( src/core/lib/event_engine/forkable.cc )
   s.files += %w( src/core/lib/event_engine/forkable.h )
