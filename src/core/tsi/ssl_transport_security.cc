@@ -1119,6 +1119,7 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 // --- tsi_handshaker_result methods implementation. ---
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
+  gpr_log(GPR_ERROR, "gregorycooke");
   tsi_result result = TSI_OK;
   const unsigned char* alpn_selected = nullptr;
   unsigned int alpn_selected_len;
@@ -1189,7 +1190,10 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (ca_cert != nullptr) {
     result = peer_property_from_x509_subject(
         ca_cert, &peer->properties[peer->property_count], true);
-    if (result != TSI_OK) return result;
+    if (result != TSI_OK) {
+      gpr_log(GPR_ERROR, "resut: %d", static_cast<int>(result));
+      return result;
+    }
     peer->property_count++;
   }
 

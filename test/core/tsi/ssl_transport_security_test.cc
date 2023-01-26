@@ -191,7 +191,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
       TSI_OK);
 }
 
-static void check_ca_cert_subject(ssl_tsi_test_fixture* ssl_fixture,
+static void check_ca_cert_subject(ssl_tsi_test_fixture* /*ssl_fixture*/,
                                   const tsi_peer* peer) {
   const tsi_peer_property* ca_cert_subject =
       tsi_peer_get_property_by_name(peer, TSI_X509_CA_SUBJECT_PEER_PROPERTY);
