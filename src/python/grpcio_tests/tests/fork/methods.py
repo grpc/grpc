@@ -181,7 +181,7 @@ class _ChildProcess(object):
         while total < timeout:
             ret, termination = os.waitpid(self._child_pid, os.WNOHANG)
             if ret == self._child_pid:
-                self._rc = os.waitstatus_to_exitcode(termination)
+                self._rc = termination
                 return True
             time.sleep(wait_interval)
             total += wait_interval
