@@ -167,9 +167,6 @@ class _ChildProcess(object):
         time.sleep(5)
 
     def start(self):
-        import sys
-        sys.stderr.write("AAAAAAAAAAAAAAAAAAAAAA forking\n")
-
         # NOTE: Try uncommenting the following line if the child is segfaulting.
         # self._orchestrate_child_gdb()
         ret = os.fork()
@@ -227,12 +224,7 @@ class _ChildProcess(object):
             sys.stderr.flush()
 
     def finish(self):
-        import sys
-        sys.stderr.write("Joining process\n")
-        sys.stderr.flush()
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
-        sys.stderr.write("Joined process\n")
-        sys.stderr.flush()
         sys.stderr.write("Exit code: {}\n".format(self._rc))
         try:
             if not terminated:

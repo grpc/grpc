@@ -197,13 +197,7 @@ class ForkInteropTest(unittest.TestCase):
         except subprocess.TimeoutExpired:
             sys.stderr.write("gdb stacktrace generation timed out.\n")
         finally:
-            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
-                stream.seek(0)
-                sys.stderr.write("gdb {}:\n{}\n".format(
-                    stream_name,
-                    stream.read().decode("ascii")))
-                stream.close()
-            sys.stderr.flush()
+            _dump_streams("gdb", streams)
 
     def _verifyTestCase(self, test_case):
         script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name, self._port)
