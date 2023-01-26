@@ -627,6 +627,12 @@ void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 // nullptr.
 Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 
+void Epoll1Poller::PrepareFork() {}
+
+void Epoll1Poller::PostforkParent() {}
+
+void Epoll1Poller::PostforkChild() {}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
