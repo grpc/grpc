@@ -953,6 +953,7 @@ struct ClientCallData::RecvInitialMetadata final {
       case kRespondedButNeedToClosePipe:
         return true;
     }
+    GPR_UNREACHABLE_CODE(return false);
   }
 };
 

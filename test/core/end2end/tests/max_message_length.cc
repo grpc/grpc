@@ -596,6 +596,9 @@ static void test_max_receive_message_length_on_compressed_request(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
+  // WARNING!!
+  // It's believed the following line (and the associated batch) is the only
+  // test we have for failing a receive operation in a batch.
   cqv.Expect(tag(102), false);
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
