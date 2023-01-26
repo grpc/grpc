@@ -24,11 +24,11 @@
 #include <atomic>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -297,7 +297,7 @@ class ClientChannel {
   //
   mutable Mutex resolution_mu_;
   // List of calls queued waiting for resolver result.
-  std::set<grpc_call_element*> resolver_queued_calls_
+  absl::flat_hash_set<grpc_call_element*> resolver_queued_calls_
       ABSL_GUARDED_BY(resolution_mu_);
   // Data from service config.
   absl::Status resolver_transient_failure_error_
@@ -315,7 +315,8 @@ class ClientChannel {
   mutable Mutex lb_mu_;
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
       ABSL_GUARDED_BY(lb_mu_);
-  std::set<LoadBalancedCall*> lb_queued_calls_ ABSL_GUARDED_BY(lb_mu_);
+  absl::flat_hash_set<LoadBalancedCall*> lb_queued_calls_
+      ABSL_GUARDED_BY(lb_mu_);
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
@@ -339,7 +340,7 @@ class ClientChannel {
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
-  std::set<SubchannelWrapper*> subchannel_wrappers_
+  absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(*work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
   grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
