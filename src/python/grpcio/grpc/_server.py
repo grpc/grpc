@@ -503,7 +503,7 @@ def _call_behavior(
                         details = 'Exception calling application: {}'.format(
                             exception)
                     except Exception:  # pylint: disable=broad-except
-                        details = 'Calling application riased unprintable Exception!'
+                        details = 'Calling application raised unprintable Exception!'
                         traceback.print_exc()
                     _LOGGER.exception(details)
                     _abort(state, rpc_event.call, cygrpc.StatusCode.unknown,
