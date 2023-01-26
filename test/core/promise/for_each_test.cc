@@ -22,7 +22,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
