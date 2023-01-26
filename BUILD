@@ -1235,6 +1235,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr",
         "//src/core:pollset",
