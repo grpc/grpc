@@ -2268,11 +2268,11 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/pollset_set.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "iomgr_fwd",
         "//:gpr",
     ],
-    visibility = ["@grpc:alt_grpc_base_legacy"],
 )
 
 grpc_cc_library(
@@ -2283,12 +2283,12 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/pollset.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "iomgr_fwd",
         "//:exec_ctx",
         "//:gpr",
     ],
-    visibility = ["@grpc:alt_grpc_base_legacy"],
 )
 
 grpc_cc_library(
