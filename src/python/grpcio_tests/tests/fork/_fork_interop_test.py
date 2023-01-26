@@ -43,7 +43,6 @@ def _dump_streams(name, streams):
 # we don't have any conflicting background threads.
 _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     import os
-    import sys
     from grpc._cython import cygrpc
     from tests.fork import methods
 
