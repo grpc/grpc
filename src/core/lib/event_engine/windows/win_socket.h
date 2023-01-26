@@ -45,6 +45,9 @@ class WinSocket final : public SocketNotifier {
     void SetError(int wsa_error);
     // Retrieve results of overlapped operation (via Winsock API)
     void GetOverlappedResult();
+    // Retrieve results of overlapped operation (via Winsock API)
+    // This overload allows acceptance of connections on new sockets.
+    void GetOverlappedResult(SOCKET sock);
     // OVERLAPPED, needed for Winsock API calls
     LPOVERLAPPED overlapped() { return &overlapped_; }
     // Data from the previous operation, set via GetOverlappedResult

@@ -117,10 +117,14 @@ void WinSocket::OpState::SetError(int wsa_error) {
 }
 
 void WinSocket::OpState::GetOverlappedResult() {
+  GetOverlappedResult(win_socket_->socket());
+}
+
+void WinSocket::OpState::GetOverlappedResult(SOCKET sock) {
   DWORD flags = 0;
   DWORD bytes;
-  BOOL success = WSAGetOverlappedResult(win_socket_->socket(), &overlapped_,
-                                        &bytes, FALSE, &flags);
+  BOOL success =
+      WSAGetOverlappedResult(sock, &overlapped_, &bytes, FALSE, &flags);
   bytes_transferred_ = bytes;
   wsa_error_ = success ? 0 : WSAGetLastError();
 }
