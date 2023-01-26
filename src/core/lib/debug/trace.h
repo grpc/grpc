@@ -19,17 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
 #define GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
 
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
-#define GRPC_THREADSAFE_TRACER
-#endif
-#endif
-
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_THREADSAFE_TRACER
 #include <atomic>
-#endif
 
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -80,11 +72,7 @@ class TraceFlag {
 #define GRPC_USE_TRACERS  // tracers on by default in OSS
 #if defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
   bool enabled() {
-#ifdef GRPC_THREADSAFE_TRACER
     return value_.load(std::memory_order_relaxed);
-#else
-    return value_;
-#endif  // GRPC_THREADSAFE_TRACER
   }
 #else
   bool enabled() { return false; }
@@ -95,20 +83,12 @@ class TraceFlag {
   friend class TraceFlagList;
 
   void set_enabled(bool enabled) {
-#ifdef GRPC_THREADSAFE_TRACER
     value_.store(enabled, std::memory_order_relaxed);
-#else
-    value_ = enabled;
-#endif
   }
 
   TraceFlag* next_tracer_;
   const char* const name_;
-#ifdef GRPC_THREADSAFE_TRACER
   std::atomic<bool> value_;
-#else
-  bool value_;
-#endif
 };
 
 #define GRPC_TRACE_FLAG_ENABLED(f) GPR_UNLIKELY((f).enabled())
