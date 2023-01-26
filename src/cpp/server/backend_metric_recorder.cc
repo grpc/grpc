@@ -33,6 +33,12 @@ bool IsUtilizationValid(double utilization) {
 // QPS must be in [0, infy).
 bool IsQpsValid(double qps) { return qps >= 0.0; }
 
+bool IsEmpty(const BackendMetricData& data) {
+  return !IsUtilizationValid(data.cpu_utilization) &&
+         !IsUtilizationValid(data.mem_utilization) && !IsQpsValid(data.qps) &&
+         data.request_cost.empty() && data.utilization.empty();
+}
+
 grpc_core::TraceFlag grpc_backend_metric_trace(false, "backend_metric");
 }  // namespace
 
@@ -167,24 +173,19 @@ ServerMetricRecorder::GetMetrics(absl::optional<uint64_t> last_seq) const {
     return std::make_pair(absl::nullopt, seq);
   }
   BackendMetricData data;
-  bool has_data = false;
   internal::MutexLock lock(&mu_);
   if (IsUtilizationValid(cpu_utilization_)) {
     data.cpu_utilization = cpu_utilization_;
-    has_data = true;
   }
   if (IsUtilizationValid(mem_utilization_)) {
     data.mem_utilization = mem_utilization_;
-    has_data = true;
   }
   if (IsQpsValid(qps_)) {
     data.qps = qps_;
-    has_data = true;
   }
   for (const auto& nu : named_utilization_) {
     data.utilization[nu.first] = nu.second;
   }
-  has_data |= !data.utilization.empty();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(
         GPR_INFO,
@@ -194,8 +195,8 @@ ServerMetricRecorder::GetMetrics(absl::optional<uint64_t> last_seq) const {
         data.utilization.size());
   }
   // We allow the sequence number returned to be possibly outdated here.
-  return std::make_pair(
-      has_data ? absl::make_optional(std::move(data)) : absl::nullopt, seq);
+  if (IsEmpty(data)) return std::make_pair(absl::nullopt, seq);
+  return std::make_pair(std::move(data), seq);
 }
 
 }  // namespace experimental
@@ -280,36 +281,30 @@ absl::optional<BackendMetricData> BackendMetricState::GetBackendMetricData() {
   // Merge metrics from the ServerMetricRecorder first since metrics recorded
   // to CallMetricRecorder takes a higher precedence.
   BackendMetricData data;
-  bool has_data = false;
   if (server_metric_recorder_ != nullptr) {
     absl::optional<BackendMetricData> server_data =
         server_metric_recorder_->GetMetrics().first;
     if (server_data.has_value()) {
       data = std::move(*server_data);
-      has_data = true;
     }
   }
   // Only overwrite if the value is set i.e. in the valid range.
   const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
   if (IsUtilizationValid(cpu)) {
     data.cpu_utilization = cpu;
-    has_data = true;
   }
   const double mem = mem_utilization_.load(std::memory_order_relaxed);
   if (IsUtilizationValid(mem)) {
     data.mem_utilization = mem;
-    has_data = true;
   }
   const double qps = qps_.load(std::memory_order_relaxed);
   if (IsQpsValid(qps)) {
     data.qps = qps;
-    has_data = true;
   }
   {
     internal::MutexLock lock(&mu_);
     data.utilization = std::move(utilization_);
     data.request_cost = std::move(request_cost_);
-    has_data |= !data.utilization.empty() || !data.request_cost.empty();
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO,
@@ -318,8 +313,8 @@ absl::optional<BackendMetricData> BackendMetricState::GetBackendMetricData() {
             this, data.cpu_utilization, data.mem_utilization, data.qps,
             data.utilization.size(), data.request_cost.size());
   }
-  if (!has_data) return absl::nullopt;
-  return absl::make_optional(std::move(data));
+  if (IsEmpty(data)) return absl::nullopt;
+  return data;
 }
 
 }  // namespace grpc

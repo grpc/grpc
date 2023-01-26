@@ -96,10 +96,6 @@ class MyTestServiceImpl : public TestServiceImpl {
     }
     AddClient(context->peer());
     absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report;
-    {
-      grpc_core::MutexLock lock(&load_report_mu_);
-      load_report = load_report_;
-    }
     if (request->has_param() && request->param().has_backend_metrics()) {
       if (!load_report.has_value()) load_report.emplace();
       const auto& request_metrics = request->param().backend_metrics();
@@ -122,9 +118,15 @@ class MyTestServiceImpl : public TestServiceImpl {
     if (load_report.has_value()) {
       auto* recorder = context->ExperimentalGetCallMetricRecorder();
       EXPECT_NE(recorder, nullptr);
-      recorder->RecordCpuUtilizationMetric(load_report->cpu_utilization())
-          .RecordMemoryUtilizationMetric(load_report->mem_utilization())
-          .RecordQpsMetric(load_report->rps_fractional());
+      if (load_report->cpu_utilization() > 0) {
+        recorder->RecordCpuUtilizationMetric(load_report->cpu_utilization());
+      }
+      if (load_report->mem_utilization() > 0) {
+        recorder->RecordMemoryUtilizationMetric(load_report->mem_utilization());
+      }
+      if (load_report->rps_fractional() > 0) {
+        recorder->RecordQpsMetric(load_report->rps_fractional());
+      }
       for (const auto& p : load_report->request_cost()) {
         char* key = static_cast<char*>(
             grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
@@ -158,15 +160,6 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
-  // TODO(roth): Once the backend utilization APIs are updated, change
-  // this to use those instead of manually constructing the data for
-  // each call.
-  void SetLoadReport(
-      absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report) {
-    grpc_core::MutexLock lock(&load_report_mu_);
-    load_report_ = std::move(load_report);
-  }
-
  private:
   void AddClient(const std::string& client) {
     grpc_core::MutexLock lock(&clients_mu_);
@@ -178,10 +171,6 @@ class MyTestServiceImpl : public TestServiceImpl {
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
-
-  grpc_core::Mutex load_report_mu_;
-  absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_
-      ABSL_GUARDED_BY(&load_report_mu_);
 };
 
 class FakeResolverResponseGeneratorWrapper {
@@ -419,14 +408,16 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const grpc_core::DebugLocation& debug_location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       std::function<bool(const Status&)> continue_predicate,
-      int timeout_ms = 15000) {
+      EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
     absl::Time deadline = absl::InfiniteFuture();
     if (timeout_ms != 0) {
       deadline = absl::Now() +
                  (absl::Milliseconds(timeout_ms) * grpc_test_slowdown_factor());
     }
     while (true) {
-      Status status = SendRpc(stub);
+      Status status =
+          SendRpc(stub, /*response=*/nullptr, /*timeout_ms=*/1000,
+                  /*wait_for_ready=*/false, /*request=*/request_ptr);
       if (!continue_predicate(status)) return;
       EXPECT_LE(absl::Now(), deadline)
           << debug_location.file() << ":" << debug_location.line();
@@ -449,8 +440,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(int port = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
-          orca_service_(&server_metric_recorder_,
-                        experimental::OrcaService::Options()) {}
+          orca_service_(
+              &server_metric_recorder_,
+              experimental::OrcaService::Options().set_min_report_duration(
+                  absl::Seconds(0.1))) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
@@ -2759,6 +2752,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   EXPECT_EQ("oob_backend_metric_test_lb",
             channel->GetLoadBalancingPolicyName());
   // Check report seen by client.
+  bool report_seen = false;
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
@@ -2769,10 +2763,12 @@ TEST_F(OobBackendMetricTest, Basic) {
       EXPECT_THAT(
           report->second.utilization(),
           ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.4)));
+      report_seen = true;
       break;
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
+  ASSERT_TRUE(report_seen);
 
   // Now update the utilization data on the server.
   // Note that the server may send a new report while we're updating these,
@@ -2783,6 +2779,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.5);
   servers_[0]->server_metric_recorder_.SetCpuUtilization(0.4);
   // Wait for client to see new report.
+  report_seen = false;
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
@@ -2794,11 +2791,13 @@ TEST_F(OobBackendMetricTest, Basic) {
         EXPECT_THAT(
             report->second.utilization(),
             ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.7)));
+        report_seen = true;
         break;
       }
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
+  ASSERT_TRUE(report_seen);
 }
 
 //
@@ -2891,43 +2890,55 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
 // WeightedRoundRobinTest
 //
 
-using WeightedRoundRobinTest = ClientLbEnd2endTest;
+const char kServiceConfigPerCall[] =
+    "{\n"
+    "  \"loadBalancingConfig\": [\n"
+    "    {\"weighted_round_robin_experimental\": {\n"
+    "      \"blackoutPeriod\": \"0s\"\n"
+    "    }}\n"
+    "  ]\n"
+    "}";
 
-TEST_F(WeightedRoundRobinTest, Basic) {
+const char kServiceConfigOob[] =
+    "{\n"
+    "  \"loadBalancingConfig\": [\n"
+    "    {\"weighted_round_robin_experimental\": {\n"
+    "      \"blackoutPeriod\": \"0s\",\n"
+    "      \"enableOobLoadReport\": true\n"
+    "    }}\n"
+    "  ]\n"
+    "}";
+
+class WeightedRoundRobinParamTest
+    : public ClientLbEnd2endTest,
+      public ::testing::WithParamInterface<const char*> {};
+
+TEST_P(WeightedRoundRobinParamTest, Basic) {
   const int kNumServers = 3;
   StartServers(kNumServers);
-  // Tell each server to report the appropriate CPU utilization.
-  xds::data::orca::v3::OrcaLoadReport load_report;
-  load_report.set_rps_fractional(100);
-  load_report.set_cpu_utilization(0.9);
-  servers_[0]->service_.SetLoadReport(load_report);
-  load_report.set_cpu_utilization(0.3);
-  servers_[1]->service_.SetLoadReport(load_report);
-  servers_[2]->service_.SetLoadReport(load_report);
+  // Report server metrics that should give 1:3:3 WRR picks.
+  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_.SetQps(100);
+  servers_[1]->server_metric_recorder_.SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_.SetQps(100);
+  servers_[2]->server_metric_recorder_.SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_.SetQps(100);
   // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator);
   auto stub = BuildStub(channel);
-  const char kServiceConfig[] =
-      "{\n"
-      "  \"loadBalancingConfig\": [\n"
-      "    {\"weighted_round_robin_experimental\": {\n"
-      "      \"blackoutPeriod\": \"0s\"\n"
-      "    }}\n"
-      "  ]\n"
-      "}";
-  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  response_generator.SetNextResolution(GetServersPorts(), GetParam());
   // Wait for the right set of WRR picks.
   size_t num_picks = 0;
   SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status&) {
-    if (++num_picks == 7) {
+    if (++num_picks == 21) {
       gpr_log(GPR_INFO, "request counts: %d %d %d",
               servers_[0]->service_.request_count(),
               servers_[1]->service_.request_count(),
               servers_[2]->service_.request_count());
-      if (servers_[0]->service_.request_count() == 1 &&
-          servers_[1]->service_.request_count() == 3 &&
-          servers_[2]->service_.request_count() == 3) {
+      if (servers_[0]->service_.request_count() == 3 &&
+          servers_[1]->service_.request_count() == 9 &&
+          servers_[2]->service_.request_count() == 9) {
         return false;
       }
       num_picks = 0;
@@ -2940,48 +2951,73 @@ TEST_F(WeightedRoundRobinTest, Basic) {
             channel->GetLoadBalancingPolicyName());
 }
 
-TEST_F(WeightedRoundRobinTest, OobReporting) {
+INSTANTIATE_TEST_SUITE_P(WeightedRoundRobin, WeightedRoundRobinParamTest,
+                         ::testing::Values(kServiceConfigPerCall,
+                                           kServiceConfigOob));
+
+using WeightedRoundRobinTest = ClientLbEnd2endTest;
+
+TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   const int kNumServers = 3;
   StartServers(kNumServers);
-  // Tell each server to report the appropriate CPU utilization.
+  // Report server metrics that should give 1:1:1 WRR picks.
   servers_[0]->server_metric_recorder_.SetCpuUtilization(0.9);
-  servers_[0]->server_metric_recorder_.SetQps(100);
+  servers_[0]->server_metric_recorder_.SetQps(9);
   servers_[1]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[1]->server_metric_recorder_.SetQps(100);
+  servers_[1]->server_metric_recorder_.SetQps(3);
   servers_[2]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[2]->server_metric_recorder_.SetQps(100);
+  servers_[2]->server_metric_recorder_.SetQps(3);
   // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator);
   auto stub = BuildStub(channel);
-  const char kServiceConfig[] =
-      "{\n"
-      "  \"loadBalancingConfig\": [\n"
-      "    {\"weighted_round_robin_experimental\": {\n"
-      "      \"blackoutPeriod\": \"0s\",\n"
-      "      \"enableOobLoadReport\": true\n"
-      "    }}\n"
-      "  ]\n"
-      "}";
-  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
-  // Wait for the right set of WRR picks.
+  response_generator.SetNextResolution(GetServersPorts(),
+                                       kServiceConfigPerCall);
+  // Send requests with per-call reported QPS set to 100.
+  // This should override per-server QPS above and give 1:3:3 WRR picks.
   size_t num_picks = 0;
-  SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status&) {
-    if (++num_picks == 7) {
-      gpr_log(GPR_INFO, "request counts: %d %d %d",
-              servers_[0]->service_.request_count(),
-              servers_[1]->service_.request_count(),
-              servers_[2]->service_.request_count());
-      if (servers_[0]->service_.request_count() == 1 &&
-          servers_[1]->service_.request_count() == 3 &&
-          servers_[2]->service_.request_count() == 3) {
-        return false;
-      }
-      num_picks = 0;
-      ResetCounters();
-    }
-    return true;
-  });
+  EchoRequest request;
+  request.mutable_param()->mutable_backend_metrics()->set_rps_fractional(100);
+  SendRpcsUntil(
+      DEBUG_LOCATION, stub,
+      [&](const Status&) {
+        if (++num_picks == 21) {
+          gpr_log(GPR_INFO, "request counts: %d %d %d",
+                  servers_[0]->service_.request_count(),
+                  servers_[1]->service_.request_count(),
+                  servers_[2]->service_.request_count());
+          if (servers_[0]->service_.request_count() == 3 &&
+              servers_[1]->service_.request_count() == 9 &&
+              servers_[2]->service_.request_count() == 9) {
+            return false;
+          }
+          num_picks = 0;
+          ResetCounters();
+        }
+        return true;
+      },
+      /*request_ptr=*/&request);
+  // Now send requests without per-call reported QPS.
+  // This should change WRR picks back to 1:1:1.
+  num_picks = 0;
+  SendRpcsUntil(
+      DEBUG_LOCATION, stub,
+      [&](const Status&) {
+        if (++num_picks == 21) {
+          gpr_log(GPR_INFO, "request counts: %d %d %d",
+                  servers_[0]->service_.request_count(),
+                  servers_[1]->service_.request_count(),
+                  servers_[2]->service_.request_count());
+          if (servers_[0]->service_.request_count() == 7 &&
+              servers_[1]->service_.request_count() == 7 &&
+              servers_[2]->service_.request_count() == 7) {
+            return false;
+          }
+          num_picks = 0;
+          ResetCounters();
+        }
+        return true;
+      });
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());
