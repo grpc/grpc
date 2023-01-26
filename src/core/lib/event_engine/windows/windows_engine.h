@@ -45,10 +45,6 @@ namespace experimental {
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
  public:
-  constexpr static TaskHandle invalid_handle{-1, -1};
-  constexpr static EventEngine::ConnectionHandle invalid_connection_handle{-1,
-                                                                           -1};
-
   class WindowsListener : public EventEngine::Listener {
    public:
     ~WindowsListener() override;
