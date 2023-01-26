@@ -20,8 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 
-#include <string.h>
-
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -36,11 +35,9 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -99,7 +96,7 @@ absl::optional<std::string> GetHttpProxyServer(
   } else {
     // User cred found
     *user_cred = uri->authority().substr(0, at);
-    proxy_name = uri->authority().substr(at + 1, uri->authority().size() - at - 1);
+    proxy_name = uri->authority().substr(at + 1);
     gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
   }
   return proxy_name;
