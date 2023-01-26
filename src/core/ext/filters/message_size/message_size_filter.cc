@@ -160,7 +160,7 @@ class MessageSizeFilter::CallBuilder {
         err->Set(std::move(r));
         return absl::nullopt;
       }
-      return msg;
+      return std::move(msg);
     };
   }
 

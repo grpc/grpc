@@ -238,8 +238,6 @@ class BaseCallData : public Activity, private Wakeable {
 
     void AddClosure(grpc_closure* closure, grpc_error_handle error,
                     const char* reason) {
-      gpr_log(GPR_DEBUG, "FLUSHER: AddCLosure %s",
-              closure->DebugString().c_str());
       call_closures_.Add(closure, error, reason);
     }
 

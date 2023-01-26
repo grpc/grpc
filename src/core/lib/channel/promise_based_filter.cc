@@ -441,6 +441,8 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
     case State::kCancelledButNotYetPolled:
       break;
     case State::kInitial:
+      state_ = State::kCancelled;
+      break;
     case State::kIdle:
     case State::kForwardedBatch:
       state_ = State::kCancelledButNotYetPolled;
