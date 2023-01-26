@@ -164,13 +164,13 @@ void ServerMetricRecorder::ClearNamedUtilization(absl::string_view name) {
 
 std::pair<absl::optional<BackendMetricData>, uint64_t>
 ServerMetricRecorder::GetMetrics(absl::optional<uint64_t> last_seq) const {
-  uint64_t seq = seq_.load(std::memory_order_acquire);
-  if (last_seq.has_value() && *last_seq == seq) {
+  if (last_seq.has_value() &&
+      *last_seq == seq_.load(std::memory_order_acquire)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] GetMetrics() returned with no change: seq:%lu",
-              this, seq);
+              this, *last_seq);
     }
-    return std::make_pair(absl::nullopt, seq);
+    return std::make_pair(absl::nullopt, *last_seq);
   }
   BackendMetricData data;
   internal::MutexLock lock(&mu_);
@@ -186,6 +186,7 @@ ServerMetricRecorder::GetMetrics(absl::optional<uint64_t> last_seq) const {
   for (const auto& nu : named_utilization_) {
     data.utilization[nu.first] = nu.second;
   }
+  uint64_t seq = seq_.load(std::memory_order_relaxed);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(
         GPR_INFO,
@@ -194,7 +195,6 @@ ServerMetricRecorder::GetMetrics(absl::optional<uint64_t> last_seq) const {
         this, seq, data.cpu_utilization, data.mem_utilization, data.qps,
         data.utilization.size());
   }
-  seq = seq_.load(std::memory_order_relaxed);
   if (IsEmpty(data)) return std::make_pair(absl::nullopt, seq);
   return std::make_pair(std::move(data), seq);
 }
