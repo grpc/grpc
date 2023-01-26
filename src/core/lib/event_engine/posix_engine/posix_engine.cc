@@ -350,8 +350,8 @@ PosixEventEngine::PosixEventEngine()
       timer_manager_(executor_) {
   if (NeedPosixEngine()) {
     poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
-    // The threadpool must be instantiated after the poller otherwise, the process
-    // will deadlock when forking.
+    // The threadpool must be instantiated after the poller otherwise, the
+    // process will deadlock when forking.
     if (poller_manager_->Poller() != nullptr) {
       executor_->Run([poller_manager = poller_manager_]() {
         PollerWorkInternal(poller_manager);

@@ -226,21 +226,18 @@ class _ChildProcess(object):
     def finish(self):
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
         sys.stderr.write("Exit code: {}\n".format(self._rc))
+        if not terminated:
+            self._print_backtraces()
+            raise RuntimeError('Child process did not terminate')
+        if self._rc != 0:
+            raise ValueError('Child process failed with exitcode %d' %
+                             self._rc)
         try:
-            if not terminated:
-                self._print_backtraces()
-                raise RuntimeError('Child process did not terminate')
-            if self._rc != 0:
-                raise ValueError('Child process failed with exitcode %d' %
-                                 self._rc)
-            try:
-                exception = self._exceptions.get(block=False)
-                raise ValueError('Child process failed: "%s": "%s"' %
-                                 (repr(exception), exception))
-            except queue.Empty:
-                pass
-        except:
-            raise
+            exception = self._exceptions.get(block=False)
+            raise ValueError('Child process failed: "%s": "%s"' %
+                             (repr(exception), exception))
+        except queue.Empty:
+            pass
 
 
 def _async_unary_same_channel(channel):

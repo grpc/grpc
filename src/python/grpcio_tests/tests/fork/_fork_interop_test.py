@@ -211,7 +211,7 @@ class ForkInteropTest(unittest.TestCase):
         except subprocess.TimeoutExpired:
             self._print_backtraces(process.pid)
             process.kill()
-            self.assertTrue(False, "Parent process timed out.")
+            raise AssertionError("Parent process timed out.")
         finally:
             _dump_streams("Parent", streams)
             _dump_streams("Server", self._streams)

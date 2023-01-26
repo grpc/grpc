@@ -47,7 +47,8 @@ namespace experimental {
 class Epoll1EventHandle;
 
 // Definition of epoll1 based poller.
-class Epoll1Poller : public PosixEventPoller, public grpc_event_engine::experimental::Forkable {
+class Epoll1Poller : public PosixEventPoller,
+                     public grpc_event_engine::experimental::Forkable {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
   EventHandle* CreateHandle(int fd, absl::string_view name,

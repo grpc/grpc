@@ -191,7 +191,7 @@ void Fork::DoDecExecCtxCount() {
 void Fork::SetResetChildPollingEngineFunc(
     Fork::child_postfork_func reset_child_polling_engine) {
   if (reset_child_polling_engine_ == nullptr) {
-      reset_child_polling_engine_ = new std::vector<Fork::child_postfork_func>();
+    reset_child_polling_engine_ = new std::vector<Fork::child_postfork_func>();
   }
   if (reset_child_polling_engine == nullptr) {
     reset_child_polling_engine_->clear();
@@ -235,5 +235,6 @@ void Fork::AwaitThreads() {
 
 std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
-std::vector<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ = nullptr;
+std::vector<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
+    nullptr;
 }  // namespace grpc_core

@@ -393,9 +393,7 @@ void Epoll1Poller::Close() {
   closed_ = true;
 }
 
-Epoll1Poller::~Epoll1Poller() {
-  Close();
-}
+Epoll1Poller::~Epoll1Poller() { Close(); }
 
 EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
                                         bool track_err) {
@@ -577,9 +575,7 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
   return nullptr;
 }
 
-void Epoll1Poller::PrepareFork() {
-  Kick();
-}
+void Epoll1Poller::PrepareFork() { Kick(); }
 
 void Epoll1Poller::PostforkParent() {}
 

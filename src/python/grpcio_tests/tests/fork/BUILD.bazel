@@ -35,7 +35,6 @@ pyx_library(
 
 py_test(
     name = "fork_test",
-
     srcs = glob(["*.py"]),
     imports = ["../.."],
     main = "_fork_interop_test.py",

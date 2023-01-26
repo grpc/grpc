@@ -34,8 +34,7 @@ bool g_registered ABSL_GUARDED_BY(g_mu){false};
 
 // This must be ordered because there are ordering dependencies between
 // certain fork handlers.
-grpc_core::NoDestruct<std::vector<Forkable*>> g_forkables
-    ABSL_GUARDED_BY(g_mu);
+grpc_core::NoDestruct<std::vector<Forkable*>> g_forkables ABSL_GUARDED_BY(g_mu);
 }  // namespace
 
 Forkable::Forkable() { ManageForkable(this); }
@@ -51,7 +50,8 @@ void RegisterForkHandlers() {
 
 void PrepareFork() {
   grpc_core::MutexLock lock(g_mu.get());
-  for (auto forkable_iter = g_forkables->rbegin(); forkable_iter != g_forkables->rend(); ++forkable_iter) {
+  for (auto forkable_iter = g_forkables->rbegin();
+       forkable_iter != g_forkables->rend(); ++forkable_iter) {
     (*forkable_iter)->PrepareFork();
   }
 }
