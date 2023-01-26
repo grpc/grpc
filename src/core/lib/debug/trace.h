@@ -71,9 +71,7 @@ class TraceFlag {
 // Prefer GRPC_TRACE_FLAG_ENABLED() macro instead of using enabled() directly.
 #define GRPC_USE_TRACERS  // tracers on by default in OSS
 #if defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
-  bool enabled() {
-    return value_.load(std::memory_order_relaxed);
-  }
+  bool enabled() { return value_.load(std::memory_order_relaxed); }
 #else
   bool enabled() { return false; }
 #endif  // defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
