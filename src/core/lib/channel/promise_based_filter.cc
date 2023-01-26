@@ -1857,9 +1857,6 @@ class ServerCallData::PollContext {
 
   ~PollContext() {
     self_->poll_ctx_ = nullptr;
-    gpr_log(GPR_DEBUG, "PollContextDone: have_scoped_activity=%s repoll=%s",
-            have_scoped_activity_ ? "true" : "false",
-            repoll_ ? "true" : "false");
     if (have_scoped_activity_) scoped_activity_.Destroy();
     if (repoll_) {
       struct NextPoll : public grpc_closure {

@@ -3324,8 +3324,10 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
 
   if (force_metadata_send_) GPR_ASSERT(!is_sending());
 
-  gpr_log(GPR_INFO, "%s[call] PollTopOfCall: is_sending=%s", DebugTag().c_str(),
-          is_sending() ? "yes" : "no");
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[call] PollTopOfCall: is_sending=%s",
+            DebugTag().c_str(), is_sending() ? "yes" : "no");
+  }
 
   if (!is_sending() && send_trailing_metadata_ != nullptr) {
     server_to_client_messages_->Close();
