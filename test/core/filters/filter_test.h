@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_CORE_FILTERS_FILTER_TEST_H
-#define TEST_CORE_FILTERS_FILTER_TEST_H
+#ifndef GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
+#define GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -156,4 +156,4 @@ class FilterTest {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
