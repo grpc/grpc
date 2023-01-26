@@ -94,10 +94,10 @@ absl::optional<std::string> GetHttpProxyServer(
   std::size_t at = uri->authority().rfind('@');
   absl::optional<std::string> proxy_name;
   if (at == std::string::npos) {
-    /* User cred not present in authority */
+    // User cred not present in authority
     proxy_name = uri->authority();
   } else {
-    /* User cred found */
+    // User cred found
     *user_cred = uri->authority().substr(0, at);
     proxy_name = uri->authority().substr(at + 1, uri->authority().size() - at - 1);
     gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
