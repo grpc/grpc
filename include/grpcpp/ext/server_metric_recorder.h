@@ -87,11 +87,11 @@ class ServerMetricRecorder {
   std::atomic<uint64_t> seq_{0};
  
   mutable grpc::internal::Mutex mu_;
-  std::map<std::string, double> named_utilization_ ABSL_GUARDED_BY(&mu_);
+  std::map<std::string, double> named_utilization_ ABSL_GUARDED_BY(mu_);
   // Defaults to -1.0 (unset).
-  double cpu_utilization_ ABSL_GUARDED_BY(&mu_) = -1.0;
-  double mem_utilization_ ABSL_GUARDED_BY(&mu_) = -1.0;
-  double qps_ ABSL_GUARDED_BY(&mu_) = -1.0;
+  double cpu_utilization_ ABSL_GUARDED_BY(mu_) = -1.0;
+  double mem_utilization_ ABSL_GUARDED_BY(mu_) = -1.0;
+  double qps_ ABSL_GUARDED_BY(mu_) = -1.0;
 };
 
 }  // namespace experimental

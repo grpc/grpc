@@ -62,9 +62,9 @@ class OrcaService : public Service {
   const absl::Duration min_report_duration_;
   grpc::internal::Mutex mu_;
   // Contains the last serialized metrics from server_metric_recorder_.
-  absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(&mu_);
+  absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(mu_);
   // The update sequence number of metrics serialized in response_slice_.
-  uint64_t response_slice_seq_ ABSL_GUARDED_BY(&mu_);
+  uint64_t response_slice_seq_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental
