@@ -52,12 +52,12 @@ void ServerMetricRecorder::SetCpuUtilization(double value) {
     }
     return;
   }
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] CPU utilization set: %f seq: %lu", this, value,
             old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   cpu_utilization_ = value;
 }
 
@@ -68,12 +68,12 @@ void ServerMetricRecorder::SetMemoryUtilization(double value) {
     }
     return;
   }
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] Mem utilization set: %f seq: %lu", this, value,
             old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   mem_utilization_ = value;
 }
 
@@ -84,11 +84,11 @@ void ServerMetricRecorder::SetQps(double value) {
     }
     return;
   }
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] QPS set: %f seq: %lu", this, value, old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   qps_ = value;
 }
 
@@ -100,65 +100,65 @@ void ServerMetricRecorder::SetNamedUtilization(std::string name, double value) {
     }
     return;
   }
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] Named utilization set: %f name: %s seq: %lu", this,
             value, name.c_str(), old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   named_utilization_[std::move(name)] = value;
 }
 
 void ServerMetricRecorder::SetAllNamedUtilization(
     std::map<std::string, double> named_utilization) {
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO,
             "[%p] All named utilization updated. size: %" PRIuPTR " seq: %lu",
             this, named_utilization.size(), old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   named_utilization_ = std::move(named_utilization);
 }
 
 void ServerMetricRecorder::ClearCpuUtilization() {
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] CPU utilization cleared. seq: %lu", this,
             old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   cpu_utilization_ = -1.0;
 }
 
 void ServerMetricRecorder::ClearMemoryUtilization() {
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] Mem utilization cleared. seq: %lu", this,
             old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   mem_utilization_ = -1.0;
 }
 
 void ServerMetricRecorder::ClearQps() {
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] QPS utilization cleared. seq: %lu", this,
             old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   qps_ = -1.0;
 }
 
 void ServerMetricRecorder::ClearNamedUtilization(absl::string_view name) {
   std::string name_str(name);
+  internal::MutexLock lock(&mu_);
   uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] Named utilization cleared. name: %s seq: %lu", this,
             name_str.c_str(), old_seq + 1);
   }
-  internal::MutexLock lock(&mu_);
   named_utilization_.erase(name_str);
 }
 
@@ -194,7 +194,7 @@ ServerMetricRecorder::GetMetrics(absl::optional<uint64_t> last_seq) const {
         this, seq, data.cpu_utilization, data.mem_utilization, data.qps,
         data.utilization.size());
   }
-  // We allow the sequence number returned to be possibly outdated here.
+  seq = seq_.load(std::memory_order_relaxed);
   if (IsEmpty(data)) return std::make_pair(absl::nullopt, seq);
   return std::make_pair(std::move(data), seq);
 }
