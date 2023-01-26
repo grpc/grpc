@@ -25,8 +25,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -38,12 +38,11 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
-#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -59,17 +58,31 @@
 
 namespace grpc_core {
 
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
+// will be appended to the user agent name reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING ""
+#endif
+
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="...", that string
+// will be appended to the user agent version reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING ""
+#endif
+
 //
 // GrpcXdsClient
 //
 
 namespace {
 
-Mutex* g_mu = [] {
-  XdsHttpFilterRegistry::Init();
-  XdsClusterSpecifierPluginRegistry::Init();
-  return new Mutex;
-}();
+Mutex* g_mu = new Mutex;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 GrpcXdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
@@ -162,6 +175,12 @@ GrpcXdsClient::GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
                              const ChannelArgs& args)
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
+          grpc_event_engine::experimental::GetDefaultEventEngine(),
+          absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
+                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING),
+          absl::StrCat("C-core ", grpc_version_string(),
+                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)

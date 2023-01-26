@@ -33,6 +33,7 @@ TEST(ThreadPoolTest, CanRunClosure) {
   grpc_core::Notification n;
   p.Run([&n] { n.Notify(); });
   n.WaitForNotification();
+  p.Quiesce();
 }
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
@@ -41,6 +42,7 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   p->Run([p, &n]() mutable {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     // This should delete the thread pool and not deadlock
+    p->Quiesce();
     p.reset();
     n.Notify();
   });
@@ -64,10 +66,9 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   });
   gpr_log(GPR_INFO, "prepare fork");
   p.PrepareFork();
-  gpr_log(GPR_INFO, "wait for notification");
-  n.WaitForNotification();
   gpr_log(GPR_INFO, "postfork child");
   p.PostforkChild();
+  n.WaitForNotification();
   grpc_core::Notification n2;
   gpr_log(GPR_INFO, "run callback 3");
   p.Run([&n2] {
@@ -76,13 +77,17 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   });
   gpr_log(GPR_INFO, "wait for notification");
   n2.WaitForNotification();
+  p.Quiesce();
 }
 
 void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });
 }
 
-TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
+// This can be re-enabled if/when the thread pool is changed to quiesce
+// pre-fork. For now, it cannot get stuck because callback execution is
+// effectively paused until after the post-fork reboot.
+TEST(ThreadPoolDeathTest, DISABLED_CanDetectStucknessAtFork) {
   ASSERT_DEATH_IF_SUPPORTED(
       [] {
         gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
@@ -110,6 +115,7 @@ TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   // Our first thread pool implementation tried to create ~1M threads for this
   // test.
   ScheduleTwiceUntilZero(&p, 20);
+  p.Quiesce();
 }
 
 }  // namespace experimental

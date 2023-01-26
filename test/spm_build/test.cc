@@ -22,7 +22,6 @@
 #include "grpcpp/create_channel.h"
 #include "grpcpp/generic/generic_stub.h"
 #include "grpcpp/grpcpp.h"
-#include "grpcpp/impl/codegen/grpc_library.h"
 #include "grpcpp/support/byte_buffer.h"
 #include "grpcpp/support/status.h"
 #include "grpcpp/support/status_code_enum.h"

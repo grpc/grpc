@@ -38,7 +38,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
@@ -94,16 +93,10 @@ GrpcXdsBootstrap::GrpcXdsServer::ChannelCreds::JsonLoader(const JsonArgs&) {
 
 namespace {
 
-constexpr absl::string_view kServerFeatureXdsV3 = "xds_v3";
 constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
     "ignore_resource_deletion";
 
 }  // namespace
-
-bool GrpcXdsBootstrap::GrpcXdsServer::ShouldUseV3() const {
-  return server_features_.find(std::string(kServerFeatureXdsV3)) !=
-         server_features_.end();
-}
 
 bool GrpcXdsBootstrap::GrpcXdsServer::IgnoreResourceDeletion() const {
   return server_features_.find(std::string(
@@ -167,9 +160,8 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
         const Json::Array& array = it->second.array_value();
         for (const Json& feature_json : array) {
           if (feature_json.type() == Json::Type::STRING &&
-              (feature_json.string_value() == kServerFeatureXdsV3 ||
-               feature_json.string_value() ==
-                   kServerFeatureIgnoreResourceDeletion)) {
+              (feature_json.string_value() ==
+               kServerFeatureIgnoreResourceDeletion)) {
             server_features_.insert(feature_json.string_value());
           }
         }

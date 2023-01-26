@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 
@@ -24,9 +24,10 @@
 
 #include "absl/status/statusor.h"
 
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -58,7 +59,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-/* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
+// This test exercises IPv4, IPv6, and dualstack sockets in various ways.
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -117,7 +118,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  /* Create server. */
+  // Create server.
   cq = grpc_completion_queue_create_for_next(nullptr);
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
@@ -134,10 +135,10 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_server_start(server);
   grpc_core::CqVerifier cqv(cq);
 
-  /* Create client. */
+  // Create client.
   std::string client_hostport;
   if (client_host[0] == 'i') {
-    /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
+    // for ipv4:/ipv6: addresses, concatenate the port to each of the parts
     std::vector<absl::string_view> uri_parts =
         absl::StrSplit(client_host, ',', absl::SkipEmpty());
     std::vector<std::string> hosts_with_port;
@@ -160,15 +161,15 @@ void test_connect(const char* server_host, const char* client_host, int port,
   log_resolved_addrs("client resolved addr", client_host);
 
   if (expect_ok) {
-    /* Normal deadline, shouldn't be reached. */
+    // Normal deadline, shouldn't be reached.
     deadline = grpc_timeout_milliseconds_to_deadline(60000);
   } else {
-    /* Give up faster when failure is expected.
-       BUG: Setting this to 1000 reveals a memory leak (b/18608927). */
+    // Give up faster when failure is expected.
+    // BUG: Setting this to 1000 reveals a memory leak (b/18608927).
     deadline = grpc_timeout_milliseconds_to_deadline(8000);
   }
 
-  /* Send a trivial request. */
+  // Send a trivial request.
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
@@ -203,7 +204,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (expect_ok) {
-    /* Check for a successful request. */
+    // Check for a successful request.
     error = grpc_server_request_call(server, &s, &call_details,
                                      &request_metadata_recv, cq, cq, tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
@@ -248,7 +249,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
     grpc_call_unref(s);
   } else {
-    /* Check for a failed connection. */
+    // Check for a failed connection.
     cqv.Expect(tag(1), true);
     cqv.Verify();
 
@@ -259,10 +260,10 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
   grpc_call_unref(c);
 
-  /* Destroy client. */
+  // Destroy client.
   grpc_channel_destroy(client);
 
-  /* Destroy server. */
+  // Destroy server.
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
   grpc_event ev;
   do {
@@ -323,11 +324,11 @@ int main(int argc, char** argv) {
     do_ipv6 = 0;
   }
 
-  /* For coverage, test with and without dualstack sockets. */
+  // For coverage, test with and without dualstack sockets.
   for (grpc_forbid_dualstack_sockets_for_testing = 0;
        grpc_forbid_dualstack_sockets_for_testing <= 1;
        grpc_forbid_dualstack_sockets_for_testing++) {
-    /* :: and 0.0.0.0 are handled identically. */
+    // :: and 0.0.0.0 are handled identically.
     test_connect("::", "127.0.0.1", 0, 1);
     test_connect("::", "::ffff:127.0.0.1", 0, 1);
     test_connect("::", "ipv4:127.0.0.1", 0, 1);
@@ -346,7 +347,7 @@ int main(int argc, char** argv) {
       test_connect("0.0.0.0", "ipv6:[::1]", 0, 1);
     }
 
-    /* These only work when the families agree. */
+    // These only work when the families agree.
     test_connect("127.0.0.1", "127.0.0.1", 0, 1);
     test_connect("127.0.0.1", "ipv4:127.0.0.1", 0, 1);
     if (do_ipv6) {
@@ -384,8 +385,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET_EV */
+#else  // GRPC_POSIX_SOCKET_EV
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET_EV */
+#endif  // GRPC_POSIX_SOCKET_EV

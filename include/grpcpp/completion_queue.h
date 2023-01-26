@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 /// A completion queue implements a concurrent producer-consumer queue, with
 /// two main API-exposed methods: \a Next and \a AsyncNext. These
@@ -34,14 +34,17 @@
 
 #include <list>
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <grpcpp/impl/codegen/rpc_service_method.h>
+#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/rpc_service_method.h>
-#include <grpcpp/support/status.h>
-#include <grpcpp/support/time.h>
+#include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/sync.h>
 
 struct grpc_completion_queue;
 
@@ -93,13 +96,11 @@ template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
 class CallOpSet;
 }  // namespace internal
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
 /// performance servers.
-class CompletionQueue : private grpc::GrpcLibraryCodegen {
+class CompletionQueue : private grpc::internal::GrpcLibrary {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
@@ -114,9 +115,7 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
-  ~CompletionQueue() override {
-    grpc::g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
-  }
+  ~CompletionQueue() override { grpc_completion_queue_destroy(cq_); }
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
   enum NextStatus {
@@ -180,9 +179,8 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
     // TIMEOUT   - we passed infinity time => queue has been shutdown, return
     //             false.
     // GOT_EVENT - we actually got an event, return true.
-    return (AsyncNextInternal(tag, ok,
-                              grpc::g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) == GOT_EVENT);
+    return (AsyncNextInternal(tag, ok, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
+            GOT_EVENT);
   }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
@@ -243,16 +241,15 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// instance.
   ///
   /// \warning Remember that the returned instance is owned. No transfer of
-  /// owership is performed.
+  /// ownership is performed.
   grpc_completion_queue* cq() { return cq_; }
 
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
   explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
-    cq_ = grpc::g_core_codegen_interface->grpc_completion_queue_create(
-        grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
-            &attributes),
-        &attributes, nullptr);
+    cq_ = grpc_completion_queue_create(
+        grpc_completion_queue_factory_lookup(&attributes), &attributes,
+        nullptr);
     InitialAvalanching();  // reserve this for the future shutdown
   }
 
@@ -320,15 +317,13 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
+    auto deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
-      auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-          cq_, tag, deadline, nullptr);
+      auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
-        GPR_CODEGEN_ASSERT(ignored == tag);
+        GPR_ASSERT(ignored == tag);
         return ok;
       }
     }
@@ -343,15 +338,13 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
     void* ignored = tag;
     // the tag must be swallowed if using TryPluck
-    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Performs a single polling pluck on \a tag. Calls tag->FinalizeResult if
@@ -361,15 +354,14 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// that the tag is internal not something that is returned to the user.
   void TryPluck(grpc::internal::CompletionQueueTag* tag,
                 gpr_timespec deadline) {
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       return;
     }
 
     bool ok = ev.success != 0;
     void* ignored = tag;
-    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Manage state of avalanching operations : completion queue tags that
@@ -377,18 +369,17 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// queue should not really shutdown until all avalanching operations have
   /// been finalized. Note that we maintain the requirement that an avalanche
   /// registration must take place before CQ shutdown (which must be maintained
-  /// elsehwere)
+  /// elsewhere)
   void InitialAvalanching() {
-    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
+    gpr_atm_rel_store(&avalanches_in_flight_, gpr_atm{1});
   }
   void RegisterAvalanching() {
-    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                 static_cast<gpr_atm>(1));
+    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, gpr_atm{1});
   }
   void CompleteAvalanching() {
-    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                     static_cast<gpr_atm>(-1)) == 1) {
-      grpc::g_core_codegen_interface->grpc_completion_queue_shutdown(cq_);
+    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, gpr_atm{-1}) ==
+        1) {
+      grpc_completion_queue_shutdown(cq_);
     }
   }
 

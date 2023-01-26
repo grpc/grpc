@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_H
-#define GRPC_CORE_LIB_IOMGR_EXECUTOR_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_EXECUTOR_H
+#define GRPC_SRC_CORE_LIB_IOMGR_EXECUTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -58,18 +58,18 @@ class Executor {
 
   void Init();
 
-  /** Is the executor multi-threaded? */
+  /// Is the executor multi-threaded?
   bool IsThreaded() const;
 
-  /* Enable/disable threading - must be called after Init and Shutdown(). Never
-   * call SetThreading(false) in the middle of an application */
+  // Enable/disable threading - must be called after Init and Shutdown(). Never
+  // call SetThreading(false) in the middle of an application
   void SetThreading(bool threading);
 
-  /** Shutdown the executor, running all pending work as part of the call */
+  /// Shutdown the executor, running all pending work as part of the call
   void Shutdown();
 
-  /** Enqueue the closure onto the executor. is_short is true if the closure is
-   * a short job (i.e expected to not block and complete quickly) */
+  /// Enqueue the closure onto the executor. is_short is true if the closure is
+  /// a short job (i.e expected to not block and complete quickly)
   void Enqueue(grpc_closure* closure, grpc_error_handle error, bool is_short);
 
   // TODO(sreek): Currently we have two executors (available globally): The
@@ -116,4 +116,4 @@ class Executor {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_EXECUTOR_H

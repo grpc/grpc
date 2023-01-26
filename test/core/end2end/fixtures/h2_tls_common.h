@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef H2_TLS_COMMON_H
-#define H2_TLS_COMMON_H
+#ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_TLS_COMMON_H
+#define GRPC_TEST_CORE_END2END_FIXTURES_H2_TLS_COMMON_H
 
 #include <stdint.h>
 #include <string.h>
@@ -229,7 +229,7 @@ inline grpc_channel_credentials* create_tls_channel_credentials(
                                                         ffd->client_verifier);
   grpc_tls_credentials_options_set_check_call_host(options,
                                                    ffd->check_call_host);
-  /* Create TLS channel credentials. */
+  // Create TLS channel credentials.
   grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
   return creds;
 }
@@ -299,4 +299,4 @@ static const uint32_t kH2TLSFeatureMask =
     FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
     FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER;
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FIXTURES_H2_TLS_COMMON_H

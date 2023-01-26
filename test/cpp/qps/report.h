@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef TEST_QPS_REPORT_H
-#define TEST_QPS_REPORT_H
+#ifndef GRPC_TEST_CPP_QPS_REPORT_H
+#define GRPC_TEST_CPP_QPS_REPORT_H
 
 #include <memory>
 #include <set>
@@ -32,50 +32,50 @@
 namespace grpc {
 namespace testing {
 
-/** Interface for all reporters. */
+/// Interface for all reporters.
 class Reporter {
  public:
-  /** Construct a reporter with the given \a name. */
+  /// Construct a reporter with the given \a name.
   explicit Reporter(const string& name) : name_(name) {}
 
   virtual ~Reporter() {}
 
-  /** Returns this reporter's name.
-   *
-   * Names are constants, set at construction time. */
+  /// Returns this reporter's name.
+  ///
+  /// Names are constants, set at construction time.
   string name() const { return name_; }
 
-  /** Reports QPS for the given \a result. */
+  /// Reports QPS for the given \a result.
   virtual void ReportQPS(const ScenarioResult& result) = 0;
 
-  /** Reports QPS per core as (YYY/server core). */
+  /// Reports QPS per core as (YYY/server core).
   virtual void ReportQPSPerCore(const ScenarioResult& result) = 0;
 
-  /** Reports latencies for the 50, 90, 95, 99 and 99.9 percentiles, in ms. */
+  /// Reports latencies for the 50, 90, 95, 99 and 99.9 percentiles, in ms.
   virtual void ReportLatency(const ScenarioResult& result) = 0;
 
-  /** Reports system and user time for client and server systems. */
+  /// Reports system and user time for client and server systems.
   virtual void ReportTimes(const ScenarioResult& result) = 0;
 
-  /** Reports server cpu usage. */
+  /// Reports server cpu usage.
   virtual void ReportCpuUsage(const ScenarioResult& result) = 0;
 
-  /** Reports client and server poll usage inside completion queue. */
+  /// Reports client and server poll usage inside completion queue.
   virtual void ReportPollCount(const ScenarioResult& result) = 0;
 
-  /** Reports queries per cpu-sec. */
+  /// Reports queries per cpu-sec.
   virtual void ReportQueriesPerCpuSec(const ScenarioResult& result) = 0;
 
  private:
   const string name_;
 };
 
-/** A composite for all reporters to be considered. */
+/// A composite for all reporters to be considered.
 class CompositeReporter : public Reporter {
  public:
   CompositeReporter() : Reporter("CompositeReporter") {}
 
-  /** Adds a \a reporter to the composite. */
+  /// Adds a \a reporter to the composite.
   void add(std::unique_ptr<Reporter> reporter);
 
   void ReportQPS(const ScenarioResult& result) override;
@@ -90,7 +90,7 @@ class CompositeReporter : public Reporter {
   std::vector<std::unique_ptr<Reporter> > reporters_;
 };
 
-/** Reporter to gpr_log(GPR_INFO). */
+/// Reporter to gpr_log(GPR_INFO).
 class GprLogReporter : public Reporter {
  public:
   explicit GprLogReporter(const string& name) : Reporter(name) {}
@@ -105,7 +105,7 @@ class GprLogReporter : public Reporter {
   void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
 };
 
-/** Dumps the report to a JSON file. */
+/// Dumps the report to a JSON file.
 class JsonReporter : public Reporter {
  public:
   JsonReporter(const string& name, const string& report_file)
@@ -143,4 +143,4 @@ class RpcReporter : public Reporter {
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_REPORT_H

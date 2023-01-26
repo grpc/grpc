@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CLIENT_H
-#define GRPC_CORE_EXT_XDS_XDS_CLIENT_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -71,9 +71,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
-  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-            OrphanablePtr<XdsTransportFactory> transport_factory,
-            Duration resource_request_timeout = Duration::Seconds(15));
+  XdsClient(
+      std::unique_ptr<XdsBootstrap> bootstrap,
+      OrphanablePtr<XdsTransportFactory> transport_factory,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+      std::string user_agent_name, std::string user_agent_version,
+      Duration resource_request_timeout = Duration::Seconds(15));
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
@@ -314,8 +317,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Stores resource type objects seen by type URL.
   std::map<absl::string_view /*resource_type*/, const XdsResourceType*>
       resource_types_ ABSL_GUARDED_BY(mu_);
-  std::map<absl::string_view /*v2_resource_type*/, const XdsResourceType*>
-      v2_resource_types_ ABSL_GUARDED_BY(mu_);
   upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
 
   // Map of existing xDS server channels.
@@ -340,4 +341,4 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_CLIENT_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H

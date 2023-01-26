@@ -82,6 +82,8 @@ grpc_cc_test(
         ":server_ssl_common",
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )

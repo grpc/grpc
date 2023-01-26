@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -32,8 +33,8 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -44,10 +45,6 @@
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 struct TestInput {
   const char* input;
@@ -86,7 +83,11 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   void TestVector(grpc_slice_split_mode mode, const char* hexstring,
                   std::string expect) {
-    auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+    grpc_core::MemoryAllocator memory_allocator =
+        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                       ->memory_quota()
+                                       ->CreateMemoryAllocator("test"));
+    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
     grpc_core::ExecCtx exec_ctx;
     grpc_slice input = parse_hexstring(hexstring);
     grpc_slice* slices;
@@ -108,9 +109,9 @@ class ParseTest : public ::testing::TestWithParam<Test> {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
       if (!err.ok()) {
-        gpr_log(GPR_ERROR, "Unexpected parse error: %s",
-                grpc_core::StatusToString(err).c_str());
-        abort();
+        grpc_core::Crash(
+            absl::StrFormat("Unexpected parse error: %s",
+                            grpc_core::StatusToString(err).c_str()));
       }
     }
 
@@ -165,36 +166,36 @@ INSTANTIATE_TEST_SUITE_P(
         Test{
             {},
             {
-                /* D.2.1 */
+                // D.2.1
                 {"400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
                  "746f 6d2d 6865 6164 6572",
                  "custom-key: custom-header\n"},
-                /* D.2.2 */
+                // D.2.2
                 {"040c 2f73 616d 706c 652f 7061 7468", ":path: /sample/path\n"},
-                /* D.2.3 */
+                // D.2.3
                 {"1008 7061 7373 776f 7264 0673 6563 7265"
                  "74",
                  "password: secret\n"},
-                /* D.2.4 */
+                // D.2.4
                 {"82", ":method: GET\n"},
             }},
         Test{{},
              {
-                 /* D.3.1 */
+                 // D.3.1
                  {"8286 8441 0f77 7777 2e65 7861 6d70 6c65"
                   "2e63 6f6d",
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: http\n"},
-                 /* D.3.2 */
+                 // D.3.2
                  {"8286 84be 5808 6e6f 2d63 6163 6865",
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: http\n"
                   "cache-control: no-cache\n"},
-                 /* D.3.3 */
+                 // D.3.3
                  {"8287 85bf 400a 6375 7374 6f6d 2d6b 6579"
                   "0c63 7573 746f 6d2d 7661 6c75 65",
                   ":path: /index.html\n"
@@ -205,21 +206,21 @@ INSTANTIATE_TEST_SUITE_P(
              }},
         Test{{},
              {
-                 /* D.4.1 */
+                 // D.4.1
                  {"8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
                   "ff",
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: http\n"},
-                 /* D.4.2 */
+                 // D.4.2
                  {"8286 84be 5886 a8eb 1064 9cbf",
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: http\n"
                   "cache-control: no-cache\n"},
-                 /* D.4.3 */
+                 // D.4.3
                  {"8287 85bf 4088 25a8 49e9 5ba9 7d7f 8925"
                   "a849 e95b b8e8 b4bf",
                   ":path: /index.html\n"
@@ -230,7 +231,7 @@ INSTANTIATE_TEST_SUITE_P(
              }},
         Test{{256},
              {
-                 /* D.5.1 */
+                 // D.5.1
                  {"4803 3330 3258 0770 7269 7661 7465 611d"
                   "4d6f 6e2c 2032 3120 4f63 7420 3230 3133"
                   "2032 303a 3133 3a32 3120 474d 546e 1768"
@@ -240,13 +241,13 @@ INSTANTIATE_TEST_SUITE_P(
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
                   "location: https://www.example.com\n"},
-                 /* D.5.2 */
+                 // D.5.2
                  {"4803 3330 37c1 c0bf",
                   ":status: 307\n"
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
                   "location: https://www.example.com\n"},
-                 /* D.5.3 */
+                 // D.5.3
                  {"88c1 611d 4d6f 6e2c 2032 3120 4f63 7420"
                   "3230 3133 2032 303a 3133 3a32 3220 474d"
                   "54c0 5a04 677a 6970 7738 666f 6f3d 4153"
@@ -264,7 +265,7 @@ INSTANTIATE_TEST_SUITE_P(
              }},
         Test{{256},
              {
-                 /* D.6.1 */
+                 // D.6.1
                  {"4882 6402 5885 aec3 771a 4b61 96d0 7abe"
                   "9410 54d4 44a8 2005 9504 0b81 66e0 82a6"
                   "2d1b ff6e 919d 29ad 1718 63c7 8f0b 97c8"
@@ -273,13 +274,13 @@ INSTANTIATE_TEST_SUITE_P(
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
                   "location: https://www.example.com\n"},
-                 /* D.6.2 */
+                 // D.6.2
                  {"4883 640e ffc1 c0bf",
                   ":status: 307\n"
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
                   "location: https://www.example.com\n"},
-                 /* D.6.3 */
+                 // D.6.3
                  {"88c1 6196 d07a be94 1054 d444 a820 0595"
                   "040b 8166 e084 a62d 1bff c05a 839b d9ab"
                   "77ad 94e7 821d d7f2 e6c7 b335 dfdf cd5b"

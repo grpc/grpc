@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -35,7 +35,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -44,7 +44,6 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
@@ -53,24 +52,24 @@
 namespace grpc_core {
 namespace {
 
-/**
- * Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the
- * proxy hostname to resolve or nullopt on error. Also sets 'user_cred' to user
- * credentials if present in the 'http_proxy' env var, otherwise leaves it
- * unchanged.
- */
+///
+/// Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the
+/// proxy hostname to resolve or nullopt on error. Also sets 'user_cred' to user
+/// credentials if present in the 'http_proxy' env var, otherwise leaves it
+/// unchanged.
+///
 absl::optional<std::string> GetHttpProxyServer(
     const ChannelArgs& args, absl::optional<std::string>* user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   absl::StatusOr<URI> uri;
-  /* We check the following places to determine the HTTP proxy to use, stopping
-   * at the first one that is set:
-   * 1. GRPC_ARG_HTTP_PROXY channel arg
-   * 2. grpc_proxy environment variable
-   * 3. https_proxy environment variable
-   * 4. http_proxy environment variable
-   * If none of the above are set, then no HTTP proxy will be used.
-   */
+  // We check the following places to determine the HTTP proxy to use, stopping
+  // at the first one that is set:
+  // 1. GRPC_ARG_HTTP_PROXY channel arg
+  // 2. grpc_proxy environment variable
+  // 3. https_proxy environment variable
+  // 4. http_proxy environment variable
+  // If none of the above are set, then no HTTP proxy will be used.
+  //
   absl::optional<std::string> uri_str =
       args.GetOwnedString(GRPC_ARG_HTTP_PROXY);
   if (!uri_str.has_value()) uri_str = GetEnv("grpc_proxy");
@@ -90,9 +89,8 @@ absl::optional<std::string> GetHttpProxyServer(
             uri->scheme().c_str());
     return absl::nullopt;
   }
-  /* Split on last '@' to separate user credentials from host
-     See also https://github.com/grpc/grpc/issues/26548
-   */
+  // Split on last '@' to separate user credentials from host
+  // See also https://github.com/grpc/grpc/issues/26548
   std::size_t at = uri->authority().rfind('@');
   absl::optional<std::string> proxy_name;
   if (at == std::string::npos) {
@@ -141,7 +139,7 @@ absl::optional<std::string> HttpProxyMapper::MapName(
             std::string(server_uri).c_str());
     return absl::nullopt;
   }
-  /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
+  // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
   auto no_proxy_str = GetEnv("no_grpc_proxy");
   if (!no_proxy_str.has_value()) {
     no_proxy_str = GetEnv("no_proxy");
@@ -173,7 +171,7 @@ absl::optional<std::string> HttpProxyMapper::MapName(
   *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER,
                     MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")));
   if (user_cred.has_value()) {
-    /* Use base64 encoding for user credentials as stated in RFC 7617 */
+    // Use base64 encoding for user credentials as stated in RFC 7617
     auto encoded_user_cred = UniquePtr<char>(
         grpc_base64_encode(user_cred->data(), user_cred->length(), 0, 0));
     *args = args->Set(

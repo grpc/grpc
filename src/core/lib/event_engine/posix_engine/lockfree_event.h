@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -24,7 +24,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class Scheduler;
 
@@ -67,7 +67,7 @@ class LockfreeEvent {
   Scheduler* scheduler_;
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H

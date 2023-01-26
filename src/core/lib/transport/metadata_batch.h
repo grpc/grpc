@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
-#define GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -34,7 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -404,6 +405,15 @@ struct WaitForReady {
   static absl::string_view DebugKey() { return "WaitForReady"; }
   static constexpr bool kRepeatable = false;
   static std::string DisplayValue(ValueType x);
+};
+
+// Annotation added by a transport to note that server trailing metadata
+// is a Trailers-Only response.
+struct GrpcTrailersOnly {
+  static absl::string_view DebugKey() { return "GrpcTrailersOnly"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
 };
 
 namespace metadata_detail {
@@ -1317,10 +1327,10 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
-    grpc_core::WaitForReady>;
+    grpc_core::WaitForReady, grpc_core::GrpcTrailersOnly>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;
 };
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H

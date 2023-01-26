@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,8 +41,9 @@ namespace grpc_core {
 class ChannelStackBuilder {
  public:
   // Initialize with a name.
-  ChannelStackBuilder(const char* name, grpc_channel_stack_type type)
-      : name_(name), type_(type) {}
+  // channel_args *must be* preconditioned already.
+  ChannelStackBuilder(const char* name, grpc_channel_stack_type type,
+                      const ChannelArgs& channel_args);
 
   const char* name() const { return name_; }
 
@@ -61,9 +62,6 @@ class ChannelStackBuilder {
 
   // Query the transport.
   grpc_transport* transport() const { return transport_; }
-
-  // Set channel args.
-  ChannelStackBuilder& SetChannelArgs(const ChannelArgs& args);
 
   // Query the channel args.
   const ChannelArgs& channel_args() const { return args_; }
@@ -98,7 +96,7 @@ class ChannelStackBuilder {
   virtual absl::StatusOr<RefCountedPtr<grpc_channel_stack>> Build() = 0;
 
  protected:
-  ~ChannelStackBuilder();
+  ~ChannelStackBuilder() = default;
 
  private:
   static std::string unknown_target() { return "unknown"; }
@@ -119,4 +117,4 @@ class ChannelStackBuilder {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H

@@ -23,8 +23,8 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include <grpcpp/impl/codegen/service_type.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
@@ -58,6 +58,10 @@ class OrcaService : public Service {
   void SetMemoryUtilization(double memory_utilization);
   void DeleteMemoryUtilization();
 
+  // Sets of removes the QPS value to be reported to clients.
+  void SetQps(double qps);
+  void DeleteQps();
+
   // Sets or removed named utilization values to be reported to clients.
   void SetNamedUtilization(std::string name, double utilization);
   void DeleteNamedUtilization(const std::string& name);
@@ -73,6 +77,7 @@ class OrcaService : public Service {
   grpc::internal::Mutex mu_;
   double cpu_utilization_ ABSL_GUARDED_BY(&mu_) = -1;
   double memory_utilization_ ABSL_GUARDED_BY(&mu_) = -1;
+  double qps_ ABSL_GUARDED_BY(&mu_) = -1;
   std::map<std::string, double> named_utilization_ ABSL_GUARDED_BY(&mu_);
   absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(&mu_);
 };

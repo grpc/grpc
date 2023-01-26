@@ -121,7 +121,8 @@ TEST_P(End2EndBinderTransportTest, UnaryCallWithNonOkStatus) {
 TEST_P(End2EndBinderTransportTest, UnaryCallServerTimeout) {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub = NewStub();
   grpc::ClientContext context;
-  context.set_deadline(absl::ToChronoTime(absl::Now() + absl::Seconds(1)));
+  context.set_deadline(absl::ToChronoTime(
+      absl::Now() + (absl::Seconds(1) * grpc_test_slowdown_factor())));
   grpc::testing::EchoRequest request;
   grpc::testing::EchoResponse response;
   request.set_message("UnaryCallServerTimeout");
@@ -361,7 +362,7 @@ TEST_P(End2EndBinderTransportTest, ClientStreamingCall) {
   std::unique_ptr<grpc::ClientWriter<grpc::testing::EchoRequest>> writer =
       stub->RequestStream(&context, &response);
   constexpr size_t kClientStreamingCounts = 100;
-  std::string expected = "";
+  std::string expected;
   for (size_t i = 0; i < kClientStreamingCounts; ++i) {
     grpc::testing::EchoRequest request;
     request.set_message("ClientStreamingCall" + std::to_string(i));

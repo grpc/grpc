@@ -1,25 +1,29 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <string>
+
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -32,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -39,6 +44,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/util/mock_endpoint.h"
 
@@ -151,13 +157,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      if (ev.type != GRPC_OP_COMPLETE) {
+        grpc_core::Crash(absl::StrFormat(
+            "[%d/%d requested calls] Unexpected event type (expected "
+            "COMPLETE): %s",
+            i, requested_calls, grpc_event_string(&ev).c_str()));
+      }
     }
     grpc_completion_queue_shutdown(cq);
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+      if (ev.type != GRPC_QUEUE_SHUTDOWN) {
+        grpc_core::Crash(
+            absl::StrFormat("Unexpected event type (expected SHUTDOWN): %s",
+                            grpc_event_string(&ev).c_str()));
+      }
     }
     grpc_call_unref(call);
     grpc_completion_queue_destroy(cq);

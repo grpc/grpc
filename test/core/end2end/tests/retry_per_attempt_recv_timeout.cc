@@ -23,11 +23,12 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -151,7 +152,7 @@ static void test_retry_per_attempt_recv_timeout(
 
   grpc_core::CqVerifier cqv(f.cq);
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = n_seconds_from_now(10);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
@@ -291,14 +292,20 @@ static void test_retry_per_attempt_recv_timeout(
   }
   GPR_ASSERT(found_retry_header);
 
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
+  op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(302),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
   // Server sends OK status.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
@@ -311,11 +318,12 @@ static void test_retry_per_attempt_recv_timeout(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(302),
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(303),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(302), true);
+  cqv.Expect(tag(303), true);
   cqv.Expect(tag(1), true);
   cqv.Verify();
 

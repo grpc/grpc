@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
-#define GRPC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
+#define GRPC_SRC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
 
 #include <grpc/support/port_platform.h>
 
@@ -32,24 +32,24 @@
 // a registry to avoid name collisions.
 //
 // Expected usage:
-/*
-// Interface has a virtual method that returns a UniqueTypeName.
-class Interface {
- public:
-  virtual ~Interface() = default;
-  virtual UniqueTypeName type() const = 0;
-};
+//
+//// Interface has a virtual method that returns a UniqueTypeName.
+// class Interface {
+// public:
+// virtual ~Interface() = default;
+// virtual UniqueTypeName type() const = 0;
+// };
 
-// Implementation uses a static factory instance to return the same
-// UniqueTypeName for every instance.
-class FooImplementation : public Interface {
- public:
-  UniqueTypeName type() const override {
-    static UniqueTypeName::Factory kFactory("Foo");
-    return kFactory.Create();
-  }
-};
-*/
+//// Implementation uses a static factory instance to return the same
+//// UniqueTypeName for every instance.
+// class FooImplementation : public Interface {
+// public:
+// UniqueTypeName type() const override {
+//   static UniqueTypeName::Factory kFactory("Foo");
+//   return kFactory.Create();
+// }
+// };
+//
 
 namespace grpc_core {
 
@@ -101,4 +101,4 @@ class UniqueTypeName {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H

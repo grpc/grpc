@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -26,15 +26,15 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstdint>
+#include <memory>
 #include <new>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -47,8 +47,7 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
@@ -56,6 +55,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -71,6 +71,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -94,7 +95,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -165,9 +165,9 @@ class Call : public CppImplOf<Call, grpc_call> {
   struct ChildCall {
     explicit ChildCall(Call* parent) : parent(parent) {}
     Call* parent;
-    /** siblings: children of the same parent form a list, and this list is
-       protected under
-        parent->mu */
+    /// siblings: children of the same parent form a list, and this list is
+    /// protected under
+    /// parent->mu
     Call* sibling_next = nullptr;
     Call* sibling_prev = nullptr;
   };
@@ -246,10 +246,10 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
   if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
     send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
   }
-  /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
-   * GRPC_PROPAGATE_STATS_CONTEXT */
-  /* TODO(ctiller): This should change to use the appropriate census start_op
-   * call. */
+  // for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
+  // GRPC_PROPAGATE_STATS_CONTEXT
+  // TODO(ctiller): This should change to use the appropriate census start_op
+  // call.
   if (propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
     if (0 == (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
       return absl::UnknownError(
@@ -454,21 +454,21 @@ class FilterStackCall final : public Call {
   struct BatchControl {
     FilterStackCall* call_ = nullptr;
     grpc_transport_stream_op_batch op_;
-    /* Share memory for cq_completion and notify_tag as they are never needed
-       simultaneously. Each byte used in this data structure count as six bytes
-       per call, so any savings we can make are worthwhile,
+    // Share memory for cq_completion and notify_tag as they are never needed
+    // simultaneously. Each byte used in this data structure count as six bytes
+    // per call, so any savings we can make are worthwhile,
 
-       We use notify_tag to determine whether or not to send notification to the
-       completion queue. Once we've made that determination, we can reuse the
-       memory for cq_completion. */
+    // We use notify_tag to determine whether or not to send notification to the
+    // completion queue. Once we've made that determination, we can reuse the
+    // memory for cq_completion.
     union {
       grpc_cq_completion cq_completion;
       struct {
-        /* Any given op indicates completion by either (a) calling a closure or
-           (b) sending a notification on the call's completion queue.  If
-           \a is_closure is true, \a tag indicates a closure to be invoked;
-           otherwise, \a tag indicates the tag to be used in the notification to
-           be sent to the completion queue. */
+        // Any given op indicates completion by either (a) calling a closure or
+        // (b) sending a notification on the call's completion queue.  If
+        // \a is_closure is true, \a tag indicates a closure to be invoked;
+        // otherwise, \a tag indicates the tag to be used in the notification to
+        // be sent to the completion queue.
         void* tag;
         bool is_closure;
       } notify_tag;
@@ -530,11 +530,11 @@ class FilterStackCall final : public Call {
   grpc_polling_entity pollent_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 
-  /** has grpc_call_unref been called */
+  /// has grpc_call_unref been called
   bool destroy_called_ = false;
   // Trailers-only response status
   bool is_trailers_only_ = false;
-  /** which ops are in-flight */
+  /// which ops are in-flight
   bool sent_initial_metadata_ = false;
   bool sending_message_ = false;
   bool sent_final_op_ = false;
@@ -546,28 +546,28 @@ class FilterStackCall final : public Call {
   BatchControl* active_batches_[kMaxConcurrentBatches] = {};
   grpc_transport_stream_op_batch_payload stream_op_payload_;
 
-  /* first idx: is_receiving, second idx: is_trailing */
+  // first idx: is_receiving, second idx: is_trailing
   grpc_metadata_batch send_initial_metadata_{arena()};
   grpc_metadata_batch send_trailing_metadata_{arena()};
   grpc_metadata_batch recv_initial_metadata_{arena()};
   grpc_metadata_batch recv_trailing_metadata_{arena()};
 
-  /* Buffered read metadata waiting to be returned to the application.
-     Element 0 is initial metadata, element 1 is trailing metadata. */
+  // Buffered read metadata waiting to be returned to the application.
+  // Element 0 is initial metadata, element 1 is trailing metadata.
   grpc_metadata_array* buffered_metadata_[2] = {};
 
-  /* Call data useful used for reporting. Only valid after the call has
-   * completed */
+  // Call data useful used for reporting. Only valid after the call has
+  // completed
   grpc_call_final_info final_info_;
 
-  /* Compression algorithm for *incoming* data */
+  // Compression algorithm for *incoming* data
   grpc_compression_algorithm incoming_compression_algorithm_ =
       GRPC_COMPRESS_NONE;
-  /* Supported encodings (compression algorithms), a bitset.
-   * Always support no compression. */
+  // Supported encodings (compression algorithms), a bitset.
+  // Always support no compression.
   CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
 
-  /* Contexts for various subsystems (security, tracing, ...). */
+  // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
   SliceBuffer send_slice_buffer_;
@@ -601,22 +601,22 @@ class FilterStackCall final : public Call {
   } final_op_;
   AtomicError status_error_;
 
-  /* recv_state can contain one of the following values:
-     RECV_NONE :                 :  no initial metadata and messages received
-     RECV_INITIAL_METADATA_FIRST :  received initial metadata first
-     a batch_control*            :  received messages first
+  // recv_state can contain one of the following values:
+  // RECV_NONE :                 :  no initial metadata and messages received
+  // RECV_INITIAL_METADATA_FIRST :  received initial metadata first
+  // a batch_control*            :  received messages first
 
-                 +------1------RECV_NONE------3-----+
-                 |                                  |
-                 |                                  |
-                 v                                  v
-     RECV_INITIAL_METADATA_FIRST        receiving_stream_ready_bctlp
-           |           ^                      |           ^
-           |           |                      |           |
-           +-----2-----+                      +-----4-----+
+  //             +------1------RECV_NONE------3-----+
+  //             |                                  |
+  //             |                                  |
+  //             v                                  v
+  // RECV_INITIAL_METADATA_FIRST        receiving_stream_ready_bctlp
+  //       |           ^                      |           ^
+  //       |           |                      |           |
+  //       +-----2-----+                      +-----4-----+
 
-    For 1, 4: See receiving_initial_metadata_ready() function
-    For 2, 3: See receiving_stream_ready() function */
+  // For 1, 4: See receiving_initial_metadata_ready() function
+  // For 2, 3: See receiving_stream_ready() function
   gpr_atm recv_state_ = 0;
 };
 
@@ -674,7 +674,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     add_init_error(&error, absl_status_to_grpc_error(call->InitParent(
                                parent, args->propagation_mask)));
   }
-  /* initial refcount dropped by grpc_call_unref */
+  // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
       call->call_stack(), args->server_transport_data,
       call->context_,     path,
@@ -729,8 +729,7 @@ void FilterStackCall::SetCompletionQueue(grpc_completion_queue* cq) {
   GPR_ASSERT(cq);
 
   if (grpc_polling_entity_pollset_set(&pollent_) != nullptr) {
-    gpr_log(GPR_ERROR, "A pollset_set is already registered for this call.");
-    abort();
+    Crash("A pollset_set is already registered for this call.");
   }
   cq_ = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");
@@ -1046,7 +1045,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
 
 namespace {
 bool AreWriteFlagsValid(uint32_t flags) {
-  /* check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set */
+  // check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set
   const uint32_t allowed_write_positions =
       (GRPC_WRITE_USED_MASK | GRPC_WRITE_INTERNAL_USED_MASK);
   const uint32_t invalid_positions = ~allowed_write_positions;
@@ -1054,7 +1053,7 @@ bool AreWriteFlagsValid(uint32_t flags) {
 }
 
 bool AreInitialMetadataFlagsValid(uint32_t flags) {
-  /* check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set */
+  // check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set
   uint32_t invalid_positions = ~GRPC_INITIAL_METADATA_USED_MASK;
   return !(flags & invalid_positions);
 }
@@ -1122,7 +1121,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
     call->send_trailing_metadata_.Clear();
   }
   if (op_.recv_trailing_metadata) {
-    /* propagate cancellation to any interested children */
+    // propagate cancellation to any interested children
     gpr_atm_rel_store(&call->received_final_op_atm_, 1);
     call->PropagateCancellationToChildren();
     error = absl::OkStatus();
@@ -1134,14 +1133,14 @@ void FilterStackCall::BatchControl::PostCompletion() {
   batch_error_.set(absl::OkStatus());
 
   if (completion_data_.notify_tag.is_closure) {
-    /* unrefs error */
+    // unrefs error
     call_ = nullptr;
     Closure::Run(DEBUG_LOCATION,
                  static_cast<grpc_closure*>(completion_data_.notify_tag.tag),
                  error);
     call->InternalUnref("completion");
   } else {
-    /* unrefs error */
+    // unrefs error
     grpc_cq_end_op(
         call->cq_, completion_data_.notify_tag.tag, error,
         [](void* user_data, grpc_cq_completion* /*storage*/) {
@@ -1194,9 +1193,9 @@ void FilterStackCall::BatchControl::ReceivingStreamReady(
     }
     call->CancelWithError(error);
   }
-  /* If recv_state is kRecvNone, we will save the batch_control
-   * object with rel_cas, and will not use it after the cas. Its corresponding
-   * acq_load is in receiving_initial_metadata_ready() */
+  // If recv_state is kRecvNone, we will save the batch_control
+  // object with rel_cas, and will not use it after the cas. Its corresponding
+  // acq_load is in receiving_initial_metadata_ready()
   if (!error.ok() || !call->receiving_slice_buffer_.has_value() ||
       !gpr_atm_rel_cas(&call->recv_state_, kRecvNone,
                        reinterpret_cast<gpr_atm>(this))) {
@@ -1235,10 +1234,10 @@ void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
   if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
                         compression_options.enabled_algorithms_bitset)
                         .IsSet(compression_algorithm))) {
-    /* check if algorithm is supported by current channel config */
+    // check if algorithm is supported by current channel config
     call->HandleCompressionAlgorithmDisabled(compression_algorithm);
   }
-  /* GRPC_COMPRESS_NONE is always set. */
+  // GRPC_COMPRESS_NONE is always set.
   GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
   if (GPR_UNLIKELY(
           !call->encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
@@ -1258,7 +1257,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_metadata_batch* md = &call->recv_initial_metadata_;
     call->RecvInitialFilter(md);
 
-    /* TODO(ctiller): this could be moved into recv_initial_filter now */
+    // TODO(ctiller): this could be moved into recv_initial_filter now
     ValidateFilteredMetadata();
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
@@ -1275,27 +1274,27 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
   grpc_closure* saved_rsr_closure = nullptr;
   while (true) {
     gpr_atm rsr_bctlp = gpr_atm_acq_load(&call->recv_state_);
-    /* Should only receive initial metadata once */
+    // Should only receive initial metadata once
     GPR_ASSERT(rsr_bctlp != 1);
     if (rsr_bctlp == 0) {
-      /* We haven't seen initial metadata and messages before, thus initial
-       * metadata is received first.
-       * no_barrier_cas is used, as this function won't access the batch_control
-       * object saved by receiving_stream_ready() if the initial metadata is
-       * received first. */
+      // We haven't seen initial metadata and messages before, thus initial
+      // metadata is received first.
+      // no_barrier_cas is used, as this function won't access the batch_control
+      // object saved by receiving_stream_ready() if the initial metadata is
+      // received first.
       if (gpr_atm_no_barrier_cas(&call->recv_state_, kRecvNone,
                                  kRecvInitialMetadataFirst)) {
         break;
       }
     } else {
-      /* Already received messages */
+      // Already received messages
       saved_rsr_closure = GRPC_CLOSURE_CREATE(
           [](void* bctl, grpc_error_handle error) {
             static_cast<BatchControl*>(bctl)->ReceivingStreamReady(error);
           },
           reinterpret_cast<BatchControl*>(rsr_bctlp),
           grpc_schedule_on_exec_ctx);
-      /* No need to modify recv_state */
+      // No need to modify recv_state
       break;
     }
   }
@@ -1364,6 +1363,15 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     seen_ops |= (1u << ops[i].op);
   }
 
+  if (!is_client() &&
+      (seen_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER)) != 0 &&
+      (seen_ops & (1u << GRPC_OP_RECV_MESSAGE)) != 0) {
+    gpr_log(GPR_ERROR,
+            "******************* SEND_STATUS WITH RECV_MESSAGE "
+            "*******************");
+    return GRPC_CALL_ERROR;
+  }
+
   GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
 
   if (nops == 0) {
@@ -1383,7 +1391,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   stream_op = &bctl->op_;
   stream_op_payload = &stream_op_payload_;
 
-  /* rewrite batch ops into a transport op */
+  // rewrite batch ops into a transport op
   for (i = 0; i < nops; i++) {
     op = &ops[i];
     if (op->reserved != nullptr) {
@@ -1392,7 +1400,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     }
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        /* Flag validation: currently allow no flags */
+        // Flag validation: currently allow no flags
         if (!AreInitialMetadataFlagsValid(op->flags)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1405,7 +1413,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         // algorithm by setting the initial metadata with key of
         // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
         // with the compression algorithm mapped from compression level.
-        /* process compression level */
+        // process compression level
         grpc_compression_level effective_compression_level =
             GRPC_COMPRESS_LEVEL_NONE;
         bool level_set = false;
@@ -1445,7 +1453,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         // Ignore any te metadata key value pairs specified.
         send_initial_metadata_.Remove(TeMetadata());
-        /* TODO(ctiller): just make these the same variable? */
+        // TODO(ctiller): just make these the same variable?
         if (is_client() && send_deadline() != Timestamp::InfFuture()) {
           send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
         }
@@ -1480,9 +1488,9 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           goto done_with_error;
         }
         uint32_t flags = op->flags;
-        /* If the outgoing buffer is already compressed, mark it as so in the
-           flags. These will be picked up by the compression filter and further
-           (wasteful) attempts at compression skipped. */
+        // If the outgoing buffer is already compressed, mark it as so in the
+        // flags. These will be picked up by the compression filter and further
+        // (wasteful) attempts at compression skipped.
         if (op->data.send_message.send_message->data.raw.compression >
             GRPC_COMPRESS_NONE) {
           flags |= GRPC_WRITE_INTERNAL_COMPRESS;
@@ -1499,7 +1507,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         break;
       }
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT: {
-        /* Flag validation: currently allow no flags */
+        // Flag validation: currently allow no flags
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1520,7 +1528,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         break;
       }
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
-        /* Flag validation: currently allow no flags */
+        // Flag validation: currently allow no flags
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1584,7 +1592,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         break;
       }
       case GRPC_OP_RECV_INITIAL_METADATA: {
-        /* Flag validation: currently allow no flags */
+        // Flag validation: currently allow no flags
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1619,7 +1627,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         break;
       }
       case GRPC_OP_RECV_MESSAGE: {
-        /* Flag validation: currently allow no flags */
+        // Flag validation: currently allow no flags
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1655,7 +1663,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         break;
       }
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
-        /* Flag validation: currently allow no flags */
+        // Flag validation: currently allow no flags
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1694,7 +1702,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         break;
       }
       case GRPC_OP_RECV_CLOSE_ON_SERVER: {
-        /* Flag validation: currently allow no flags */
+        // Flag validation: currently allow no flags
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1751,7 +1759,7 @@ done:
   return error;
 
 done_with_error:
-  /* reverse any mutations that occurred */
+  // reverse any mutations that occurred
   if (stream_op->send_initial_metadata) {
     sent_initial_metadata_ = false;
     send_initial_metadata_.Clear();
@@ -1812,7 +1820,11 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class PromiseBasedCall : public Call, public Activity, public Wakeable {
+class PromiseBasedCall : public Call,
+                         public Activity,
+                         public Wakeable,
+                         public grpc_event_engine::experimental::EventEngine::
+                             Closure /* for deadlines */ {
  public:
   PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
 
@@ -1939,23 +1951,25 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
 
+  void UpdateDeadline(Timestamp deadline);
+  void ResetDeadline();
+  // Implementation of EventEngine::Closure, called when deadline expires
+  void Run() override;
+
  protected:
   class ScopedContext
       : public ScopedActivity,
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallContext>,
-        public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<FragmentAllocator> {
+        public promise_detail::Context<CallFinalization> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
-          promise_detail::Context<CallFinalization>(&call->finalization_),
-          promise_detail::Context<FragmentAllocator>(
-              &call->fragment_allocator_) {}
+          promise_detail::Context<CallFinalization>(&call->finalization_) {}
   };
 
   class Completion {
@@ -2175,14 +2189,16 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   CallContext call_context_{this};
   bool keep_polling_ ABSL_GUARDED_BY(mu()) = false;
 
-  /* Contexts for various subsystems (security, tracing, ...). */
+  // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_);
-  FragmentAllocator fragment_allocator_ ABSL_GUARDED_BY(mu_);
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
   CallFinalization finalization_;
+  // Current deadline.
+  Timestamp deadline_ = Timestamp::InfFuture();
+  grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
 };
 
 template <typename T>
@@ -2349,6 +2365,32 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
       grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
 }
 
+void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
+  if (deadline >= deadline_) return;
+  auto* const event_engine = channel()->event_engine();
+  if (deadline_ != Timestamp::InfFuture()) {
+    if (!event_engine->Cancel(deadline_task_)) return;
+  } else {
+    InternalRef("deadline");
+  }
+  event_engine->RunAfter(deadline - Timestamp::Now(), this);
+}
+
+void PromiseBasedCall::ResetDeadline() {
+  if (deadline_ == Timestamp::InfFuture()) return;
+  auto* const event_engine = channel()->event_engine();
+  if (!event_engine->Cancel(deadline_task_)) return;
+  deadline_ = Timestamp::InfFuture();
+  InternalUnref("deadline");
+}
+
+void PromiseBasedCall::Run() {
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
+  CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
+  InternalUnref("deadline");
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // CallContext
 
@@ -2362,6 +2404,10 @@ void CallContext::IncrementRefCount(const char* reason) {
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
 
+void CallContext::UpdateDeadline(Timestamp deadline) {
+  call_->UpdateDeadline(deadline);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
 
@@ -2372,7 +2418,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     global_stats().IncrementClientCallsCreated();
     ScopedContext context(this);
     send_initial_metadata_ =
-        GetContext<FragmentAllocator>()->MakeClientMetadata();
+        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
@@ -2380,6 +2426,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     }
     if (auto* channelz_channel = channel()->channelz_node()) {
       channelz_channel->RecordCallStarted();
+    }
+    if (args->send_deadline != Timestamp::InfFuture()) {
+      UpdateDeadline(args->send_deadline);
     }
   }
 
@@ -2401,7 +2450,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   void Orphan() override {
     MutexLock lock(mu());
     ScopedContext ctx(this);
-    if (!completed_) Finish(ServerMetadataHandle(absl::CancelledError()));
+    if (!completed_) Finish(ServerMetadataFromStatus(absl::CancelledError()));
   }
   bool is_trailers_only() const override {
     MutexLock lock(mu());
@@ -2460,7 +2509,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_GUARDED_BY(mu());
   absl::optional<PipeReceiver<MessageHandle>::NextType> outstanding_recv_
       ABSL_GUARDED_BY(mu());
-  absl::optional<Latch<ServerMetadata*>::WaitPromise>
+  absl::optional<LatchWaitPromise<ServerMetadata*>>
       server_initial_metadata_ready_;
   absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
@@ -2485,7 +2534,7 @@ void ClientPromiseBasedCall::StartPromise(
 void ClientPromiseBasedCall::CancelWithError(grpc_error_handle error) {
   MutexLock lock(mu());
   ScopedContext context(this);
-  Finish(ServerMetadataHandle(grpc_error_to_absl_status(error)));
+  Finish(ServerMetadataFromStatus(grpc_error_to_absl_status(error)));
 }
 
 grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
@@ -2543,7 +2592,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =
             op.data.recv_initial_metadata.recv_initial_metadata;
-        server_initial_metadata_ready_ = server_initial_metadata_.Wait();
+        server_initial_metadata_ready_.emplace(server_initial_metadata_.Wait());
         recv_initial_metadata_completion_ =
             AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata);
       } break;
@@ -2568,8 +2617,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
               &op.data.send_message.send_message->data.raw.slice_buffer,
               send.c_slice_buffer());
           outstanding_send_.emplace(client_to_server_messages_.sender.Push(
-              GetContext<FragmentAllocator>()->MakeMessage(std::move(send),
-                                                           op.flags)));
+              GetContext<Arena>()->MakePooled<Message>(std::move(send),
+                                                       op.flags)));
         } else {
           FailCompletion(completion);
         }
@@ -2681,7 +2730,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
       outstanding_send_.reset();
       if (!*result) {
         FailCompletion(send_message_completion_);
-        Finish(ServerMetadataHandle(absl::Status(
+        Finish(ServerMetadataFromStatus(absl::Status(
             absl::StatusCode::kInternal, "Failed to send message to server")));
       }
     }
@@ -2754,6 +2803,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
             trailing_metadata->DebugString().c_str());
   }
   promise_ = ArenaPromise<ServerMetadataHandle>();
+  ResetDeadline();
   completed_ = true;
   if (recv_initial_metadata_ != nullptr) {
     ForceImmediateRepoll();
@@ -2836,6 +2886,9 @@ void ClientPromiseBasedCall::PublishStatus(
         gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
   }
   PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
+  // Clear state saying we have a RECV_STATUS_ON_CLIENT outstanding
+  // (so we don't call through twice)
+  recv_status_on_client_ = absl::monostate();
   FinishOpOnCompletion(&recv_status_on_client_completion_,
                        PendingOp::kReceiveStatusOnClient);
 }

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -26,16 +26,17 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
-#include "test/core/compression/args_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -109,8 +110,8 @@ static void request_for_disabled_algorithm(
   grpc_call* s;
   grpc_slice request_payload_slice;
   grpc_byte_buffer* request_payload;
-  const grpc_channel_args* client_args;
-  const grpc_channel_args* server_args;
+  grpc_core::ChannelArgs client_args;
+  grpc_core::ChannelArgs server_args;
   grpc_end2end_test_fixture f;
   grpc_op ops[6];
   grpc_op* op;
@@ -130,28 +131,26 @@ static void request_for_disabled_algorithm(
   request_payload_slice = grpc_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  client_args = grpc_channel_args_set_channel_default_compression_algorithm(
-      nullptr, requested_client_compression_algorithm);
-  server_args = grpc_channel_args_set_channel_default_compression_algorithm(
-      nullptr, GRPC_COMPRESS_NONE);
-  server_args = grpc_channel_args_compression_algorithm_set_state(
-      &server_args, algorithm_to_disable, false);
+  client_args =
+      grpc_core::ChannelArgs().Set(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                                   requested_client_compression_algorithm);
+  server_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, GRPC_COMPRESS_NONE)
+          .Set(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+               grpc_core::BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT>()
+                   .SetAll(true)
+                   .Set(algorithm_to_disable, false)
+                   .ToInt<uint32_t>());
   if (!decompress_in_core) {
-    grpc_arg disable_decompression_in_core_arg =
-        grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
-    const grpc_channel_args* old_client_args = client_args;
-    const grpc_channel_args* old_server_args = server_args;
-    client_args = grpc_channel_args_copy_and_add(
-        client_args, &disable_decompression_in_core_arg, 1);
-    server_args = grpc_channel_args_copy_and_add(
-        server_args, &disable_decompression_in_core_arg, 1);
-    grpc_channel_args_destroy(old_client_args);
-    grpc_channel_args_destroy(old_server_args);
+    client_args =
+        client_args.Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, false);
+    server_args =
+        server_args.Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, false);
   }
 
-  f = begin_test(config, test_name, client_args, server_args,
-                 decompress_in_core);
+  f = begin_test(config, test_name, client_args.ToC().get(),
+                 server_args.ToC().get(), decompress_in_core);
   grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -241,16 +240,16 @@ static void request_for_disabled_algorithm(
   cqv.Expect(tag(103), true);
   cqv.Verify();
 
-  /* call was cancelled (closed) ... */
+  // call was cancelled (closed) ...
   GPR_ASSERT(was_cancelled != 0);
-  /* with a certain error */
+  // with a certain error
   GPR_ASSERT(status == expected_error);
 
   const char* algo_name = nullptr;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
   std::string expected_details =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
-  /* and we expect a specific reason for it */
+  // and we expect a specific reason for it
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, expected_details.c_str()));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
 
@@ -266,8 +265,6 @@ static void request_for_disabled_algorithm(
   grpc_slice_unref(request_payload_slice);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_channel_args_destroy(client_args);
-  grpc_channel_args_destroy(server_args);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -286,8 +283,8 @@ static void request_with_payload_template_inner(
   grpc_call* s;
   grpc_slice request_payload_slice;
   grpc_byte_buffer* request_payload = nullptr;
-  const grpc_channel_args* client_args;
-  const grpc_channel_args* server_args;
+  grpc_core::ChannelArgs client_args;
+  grpc_core::ChannelArgs server_args;
   grpc_end2end_test_fixture f;
   grpc_op ops[6];
   grpc_op* op;
@@ -315,25 +312,20 @@ static void request_with_payload_template_inner(
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string(response_str);
 
-  client_args = grpc_channel_args_set_channel_default_compression_algorithm(
-      nullptr, default_client_channel_compression_algorithm);
-  server_args = grpc_channel_args_set_channel_default_compression_algorithm(
-      nullptr, default_server_channel_compression_algorithm);
+  client_args = grpc_core::ChannelArgs().Set(
+      GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+      default_client_channel_compression_algorithm);
+  server_args = grpc_core::ChannelArgs().Set(
+      GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+      default_server_channel_compression_algorithm);
   if (!decompress_in_core) {
-    grpc_arg disable_decompression_in_core_arg =
-        grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
-    const grpc_channel_args* old_client_args = client_args;
-    const grpc_channel_args* old_server_args = server_args;
-    client_args = grpc_channel_args_copy_and_add(
-        client_args, &disable_decompression_in_core_arg, 1);
-    server_args = grpc_channel_args_copy_and_add(
-        server_args, &disable_decompression_in_core_arg, 1);
-    grpc_channel_args_destroy(old_client_args);
-    grpc_channel_args_destroy(old_server_args);
+    client_args =
+        client_args.Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, false);
+    server_args =
+        server_args.Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, false);
   }
-  f = begin_test(config, test_name, client_args, server_args,
-                 decompress_in_core);
+  f = begin_test(config, test_name, client_args.ToC().get(),
+                 server_args.ToC().get(), decompress_in_core);
   grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -558,8 +550,6 @@ static void request_with_payload_template_inner(
   grpc_call_unref(c);
   grpc_call_unref(s);
 
-  grpc_channel_args_destroy(client_args);
-  grpc_channel_args_destroy(server_args);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -652,21 +642,21 @@ static void test_invoke_request_with_compressed_payload_md_override(
   memset(&identity_compression_override.internal_data, 0,
          sizeof(identity_compression_override.internal_data));
 
-  /* Channel default NONE (aka IDENTITY), call override to GZIP */
+  // Channel default NONE (aka IDENTITY), call override to GZIP
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
       /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
-  /* Channel default DEFLATE, call override to GZIP */
+  // Channel default DEFLATE, call override to GZIP
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
       /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
-  /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
+  // Channel default DEFLATE, call override to NONE (aka IDENTITY)
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,

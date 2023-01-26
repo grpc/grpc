@@ -33,13 +33,12 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpcpp/ext/orca_service.h>
-#include <grpcpp/impl/codegen/server_callback_handlers.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_callback_handlers.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
@@ -203,6 +202,18 @@ void OrcaService::DeleteMemoryUtilization() {
   response_slice_.reset();
 }
 
+void OrcaService::SetQps(double qps) {
+  grpc::internal::MutexLock lock(&mu_);
+  qps_ = qps;
+  response_slice_.reset();
+}
+
+void OrcaService::DeleteQps() {
+  grpc::internal::MutexLock lock(&mu_);
+  qps_ = -1;
+  response_slice_.reset();
+}
+
 void OrcaService::SetNamedUtilization(std::string name, double utilization) {
   grpc::internal::MutexLock lock(&mu_);
   named_utilization_[std::move(name)] = utilization;
@@ -235,6 +246,9 @@ Slice OrcaService::GetOrCreateSerializedResponse() {
     if (memory_utilization_ != -1) {
       xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
                                                           memory_utilization_);
+    }
+    if (qps_ != -1) {
+      xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, qps_);
     }
     for (const auto& p : named_utilization_) {
       xds_data_orca_v3_OrcaLoadReport_utilization_set(

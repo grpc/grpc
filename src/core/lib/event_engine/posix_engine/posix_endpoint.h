@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,18 +31,20 @@
 #include "absl/hash/hash.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
@@ -62,7 +64,7 @@ typedef size_t msg_iovlen_type;
 #endif  //  GRPC_POSIX_SOCKET_TCP
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -345,7 +347,7 @@ class TcpZerocopySendCtx {
       // state was CHECK and is_in_write is false. This means that after the
       // previous sendmsg returned and set is_in_write to false, it did
       // not update the z-copy change from CHECK to OPEN.
-      GPR_ASSERT(false && "OMem state error!");
+      grpc_core::Crash("OMem state error!");
     }
   }
 
@@ -467,6 +469,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   PosixEndpointImpl(
       EventHandle* handle, PosixEngineClosure* on_done,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+      grpc_event_engine::experimental::MemoryAllocator&& allocator,
       const PosixTcpOptions& options);
   ~PosixEndpointImpl() override;
   void Read(
@@ -488,7 +491,11 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  void MaybeShutdown(absl::Status why);
+  int GetWrappedFd() { return fd_; }
+
+  void MaybeShutdown(
+      absl::Status why,
+      absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd);
 
  private:
   void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
@@ -513,6 +520,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
                            ssize_t* sent_length, int* saved_errno,
                            int additional_flags);
+  absl::Status TcpAnnotateError(absl::Status src_error);
 #ifdef GRPC_LINUX_ERRQUEUE
   bool ProcessErrors();
   // Reads a cmsg to process zerocopy control messages.
@@ -521,7 +529,6 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
-  grpc_core::Mutex traced_buffer_mu_;
   PosixSocketWrapper sock_;
   int fd_;
   bool is_first_read_ = true;
@@ -557,14 +564,19 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
   grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address_;
 
+  // Maintain a shared_ptr to mem_quota_ to ensure the underlying basic memory
+  // quota is not deleted until the endpoint is destroyed.
+  grpc_core::MemoryQuotaRefPtr mem_quota_;
   grpc_core::MemoryOwner memory_owner_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
 
   void* outgoing_buffer_arg_ = nullptr;
 
-  // A counter which starts at 0. It is initialized the first time the socket
-  // options for collecting timestamps are set, and is incremented with each
-  // byte sent.
+  absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
+
+  // A counter which starts at 0. It is initialized the first time the
+  // socket options for collecting timestamps are set, and is incremented
+  // with each byte sent.
   int bytes_counter_ = -1;
   // True if timestamping options are set on the socket.
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -576,28 +588,25 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   std::atomic<bool> stop_error_notification_{false};
   std::unique_ptr<TcpZerocopySendCtx> tcp_zerocopy_send_ctx_;
   TcpZerocopySendRecord* current_zerocopy_send_ = nullptr;
-  // If true, the size of buffers alloted for tcp reads will be based on the
-  // specified min_progress_size values conveyed by the upper layers.
-  bool frame_size_tuning_enabled_ = false;
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
   int min_progress_size_ = 1;
-  TracedBufferList traced_buffers_ ABSL_GUARDED_BY(traced_buffer_mu_);
+  TracedBufferList traced_buffers_;
   // The handle is owned by the PosixEndpointImpl object.
   EventHandle* handle_;
   PosixEventPoller* poller_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
-class PosixEndpoint
-    : public grpc_event_engine::experimental::EventEngine::Endpoint {
+class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint(
       EventHandle* handle, PosixEngineClosure* on_shutdown,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
-      const grpc_event_engine::experimental::EndpointConfig& config)
+      grpc_event_engine::experimental::MemoryAllocator&& allocator,
+      const PosixTcpOptions& options)
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
-                                    TcpOptionsFromEndpointConfig(config))) {}
+                                    std::move(allocator), options)) {}
 
   void Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
@@ -624,18 +633,31 @@ class PosixEndpoint
     return impl_->GetLocalAddress();
   }
 
+  int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override {
+    if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
+                           std::move(on_release_fd));
+    }
+  }
+
   ~PosixEndpoint() override {
-    impl_->MaybeShutdown(absl::InternalError("Endpoint closing"));
+    if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
+                           nullptr);
+    }
   }
 
  private:
   PosixEndpointImpl* impl_;
+  std::atomic<bool> shutdown_{false};
 };
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-class PosixEndpoint
-    : public grpc_event_engine::experimental::EventEngine::Endpoint {
+class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint() = default;
 
@@ -643,25 +665,35 @@ class PosixEndpoint
             grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
             const grpc_event_engine::experimental::EventEngine::Endpoint::
                 ReadArgs* /*args*/) override {
-    GPR_ASSERT(false && "PosixEndpoint::Read not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Read not supported on this platform");
   }
 
   void Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
              grpc_event_engine::experimental::SliceBuffer* /*data*/,
              const grpc_event_engine::experimental::EventEngine::Endpoint::
                  WriteArgs* /*args*/) override {
-    GPR_ASSERT(false && "PosixEndpoint::Write not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Write not supported on this platform");
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddress() const override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetPeerAddress not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetPeerAddress not supported on this platform");
   }
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetLocalAddress() const override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetLocalAddress not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetLocalAddress not supported on this platform");
+  }
+
+  int GetWrappedFd() override {
+    grpc_core::Crash(
+        "PosixEndpoint::GetWrappedFd not supported on this platform");
+  }
+
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override {
+    grpc_core::Crash("PosixEndpoint::Shutdown not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;
@@ -671,14 +703,15 @@ class PosixEndpoint
 
 // Create a PosixEndpoint.
 // A shared_ptr of the EventEngine is passed to the endpoint to ensure that
-// the event engine is alive for the lifetime of the endpoint. The ownership
+// the EventEngine is alive for the lifetime of the endpoint. The ownership
 // of the EventHandle is transferred to the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
-    const grpc_event_engine::experimental::EndpointConfig& config);
+    std::shared_ptr<EventEngine> engine,
+    grpc_event_engine::experimental::MemoryAllocator&& allocator,
+    const PosixTcpOptions& options);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

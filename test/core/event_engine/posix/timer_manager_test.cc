@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <memory>
 #include <random>
 
 #include "absl/functional/any_invocable.h"
@@ -32,7 +33,7 @@
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 TEST(TimerManagerTest, StressTest) {
   grpc_core::ExecCtx exec_ctx;
@@ -45,8 +46,9 @@ TEST(TimerManagerTest, StressTest) {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<> dis_millis(100, 3000);
+  auto pool = std::make_shared<grpc_event_engine::experimental::ThreadPool>();
   {
-    TimerManager manager;
+    TimerManager manager(pool);
     for (auto& timer : timers) {
       exec_ctx.InvalidateNow();
       manager.TimerInit(
@@ -69,6 +71,7 @@ TEST(TimerManagerTest, StressTest) {
       absl::SleepFor(absl::Milliseconds(333));
     }
   }
+  pool->Quiesce();
 }
 
 TEST(TimerManagerTest, ShutDownBeforeAllCallbacksAreExecuted) {
@@ -79,16 +82,18 @@ TEST(TimerManagerTest, ShutDownBeforeAllCallbacksAreExecuted) {
   timers.resize(kTimerCount);
   std::atomic_int called{0};
   experimental::AnyInvocableClosure closure([&called] { ++called; });
+  auto pool = std::make_shared<grpc_event_engine::experimental::ThreadPool>();
   {
-    TimerManager manager;
+    TimerManager manager(pool);
     for (auto& timer : timers) {
       manager.TimerInit(&timer, grpc_core::Timestamp::InfFuture(), &closure);
     }
   }
   ASSERT_EQ(called.load(), 0);
+  pool->Quiesce();
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

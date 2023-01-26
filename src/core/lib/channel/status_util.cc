@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,7 +22,11 @@
 
 #include <string.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 #include "src/core/lib/gpr/useful.h"
 
@@ -113,6 +117,20 @@ bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
 }
 
 namespace grpc_core {
+
+namespace internal {
+
+std::string StatusCodeSet::ToString() const {
+  std::vector<absl::string_view> codes;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
+    if (Contains(g_status_string_entries[i].status)) {
+      codes.emplace_back(g_status_string_entries[i].str);
+    }
+  }
+  return absl::StrCat("{", absl::StrJoin(codes, ","), "}");
+}
+
+}  // namespace internal
 
 absl::Status MaybeRewriteIllegalStatusCode(absl::Status status,
                                            absl::string_view source) {

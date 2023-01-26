@@ -23,9 +23,12 @@ import sys
 
 
 def build_valid_guard(fpath):
-    prefix = 'GRPC_' if not fpath.startswith('include/') else ''
-    return prefix + '_'.join(
-        fpath.replace('++', 'XX').replace('.', '_').upper().split('/')[1:])
+    guard_components = fpath.replace('++', 'XX').replace('.',
+                                                         '_').upper().split('/')
+    if fpath.startswith('include/'):
+        return '_'.join(guard_components[1:])
+    else:
+        return 'GRPC_' + '_'.join(guard_components)
 
 
 def load(fpath):
@@ -132,9 +135,11 @@ class GuardValidator(object):
 
         # Is there a properly commented #endif?
         flines = fcontents.rstrip().splitlines()
-        match = self.endif_c_core_re.search('\n'.join(flines[-3:]))
+        # Use findall and use the last result if there are multiple matches,
+        # i.e. nested include guards.
+        match = self.endif_c_core_re.findall('\n'.join(flines[-3:]))
         if not match and not c_core_header:
-            match = self.endif_re.search('\n'.join(flines[-3:]))
+            match = self.endif_re.findall('\n'.join(flines[-3:]))
         if not match:
             # No endif. Check if we have the last line as just '#endif' and if so
             # replace it with a properly commented one.
@@ -152,10 +157,10 @@ class GuardValidator(object):
                     fpath,
                     self.endif_c_core_re if c_core_header else self.endif_re,
                     flines[-1], '', '', False)
-        elif match.group(1) != running_guard:
+        elif match[-1] != running_guard:
             # Is the #endif guard the same as the #ifndef and #define guards?
-            fcontents = self.fail(fpath, self.endif_re, fcontents,
-                                  match.group(1), valid_guard, fix)
+            fcontents = self.fail(fpath, self.endif_re, fcontents, match[-1],
+                                  valid_guard, fix)
             if fix:
                 save(fpath, fcontents)
 
@@ -184,7 +189,7 @@ argp.add_argument('-f', '--fix', default=False, action='store_true')
 argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
 
-grep_filter = r"grep -E '^(include|src/core)/.*\.h$'"
+grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp)/.*\.h$'"
 if args.precommit:
     git_command = 'git diff --name-only HEAD'
 else:

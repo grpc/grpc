@@ -34,7 +34,7 @@ namespace {
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::RoutingPriority;
-using ::envoy::config::endpoint::v3::HealthStatus;
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
@@ -218,6 +218,12 @@ TEST_P(CdsTest, CircuitBreaking) {
                       "circuit breaker drop");
   // Cancel one RPC to allow another one through.
   rpcs[0].CancelRpc();
+  // Add a sleep here to ensure the RPC cancellation has completed correctly
+  // before trying the next RPC. There maybe a slight delay between return of
+  // CANCELLED RPC status and update of internal state tracking the number of
+  // concurrent active requests.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1000, GPR_TIMESPAN)));
   CheckRpcSendOk(DEBUG_LOCATION);
   // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
@@ -258,6 +264,12 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
                       "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
+  // Add a sleep here to ensure the RPC cancellation has completed correctly
+  // before trying the next RPC. There maybe a slight delay between return of
+  // CANCELLED RPC status and update of internal state tracking the number of
+  // concurrent active requests.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1000, GPR_TIMESPAN)));
   CheckRpcSendOk(DEBUG_LOCATION);
   // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
@@ -429,8 +441,9 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "empty address list: EDS resource eds_service_name contains empty "
-      "localities: \\[\\{region=\"xds_default_locality_region\", "
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name contains empty localities: "
+      "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.

@@ -1,27 +1,30 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/cpp/ext/filters/census/server_filter.h"
 
+#include <algorithm>
 #include <utility>
+#include <vector>
 
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -30,6 +33,7 @@
 #include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -38,12 +42,14 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/channel_filter.h"
+#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 
 namespace grpc {
+namespace internal {
 
-constexpr uint32_t CensusServerCallData::kMaxServerStatsLen;
+constexpr uint32_t OpenCensusServerCallData::kMaxServerStatsLen;
 
 namespace {
 
@@ -76,13 +82,13 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 }  // namespace
 
-void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
-                                               grpc_error_handle error) {
+void OpenCensusServerCallData::OnDoneRecvMessageCb(void* user_data,
+                                                   grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  CensusServerCallData* calld =
-      reinterpret_cast<CensusServerCallData*>(elem->call_data);
-  CensusChannelData* channeld =
-      reinterpret_cast<CensusChannelData*>(elem->channel_data);
+  OpenCensusServerCallData* calld =
+      reinterpret_cast<OpenCensusServerCallData*>(elem->call_data);
+  OpenCensusChannelData* channeld =
+      reinterpret_cast<OpenCensusChannelData*>(elem->channel_data);
   GPR_ASSERT(calld != nullptr);
   GPR_ASSERT(channeld != nullptr);
   // Stream messages are no longer valid after receiving trailing metadata.
@@ -93,11 +99,11 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
                           error);
 }
 
-void CensusServerCallData::OnDoneRecvInitialMetadataCb(
+void OpenCensusServerCallData::OnDoneRecvInitialMetadataCb(
     void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  CensusServerCallData* calld =
-      reinterpret_cast<CensusServerCallData*>(elem->call_data);
+  OpenCensusServerCallData* calld =
+      reinterpret_cast<OpenCensusServerCallData*>(elem->call_data);
   GPR_ASSERT(calld != nullptr);
   if (error.ok()) {
     grpc_metadata_batch* initial_metadata = calld->recv_initial_metadata_;
@@ -114,15 +120,17 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
           calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
     }
     if (OpenCensusStatsEnabled()) {
-      ::opencensus::stats::Record({{RpcServerStartedRpcs(), 1}},
-                                  {{ServerMethodTagKey(), calld->method_}});
+      std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+          calld->context_.tags().tags();
+      tags.emplace_back(ServerMethodTagKey(), std::string(calld->method_));
+      ::opencensus::stats::Record({{RpcServerStartedRpcs(), 1}}, tags);
     }
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->initial_on_done_recv_initial_metadata_, error);
 }
 
-void CensusServerCallData::StartTransportStreamOpBatch(
+void OpenCensusServerCallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, TransportStreamOpBatch* op) {
   if (op->recv_initial_metadata() != nullptr) {
     // substitute our callback for the op callback
@@ -155,7 +163,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, op->op());
 }
 
-grpc_error_handle CensusServerCallData::Init(
+grpc_error_handle OpenCensusServerCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   start_time_ = absl::Now();
   gc_ =
@@ -169,26 +177,32 @@ grpc_error_handle CensusServerCallData::Init(
   return absl::OkStatus();
 }
 
-void CensusServerCallData::Destroy(grpc_call_element* /*elem*/,
-                                   const grpc_call_final_info* final_info,
-                                   grpc_closure* /*then_call_closure*/) {
+void OpenCensusServerCallData::Destroy(grpc_call_element* /*elem*/,
+                                       const grpc_call_final_info* final_info,
+                                       grpc_closure* /*then_call_closure*/) {
   grpc_auth_context_release(auth_context_);
   if (OpenCensusStatsEnabled()) {
     const uint64_t request_size = GetOutgoingDataSize(final_info);
     const uint64_t response_size = GetIncomingDataSize(final_info);
     double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
+    std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+        context_.tags().tags();
+    tags.emplace_back(ServerMethodTagKey(), std::string(method_));
+    tags.emplace_back(
+        ServerStatusTagKey(),
+        std::string(StatusCodeToString(final_info->final_status)));
     ::opencensus::stats::Record(
         {{RpcServerSentBytesPerRpc(), static_cast<double>(response_size)},
          {RpcServerReceivedBytesPerRpc(), static_cast<double>(request_size)},
          {RpcServerServerLatency(), elapsed_time_ms},
          {RpcServerSentMessagesPerRpc(), sent_message_count_},
          {RpcServerReceivedMessagesPerRpc(), recv_message_count_}},
-        {{ServerMethodTagKey(), method_},
-         {ServerStatusTagKey(), StatusCodeToString(final_info->final_status)}});
+        tags);
   }
   if (OpenCensusTracingEnabled()) {
     context_.EndSpan();
   }
 }
 
+}  // namespace internal
 }  // namespace grpc

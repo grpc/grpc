@@ -26,8 +26,7 @@
 
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -35,7 +34,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -55,8 +53,6 @@
 namespace grpc_core {
 
 namespace {
-
-using ::grpc_event_engine::experimental::EventEngine;
 
 // TODO(ctiller): The idle filter was disabled in client channel by default
 // due to b/143502997. Now the bug is fixed enable the filter by default.
@@ -98,10 +94,10 @@ struct MaxAgeFilter::Config {
            max_connection_idle != Duration::Infinity();
   }
 
-  /* A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
-     connection storms. Note that the MAX_CONNECTION_AGE option without jitter
-     would not create connection storms by itself, but if there happened to be a
-     connection storm it could cause it to repeat at a fixed period. */
+  // A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
+  // connection storms. Note that the MAX_CONNECTION_AGE option without jitter
+  // would not create connection storms by itself, but if there happened to be a
+  // connection storm it could cause it to repeat at a fixed period.
   static Config FromChannelArgs(const ChannelArgs& args) {
     const Duration args_max_age =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_MS)
@@ -112,32 +108,28 @@ struct MaxAgeFilter::Config {
     const Duration args_max_age_grace =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)
             .value_or(kDefaultMaxConnectionAgeGrace);
-    /* generate a random number between 1 - kMaxConnectionAgeJitter and
-       1 + kMaxConnectionAgeJitter */
+    // generate a random number between 1 - kMaxConnectionAgeJitter and
+    // 1 + kMaxConnectionAgeJitter
     const double multiplier =
         rand() * kMaxConnectionAgeJitter * 2.0 / RAND_MAX + 1.0 -
         kMaxConnectionAgeJitter;
-    /* GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
-       will not be cast to int implicitly before the comparison. */
+    // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
+    // will not be cast to int implicitly before the comparison.
     return Config{args_max_age * multiplier, args_max_idle, args_max_age_grace};
   }
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  // TODO(hork): pull EventEngine from args
-  ClientIdleFilter filter(
-      filter_args.channel_stack(), GetClientIdleTimeout(args),
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  ClientIdleFilter filter(filter_args.channel_stack(),
+                          GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  // TODO(hork): pull EventEngine from args
   MaxAgeFilter filter(filter_args.channel_stack(),
-                      Config::FromChannelArgs(args),
-                      grpc_event_engine::experimental::GetDefaultEventEngine());
+                      Config::FromChannelArgs(args));
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));
 }
 
@@ -211,7 +203,7 @@ void MaxAgeFilter::PostInit() {
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
         },
-        engine_.get()));
+        channel_stack->EventEngine()));
   }
 }
 
@@ -272,7 +264,7 @@ void ChannelIdleFilter::StartIdleTimer() {
       [channel_stack, this](absl::Status status) {
         if (status.ok()) CloseChannel();
       },
-      engine_.get()));
+      channel_stack->EventEngine()));
 }
 
 void ChannelIdleFilter::CloseChannel() {
@@ -314,13 +306,10 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       });
 }
 
-MaxAgeFilter::MaxAgeFilter(
-    grpc_channel_stack* channel_stack, const Config& max_age_config,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
-    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle,
-                        engine),
+MaxAgeFilter::MaxAgeFilter(grpc_channel_stack* channel_stack,
+                           const Config& max_age_config)
+    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle),
       max_connection_age_(max_age_config.max_connection_age),
-      max_connection_age_grace_(max_age_config.max_connection_age_grace),
-      engine_(engine) {}
+      max_connection_age_grace_(max_age_config.max_connection_age_grace) {}
 
 }  // namespace grpc_core

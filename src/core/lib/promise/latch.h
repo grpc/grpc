@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_LATCH_H
-#define GRPC_CORE_LIB_PROMISE_LATCH_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
+#define GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
 
 #include <grpc/support/port_platform.h>
+
+#include <type_traits>
 
 #include <grpc/support/log.h>
 
@@ -31,23 +33,6 @@ namespace grpc_core {
 template <typename T>
 class Latch {
  public:
-  // This is the type of the promise returned by Wait.
-  class WaitPromise {
-   public:
-    Poll<T*> operator()() const {
-      if (latch_->has_value_) {
-        return &latch_->value_;
-      } else {
-        return latch_->waiter_.pending();
-      }
-    }
-
-   private:
-    friend class Latch;
-    explicit WaitPromise(Latch* latch) : latch_(latch) {}
-    Latch* latch_;
-  };
-
   Latch() = default;
   Latch(const Latch&) = delete;
   Latch& operator=(const Latch&) = delete;
@@ -67,11 +52,17 @@ class Latch {
   }
 
   // Produce a promise to wait for a value from this latch.
-  WaitPromise Wait() {
+  auto Wait() {
 #ifndef NDEBUG
     has_had_waiters_ = true;
 #endif
-    return WaitPromise(this);
+    return [this]() -> Poll<T*> {
+      if (has_value_) {
+        return &value_;
+      } else {
+        return waiter_.pending();
+      }
+    };
   }
 
   // Set the value of the latch. Can only be called once.
@@ -98,6 +89,9 @@ class Latch {
   IntraActivityWaiter waiter_;
 };
 
+template <typename T>
+using LatchWaitPromise = decltype(std::declval<Latch<T>>().Wait());
+
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_LATCH_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_LATCH_H

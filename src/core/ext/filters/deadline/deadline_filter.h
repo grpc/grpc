@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -90,4 +90,4 @@ bool grpc_deadline_checking_enabled(const grpc_core::ChannelArgs& args);
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
 
-#endif /* GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H

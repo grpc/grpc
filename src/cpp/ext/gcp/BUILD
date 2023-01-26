@@ -28,35 +28,34 @@ package(
     ],
 )
 
-# This is an EXPERIMENTAL target subject to change.
 grpc_cc_library(
     name = "observability",
     srcs = [
         "observability.cc",
     ],
     hdrs = [
-        "observability.h",
+        "//:include/grpcpp/ext/gcp_observability.h",
     ],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
-        "googleapis_trace_grpc_service",
         "googleapis_monitoring_grpc_service",
+        "googleapis_trace_grpc_service",
         "opencensus-stats",
+        "opencensus-stats-stackdriver_exporter",
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
-        "opencensus-stats-stackdriver_exporter",
     ],
     language = "c++",
-    tags = ["nofixdeps"],
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
-        ":observability_config",
+        "observability_config",
+        "observability_logging_sink",
         "//:gpr",
-        "//:grpc++_public_hdrs",
+        "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//:grpc_public_hdrs",
+        "//src/cpp/ext/filters/logging:logging_filter",
     ],
 )
 
@@ -77,14 +76,50 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
-        "//:env",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
-        "//:json",
-        "//:json_args",
-        "//:json_object_loader",
-        "//:slice_refcount",
-        "//:status_helper",
+        "//src/core:env",
+        "//src/core:error",
+        "//src/core:json",
+        "//src/core:json_args",
+        "//src/core:json_object_loader",
+        "//src/core:slice",
+        "//src/core:slice_refcount",
+        "//src/core:status_helper",
+        "//src/core:validation_errors",
+    ],
+)
+
+grpc_cc_library(
+    name = "observability_logging_sink",
+    srcs = [
+        "observability_logging_sink.cc",
+    ],
+    hdrs = [
+        "observability_logging_sink.h",
+    ],
+    external_deps = [
+        "absl/base",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "google/api:monitored_resource_cc_proto",
+        "googleapis_logging_cc_proto",
+        "googleapis_logging_grpc_service",
+        "protobuf_headers",
+    ],
+    language = "c++",
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "observability_config",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc++",
+        "//:grpc_opencensus_plugin",
+        "//src/core:env",
+        "//src/core:json",
+        "//src/core:time",
+        "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -27,22 +27,23 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
-/* --- Constants. ---*/
+// --- Constants. ---
 #define TSI_FAKE_FRAME_HEADER_SIZE 4
 #define TSI_FAKE_FRAME_INITIAL_ALLOCATED_SIZE 64
 #define TSI_FAKE_DEFAULT_FRAME_SIZE 16384
 #define TSI_FAKE_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 256
 
-/* --- Structure definitions. ---*/
+// --- Structure definitions. ---
 
-/* a frame is encoded like this:
-   | size |     data    |
-   where the size field value is the size of the size field plus the size of
-   the data encoded in little endian on 4 bytes.  */
+// a frame is encoded like this:
+// | size |     data    |
+// where the size field value is the size of the size field plus the size of
+// the data encoded in little endian on 4 bytes.
 struct tsi_fake_frame {
   unsigned char* data;
   size_t size;
@@ -82,7 +83,7 @@ struct tsi_fake_zero_copy_grpc_protector {
   size_t max_frame_size;
   size_t parsed_frame_size;
 };
-/* --- Utils. ---*/
+// --- Utils. ---
 
 static const char* tsi_fake_handshake_message_strings[] = {
     "CLIENT_INIT", "SERVER_INIT", "CLIENT_FINISHED", "SERVER_FINISHED"};
@@ -127,7 +128,7 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
   GPR_ASSERT(sb != nullptr && sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
   uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
   uint8_t* buf = frame_size_buffer;
-  /* Copies the first 4 bytes to a temporary buffer.  */
+  // Copies the first 4 bytes to a temporary buffer.
   size_t remaining = TSI_FAKE_FRAME_HEADER_SIZE;
   for (size_t i = 0; i < sb->count; i++) {
     size_t slice_length = GRPC_SLICE_LENGTH(sb->slices[i]);
@@ -156,8 +157,8 @@ static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
   if (!needs_draining) frame->size = 0;
 }
 
-/* Checks if the frame's allocated size is at least frame->size, and reallocs
- * more memory if necessary. */
+// Checks if the frame's allocated size is at least frame->size, and reallocs
+// more memory if necessary.
 static void tsi_fake_frame_ensure_size(tsi_fake_frame* frame) {
   if (frame->data == nullptr) {
     frame->allocated_size = frame->size;
@@ -171,9 +172,9 @@ static void tsi_fake_frame_ensure_size(tsi_fake_frame* frame) {
   }
 }
 
-/* Decodes the serialized fake frame contained in incoming_bytes, and fills
- * frame with the contents of the decoded frame.
- * This method should not be called if frame->needs_framing is not 0.  */
+// Decodes the serialized fake frame contained in incoming_bytes, and fills
+// frame with the contents of the decoded frame.
+// This method should not be called if frame->needs_framing is not 0.
 static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
                                         size_t* incoming_bytes_size,
                                         tsi_fake_frame* frame,
@@ -195,7 +196,7 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
   if (frame->offset < TSI_FAKE_FRAME_HEADER_SIZE) {
     to_read_size = TSI_FAKE_FRAME_HEADER_SIZE - frame->offset;
     if (to_read_size > available_size) {
-      /* Just fill what we can and exit. */
+      // Just fill what we can and exit.
       memcpy(frame->data + frame->offset, bytes_cursor, available_size);
       bytes_cursor += available_size;
       frame->offset += available_size;
@@ -225,9 +226,9 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
   return TSI_OK;
 }
 
-/* Encodes a fake frame into its wire format and places the result in
- * outgoing_bytes. outgoing_bytes_size indicates the size of the encoded frame.
- * This method should not be called if frame->needs_framing is 0.  */
+// Encodes a fake frame into its wire format and places the result in
+// outgoing_bytes. outgoing_bytes_size indicates the size of the encoded frame.
+// This method should not be called if frame->needs_framing is 0.
 static tsi_result tsi_fake_frame_encode(unsigned char* outgoing_bytes,
                                         size_t* outgoing_bytes_size,
                                         tsi_fake_frame* frame,
@@ -248,8 +249,8 @@ static tsi_result tsi_fake_frame_encode(unsigned char* outgoing_bytes,
   return TSI_OK;
 }
 
-/* Sets the payload of a fake frame to contain the given data blob, where
- * data_size indicates the size of data. */
+// Sets the payload of a fake frame to contain the given data blob, where
+// data_size indicates the size of data.
 static void tsi_fake_frame_set_data(unsigned char* data, size_t data_size,
                                     tsi_fake_frame* frame) {
   frame->offset = 0;
@@ -260,12 +261,12 @@ static void tsi_fake_frame_set_data(unsigned char* data, size_t data_size,
   tsi_fake_frame_reset(frame, 1 /* needs draining */);
 }
 
-/* Destroys the contents of a fake frame. */
+// Destroys the contents of a fake frame.
 static void tsi_fake_frame_destruct(tsi_fake_frame* frame) {
   if (frame->data != nullptr) gpr_free(frame->data);
 }
 
-/* --- tsi_frame_protector methods implementation. ---*/
+// --- tsi_frame_protector methods implementation. ---
 
 static tsi_result fake_protector_protect(tsi_frame_protector* self,
                                          const unsigned char* unprotected_bytes,
@@ -282,7 +283,7 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
   size_t* num_bytes_written = protected_output_frames_size;
   *num_bytes_written = 0;
 
-  /* Try to drain first. */
+  // Try to drain first.
   if (frame->needs_draining) {
     drained_size = saved_output_size - *num_bytes_written;
     result = tsi_fake_frame_encode(protected_output_frames, &drained_size,
@@ -298,10 +299,10 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
     }
   }
 
-  /* Now process the unprotected_bytes. */
+  // Now process the unprotected_bytes.
   if (frame->needs_draining) return TSI_INTERNAL_ERROR;
   if (frame->size == 0) {
-    /* New frame, create a header. */
+    // New frame, create a header.
     size_t written_in_frame_size = 0;
     store32_little_endian(static_cast<uint32_t>(impl->max_frame_size),
                           frame_header);
@@ -322,7 +323,7 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
     return result;
   }
 
-  /* Try to drain again. */
+  // Try to drain again.
   if (!frame->needs_draining) return TSI_INTERNAL_ERROR;
   if (frame->offset != 0) return TSI_INTERNAL_ERROR;
   drained_size = saved_output_size - *num_bytes_written;
@@ -341,12 +342,12 @@ static tsi_result fake_protector_protect_flush(
       reinterpret_cast<tsi_fake_frame_protector*>(self);
   tsi_fake_frame* frame = &impl->protect_frame;
   if (!frame->needs_draining) {
-    /* Create a short frame. */
+    // Create a short frame.
     frame->size = frame->offset;
     frame->offset = 0;
     frame->needs_draining = 1;
     store32_little_endian(static_cast<uint32_t>(frame->size),
-                          frame->data); /* Overwrite header. */
+                          frame->data);  // Overwrite header.
   }
   result = tsi_fake_frame_encode(protected_output_frames,
                                  protected_output_frames_size, frame,
@@ -369,9 +370,9 @@ static tsi_result fake_protector_unprotect(
   size_t* num_bytes_written = unprotected_bytes_size;
   *num_bytes_written = 0;
 
-  /* Try to drain first. */
+  // Try to drain first.
   if (frame->needs_draining) {
-    /* Go past the header if needed. */
+    // Go past the header if needed.
     if (frame->offset == 0) frame->offset = TSI_FAKE_FRAME_HEADER_SIZE;
     drained_size = saved_output_size - *num_bytes_written;
     result = tsi_fake_frame_encode(unprotected_bytes, &drained_size, frame,
@@ -387,7 +388,7 @@ static tsi_result fake_protector_unprotect(
     }
   }
 
-  /* Now process the protected_bytes. */
+  // Now process the protected_bytes.
   if (frame->needs_draining) return TSI_INTERNAL_ERROR;
   result = tsi_fake_frame_decode(protected_frames_bytes,
                                  protected_frames_bytes_size, frame,
@@ -397,10 +398,10 @@ static tsi_result fake_protector_unprotect(
     return result;
   }
 
-  /* Try to drain again. */
+  // Try to drain again.
   if (!frame->needs_draining) return TSI_INTERNAL_ERROR;
   if (frame->offset != 0) return TSI_INTERNAL_ERROR;
-  frame->offset = TSI_FAKE_FRAME_HEADER_SIZE; /* Go past the header. */
+  frame->offset = TSI_FAKE_FRAME_HEADER_SIZE;  // Go past the header.
   drained_size = saved_output_size - *num_bytes_written;
   result = tsi_fake_frame_encode(unprotected_bytes, &drained_size, frame,
                                  /*error=*/nullptr);
@@ -424,7 +425,7 @@ static const tsi_frame_protector_vtable frame_protector_vtable = {
     fake_protector_destroy,
 };
 
-/* --- tsi_zero_copy_grpc_protector methods implementation. ---*/
+// --- tsi_zero_copy_grpc_protector methods implementation. ---
 
 static tsi_result fake_zero_copy_grpc_protector_protect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
@@ -435,7 +436,7 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
   }
   tsi_fake_zero_copy_grpc_protector* impl =
       reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
-  /* Protects each frame. */
+  // Protects each frame.
   while (unprotected_slices->length > 0) {
     size_t frame_length =
         std::min(impl->max_frame_size,
@@ -461,7 +462,7 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
   tsi_fake_zero_copy_grpc_protector* impl =
       reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
   grpc_slice_buffer_move_into(protected_slices, &impl->protected_sb);
-  /* Unprotect each frame, if we get a full frame. */
+  // Unprotect each frame, if we get a full frame.
   while (impl->protected_sb.length >= TSI_FAKE_FRAME_HEADER_SIZE) {
     if (impl->parsed_frame_size == 0) {
       impl->parsed_frame_size = read_frame_size(&impl->protected_sb);
@@ -470,12 +471,12 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
         return TSI_DATA_CORRUPTED;
       }
     }
-    /* If we do not have a full frame, return with OK status. */
+    // If we do not have a full frame, return with OK status.
     if (impl->protected_sb.length < impl->parsed_frame_size) break;
-    /* Strips header bytes. */
+    // Strips header bytes.
     grpc_slice_buffer_move_first(&impl->protected_sb,
                                  TSI_FAKE_FRAME_HEADER_SIZE, &impl->header_sb);
-    /* Moves data to unprotected slices. */
+    // Moves data to unprotected slices.
     grpc_slice_buffer_move_first(
         &impl->protected_sb,
         impl->parsed_frame_size - TSI_FAKE_FRAME_HEADER_SIZE,
@@ -520,7 +521,7 @@ static const tsi_zero_copy_grpc_protector_vtable
         fake_zero_copy_grpc_protector_max_frame_size,
 };
 
-/* --- tsi_handshaker_result methods implementation. ---*/
+// --- tsi_handshaker_result methods implementation. ---
 
 struct fake_handshaker_result {
   tsi_handshaker_result base;
@@ -530,7 +531,7 @@ struct fake_handshaker_result {
 
 static tsi_result fake_handshaker_result_extract_peer(
     const tsi_handshaker_result* /*self*/, tsi_peer* peer) {
-  /* Construct a tsi_peer with 1 property: certificate type, security_level. */
+  // Construct a tsi_peer with 1 property: certificate type, security_level.
   tsi_result result = tsi_construct_peer(2, peer);
   if (result != TSI_OK) return result;
   result = tsi_construct_string_peer_property_from_cstring(
@@ -613,7 +614,7 @@ static tsi_result fake_handshaker_result_create(
   return TSI_OK;
 }
 
-/* --- tsi_handshaker methods implementation. ---*/
+// --- tsi_handshaker methods implementation. ---
 
 static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     tsi_handshaker* self, unsigned char* bytes, size_t* bytes_size,
@@ -648,7 +649,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   if (result != TSI_OK) return result;
   if (!impl->is_client &&
       impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
-    /* We're done. */
+    // We're done.
     if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
       gpr_log(GPR_INFO, "Server is done.");
     }
@@ -676,7 +677,7 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
       tsi_fake_frame_decode(bytes, bytes_size, &impl->incoming_frame, error);
   if (result != TSI_OK) return result;
 
-  /* We now have a complete frame. */
+  // We now have a complete frame.
   result = tsi_fake_handshake_message_from_string(
       reinterpret_cast<const char*>(impl->incoming_frame.data) +
           TSI_FAKE_FRAME_HEADER_SIZE,
@@ -697,7 +698,7 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
   tsi_fake_frame_reset(&impl->incoming_frame, 0 /* needs_draining */);
   impl->needs_incoming_message = 0;
   if (impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
-    /* We're done. */
+    // We're done.
     if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
       gpr_log(GPR_INFO, "%s is done.", impl->is_client ? "Client" : "Server");
     }
@@ -725,7 +726,7 @@ static tsi_result fake_handshaker_next(
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/,
     std::string* error) {
-  /* Sanity check the arguments. */
+  // Sanity check the arguments.
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
       handshaker_result == nullptr) {
@@ -736,7 +737,7 @@ static tsi_result fake_handshaker_next(
       reinterpret_cast<tsi_fake_handshaker*>(self);
   tsi_result result = TSI_OK;
 
-  /* Decode and process a handshake frame from the peer. */
+  // Decode and process a handshake frame from the peer.
   size_t consumed_bytes_size = received_bytes_size;
   if (received_bytes_size > 0) {
     result = fake_handshaker_process_bytes_from_peer(
@@ -744,8 +745,8 @@ static tsi_result fake_handshaker_next(
     if (result != TSI_OK) return result;
   }
 
-  /* Create a handshake message to send to the peer and encode it as a fake
-   * frame. */
+  // Create a handshake message to send to the peer and encode it as a fake
+  // frame.
   size_t offset = 0;
   do {
     size_t sent_bytes_size = handshaker->outgoing_bytes_buffer_size - offset;
@@ -764,23 +765,23 @@ static tsi_result fake_handshaker_next(
   *bytes_to_send = handshaker->outgoing_bytes_buffer;
   *bytes_to_send_size = offset;
 
-  /* Check if the handshake was completed. */
+  // Check if the handshake was completed.
   if (fake_handshaker_get_result(self) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
-    /* Calculate the unused bytes. */
+    // Calculate the unused bytes.
     const unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = received_bytes_size - consumed_bytes_size;
     if (unused_bytes_size > 0) {
       unused_bytes = received_bytes + consumed_bytes_size;
     }
 
-    /* Create a handshaker_result containing the unused bytes. */
+    // Create a handshaker_result containing the unused bytes.
     result = fake_handshaker_result_create(unused_bytes, unused_bytes_size,
                                            handshaker_result, error);
     if (result == TSI_OK) {
-      /* Indicate that the handshake has completed and that a handshaker_result
-       * has been created. */
+      // Indicate that the handshake has completed and that a handshaker_result
+      // has been created.
       self->handshaker_result_created = true;
     }
   }
@@ -788,14 +789,14 @@ static tsi_result fake_handshaker_next(
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
-    nullptr, /* get_bytes_to_send_to_peer -- deprecated */
-    nullptr, /* process_bytes_from_peer   -- deprecated */
-    nullptr, /* get_result                -- deprecated */
-    nullptr, /* extract_peer              -- deprecated */
-    nullptr, /* create_frame_protector    -- deprecated */
+    nullptr,  // get_bytes_to_send_to_peer -- deprecated
+    nullptr,  // process_bytes_from_peer   -- deprecated
+    nullptr,  // get_result                -- deprecated
+    nullptr,  // extract_peer              -- deprecated
+    nullptr,  // create_frame_protector    -- deprecated
     fake_handshaker_destroy,
     fake_handshaker_next,
-    nullptr, /* shutdown */
+    nullptr,  // shutdown
 };
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {

@@ -1,133 +1,133 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
-#include "opencensus/stats/stats.h"
+#include <algorithm>
+#include <functional>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/call_once.h"
 #include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
+
+#include <grpcpp/opencensus.h>
 
 namespace grpc {
 
-// The tag keys set when recording RPC stats.
-::opencensus::tags::TagKey ClientMethodTagKey();
-::opencensus::tags::TagKey ClientStatusTagKey();
-::opencensus::tags::TagKey ServerMethodTagKey();
-::opencensus::tags::TagKey ServerStatusTagKey();
+// The following using declarations have been added to prevent breaking users
+// that were directly using this header file.
+using experimental::ClientMethodTagKey;  // NOLINT
+using experimental::ClientStatusTagKey;  // NOLINT
+using experimental::ServerMethodTagKey;  // NOLINT
+using experimental::ServerStatusTagKey;  // NOLINT
 
-// Names of measures used by the plugin--users can create views on these
-// measures but should not record data for them.
-extern const absl::string_view kRpcClientSentMessagesPerRpcMeasureName;
-extern const absl::string_view kRpcClientSentBytesPerRpcMeasureName;
-extern const absl::string_view kRpcClientReceivedMessagesPerRpcMeasureName;
-extern const absl::string_view kRpcClientReceivedBytesPerRpcMeasureName;
-extern const absl::string_view kRpcClientRoundtripLatencyMeasureName;
-extern const absl::string_view kRpcClientServerLatencyMeasureName;
-extern const absl::string_view kRpcClientStartedRpcsMeasureName;
-extern const absl::string_view kRpcClientRetriesPerCallMeasureName;
-extern const absl::string_view kRpcClientTransparentRetriesPerCallMeasureName;
-extern const absl::string_view kRpcClientRetryDelayPerCallMeasureName;
+using experimental::kRpcClientReceivedBytesPerRpcMeasureName;        // NOLINT
+using experimental::kRpcClientReceivedMessagesPerRpcMeasureName;     // NOLINT
+using experimental::kRpcClientRetriesPerCallMeasureName;             // NOLINT
+using experimental::kRpcClientRetryDelayPerCallMeasureName;          // NOLINT
+using experimental::kRpcClientRoundtripLatencyMeasureName;           // NOLINT
+using experimental::kRpcClientSentBytesPerRpcMeasureName;            // NOLINT
+using experimental::kRpcClientSentMessagesPerRpcMeasureName;         // NOLINT
+using experimental::kRpcClientServerLatencyMeasureName;              // NOLINT
+using experimental::kRpcClientStartedRpcsMeasureName;                // NOLINT
+using experimental::kRpcClientTransparentRetriesPerCallMeasureName;  // NOLINT
 
-extern const absl::string_view kRpcServerSentMessagesPerRpcMeasureName;
-extern const absl::string_view kRpcServerSentBytesPerRpcMeasureName;
-extern const absl::string_view kRpcServerReceivedMessagesPerRpcMeasureName;
-extern const absl::string_view kRpcServerReceivedBytesPerRpcMeasureName;
-extern const absl::string_view kRpcServerServerLatencyMeasureName;
-extern const absl::string_view kRpcServerStartedRpcsMeasureName;
+using experimental::kRpcServerReceivedBytesPerRpcMeasureName;     // NOLINT
+using experimental::kRpcServerReceivedMessagesPerRpcMeasureName;  // NOLINT
+using experimental::kRpcServerSentBytesPerRpcMeasureName;         // NOLINT
+using experimental::kRpcServerSentMessagesPerRpcMeasureName;      // NOLINT
+using experimental::kRpcServerServerLatencyMeasureName;           // NOLINT
+using experimental::kRpcServerStartedRpcsMeasureName;             // NOLINT
 
-// Canonical gRPC view definitions.
-const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientSentBytesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ClientReceivedMessagesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ClientReceivedBytesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientServerLatencyCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientStartedRpcsCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientRetriesCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ClientTransparentRetriesPerCallCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientTransparentRetriesCumulative();
-const ::opencensus::stats::ViewDescriptor& ClientRetryDelayPerCallCumulative();
+using experimental::ClientCompletedRpcsCumulative;              // NOLINT
+using experimental::ClientReceivedBytesPerRpcCumulative;        // NOLINT
+using experimental::ClientReceivedMessagesPerRpcCumulative;     // NOLINT
+using experimental::ClientRetriesCumulative;                    // NOLINT
+using experimental::ClientRetriesPerCallCumulative;             // NOLINT
+using experimental::ClientRetryDelayPerCallCumulative;          // NOLINT
+using experimental::ClientRoundtripLatencyCumulative;           // NOLINT
+using experimental::ClientSentBytesPerRpcCumulative;            // NOLINT
+using experimental::ClientSentMessagesPerRpcCumulative;         // NOLINT
+using experimental::ClientServerLatencyCumulative;              // NOLINT
+using experimental::ClientStartedRpcsCumulative;                // NOLINT
+using experimental::ClientTransparentRetriesCumulative;         // NOLINT
+using experimental::ClientTransparentRetriesPerCallCumulative;  // NOLINT
 
-const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ServerReceivedBytesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor& ServerServerLatencyCumulative();
-const ::opencensus::stats::ViewDescriptor& ServerStartedCountCumulative();
-const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsCumulative();
-const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsCumulative();
-const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ServerReceivedMessagesPerRpcCumulative();
+using experimental::ServerCompletedRpcsCumulative;           // NOLINT
+using experimental::ServerReceivedBytesPerRpcCumulative;     // NOLINT
+using experimental::ServerReceivedMessagesPerRpcCumulative;  // NOLINT
+using experimental::ServerSentBytesPerRpcCumulative;         // NOLINT
+using experimental::ServerSentMessagesPerRpcCumulative;      // NOLINT
+using experimental::ServerServerLatencyCumulative;           // NOLINT
+using experimental::ServerStartedRpcsCumulative;             // NOLINT
 
-const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ClientSentBytesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ClientReceivedMessagesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ClientReceivedBytesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyMinute();
-const ::opencensus::stats::ViewDescriptor& ClientServerLatencyMinute();
-const ::opencensus::stats::ViewDescriptor& ClientStartedRpcsMinute();
-const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsMinute();
-const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallMinute();
-const ::opencensus::stats::ViewDescriptor& ClientRetriesMinute();
-const ::opencensus::stats::ViewDescriptor&
-ClientTransparentRetriesPerCallMinute();
-const ::opencensus::stats::ViewDescriptor& ClientTransparentRetriesMinute();
-const ::opencensus::stats::ViewDescriptor& ClientRetryDelayPerCallMinute();
+using experimental::ClientCompletedRpcsMinute;              // NOLINT
+using experimental::ClientReceivedBytesPerRpcMinute;        // NOLINT
+using experimental::ClientReceivedMessagesPerRpcMinute;     // NOLINT
+using experimental::ClientRetriesMinute;                    // NOLINT
+using experimental::ClientRetriesPerCallMinute;             // NOLINT
+using experimental::ClientRetryDelayPerCallMinute;          // NOLINT
+using experimental::ClientRoundtripLatencyMinute;           // NOLINT
+using experimental::ClientSentBytesPerRpcMinute;            // NOLINT
+using experimental::ClientSentMessagesPerRpcMinute;         // NOLINT
+using experimental::ClientServerLatencyMinute;              // NOLINT
+using experimental::ClientStartedRpcsMinute;                // NOLINT
+using experimental::ClientTransparentRetriesMinute;         // NOLINT
+using experimental::ClientTransparentRetriesPerCallMinute;  // NOLINT
 
-const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ServerReceivedMessagesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ServerReceivedBytesPerRpcMinute();
-const ::opencensus::stats::ViewDescriptor& ServerServerLatencyMinute();
-const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsMinute();
-const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsMinute();
+using experimental::ServerCompletedRpcsMinute;           // NOLINT
+using experimental::ServerReceivedBytesPerRpcMinute;     // NOLINT
+using experimental::ServerReceivedMessagesPerRpcMinute;  // NOLINT
+using experimental::ServerSentBytesPerRpcMinute;         // NOLINT
+using experimental::ServerSentMessagesPerRpcMinute;      // NOLINT
+using experimental::ServerServerLatencyMinute;           // NOLINT
+using experimental::ServerStartedRpcsMinute;             // NOLINT
 
-const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ClientSentBytesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ClientReceivedMessagesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ClientReceivedBytesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyHour();
-const ::opencensus::stats::ViewDescriptor& ClientServerLatencyHour();
-const ::opencensus::stats::ViewDescriptor& ClientStartedRpcsHour();
-const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsHour();
-const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallHour();
-const ::opencensus::stats::ViewDescriptor& ClientRetriesHour();
-const ::opencensus::stats::ViewDescriptor&
-ClientTransparentRetriesPerCallHour();
-const ::opencensus::stats::ViewDescriptor& ClientTransparentRetriesHour();
-const ::opencensus::stats::ViewDescriptor& ClientRetryDelayPerCallHour();
+using experimental::ClientCompletedRpcsHour;              // NOLINT
+using experimental::ClientReceivedBytesPerRpcHour;        // NOLINT
+using experimental::ClientReceivedMessagesPerRpcHour;     // NOLINT
+using experimental::ClientRetriesHour;                    // NOLINT
+using experimental::ClientRetriesPerCallHour;             // NOLINT
+using experimental::ClientRetryDelayPerCallHour;          // NOLINT
+using experimental::ClientRoundtripLatencyHour;           // NOLINT
+using experimental::ClientSentBytesPerRpcHour;            // NOLINT
+using experimental::ClientSentMessagesPerRpcHour;         // NOLINT
+using experimental::ClientServerLatencyHour;              // NOLINT
+using experimental::ClientStartedRpcsHour;                // NOLINT
+using experimental::ClientTransparentRetriesHour;         // NOLINT
+using experimental::ClientTransparentRetriesPerCallHour;  // NOLINT
 
-const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ServerReceivedMessagesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ServerReceivedBytesPerRpcHour();
-const ::opencensus::stats::ViewDescriptor& ServerServerLatencyHour();
-const ::opencensus::stats::ViewDescriptor& ServerStartedCountHour();
-const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsHour();
-const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
+using experimental::ServerCompletedRpcsHour;           // NOLINT
+using experimental::ServerReceivedBytesPerRpcHour;     // NOLINT
+using experimental::ServerReceivedMessagesPerRpcHour;  // NOLINT
+using experimental::ServerSentBytesPerRpcHour;         // NOLINT
+using experimental::ServerSentMessagesPerRpcHour;      // NOLINT
+using experimental::ServerServerLatencyHour;           // NOLINT
+using experimental::ServerStartedRpcsHour;             // NOLINT
+
+namespace internal {
 
 // Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
 // of a program, before any channels/servers are built.
@@ -137,6 +137,61 @@ void EnableOpenCensusTracing(bool enable);
 bool OpenCensusStatsEnabled();
 bool OpenCensusTracingEnabled();
 
+// Registers various things for the OpenCensus plugin.
+class OpenCensusRegistry {
+ public:
+  struct Label {
+    std::string key;
+    opencensus::tags::TagKey tag_key;
+    std::string value;
+  };
+
+  static OpenCensusRegistry& Get();
+
+  // Registers the functions to be run post-init.
+  void RegisterFunctions(std::function<void()> f) {
+    exporter_registry_.push_back(std::move(f));
+  }
+
+  // Runs the registry post-init exactly once. Protected with an absl::CallOnce.
+  void RunFunctionsPostInit() {
+    absl::call_once(once_, &OpenCensusRegistry::RunFunctionsPostInitHelper,
+                    this);
+  }
+
+  void RegisterConstantLabels(
+      const std::map<std::string, std::string>& labels) {
+    constant_labels_.reserve(labels.size());
+    for (const auto& label : labels) {
+      auto tag_key = opencensus::tags::TagKey::Register(label.first);
+      constant_labels_.emplace_back(Label{label.first, tag_key, label.second});
+    }
+  }
+
+  ::opencensus::tags::TagMap PopulateTagMapWithConstantLabels(
+      const ::opencensus::tags::TagMap& tag_map);
+
+  void PopulateCensusContextWithConstantAttributes(
+      grpc::experimental::CensusContext* context);
+
+  const std::vector<Label>& constant_labels() const { return constant_labels_; }
+
+ private:
+  void RunFunctionsPostInitHelper() {
+    for (const auto& f : exporter_registry_) {
+      f();
+    }
+  }
+
+  OpenCensusRegistry() = default;
+
+  std::vector<std::function<void()>> exporter_registry_;
+  absl::once_flag once_;
+  std::vector<Label> constant_labels_;
+};
+
+}  // namespace internal
+
 }  // namespace grpc
 
-#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H */
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H

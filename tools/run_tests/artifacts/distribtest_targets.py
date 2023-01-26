@@ -115,28 +115,25 @@ class CSharpDistribTest(object):
                 self.name,
                 'tools/dockerfile/distribtest/csharp_%s_%s' %
                 (self.docker_suffix, self.arch),
-                'tools/run_tests/artifacts/run_distribtest_csharp.sh',
-                copy_rel_path='tools/run_tests/artifacts')
+                'test/distrib/csharp/run_distrib_test%s.sh' %
+                self.script_suffix,
+                copy_rel_path='test/distrib')
         elif self.platform == 'macos':
-            return create_jobspec(
-                self.name,
-                ['tools/run_tests/artifacts/run_distribtest_csharp.sh'],
-                environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix
+            ],
+                                  environ={
+                                      'EXTERNAL_GIT_ROOT': '../../../..',
+                                      'SKIP_NETCOREAPP21_DISTRIBTEST': '1',
+                                      'SKIP_NET50_DISTRIBTEST': '1',
+                                  },
+                                  use_workspace=True)
         elif self.platform == 'windows':
-            if self.arch == 'x64':
-                # Use double leading / as the first occurrence gets removed by msys bash
-                # when invoking the .bat file (side-effect of posix path conversion)
-                environ = {
-                    'MSBUILD_EXTRA_ARGS': '//p:Platform=x64',
-                    'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\x64\\Debug'
-                }
-            else:
-                environ = {'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
+            # TODO(jtattermusch): re-enable windows distribtest
             return create_jobspec(
                 self.name,
                 ['bash', 'tools/run_tests/artifacts/run_distribtest_csharp.sh'],
-                environ=environ,
+                environ={},
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")
@@ -351,40 +348,35 @@ def targets():
     """Gets list of supported targets"""
     return [
         # C++
-        CppDistribTest('linux', 'x64', 'stretch', 'cmake', presubmit=True),
+        CppDistribTest('linux', 'x64', 'debian10', 'cmake', presubmit=True),
         CppDistribTest('linux',
                        'x64',
-                       'stretch',
+                       'debian10',
                        'cmake_as_submodule',
                        presubmit=True),
         CppDistribTest('linux',
                        'x64',
-                       'stretch',
+                       'debian10',
                        'cmake_as_externalproject',
                        presubmit=True),
         CppDistribTest('linux',
                        'x64',
-                       'stretch',
+                       'debian10',
                        'cmake_fetchcontent',
                        presubmit=True),
         CppDistribTest('linux',
                        'x64',
-                       'stretch',
+                       'debian10',
                        'cmake_module_install',
                        presubmit=True),
         CppDistribTest('linux',
                        'x64',
-                       'stretch',
-                       'cmake_module_install_pkgconfig',
-                       presubmit=True),
-        CppDistribTest('linux',
-                       'x64',
-                       'stretch',
+                       'debian10',
                        'cmake_pkgconfig',
                        presubmit=True),
         CppDistribTest('linux',
                        'x64',
-                       'stretch_aarch64_cross',
+                       'debian10_aarch64_cross',
                        'cmake_aarch64_cross',
                        presubmit=True),
         CppDistribTest('windows', 'x86', testcase='cmake', presubmit=True),
@@ -393,14 +385,11 @@ def targets():
                        testcase='cmake_as_externalproject',
                        presubmit=True),
         # C#
-        CSharpDistribTest('linux', 'x64', 'stretch', presubmit=True),
         CSharpDistribTest('linux',
                           'x64',
-                          'stretch',
+                          'debian10',
                           use_dotnet_cli=True,
                           presubmit=True),
-        CSharpDistribTest('linux', 'x64', 'centos7'),
-        CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
         CSharpDistribTest('linux',
                           'x64',
@@ -417,7 +406,7 @@ def targets():
                           'dotnet5',
                           use_dotnet_cli=True,
                           presubmit=True),
-        CSharpDistribTest('macos', 'x64', presubmit=True),
+        CSharpDistribTest('macos', 'x64', use_dotnet_cli=True, presubmit=True),
         CSharpDistribTest('windows', 'x86', presubmit=True),
         CSharpDistribTest('windows', 'x64', presubmit=True),
         # Python
@@ -444,19 +433,19 @@ def targets():
         # Ruby
         RubyDistribTest('linux',
                         'x64',
-                        'stretch',
+                        'debian10',
                         ruby_version='ruby_2_6',
                         source=True,
                         presubmit=True),
         RubyDistribTest('linux',
                         'x64',
-                        'stretch',
+                        'debian10',
                         ruby_version='ruby_2_7',
                         presubmit=True),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
         RubyDistribTest('linux', 'x64', 'ubuntu1804', presubmit=True),
         # PHP7
-        PHP7DistribTest('linux', 'x64', 'stretch', presubmit=True),
+        PHP7DistribTest('linux', 'x64', 'debian10', presubmit=True),
         PHP7DistribTest('macos', 'x64', presubmit=True),
     ]

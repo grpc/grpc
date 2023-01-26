@@ -492,8 +492,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang6':
             return ('clang_6', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang13':
-            return ('clang_13', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang15':
+            return ('clang_15', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -1014,21 +1014,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='ios-perf-test',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'PerfTests'}))
-        # TODO(jtattermusch): Clarify what's the difference between PerfTests and PerfTestsPosix
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='ios-perf-test-posix',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'PerfTestsPosix'}))
         # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
         # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
         out.append(
@@ -1037,17 +1022,6 @@ class ObjCLanguage(object):
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='tvos-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'TvTests',
-                                     'PLATFORM': 'tvos'
-                                 }))
-
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1098,7 +1072,7 @@ class Sanity(object):
                                      timeout_seconds=30 * 60,
                                      environ=environ,
                                      cpu_cost=cmd.get('cpu_cost', 1))
-                for cmd in yaml.load(f)
+                for cmd in yaml.safe_load(f)
             ]
 
     def pre_build_steps(self):
@@ -1489,7 +1463,7 @@ argp.add_argument(
         'gcc12',
         'gcc_musl',
         'clang6',
-        'clang13',
+        'clang15',
         'python2.7',
         'python3.5',
         'python3.7',

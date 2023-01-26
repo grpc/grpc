@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -240,7 +240,7 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   }
   if (!absl::GetFlag(FLAGS_default_service_config).empty()) {
     args.SetString(GRPC_ARG_SERVICE_CONFIG,
-                   absl::GetFlag(FLAGS_default_service_config).c_str());
+                   absl::GetFlag(FLAGS_default_service_config));
   }
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
@@ -319,7 +319,7 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
     const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
   } else {
-    Usage("Invalid command '" + std::string(command.c_str()) + "'");
+    Usage("Invalid command '" + command + "'");
   }
   return 1;
 }
@@ -562,7 +562,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     request_text = argv[2];
   }
 
-  if (parser->IsStreaming(method_name, true /* is_request */)) {
+  if (parser != nullptr &&
+      parser->IsStreaming(method_name, true /* is_request */)) {
     std::istream* input_stream;
     std::ifstream input_file;
 
@@ -666,7 +667,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   } else {  // parser->IsStreaming(method_name, true /* is_request */)
     if (absl::GetFlag(FLAGS_batch)) {
-      if (parser->IsStreaming(method_name, false /* is_request */)) {
+      if (parser != nullptr &&
+          parser->IsStreaming(method_name, false /* is_request */)) {
         fprintf(stderr, "Batch mode for streaming RPC is not supported.\n");
         return false;
       }

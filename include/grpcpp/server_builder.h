@@ -1,25 +1,25 @@
-/*
- *
- * Copyright 2015-2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015-2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SERVER_BUILDER_H
 #define GRPCPP_SERVER_BUILDER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <climits>
 #include <map>
@@ -30,12 +30,12 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/server_interceptor.h>
 
 struct grpc_resource_quota;
 
@@ -328,6 +328,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<NamedService*> services() {
     std::vector<NamedService*> service_refs;
+    service_refs.reserve(services_.size());
     for (auto& ptr : services_) {
       service_refs.push_back(ptr.get());
     }
@@ -337,6 +338,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<grpc::ServerBuilderOption*> options() {
     std::vector<grpc::ServerBuilderOption*> option_refs;
+    option_refs.reserve(options_.size());
     for (auto& ptr : options_) {
       option_refs.push_back(ptr.get());
     }

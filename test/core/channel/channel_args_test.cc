@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channel_args.h"
 
@@ -28,12 +28,16 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::CreateEventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
 
 TEST(ChannelArgsTest, Noop) { ChannelArgs(); }
 
@@ -162,6 +166,33 @@ TEST(ChannelArgsTest, RetrieveRawPointerFromStoredSharedPtr) {
   EXPECT_EQ(raw_obj->n, 42);
   // Refs: p and ChannelArgs
   EXPECT_EQ(2, shared_obj.use_count());
+}
+
+TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
+  ChannelArgs a;
+  a = a.SetObject(p);
+  Notification signal;
+  bool triggered = false;
+  a.GetObjectRef<EventEngine>()->Run([&triggered, &signal] {
+    triggered = true;
+    signal.Notify();
+  });
+  signal.WaitForNotification();
+  ASSERT_TRUE(triggered);
+}
+
+TEST(ChannelArgsTest, GetNonOwningEventEngine) {
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
+  ASSERT_TRUE(p.unique());
+  ChannelArgs a;
+  a = a.SetObject(p);
+  ASSERT_FALSE(p.unique());
+  ASSERT_EQ(p.use_count(), 2);
+  EventEngine* engine = a.GetObject<EventEngine>();
+  (void)engine;
+  // p and the channel args
+  ASSERT_EQ(p.use_count(), 2);
 }
 
 }  // namespace grpc_core

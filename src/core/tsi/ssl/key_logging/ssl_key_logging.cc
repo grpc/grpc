@@ -20,6 +20,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -118,7 +119,11 @@ grpc_core::RefCountedPtr<TlsSessionKeyLogger> TlsSessionKeyLoggerCache::Get(
     grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache;
     if (g_cache_instance == nullptr) {
       // This will automatically set g_cache_instance.
-      cache = grpc_core::MakeRefCounted<TlsSessionKeyLoggerCache>();
+      // Not using MakeRefCounted because to the thread safety analysis, which
+      // cannot see through calls, it would look like MakeRefCounted was
+      // calling TlsSessionKeyLoggerCache without holding a lock on
+      // g_tls_session_key_log_cache_mu.
+      cache.reset(new TlsSessionKeyLoggerCache());
     } else {
       cache = g_cache_instance->Ref();
     }

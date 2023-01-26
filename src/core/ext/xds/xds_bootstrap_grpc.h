@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
-#define GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,6 +31,9 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
+#include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_lb_policy_registry.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -74,7 +77,6 @@ class GrpcXdsBootstrap : public XdsBootstrap {
    public:
     const std::string& server_uri() const override { return server_uri_; }
 
-    bool ShouldUseV3() const override;
     bool IgnoreResourceDeletion() const override;
 
     bool Equals(const XdsServer& other) const override;
@@ -149,6 +151,16 @@ class GrpcXdsBootstrap : public XdsBootstrap {
       const {
     return certificate_providers_;
   }
+  const XdsHttpFilterRegistry& http_filter_registry() const {
+    return http_filter_registry_;
+  }
+  const XdsClusterSpecifierPluginRegistry& cluster_specifier_plugin_registry()
+      const {
+    return cluster_specifier_plugin_registry_;
+  }
+  const XdsLbPolicyRegistry& lb_policy_registry() const {
+    return lb_policy_registry_;
+  }
 
   // Exposed for testing purposes only.
   const std::map<std::string, GrpcAuthority>& authorities() const {
@@ -162,8 +174,11 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   std::string server_listener_resource_name_template_;
   std::map<std::string, GrpcAuthority> authorities_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
+  XdsHttpFilterRegistry http_filter_registry_;
+  XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
+  XdsLbPolicyRegistry lb_policy_registry_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H

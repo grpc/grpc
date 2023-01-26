@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <limits.h>
 #include <stdint.h>
@@ -27,7 +27,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -40,7 +40,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -254,9 +253,9 @@ static void test_request(grpc_end2end_test_config config) {
   gpr_mu_unlock(&g_mu);
 }
 
-/*******************************************************************************
- * Test latency filter
- */
+//******************************************************************************
+// Test latency filter
+//
 
 static grpc_error_handle init_call_elem(
     grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
@@ -304,9 +303,9 @@ static const grpc_channel_filter test_server_filter = {
     destroy_channel_elem,     grpc_channel_next_get_info,
     "server_filter_latency"};
 
-/*******************************************************************************
- * Registration
- */
+//******************************************************************************
+// Registration
+//
 
 void filter_latency(grpc_end2end_test_config config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(

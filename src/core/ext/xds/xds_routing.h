@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_ROUTING_H
-#define GRPC_CORE_EXT_XDS_XDS_ROUTING_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -90,6 +91,7 @@ class XdsRouting {
   // Generates a map of per_filter_configs. \a args is consumed.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigs(
+      const XdsHttpFilterRegistry& http_filter_registry,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
       const XdsRouteConfigResource::VirtualHost& vhost,
@@ -101,4 +103,4 @@ class XdsRouting {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_ROUTING_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H

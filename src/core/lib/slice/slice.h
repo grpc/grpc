@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_H
-#define GRPC_CORE_LIB_SLICE_SLICE_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_H
+#define GRPC_SRC_CORE_LIB_SLICE_SLICE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,6 +25,8 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
+#include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -45,9 +47,9 @@
 //   MutableSlice - provides a guarantee of unique ownership, meaning the
 //                  underlying data can be mutated safely.
 
-// This slice implementation is an extension of the event engine Slice
+// This slice implementation is an extension of the EventEngine Slice
 // implementation defined in <grpc/event_engine/slice.h>. Changes to this
-// implementation might warrant changes to the public event engine Slice
+// implementation might warrant changes to the public EventEngine Slice
 // type as well.
 
 namespace grpc_core {
@@ -194,6 +196,10 @@ struct CopyConstructors {
   static Out FromCopiedBuffer(const char* p, size_t len) {
     return Out(grpc_slice_from_copied_buffer(p, len));
   }
+  static Out FromCopiedBuffer(const uint8_t* p, size_t len) {
+    return Out(
+        grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(p), len));
+  }
 
   template <typename Buffer>
   static Out FromCopiedBuffer(const Buffer& buffer) {
@@ -253,8 +259,9 @@ class StaticSlice : public slice_detail::BaseSlice,
   }
 };
 
-class MutableSlice : public slice_detail::BaseSlice,
-                     public slice_detail::CopyConstructors<MutableSlice> {
+class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
+    : public slice_detail::BaseSlice,
+      public slice_detail::CopyConstructors<MutableSlice> {
  public:
   MutableSlice() = default;
   explicit MutableSlice(const grpc_slice& slice)
@@ -291,9 +298,10 @@ class MutableSlice : public slice_detail::BaseSlice,
   uint8_t& operator[](size_t i) { return mutable_data()[i]; }
 };
 
-class Slice : public slice_detail::BaseSlice,
-              public slice_detail::CopyConstructors<Slice>,
-              public slice_detail::StaticConstructors<Slice> {
+class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
+    : public slice_detail::BaseSlice,
+      public slice_detail::CopyConstructors<Slice>,
+      public slice_detail::StaticConstructors<Slice> {
  public:
   Slice() = default;
   ~Slice() { CSliceUnref(c_slice()); }
@@ -399,4 +407,19 @@ class Slice : public slice_detail::BaseSlice,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SLICE_SLICE_H
+namespace grpc_event_engine {
+namespace experimental {
+namespace internal {
+template <>
+struct SliceCastable<grpc_core::Slice, grpc_slice> {};
+template <>
+struct SliceCastable<grpc_slice, grpc_core::Slice> {};
+template <>
+struct SliceCastable<grpc_core::Slice, Slice> {};
+template <>
+struct SliceCastable<Slice, grpc_core::Slice> {};
+}  // namespace internal
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+#endif  // GRPC_SRC_CORE_LIB_SLICE_SLICE_H

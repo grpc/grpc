@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
 #include <grpc/support/port_platform.h>
-
-#include <stddef.h>
 
 #include <array>
 #include <cassert>
@@ -32,28 +30,11 @@
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 namespace promise_detail {
-
-// Given f0, ..., fn, call function idx and return the result.
-template <typename R, typename A, R (*... f)(A* arg)>
-class JumpTable {
- public:
-  JumpTable() = delete;
-  JumpTable(const JumpTable&) = delete;
-
-  static R Run(size_t idx, A* arg) { return fs_[idx](arg); }
-
- private:
-  using Fn = R (*)(A* arg);
-  static const Fn fs_[sizeof...(f)];
-};
-
-template <typename R, typename A, R (*... f)(A* arg)>
-const typename JumpTable<R, A, f...>::Fn
-    JumpTable<R, A, f...>::fs_[sizeof...(f)] = {f...};
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -68,7 +49,7 @@ struct SeqStateTypes {
   // Wrap the factory callable in our factory wrapper to deal with common edge
   // cases. We use the 'unwrapped type' from the traits, so for instance, TrySeq
   // can pass back a T from a StatusOr<T>.
-  using Next = promise_detail::PromiseFactory<
+  using Next = promise_detail::OncePromiseFactory<
       typename PromiseResultTraits::UnwrappedType, FNext>;
 };
 
@@ -353,14 +334,16 @@ class BasicSeq {
   // parameter unpacking can work.
   template <char I>
   struct RunStateStruct {
-    static Poll<Result> Run(BasicSeq* s) { return s->RunState<I>(); }
+    BasicSeq* s;
+    Poll<Result> operator()() { return s->RunState<I>(); }
   };
 
   // Similarly placate those compilers for
   // DestructCurrentPromiseAndSubsequentFactories
   template <char I>
   struct DestructCurrentPromiseAndSubsequentFactoriesStruct {
-    static void Run(BasicSeq* s) {
+    BasicSeq* s;
+    void operator()() {
       return s->DestructCurrentPromiseAndSubsequentFactories<I>();
     }
   };
@@ -373,8 +356,7 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return JumpTable<Poll<Result>, BasicSeq, RunStateStruct<I>::Run...>::Run(
-        state_, this);
+    return Switch<Poll<Result>>(state_, RunStateStruct<I>{this}...);
   }
 
   // Run the appropriate destructors for a given state.
@@ -384,9 +366,8 @@ class BasicSeq {
   // which can choose the correct instance at runtime to destroy everything.
   template <char... I>
   void RunDestruct(absl::integer_sequence<char, I...>) {
-    JumpTable<void, BasicSeq,
-              DestructCurrentPromiseAndSubsequentFactoriesStruct<I>::Run...>::
-        Run(state_, this);
+    Switch<void>(
+        state_, DestructCurrentPromiseAndSubsequentFactoriesStruct<I>{this}...);
   }
 
  public:
@@ -513,4 +494,4 @@ class BasicSeqIter {
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H

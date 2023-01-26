@@ -13,6 +13,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+#define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+
 #include <memory>
 #include <set>
 #include <string>
@@ -31,6 +34,7 @@
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -73,11 +77,6 @@ class XdsTestType {
     return *this;
   }
 
-  XdsTestType& set_use_v2() {
-    use_v2_ = true;
-    return *this;
-  }
-
   XdsTestType& set_use_xds_credentials() {
     use_xds_credentials_ = true;
     return *this;
@@ -105,7 +104,6 @@ class XdsTestType {
 
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
-  bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
   bool use_csds_streaming() const { return use_csds_streaming_; }
   HttpFilterConfigLocation filter_config_setup() const {
@@ -117,7 +115,7 @@ class XdsTestType {
   }
 
   std::string AsString() const {
-    std::string retval = use_v2_ ? "V2" : "V3";
+    std::string retval = "V3";
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     if (use_xds_credentials_) retval += "XdsCreds";
@@ -146,7 +144,6 @@ class XdsTestType {
  private:
   bool enable_load_reporting_ = false;
   bool enable_rds_testing_ = false;
-  bool use_v2_ = false;
   bool use_xds_credentials_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
@@ -215,7 +212,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
    public:
     // A status notifier for xDS-enabled servers.
     class XdsServingStatusNotifier
-        : public grpc::experimental::XdsServerServingStatusNotifierInterface {
+        : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
@@ -305,6 +302,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
           for (const auto& entry : peer_identity) {
             last_peer_identity_.emplace_back(entry.data(), entry.size());
           }
+          if (load_report_.has_value()) {
+            context->ExperimentalGetCallMetricRecorder()
+                ->RecordCpuUtilizationMetric(load_report_->cpu_utilization())
+                .RecordQpsMetric(load_report_->rps_fractional());
+          }
         }
         return status;
       }
@@ -332,10 +334,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
         return last_peer_identity_;
       }
 
+      // TODO(roth): Once the backend utilization APIs are updated, change
+      // this to use those instead of manually constructing the data for
+      // each call.
+      void set_load_report(
+          absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report) {
+        grpc_core::MutexLock lock(&mu_);
+        load_report_ = std::move(load_report);
+      }
+
      private:
       grpc_core::Mutex mu_;
-      std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
-      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
+      std::set<std::string> clients_ ABSL_GUARDED_BY(&mu_);
+      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(&mu_);
+      absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_
+          ABSL_GUARDED_BY(&mu_);
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
@@ -397,10 +410,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   class BootstrapBuilder {
    public:
     BootstrapBuilder() {}
-    BootstrapBuilder& SetV2() {
-      v2_ = true;
-      return *this;
-    }
     BootstrapBuilder& SetIgnoreResourceDeletion() {
       ignore_resource_deletion_ = true;
       return *this;
@@ -452,7 +461,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::string MakeCertificateProviderText();
     std::string MakeAuthorityText();
 
-    bool v2_ = false;
     bool ignore_resource_deletion_ = false;
     std::string top_server_;
     std::string client_default_listener_resource_name_template_;
@@ -554,15 +562,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(
-          int port,
-          ::envoy::config::endpoint::v3::HealthStatus health_status =
-              ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
-          int lb_weight = 1)
+      explicit Endpoint(int port,
+                        ::envoy::config::core::v3::HealthStatus health_status =
+                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        int lb_weight = 1)
           : port(port), health_status(health_status), lb_weight(lb_weight) {}
 
       int port;
-      ::envoy::config::endpoint::v3::HealthStatus health_status;
+      ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
     };
 
@@ -596,8 +603,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // constructing an EDS resource.
   EdsResourceArgs::Endpoint CreateEndpoint(
       size_t backend_idx,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1) {
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
                                      health_status, lb_weight);
@@ -607,8 +614,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // for use in constructing an EDS resource.
   std::vector<EdsResourceArgs::Endpoint> CreateEndpointsForBackends(
       size_t start_index = 0, size_t stop_index = 0,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1);
 
   // Returns an endpoint for an unused port, for use in constructing an
@@ -1077,3 +1084,5 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H

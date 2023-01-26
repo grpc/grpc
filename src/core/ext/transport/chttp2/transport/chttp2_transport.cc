@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
@@ -39,13 +38,14 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -55,15 +55,16 @@
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -97,13 +98,13 @@
 #define DEFAULT_MAX_HEADER_LIST_SIZE (8 * 1024)
 
 #define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
-#define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
-#define DEFAULT_SERVER_KEEPALIVE_TIME_MS 7200000  /* 2 hours */
-#define DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
+#define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
+#define DEFAULT_SERVER_KEEPALIVE_TIME_MS 7200000   // 2 hours
+#define DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
-#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
+#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000  // 5 minutes
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
 #define DEFAULT_MAX_PING_STRIKES 2
 
@@ -128,7 +129,6 @@ static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
 static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_core::TraceFlag grpc_http_trace(false, "http");
 grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
 grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
                                                          "chttp2_refcount");
@@ -323,6 +323,13 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(false);
+  // Only send the prefered rx frame size http2 setting if we are instructed
+  // to auto size the buffers allocated at tcp level and we also can adjust
+  // sending frame size.
+  t->enable_preferred_rx_crypto_frame_advertisement =
+      channel_args
+          .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
+          .value_or(false);
 
   if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -392,6 +399,16 @@ static void read_channel_args(grpc_chttp2_transport* t,
               std::string(setting.channel_arg_name).c_str(),
               is_client ? "clients" : "servers");
     }
+  }
+
+  if (t->enable_preferred_rx_crypto_frame_advertisement) {
+    const grpc_chttp2_setting_parameters* sp =
+        &grpc_chttp2_settings_parameters
+            [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE];
+    queue_setting_update(
+        t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+        grpc_core::Clamp(INT_MAX, static_cast<int>(sp->min_value),
+                         static_cast<int>(sp->max_value)));
   }
 }
 
@@ -680,9 +697,9 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (GPR_UNLIKELY(included.is_set(i))) {
-      gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
-              t->is_client ? "client" : "server", id, i);
-      abort();
+      grpc_core::Crash(absl::StrFormat("%s stream %d still included in list %d",
+                                       t->is_client ? "client" : "server", id,
+                                       i));
     }
   }
 
@@ -864,16 +881,17 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
-  // If the peer_state_based_framing experiment is set to true,
-  // choose max_frame_size as 2 * max http2 frame size of peer. If peer is under
-  // high memory pressure, then it would advertise a smaller max http2 frame
-  // size. With this logic, the sender would automatically reduce the sending
-  // frame size as well.
+  // Choose max_frame_size as the prefered rx crypto frame size indicated by the
+  // peer.
   int max_frame_size =
-      grpc_core::IsPeerStateBasedFramingEnabled()
-          ? 2 * t->settings[GRPC_PEER_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
-          : INT_MAX;
+      t->settings
+          [GRPC_PEER_SETTINGS]
+          [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE];
+  // Note: max frame size is 0 if the remote peer does not support adjusting the
+  // sending frame size.
+  if (max_frame_size == 0) {
+    max_frame_size = INT_MAX;
+  }
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
@@ -968,14 +986,17 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
-  // Discard the error from a previous goaway frame (if any)
-  if (!t->goaway_error.ok()) {
-  }
   t->goaway_error = grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
-                             grpc_core::StatusIntProperty::kHttp2Error,
-                             static_cast<intptr_t>(goaway_error)),
+          grpc_error_set_int(
+              grpc_core::StatusCreate(
+                  absl::StatusCode::kUnavailable,
+                  absl::StrFormat(
+                      "GOAWAY received; Error code: %u; Debug Text: %s",
+                      goaway_error, goaway_text),
+                  DEBUG_LOCATION, {}),
+              grpc_core::StatusIntProperty::kHttp2Error,
+              static_cast<intptr_t>(goaway_error)),
           grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
       grpc_core::StatusStrProperty::kRawBytes, goaway_text);
 
@@ -1395,6 +1416,9 @@ static void perform_stream_op_locked(void* stream_op,
         op_payload->recv_initial_metadata.recv_initial_metadata;
     s->trailing_metadata_available =
         op_payload->recv_initial_metadata.trailing_metadata_available;
+    if (s->parsed_trailers_only && s->trailing_metadata_available != nullptr) {
+      *s->trailing_metadata_available = true;
+    }
     if (op_payload->recv_initial_metadata.peer_string != nullptr) {
       gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
                         (gpr_atm)t->peer_string.c_str());
@@ -1947,7 +1971,8 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   //   what we want - which is safe because we haven't told anyone
   //   about the metadata yet
   if (s->published_metadata[1] == GRPC_METADATA_NOT_PUBLISHED ||
-      s->recv_trailing_metadata_finished != nullptr) {
+      s->recv_trailing_metadata_finished != nullptr ||
+      !s->final_metadata_requested) {
     s->trailing_metadata_buffer.Set(grpc_core::GrpcStatusMetadata(), status);
     if (!message.empty()) {
       s->trailing_metadata_buffer.Set(
@@ -2066,6 +2091,8 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     grpc_chttp2_maybe_complete_recv_message(t, s);
   }
   if (became_closed) {
+    s->stats.latency =
+        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), s->creation_time);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
@@ -2151,8 +2178,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
   status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
   p = GRPC_SLICE_START_PTR(status_hdr);
-  *p++ = 0x00; /* literal header, not indexed */
-  *p++ = 11;   /* len(grpc-status) */
+  *p++ = 0x00;  // literal header, not indexed
+  *p++ = 11;    // len(grpc-status)
   *p++ = 'g';
   *p++ = 'r';
   *p++ = 'p';
@@ -2180,8 +2207,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_core::VarintWriter<1> msg_len_writer(static_cast<uint32_t>(msg_len));
   message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
   p = GRPC_SLICE_START_PTR(message_pfx);
-  *p++ = 0x00; /* literal header, not indexed */
-  *p++ = 12;   /* len(grpc-message) */
+  *p++ = 0x00;  // literal header, not indexed
+  *p++ = 12;    // len(grpc-message)
   *p++ = 'g';
   *p++ = 'r';
   *p++ = 'p';
@@ -2298,6 +2325,15 @@ void grpc_chttp2_act_on_flowctl_action(
                 queue_setting_update(t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
                                      action.max_frame_size());
               });
+  if (t->enable_preferred_rx_crypto_frame_advertisement) {
+    WithUrgency(
+        t, action.preferred_rx_crypto_frame_size_update(),
+        GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
+          queue_setting_update(
+              t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+              action.preferred_rx_crypto_frame_size());
+        });
+  }
 }
 
 static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
@@ -2355,8 +2391,6 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
       errors[2] = try_http_parsing(t);
       error = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
                                             GPR_ARRAY_SIZE(errors));
-    }
-    for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
     }
 
     if (t->initial_window_update != 0) {
@@ -2947,7 +2981,7 @@ void grpc_chttp2_transport_start_reading(
   grpc_chttp2_transport* t =
       reinterpret_cast<grpc_chttp2_transport*>(transport);
   GRPC_CHTTP2_REF_TRANSPORT(
-      t, "reading_action"); /* matches unref inside reading_action */
+      t, "reading_action");  // matches unref inside reading_action
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);

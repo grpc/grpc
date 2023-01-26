@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,7 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -47,25 +47,25 @@
 // Code for maintaining a list of subchannels within an LB policy.
 //
 // To use this, callers must create their own subclasses, like so:
-/*
+//
 
-class MySubchannelList;  // Forward declaration.
+// class MySubchannelList;  // Forward declaration.
 
-class MySubchannelData
-    : public SubchannelData<MySubchannelList, MySubchannelData> {
- public:
-  void ProcessConnectivityChangeLocked(
-      absl::optional<grpc_connectivity_state> old_state,
-      grpc_connectivity_state new_state) override {
-    // ...code to handle connectivity changes...
-  }
-};
+// class MySubchannelData
+//   : public SubchannelData<MySubchannelList, MySubchannelData> {
+// public:
+// void ProcessConnectivityChangeLocked(
+//     absl::optional<grpc_connectivity_state> old_state,
+//     grpc_connectivity_state new_state) override {
+//   // ...code to handle connectivity changes...
+// }
+// };
 
-class MySubchannelList
-    : public SubchannelList<MySubchannelList, MySubchannelData> {
-};
+// class MySubchannelList
+//   : public SubchannelList<MySubchannelList, MySubchannelData> {
+// };
 
-*/
+//
 // All methods will be called from within the client_channel work serializer.
 
 namespace grpc_core {
@@ -200,6 +200,10 @@ class SubchannelList : public DualRefCounted<SubchannelListType> {
   // Resets connection backoff of all subchannels.
   void ResetBackoffLocked();
 
+  // Returns true if all subchannels have seen their initial
+  // connectivity state notifications.
+  bool AllSubchannelsSeenInitialState();
+
   void Orphan() override;
 
  protected:
@@ -324,6 +328,7 @@ void SubchannelData<SubchannelListType,
   pending_watcher_ =
       new Watcher(this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
+      // NOLINTNEXTLINE(google-readability-casting)
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
           pending_watcher_));
 }
@@ -434,6 +439,15 @@ void SubchannelList<SubchannelListType,
   }
 }
 
+template <typename SubchannelListType, typename SubchannelDataType>
+bool SubchannelList<SubchannelListType,
+                    SubchannelDataType>::AllSubchannelsSeenInitialState() {
+  for (size_t i = 0; i < num_subchannels(); ++i) {
+    if (!subchannel(i)->connectivity_state().has_value()) return false;
+  }
+  return true;
+}
+
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H

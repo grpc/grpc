@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 // \file Arena based allocator
 // Allows very fast allocation of memory, but that memory cannot be freed until
@@ -22,8 +22,8 @@
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
 
-#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
-#define GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,7 +31,11 @@
 
 #include <atomic>
 #include <memory>
+#include <new>
 #include <utility>
+
+#include "absl/meta/type_traits.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 
@@ -42,7 +46,46 @@
 
 namespace grpc_core {
 
+namespace arena_detail {
+
+template <typename Void, size_t kIndex, size_t kObjectSize,
+          size_t... kBucketSize>
+struct PoolIndexForSize;
+
+template <size_t kObjectSize, size_t kIndex, size_t kSmallestRemainingBucket,
+          size_t... kBucketSizes>
+struct PoolIndexForSize<
+    absl::enable_if_t<kObjectSize <= kSmallestRemainingBucket>, kIndex,
+    kObjectSize, kSmallestRemainingBucket, kBucketSizes...> {
+  static constexpr size_t kPool = kIndex;
+  static constexpr size_t kSize = kSmallestRemainingBucket;
+};
+
+template <size_t kObjectSize, size_t kIndex, size_t kSmallestRemainingBucket,
+          size_t... kBucketSizes>
+struct PoolIndexForSize<
+    absl::enable_if_t<(kObjectSize > kSmallestRemainingBucket)>, kIndex,
+    kObjectSize, kSmallestRemainingBucket, kBucketSizes...>
+    : public PoolIndexForSize<void, kIndex + 1, kObjectSize, kBucketSizes...> {
+};
+
+template <size_t kObjectSize, size_t... kBucketSizes>
+constexpr size_t PoolFromObjectSize(
+    absl::integer_sequence<size_t, kBucketSizes...>) {
+  return PoolIndexForSize<void, 0, kObjectSize, kBucketSizes...>::kPool;
+}
+
+template <size_t kObjectSize, size_t... kBucketSizes>
+constexpr size_t AllocationSizeFromObjectSize(
+    absl::integer_sequence<size_t, kBucketSizes...>) {
+  return PoolIndexForSize<void, 0, kObjectSize, kBucketSizes...>::kSize;
+}
+
+}  // namespace arena_detail
+
 class Arena {
+  using PoolSizes = absl::integer_sequence<size_t, 256, 512, 768>;
+
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static Arena* Create(size_t initial_size, MemoryAllocator* memory_allocator);
@@ -88,6 +131,37 @@ class Arena {
     return &p->t;
   }
 
+  class PooledDeleter {
+   public:
+    explicit PooledDeleter(Arena* arena) : arena_(arena) {}
+    PooledDeleter() = default;
+    template <typename T>
+    void operator()(T* p) {
+      // TODO(ctiller): promise based filter hijacks ownership of some pointers
+      // to make them appear as PoolPtr without really transferring ownership,
+      // by setting the arena to nullptr.
+      // This is a transitional hack and should be removed once promise based
+      // filter is removed.
+      if (arena_ != nullptr) arena_->DeletePooled(p);
+    }
+
+   private:
+    Arena* arena_;
+  };
+
+  template <typename T>
+  using PoolPtr = std::unique_ptr<T, PooledDeleter>;
+
+  template <typename T, typename... Args>
+  PoolPtr<T> MakePooled(Args&&... args) {
+    return PoolPtr<T>(
+        new (AllocPooled(
+            arena_detail::AllocationSizeFromObjectSize<sizeof(T)>(PoolSizes()),
+            &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())]))
+            T(std::forward<Args>(args)...),
+        PooledDeleter(this));
+  }
+
  private:
   struct Zone {
     Zone* prev;
@@ -128,6 +202,20 @@ class Arena {
 
   void* AllocZone(size_t size);
 
+  template <typename T>
+  void DeletePooled(T* p) {
+    p->~T();
+    FreePooled(
+        p, &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())]);
+  }
+
+  struct FreePoolNode {
+    FreePoolNode* next;
+  };
+
+  void* AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head);
+  static void FreePooled(void* p, std::atomic<FreePoolNode*>* head);
+
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
   std::atomic<size_t> total_used_{0};
@@ -140,6 +228,7 @@ class Arena {
   // last zone; the zone list is reverse-walked during arena destruction only.
   std::atomic<Zone*> last_zone_{nullptr};
   std::atomic<ManagedNewObject*> managed_new_head_{nullptr};
+  std::atomic<FreePoolNode*> pools_[PoolSizes::size()]{};
   // The backing memory quota
   MemoryAllocator* const memory_allocator_;
 };
@@ -160,4 +249,4 @@ struct ContextType<Arena> {};
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H */
+#endif  // GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H

@@ -11,21 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <limits.h>
 
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -33,19 +33,22 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/memory_request.h>
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
@@ -88,14 +91,9 @@
 #define MAX_READ_IOVEC 64
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
-
-using ::grpc_event_engine::experimental::EndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Slice;
-using ::grpc_event_engine::experimental::SliceBuffer;
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
@@ -210,6 +208,16 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
+absl::Status PosixOSError(int error_no, const char* call_name) {
+  absl::Status s = absl::UnknownError(grpc_core::StrError(error_no));
+  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, error_no);
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
+                          grpc_core::StrError(error_no));
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
+                          call_name);
+  return s;
+}
+
 }  // namespace
 
 #if defined(IOV_MAX) && IOV_MAX < 260
@@ -227,9 +235,9 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
   for (iov_size = 0;
        out_offset_.slice_idx != buf_.Count() && iov_size != MAX_WRITE_IOVEC;
        iov_size++) {
-    auto slice = buf_.RefSlice(out_offset_.slice_idx);
-    iov[iov_size].iov_base =
-        const_cast<uint8_t*>(slice.begin()) + out_offset_.byte_idx;
+    MutableSlice& slice = internal::SliceCast<MutableSlice>(
+        buf_.MutableSliceAt(out_offset_.slice_idx));
+    iov[iov_size].iov_base = slice.begin();
     iov[iov_size].iov_len = slice.length() - out_offset_.byte_idx;
     *sending_length += iov[iov_size].iov_len;
     ++(out_offset_.slice_idx);
@@ -270,6 +278,19 @@ void PosixEndpointImpl::FinishEstimate() {
   bytes_read_this_round_ = 0;
 }
 
+absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) {
+  auto peer_string = ResolvedAddressToNormalizedString(peer_address_);
+
+  grpc_core::StatusSetStr(&src_error,
+                          grpc_core::StatusStrProperty::kTargetAddress,
+                          peer_string.ok() ? *peer_string : "");
+  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
+                          handle_->WrappedFd());
+  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
+                          GRPC_STATUS_UNAVAILABLE);
+  return src_error;
+}
+
 // Returns true if data available to read or error other than EAGAIN.
 bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   struct msghdr msg;
@@ -285,8 +306,9 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 #endif  // GRPC_LINUX_ERRQUEUE
   char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
-    Slice slice = incoming_buffer_->RefSlice(i);
-    iov[i].iov_base = const_cast<uint8_t*>(slice.begin());
+    MutableSlice& slice =
+        internal::SliceCast<MutableSlice>(incoming_buffer_->MutableSliceAt(i));
+    iov[i].iov_base = slice.begin();
     iov[i].iov_len = slice.length();
   }
 
@@ -316,39 +338,33 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       read_bytes = recvmsg(fd_, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    if (read_bytes < 0 && errno == EAGAIN) {
+      // NB: After calling call_read_cb a parallel call of the read handler may
+      // be running.
+      if (total_read_bytes > 0) {
+        break;
+      }
+      FinishEstimate();
+      inq_ = 0;
+      return false;
+    }
+
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
-    if (read_bytes <= 0 &&
-        total_read_bytes >= static_cast<size_t>(min_progress_size_)) {
+    if (read_bytes <= 0 && total_read_bytes >= 1) {
       inq_ = 1;
       break;
     }
 
-    if (read_bytes < 0) {
-      // NB: After calling call_read_cb a parallel call of the read handler may
-      // be running.
-      if (errno == EAGAIN) {
-        if (total_read_bytes > 0) {
-          break;
-        }
-        FinishEstimate();
-        inq_ = 0;
-        return false;
-      } else {
-        incoming_buffer_->Clear();
-        status =
-            absl::InternalError(absl::StrCat("recvmsg:", std::strerror(errno)));
-        return true;
-      }
-    }
-    if (read_bytes == 0) {
+    if (read_bytes <= 0) {
       // 0 read size ==> end of stream
-      //
-      // We may have read something, i.e., total_read_bytes > 0, but since the
-      // connection is closed we will drop the data here, because we can't call
-      // the callback multiple times.
       incoming_buffer_->Clear();
-      status = absl::InternalError("Socket closed");
+      if (read_bytes == 0) {
+        status = TcpAnnotateError(absl::InternalError("Socket closed"));
+      } else {
+        status = TcpAnnotateError(absl::InternalError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
+      }
       return true;
     }
 
@@ -403,7 +419,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   status = absl::OkStatus();
-  if (frame_size_tuning_enabled_) {
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
     // this round.
     min_progress_size_ -= total_read_bytes;
@@ -432,7 +448,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   if (total_read_bytes < incoming_buffer_->Length()) {
     incoming_buffer_->MoveLastNBytesIntoSliceBuffer(
         incoming_buffer_->Length() - total_read_bytes, last_read_buffer_);
-    // last_read_buffer_.Clear();
   }
   return true;
 }
@@ -451,9 +466,11 @@ void PosixEndpointImpl::MaybePostReclaimer() {
     has_posted_reclaimer_ = true;
     memory_owner_.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [this](absl::optional<grpc_core::ReclamationSweep> sweep) {
-          if (!sweep.has_value()) return;
-          PerformReclamation();
+        [self = Ref(DEBUG_LOCATION, "Posix Reclaimer")](
+            absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (sweep.has_value()) {
+            self->PerformReclamation();
+          }
         });
   }
 }
@@ -500,69 +517,53 @@ void PosixEndpointImpl::UpdateRcvLowat() {
 }
 
 void PosixEndpointImpl::MaybeMakeReadSlices() {
-  if (grpc_core::IsTcpReadChunksEnabled()) {
-    static const int kBigAlloc = 64 * 1024;
-    static const int kSmallAlloc = 8 * 1024;
-    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_)) {
-      size_t allocate_length = min_progress_size_;
-      const size_t target_length = static_cast<size_t>(target_length_);
-      // If memory pressure is low and we think there will be more than
-      // min_progress_size bytes to read, allocate a bit more.
-      const bool low_memory_pressure =
-          memory_owner_.GetPressureInfo().pressure_control_value < 0.8;
-      if (low_memory_pressure && target_length > allocate_length) {
-        allocate_length = target_length;
-      }
-      int extra_wanted =
-          allocate_length - static_cast<int>(incoming_buffer_->Length());
-      if (extra_wanted >=
-          (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
-        while (extra_wanted > 0) {
-          extra_wanted -= kBigAlloc;
-          incoming_buffer_->AppendIndexed(
-              Slice(memory_owner_.MakeSlice(kBigAlloc)));
-        }
-      } else {
-        while (extra_wanted > 0) {
-          extra_wanted -= kSmallAlloc;
-          incoming_buffer_->AppendIndexed(
-              Slice(memory_owner_.MakeSlice(kSmallAlloc)));
-        }
-      }
-      MaybePostReclaimer();
+  static const int kBigAlloc = 64 * 1024;
+  static const int kSmallAlloc = 8 * 1024;
+  if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_)) {
+    size_t allocate_length = min_progress_size_;
+    const size_t target_length = static_cast<size_t>(target_length_);
+    // If memory pressure is low and we think there will be more than
+    // min_progress_size bytes to read, allocate a bit more.
+    const bool low_memory_pressure =
+        memory_owner_.GetPressureInfo().pressure_control_value < 0.8;
+    if (low_memory_pressure && target_length > allocate_length) {
+      allocate_length = target_length;
     }
-  } else {
-    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_) &&
-        incoming_buffer_->Count() < MAX_READ_IOVEC) {
-      int target_length =
-          std::max(static_cast<int>(target_length_), min_progress_size_);
-      int extra_wanted =
-          target_length - static_cast<int>(incoming_buffer_->Length());
-      int min_read_chunk_size =
-          std::max(min_read_chunk_size_, min_progress_size_);
-      int max_read_chunk_size =
-          std::max(max_read_chunk_size_, min_progress_size_);
-      incoming_buffer_->AppendIndexed(
-          Slice(memory_owner_.MakeSlice(grpc_core::MemoryRequest(
-              min_read_chunk_size,
-              grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                               max_read_chunk_size)))));
-      MaybePostReclaimer();
+    int extra_wanted =
+        allocate_length - static_cast<int>(incoming_buffer_->Length());
+    if (extra_wanted >=
+        (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
+      while (extra_wanted > 0) {
+        extra_wanted -= kBigAlloc;
+        incoming_buffer_->AppendIndexed(
+            Slice(memory_owner_.MakeSlice(kBigAlloc)));
+      }
+    } else {
+      while (extra_wanted > 0) {
+        extra_wanted -= kSmallAlloc;
+        incoming_buffer_->AppendIndexed(
+            Slice(memory_owner_.MakeSlice(kSmallAlloc)));
+      }
     }
+    MaybePostReclaimer();
   }
 }
 
 void PosixEndpointImpl::HandleRead(absl::Status status) {
   read_mu_.Lock();
-  if (status.ok()) {
+  if (status.ok() && memory_owner_.is_valid()) {
     MaybeMakeReadSlices();
     if (!TcpDoRead(status)) {
+      UpdateRcvLowat();
       // We've consumed the edge, request a new one.
       read_mu_.Unlock();
       handle_->NotifyOnRead(on_read_);
       return;
     }
   } else {
+    if (!memory_owner_.is_valid()) {
+      status = absl::UnknownError("Shutting down endpoint");
+    }
     incoming_buffer_->Clear();
     last_read_buffer_.Clear();
   }
@@ -577,29 +578,33 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
-  read_mu_.Lock();
+  grpc_core::ReleasableMutexLock lock(&read_mu_);
   GPR_ASSERT(read_cb_ == nullptr);
   read_cb_ = std::move(on_read);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
-  read_mu_.Unlock();
-  if (args != nullptr && frame_size_tuning_enabled_) {
-    min_progress_size_ = args->read_hint_bytes;
+  if (args != nullptr && grpc_core::IsTcpFrameSizeTuningEnabled()) {
+    min_progress_size_ = std::max(static_cast<int>(args->read_hint_bytes), 1);
   } else {
     min_progress_size_ = 1;
   }
   Ref().release();
   if (is_first_read_) {
+    UpdateRcvLowat();
     // Endpoint read called for the very first time. Register read callback
     // with the polling engine.
     is_first_read_ = false;
+    lock.Release();
     handle_->NotifyOnRead(on_read_);
   } else if (inq_ == 0) {
+    UpdateRcvLowat();
+    lock.Release();
     // Upper layer asked to read more but we know there is no pending data to
     // read from previous reads. So, wait for POLLIN.
     handle_->NotifyOnRead(on_read_);
   } else {
+    lock.Release();
     on_read_->SetStatus(absl::OkStatus());
     engine_->Run(on_read_);
   }
@@ -766,13 +771,7 @@ struct cmsghdr* PosixEndpointImpl::ProcessTimestamp(msghdr* msg,
     gpr_log(GPR_ERROR, "Unexpected control message");
     return cmsg;
   }
-  // The error handling can potentially be done on another thread so we need to
-  // protect the traced buffer list. A lock free list might be better. Using a
-  // simple mutex for now.
-  {
-    grpc_core::MutexLock lock(&traced_buffer_mu_);
-    traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
-  }
+  traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
   return next_cmsg;
 }
 
@@ -827,10 +826,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(length)) {
-    traced_buffer_mu_.Lock();
     traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + length),
                                 fd_, outgoing_buffer_arg_);
-    traced_buffer_mu_.Unlock();
     outgoing_buffer_arg_ = nullptr;
   }
   return true;
@@ -843,7 +840,7 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
 }
 
 void PosixEndpointImpl::HandleError(absl::Status /*status*/) {
-  GPR_ASSERT(false && "Error handling not supported on this platform");
+  grpc_core::Crash("Error handling not supported on this platform");
 }
 
 void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {}
@@ -853,7 +850,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
                                             ssize_t* /*sent_length*/,
                                             int* /*saved_errno*/,
                                             int /*additional_flags*/) {
-  GPR_ASSERT(false && "Write with timestamps not supported for this platform");
+  grpc_core::Crash("Write with timestamps not supported for this platform");
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
@@ -868,10 +865,8 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 // release operations needed can be performed on the arg.
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_arg_ != nullptr) {
-    traced_buffer_mu_.Lock();
     traced_buffers_.Shutdown(outgoing_buffer_arg_,
                              absl::InternalError("TracedBuffer list shutdown"));
-    traced_buffer_mu_.Unlock();
     outgoing_buffer_arg_ = nullptr;
   }
 }
@@ -946,8 +941,9 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
             "Tx0cp encountered an ENOBUFS error possibly because one or "
             "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
             "small for the intended user. Current system value of "
-            "RLIMIT_MEMLOCK is %lu and hard memlock ulimit is %lu. Consider "
-            "increasing these values appropriately for the intended user.",
+            "RLIMIT_MEMLOCK is %" PRIu64 " and hard memlock ulimit is %" PRIu64
+            ".Consider increasing these values appropriately for the intended "
+            "user.",
             GetRLimitMemLockMax(), GetUlimitHardMemLock());
 #endif
       }
@@ -959,8 +955,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        status = absl::InternalError(
-            absl::StrCat("sendmsg", std::strerror(saved_errno)));
+        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
         TcpShutdownTracedBufferList();
         return true;
       }
@@ -1008,10 +1003,11 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     for (iov_size = 0; outgoing_slice_idx != outgoing_buffer_->Count() &&
                        iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
-      auto slice = outgoing_buffer_->RefSlice(outgoing_slice_idx);
-      iov[iov_size].iov_base =
-          const_cast<uint8_t*>(slice.begin()) + outgoing_byte_idx_;
+      MutableSlice& slice = internal::SliceCast<MutableSlice>(
+          outgoing_buffer_->MutableSliceAt(outgoing_slice_idx));
+      iov[iov_size].iov_base = slice.begin() + outgoing_byte_idx_;
       iov[iov_size].iov_len = slice.length() - outgoing_byte_idx_;
+
       sending_length += iov[iov_size].iov_len;
       outgoing_slice_idx++;
       outgoing_byte_idx_ = 0;
@@ -1052,8 +1048,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
         }
         return false;
       } else {
-        status = absl::InternalError(
-            absl::StrCat("sendmsg", std::strerror(saved_errno)));
+        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
         outgoing_buffer_->Clear();
         TcpShutdownTracedBufferList();
         return true;
@@ -1119,8 +1114,9 @@ void PosixEndpointImpl::Write(
   GPR_DEBUG_ASSERT(data != nullptr);
 
   if (data->Length() == 0) {
-    on_writable(handle_->IsHandleShutdown() ? absl::InternalError("EOF")
-                                            : status);
+    on_writable(handle_->IsHandleShutdown()
+                    ? TcpAnnotateError(absl::InternalError("EOF"))
+                    : status);
     TcpShutdownTracedBufferList();
     return;
   }
@@ -1147,22 +1143,41 @@ void PosixEndpointImpl::Write(
     current_zerocopy_send_ = zerocopy_send_record;
     handle_->NotifyOnWrite(on_write_);
   } else {
-    on_writable(status);
+    // TODO(vigneshbabu): Consider eventually running this callback inline to
+    // avoid a thread hop. At the time of submission, it causes deadlocks which
+    // should be reolved after ExecCtx removal.
+    engine_->Run([on_writable = std::move(on_writable), status]() mutable {
+      on_writable(status);
+    });
   }
 }
 
-void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
+void PosixEndpointImpl::MaybeShutdown(
+    absl::Status why,
+    absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
   if (poller_->CanTrackErrors()) {
     ZerocopyDisableAndWaitForRemaining();
     stop_error_notification_.store(true, std::memory_order_release);
     handle_->SetHasError();
   }
+  on_release_fd_ = std::move(on_release_fd);
+  grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
+                          GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
+  read_mu_.Lock();
+  memory_owner_.Reset();
+  read_mu_.Unlock();
   Unref();
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  handle_->OrphanHandle(on_done_, nullptr, "");
+  int release_fd = -1;
+  handle_->OrphanHandle(on_done_,
+                        on_release_fd_ == nullptr ? nullptr : &release_fd, "");
+  if (on_release_fd_ != nullptr) {
+    engine_->Run([on_release_fd = std::move(on_release_fd_),
+                  release_fd]() mutable { on_release_fd(release_fd); });
+  }
   delete on_read_;
   delete on_write_;
   delete on_error_;
@@ -1171,6 +1186,7 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
 PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
+                                     MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
@@ -1181,11 +1197,19 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);
-  memory_owner_ = options.resource_quota->memory_quota()->CreateMemoryOwner(
-      *sock.PeerAddressString());
+  auto peer_addr_string = sock.PeerAddressString();
+  mem_quota_ = options.resource_quota->memory_quota();
+  memory_owner_ = mem_quota_->CreateMemoryOwner(
+      peer_addr_string.ok() ? *peer_addr_string : "");
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
-  local_address_ = *sock.LocalAddress();
-  peer_address_ = *sock.PeerAddress();
+  auto local_address = sock.LocalAddress();
+  if (local_address.ok()) {
+    local_address_ = *local_address;
+  }
+  auto peer_address = sock.PeerAddress();
+  if (peer_address.ok()) {
+    peer_address_ = *peer_address;
+  }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
@@ -1217,7 +1241,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     if (zerocopy_enabled) {
       gpr_log(GPR_INFO,
               "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value = "
-              "%lu, ulimit hard memlock value = %lu",
+              "%" PRIu64 ",ulimit hard memlock value = %" PRIu64,
               GetRLimitMemLockMax(), GetUlimitHardMemLock());
     }
   }
@@ -1225,7 +1249,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   tcp_zerocopy_send_ctx_ = std::make_unique<TcpZerocopySendCtx>(
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
-  frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
 #ifdef GRPC_HAVE_TCP_INQ
   int one = 1;
   if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
@@ -1254,30 +1277,29 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
+    std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
+    const PosixTcpOptions& options) {
   GPR_DEBUG_ASSERT(handle != nullptr);
   return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
-                                         config);
+                                         std::move(allocator), options);
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
+namespace experimental {
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
-    std::shared_ptr<EventEngine> /*engine*/, const EndpointConfig& /*config*/) {
-  GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
+    std::shared_ptr<EventEngine> /*engine*/,
+    const PosixTcpOptions& /*options*/) {
+  grpc_core::Crash("Cannot create PosixEndpoint on this platform");
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_POSIX_SOCKET_TCP

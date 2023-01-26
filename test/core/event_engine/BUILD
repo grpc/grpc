@@ -29,10 +29,9 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:common_event_engine_closures",
-        "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:notification",
+        "//src/core:common_event_engine_closures",
+        "//src/core:notification",
     ],
 )
 
@@ -44,10 +43,10 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:forkable",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_unsecure",
+        "//src/core:forkable",
     ],
 )
 
@@ -56,9 +55,9 @@ grpc_cc_test(
     srcs = ["thread_pool_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:event_engine_thread_pool",
         "//:gpr",
-        "//:notification",
+        "//src/core:event_engine_thread_pool",
+        "//src/core:notification",
     ],
 )
 
@@ -73,7 +72,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr_platform",
-        "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
     ],
 )
 
@@ -88,10 +88,9 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:default_event_engine",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc",
+        "//src/core:default_event_engine",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -103,7 +102,6 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -114,10 +112,9 @@ grpc_cc_test(
     external_deps = ["gtest"],
     deps = [
         "aborting_event_engine",
-        "//:default_event_engine",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc",
+        "//src/core:default_event_engine",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -127,10 +124,10 @@ grpc_cc_test(
     srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:event_engine_common",
         "//:gpr",
         "//:gpr_platform",
-        "//:slice",
+        "//src/core:event_engine_common",
+        "//src/core:slice",
     ],
 )
 
@@ -171,4 +168,46 @@ grpc_cc_library(
         "gtest",
     ],
     deps = ["//:event_engine_base_hdrs"],
+)
+
+grpc_cc_test(
+    name = "tcp_socket_utils_test",
+    srcs = ["tcp_socket_utils_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_test_utils",
+    testonly = True,
+    srcs = ["event_engine_test_utils.cc"],
+    hdrs = ["event_engine_test_utils.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:memory_quota",
+        "//src/core:notification",
+        "//src/core:time",
+    ],
 )

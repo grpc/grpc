@@ -70,6 +70,8 @@ def _get_external_deps(external_deps):
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
+        elif dep.startswith("google/"):
+            ret.append("@com_google_googleapis//" + dep)
         else:
             ret.append("//external:" + dep)
     return ret
@@ -92,8 +94,10 @@ def _update_visibility(visibility):
         "cli": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
+        "exec_ctx": PRIVATE,
         "grpclb": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
+        "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
@@ -132,6 +136,7 @@ def grpc_cc_library(
         alwayslink = 0,
         data = [],
         tags = [],
+        linkopts = [],
         linkstatic = False):
     """An internal wrapper around cc_library.
 
@@ -151,13 +156,14 @@ def grpc_cc_library(
       alwayslink: Whether to enable alwayslink on the cc_library.
       data: Data dependencies.
       tags: Tags to apply to the rule.
+      linkopts: Extra libraries to link.
       linkstatic: Whether to enable linkstatic on the cc_library.
     """
     visibility = _update_visibility(visibility)
     copts = []
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
-    linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
+    linkopts = linkopts + if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
@@ -453,7 +459,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkstatic": linkstatic,
     }
 
-    if "grpc-fuzzer" not in tags:
+    if "grpc-fuzzer" not in tags and "no_test_ios" not in tags:
         ios_cc_test(
             name = name,
             srcs = srcs,

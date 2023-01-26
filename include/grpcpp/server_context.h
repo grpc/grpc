@@ -1,25 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SERVER_CONTEXT_H
 #define GRPCPP_SERVER_CONTEXT_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 #include <cassert>
@@ -28,15 +28,17 @@
 #include <type_traits>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/compression_types.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/call_op_set.h>
-#include <grpcpp/impl/codegen/callback_common.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/support/callback_common.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/message_allocator.h>
 #include <grpcpp/support/server_callback.h>
@@ -62,8 +64,6 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 template <class ServiceType, class RequestType, class ResponseType>
@@ -147,15 +147,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  ///\endverbatim
+  ///
   void AddInitialMetadata(const std::string& key, const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -172,15 +172,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  ///\endverbatim
+  ///
   void AddTrailingMetadata(const std::string& key, const std::string& value);
 
   /// Return whether this RPC failed before the server could provide its status
@@ -440,8 +440,7 @@ class ServerContextBase {
   }
 
   void MaybeMarkCancelledOnRead() {
-    if (g_core_codegen_interface->grpc_call_failed_before_recv_message(
-            call_.call)) {
+    if (grpc_call_failed_before_recv_message(call_.call)) {
       marked_cancelled_.store(true, std::memory_order_release);
     }
   }

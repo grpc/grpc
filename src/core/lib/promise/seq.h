@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_SEQ_H
-#define GRPC_CORE_LIB_PROMISE_SEQ_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_SEQ_H
+#define GRPC_SRC_CORE_LIB_PROMISE_SEQ_H
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/promise/detail/basic_seq.h"
@@ -32,13 +33,11 @@ struct SeqTraits {
   using UnwrappedType = T;
   using WrappedType = T;
   template <typename Next>
-  static auto CallFactory(Next* next, T&& value)
-      -> decltype(next->Once(std::forward<T>(value))) {
-    return next->Once(std::forward<T>(value));
+  static auto CallFactory(Next* next, T&& value) {
+    return next->Make(std::forward<T>(value));
   }
   template <typename F, typename Elem>
-  static auto CallSeqFactory(F& f, Elem&& elem, T&& value)
-      -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
+  static auto CallSeqFactory(F& f, Elem&& elem, T&& value) {
     return f(std::forward<Elem>(elem), std::forward<T>(value));
   }
   template <typename Result, typename PriorResult, typename RunNext>
@@ -105,4 +104,4 @@ SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_SEQ_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_SEQ_H

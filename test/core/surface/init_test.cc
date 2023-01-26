@@ -1,25 +1,28 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/surface/init.h"
 
+#include <stdint.h>
+
 #include <chrono>
 #include <memory>
+#include <ratio>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -66,7 +69,7 @@ TEST(Init, blocking) {
   test_blocking(3);
 }
 
-TEST(Init, shutdown_with_thread) {
+TEST(Init, ShutdownWithThread) {
   grpc_init();
   {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
@@ -87,7 +90,7 @@ TEST(Init, mixed) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, mixed_with_thread) {
+TEST(Init, MixedWithThread) {
   grpc_init();
   {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
@@ -102,7 +105,7 @@ TEST(Init, mixed_with_thread) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, repeatedly) {
+TEST(Init, Repeatedly) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
     {
@@ -115,7 +118,7 @@ TEST(Init, repeatedly) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, repeatedly_blocking) {
+TEST(Init, RepeatedlyBlocking) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
     {

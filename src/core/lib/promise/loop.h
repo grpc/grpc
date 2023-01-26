@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_LOOP_H
-#define GRPC_CORE_LIB_PROMISE_LOOP_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
+#define GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -76,14 +76,14 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
 template <typename F>
 class Loop {
  private:
-  using Factory = promise_detail::PromiseFactory<void, F>;
-  using PromiseType = decltype(std::declval<Factory>().Repeated());
+  using Factory = promise_detail::RepeatedPromiseFactory<void, F>;
+  using PromiseType = decltype(std::declval<Factory>().Make());
   using PromiseResult = typename PromiseType::Result;
 
  public:
   using Result = typename LoopTraits<PromiseResult>::Result;
 
-  explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Repeated()) {}
+  explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Make()) {}
   ~Loop() { promise_.~PromiseType(); }
 
   Loop(Loop&& loop) noexcept
@@ -104,7 +104,7 @@ class Loop {
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);
         if (absl::holds_alternative<Continue>(lc)) {
           promise_.~PromiseType();
-          new (&promise_) PromiseType(factory_.Repeated());
+          new (&promise_) PromiseType(factory_.Make());
           continue;
         }
         //  - otherwise there's our result... return it out.
@@ -118,7 +118,9 @@ class Loop {
 
  private:
   GPR_NO_UNIQUE_ADDRESS Factory factory_;
-  GPR_NO_UNIQUE_ADDRESS union { GPR_NO_UNIQUE_ADDRESS PromiseType promise_; };
+  GPR_NO_UNIQUE_ADDRESS union {
+    GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
+  };
 };
 
 }  // namespace promise_detail
@@ -133,4 +135,4 @@ promise_detail::Loop<F> Loop(F f) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_LOOP_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
