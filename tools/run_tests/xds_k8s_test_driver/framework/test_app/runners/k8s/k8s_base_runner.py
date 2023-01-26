@@ -18,7 +18,7 @@ import contextlib
 import datetime
 import logging
 import pathlib
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import mako.template
 import yaml
@@ -121,7 +121,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
                           cls.TEMPLATE_DIR_RELATIVE_PATH)
         return templates_path.joinpath(template_name).resolve()
 
-    def _create_from_template(self, template_name, **kwargs):
+    def _create_from_template(self, template_name, **kwargs) -> object:
         template_file = self._template_file_from_name(template_name)
         logger.debug("Loading k8s manifest template: %s", template_file)
 
@@ -135,7 +135,26 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         if next(manifests, False):
             raise _RunnerError('Exactly one document expected in manifest '
                                f'{template_file}')
-        k8s_objects = self.k8s_namespace.apply_manifest(manifest)
+
+        # TODO(sergiitk, b/178378578): add a retryer.
+        try:
+            k8s_objects = self.k8s_namespace.apply_manifest(manifest)
+        except k8s.FailToCreateError as err_create:
+            # Since we verified this is not a multi-doc yaml, we should
+            # expect a single exception. Otherwise, something went horribly
+            # wrong, or API promises got broken.
+            if len(err_create.api_exceptions) != 1:
+                raise
+
+            api_exception: k8s.ApiException = err_create.api_exceptions[0]
+            if api_exception.status == 401:
+                # 401 Unauthorized: token might be expired, attempt auth refresh
+                self.k8s_namespace.refresh_auth()
+                k8s_objects = self.k8s_namespace.apply_manifest(manifest)
+            else:
+                # Reraise for anything else.
+                raise
+
         if len(k8s_objects) != 1:
             raise _RunnerError('Expected exactly one object must created from '
                                f'manifest {template_file}')
