@@ -11097,6 +11097,32 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(for_each_test
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11126,7 +11152,15 @@ target_link_libraries(for_each_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
+  absl::flat_hash_set
+  absl::any_invocable
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::utility
+  gpr
+  upb
 )
 
 
