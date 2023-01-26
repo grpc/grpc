@@ -465,8 +465,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
    public:
     explicit FakeCallState(
         const std::map<UniqueTypeName, absl::string_view>& attributes) {
-      for (const auto& it : attributes) {
-        attributes_.emplace(it.first, std::string(it.second));
+      for (const auto& p : attributes) {
+        attributes_.emplace(p.first, std::string(p.second));
       }
     }
 
