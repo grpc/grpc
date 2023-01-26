@@ -20,6 +20,9 @@ EXPERIMENTS = {
     "dbg": {
     },
     "off": {
+        "census_test": [
+            "transport_supplies_client_latency",
+        ],
         "core_end2end_test": [
             "promise_based_client_call",
         ],
@@ -29,6 +32,9 @@ EXPERIMENTS = {
         ],
         "event_engine_client_test": [
             "event_engine_client",
+        ],
+        "event_engine_listener_test": [
+            "event_engine_listener",
         ],
         "flow_control_test": [
             "peer_state_based_framing",

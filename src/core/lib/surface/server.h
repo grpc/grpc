@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_SERVER_H
-#define GRPC_CORE_LIB_SURFACE_SERVER_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
+#define GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -522,4 +522,4 @@ struct grpc_server_config_fetcher {
   virtual grpc_pollset_set* interested_parties() = 0;
 };
 
-#endif  // GRPC_CORE_LIB_SURFACE_SERVER_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_SERVER_H

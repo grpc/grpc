@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_UTIL_NO_OP_EVENT_ENGINE_H
-#define GRPC_TEST_CORE_EVENT_ENGINE_UTIL_NO_OP_EVENT_ENGINE_H
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_UTIL_ABORTING_EVENT_ENGINE_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_UTIL_ABORTING_EVENT_ENGINE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -68,4 +68,4 @@ class AbortingEventEngine : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_UTIL_NO_OP_EVENT_ENGINE_H
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_UTIL_ABORTING_EVENT_ENGINE_H

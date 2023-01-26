@@ -38,8 +38,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
+  s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.3'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -160,6 +160,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )
@@ -169,6 +170,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/cds.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc )
@@ -443,6 +447,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c )
@@ -469,6 +477,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c )
@@ -481,6 +491,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c )
@@ -779,6 +791,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c )
@@ -791,6 +805,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c )
@@ -1020,6 +1036,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/default_event_engine.h )
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.cc )
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.h )
+  s.files += %w( src/core/lib/event_engine/event_engine.cc )
   s.files += %w( src/core/lib/event_engine/executor/executor.h )
   s.files += %w( src/core/lib/event_engine/forkable.cc )
   s.files += %w( src/core/lib/event_engine/forkable.h )
@@ -1065,6 +1082,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h )
   s.files += %w( src/core/lib/event_engine/resolved_address.cc )
+  s.files += %w( src/core/lib/event_engine/resolved_address_internal.h )
+  s.files += %w( src/core/lib/event_engine/shim.cc )
+  s.files += %w( src/core/lib/event_engine/shim.h )
   s.files += %w( src/core/lib/event_engine/slice.cc )
   s.files += %w( src/core/lib/event_engine/slice_buffer.cc )
   s.files += %w( src/core/lib/event_engine/socket_notifier.h )
@@ -1232,6 +1252,12 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/ev_posix.cc )
   s.files += %w( src/core/lib/iomgr/ev_posix.h )
   s.files += %w( src/core/lib/iomgr/ev_windows.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine_shims/closure.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine_shims/closure.h )
+  s.files += %w( src/core/lib/iomgr/event_engine_shims/endpoint.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine_shims/endpoint.h )
+  s.files += %w( src/core/lib/iomgr/event_engine_shims/tcp_client.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine_shims/tcp_client.h )
   s.files += %w( src/core/lib/iomgr/exec_ctx.cc )
   s.files += %w( src/core/lib/iomgr/exec_ctx.h )
   s.files += %w( src/core/lib/iomgr/executor.cc )

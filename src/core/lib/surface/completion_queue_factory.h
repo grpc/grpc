@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
-#define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
+#define GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,4 +34,4 @@ struct grpc_completion_queue_factory {
   grpc_completion_queue_factory_vtable* vtable;
 };
 
-#endif  // GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H

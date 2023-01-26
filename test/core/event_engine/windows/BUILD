@@ -21,8 +21,10 @@ grpc_cc_test(
     timeout = "short",
     srcs = ["iocp_test.cc"],
     external_deps = [
-        "gtest",
+        "absl/status",
+        "absl/time",
         "absl/types:variant",
+        "gtest",
     ],
     language = "C++",
     tags = [
@@ -34,11 +36,15 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "create_sockpair",
+        "//:gpr",
         "//:gpr_platform",
+        "//:grpc_unsecure",
         "//src/core:common_event_engine_closures",
-        "//src/core:event_engine_utils",
+        "//src/core:error",
+        "//src/core:event_engine_poller",
+        "//src/core:event_engine_thread_pool",
+        "//src/core:notification",
         "//src/core:windows_iocp",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -46,7 +52,11 @@ grpc_cc_test(
     name = "win_socket_test",
     timeout = "short",
     srcs = ["win_socket_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/time",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_linux",
@@ -57,10 +67,13 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "create_sockpair",
+        "//:gpr",
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:common_event_engine_closures",
-        "//src/core:windows_event_engine",
-        "//test/core/util:grpc_test_util",
+        "//src/core:error",
+        "//src/core:event_engine_thread_pool",
+        "//src/core:windows_iocp",
     ],
 )
 
@@ -68,7 +81,10 @@ grpc_cc_test(
     name = "windows_endpoint_test",
     timeout = "short",
     srcs = ["windows_endpoint_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_linux",
@@ -80,9 +96,13 @@ grpc_cc_test(
     deps = [
         "create_sockpair",
         "//:gpr_platform",
-        "//src/core:common_event_engine_closures",
+        "//:grpc",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:event_engine_thread_pool",
+        "//src/core:memory_quota",
+        "//src/core:notification",
         "//src/core:windows_endpoint",
-        "//test/core/util:grpc_test_util",
+        "//src/core:windows_iocp",
     ],
 )
 
@@ -98,6 +118,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr_platform",
-        "//:grpc_base",
+        "//src/core:error",
+        "//src/core:windows_iocp",
     ],
 )

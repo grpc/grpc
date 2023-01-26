@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SUPPORT_HISTOGRAM_H
-#define GRPC_SUPPORT_HISTOGRAM_H
+#ifndef GRPC_TEST_CORE_UTIL_HISTOGRAM_H
+#define GRPC_TEST_CORE_UTIL_HISTOGRAM_H
 
 #include <grpc/support/port_platform.h>
 
@@ -61,4 +61,4 @@ void grpc_histogram_merge_contents(grpc_histogram* histogram,
 }
 #endif
 
-#endif  // GRPC_SUPPORT_HISTOGRAM_H
+#endif  // GRPC_TEST_CORE_UTIL_HISTOGRAM_H

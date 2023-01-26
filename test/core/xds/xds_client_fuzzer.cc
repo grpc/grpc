@@ -59,6 +59,7 @@ class Fuzzer {
     }
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
     transport_factory->SetAutoCompleteMessagesFromClient(false);
+    transport_factory->SetAbortOnUndrainedMessages(false);
     transport_factory_ = transport_factory.get();
     xds_client_ = MakeRefCounted<XdsClient>(
         std::move(*bootstrap), std::move(transport_factory),

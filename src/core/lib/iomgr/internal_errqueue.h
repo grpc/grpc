@@ -22,8 +22,8 @@
 // have <linux/errqueue.h> and <linux/net_tstamp.h>.
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
-#define GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -183,4 +183,4 @@ bool KernelSupportsErrqueue();
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 
-#endif  // GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H

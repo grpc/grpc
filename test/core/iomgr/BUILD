@@ -61,7 +61,10 @@ grpc_cc_test(
     srcs = ["endpoint_pair_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    tags = ["endpoint_test"],
+    tags = [
+        "endpoint_test",
+        "event_engine_client_test",
+    ],
     deps = [
         ":endpoint_tests",
         "//:gpr",
@@ -245,6 +248,7 @@ grpc_cc_test(
     language = "C++",
     tags = [
         "endpoint_test",
+        "event_engine_client_test",
         "no_windows",
     ],
     deps = [
@@ -262,6 +266,7 @@ grpc_cc_test(
     language = "C++",
     tags = [
         "endpoint_test",
+        "event_engine_listener_test",
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
         "no_windows",
     ],
@@ -309,7 +314,10 @@ grpc_cc_test(
     srcs = ["tcp_server_posix_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    tags = ["no_windows"],
+    tags = [
+        "event_engine_listener_test",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

@@ -16,89 +16,24 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine/test_suite")
+grpc_package(
+    name = "test/core/event_engine/test_suite",
+    visibility = "public",
+)
 
 grpc_cc_library(
-    name = "timer",
+    name = "event_engine_test_framework",
     testonly = True,
-    srcs = ["timer_test.cc"],
+    srcs = ["event_engine_test_framework.cc"],
+    hdrs = ["event_engine_test_framework.h"],
     external_deps = [
-        "absl/base:core_headers",
         "absl/functional:any_invocable",
-        "absl/functional:bind_front",
-        "absl/functional:function_ref",
-        "absl/time",
         "gtest",
     ],
     deps = [
-        "conformance_test_base_lib",
         "//:gpr",
         "//src/core:event_engine_interface",
     ],
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "dns",
-    testonly = True,
-    srcs = ["dns_test.cc"],
-    external_deps = ["gtest"],
-    deps = [
-        "conformance_test_base_lib",
-        "//:exec_ctx",
-    ],
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "client",
-    testonly = True,
-    srcs = ["client_test.cc"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/time",
-        "gtest",
-    ],
-    deps = [
-        "conformance_test_base_lib",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//src/core:channel_args",
-        "//src/core:channel_args_endpoint_config",
-        "//src/core:memory_quota",
-        "//src/core:notification",
-        "//src/core:resource_quota",
-        "//test/core/util:grpc_test_util_unsecure",
-    ],
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "server",
-    testonly = True,
-    srcs = ["server_test.cc"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/time",
-        "gtest",
-    ],
-    deps = [
-        "conformance_test_base_lib",
-        "//:exec_ctx",
-        "//:grpc",
-        "//src/core:channel_args",
-        "//src/core:channel_args_endpoint_config",
-        "//src/core:memory_quota",
-        "//src/core:notification",
-        "//src/core:resource_quota",
-        "//test/core/util:grpc_test_util_unsecure",
-    ],
-    alwayslink = 1,
 )
 
 # -- EventEngine implementations --
@@ -113,12 +48,14 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
-        "conformance_test_base_lib",
-        "oracle_event_engine_posix",
-        "timer",
+        "event_engine_test_framework",
         "//:grpc",
         "//src/core:experiments",
         "//src/core:posix_event_engine",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/tests:client",
+        "//test/core/event_engine/test_suite/tests:server",
+        "//test/core/event_engine/test_suite/tests:timer",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -133,10 +70,11 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "conformance_test_base_lib",
+        "event_engine_test_framework",
         "//:gpr_platform",
         "//:grpc",
         "//src/core:windows_event_engine",
+        "//test/core/event_engine/test_suite/tests:timer",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -150,10 +88,11 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "conformance_test_base_lib",
+        "event_engine_test_framework",
         "//:gpr_platform",
-        "//:grpc",
+        "//:grpc_unsecure",
         "//src/core:cf_event_engine",
+        "//test/core/event_engine/test_suite/tests:timer",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -171,96 +110,9 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "conformance_test_base_lib",
-        "timer",
+        "event_engine_test_framework",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-    ],
-)
-
-# -- Internal targets --
-
-grpc_cc_library(
-    name = "oracle_event_engine_posix",
-    testonly = True,
-    srcs = ["oracle_event_engine_posix.cc"],
-    hdrs = ["oracle_event_engine_posix.h"],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/time",
-    ],
-    tags = [
-        "cpu:10",
-        "no_windows",
-    ],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "conformance_test_base_lib",
-        "//:gpr",
-        "//:sockaddr_utils",
-        "//src/core:event_engine_interface",
-        "//src/core:event_engine_memory_allocator",
-        "//src/core:event_engine_slice_buffer",
-        "//src/core:notification",
-        "//src/core:resolved_address",
-        "//src/core:strerror",
-    ],
-)
-
-grpc_cc_test(
-    name = "oracle_event_engine_posix_test",
-    srcs = ["oracle_event_engine_posix_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    tags = [
-        "no_test_ios",
-        "no_windows",
-    ],
-    # TODO(vignesbabu): This is required because the oracle event engine uses
-    # poll syscall. If uses_polling is set to False, there will be an attempt
-    # to run this test with GRPC_POLL_STRATEGY=none which will hijack the poll
-    # c-wrapper causing the test to fail. A more generic posix oracle event
-    # engine design which doesn't rely on poll is required.
-    uses_polling = True,
-    deps = [
-        "conformance_test_base_lib",
-        "oracle_event_engine_posix",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "conformance_test_base_lib",
-    testonly = True,
-    srcs = [
-        "event_engine_test.cc",
-        "event_engine_test_utils.cc",
-    ],
-    hdrs = [
-        "event_engine_test.h",
-        "event_engine_test_utils.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/time",
-        "gtest",
-    ],
-    visibility = ["@grpc:public"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:uri_parser",
-        "//src/core:channel_args_endpoint_config",
-        "//src/core:memory_quota",
-        "//src/core:notification",
-        "//src/core:resolved_address",
+        "//test/core/event_engine/test_suite/tests:timer",
     ],
 )

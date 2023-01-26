@@ -25,6 +25,20 @@ import time
 
 import run_buildozer
 
+INCLUDED_DIRECTORIES = [
+    "",
+    "src/core",
+    "src/cpp/ext/gcp",
+    "src/cpp/ext/filters/logging",
+    "test/core/uri",
+    "test/core/util",
+    "test/core/end2end",
+    "test/core/event_engine/...",
+    "test/core/promise",
+    "test/core/resource_quota",
+    "test/core/transport/chaotic_good",
+]
+
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
@@ -141,6 +155,8 @@ EXTERNAL_DEPS = {
         'cares',
     'benchmark/benchmark.h':
         'benchmark',
+    'google/api/monitored_resource.pb.h':
+        'google/api:monitored_resource_cc_proto',
     'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
         'googleapis_trace_grpc_service',
     'google/logging/v2/logging.grpc.pb.h':
@@ -431,22 +447,16 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-for dirname in [
-        "",
-        "src/core",
-        "src/cpp/ext/gcp",
-        "src/cpp/ext/filters/logging",
-        "test/core/uri",
-        "test/core/util",
-        "test/core/end2end",
-        "test/core/event_engine",
-        "test/core/event_engine/fuzzing_event_engine",
-        "test/core/event_engine/posix",
-        "test/core/event_engine/test_suite",
-        "test/core/promise",
-        "test/core/resource_quota",
-        "test/core/transport/chaotic_good",
-]:
+def included_directories():
+    for name in INCLUDED_DIRECTORIES:
+        if name.endswith('/...'):
+            for root, dirs, files in os.walk(name[:-4]):
+                if 'BUILD' in files:
+                    yield root
+        else:
+            yield name
+
+for dirname in included_directories():
     parsing_path = dirname
     exec(
         open('%sBUILD' % (dirname + '/' if dirname else ''), 'r').read(), {
@@ -563,7 +573,7 @@ def make_library(library):
     hdrs = sorted(consumes[library])
     # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
     # which is in grpc, which is illegal but hard to change
-    # once event engine lands we can clean this up
+    # once EventEngine lands we can clean this up
     deps = Choices(library, {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']}
                    if library.startswith('//test/') else {})
     external_deps = Choices(None, {})
@@ -592,7 +602,7 @@ def make_library(library):
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not dep.startswith('//'):
+            if not ('//' in dep):
                 dep = '//:' + dep
             deps.add(dep, hdr)
             continue

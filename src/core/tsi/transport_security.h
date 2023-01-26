@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_TRANSPORT_SECURITY_H
+#ifndef GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_H
+#define GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -140,4 +140,4 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
 // Utils.
 char* tsi_strdup(const char* src);  // Sadly, no strdup in C89.
 
-#endif  // GRPC_CORE_TSI_TRANSPORT_SECURITY_H
+#endif  // GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_H

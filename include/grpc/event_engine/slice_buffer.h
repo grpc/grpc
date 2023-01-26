@@ -47,7 +47,7 @@ namespace experimental {
 ///
 /// The SliceBuffer API is basically a replica of the grpc_slice_buffer's,
 /// and its documentation will move here once we remove the C structure,
-/// which should happen before the Event Engine's API is no longer
+/// which should happen before the EventEngine's API is no longer
 /// an experimental API.
 class SliceBuffer {
  public:
@@ -135,7 +135,19 @@ class SliceBuffer {
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
 
+  // Returns a SliceBuffer that transfers slices into this new SliceBuffer,
+  // leaving the input parameter empty.
+  static SliceBuffer TakeCSliceBuffer(grpc_slice_buffer& slice_buffer) {
+    return SliceBuffer(&slice_buffer);
+  }
+
  private:
+  // Transfers slices into this new SliceBuffer, leaving the parameter empty.
+  // Does not take ownership of the slice_buffer argument.
+  explicit SliceBuffer(grpc_slice_buffer* slice_buffer) {
+    grpc_slice_buffer_init(&slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, slice_buffer);
+  }
   /// The backing raw slice buffer.
   grpc_slice_buffer slice_buffer_;
 };

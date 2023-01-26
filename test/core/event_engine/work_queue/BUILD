@@ -25,12 +25,17 @@ grpc_package(
 grpc_cc_test(
     name = "work_queue_test",
     srcs = ["work_queue_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/time",
+        "gtest",
+    ],
     deps = [
-        "//:exec_ctx",
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_interface",
         "//src/core:event_engine_work_queue",
+        "//src/core:time",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -39,13 +44,19 @@ grpc_proto_fuzzer(
     name = "work_queue_fuzzer",
     srcs = ["work_queue_fuzzer.cc"],
     corpus = "corpora",
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/types:optional",
+    ],
     language = "C++",
     proto = "work_queue_fuzzer.proto",
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:gpr_platform",
+        "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_interface",
         "//src/core:event_engine_work_queue",
-        "//test/core/util:grpc_test_util",
     ],
 )

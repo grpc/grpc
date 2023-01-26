@@ -37,6 +37,8 @@ struct envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs;
 struct envoy_admin_v3_EndpointsConfigDump;
 struct envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig;
 struct envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig;
+struct envoy_admin_v3_EcdsConfigDump;
+struct envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig;
 typedef struct envoy_admin_v3_UpdateFailureState envoy_admin_v3_UpdateFailureState;
 typedef struct envoy_admin_v3_ListenersConfigDump envoy_admin_v3_ListenersConfigDump;
 typedef struct envoy_admin_v3_ListenersConfigDump_StaticListener envoy_admin_v3_ListenersConfigDump_StaticListener;
@@ -54,6 +56,8 @@ typedef struct envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs e
 typedef struct envoy_admin_v3_EndpointsConfigDump envoy_admin_v3_EndpointsConfigDump;
 typedef struct envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig;
 typedef struct envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig;
+typedef struct envoy_admin_v3_EcdsConfigDump envoy_admin_v3_EcdsConfigDump;
+typedef struct envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig;
 extern const upb_MiniTable envoy_admin_v3_UpdateFailureState_msginit;
 extern const upb_MiniTable envoy_admin_v3_ListenersConfigDump_msginit;
 extern const upb_MiniTable envoy_admin_v3_ListenersConfigDump_StaticListener_msginit;
@@ -71,6 +75,8 @@ extern const upb_MiniTable envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRo
 extern const upb_MiniTable envoy_admin_v3_EndpointsConfigDump_msginit;
 extern const upb_MiniTable envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit;
 extern const upb_MiniTable envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit;
+extern const upb_MiniTable envoy_admin_v3_EcdsConfigDump_msginit;
+extern const upb_MiniTable envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit;
 struct google_protobuf_Any;
 struct google_protobuf_Timestamp;
 extern const upb_MiniTable google_protobuf_Any_msginit;
@@ -1754,6 +1760,185 @@ UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_EndpointsCon
   return sub;
 }
 UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_client_status(envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig *msg, int32_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+}
+
+/* envoy.admin.v3.EcdsConfigDump */
+
+UPB_INLINE envoy_admin_v3_EcdsConfigDump* envoy_admin_v3_EcdsConfigDump_new(upb_Arena* arena) {
+  return (envoy_admin_v3_EcdsConfigDump*)_upb_Message_New(&envoy_admin_v3_EcdsConfigDump_msginit, arena);
+}
+UPB_INLINE envoy_admin_v3_EcdsConfigDump* envoy_admin_v3_EcdsConfigDump_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_admin_v3_EcdsConfigDump* ret = envoy_admin_v3_EcdsConfigDump_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_EcdsConfigDump_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_admin_v3_EcdsConfigDump* envoy_admin_v3_EcdsConfigDump_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_admin_v3_EcdsConfigDump* ret = envoy_admin_v3_EcdsConfigDump_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_EcdsConfigDump_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_admin_v3_EcdsConfigDump_serialize(const envoy_admin_v3_EcdsConfigDump* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_EcdsConfigDump_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_admin_v3_EcdsConfigDump_serialize_ex(const envoy_admin_v3_EcdsConfigDump* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_EcdsConfigDump_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE bool envoy_admin_v3_EcdsConfigDump_has_ecds_filters(const envoy_admin_v3_EcdsConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_clear_ecds_filters(const envoy_admin_v3_EcdsConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* const* envoy_admin_v3_EcdsConfigDump_ecds_filters(const envoy_admin_v3_EcdsConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
+
+UPB_INLINE envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig** envoy_admin_v3_EcdsConfigDump_mutable_ecds_filters(envoy_admin_v3_EcdsConfigDump* msg, size_t* len) {
+  return (envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig** envoy_admin_v3_EcdsConfigDump_resize_ecds_filters(envoy_admin_v3_EcdsConfigDump* msg, size_t len, upb_Arena* arena) {
+  return (envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* envoy_admin_v3_EcdsConfigDump_add_ecds_filters(envoy_admin_v3_EcdsConfigDump* msg, upb_Arena* arena) {
+  struct envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* sub = (struct envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig*)_upb_Message_New(&envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
+
+/* envoy.admin.v3.EcdsConfigDump.EcdsFilterConfig */
+
+UPB_INLINE envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_new(upb_Arena* arena) {
+  return (envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig*)_upb_Message_New(&envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit, arena);
+}
+UPB_INLINE envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* ret = envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* ret = envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_serialize(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_serialize_ex(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_clear_version_info(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_version_info(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
+}
+UPB_INLINE bool envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_has_ecds_filter(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_clear_ecds_filter(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_ecds_filter(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const struct google_protobuf_Any*);
+}
+UPB_INLINE bool envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_has_last_updated(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_clear_last_updated(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_last_updated(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_Timestamp*);
+}
+UPB_INLINE bool envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_has_error_state(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_clear_error_state(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+}
+UPB_INLINE const envoy_admin_v3_UpdateFailureState* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_error_state(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const envoy_admin_v3_UpdateFailureState*);
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_clear_client_status(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
+}
+UPB_INLINE int32_t envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_client_status(const envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+}
+
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_version_info(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = value;
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_ecds_filter(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig *msg, struct google_protobuf_Any* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), struct google_protobuf_Any*) = value;
+}
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_mutable_ecds_filter(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg, upb_Arena* arena) {
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_ecds_filter(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
+    if (!sub) return NULL;
+    envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_ecds_filter(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_last_updated(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig *msg, struct google_protobuf_Timestamp* value) {
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), struct google_protobuf_Timestamp*) = value;
+}
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_mutable_last_updated(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg, upb_Arena* arena) {
+  struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_last_updated(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
+    if (!sub) return NULL;
+    envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_last_updated(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_error_state(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig *msg, envoy_admin_v3_UpdateFailureState* value) {
+  _upb_sethas(msg, 3);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), envoy_admin_v3_UpdateFailureState*) = value;
+}
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_mutable_error_state(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig* msg, upb_Arena* arena) {
+  struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_error_state(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_Message_New(&envoy_admin_v3_UpdateFailureState_msginit, arena);
+    if (!sub) return NULL;
+    envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_error_state(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_set_client_status(envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 

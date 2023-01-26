@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-UniqueTypeName XdsHostOverrideTypeName();
+UniqueTypeName XdsOverrideHostTypeName();
 
 // A filter to provide cookie-based stateful session affinity.
 class StatefulSessionFilter : public ChannelFilter {
@@ -51,7 +51,7 @@ class StatefulSessionFilter : public ChannelFilter {
  private:
   explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
 
-  absl::optional<absl::string_view> GetHostOverrideFromCookie(
+  absl::optional<absl::string_view> GetOverrideHostFromCookie(
       const ClientMetadataHandle& initial_metadata,
       absl::string_view cookie_name);
 
@@ -63,4 +63,4 @@ class StatefulSessionFilter : public ChannelFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H

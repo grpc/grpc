@@ -247,6 +247,7 @@ grpc_cc_test(
         "//src/core:channel_args_endpoint_config",
         "//src/core:dual_ref_counted",
         "//src/core:event_engine_poller",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:notification",
         "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_closure",
@@ -255,8 +256,8 @@ grpc_cc_test(
         "//src/core:posix_event_engine_poller_posix_default",
         "//src/core:posix_event_engine_tcp_socket_utils",
         "//src/core:resource_quota",
-        "//test/core/event_engine/test_suite:conformance_test_base_lib",
-        "//test/core/event_engine/test_suite:oracle_event_engine_posix",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -315,7 +316,7 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:posix_event_engine",
         "//src/core:resource_quota",
-        "//test/core/event_engine/test_suite:conformance_test_base_lib",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )

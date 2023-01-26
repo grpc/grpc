@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_PRIVATE_H
-#define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_PRIVATE_H
+#ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_PRIVATE_H
+#define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_PRIVATE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -86,4 +86,4 @@ void alts_handshaker_client_ref_for_testing(alts_handshaker_client* c);
 }  // namespace internal
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_PRIVATE_H
+#endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_PRIVATE_H

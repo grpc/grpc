@@ -48,6 +48,11 @@ const char* const description_promise_based_client_call =
     "(ie when all filters in a stack are promise based)";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
+const char* const description_transport_supplies_client_latency =
+    "If set, use the transport represented value for client latency in "
+    "opencensus";
+const char* const description_event_engine_listener =
+    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 }  // namespace
 
 namespace grpc_core {
@@ -66,6 +71,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
     {"free_large_allocator", description_free_large_allocator, false},
+    {"transport_supplies_client_latency",
+     description_transport_supplies_client_latency, false},
+    {"event_engine_listener", description_event_engine_listener, false},
 };
 
 }  // namespace grpc_core
