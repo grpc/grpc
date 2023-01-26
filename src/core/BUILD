@@ -52,21 +52,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_common",
-    srcs = [
-        "lib/event_engine/slice.cc",
-        "lib/event_engine/slice_buffer.cc",
-    ],
-    deps = [
-        "slice",
-        "slice_refcount",
-        "//:gpr",
-        "//:gpr_platform",
-        "//:grpc_base",
-    ],
-)
-
-grpc_cc_library(
     name = "event_engine_handle_containers",
     hdrs = [
         "lib/event_engine/handle_containers.h",
