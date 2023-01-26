@@ -1253,6 +1253,7 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/iomgr/tcp_server.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
         "grpc_types",
