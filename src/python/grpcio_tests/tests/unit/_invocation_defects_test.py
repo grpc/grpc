@@ -48,7 +48,8 @@ class _Handler(object):
             ),))
         return request
 
-    def handle_unary_unary_with_nested_exception(self, request, servicer_context):
+    def handle_unary_unary_with_nested_exception(self, request,
+                                                 servicer_context):
         raise test_control.NestedDefect()
 
     def handle_unary_stream(self, request, servicer_context):
@@ -133,9 +134,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
         elif handler_call_details.method == _DEFECTIVE_GENERIC_RPC_HANDLER:
             return self._handler.defective_generic_rpc_handler()
         elif handler_call_details.method == _UNARY_UNARY_NESTED_EXCEPTION:
-            return _MethodHandler(False, False, None, None,
-                                  self._handler.handle_unary_unary_with_nested_exception, None, None,
-                                  None)
+            return _MethodHandler(
+                False, False, None, None,
+                self._handler.handle_unary_unary_with_nested_exception, None,
+                None, None)
         else:
             return None
 
@@ -182,6 +184,7 @@ def _stream_stream_multi_callable(channel):
 
 def _defective_handler_multi_callable(channel):
     return channel.unary_unary(_DEFECTIVE_GENERIC_RPC_HANDLER)
+
 
 def _defective_nested_exception_handler_multi_callable(channel):
     return channel.unary_unary(_UNARY_UNARY_NESTED_EXCEPTION)
@@ -273,15 +276,17 @@ class InvocationDefectsTest(unittest.TestCase):
 
     def testNestedExceptionGenericRpcHandlerUnaryResponse(self):
         request = b'\x07\x08'
-        multi_callable = _defective_nested_exception_handler_multi_callable(self._channel)
+        multi_callable = _defective_nested_exception_handler_multi_callable(
+            self._channel)
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable(request,
-                            metadata=(('test',
-                                        'DefectiveGenericRpcHandlerUnary'),))
+                           metadata=(('test',
+                                      'DefectiveGenericRpcHandlerUnary'),))
 
         self.assertIs(grpc.StatusCode.UNKNOWN,
                       exception_context.exception.code())
+
 
 if __name__ == '__main__':
     logging.basicConfig()

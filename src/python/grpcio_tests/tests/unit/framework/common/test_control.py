@@ -25,6 +25,7 @@ class Defect(Exception):
   defect in either the test infrastructure or the system under test.
   """
 
+
 class NestedDefect(Exception):
     """Simulates a nested programming defect raised into in a system under test."""
 
