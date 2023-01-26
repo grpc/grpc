@@ -447,6 +447,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+
 def included_directories():
     for name in INCLUDED_DIRECTORIES:
         if name.endswith('/...'):
@@ -455,6 +456,7 @@ def included_directories():
                     yield root
         else:
             yield name
+
 
 for dirname in included_directories():
     parsing_path = dirname
