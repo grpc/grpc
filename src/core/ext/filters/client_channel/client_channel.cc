@@ -116,11 +116,11 @@ class ClientChannel::CallData {
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
   static void SetPollent(grpc_call_element* elem, grpc_polling_entity* pollent);
 
-  void CheckResolution(grpc_call_element* elem, bool was_queued);
+  void CheckResolution(bool was_queued);
 
   // Removes the call from the channel's list of calls queued
   // for name resolution.
-  void RemoveCallFromResolverQueuedCallsLocked(grpc_call_element* elem)
+  void RemoveCallFromResolverQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
 
  private:
@@ -130,10 +130,13 @@ class ClientChannel::CallData {
            const grpc_call_element_args& args);
   ~CallData();
 
+  ClientChannel* chand() const {
+    return static_cast<ClientChannel*>(elem_->channel_data);
+  }
+
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
-  void PendingBatchesAdd(grpc_call_element* elem,
-                         grpc_transport_stream_op_batch* batch);
+  void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
   static void FailPendingBatchInCallCombiner(void* arg,
                                              grpc_error_handle error);
   // A predicate type and some useful implementations for PendingBatchesFail().
@@ -153,18 +156,18 @@ class ClientChannel::CallData {
   // If yield_call_combiner_predicate returns true, assumes responsibility for
   // yielding the call combiner.
   void PendingBatchesFail(
-      grpc_call_element* elem, grpc_error_handle error,
+      grpc_error_handle error,
       YieldCallCombinerPredicate yield_call_combiner_predicate);
   static void ResumePendingBatchInCallCombiner(void* arg,
                                                grpc_error_handle ignored);
-  // Resumes all pending batches on lb_call_.
-  void PendingBatchesResume(grpc_call_element* elem);
+  // Resumes all pending batches on dynamic_call_.
+  void PendingBatchesResume();
 
   // Helper function for CheckResolution().  Returns true if the call
   // can continue (i.e., there is a valid resolution result, or there is
   // an invalid resolution result but the call is not wait_for_ready).
   bool CheckResolutionLocked(
-      grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+      grpc_metadata_batch* initial_metadata,
       absl::StatusOr<RefCountedPtr<ConfigSelector>>* config_selector)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
   // Applies service config to the call.  Must be invoked once we know
@@ -172,16 +175,16 @@ class ClientChannel::CallData {
   // If an error is returned, the error indicates the status with which
   // the call should be failed.
   grpc_error_handle ApplyServiceConfigToCallLocked(
-      grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+      grpc_metadata_batch* initial_metadata,
       const absl::StatusOr<RefCountedPtr<ConfigSelector>>& config_selector);
   // Adds the call to the channel's list of calls queued for name resolution.
-  void AddCallToResolverQueuedCallsLocked(grpc_call_element* elem)
+  void AddCallToResolverQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
 
   static void RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
       void* arg, grpc_error_handle error);
 
-  void CreateDynamicCall(grpc_call_element* elem);
+  void CreateDynamicCall();
 
   // State for handling deadlines.
   // The code in deadline_filter.c requires this to be the first field.
@@ -190,6 +193,8 @@ class ClientChannel::CallData {
   // and call combiner.  If/when we have time, find a way to avoid this
   // without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state_;
+
+  grpc_call_element* elem_;
 
   grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
@@ -1078,14 +1083,12 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
 }
 
 void ClientChannel::ReprocessQueuedResolverCalls() {
-  for (grpc_call_element* elem : resolver_queued_calls_) {
-    CallData* calld = static_cast<CallData*>(elem->call_data);
-    calld->RemoveCallFromResolverQueuedCallsLocked(elem);
-    owning_stack_->EventEngine()->Run([elem]() {
+  for (CallData* calld : resolver_queued_calls_) {
+    calld->RemoveCallFromResolverQueuedCallsLocked();
+    owning_stack_->EventEngine()->Run([calld]() {
       ApplicationCallbackExecCtx application_exec_ctx;
       ExecCtx exec_ctx;
-      CallData* calld = static_cast<CallData*>(elem->call_data);
-      calld->CheckResolution(elem, /*was_queued=*/true);
+      calld->CheckResolution(/*was_queued=*/true);
     });
   }
   resolver_queued_calls_.clear();
@@ -1731,6 +1734,7 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
                       GPR_LIKELY(chand.deadline_checking_enabled_)
                           ? args.deadline
                           : Timestamp::InfFuture()),
+      elem_(elem),
       path_(CSliceRef(args.path)),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
@@ -1793,7 +1797,7 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready_,
                       RecvTrailingMetadataReadyForConfigSelectorCommitCallback,
-                      elem, nullptr);
+                      calld, nullptr);
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &calld->recv_trailing_metadata_ready_;
   }
@@ -1834,14 +1838,14 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
               calld, StatusToString(calld->cancel_error_).c_str());
     }
     // Fail all pending batches.
-    calld->PendingBatchesFail(elem, calld->cancel_error_, NoYieldCallCombiner);
+    calld->PendingBatchesFail(calld->cancel_error_, NoYieldCallCombiner);
     // Note: This will release the call combiner.
     grpc_transport_stream_op_batch_finish_with_failure(
         batch, calld->cancel_error_, calld->call_combiner_);
     return;
   }
   // Add the batch to the pending list.
-  calld->PendingBatchesAdd(elem, batch);
+  calld->PendingBatchesAdd(batch);
   // For batches containing a send_initial_metadata op, acquire the
   // channel's resolution mutex to apply the service config to the call,
   // after which we will create a dynamic call.
@@ -1868,7 +1872,7 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
           },
           DEBUG_LOCATION);
     }
-    calld->CheckResolution(elem, /*was_queued=*/false);
+    calld->CheckResolution(/*was_queued=*/false);
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1906,13 +1910,12 @@ size_t ClientChannel::CallData::GetBatchIndex(
 
 // This is called via the call combiner, so access to calld is synchronized.
 void ClientChannel::CallData::PendingBatchesAdd(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
+    grpc_transport_stream_op_batch* batch) {
   const size_t idx = GetBatchIndex(batch);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
-            "chand=%p calld=%p: adding pending batch at index %" PRIuPTR, chand,
-            this, idx);
+            "chand=%p calld=%p: adding pending batch at index %" PRIuPTR,
+            chand(), this, idx);
   }
   grpc_transport_stream_op_batch*& pending = pending_batches_[idx];
   GPR_ASSERT(pending == nullptr);
@@ -1932,7 +1935,7 @@ void ClientChannel::CallData::FailPendingBatchInCallCombiner(
 
 // This is called via the call combiner, so access to calld is synchronized.
 void ClientChannel::CallData::PendingBatchesFail(
-    grpc_call_element* elem, grpc_error_handle error,
+    grpc_error_handle error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(!error.ok());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1940,9 +1943,9 @@ void ClientChannel::CallData::PendingBatchesFail(
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(
-        GPR_INFO, "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
-        elem->channel_data, this, num_batches, StatusToString(error).c_str());
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
+            chand(), this, num_batches, StatusToString(error).c_str());
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -1969,16 +1972,13 @@ void ClientChannel::CallData::ResumePendingBatchInCallCombiner(
     void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* elem =
-      static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
-  auto* calld = static_cast<CallData*>(elem->call_data);
+  auto* calld = static_cast<CallData*>(batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   calld->dynamic_call_->StartTransportStreamOpBatch(batch);
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ClientChannel::CallData::PendingBatchesResume(grpc_call_element* elem) {
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
+void ClientChannel::CallData::PendingBatchesResume() {
   // Retries not enabled; send down batches as-is.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     size_t num_batches = 0;
@@ -1988,13 +1988,13 @@ void ClientChannel::CallData::PendingBatchesResume(grpc_call_element* elem) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: starting %" PRIuPTR
             " pending batches on dynamic_call=%p",
-            chand, this, num_batches, dynamic_call_.get());
+            chand(), this, num_batches, dynamic_call_.get());
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     grpc_transport_stream_op_batch*& batch = pending_batches_[i];
     if (batch != nullptr) {
-      batch->handler_private.extra_arg = elem;
+      batch->handler_private.extra_arg = this;
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                         ResumePendingBatchInCallCombiner, batch, nullptr);
       closures.Add(&batch->handler_private.closure, absl::OkStatus(),
@@ -2014,8 +2014,7 @@ void ClientChannel::CallData::PendingBatchesResume(grpc_call_element* elem) {
 // queued pick.
 class ClientChannel::CallData::ResolverQueuedCallCanceller {
  public:
-  explicit ResolverQueuedCallCanceller(grpc_call_element* elem) : elem_(elem) {
-    auto* calld = static_cast<CallData*>(elem->call_data);
+  explicit ResolverQueuedCallCanceller(CallData* calld) : calld_(calld) {
     GRPC_CALL_STACK_REF(calld->owning_call_, "ResolverQueuedCallCanceller");
     GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
                       grpc_schedule_on_exec_ctx);
@@ -2025,8 +2024,8 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
  private:
   static void CancelLocked(void* arg, grpc_error_handle error) {
     auto* self = static_cast<ResolverQueuedCallCanceller*>(arg);
-    auto* chand = static_cast<ClientChannel*>(self->elem_->channel_data);
-    auto* calld = static_cast<CallData*>(self->elem_->call_data);
+    auto* calld = self->calld_;
+    auto* chand = calld->chand();
     {
       MutexLock lock(&chand->resolution_mu_);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2038,10 +2037,10 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
       }
       if (calld->resolver_call_canceller_ == self && !error.ok()) {
         // Remove pick from list of queued picks.
-        calld->RemoveCallFromResolverQueuedCallsLocked(self->elem_);
-        chand->resolver_queued_calls_.erase(self->elem_);
+        calld->RemoveCallFromResolverQueuedCallsLocked();
+        chand->resolver_queued_calls_.erase(calld);
         // Fail pending batches on the call.
-        calld->PendingBatchesFail(self->elem_, error,
+        calld->PendingBatchesFail(error,
                                   YieldCallCombinerIfPendingBatchesFound);
       }
     }
@@ -2049,52 +2048,48 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
     delete self;
   }
 
-  grpc_call_element* elem_;
+  CallData* calld_;
   grpc_closure closure_;
 };
 
-void ClientChannel::CallData::RemoveCallFromResolverQueuedCallsLocked(
-    grpc_call_element* elem) {
-  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
+void ClientChannel::CallData::RemoveCallFromResolverQueuedCallsLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: removing from resolver queued picks list",
-            chand, this);
+            chand(), this);
   }
   // Remove call's pollent from channel's interested_parties.
   grpc_polling_entity_del_from_pollset_set(pollent_,
-                                           chand->interested_parties_);
+                                           chand()->interested_parties_);
   // Lame the call combiner canceller.
   resolver_call_canceller_ = nullptr;
   // Note: There's no need to actually remove the call from the queue
-  // here, beacuse that will be done in
+  // here, because that will be done in
   // ResolverQueuedCallCanceller::CancelLocked() or
   // ClientChannel::ReprocessQueuedResolverCalls().
 }
 
-void ClientChannel::CallData::AddCallToResolverQueuedCallsLocked(
-    grpc_call_element* elem) {
-  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
+void ClientChannel::CallData::AddCallToResolverQueuedCallsLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: adding to resolver queued picks list",
-            chand, this);
+            chand(), this);
   }
   // Add call's pollent to channel's interested_parties, so that I/O
   // can be done under the call's CQ.
-  grpc_polling_entity_add_to_pollset_set(pollent_, chand->interested_parties_);
+  grpc_polling_entity_add_to_pollset_set(pollent_,
+                                         chand()->interested_parties_);
   // Add to queue.
-  chand->resolver_queued_calls_.insert(elem);
+  chand()->resolver_queued_calls_.insert(this);
   // Register call combiner cancellation callback.
-  resolver_call_canceller_ = new ResolverQueuedCallCanceller(elem);
+  resolver_call_canceller_ = new ResolverQueuedCallCanceller(this);
 }
 
 grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
-    grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+    grpc_metadata_batch* initial_metadata,
     const absl::StatusOr<RefCountedPtr<ConfigSelector>>& config_selector) {
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
-            chand, this);
+            chand(), this);
   }
   if (!config_selector.ok()) return config_selector.status();
   // Use the ConfigSelector to determine the config for the call.
@@ -2117,18 +2112,18 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
-          chand->service_config_parser_index_));
+          chand()->service_config_parser_index_));
   if (method_params != nullptr) {
     // If the deadline from the service config is shorter than the one
     // from the client API, reset the deadline timer.
-    if (chand->deadline_checking_enabled_ &&
+    if (chand()->deadline_checking_enabled_ &&
         method_params->timeout() != Duration::Zero()) {
       const Timestamp per_method_deadline =
           Timestamp::FromCycleCounterRoundUp(call_start_time_) +
           method_params->timeout();
       if (per_method_deadline < deadline_) {
         deadline_ = per_method_deadline;
-        grpc_deadline_state_reset(elem, deadline_);
+        grpc_deadline_state_reset(elem_, deadline_);
       }
     }
     // If the service config set wait_for_ready and the application
@@ -2145,9 +2140,8 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
 void ClientChannel::CallData::
     RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
         void* arg, grpc_error_handle error) {
-  auto* elem = static_cast<grpc_call_element*>(arg);
-  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
-  auto* calld = static_cast<CallData*>(elem->call_data);
+  auto* calld = static_cast<CallData*>(arg);
+  auto* chand = calld->chand();
   auto* service_config_call_data =
       static_cast<ClientChannelServiceConfigCallData*>(
           calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
@@ -2166,29 +2160,27 @@ void ClientChannel::CallData::
                error);
 }
 
-void ClientChannel::CallData::CheckResolution(grpc_call_element* elem,
-                                              bool was_queued) {
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
+void ClientChannel::CallData::CheckResolution(bool was_queued) {
   grpc_metadata_batch* initial_metadata =
       pending_batches_[0]->payload->send_initial_metadata.send_initial_metadata;
   // Check if we have a resolver result to use.
   absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector;
   {
-    MutexLock lock(&chand->resolution_mu_);
+    MutexLock lock(&chand()->resolution_mu_);
     bool result_ready =
-        CheckResolutionLocked(elem, initial_metadata, &config_selector);
+        CheckResolutionLocked(initial_metadata, &config_selector);
     // If no result is available, queue the call.
     if (!result_ready) {
-      AddCallToResolverQueuedCallsLocked(elem);
+      AddCallToResolverQueuedCallsLocked();
       return;
     }
   }
   // We have a result.  Apply service config to call.
   grpc_error_handle error =
-      ApplyServiceConfigToCallLocked(elem, initial_metadata, config_selector);
+      ApplyServiceConfigToCallLocked(initial_metadata, config_selector);
   // ConfigSelector must be unreffed inside the WorkSerializer.
   if (config_selector.ok()) {
-    chand->work_serializer_->Run(
+    chand()->work_serializer_->Run(
         [config_selector = std::move(*config_selector)]() mutable {
           config_selector.reset();
         },
@@ -2199,9 +2191,9 @@ void ClientChannel::CallData::CheckResolution(grpc_call_element* elem,
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: error applying config to call: error=%s",
-              chand, this, StatusToString(error).c_str());
+              chand(), this, StatusToString(error).c_str());
     }
-    PendingBatchesFail(elem, error, YieldCallCombiner);
+    PendingBatchesFail(error, YieldCallCombiner);
     return;
   }
   // If the call was queued, add trace annotation.
@@ -2213,24 +2205,23 @@ void ClientChannel::CallData::CheckResolution(grpc_call_element* elem,
     }
   }
   // Create dynamic call.
-  CreateDynamicCall(elem);
+  CreateDynamicCall();
 }
 
 bool ClientChannel::CallData::CheckResolutionLocked(
-    grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
+    grpc_metadata_batch* initial_metadata,
     absl::StatusOr<RefCountedPtr<ConfigSelector>>* config_selector) {
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   // If we don't yet have a resolver result, we need to queue the call
   // until we get one.
-  if (GPR_UNLIKELY(!chand->received_service_config_data_)) {
+  if (GPR_UNLIKELY(!chand()->received_service_config_data_)) {
     // If the resolver returned transient failure before returning the
     // first service config, fail any non-wait_for_ready calls.
-    absl::Status resolver_error = chand->resolver_transient_failure_error_;
+    absl::Status resolver_error = chand()->resolver_transient_failure_error_;
     if (!resolver_error.ok() &&
         !initial_metadata->GetOrCreatePointer(WaitForReady())->value) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: resolution failed, failing call",
-                chand, this);
+                chand(), this);
       }
       *config_selector = absl_status_to_grpc_error(resolver_error);
       return true;
@@ -2239,19 +2230,18 @@ bool ClientChannel::CallData::CheckResolutionLocked(
     // returned transient failure but the call is wait_for_ready.  In
     // either case, queue the call.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: no resolver result yet", chand,
+      gpr_log(GPR_INFO, "chand=%p calld=%p: no resolver result yet", chand(),
               this);
     }
     return false;
   }
   // Result found.
-  *config_selector = chand->config_selector_;
-  dynamic_filters_ = chand->dynamic_filters_;
+  *config_selector = chand()->config_selector_;
+  dynamic_filters_ = chand()->dynamic_filters_;
   return true;
 }
 
-void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
-  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
+void ClientChannel::CallData::CreateDynamicCall() {
   DynamicFilters::Call::Args args = {std::move(dynamic_filters_),
                                      pollent_,
                                      path_,
@@ -2266,19 +2256,19 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
     gpr_log(
         GPR_INFO,
         "chand=%p calld=%p: creating dynamic call stack on channel_stack=%p",
-        chand, this, channel_stack);
+        chand(), this, channel_stack);
   }
   dynamic_call_ = channel_stack->CreateCall(std::move(args), &error);
   if (!error.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: failed to create dynamic call: error=%s",
-              chand, this, StatusToString(error).c_str());
+              chand(), this, StatusToString(error).c_str());
     }
-    PendingBatchesFail(elem, error, YieldCallCombiner);
+    PendingBatchesFail(error, YieldCallCombiner);
     return;
   }
-  PendingBatchesResume(elem);
+  PendingBatchesResume();
 }
 
 //

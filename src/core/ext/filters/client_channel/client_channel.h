@@ -297,8 +297,7 @@ class ClientChannel {
   //
   mutable Mutex resolution_mu_;
   // List of calls queued waiting for resolver result.
-  std::set<grpc_call_element*> resolver_queued_calls_
-      ABSL_GUARDED_BY(resolution_mu_);
+  std::set<CallData*> resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_);
   // Data from service config.
   absl::Status resolver_transient_failure_error_
       ABSL_GUARDED_BY(resolution_mu_);
