@@ -171,8 +171,6 @@ void grpc_transport_stream_op_batch_finish_with_failure(
 void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures) {
-  if (batch->cancel_stream) {
-  }
   // Construct a list of closures to execute.
   if (batch->recv_initial_metadata) {
     closures->Add(
@@ -195,8 +193,6 @@ void grpc_transport_stream_op_batch_queue_finish_with_failure(
 
 void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error) {
-  if (batch->cancel_stream) {
-  }
   // Construct a list of closures to execute.
   if (batch->recv_initial_metadata) {
     grpc_core::ExecCtx::Run(
