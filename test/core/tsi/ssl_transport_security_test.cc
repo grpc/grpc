@@ -191,15 +191,15 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
       TSI_OK);
 }
 
-static void check_ca_cert_subject(ssl_tsi_test_fixture* /*ssl_fixture*/,
+static void check_verified_root_cert_subject(ssl_tsi_test_fixture* /*ssl_fixture*/,
                                   const tsi_peer* peer) {
-  const tsi_peer_property* ca_cert_subject =
-      tsi_peer_get_property_by_name(peer, TSI_X509_CA_SUBJECT_PEER_PROPERTY);
-  ASSERT_NE(ca_cert_subject, nullptr);
+  const tsi_peer_property* verified_root_cert_subject =
+      tsi_peer_get_property_by_name(peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
+  ASSERT_NE(verified_root_cert_subject, nullptr);
   const char* expected_match =
       "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
-  ASSERT_EQ(memcmp(ca_cert_subject->value.data, expected_match,
-                   ca_cert_subject->value.length),
+  ASSERT_EQ(memcmp(verified_root_cert_subject->value.data, expected_match,
+                   verified_root_cert_subject->value.length),
             0);
 }
 
@@ -373,7 +373,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_alpn(ssl_fixture, &peer);
     check_security_level(&peer);
     if (!ssl_fixture->session_reused) {
-      check_ca_cert_subject(ssl_fixture, &peer);
+      check_verified_root_cert_subject(ssl_fixture, &peer);
     }
     if (ssl_fixture->server_name_indication == nullptr ||
         strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
@@ -395,7 +395,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_alpn(ssl_fixture, &peer);
     check_security_level(&peer);
     if (ssl_fixture->force_client_auth && !ssl_fixture->session_reused) {
-      check_ca_cert_subject(ssl_fixture, &peer);
+      check_verified_root_cert_subject(ssl_fixture, &peer);
     }
     check_client_peer(ssl_fixture, &peer);
   } else {
