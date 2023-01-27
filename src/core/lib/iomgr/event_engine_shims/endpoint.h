@@ -26,7 +26,16 @@ namespace experimental {
 /// Server code needs to create grpc_endpoints after the EventEngine has made
 /// connections.
 grpc_endpoint* grpc_event_engine_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint);
+    std::unique_ptr<EventEngine::Endpoint> ee_endpoint, bool fd_support_exists);
+
+/// Returns true if the passed endpoint is an event engine shim endpoint.
+bool grpc_is_event_engine_endpoint(grpc_endpoint* ep);
+
+/// Destroys the passed in event engine shim endpoint and schedules the
+/// asynchronous execution of the on_release_fd callback. The int pointer fd is
+/// set to the underlying endpoint's file descriptor.
+void grpc_event_engine_endpoint_destroy_and_release_fd(
+    grpc_endpoint* ep, int* fd, grpc_closure* on_release_fd);
 
 /// Returns true if the passed endpoint is an event engine shim endpoint.
 bool grpc_is_event_engine_endpoint(grpc_endpoint* ep);

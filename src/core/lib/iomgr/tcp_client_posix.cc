@@ -36,6 +36,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gpr/string.h"
@@ -406,7 +407,8 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            grpc_core::Timestamp deadline) {
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
     return grpc_event_engine::experimental::event_engine_tcp_client_connect(
-        closure, ep, config, addr, deadline);
+        grpc_event_engine::experimental::GetInternalEventEngineWithFdSupport(),
+        /*fd_support_exists=*/true, closure, ep, config, addr, deadline);
   }
   grpc_resolved_address mapped_addr;
   grpc_core::PosixTcpOptions options(TcpOptionsFromEndpointConfig(config));
@@ -425,7 +427,10 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
 static bool tcp_cancel_connect(int64_t connection_handle) {
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
     return grpc_event_engine::experimental::
-        event_engine_tcp_client_cancel_connect(connection_handle);
+        event_engine_tcp_client_cancel_connect(
+            grpc_event_engine::experimental::
+                GetInternalEventEngineWithFdSupport(),
+            connection_handle);
   }
   if (connection_handle <= 0) {
     return false;

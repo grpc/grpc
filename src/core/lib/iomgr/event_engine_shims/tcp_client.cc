@@ -22,7 +22,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -37,20 +36,23 @@ namespace grpc_event_engine {
 namespace experimental {
 
 int64_t event_engine_tcp_client_connect(
+    std::shared_ptr<EventEngine> event_engine, bool fd_support_exists,
     grpc_closure* on_connect, grpc_endpoint** endpoint,
     const grpc_event_engine::experimental::EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
+  GPR_DEBUG_ASSERT(event_engine);
   auto resource_quota = reinterpret_cast<grpc_core::ResourceQuota*>(
       config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA));
   auto addr_uri = grpc_sockaddr_to_uri(addr);
-  EventEngine::ConnectionHandle handle = GetDefaultEventEngine()->Connect(
-      [on_connect,
-       endpoint](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
+  EventEngine::ConnectionHandle handle = event_engine->Connect(
+      [on_connect, endpoint, fd_support_exists](
+          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         grpc_core::ApplicationCallbackExecCtx app_ctx;
         grpc_core::ExecCtx exec_ctx;
         absl::Status conn_status = ep.ok() ? absl::OkStatus() : ep.status();
         if (ep.ok()) {
-          *endpoint = grpc_event_engine_endpoint_create(std::move(*ep));
+          *endpoint = grpc_event_engine_endpoint_create(std::move(*ep),
+                                                        fd_support_exists);
         } else {
           *endpoint = nullptr;
         }
@@ -72,10 +74,12 @@ int64_t event_engine_tcp_client_connect(
   return handle.keys[0];
 }
 
-bool event_engine_tcp_client_cancel_connect(int64_t connection_handle) {
+bool event_engine_tcp_client_cancel_connect(
+    std::shared_ptr<EventEngine> event_engine, int64_t connection_handle) {
+  GPR_DEBUG_ASSERT(event_engine);
   GRPC_EVENT_ENGINE_TRACE("EventEngine::CancelConnect handle: %" PRId64,
                           connection_handle);
-  return GetDefaultEventEngine()->CancelConnect(
+  return event_engine->CancelConnect(
       {static_cast<intptr_t>(connection_handle), 0});
 }
 }  // namespace experimental

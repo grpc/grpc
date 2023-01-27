@@ -27,16 +27,17 @@ namespace experimental {
 /// invokes the on_connect callback asynchronously upon connection
 /// establishment, failure or timeout. It returns a 64 bit connection handle
 /// which can later be used to cancel an in progress connection attempt.
-int64_t event_engine_tcp_client_connect(grpc_closure* on_connect,
-                                        grpc_endpoint** endpoint,
-                                        const EndpointConfig& config,
-                                        const grpc_resolved_address* addr,
-                                        grpc_core::Timestamp deadline);
+int64_t event_engine_tcp_client_connect(
+    std::shared_ptr<EventEngine> event_engine, bool fd_support_exists,
+    grpc_closure* on_connect, grpc_endpoint** endpoint,
+    const EndpointConfig& config, const grpc_resolved_address* addr,
+    grpc_core::Timestamp deadline);
 
 /// Attempts to cancel an in progress connection attempt represented by the
 /// passed in connection handle. It returns true if the cancellation attempt
 /// succeeded. Otherwise it returns false.
-bool event_engine_tcp_client_cancel_connect(int64_t connection_handle);
+bool event_engine_tcp_client_cancel_connect(
+    std::shared_ptr<EventEngine> event_engine, int64_t connection_handle);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

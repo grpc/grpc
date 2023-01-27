@@ -38,6 +38,12 @@ namespace experimental {
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
+/// Access the shared global internal EventEngine instance which supports file
+/// descriptors.
+/// This method may return nullptr if the platform does not support file
+/// descriptors.
+std::shared_ptr<EventEngine> GetInternalEventEngineWithFdSupport();
+
 /// On ingress, ensure that an EventEngine exists in channel args via
 /// preconditioning.
 void RegisterEventEngineChannelArgPreconditioning(
