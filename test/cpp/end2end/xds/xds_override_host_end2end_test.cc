@@ -135,18 +135,16 @@ class OverrideHostTest : public XdsEnd2endTest {
   }
 
   void CheckBackendCallCounts(
-      absl::variant<std::function<size_t(size_t backend_idx)>, size_t>
-          call_count,
+      absl::variant<std::function<int(size_t backend_idx)>, int> call_count,
       RpcService service = RpcService::SERVICE_ECHO,
       const grpc_core::DebugLocation& debug_location = DEBUG_LOCATION) {
     for (size_t i = 0; i < backends_.size(); i++) {
-      EXPECT_EQ(grpc_core::Match(
-                    call_count,
-                    [i](std::function<size_t(size_t backend_idx)> fn) {
-                      return fn(i);
-                    },
-                    [](size_t count) { return count; }),
-                GetAndResetRequestCount(i, service))
+      EXPECT_EQ(
+          grpc_core::Match(
+              call_count,
+              [i](std::function<int(size_t backend_idx)> fn) { return fn(i); },
+              [](int count) { return count; }),
+          GetAndResetRequestCount(i, service))
           << "Backend " << i << "\n"
           << debug_location.file() << ":" << debug_location.line();
       // Make sure no other calls are there, mostly to prevent coding errors in
