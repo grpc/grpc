@@ -1884,7 +1884,6 @@ static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
   factory->key_logger->LogSessionKeys(ssl_context, info);
 }
 
-
 // --- tsi_ssl_handshaker_factory constructors. ---
 
 static tsi_ssl_handshaker_factory_vtable client_handshaker_factory_vtable = {
