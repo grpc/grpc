@@ -23,6 +23,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -43,23 +44,27 @@ int64_t event_engine_tcp_client_connect(
   auto resource_quota = reinterpret_cast<grpc_core::ResourceQuota*>(
       config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA));
   auto addr_uri = grpc_sockaddr_to_uri(addr);
+  std::shared_ptr<EventEngine> keeper;
   EventEngine* engine_ptr = reinterpret_cast<EventEngine*>(
       config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
-  // Keeps the engine alive for some tests that have not otherwise instantiated
-  // an EventEngine
-  std::shared_ptr<EventEngine> keeper;
-  if (engine_ptr == nullptr) {
+  auto fd_support = config.GetInt(GRPC_INTERNAL_ARG_EVENT_ENGINE_SUPPORTS_FD);
+  if (engine_ptr == nullptr || !fd_support.has_value()) {
+    // TODO(hork): fix all tests that don't precondition channel args so this
+    // block can be removed.
+    // Keeps the EventEngine alive if necessary.
     keeper = GetDefaultEventEngine();
     engine_ptr = keeper.get();
+    fd_support = DefaultEventEngineFactorySupportsFd();
   }
   EventEngine::ConnectionHandle handle = engine_ptr->Connect(
-      [on_connect,
-       endpoint](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
+      [on_connect, endpoint,
+       fd_support](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         grpc_core::ApplicationCallbackExecCtx app_ctx;
         grpc_core::ExecCtx exec_ctx;
         absl::Status conn_status = ep.ok() ? absl::OkStatus() : ep.status();
         if (ep.ok()) {
-          *endpoint = grpc_event_engine_endpoint_create(std::move(*ep));
+          *endpoint =
+              grpc_event_engine_endpoint_create(std::move(*ep), fd_support);
         } else {
           *endpoint = nullptr;
         }

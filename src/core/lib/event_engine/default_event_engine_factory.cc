@@ -30,6 +30,8 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<WindowsEventEngine>();
 }
 
+bool DefaultEventEngineFactorySupportsFd() { return false; }
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 #else  // not GPR_WINDOWS
@@ -41,6 +43,8 @@ namespace experimental {
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<PosixEventEngine>();
 }
+
+bool DefaultEventEngineFactorySupportsFd() { return true; }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

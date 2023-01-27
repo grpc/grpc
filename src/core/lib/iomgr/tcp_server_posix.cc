@@ -52,6 +52,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -171,13 +172,19 @@ static grpc_error_handle CreateEventEngineListener(
   auto on_shutdown_complete_cb =
       grpc_event_engine::experimental::GrpcClosureToStatusCallback(
           shutdown_complete);
-  PosixEventEngineWithFdSupport* engine_ptr =
-      reinterpret_cast<PosixEventEngineWithFdSupport*>(
-          config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
-  // Keeps the engine alive for some tests that have not otherwise instantiated
-  // an EventEngine
+  PosixEventEngineWithFdSupport* engine_ptr;
   std::shared_ptr<EventEngine> keeper;
-  if (engine_ptr == nullptr) {
+  auto supports_fd = config.GetInt(GRPC_INTERNAL_ARG_EVENT_ENGINE_SUPPORTS_FD);
+  if (supports_fd.has_value() && *supports_fd) {
+    // via ChannelArgs Preconditioning
+    engine_ptr = reinterpret_cast<PosixEventEngineWithFdSupport*>(
+        config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+  } else {
+    // TODO(hork): fix all tests that don't precondition channel args so this
+    // block can be removed.
+    GPR_ASSERT(
+        grpc_event_engine::experimental::DefaultEventEngineFactorySupportsFd());
+    // Keeps the EventEngine alive if necessary.
     keeper = grpc_event_engine::experimental::GetDefaultEventEngine();
     engine_ptr = reinterpret_cast<PosixEventEngineWithFdSupport*>(keeper.get());
   }

@@ -27,6 +27,10 @@ namespace experimental {
 /// Create an EventEngine using the default factory provided at link time.
 std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 
+/// Wheter or not the factory produces engines that implement the interfaces in
+/// include/grpc/event_engine/posix.h.
+bool DefaultEventEngineFactorySupportsFd();
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

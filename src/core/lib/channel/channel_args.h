@@ -51,6 +51,8 @@
 // application, replace this with a macro in
 // include/grpc/impl/codegen/grpc_types.h.
 #define GRPC_INTERNAL_ARG_EVENT_ENGINE "grpc.internal.event_engine"
+#define GRPC_INTERNAL_ARG_EVENT_ENGINE_SUPPORTS_FD \
+  "grpc.internal.event_engine.supports_fd"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
 

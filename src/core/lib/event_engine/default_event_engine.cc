@@ -80,7 +80,9 @@ namespace {
 grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
     grpc_core::ChannelArgs args) {
   if (args.ContainsObject<EventEngine>()) return args;
-  return args.SetObject<EventEngine>(GetDefaultEventEngine());
+  return args.SetObject<EventEngine>(GetDefaultEventEngine())
+      .Set(GRPC_INTERNAL_ARG_EVENT_ENGINE_SUPPORTS_FD,
+           DefaultEventEngineFactorySupportsFd());
 }
 }  // namespace
 
