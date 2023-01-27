@@ -338,7 +338,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",

@@ -519,7 +519,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       // Skip draining hosts if not in the override status set.
       continue;
     }
-    auto key = grpc_sockaddr_to_string(&address.address(), false);
+    auto key = grpc_sockaddr_to_uri(&address.address());
     if (key.ok()) {
       addresses_for_map.emplace(std::move(*key), status);
     }
@@ -550,7 +550,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
     ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel) {
-  auto key = grpc_sockaddr_to_string(&address.address(), false);
+  auto key = grpc_sockaddr_to_uri(&address.address());
   if (!key.ok()) {
     return subchannel;
   }
