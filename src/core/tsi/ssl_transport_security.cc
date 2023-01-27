@@ -858,6 +858,22 @@ static tsi_result build_alpn_protocol_name_list(
   return TSI_OK;
 }
 
+// This callback is invoked when the CRL has been verified and will soft-fail
+// errors in verification depending on certain error types.
+static int verify_cb(int ok, X509_STORE_CTX* ctx) {
+  int cert_error = X509_STORE_CTX_get_error(ctx);
+  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
+    gpr_log(
+        GPR_INFO,
+        "Certificate verification failed to get CRL files. Ignoring error.");
+    return 1;
+  }
+  if (cert_error != 0) {
+    gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
+  }
+  return ok;
+}
+
 // The verification callback is used for clients that don't really care about
 // the server's certificate, but we need to pull it anyway, in case a higher
 // layer wants to look at it. In this case the verification may fail, but
@@ -867,6 +883,16 @@ static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
 }
 
 static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
+  // There's a case where this function is set in SSL_CTX_set_verify and a CRL
+  // related callback is set with X509_STORE_set_verify_cb. They overlap and
+  // this will take precedence, thus we need to ensure the CRL related callback
+  // is still called
+  X509_VERIFY_PARAM* param = X509_STORE_CTX_get0_param(ctx);
+  auto flags = X509_VERIFY_PARAM_get_flags(param);
+  if (flags & X509_V_FLAG_CRL_CHECK) {
+    preverify_ok = verify_cb(preverify_ok, ctx);
+  }
+
   if (preverify_ok == 0) {
     return 0;
   }
@@ -1119,7 +1145,6 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 // --- tsi_handshaker_result methods implementation. ---
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
-  gpr_log(GPR_ERROR, "gregorycooke");
   tsi_result result = TSI_OK;
   const unsigned char* alpn_selected = nullptr;
   unsigned int alpn_selected_len;
@@ -1859,21 +1884,6 @@ static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
   factory->key_logger->LogSessionKeys(ssl_context, info);
 }
 
-// This callback is invoked when the CRL has been verified and will soft-fail
-// errors in verification depending on certain error types.
-static int verify_cb(int ok, X509_STORE_CTX* ctx) {
-  int cert_error = X509_STORE_CTX_get_error(ctx);
-  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
-    gpr_log(
-        GPR_INFO,
-        "Certificate verification failed to get CRL files. Ignoring error.");
-    return 1;
-  }
-  if (cert_error != 0) {
-    gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
-  }
-  return ok;
-}
 
 // --- tsi_ssl_handshaker_factory constructors. ---
 
