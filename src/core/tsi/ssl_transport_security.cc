@@ -894,7 +894,7 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
   }
 
   if (preverify_ok == 0) {
-    return 0;
+    return preverify_ok;
   }
 
   // If we're here, verification was successful
@@ -902,7 +902,7 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
   // so that we have access to it when populating the tsi_peer
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
   if (chain == nullptr) {
-    return 1;
+    return preverify_ok;
   }
 
   // The ca cert is the last in the chain
@@ -911,7 +911,7 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
   SSL* ssl = static_cast<SSL*>(
       X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, ca_cert);
-  return 1;
+  return preverify_ok;
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
