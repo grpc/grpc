@@ -2155,6 +2155,9 @@ class PromiseBasedCall : public Call,
   // Mark the completion as failed. Does not finish it.
   void FailCompletion(const Completion& completion,
                       SourceLocation source_location = {});
+  // Mark the completion as infallible. Overrides FailCompletion to report
+  // success always.
+  void ForceCompletionSuccess(const Completion& completion);
   // Run the promise polling loop until it stalls.
   void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Update the promise state once.
@@ -2242,6 +2245,7 @@ class PromiseBasedCall : public Call,
       uint8_t pending_op_bits;
       bool is_closure;
       bool success;
+      bool force_success;
       void* tag;
     } pending;
     grpc_cq_completion completion;
@@ -2442,7 +2446,7 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     grpc_cq_begin_op(cq(), tag);
   }
   completion_info_[c.index()].pending = {
-      PendingOpBit(PendingOp::kStartingBatch), is_closure, true, tag};
+      PendingOpBit(PendingOp::kStartingBatch), is_closure, true, false, tag};
   return c;
 }
 
@@ -2468,6 +2472,10 @@ void PromiseBasedCall::FailCompletion(const Completion& completion,
             CompletionString(completion).c_str());
   }
   completion_info_[completion.index()].pending.success = false;
+}
+
+void PromiseBasedCall::ForceCompletionSuccess(const Completion& completion) {
+  completion_info_[completion.index()].pending.force_success = true;
 }
 
 void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
@@ -2498,7 +2506,8 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
   CompletionInfo::Pending& pending = completion_info_[i].pending;
   GPR_ASSERT(pending.pending_op_bits & PendingOpBit(reason));
   pending.pending_op_bits &= ~PendingOpBit(reason);
-  auto error = pending.success ? absl::OkStatus() : absl::CancelledError();
+  const bool success = pending.force_success || pending.success;
+  auto error = success ? absl::OkStatus() : absl::CancelledError();
   if (pending.pending_op_bits == 0) {
     if (pending.is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
@@ -3487,6 +3496,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   DebugTag().c_str(),
                   recv_close_op_cancel_state_.ToString().c_str());
         }
+        ForceCompletionSuccess(completion);
         if (!recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
                 op.data.recv_close_on_server.cancelled)) {
           recv_close_completion_ =

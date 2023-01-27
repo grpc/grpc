@@ -108,7 +108,7 @@ class Curried {
   GPR_NO_UNIQUE_ADDRESS F f_;
   GPR_NO_UNIQUE_ADDRESS Arg arg_;
 #ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
 #endif
 };
 
