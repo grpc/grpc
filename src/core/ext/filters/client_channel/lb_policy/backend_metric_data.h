@@ -44,6 +44,12 @@ struct BackendMetricData {
   std::map<absl::string_view, double> utilization;
 };
 
+// Backend metrics and an associated update sequence number.
+struct BackendMetricDataState {
+  BackendMetricData data;
+  uint64_t seq = 0;
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_BACKEND_METRIC_DATA_H

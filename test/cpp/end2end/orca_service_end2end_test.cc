@@ -94,15 +94,14 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
   };
 
   OrcaServiceEnd2endTest()
-      : orca_service_(std::make_unique<OrcaService>(
-            &server_metric_recorder_,
-            OrcaService::Options().set_min_report_duration(
-                absl::ZeroDuration()))) {
+      : orca_service_(&server_metric_recorder_,
+                      OrcaService::Options().set_min_report_duration(
+                          absl::ZeroDuration())) {
     std::string server_address =
         absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     ServerBuilder builder;
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    builder.RegisterService(orca_service_.get());
+    builder.RegisterService(&orca_service_);
     server_ = builder.BuildAndStart();
     gpr_log(GPR_INFO, "server started on %s", server_address_.c_str());
     auto channel = CreateChannel(server_address, InsecureChannelCredentials());
@@ -113,7 +112,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
 
   std::string server_address_;
   ServerMetricRecorder server_metric_recorder_;
-  std::unique_ptr<OrcaService> orca_service_;
+  OrcaService orca_service_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<OpenRcaService::Stub> stub_;
 };

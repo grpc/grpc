@@ -64,7 +64,7 @@ class OrcaService : public Service {
   // Contains the last serialized metrics from server_metric_recorder_.
   absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(mu_);
   // The update sequence number of metrics serialized in response_slice_.
-  uint64_t response_slice_seq_ ABSL_GUARDED_BY(mu_);
+  absl::optional<uint64_t> response_slice_seq_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental

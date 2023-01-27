@@ -28,7 +28,7 @@ class BackendMetricProvider {
  public:
   virtual ~BackendMetricProvider() = default;
   // Returns nullopt when empty.
-  virtual absl::optional<BackendMetricData> GetBackendMetricData() = 0;
+  virtual BackendMetricData GetBackendMetricData() = 0;
 };
 
 }  // namespace grpc_core

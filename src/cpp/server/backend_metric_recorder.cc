@@ -17,12 +17,15 @@
 #include <inttypes.h>
 
 #include <grpc/support/log.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/cpp/server/backend_metric_recorder.h"
 
 using grpc_core::BackendMetricData;
+using grpc_core::BackendMetricDataState;
 
 namespace {
 // All utilization values must be in [0, 1].
@@ -33,17 +36,26 @@ bool IsUtilizationValid(double utilization) {
 // QPS must be in [0, infy).
 bool IsQpsValid(double qps) { return qps >= 0.0; }
 
-bool IsEmpty(const BackendMetricData& data) {
-  return !IsUtilizationValid(data.cpu_utilization) &&
-         !IsUtilizationValid(data.mem_utilization) && !IsQpsValid(data.qps) &&
-         data.request_cost.empty() && data.utilization.empty();
-}
-
 grpc_core::TraceFlag grpc_backend_metric_trace(false, "backend_metric");
 }  // namespace
 
 namespace grpc {
 namespace experimental {
+
+ServerMetricRecorder::ServerMetricRecorder() {
+  // Starts with an empty result.
+  metric_state_ = std::make_shared<const BackendMetricDataState>();
+}
+
+template <typename Updater>
+void ServerMetricRecorder::UpdateBackendMetricDataState(Updater updater) {
+  internal::MutexLock lock(&mu_);
+  BackendMetricDataState result = *metric_state_.get();
+  updater(result.data);
+  ++result.seq;
+  metric_state_ =
+      std::make_shared<const BackendMetricDataState>(std::move(result));
+}
 
 void ServerMetricRecorder::SetCpuUtilization(double value) {
   if (!IsUtilizationValid(value)) {
@@ -52,13 +64,11 @@ void ServerMetricRecorder::SetCpuUtilization(double value) {
     }
     return;
   }
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
+  UpdateBackendMetricDataState(
+      [value](BackendMetricData& data) { data.cpu_utilization = value; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] CPU utilization set: %f seq: %lu", this, value,
-            old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] CPU utilization set: %f", this, value);
   }
-  cpu_utilization_ = value;
 }
 
 void ServerMetricRecorder::SetMemoryUtilization(double value) {
@@ -68,13 +78,11 @@ void ServerMetricRecorder::SetMemoryUtilization(double value) {
     }
     return;
   }
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
+  UpdateBackendMetricDataState(
+      [value](BackendMetricData& data) { data.mem_utilization = value; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] Mem utilization set: %f seq: %lu", this, value,
-            old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] Mem utilization set: %f", this, value);
   }
-  mem_utilization_ = value;
 }
 
 void ServerMetricRecorder::SetQps(double value) {
@@ -84,119 +92,105 @@ void ServerMetricRecorder::SetQps(double value) {
     }
     return;
   }
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
+  UpdateBackendMetricDataState(
+      [value](BackendMetricData& data) { data.qps = value; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] QPS set: %f seq: %lu", this, value, old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] QPS set: %f", this, value);
   }
-  qps_ = value;
 }
 
-void ServerMetricRecorder::SetNamedUtilization(std::string name, double value) {
+void ServerMetricRecorder::SetNamedUtilization(absl::string_view name,
+                                               double value) {
   if (!IsUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] Named utilization rejected: %f name: %s", this,
-              value, name.c_str());
+              value, std::string(name).c_str());
     }
     return;
   }
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] Named utilization set: %f name: %s seq: %lu", this,
-            value, name.c_str(), old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] Named utilization set: %f name: %s", this, value,
+            std::string(name).c_str());
   }
-  named_utilization_[std::move(name)] = value;
+  UpdateBackendMetricDataState([name, value](BackendMetricData& data) {
+    data.utilization[name] = value;
+  });
 }
 
 void ServerMetricRecorder::SetAllNamedUtilization(
-    std::map<std::string, double> named_utilization) {
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
+    std::map<absl::string_view, double> named_utilization) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO,
-            "[%p] All named utilization updated. size: %" PRIuPTR " seq: %lu",
-            this, named_utilization.size(), old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] All named utilization updated. size: %" PRIuPTR,
+            this, named_utilization.size());
   }
-  named_utilization_ = std::move(named_utilization);
+  UpdateBackendMetricDataState(
+      [utilization = std::move(named_utilization)](BackendMetricData& data) {
+        data.utilization = std::move(utilization);
+      });
 }
 
 void ServerMetricRecorder::ClearCpuUtilization() {
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
+  UpdateBackendMetricDataState(
+      [](BackendMetricData& data) { data.cpu_utilization = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] CPU utilization cleared. seq: %lu", this,
-            old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] CPU utilization cleared.", this);
   }
-  cpu_utilization_ = -1.0;
 }
 
 void ServerMetricRecorder::ClearMemoryUtilization() {
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
+  UpdateBackendMetricDataState(
+      [](BackendMetricData& data) { data.mem_utilization = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] Mem utilization cleared. seq: %lu", this,
-            old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] Mem utilization cleared.", this);
   }
-  mem_utilization_ = -1.0;
 }
 
 void ServerMetricRecorder::ClearQps() {
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
+  UpdateBackendMetricDataState([](BackendMetricData& data) { data.qps = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] QPS utilization cleared. seq: %lu", this,
-            old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] QPS utilization cleared.", this);
   }
-  qps_ = -1.0;
 }
 
 void ServerMetricRecorder::ClearNamedUtilization(absl::string_view name) {
-  std::string name_str(name);
-  internal::MutexLock lock(&mu_);
-  uint64_t old_seq = seq_.fetch_add(1, std::memory_order_acq_rel);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
-    gpr_log(GPR_INFO, "[%p] Named utilization cleared. name: %s seq: %lu", this,
-            name_str.c_str(), old_seq + 1);
+    gpr_log(GPR_INFO, "[%p] Named utilization cleared. name: %s", this,
+            std::string(name).c_str());
   }
-  named_utilization_.erase(name_str);
+  UpdateBackendMetricDataState(
+      [name](BackendMetricData& data) { data.utilization.erase(name); });
 }
 
-std::pair<absl::optional<BackendMetricData>, uint64_t>
-ServerMetricRecorder::GetMetrics(absl::optional<uint64_t> last_seq) const {
-  if (last_seq.has_value() &&
-      *last_seq == seq_.load(std::memory_order_acquire)) {
+grpc_core::BackendMetricData ServerMetricRecorder::GetMetrics() const {
+  auto result = GetMetricsIfChanged();
+  return result->data;
+}
+
+std::shared_ptr<const BackendMetricDataState>
+ServerMetricRecorder::GetMetricsIfChanged(
+    absl::optional<uint64_t> last_seq) const {
+  std::shared_ptr<const BackendMetricDataState> result;
+  {
+    internal::MutexLock lock(&mu_);
+    result = metric_state_;
+  }
+  if (last_seq.has_value() && *last_seq == result->seq) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] GetMetrics() returned with no change: seq:%lu",
               this, *last_seq);
     }
-    return std::make_pair(absl::nullopt, *last_seq);
+    return nullptr;
   }
-  BackendMetricData data;
-  internal::MutexLock lock(&mu_);
-  if (IsUtilizationValid(cpu_utilization_)) {
-    data.cpu_utilization = cpu_utilization_;
-  }
-  if (IsUtilizationValid(mem_utilization_)) {
-    data.mem_utilization = mem_utilization_;
-  }
-  if (IsQpsValid(qps_)) {
-    data.qps = qps_;
-  }
-  for (const auto& nu : named_utilization_) {
-    data.utilization[nu.first] = nu.second;
-  }
-  uint64_t seq = seq_.load(std::memory_order_relaxed);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    const auto& data = result->data;
     gpr_log(
         GPR_INFO,
         "[%p] GetMetrics() returned: seq:%lu cpu:%f mem:%f qps:%f utilization "
         "size: %" PRIuPTR,
-        this, seq, data.cpu_utilization, data.mem_utilization, data.qps,
+        this, result->seq, data.cpu_utilization, data.mem_utilization, data.qps,
         data.utilization.size());
   }
-  if (IsEmpty(data)) return std::make_pair(absl::nullopt, seq);
-  return std::make_pair(std::move(data), seq);
+  return result;
 }
 
 }  // namespace experimental
@@ -277,16 +271,12 @@ experimental::CallMetricRecorder& BackendMetricState::RecordRequestCostMetric(
   return *this;
 }
 
-absl::optional<BackendMetricData> BackendMetricState::GetBackendMetricData() {
+BackendMetricData BackendMetricState::GetBackendMetricData() {
   // Merge metrics from the ServerMetricRecorder first since metrics recorded
   // to CallMetricRecorder takes a higher precedence.
   BackendMetricData data;
   if (server_metric_recorder_ != nullptr) {
-    absl::optional<BackendMetricData> server_data =
-        server_metric_recorder_->GetMetrics().first;
-    if (server_data.has_value()) {
-      data = std::move(*server_data);
-    }
+    data = server_metric_recorder_->GetMetrics();
   }
   // Only overwrite if the value is set i.e. in the valid range.
   const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
@@ -313,7 +303,6 @@ absl::optional<BackendMetricData> BackendMetricState::GetBackendMetricData() {
             this, data.cpu_utilization, data.mem_utilization, data.qps,
             data.utilization.size(), data.request_cost.size());
   }
-  if (IsEmpty(data)) return absl::nullopt;
   return data;
 }
 

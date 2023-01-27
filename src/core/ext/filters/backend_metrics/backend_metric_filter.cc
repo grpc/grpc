@@ -18,29 +18,28 @@ TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) const {
   if (provider == nullptr) return absl::nullopt;
-  absl::optional<BackendMetricData> d = provider->GetBackendMetricData();
-  if (d == absl::nullopt) return absl::nullopt;
+  BackendMetricData data = provider->GetBackendMetricData();
   upb::Arena arena;
   xds_data_orca_v3_OrcaLoadReport* response =
       xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
-  if (d->cpu_utilization != -1) {
+  if (data.cpu_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(response,
-                                                        d->cpu_utilization);
+                                                        data.cpu_utilization);
   }
-  if (d->mem_utilization != -1) {
+  if (data.mem_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
-                                                        d->mem_utilization);
+                                                        data.mem_utilization);
   }
-  if (d->qps != -1) {
-    xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, d->qps);
+  if (data.qps != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
   }
-  for (const auto& p : d->request_cost) {
+  for (const auto& p : data.request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(
         response,
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
         p.second, arena.ptr());
   }
-  for (const auto& p : d->utilization) {
+  for (const auto& p : data.utilization) {
     xds_data_orca_v3_OrcaLoadReport_utilization_set(
         response,
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),

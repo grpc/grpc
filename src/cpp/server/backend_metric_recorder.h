@@ -45,8 +45,7 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
   experimental::CallMetricRecorder& RecordRequestCostMetric(
       string_ref name, double value) override;
   // This clears metrics currently recorded. Don't call twice.
-  // Returns nullopt if data is empty.
-  absl::optional<grpc_core::BackendMetricData> GetBackendMetricData() override;
+  grpc_core::BackendMetricData GetBackendMetricData() override;
 
  private:
   experimental::ServerMetricRecorder* server_metric_recorder_;
