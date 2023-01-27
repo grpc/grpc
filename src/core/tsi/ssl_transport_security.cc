@@ -1229,8 +1229,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
     if (result != TSI_OK) {
-      gpr_log(GPR_DEBUG, "result: %d", static_cast<int>(result));
-      return result;
+      gpr_log(GPR_DEBUG, "Problem extracting subject from verified_root_cert. result: %d", static_cast<int>(result));
     }
     peer->property_count++;
   }
