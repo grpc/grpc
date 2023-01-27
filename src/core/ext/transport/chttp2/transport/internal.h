@@ -24,11 +24,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -422,11 +424,11 @@ struct grpc_chttp2_transport
   /// destructive cleanup closure
   grpc_closure destructive_reclaimer_locked;
 
-  // next bdp ping timer
-  bool have_next_bdp_ping_timer = false;
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
-  grpc_timer next_bdp_ping_timer;
+  // next bdp ping timer handle
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      next_bdp_ping_timer_handle;
 
   // keep-alive ping support
   /// Closure to initialize a keepalive ping
@@ -465,6 +467,8 @@ struct grpc_chttp2_transport
   /// the peer
   ///
   bool enable_preferred_rx_crypto_frame_advertisement = false;
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 typedef enum {

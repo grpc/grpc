@@ -38,6 +38,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice_buffer.h>
@@ -173,7 +174,7 @@ static void start_bdp_ping(void* tp, grpc_error_handle error);
 static void finish_bdp_ping(void* tp, grpc_error_handle error);
 static void start_bdp_ping_locked(void* tp, grpc_error_handle error);
 static void finish_bdp_ping_locked(void* tp, grpc_error_handle error);
-static void next_bdp_ping_timer_expired(void* tp, grpc_error_handle error);
+static void next_bdp_ping_timer_expired(grpc_chttp2_transport* tp);
 static void next_bdp_ping_timer_expired_locked(void* tp,
                                                grpc_error_handle error);
 
@@ -485,7 +486,10 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           peer_string.c_str(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner),
-      deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0) {
+      deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
+      event_engine(
+          channel_args
+              .GetObjectRef<grpc_event_engine::experimental::EventEngine>()) {
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
@@ -595,8 +599,10 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     if (t->ping_state.is_delayed_ping_timer_set) {
       grpc_timer_cancel(&t->ping_state.delayed_ping_timer);
     }
-    if (t->have_next_bdp_ping_timer) {
-      grpc_timer_cancel(&t->next_bdp_ping_timer);
+    if (t->next_bdp_ping_timer_handle) {
+      if (t->event_engine->Cancel(*t->next_bdp_ping_timer_handle)) {
+        t->next_bdp_ping_timer_handle.reset();
+      }
     }
     switch (t->keepalive_state) {
       case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING:
@@ -2520,27 +2526,27 @@ static void finish_bdp_ping_locked(void* tp, grpc_error_handle error) {
       t->flow_control.bdp_estimator()->CompletePing();
   grpc_chttp2_act_on_flowctl_action(t->flow_control.PeriodicUpdate(), t,
                                     nullptr);
-  GPR_ASSERT(!t->have_next_bdp_ping_timer);
-  t->have_next_bdp_ping_timer = true;
-  GRPC_CLOSURE_INIT(&t->next_bdp_ping_timer_expired_locked,
-                    next_bdp_ping_timer_expired, t, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&t->next_bdp_ping_timer, next_ping,
-                  &t->next_bdp_ping_timer_expired_locked);
+  GPR_ASSERT(!t->next_bdp_ping_timer_handle);
+  t->next_bdp_ping_timer_handle =
+      t->event_engine->RunAfter(next_ping - grpc_core::Timestamp::Now(), [t] {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        next_bdp_ping_timer_expired(t);
+      });
 }
 
-static void next_bdp_ping_timer_expired(void* tp, grpc_error_handle error) {
-  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  t->combiner->Run(
-      GRPC_CLOSURE_INIT(&t->next_bdp_ping_timer_expired_locked,
-                        next_bdp_ping_timer_expired_locked, t, nullptr),
-      error);
+static void next_bdp_ping_timer_expired(grpc_chttp2_transport* tp) {
+  tp->combiner->Run(
+      GRPC_CLOSURE_INIT(&tp->next_bdp_ping_timer_expired_locked,
+                        next_bdp_ping_timer_expired_locked, tp, nullptr),
+      absl::OkStatus());
 }
 
 static void next_bdp_ping_timer_expired_locked(void* tp,
                                                grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  GPR_ASSERT(t->have_next_bdp_ping_timer);
-  t->have_next_bdp_ping_timer = false;
+  GPR_ASSERT(t->next_bdp_ping_timer_handle);
+  t->next_bdp_ping_timer_handle.reset();
   if (!error.ok()) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
