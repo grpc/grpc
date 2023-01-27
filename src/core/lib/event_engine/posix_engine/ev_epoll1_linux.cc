@@ -375,25 +375,21 @@ void Epoll1Poller::Shutdown() {
 }
 
 void Epoll1Poller::Close() {
-  {
-    grpc_core::MutexLock lock(&mu_);
-    if (closed_) return;
-  }
+  grpc_core::MutexLock lock(&mu_);
+  if (closed_) return;
 
   if (g_epoll_set_.epfd >= 0) {
     close(g_epoll_set_.epfd);
     g_epoll_set_.epfd = -1;
   }
-  {
-    grpc_core::MutexLock lock(&mu_);
-    while (!free_epoll1_handles_list_.empty()) {
-      Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
-          free_epoll1_handles_list_.front());
-      free_epoll1_handles_list_.pop_front();
-      delete handle;
-    }
-    closed_ = true;
+
+  while (!free_epoll1_handles_list_.empty()) {
+    Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
+        free_epoll1_handles_list_.front());
+    free_epoll1_handles_list_.pop_front();
+    delete handle;
   }
+  closed_ = true;
 }
 
 Epoll1Poller::~Epoll1Poller() { Close(); }
