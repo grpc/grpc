@@ -134,11 +134,11 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
-  std::map<UniqueTypeName, std::string> call_attributes{
-      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, absl::string_view> call_attributes{
+      {XdsOverrideHostTypeName(), kAddresses[1]}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[1]);
-  call_attributes[XdsOverrideHostTypeName()] = std::string("127.0.0.1:441");
+  call_attributes[XdsOverrideHostTypeName()] = kAddresses[0];
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
   EXPECT_EQ(ExpectPickComplete(picker.get(), call_attributes), kAddresses[0]);
 }
@@ -149,7 +149,7 @@ TEST_F(XdsOverrideHostTest, SubchannelNotFound) {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
-  std::map<UniqueTypeName, std::string> call_attributes{
+  std::map<UniqueTypeName, absl::string_view> call_attributes{
       {XdsOverrideHostTypeName(), "no such host"}};
   ExpectRoundRobinPicks(picker.get(), kAddresses, call_attributes);
 }
@@ -160,8 +160,8 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
-  std::map<UniqueTypeName, std::string> call_attributes{
-      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, absl::string_view> call_attributes{
+      {XdsOverrideHostTypeName(), kAddresses[1]}};
   ExpectRoundRobinPicks(picker.get(), {kAddresses[1]}, call_attributes);
   // Some other address is gone
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[1]},
@@ -206,8 +206,8 @@ TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, absl::string_view> pick_arg{
+      {XdsOverrideHostTypeName(), kAddresses[1]}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
@@ -232,8 +232,8 @@ TEST_F(XdsOverrideHostTest, ConnectingSubchannelIsQueued) {
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, absl::string_view> pick_arg{
+      {XdsOverrideHostTypeName(), kAddresses[1]}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
@@ -262,8 +262,8 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   ExpectQueueEmpty();
   // Draining subchannel is returned
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, absl::string_view> pick_arg{
+      {XdsOverrideHostTypeName(), kAddresses[1]}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
@@ -281,8 +281,8 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, absl::string_view> pick_arg{
+      {XdsOverrideHostTypeName(), kAddresses[1]}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
@@ -326,8 +326,8 @@ TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   ExpectQueueEmpty();
-  std::map<UniqueTypeName, std::string> pick_arg{
-      {XdsOverrideHostTypeName(), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, absl::string_view> pick_arg{
+      {XdsOverrideHostTypeName(), kAddresses[1]}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kHealthy},
@@ -353,13 +353,13 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:441"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[0]}}),
             kAddresses[0]);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:442"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[1]}}),
             kAddresses[1]);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:443"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[2]}}),
             kAddresses[2]);
   // UNKNOWN excluded - first chanel does not get overridden
   ApplyUpdateWithHealthStatuses(
@@ -371,12 +371,12 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]},
-                        {{XdsOverrideHostTypeName(), "127.0.0.1:441"}});
+                        {{XdsOverrideHostTypeName(), kAddresses[0]}});
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:442"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[1]}}),
             kAddresses[1]);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:443"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[2]}}),
             kAddresses[2]);
   // HEALTHY excluded - second chanel does not get overridden
   ApplyUpdateWithHealthStatuses(
@@ -388,13 +388,13 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:441"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[0]}}),
             kAddresses[0]);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:442"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[1]}}),
             kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]},
-                        {{XdsOverrideHostTypeName(), "127.0.0.1:443"}});
+                        {{XdsOverrideHostTypeName(), kAddresses[2]}});
   // DRAINING excluded - third chanel does not get overridden
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
@@ -405,13 +405,13 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:441"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[0]}}),
             kAddresses[0]);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
-                               {{XdsOverrideHostTypeName(), "127.0.0.1:442"}}),
+                               {{XdsOverrideHostTypeName(), kAddresses[1]}}),
             kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]},
-                        {{XdsOverrideHostTypeName(), "127.0.0.1:443"}});
+                        {{XdsOverrideHostTypeName(), kAddresses[2]}});
 }
 
 }  // namespace
