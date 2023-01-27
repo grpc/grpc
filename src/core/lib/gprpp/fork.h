@@ -59,7 +59,8 @@ class Fork {
   // reset the polling engine's internal state.
   static void SetResetChildPollingEngineFunc(
       child_postfork_func reset_child_polling_engine);
-  static std::vector<child_postfork_func> GetResetChildPollingEngineFunc();
+  static const std::vector<child_postfork_func>&
+  GetResetChildPollingEngineFunc();
 
   // Check if there is a single active ExecCtx
   // (the one used to invoke this function).  If there are more,

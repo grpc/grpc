@@ -199,7 +199,9 @@ void Fork::SetResetChildPollingEngineFunc(
     reset_child_polling_engine_->emplace_back(reset_child_polling_engine);
   }
 }
-std::vector<Fork::child_postfork_func> Fork::GetResetChildPollingEngineFunc() {
+
+const std::vector<Fork::child_postfork_func>&
+Fork::GetResetChildPollingEngineFunc() {
   return *reset_child_polling_engine_;
 }
 

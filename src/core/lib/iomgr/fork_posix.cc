@@ -100,7 +100,7 @@ void grpc_postfork_child() {
   if (!skipped_handler) {
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
-    for (auto reset_polling_engine :
+    for (auto* reset_polling_engine :
          grpc_core::Fork::GetResetChildPollingEngineFunc()) {
       if (reset_polling_engine != nullptr) {
         reset_polling_engine();

@@ -375,7 +375,10 @@ void Epoll1Poller::Shutdown() {
 }
 
 void Epoll1Poller::Close() {
-  if (closed_) return;
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (closed_) return;
+  }
 
   if (g_epoll_set_.epfd >= 0) {
     close(g_epoll_set_.epfd);
@@ -389,8 +392,8 @@ void Epoll1Poller::Close() {
       free_epoll1_handles_list_.pop_front();
       delete handle;
     }
+    closed_ = true;
   }
-  closed_ = true;
 }
 
 Epoll1Poller::~Epoll1Poller() { Close(); }
@@ -577,8 +580,10 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
 
 void Epoll1Poller::PrepareFork() { Kick(); }
 
+// TODO(vigneshbabu): implement
 void Epoll1Poller::PostforkParent() {}
 
+// TODO(vigneshbabu): implement
 void Epoll1Poller::PostforkChild() {}
 
 }  // namespace experimental
