@@ -47,7 +47,8 @@
 #define TSI_X509_URI_PEER_PROPERTY "x509_uri"
 #define TSI_X509_EMAIL_PEER_PROPERTY "x509_email"
 #define TSI_X509_IP_PEER_PROPERTY "x509_ip"
-#define TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY "x509_verified_root_cert_subject"
+#define TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY \
+  "x509_verified_root_cert_subject"
 
 // --- tsi_ssl_root_certs_store object ---
 
