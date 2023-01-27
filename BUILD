@@ -1450,6 +1450,7 @@ grpc_cc_library(
         "//src/core:iomgr_port",
         "//src/core:json",
         "//src/core:latch",
+        "//src/core:load_file",
         "//src/core:match",
         "//src/core:memory_quota",
         "//src/core:no_destruct",
