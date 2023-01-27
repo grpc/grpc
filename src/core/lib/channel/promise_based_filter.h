@@ -398,6 +398,8 @@ class BaseCallData : public Activity, private Wakeable {
       kCancelledButNotYetPolled,
       // We're done.
       kCancelled,
+      // We're done, but we haven't gotten a status yet
+      kCancelledButNoStatus,
     };
     static const char* StateString(State);
 
