@@ -144,7 +144,7 @@ struct tsi_ssl_frame_protector {
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
-static int g_ssl_ex_ca_cert_index = -1;
+static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
@@ -195,9 +195,9 @@ static void init_openssl(void) {
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(g_ssl_ctx_ex_factory_index != -1);
 
-  g_ssl_ex_ca_cert_index =
+  g_ssl_ex_verified_root_cert_index =
       SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
-  GPR_ASSERT(g_ssl_ex_ca_cert_index != -1);
+  GPR_ASSERT(g_ssl_ex_verified_root_cert_index != -1);
 }
 
 // --- Ssl utils. ---
@@ -334,7 +334,7 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
         property);
   } else {
     result = tsi_construct_string_peer_property(
-        TSI_X509_CA_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
+        TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
         property);
   }
   BIO_free(bio);
@@ -910,7 +910,7 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
 
   SSL* ssl = static_cast<SSL*>(
       X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  SSL_set_ex_data(ssl, g_ssl_ex_ca_cert_index, ca_cert);
+  SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, ca_cert);
   return 1;
 }
 
@@ -1170,7 +1170,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
 
   X509* ca_cert =
-      static_cast<X509*>(SSL_get_ex_data(impl->ssl, g_ssl_ex_ca_cert_index));
+      static_cast<X509*>(SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
