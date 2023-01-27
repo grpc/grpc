@@ -2366,9 +2366,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     if (send_trailing_state_ ==
         SendTrailingState::kQueuedButHaventClosedSends) {
       send_trailing_state_ = SendTrailingState::kQueued;
-      send_message()->Done(
-          *send_trailing_metadata_batch_->payload->send_trailing_metadata
-               .send_trailing_metadata);
+      send_message()->Done(*send_trailing_metadata_batch_->payload
+                                ->send_trailing_metadata.send_trailing_metadata,
+                           flusher);
     }
     send_message()->WakeInsideCombiner(
         flusher,
@@ -2387,9 +2387,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
          (send_trailing_metadata_batch_->send_message &&
           send_message()->IsForwarded()))) {
       send_trailing_state_ = SendTrailingState::kQueued;
-      send_message()->Done(
-          *send_trailing_metadata_batch_->payload->send_trailing_metadata
-               .send_trailing_metadata);
+      send_message()->Done(*send_trailing_metadata_batch_->payload
+                                ->send_trailing_metadata.send_trailing_metadata,
+                           flusher);
     }
   }
   if (receive_message() != nullptr) {
