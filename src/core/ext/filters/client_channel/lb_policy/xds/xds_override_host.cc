@@ -580,11 +580,22 @@ XdsOverrideHostLb::GetSubchannelByAddress(
     absl::string_view address, XdsHealthStatusSet overriden_health_statuses) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
-  if (it != subchannel_map_.end() &&
-      overriden_health_statuses.Contains(it->second.eds_health_status())) {
-    return it->second.GetSubchannel()->Ref();
+  if (it == subchannel_map_.end()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "Subchannel %s was not found",
+              std::string(address).c_str());
+    }
+    return nullptr;
   }
-  return nullptr;
+  if (!overriden_health_statuses.Contains(it->second.eds_health_status())) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "Subchannel %s health status is not overridden (%s)",
+              std::string(address).c_str(),
+              it->second.eds_health_status().ToString());
+    }
+    return nullptr;
+  }
+  return it->second.GetSubchannel()->Ref();
 }
 
 void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
@@ -785,7 +796,7 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
     auto host_status_list = LoadJsonObjectField<std::vector<std::string>>(
         json.object_value(), args, "overrideHostStatus", errors,
         /*required=*/false);
-    if (host_status_list.has_value()) {
+    if (host_status_list.has_value() && !host_status_list->empty()) {
       for (size_t i = 0; i < host_status_list->size(); ++i) {
         const std::string& host_status = (*host_status_list)[i];
         auto status = XdsHealthStatus::FromString(host_status);

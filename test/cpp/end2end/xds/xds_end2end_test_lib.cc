@@ -808,8 +808,9 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   return grpc::CreateCustomChannel(uri, channel_creds, *args);
 }
 
-Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
-                               EchoResponse* response) {
+Status XdsEnd2endTest::SendRpc(
+    const RpcOptions& rpc_options, EchoResponse* response,
+    std::map<std::string, std::string, std::less<>>* metadata) {
   EchoResponse local_response;
   if (response == nullptr) response = &local_response;
   ClientContext context;
@@ -834,21 +835,43 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
           SendRpcMethod(stub2_.get(), rpc_options, &context, request, response);
       break;
   }
+  if (metadata != nullptr) {
+    for (const auto& it : context.GetServerInitialMetadata()) {
+      std::string header(it.first.data(), it.first.size());
+      // Guard against implementation-specific header case - RFC 2616
+      absl::AsciiStrToLower(&header);
+      metadata->emplace(header,
+                        std::string(it.second.data(), it.second.size()));
+    }
+  }
   return status;
 }
 
 void XdsEnd2endTest::SendRpcsUntil(
     const grpc_core::DebugLocation& debug_location,
     std::function<bool(const RpcResult&)> continue_predicate, int timeout_ms,
-    const RpcOptions& rpc_options) {
+    const RpcOptions& rpc_options,
+    std::vector<std::map<std::string, std::string, std::less<>>>*
+        responses_initial_metadata) {
   absl::Time deadline = absl::InfiniteFuture();
+  // Just a small utility to declutter callers
+  if (responses_initial_metadata != nullptr) {
+    responses_initial_metadata->clear();
+  }
   if (timeout_ms != 0) {
     deadline = absl::Now() +
                (absl::Milliseconds(timeout_ms) * grpc_test_slowdown_factor());
   }
   while (true) {
     RpcResult result;
-    result.status = SendRpc(rpc_options, &result.response);
+    std::map<std::string, std::string, std::less<>>* response_initial_metadata =
+        nullptr;
+    if (responses_initial_metadata != nullptr) {
+      responses_initial_metadata->emplace_back();
+      response_initial_metadata = &responses_initial_metadata->back();
+    }
+    result.status =
+        SendRpc(rpc_options, &result.response, response_initial_metadata);
     if (!continue_predicate(result)) return;
     EXPECT_LE(absl::Now(), deadline)
         << debug_location.file() << ":" << debug_location.line();
@@ -858,7 +881,9 @@ void XdsEnd2endTest::SendRpcsUntil(
 
 void XdsEnd2endTest::CheckRpcSendOk(
     const grpc_core::DebugLocation& debug_location, const size_t times,
-    const RpcOptions& rpc_options) {
+    const RpcOptions& rpc_options,
+    std::vector<std::map<std::string, std::string, std::less<>>>*
+        responses_initial_metadata) {
   SendRpcsUntil(
       debug_location,
       [debug_location, times, n = size_t{0}](const RpcResult& result) mutable {
@@ -869,7 +894,7 @@ void XdsEnd2endTest::CheckRpcSendOk(
         EXPECT_EQ(result.response.message(), kRequestMessage);
         return ++n < times;
       },
-      /*timeout_ms=*/0, rpc_options);
+      /*timeout_ms=*/0, rpc_options, responses_initial_metadata);
 }
 
 void XdsEnd2endTest::CheckRpcSendFailure(
