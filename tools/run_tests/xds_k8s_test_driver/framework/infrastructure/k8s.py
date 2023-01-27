@@ -15,7 +15,6 @@
 #   added to get around circular dependencies caused by k8s.py clashing with
 #   k8s/__init__.py
 import datetime
-import functools
 import json
 import logging
 import pathlib

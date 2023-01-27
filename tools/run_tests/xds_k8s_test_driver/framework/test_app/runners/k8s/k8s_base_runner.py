@@ -18,7 +18,7 @@ import contextlib
 import datetime
 import logging
 import pathlib
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import mako.template
 import yaml
