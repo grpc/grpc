@@ -184,14 +184,15 @@ static void send_ping_locked(grpc_chttp2_transport* t,
 static void retry_initiate_ping_locked(void* tp, grpc_error_handle error);
 
 // keepalive-relevant functions
-static void init_keepalive_ping(void* arg, grpc_error_handle error);
+static void init_keepalive_ping(grpc_chttp2_transport* t);
 static void init_keepalive_ping_locked(void* arg, grpc_error_handle error);
 static void start_keepalive_ping(void* arg, grpc_error_handle error);
 static void finish_keepalive_ping(void* arg, grpc_error_handle error);
 static void start_keepalive_ping_locked(void* arg, grpc_error_handle error);
 static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error);
-static void keepalive_watchdog_fired(void* arg, grpc_error_handle error);
+static void keepalive_watchdog_fired(grpc_chttp2_transport* t);
 static void keepalive_watchdog_fired_locked(void* arg, grpc_error_handle error);
+static void maybe_reset_keepalive_ping_timer(grpc_chttp2_transport* t);
 
 namespace grpc_core {
 
@@ -451,11 +452,12 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
   if (t->keepalive_time != grpc_core::Duration::Infinity()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
-    GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
-                      grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_core::Timestamp::Now() + t->keepalive_time,
-                    &t->init_keepalive_ping_locked);
+    t->keepalive_ping_timer_handle =
+        t->event_engine->RunAfter(t->keepalive_time, [t] {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          init_keepalive_ping(t);
+        });
   } else {
     // Use GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED to indicate there are no
     //   inflight keeaplive timers
@@ -606,11 +608,22 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     }
     switch (t->keepalive_state) {
       case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING:
-        grpc_timer_cancel(&t->keepalive_ping_timer);
+        if (t->keepalive_ping_timer_handle) {
+          if (t->event_engine->Cancel(*t->keepalive_ping_timer_handle)) {
+            t->keepalive_ping_timer_handle.reset();
+          }
+        }
         break;
       case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING:
-        grpc_timer_cancel(&t->keepalive_ping_timer);
-        grpc_timer_cancel(&t->keepalive_watchdog_timer);
+        if (t->keepalive_ping_timer_handle) {
+          if (t->event_engine->Cancel(*t->keepalive_ping_timer_handle)) {
+            t->keepalive_ping_timer_handle.reset();
+          }
+        }
+        if (t->keepalive_watchdog_timer_handle) {
+          t->event_engine->Cancel(*t->keepalive_watchdog_timer_handle);
+          t->keepalive_watchdog_timer_handle.reset();
+        }
         break;
       case GRPC_CHTTP2_KEEPALIVE_STATE_DYING:
       case GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED:
@@ -2430,7 +2443,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
     keep_reading = true;
     // Since we have read a byte, reset the keepalive timer
     if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
-      grpc_timer_cancel(&t->keepalive_ping_timer);
+      maybe_reset_keepalive_ping_timer(t);
     }
   }
   grpc_slice_buffer_reset_and_unref(&t->read_buffer);
@@ -2490,7 +2503,7 @@ static void start_bdp_ping_locked(void* tp, grpc_error_handle error) {
   }
   // Reset the keepalive ping timer
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
-    grpc_timer_cancel(&t->keepalive_ping_timer);
+    maybe_reset_keepalive_ping_timer(t);
   }
   t->flow_control.bdp_estimator()->StartPing();
   t->bdp_ping_started = true;
@@ -2619,11 +2632,10 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
   }
 }
 
-static void init_keepalive_ping(void* arg, grpc_error_handle error) {
-  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
+static void init_keepalive_ping(grpc_chttp2_transport* t) {
   t->combiner->Run(GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked,
                                      init_keepalive_ping_locked, t, nullptr),
-                   error);
+                   absl::OkStatus());
 }
 
 static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
@@ -2636,30 +2648,17 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
         grpc_chttp2_stream_map_size(&t->stream_map) > 0) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
-      grpc_timer_init_unset(&t->keepalive_watchdog_timer);
       send_keepalive_ping_locked(t);
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     } else {
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
-      GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
-                        grpc_schedule_on_exec_ctx);
-      grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_core::Timestamp::Now() + t->keepalive_time,
-                      &t->init_keepalive_ping_locked);
+      t->keepalive_ping_timer_handle =
+          t->event_engine->RunAfter(t->keepalive_time, [t] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            init_keepalive_ping(t);
+          });
     }
-  } else if (error == absl::CancelledError()) {
-    // The keepalive ping timer may be cancelled by bdp
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
-              t->peer_string.c_str());
-    }
-    GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
-    GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
-                      grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_core::Timestamp::Now() + t->keepalive_time,
-                    &t->init_keepalive_ping_locked);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "init keepalive ping");
 }
@@ -2684,11 +2683,12 @@ static void start_keepalive_ping_locked(void* arg, grpc_error_handle error) {
     gpr_log(GPR_INFO, "%s: Start keepalive ping", t->peer_string.c_str());
   }
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
-  GRPC_CLOSURE_INIT(&t->keepalive_watchdog_fired_locked,
-                    keepalive_watchdog_fired, t, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&t->keepalive_watchdog_timer,
-                  grpc_core::Timestamp::Now() + t->keepalive_timeout,
-                  &t->keepalive_watchdog_fired_locked);
+  t->keepalive_watchdog_timer_handle =
+      t->event_engine->RunAfter(t->keepalive_timeout, [t] {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        keepalive_watchdog_fired(t);
+      });
   t->keepalive_ping_started = true;
 }
 
@@ -2718,48 +2718,69 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error) {
       }
       t->keepalive_ping_started = false;
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
-      grpc_timer_cancel(&t->keepalive_watchdog_timer);
+      if (t->keepalive_watchdog_timer_handle) {
+        t->event_engine->Cancel(*t->keepalive_watchdog_timer_handle);
+        t->keepalive_watchdog_timer_handle.reset();
+      }
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
-      GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
-                        grpc_schedule_on_exec_ctx);
-      grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_core::Timestamp::Now() + t->keepalive_time,
-                      &t->init_keepalive_ping_locked);
+      t->keepalive_ping_timer_handle =
+          t->event_engine->RunAfter(t->keepalive_time, [t] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            init_keepalive_ping(t);
+          });
     }
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "keepalive ping end");
 }
 
-static void keepalive_watchdog_fired(void* arg, grpc_error_handle error) {
-  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
+static void keepalive_watchdog_fired(grpc_chttp2_transport* t) {
   t->combiner->Run(
       GRPC_CLOSURE_INIT(&t->keepalive_watchdog_fired_locked,
                         keepalive_watchdog_fired_locked, t, nullptr),
-      error);
+      absl::OkStatus());
 }
 
 static void keepalive_watchdog_fired_locked(void* arg,
                                             grpc_error_handle error) {
+  GPR_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
-    if (error.ok()) {
-      gpr_log(GPR_INFO, "%s: Keepalive watchdog fired. Closing transport.",
-              t->peer_string.c_str());
-      t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
-      close_transport_locked(
-          t, grpc_error_set_int(GRPC_ERROR_CREATE("keepalive watchdog timeout"),
-                                grpc_core::StatusIntProperty::kRpcStatus,
-                                GRPC_STATUS_UNAVAILABLE));
-    }
+    gpr_log(GPR_INFO, "%s: Keepalive watchdog fired. Closing transport.",
+            t->peer_string.c_str());
+    t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
+    close_transport_locked(
+        t, grpc_error_set_int(GRPC_ERROR_CREATE("keepalive watchdog timeout"),
+                              grpc_core::StatusIntProperty::kRpcStatus,
+                              GRPC_STATUS_UNAVAILABLE));
   } else {
-    // The watchdog timer should have been cancelled by
-    // finish_keepalive_ping_locked.
-    if (GPR_UNLIKELY(error != absl::CancelledError())) {
-      gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
-              t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);
-    }
+    // If keepalive_state is not PINGING, we consider it as an error. Maybe the
+    // cancellation failed in finish_keepalive_ping_locked. Users have seen
+    // other states: https://github.com/grpc/grpc/issues/32085.
+    gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
+            t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "keepalive watchdog");
+}
+
+static void maybe_reset_keepalive_ping_timer(grpc_chttp2_transport* t) {
+  if (t->keepalive_ping_timer_handle) {
+    if (t->event_engine->Cancel(*t->keepalive_ping_timer_handle)) {
+      // Cancel succeeds, resets the keepalive ping timer.
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+        gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
+                t->peer_string.c_str());
+      }
+      GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
+      t->keepalive_ping_timer_handle =
+          t->event_engine->RunAfter(t->keepalive_time, [t] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            init_keepalive_ping(t);
+          });
+    }
+  }
 }
 
 //

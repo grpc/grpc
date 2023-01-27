@@ -408,7 +408,6 @@ struct grpc_chttp2_transport
   grpc_closure finish_bdp_ping_locked;
 
   // if non-NULL, close the transport with this error when writes are finished
-  //
   grpc_error_handle close_transport_on_writes_finished;
 
   // a list of closures to run after writes are finished
@@ -440,9 +439,11 @@ struct grpc_chttp2_transport
   /// Closrue to run when the keepalive ping timeouts
   grpc_closure keepalive_watchdog_fired_locked;
   /// timer to initiate ping events
-  grpc_timer keepalive_ping_timer;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      keepalive_ping_timer_handle;
   /// watchdog to kill the transport when waiting for the keepalive ping
-  grpc_timer keepalive_watchdog_timer;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      keepalive_watchdog_timer_handle;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// grace period for a ping to complete before watchdog kicks in
@@ -465,7 +466,6 @@ struct grpc_chttp2_transport
   bool reading_paused_on_pending_induced_frames = false;
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
-  ///
   bool enable_preferred_rx_crypto_frame_advertisement = false;
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
