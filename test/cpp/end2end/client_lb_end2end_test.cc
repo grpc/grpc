@@ -95,46 +95,29 @@ class MyTestServiceImpl : public TestServiceImpl {
       ++request_count_;
     }
     AddClient(context->peer());
-    absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report;
     if (request->has_param() && request->param().has_backend_metrics()) {
-      if (!load_report.has_value()) load_report.emplace();
       const auto& request_metrics = request->param().backend_metrics();
-      if (request_metrics.cpu_utilization() > 0) {
-        load_report->set_cpu_utilization(request_metrics.cpu_utilization());
-      }
-      if (request_metrics.mem_utilization() > 0) {
-        load_report->set_mem_utilization(request_metrics.mem_utilization());
-      }
-      if (request_metrics.rps_fractional() > 0) {
-        load_report->set_rps_fractional(request_metrics.rps_fractional());
-      }
-      for (const auto& p : request_metrics.request_cost()) {
-        (*load_report->mutable_request_cost())[p.first] = p.second;
-      }
-      for (const auto& p : request_metrics.utilization()) {
-        (*load_report->mutable_utilization())[p.first] = p.second;
-      }
-    }
-    if (load_report.has_value()) {
       auto* recorder = context->ExperimentalGetCallMetricRecorder();
       EXPECT_NE(recorder, nullptr);
-      if (load_report->cpu_utilization() > 0) {
-        recorder->RecordCpuUtilizationMetric(load_report->cpu_utilization());
+      // Do not record when zero since it indicates no test per-call report.
+      if (request_metrics.cpu_utilization() > 0) {
+        recorder->RecordCpuUtilizationMetric(request_metrics.cpu_utilization());
       }
-      if (load_report->mem_utilization() > 0) {
-        recorder->RecordMemoryUtilizationMetric(load_report->mem_utilization());
+      if (request_metrics.mem_utilization() > 0) {
+        recorder->RecordMemoryUtilizationMetric(
+            request_metrics.mem_utilization());
       }
-      if (load_report->rps_fractional() > 0) {
-        recorder->RecordQpsMetric(load_report->rps_fractional());
+      if (request_metrics.rps_fractional() > 0) {
+        recorder->RecordQpsMetric(request_metrics.rps_fractional());
       }
-      for (const auto& p : load_report->request_cost()) {
+      for (const auto& p : request_metrics.request_cost()) {
         char* key = static_cast<char*>(
             grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
         strncpy(key, p.first.data(), p.first.size());
         key[p.first.size()] = '\0';
         recorder->RecordRequestCostMetric(key, p.second);
       }
-      for (const auto& p : load_report->utilization()) {
+      for (const auto& p : request_metrics.utilization()) {
         char* key = static_cast<char*>(
             grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
         strncpy(key, p.first.data(), p.first.size());
@@ -2894,7 +2877,8 @@ const char kServiceConfigPerCall[] =
     "{\n"
     "  \"loadBalancingConfig\": [\n"
     "    {\"weighted_round_robin_experimental\": {\n"
-    "      \"blackoutPeriod\": \"0s\"\n"
+    "      \"blackoutPeriod\": \"0s\",\n"
+    "      \"weightUpdatePeriod\": \"0.1s\"\n"
     "    }}\n"
     "  ]\n"
     "}";
@@ -2904,6 +2888,7 @@ const char kServiceConfigOob[] =
     "  \"loadBalancingConfig\": [\n"
     "    {\"weighted_round_robin_experimental\": {\n"
     "      \"blackoutPeriod\": \"0s\",\n"
+    "      \"weightUpdatePeriod\": \"0.1s\",\n"
     "      \"enableOobLoadReport\": true\n"
     "    }}\n"
     "  ]\n"
@@ -2912,6 +2897,10 @@ const char kServiceConfigOob[] =
 class WeightedRoundRobinParamTest
     : public ClientLbEnd2endTest,
       public ::testing::WithParamInterface<const char*> {};
+
+INSTANTIATE_TEST_SUITE_P(WeightedRoundRobin, WeightedRoundRobinParamTest,
+                         ::testing::Values(kServiceConfigPerCall,
+                                           kServiceConfigOob));
 
 TEST_P(WeightedRoundRobinParamTest, Basic) {
   const int kNumServers = 3;
@@ -2930,16 +2919,20 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
   response_generator.SetNextResolution(GetServersPorts(), GetParam());
   // Wait for the right set of WRR picks.
   size_t num_picks = 0;
+  size_t num_passes = 0;
   SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status&) {
-    if (++num_picks == 21) {
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+    if (++num_picks == 7) {
       gpr_log(GPR_INFO, "request counts: %d %d %d",
               servers_[0]->service_.request_count(),
               servers_[1]->service_.request_count(),
               servers_[2]->service_.request_count());
-      if (servers_[0]->service_.request_count() == 3 &&
-          servers_[1]->service_.request_count() == 9 &&
-          servers_[2]->service_.request_count() == 9) {
-        return false;
+      if (servers_[0]->service_.request_count() == 1 &&
+          servers_[1]->service_.request_count() == 3 &&
+          servers_[2]->service_.request_count() == 3) {
+        if (++num_passes == 3) return false;
+      } else {
+        num_passes = 0;
       }
       num_picks = 0;
       ResetCounters();
@@ -2951,22 +2944,18 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
             channel->GetLoadBalancingPolicyName());
 }
 
-INSTANTIATE_TEST_SUITE_P(WeightedRoundRobin, WeightedRoundRobinParamTest,
-                         ::testing::Values(kServiceConfigPerCall,
-                                           kServiceConfigOob));
-
 using WeightedRoundRobinTest = ClientLbEnd2endTest;
 
 TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   const int kNumServers = 3;
   StartServers(kNumServers);
-  // Report server metrics that should give 1:1:1 WRR picks.
+  // Report server metrics that should give 1:2:4 WRR picks.
   servers_[0]->server_metric_recorder_.SetCpuUtilization(0.9);
   servers_[0]->server_metric_recorder_.SetQps(9);
   servers_[1]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[1]->server_metric_recorder_.SetQps(3);
+  servers_[1]->server_metric_recorder_.SetQps(6);
   servers_[2]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[2]->server_metric_recorder_.SetQps(3);
+  servers_[2]->server_metric_recorder_.SetQps(12);
   // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator);
@@ -2976,20 +2965,24 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   // Send requests with per-call reported QPS set to 100.
   // This should override per-server QPS above and give 1:3:3 WRR picks.
   size_t num_picks = 0;
+  size_t num_passes = 0;
   EchoRequest request;
   request.mutable_param()->mutable_backend_metrics()->set_rps_fractional(100);
   SendRpcsUntil(
       DEBUG_LOCATION, stub,
       [&](const Status&) {
-        if (++num_picks == 21) {
+        gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+        if (++num_picks == 7) {
           gpr_log(GPR_INFO, "request counts: %d %d %d",
                   servers_[0]->service_.request_count(),
                   servers_[1]->service_.request_count(),
                   servers_[2]->service_.request_count());
-          if (servers_[0]->service_.request_count() == 3 &&
-              servers_[1]->service_.request_count() == 9 &&
-              servers_[2]->service_.request_count() == 9) {
-            return false;
+          if (servers_[0]->service_.request_count() == 1 &&
+              servers_[1]->service_.request_count() == 3 &&
+              servers_[2]->service_.request_count() == 3) {
+            if (++num_passes == 3) return false;
+          } else {
+            num_passes = 0;
           }
           num_picks = 0;
           ResetCounters();
@@ -2998,26 +2991,28 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
       },
       /*request_ptr=*/&request);
   // Now send requests without per-call reported QPS.
-  // This should change WRR picks back to 1:1:1.
+  // This should change WRR picks back to 1:2:4.
   num_picks = 0;
-  SendRpcsUntil(
-      DEBUG_LOCATION, stub,
-      [&](const Status&) {
-        if (++num_picks == 21) {
-          gpr_log(GPR_INFO, "request counts: %d %d %d",
-                  servers_[0]->service_.request_count(),
-                  servers_[1]->service_.request_count(),
-                  servers_[2]->service_.request_count());
-          if (servers_[0]->service_.request_count() == 7 &&
-              servers_[1]->service_.request_count() == 7 &&
-              servers_[2]->service_.request_count() == 7) {
-            return false;
-          }
-          num_picks = 0;
-          ResetCounters();
-        }
-        return true;
-      });
+  num_passes = 0;
+  SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status&) {
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+    if (++num_picks == 7) {
+      gpr_log(GPR_INFO, "request counts: %d %d %d",
+              servers_[0]->service_.request_count(),
+              servers_[1]->service_.request_count(),
+              servers_[2]->service_.request_count());
+      if (servers_[0]->service_.request_count() == 1 &&
+          servers_[1]->service_.request_count() == 2 &&
+          servers_[2]->service_.request_count() == 4) {
+        if (++num_passes == 3) return false;
+      } else {
+        num_passes = 0;
+      }
+      num_picks = 0;
+      ResetCounters();
+    }
+    return true;
+  });
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());
