@@ -2910,6 +2910,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
         recv_status_on_client_completion_ =
             AddOpToCompletion(completion, PendingOp::kReceiveStatusOnClient);
+        ForceCompletionSuccess(completion);
         if (auto* finished_metadata =
                 absl::get_if<ServerMetadataHandle>(&recv_status_on_client_)) {
           PublishStatus(op.data.recv_status_on_client,
