@@ -312,7 +312,7 @@ static tsi_result peer_property_from_x509_common_name(
 // Gets the subject of an X509 cert as a tsi_peer_property.
 static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   tsi_peer_property* property,
-                                                  bool is_ca_cert) {
+                                                  bool is_verified_root_cert) {
   X509_NAME* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
     gpr_log(GPR_INFO, "Could not get subject name from certificate.");
@@ -328,7 +328,7 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
     return TSI_INTERNAL_ERROR;
   }
   tsi_result result;
-  if (!is_ca_cert) {
+  if (!is_verified_root_cert) {
     result = tsi_construct_string_peer_property(
         TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
         property);
@@ -905,12 +905,25 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
     return preverify_ok;
   }
 
-  // The ca cert is the last in the chain
-  X509* ca_cert = sk_X509_value(chain, sk_X509_num(chain) - 1);
+  // The root cert is the last in the chain
+  auto last_index = sk_X509_num(chain) - 1;
+  if (last_index < 0) {
+    return preverify_ok;
+  }
+  X509* root_cert = sk_X509_value(chain, last_index);
+  if (root_cert == nullptr) {
+    return preverify_ok;
+  }
 
   SSL* ssl = static_cast<SSL*>(
       X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, ca_cert);
+  if (ssl == nullptr) {
+    return preverify_ok;
+  }
+  int success = SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, root_cert);
+  if (success == 0) {
+    gpr_log(GPR_INFO, "Could not set verified root cert in SSL's ex_data");
+  }
   return preverify_ok;
 }
 
@@ -1169,13 +1182,13 @@ static tsi_result ssl_handshaker_result_extract_peer(
   // the peer's certificate is not present in the stack
   STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
 
-  X509* ca_cert =
+  X509* verified_root_cert =
       static_cast<X509*>(SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
-  if (ca_cert != nullptr) new_property_count++;
+  if (verified_root_cert != nullptr) new_property_count++;
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer->property_count; i++) {
@@ -1212,11 +1225,11 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (result != TSI_OK) return result;
   peer->property_count++;
 
-  if (ca_cert != nullptr) {
+  if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(
-        ca_cert, &peer->properties[peer->property_count], true);
+        verified_root_cert, &peer->properties[peer->property_count], true);
     if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "resut: %d", static_cast<int>(result));
+      gpr_log(GPR_DEBUG, "result: %d", static_cast<int>(result));
       return result;
     }
     peer->property_count++;
