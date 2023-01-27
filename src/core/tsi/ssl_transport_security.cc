@@ -906,11 +906,11 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
   }
 
   // The root cert is the last in the chain
-  auto last_index = sk_X509_num(chain) - 1;
-  if (last_index < 0) {
+  auto chain_length = sk_X509_num(chain);
+  if (chain_length == 0) {
     return preverify_ok;
   }
-  X509* root_cert = sk_X509_value(chain, last_index);
+  X509* root_cert = sk_X509_value(chain, chain_length - 1);
   if (root_cert == nullptr) {
     return preverify_ok;
   }
