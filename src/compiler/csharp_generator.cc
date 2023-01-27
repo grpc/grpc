@@ -436,14 +436,14 @@ void GenerateServiceDescriptorProperty(Printer* out,
 
 void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   out->Print(
-      "/// <summary>Base class for server-side implementations of "
+      "/// <summary>Base record for server-side implementations of "
       "$servicename$</summary>\n",
       "servicename", GetServiceClassName(service));
   out->Print(
       "[grpc::BindServiceMethod(typeof($classname$), "
       "\"BindService\")]\n",
       "classname", GetServiceClassName(service));
-  out->Print("public abstract partial class $name$\n", "name",
+  out->Print("public abstract partial record $name$\n", "name",
              GetServerClassName(service));
   out->Print("{\n");
   out->Indent();
