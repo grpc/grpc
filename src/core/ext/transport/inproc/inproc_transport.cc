@@ -766,6 +766,8 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
                        nullptr);
       s->to_read_trailing_md.Clear();
       s->to_read_trailing_md_filled = false;
+      s->recv_trailing_md_op->payload->recv_trailing_metadata
+          .recv_trailing_metadata->Set(grpc_core::GrpcStatusFromWire(), true);
 
       // We should schedule the recv_trailing_md_op completion if
       // 1. this stream is the client-side
