@@ -613,6 +613,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
       case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING:
         if (t->keepalive_ping_timer_handle) {
           if (t->event_engine->Cancel(*t->keepalive_ping_timer_handle)) {
+            GRPC_CHTTP2_UNREF_TRANSPORT(t, "init keepalive ping");
             t->keepalive_ping_timer_handle.reset();
           }
         }
@@ -620,6 +621,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
       case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING:
         if (t->keepalive_ping_timer_handle) {
           if (t->event_engine->Cancel(*t->keepalive_ping_timer_handle)) {
+            GRPC_CHTTP2_UNREF_TRANSPORT(t, "init keepalive ping");
             t->keepalive_ping_timer_handle.reset();
           }
         }
@@ -2861,7 +2863,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
             t->combiner->Run(&t->destructive_reclaimer_locked,
                              absl::OkStatus());
           } else {
-            GRPC_CHTTP2_UNREF_TRANSPORT(t, "benign_reclaimer");
+            GRPC_CHTTP2_UNREF_TRANSPORT(t, "destructive_reclaimer");
           }
         });
   }
