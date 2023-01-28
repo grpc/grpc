@@ -59,6 +59,9 @@ class ThreadPool final : public Forkable, public Executor {
   void PostforkParent() override;
   void PostforkChild() override;
 
+  // Returns true if the current thread is a thread pool thread.
+  bool IsThreadPoolThread();
+
  private:
   class Queue {
    public:

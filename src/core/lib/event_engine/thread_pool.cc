@@ -27,6 +27,7 @@
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "thread_pool.h"
 
 #include <grpc/support/log.h>
 
@@ -147,6 +148,8 @@ ThreadPool::ThreadPool() {
     StartThread(state_, StartThreadReason::kInitialPool);
   }
 }
+
+bool ThreadPool::IsThreadPoolThread() { return g_threadpool_thread; }
 
 void ThreadPool::Quiesce() {
   state_->queue.SetShutdown();

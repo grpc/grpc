@@ -176,7 +176,9 @@ std::unique_ptr<EventEngine::DNSResolver> WindowsEventEngine::GetDNSResolver(
   grpc_core::Crash("unimplemented");
 }
 
-bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
+bool WindowsEventEngine::IsWorkerThread() {
+  return executor_->IsThreadPoolThread();
+}
 
 void WindowsEventEngine::OnConnectCompleted(
     std::shared_ptr<ConnectionState> state) {
