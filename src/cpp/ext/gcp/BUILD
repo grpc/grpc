@@ -123,3 +123,14 @@ grpc_cc_library(
         "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )
+
+grpc_cc_library(
+    name = "auto_detect_resource_type",
+    srcs = ["auto_detect_resource_type.cc",],
+    hdrs = ["auto_detect_resource_type.h",],
+    language = "c++",
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:gpr_platform",
+    ],
+)
