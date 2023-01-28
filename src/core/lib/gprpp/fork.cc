@@ -24,6 +24,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
@@ -63,6 +64,13 @@ class ExecCtxState {
   }
 
   void IncExecCtxCount() {
+    // If we are in an EventEngine thread, we should not block any ExecCtx
+    // operations. EventEngine threads are expected to be well-behaved on fork,
+    // so this accounting should be unnecessary.
+    if (grpc_event_engine::experimental::ThreadPool::IsThreadPoolThread()) {
+      gpr_atm_no_barrier_fetch_add(&count_, 1);
+      return;
+    }
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
     while (true) {
       if (count <= BLOCKED(1)) {
