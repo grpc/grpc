@@ -305,6 +305,7 @@
         'absl/types:variant',
       ],
       'sources': [
+        'src/core/lib/event_engine/thread_local.cc',
         'src/core/lib/gpr/alloc.cc',
         'src/core/lib/gpr/atm.cc',
         'src/core/lib/gpr/cpu_iphone.cc',

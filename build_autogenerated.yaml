@@ -170,6 +170,7 @@ libs:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
+  - src/core/lib/event_engine/thread_local.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
@@ -196,6 +197,7 @@ libs:
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
   src:
+  - src/core/lib/event_engine/thread_local.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
   - src/core/lib/gpr/cpu_iphone.cc

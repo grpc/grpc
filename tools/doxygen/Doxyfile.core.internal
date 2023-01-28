@@ -1866,6 +1866,8 @@ src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
 src/core/lib/event_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/tcp_socket_utils.h \
+src/core/lib/event_engine/thread_local.cc \
+src/core/lib/event_engine/thread_local.h \
 src/core/lib/event_engine/thread_pool.cc \
 src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/time_util.cc \
