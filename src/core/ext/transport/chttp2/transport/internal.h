@@ -434,9 +434,9 @@ struct grpc_chttp2_transport
   grpc_closure init_keepalive_ping_locked;
   /// Closure to run when the keepalive ping is sent
   grpc_closure start_keepalive_ping_locked;
-  /// Cousure to run when the keepalive ping ack is received
+  /// Closure to run when the keepalive ping ack is received
   grpc_closure finish_keepalive_ping_locked;
-  /// Closrue to run when the keepalive ping timeouts
+  /// Closure to run when the keepalive ping timeouts
   grpc_closure keepalive_watchdog_fired_locked;
   /// timer to initiate ping events
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
@@ -468,7 +468,8 @@ struct grpc_chttp2_transport
   /// the peer
   bool enable_preferred_rx_crypto_frame_advertisement = false;
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine =
+      nullptr;
 };
 
 typedef enum {
