@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_CONFIG_H
 #define GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_CONFIG_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include <map>
