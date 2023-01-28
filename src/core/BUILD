@@ -1395,6 +1395,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_thread_local",
+    srcs = ["lib/event_engine/thread_local.cc"],
+    hdrs = ["lib/event_engine/thread_local.h"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "event_engine_thread_pool",
     srcs = ["lib/event_engine/thread_pool.cc"],
     hdrs = [
@@ -1407,6 +1414,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_executor",
+        "event_engine_thread_local",
         "forkable",
         "time",
         "useful",
