@@ -155,7 +155,7 @@ void ThreadPool::Quiesce() {
   // until the callstack unwinds a little, so we need to wait for just one
   // thread running instead of zero.
   state_->thread_count.BlockUntilThreadCount(
-      ThreadPool::IsEventEngineThread() ? 1 : 0, "shutting down");
+      ThreadLocal::IsEventEngineThread() ? 1 : 0, "shutting down");
   quiesced_.store(true, std::memory_order_relaxed);
 }
 
