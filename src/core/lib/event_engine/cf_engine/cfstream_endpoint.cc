@@ -32,7 +32,7 @@ absl::Status CFErrorToStatus(CFTypeUniqueRef<CFErrorRef> cf_error) {
   char desc_buf[256];
   CFStringGetCString(cf_domain, domain_buf, 256, kCFStringEncodingUTF8);
   CFStringGetCString(cf_desc, desc_buf, 256, kCFStringEncodingUTF8);
-  return absl::Status(absl::StatusCode::kInternal,
+  return absl::Status(absl::StatusCode::kUnknown,
                       absl::StrFormat("(domain:%s, code:%ld, description:%s)",
                                       domain_buf, code, desc_buf));
 }
@@ -59,16 +59,18 @@ void CFStreamEndpoint::Connect(EventEngine::OnConnectCallback on_connect,
                                EventEngine::ResolvedAddress addr,
                                EventEngine::Duration timeout) {
   peer_address_ = std::move(addr);
-  std::string host_port =
-      grpc_sockaddr_to_string(reinterpret_cast<const grpc_resolved_address*>(
-                                  peer_address_.address()),
-                              true)
-          .value();
+  auto host_port = ResolvedAddressToNormalizedString(peer_address_);
+  if (!host_port.ok()) {
+    on_connect(std::move(host_port).status());
+    delete this;
+    return;
+  }
+
   gpr_log(GPR_INFO, "CFStreamClient::connect, host_port: %s",
-          host_port.c_str());
+          host_port->c_str());
   std::string host_string;
   std::string port_string;
-  grpc_core::SplitHostPort(host_port, &host_string, &port_string);
+  grpc_core::SplitHostPort(host_port.value(), &host_string, &port_string);
   CFStringRef host = CFStringCreateWithCString(NULL, host_string.c_str(),
                                                kCFStringEncodingUTF8);
   int port = ResolvedAddressGetPort(peer_address_);
@@ -113,7 +115,7 @@ void CFStreamEndpoint::Connect(EventEngine::OnConnectCallback on_connect,
   open_event_.NotifyOn(new PosixEngineClosure(
       [this, on_connect = std::move(on_connect),
        connect_timeout_timer](absl::Status status) mutable {
-        engine_->Cancel(connect_timeout_timer);
+        bool canceled = engine_->Cancel(connect_timeout_timer);
 
         if (!status.ok()) {
           on_connect(std::move(status));
@@ -121,14 +123,14 @@ void CFStreamEndpoint::Connect(EventEngine::OnConnectCallback on_connect,
           return;
         }
 
-        auto status_or_local_addr = CFReadStreamLocallAddress(cf_read_stream_);
-        if (!status_or_local_addr.ok()) {
-          on_connect(std::move(status_or_local_addr).status());
+        auto local_addr = CFReadStreamLocallAddress(cf_read_stream_);
+        if (!local_addr.ok()) {
+          on_connect(std::move(local_addr).status());
           delete this;
           return;
         }
 
-        local_address_ = status_or_local_addr.value();
+        local_address_ = local_addr.value();
         on_connect(std::unique_ptr<EventEngine::Endpoint>(this));
       },
       false /* is_permanent */));
@@ -143,6 +145,7 @@ void CFStreamEndpoint::Connect(EventEngine::OnConnectCallback on_connect,
     case kCFStreamEventOpenCompleted:
       break;
     case kCFStreamEventHasBytesAvailable:
+      ABSL_FALLTHROUGH_INTENDED;
     case kCFStreamEventEndEncountered:
       self->read_event_.SetReady();
       break;
@@ -169,6 +172,7 @@ void CFStreamEndpoint::WriteCallback(CFWriteStreamRef stream,
       self->open_event_.SetReady();
       break;
     case kCFStreamEventCanAcceptBytes:
+      ABSL_FALLTHROUGH_INTENDED;
     case kCFStreamEventEndEncountered:
       self->write_event_.SetReady();
       break;
