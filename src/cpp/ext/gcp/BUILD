@@ -126,11 +126,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "auto_detect_resource_type",
-    srcs = ["auto_detect_resource_type.cc",],
-    hdrs = ["auto_detect_resource_type.h",],
+    srcs = ["auto_detect_resource_type.cc"],
+    hdrs = ["auto_detect_resource_type.h"],
     language = "c++",
     visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:gpr_platform",
-    ],
+    deps = ["//:gpr_platform"],
 )
