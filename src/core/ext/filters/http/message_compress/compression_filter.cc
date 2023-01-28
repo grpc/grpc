@@ -232,7 +232,7 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
         return CompressMessage(std::move(message), compression_algorithm);
       });
   auto* decompress_args = GetContext<Arena>()->New<DecompressArgs>(
-      DecompressArgs{GRPC_COMPRESS_NONE, absl::nullopt});
+      DecompressArgs{GRPC_COMPRESS_ALGORITHMS_COUNT, absl::nullopt});
   auto* decompress_err =
       GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
   call_args.server_initial_metadata->InterceptAndMap(
@@ -267,8 +267,11 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
       [decompress_err, decompress_args,
        this](MessageHandle message) -> absl::optional<MessageHandle> {
         auto r = DecompressMessage(std::move(message), decompress_args);
-        gpr_log(GPR_DEBUG, "DecompressMessage returned %s",
-                r.status().ToString().c_str());
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_DEBUG, "%s[compression] DecompressMessage returned %s",
+                  Activity::current()->DebugTag().c_str(),
+                  r.status().ToString().c_str());
+        }
         if (!r.ok()) {
           decompress_err->Set(ServerMetadataFromStatus(r.status()));
           return absl::nullopt;

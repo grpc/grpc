@@ -2227,7 +2227,7 @@ class PromiseBasedCall : public Call,
   void StartSendMessage(const grpc_op& op, const Completion& completion,
                         PipeSender<MessageHandle>* sender)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  bool PollSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void PollSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void CancelSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   bool completed() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -2585,22 +2585,18 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
   }
 }
 
-bool PromiseBasedCall::PollSendMessage() {
-  if (!outstanding_send_.has_value()) return true;
+void PromiseBasedCall::PollSendMessage() {
+  if (!outstanding_send_.has_value()) return;
   Poll<bool> r = (*outstanding_send_)();
   if (const bool* result = absl::get_if<bool>(&r)) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%sPollSendMessage completes %s", DebugTag().c_str(),
               *result ? "successfully" : "with failure");
     }
-    if (!*result) {
-      FailCompletion(send_message_completion_);
-      return false;
-    }
+    if (!*result) FailCompletion(send_message_completion_);
     FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
     outstanding_send_.reset();
   }
-  return true;
 }
 
 void PromiseBasedCall::CancelSendMessage() {
@@ -2817,7 +2813,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       recv_status_on_client_ ABSL_GUARDED_BY(mu());
   absl::optional<PipeReceiverNextType<ServerMetadataHandle>>
       server_initial_metadata_ready_;
-  absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
   Completion close_send_completion_ ABSL_GUARDED_BY(mu());
@@ -2994,10 +2989,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
       PublishInitialMetadata(&no_metadata);
     }
   }
-  if (!PollSendMessage()) {
-    Finish(ServerMetadataFromStatus(absl::Status(
-        absl::StatusCode::kInternal, "Failed to send message to server")));
-  }
+  PollSendMessage();
   if (!is_sending() && close_send_completion_.has_value()) {
     client_to_server_messages_.sender.Close();
     FinishOpOnCompletion(&close_send_completion_,
@@ -3017,8 +3009,8 @@ void ClientPromiseBasedCall::UpdateOnce() {
       Finish(std::move(*result));
     }
   }
-  if (incoming_compression_algorithm_.has_value()) {
-    PollRecvMessage(*incoming_compression_algorithm_);
+  if (!server_initial_metadata_ready_.has_value()) {
+    PollRecvMessage(incoming_compression_algorithm());
   }
 }
 
