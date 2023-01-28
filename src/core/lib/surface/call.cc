@@ -2983,7 +2983,12 @@ void ClientPromiseBasedCall::UpdateOnce() {
         (*server_initial_metadata_ready_)();
     if (auto* server_initial_metadata =
             absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
-      PublishInitialMetadata(server_initial_metadata->value().get());
+      if (server_initial_metadata->has_value()) {
+        PublishInitialMetadata(server_initial_metadata->value().get());
+      } else {
+        ServerMetadata no_metadata{GetContext<Arena>()};
+        PublishInitialMetadata(&no_metadata);
+      }
     } else if (completed()) {
       ServerMetadata no_metadata{GetContext<Arena>()};
       PublishInitialMetadata(&no_metadata);
@@ -3037,8 +3042,18 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
       (*server_initial_metadata_ready_)();
   server_initial_metadata_ready_.reset();
   if (auto* result = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
-    if (pending_initial_metadata) PublishInitialMetadata(result->value().get());
-    is_trailers_only_ = false;
+    if (pending_initial_metadata) {
+      if (result->has_value()) {
+        PublishInitialMetadata(result->value().get());
+        is_trailers_only_ = false;
+      } else {
+        ServerMetadata no_metadata{GetContext<Arena>()};
+        PublishInitialMetadata(&no_metadata);
+        is_trailers_only_ = true;
+      }
+    } else {
+      is_trailers_only_ = false;
+    }
   } else {
     if (pending_initial_metadata) {
       ServerMetadata no_metadata{GetContext<Arena>()};

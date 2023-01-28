@@ -480,7 +480,7 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
   }
 
   const uint8_t* last = haystack_bytes + haystack_len - needle_len;
-  for (const uint8_t* cur = haystack_bytes; cur != last; ++cur) {
+  for (const uint8_t* cur = haystack_bytes; cur <= last; ++cur) {
     if (0 == memcmp(cur, needle_bytes, needle_len)) {
       return static_cast<int>(cur - haystack_bytes);
     }

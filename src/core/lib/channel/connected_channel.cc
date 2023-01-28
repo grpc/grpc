@@ -475,7 +475,15 @@ class ConnectedChannelStream : public Orphanable {
     return Match(
         recv_message_state_, [](Idle) -> std::string { return "IDLE"; },
         [](Closed) -> std::string { return "CLOSED"; },
-        [](const PendingReceiveMessage&) -> std::string { return "WAITING"; },
+        [](const PendingReceiveMessage& m) -> std::string {
+          if (m.received) {
+            return absl::StrCat("RECEIVED_FROM_TRANSPORT:",
+                                m.payload.has_value()
+                                    ? absl::StrCat(m.payload->Length(), "b")
+                                    : "EOS");
+          }
+          return "WAITING";
+        },
         [](const absl::optional<MessageHandle>& message) -> std::string {
           return absl::StrCat(
               "READY:", message.has_value()
@@ -567,13 +575,7 @@ class ConnectedChannelStream : public Orphanable {
   void RecvMessageBatchDone(grpc_error_handle error) {
     {
       MutexLock lock(mu());
-      if (error != absl::OkStatus()) {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%s[connected] RecvMessageBatchDone: error=%s",
-                  recv_message_waker_.ActivityDebugTag().c_str(),
-                  StatusToString(error).c_str());
-        }
-      } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
+      if (absl::holds_alternative<Closed>(recv_message_state_)) {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO,
                   "%s[connected] RecvMessageBatchDone: already closed, "
@@ -581,14 +583,21 @@ class ConnectedChannelStream : public Orphanable {
                   recv_message_waker_.ActivityDebugTag().c_str());
         }
       } else {
-        if (grpc_call_trace.enabled()) {
+        auto pending =
+            absl::get_if<PendingReceiveMessage>(&recv_message_state_);
+        GPR_ASSERT(pending != nullptr);
+        if (!error.ok()) {
+          if (grpc_call_trace.enabled()) {
+            gpr_log(GPR_INFO, "%s[connected] RecvMessageBatchDone: error=%s",
+                    recv_message_waker_.ActivityDebugTag().c_str(),
+                    StatusToString(error).c_str());
+          }
+          pending->payload.reset();
+        } else if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO,
                   "%s[connected] RecvMessageBatchDone: received message",
                   recv_message_waker_.ActivityDebugTag().c_str());
         }
-        auto pending =
-            absl::get_if<PendingReceiveMessage>(&recv_message_state_);
-        GPR_ASSERT(pending != nullptr);
         GPR_ASSERT(pending->received == false);
         pending->received = true;
       }
@@ -748,9 +757,21 @@ class ClientStream : public ConnectedChannelStream {
         server_initial_metadata_push_promise_.reset();
       }
     }
+    if (server_initial_metadata_state_ == ServerInitialMetadataState::kError) {
+      server_initial_metadata_pipe_->Close();
+    }
     PollSendMessage(client_to_server_messages_, &client_trailing_metadata_);
     PollRecvMessage(server_to_client_messages_);
-    if (server_initial_metadata_state_ == ServerInitialMetadataState::kPushed &&
+    if (grpc_call_trace.enabled()) {
+      gpr_log(
+          GPR_INFO,
+          "%s[connected] Finishing PollConnectedChannel: requesting metadata",
+          Activity::current()->DebugTag().c_str());
+    }
+    if ((server_initial_metadata_state_ ==
+             ServerInitialMetadataState::kPushed ||
+         server_initial_metadata_state_ ==
+             ServerInitialMetadataState::kError) &&
         !IsPromiseReceiving() &&
         std::exchange(queued_trailing_metadata_, false)) {
       if (grpc_call_trace.enabled()) {
@@ -858,6 +879,18 @@ class ClientStream : public ConnectedChannelStream {
     if (queued_trailing_metadata_) queued.push_back("trailing_metadata");
     if (!queued.empty()) {
       ops.push_back(absl::StrCat("queued:", absl::StrJoin(queued, ",")));
+    }
+    switch (server_initial_metadata_state_) {
+      case ServerInitialMetadataState::kNotReceived:
+      case ServerInitialMetadataState::kReceivedButNotPushed:
+      case ServerInitialMetadataState::kPushed:
+        break;
+      case ServerInitialMetadataState::kPushing:
+        ops.push_back("server_initial_metadata:PUSHING");
+        break;
+      case ServerInitialMetadataState::kError:
+        ops.push_back("server_initial_metadata:ERROR");
+        break;
     }
     // Send message
     std::string send_message_state = SendMessageString();
