@@ -204,6 +204,8 @@ bool grpc_call_is_trailers_only(const grpc_call* call);
 // Returns the authority for the call, as seen on the server side.
 absl::string_view grpc_call_server_authority(const grpc_call* call);
 
+bool grpc_call_is_promise_based(grpc_call* call);
+
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;
 

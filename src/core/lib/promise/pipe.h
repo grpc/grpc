@@ -465,6 +465,7 @@ class Push {
   Push& operator=(Push&& other) noexcept = default;
 
   Poll<bool> operator()() {
+    if (center_ == nullptr) return false;
     if (auto* p = absl::get_if<T>(&state_)) {
       auto r = center_->Push(p);
       if (auto* ok = absl::get_if<bool>(&r)) {
@@ -511,7 +512,8 @@ class Next {
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
-  return pipe_detail::Push<T>(center_->Ref(), std::move(value));
+  return pipe_detail::Push<T>(center_ == nullptr ? nullptr : center_->Ref(),
+                              std::move(value));
 }
 
 template <typename T>

@@ -113,6 +113,7 @@ class Call : public CppImplOf<Call, grpc_call> {
  public:
   Arena* arena() { return arena_; }
   bool is_client() const { return is_client_; }
+  virtual bool is_promise_based() const = 0;
 
   virtual void ContextSet(grpc_context_index elem, void* value,
                           void (*destroy)(void* value)) = 0;
@@ -482,6 +483,8 @@ class FilterStackCall final : public Call {
     }
     gpr_free(static_cast<void*>(const_cast<char*>(final_info_.error_string)));
   }
+
+  bool is_promise_based() const override { return false; }
 
   bool Completed() override {
     return gpr_atm_acq_load(&received_final_op_atm_) != 0;
@@ -1885,6 +1888,8 @@ class PromiseBasedCall : public Call,
  public:
   PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                    const grpc_call_create_args& args);
+
+  bool is_promise_based() const override { return true; }
 
   void ContextSet(grpc_context_index elem, void* value,
                   void (*destroy)(void* value)) override;

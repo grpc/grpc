@@ -40,6 +40,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -448,12 +449,23 @@ static grpc_error_handle init_channel_elem(
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_filter = {
-    grpc_call_next_op,    nullptr,
-    grpc_channel_next_op, 0,
-    init_call_elem,       grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,    0,
-    init_channel_elem,    grpc_channel_stack_no_post_init,
-    destroy_channel_elem, grpc_channel_next_get_info,
+    grpc_call_next_op,
+    [](grpc_channel_element*, grpc_core::CallArgs,
+       grpc_core::NextPromiseFactory)
+        -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
+      return grpc_core::Immediate(grpc_core::ServerMetadataFromStatus(
+          absl::PermissionDeniedError("access denied")));
+    },
+    grpc_channel_next_op,
+    0,
+    init_call_elem,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    destroy_call_elem,
+    0,
+    init_channel_elem,
+    grpc_channel_stack_no_post_init,
+    destroy_channel_elem,
+    grpc_channel_next_get_info,
     "filter_init_fails"};
 
 //******************************************************************************

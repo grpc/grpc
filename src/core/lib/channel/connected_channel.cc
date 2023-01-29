@@ -71,6 +71,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
@@ -808,10 +809,13 @@ class ClientStream : public ConnectedChannelStream {
   void RecvTrailingMetadataReady(grpc_error_handle error) {
     if (!error.ok()) {
       server_trailing_metadata_->Clear();
-      server_trailing_metadata_->Set(
-          GrpcStatusMetadata(), static_cast<grpc_status_code>(error.code()));
+      grpc_status_code status = GRPC_STATUS_UNKNOWN;
+      std::string message;
+      grpc_error_get_status(error, Timestamp::InfFuture(), &status, &message,
+                            nullptr, nullptr);
+      server_trailing_metadata_->Set(GrpcStatusMetadata(), status);
       server_trailing_metadata_->Set(GrpcMessageMetadata(),
-                                     Slice::FromCopiedString(error.message()));
+                                     Slice::FromCopiedString(message));
     }
     {
       MutexLock lock(mu());
