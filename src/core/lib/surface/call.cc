@@ -2142,10 +2142,23 @@ class PromiseBasedCall : public Call,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Stringify a completion
   std::string CompletionString(const Completion& completion) const {
+    auto& pending = completion_info_[completion.index()].pending;
+    const char* success_string = ":unknown";
+    switch (pending.success) {
+      case CompletionSuccess::kSuccess:
+        success_string = "";
+        break;
+      case CompletionSuccess::kFailure:
+        success_string = ":failure";
+        break;
+      case CompletionSuccess::kForceSuccess:
+        success_string = ":force-success";
+        break;
+    }
     return completion.has_value()
-               ? absl::StrFormat(
-                     "%d:tag=%p", static_cast<int>(completion.index()),
-                     completion_info_[completion.index()].pending.tag)
+               ? absl::StrFormat("%d:tag=%p%s",
+                                 static_cast<int>(completion.index()),
+                                 pending.tag, success_string)
                : "no-completion";
   }
   // Finish one op on the completion. Must have been previously been added.
@@ -2239,13 +2252,13 @@ class PromiseBasedCall : public Call,
   }
 
  private:
+  enum class CompletionSuccess : uint8_t { kSuccess, kFailure, kForceSuccess };
   union CompletionInfo {
     struct Pending {
       // Bitmask of PendingOps
       uint8_t pending_op_bits;
       bool is_closure;
-      bool success;
-      bool force_success;
+      CompletionSuccess success;
       void* tag;
     } pending;
     grpc_cq_completion completion;
@@ -2258,8 +2271,8 @@ class PromiseBasedCall : public Call,
     // Ref the Handle (not the activity).
     void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
 
-    // Activity is going away... drop its reference and sever the connection
-    // back.
+    // Activity is going away... drop its reference and sever the
+    // connection back.
     void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
       auto unref = absl::MakeCleanup([this]() { Unref(); });
       MutexLock lock(&mu_);
@@ -2267,21 +2280,21 @@ class PromiseBasedCall : public Call,
       call_ = nullptr;
     }
 
-    // Activity needs to wake up (if it still exists!) - wake it up, and drop
-    // the ref that was kept for this handle.
+    // Activity needs to wake up (if it still exists!) - wake it up,
+    // and drop the ref that was kept for this handle.
     void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
-      // Drop the ref to the handle at end of scope (we have one ref = one
-      // wakeup semantics).
+      // Drop the ref to the handle at end of scope (we have one ref
+      // = one wakeup semantics).
       auto unref = absl::MakeCleanup([this]() { Unref(); });
       ReleasableMutexLock lock(&mu_);
-      // Note that activity refcount can drop to zero, but we could win the lock
-      // against DropActivity, so we need to only increase activities refcount
-      // if it is non-zero.
+      // Note that activity refcount can drop to zero, but we could
+      // win the lock against DropActivity, so we need to only
+      // increase activities refcount if it is non-zero.
       if (call_ != nullptr && call_->RefIfNonZero()) {
         PromiseBasedCall* call = call_;
         lock.Release();
-        // Activity still exists and we have a reference: wake it up, which will
-        // drop the ref.
+        // Activity still exists and we have a reference: wake it up,
+        // which will drop the ref.
         call->Wakeup();
       }
     }
@@ -2302,9 +2315,9 @@ class PromiseBasedCall : public Call,
     }
 
     mutable Mutex mu_;
-    // We have two initial refs: one for the wakeup that this is created for,
-    // and will be dropped by Wakeup, and the other for the activity which is
-    // dropped by DropActivity.
+    // We have two initial refs: one for the wakeup that this is
+    // created for, and will be dropped by Wakeup, and the other for
+    // the activity which is dropped by DropActivity.
     std::atomic<size_t> refs_{2};
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
@@ -2446,7 +2459,8 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     grpc_cq_begin_op(cq(), tag);
   }
   completion_info_[c.index()].pending = {
-      PendingOpBit(PendingOp::kStartingBatch), is_closure, true, false, tag};
+      PendingOpBit(PendingOp::kStartingBatch), is_closure,
+      CompletionSuccess::kSuccess, tag};
   return c;
 }
 
@@ -2471,11 +2485,27 @@ void PromiseBasedCall::FailCompletion(const Completion& completion,
             "%s[call] FailCompletion %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
   }
-  completion_info_[completion.index()].pending.success = false;
+  auto& success = completion_info_[completion.index()].pending.success;
+  switch (success) {
+    case CompletionSuccess::kSuccess:
+      success = CompletionSuccess::kFailure;
+      break;
+    case CompletionSuccess::kFailure:
+    case CompletionSuccess::kForceSuccess:
+      break;
+  }
 }
 
 void PromiseBasedCall::ForceCompletionSuccess(const Completion& completion) {
-  completion_info_[completion.index()].pending.force_success = true;
+  auto& success = completion_info_[completion.index()].pending.success;
+  switch (success) {
+    case CompletionSuccess::kSuccess:
+    case CompletionSuccess::kFailure:
+      success = CompletionSuccess::kForceSuccess;
+      break;
+    case CompletionSuccess::kForceSuccess:
+      break;
+  }
 }
 
 void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
@@ -2483,7 +2513,8 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
   if (grpc_call_trace.enabled()) {
     auto pending_op_bits =
         completion_info_[completion->index()].pending.pending_op_bits;
-    bool success = completion_info_[completion->index()].pending.success;
+    bool success = completion_info_[completion->index()].pending.success !=
+                   CompletionSuccess::kFailure;
     std::vector<const char*> pending;
     for (size_t i = 0; i < 8 * sizeof(pending_op_bits); i++) {
       if (static_cast<PendingOp>(i) == reason) continue;
@@ -2493,7 +2524,8 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
     }
     gpr_log(
         GPR_INFO,
-        "%s[call] FinishOpOnCompletion tag:%p completion:%s finish:%s %s",
+        "%s[call] FinishOpOnCompletion tag:%p completion:%s "
+        "finish:%s %s",
         DebugTag().c_str(), completion_info_[completion->index()].pending.tag,
         CompletionString(*completion).c_str(), PendingOpString(reason),
         (pending.empty()
@@ -2506,9 +2538,9 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
   CompletionInfo::Pending& pending = completion_info_[i].pending;
   GPR_ASSERT(pending.pending_op_bits & PendingOpBit(reason));
   pending.pending_op_bits &= ~PendingOpBit(reason);
-  const bool success = pending.force_success || pending.success;
-  auto error = success ? absl::OkStatus() : absl::CancelledError();
   if (pending.pending_op_bits == 0) {
+    const bool success = pending.success != CompletionSuccess::kFailure;
+    auto error = success ? absl::OkStatus() : absl::CancelledError();
     if (pending.is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
                    error);
@@ -2635,7 +2667,8 @@ void PromiseBasedCall::PollRecvMessage(
                                   &(*recv_message_)->data.raw.slice_buffer);
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv "
+                "finishes: received "
                 "%" PRIdPTR " byte message",
                 DebugTag().c_str(),
                 (*recv_message_)->data.raw.slice_buffer.length);
@@ -2643,7 +2676,8 @@ void PromiseBasedCall::PollRecvMessage(
     } else if (result->cancelled()) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv "
+                "finishes: received "
                 "end-of-stream with error",
                 DebugTag().c_str());
       }
@@ -2652,7 +2686,8 @@ void PromiseBasedCall::PollRecvMessage(
     } else {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv "
+                "finishes: received "
                 "end-of-stream",
                 DebugTag().c_str());
       }
@@ -2662,8 +2697,10 @@ void PromiseBasedCall::PollRecvMessage(
   } else if (completed_) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "%s[call] UpdateOnce: outstanding_recv finishes: promise has "
-              "completed without queuing a message, forcing end-of-stream",
+              "%s[call] UpdateOnce: outstanding_recv finishes: "
+              "promise has "
+              "completed without queuing a message, forcing "
+              "end-of-stream",
               DebugTag().c_str());
     }
     outstanding_recv_.reset();
@@ -2750,9 +2787,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     send_initial_metadata_.reset();
     recv_status_on_client_ = absl::monostate();
     promise_ = ArenaPromise<ServerMetadataHandle>();
-    // Need to destroy the pipes under the ScopedContext above, so we move them
-    // out here and then allow the destructors to run at end of scope, but
-    // before context.
+    // Need to destroy the pipes under the ScopedContext above, so we
+    // move them out here and then allow the destructors to run at
+    // end of scope, but before context.
     auto c2s = std::move(client_to_server_messages_);
     auto s2c = std::move(server_to_client_messages_);
     auto sim = std::move(server_initial_metadata_);
@@ -3181,9 +3218,10 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  private:
   class RecvCloseOpCancelState {
    public:
-    // Request that receiver be filled in per grpc_op_recv_close_on_server.
-    // Returns true if the request can be fulfilled immediately.
-    // Returns false if the request will be fulfilled later.
+    // Request that receiver be filled in per
+    // grpc_op_recv_close_on_server. Returns true if the request can
+    // be fulfilled immediately. Returns false if the request will be
+    // fulfilled later.
     bool ReceiveCloseOnServerOpStarted(int* receiver) {
       switch (state_) {
         case kUnset:
@@ -3201,7 +3239,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     }
 
     // Mark the call as having completed.
-    // Returns true if this finishes a previous RequestReceiveCloseOnServer.
+    // Returns true if this finishes a previous
+    // RequestReceiveCloseOnServer.
     bool CompleteCall(bool success) {
       switch (state_) {
         case kUnset:
@@ -3235,8 +3274,9 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     static constexpr uintptr_t kUnset = 0;
     static constexpr uintptr_t kFinishedWithFailure = 1;
     static constexpr uintptr_t kFinishedWithSuccess = 2;
-    // Holds one of kUnset, kFinishedWithFailure, or kFinishedWithSuccess
-    // OR an int* that wants to receive the final status.
+    // Holds one of kUnset, kFinishedWithFailure, or
+    // kFinishedWithSuccess OR an int* that wants to receive the
+    // final status.
     uintptr_t state_ = kUnset;
   };
 
@@ -3536,6 +3576,7 @@ void ServerPromiseBasedCall::CommitBatchAfterCompletion(
                   DebugTag().c_str(),
                   recv_close_op_cancel_state_.ToString().c_str());
         }
+        ForceCompletionSuccess(completion);
         GPR_ASSERT(recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
             op.data.recv_close_on_server.cancelled));
         break;
