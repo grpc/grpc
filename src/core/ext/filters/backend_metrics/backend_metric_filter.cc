@@ -22,28 +22,37 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
   upb::Arena arena;
   xds_data_orca_v3_OrcaLoadReport* response =
       xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
+  bool has_data = false;
   if (data.cpu_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(response,
                                                         data.cpu_utilization);
+    has_data = true;
   }
   if (data.mem_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
                                                         data.mem_utilization);
+    has_data = true;
   }
   if (data.qps != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
+    has_data = true;
   }
   for (const auto& p : data.request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(
         response,
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
         p.second, arena.ptr());
+    has_data = true;
   }
   for (const auto& p : data.utilization) {
     xds_data_orca_v3_OrcaLoadReport_utilization_set(
         response,
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
         p.second, arena.ptr());
+    has_data = true;
+  }
+  if (!has_data) {
+    return absl::nullopt;
   }
   size_t len;
   char* buf =

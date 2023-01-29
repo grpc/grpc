@@ -3634,7 +3634,6 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     language = "c++",
-    deps = [ "//:gpr_platform", ],
 )
 
 grpc_cc_library(

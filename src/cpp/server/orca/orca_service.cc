@@ -169,7 +169,8 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
 OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
                          Options options)
-    : server_metric_recorder_(server_metric_recorder),
+    : server_metric_recorder_(
+          static_cast<ServerMetricRecorderImpl*>(server_metric_recorder)),
       min_report_duration_(options.min_report_duration) {
   GPR_ASSERT(server_metric_recorder_ != nullptr);
   AddMethod(new internal::RpcServiceMethod(
@@ -184,9 +185,10 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
 
 Slice OrcaService::GetOrCreateSerializedResponse() {
   grpc::internal::MutexLock lock(&mu_);
-  std::shared_ptr<const grpc_core::BackendMetricDataState> result =
-      server_metric_recorder_->GetMetricsIfChanged(response_slice_seq_);
-  if (result != nullptr) {
+  std::shared_ptr<const ServerMetricRecorderImpl::BackendMetricDataState>
+      result = server_metric_recorder_->GetMetricsIfChanged();
+  if (!response_slice_seq_.has_value() ||
+      *response_slice_seq_ != result->sequence_number) {
     const auto& data = result->data;
     upb::Arena arena;
     xds_data_orca_v3_OrcaLoadReport* response =
@@ -212,7 +214,7 @@ Slice OrcaService::GetOrCreateSerializedResponse() {
     char* buf = xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(),
                                                           &buf_length);
     response_slice_.emplace(buf, buf_length);
-    response_slice_seq_ = result->seq;
+    response_slice_seq_ = result->sequence_number;
   }
   return Slice(*response_slice_);
 }

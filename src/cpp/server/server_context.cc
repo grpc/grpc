@@ -59,7 +59,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/call.h"
-#include "src/cpp/server/backend_metric_recorder.h"
+#include "src/cpp/server/backend_metric_state.h"
 
 namespace grpc {
 
