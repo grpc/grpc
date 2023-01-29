@@ -810,10 +810,8 @@ class ClientStream : public ConnectedChannelStream {
       server_trailing_metadata_->Clear();
       server_trailing_metadata_->Set(
           GrpcStatusMetadata(), static_cast<grpc_status_code>(error.code()));
-      server_trailing_metadata_->Set(
-          GrpcMessageMetadata(),
-          Slice::FromCopiedString(
-              absl::StrCat("Error received from peer: ", error.message())));
+      server_trailing_metadata_->Set(GrpcMessageMetadata(),
+                                     Slice::FromCopiedString(error.message()));
     }
     {
       MutexLock lock(mu());
