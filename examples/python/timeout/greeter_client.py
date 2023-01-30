@@ -19,9 +19,8 @@ import logging
 
 import grpc
 
-helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
-
+import helloworld_pb2
+import helloworld_pb2_grpc
 
 def unary_call(stub: helloworld_pb2_grpc.GreeterStub, request_id: int,
                message: str):

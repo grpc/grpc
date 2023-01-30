@@ -19,8 +19,8 @@ from time import sleep
 
 import grpc
 
-helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+import helloworld_pb2
+import helloworld_pb2_grpc
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):

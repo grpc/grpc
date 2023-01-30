@@ -20,6 +20,10 @@ ARTIFACTS += helloworld/helloworld_pb2.py
 ARTIFACTS += helloworld/helloworld_pb2_grpc.py
 ARTIFACTS += helloworld/helloworld_pb2.pyi
 
+ARTIFACTS += timeout/helloworld_pb2.py
+ARTIFACTS += timeout/helloworld_pb2_grpc.py
+ARTIFACTS += timeout/helloworld_pb2.pyi
+
 ARTIFACTS += async_streaming/phone_pb2.py
 ARTIFACTS += async_streaming/phone_pb2_grpc.py
 ARTIFACTS += async_streaming/phone_pb2.pyi
@@ -69,6 +73,9 @@ all: ${ARTIFACTS}
 
 helloworld/helloworld_pb2.py helloworld/helloworld_pb2_grpc.py helloworld/helloworld_pb2.pyi: ../protos/helloworld.proto
 	python3 -m grpc_tools.protoc --python_out=helloworld --grpc_python_out=helloworld --pyi_out=helloworld -I ../protos ../protos/helloworld.proto
+
+timeout/helloworld_pb2.py timeout/helloworld_pb2_grpc.py timeout/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=timeout --grpc_python_out=timeout --pyi_out=timeout -I ../protos ../protos/helloworld.proto
 
 async_streaming/phone_pb2.py async_streaming/phone_pb2_grpc.py async_streaming/phone_pb2.pyi: async_streaming/phone.proto
 	python3 -m grpc_tools.protoc --python_out=async_streaming --grpc_python_out=async_streaming --pyi_out=async_streaming -I async_streaming async_streaming/phone.proto
