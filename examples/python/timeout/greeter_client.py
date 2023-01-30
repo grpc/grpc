@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import grpc
 
 import helloworld_pb2
 import helloworld_pb2_grpc
+
 
 def unary_call(stub: helloworld_pb2_grpc.GreeterStub, request_id: int,
                message: str):

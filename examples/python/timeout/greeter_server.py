@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,8 +33,33 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 
 def serve():
+    """
+    grpc.keepalive_time_ms: The period (in milliseconds) after which a keepalive ping is
+        sent on the transport.
+    grpc.keepalive_timeout_ms: The amount of time (in milliseconds) the sender of the keepalive
+        ping waits for an acknowledgement. If it does not receive an acknowledgment within
+        this time, it will close the connection.
+    grpc.http2.min_ping_interval_without_data_ms: Minimum allowed time (in milliseconds)
+        between a serverreceiving successive ping frames without sending any data/header frame.
+    grpc.max_connection_idle_ms: Maximum time (in milliseconds) that a channel may have no
+        outstanding rpcs, after which the server will close the connection.
+    grpc.max_connection_age_ms: Maximum time (in milliseconds) that a channel may exist.
+    grpc.max_connection_age_grace_ms: Grace period (in milliseconds) after the channel
+        reaches its max age.
+    grpc.keepalive_permit_without_calls: If set to 1 (0 : false; 1 : true), allows keepalive
+        pings to be sent even if there are no calls in flight.
+    For more details, check: https://github.com/grpc/grpc/blob/master/doc/keepalive.md
+    """
+    server_options = [('grpc.keepalive_time_ms', 5000),
+                      ('grpc.keepalive_timeout_ms', 1000),
+                      ('grpc.http2.min_ping_interval_without_data_ms', 5000),
+                      ('grpc.max_connection_idle_ms', 15000),
+                      ('grpc.max_connection_age_ms', 30000),
+                      ('grpc.max_connection_age_grace_ms', 5000),
+                      ('grpc.keepalive_permit_without_calls', 1)]
     port = '50051'
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(thread_pool=futures.ThreadPoolExecutor(max_workers=10),
+                         options=server_options)
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     server.add_insecure_port('[::]:' + port)
     server.start()
