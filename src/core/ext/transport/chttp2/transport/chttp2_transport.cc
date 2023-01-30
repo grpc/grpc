@@ -174,7 +174,7 @@ static void start_bdp_ping(void* tp, grpc_error_handle error);
 static void finish_bdp_ping(void* tp, grpc_error_handle error);
 static void start_bdp_ping_locked(void* tp, grpc_error_handle error);
 static void finish_bdp_ping_locked(void* tp, grpc_error_handle error);
-static void next_bdp_ping_timer_expired(grpc_chttp2_transport* tp);
+static void next_bdp_ping_timer_expired(grpc_chttp2_transport* t);
 static void next_bdp_ping_timer_expired_locked(void* tp,
                                                grpc_error_handle error);
 
@@ -538,7 +538,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   // No pings allowed before receiving a header or data frame.
   ping_state.pings_before_data_required = 0;
-  ping_state.is_delayed_ping_timer_set = false;
   ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
 
   ping_recv_state.last_ping_recv_time = grpc_core::Timestamp::InfPast();
@@ -600,8 +599,11 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
-    if (t->ping_state.is_delayed_ping_timer_set) {
-      grpc_timer_cancel(&t->ping_state.delayed_ping_timer);
+    if (t->ping_state.delayed_ping_timer_handle) {
+      if (t->event_engine->Cancel(*t->ping_state.delayed_ping_timer_handle)) {
+        GRPC_CHTTP2_UNREF_TRANSPORT(t, "retry_initiate_ping_locked");
+        t->ping_state.delayed_ping_timer_handle.reset();
+      }
     }
     if (t->next_bdp_ping_timer_handle) {
       if (t->event_engine->Cancel(*t->next_bdp_ping_timer_handle)) {
@@ -1577,19 +1579,17 @@ static void send_keepalive_ping_locked(grpc_chttp2_transport* t) {
       absl::OkStatus());
 }
 
-void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error) {
-  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
+void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t) {
   t->combiner->Run(GRPC_CLOSURE_INIT(&t->retry_initiate_ping_locked,
                                      retry_initiate_ping_locked, t, nullptr),
-                   error);
+                   absl::OkStatus());
 }
 
 static void retry_initiate_ping_locked(void* tp, grpc_error_handle error) {
+  GPR_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  t->ping_state.is_delayed_ping_timer_set = false;
-  if (error.ok()) {
-    grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING);
-  }
+  t->ping_state.delayed_ping_timer_handle.reset();
+  grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING);
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "retry_initiate_ping_locked");
 }
 
@@ -2555,10 +2555,10 @@ static void finish_bdp_ping_locked(void* tp, grpc_error_handle error) {
       });
 }
 
-static void next_bdp_ping_timer_expired(grpc_chttp2_transport* tp) {
-  tp->combiner->Run(
-      GRPC_CLOSURE_INIT(&tp->next_bdp_ping_timer_expired_locked,
-                        next_bdp_ping_timer_expired_locked, tp, nullptr),
+static void next_bdp_ping_timer_expired(grpc_chttp2_transport* t) {
+  t->combiner->Run(
+      GRPC_CLOSURE_INIT(&t->next_bdp_ping_timer_expired_locked,
+                        next_bdp_ping_timer_expired_locked, t, nullptr),
       absl::OkStatus());
 }
 
@@ -2568,10 +2568,6 @@ static void next_bdp_ping_timer_expired_locked(void* tp,
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   GPR_ASSERT(t->next_bdp_ping_timer_handle);
   t->next_bdp_ping_timer_handle.reset();
-  if (!error.ok()) {
-    GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
-    return;
-  }
   if (t->flow_control.bdp_estimator()->accumulator() == 0) {
     // Block the bdp ping till we receive more data.
     t->bdp_ping_blocked = true;

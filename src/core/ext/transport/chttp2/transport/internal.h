@@ -59,7 +59,6 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -149,8 +148,8 @@ struct grpc_chttp2_repeated_ping_policy {
 struct grpc_chttp2_repeated_ping_state {
   grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
-  grpc_timer delayed_ping_timer;
-  bool is_delayed_ping_timer_set;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      delayed_ping_timer_handle;
 };
 struct grpc_chttp2_server_ping_recv_state {
   grpc_core::Timestamp last_ping_recv_time;
@@ -806,7 +805,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
 
-void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
+void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t);
 
 void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 
