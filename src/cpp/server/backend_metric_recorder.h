@@ -22,6 +22,7 @@
 #include <map>
 
 #include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 
 #include "src/core/ext/filters/backend_metrics/backend_metric_provider.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"

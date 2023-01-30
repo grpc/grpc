@@ -105,7 +105,7 @@ void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
       GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
         if (builder->channel_args().Contains(
                 GRPC_ARG_SERVER_CALL_METRIC_RECORDING)) {
-          builder->PrependFilter(&grpc_core::BackendMetricFilter::kFilter);
+          builder->PrependFilter(&BackendMetricFilter::kFilter);
         }
         return true;
       });
