@@ -204,6 +204,14 @@ static void check_verified_root_cert_subject(
             0);
 }
 
+static void check_verified_root_cert_subject_unset(
+    ssl_tsi_test_fixture* /*ssl_fixture*/, const tsi_peer* peer) {
+  const tsi_peer_property* verified_root_cert_subject =
+      tsi_peer_get_property_by_name(
+          peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
+  ASSERT_EQ(verified_root_cert_subject, nullptr);
+}
+
 static void check_alpn(ssl_tsi_test_fixture* ssl_fixture,
                        const tsi_peer* peer) {
   ASSERT_NE(ssl_fixture, nullptr);
@@ -375,6 +383,8 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_security_level(&peer);
     if (!ssl_fixture->session_reused) {
       check_verified_root_cert_subject(ssl_fixture, &peer);
+    } else {
+      check_verified_root_cert_subject_unset(ssl_fixture, &peer);
     }
     if (ssl_fixture->server_name_indication == nullptr ||
         strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
@@ -397,6 +407,8 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_security_level(&peer);
     if (ssl_fixture->force_client_auth && !ssl_fixture->session_reused) {
       check_verified_root_cert_subject(ssl_fixture, &peer);
+    } else {
+      check_verified_root_cert_subject_unset(ssl_fixture, &peer);
     }
     check_client_peer(ssl_fixture, &peer);
   } else {
