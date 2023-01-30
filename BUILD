@@ -1991,7 +1991,6 @@ grpc_cc_library(
         "src/cpp/server/backend_metric_state.h"
     ],
     language = "c++",
-    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "grpcpp_call_metric_recorder",
