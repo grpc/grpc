@@ -27,7 +27,6 @@
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "thread_pool.h"
 
 #include <grpc/support/log.h>
 
