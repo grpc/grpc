@@ -787,10 +787,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Sends an RPC with the specified options.
   // If response is non-null, it will be populated with the response.
   // Returns the status of the RPC.
-  Status SendRpc(
-      const RpcOptions& rpc_options = RpcOptions(),
-      EchoResponse* response = nullptr,
-      std::map<std::string, std::string, std::less<>>* metadata = nullptr);
+  Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
+                 EchoResponse* response = nullptr,
+                 std::multimap<std::string, std::string>*
+                     server_initial_metadata = nullptr);
 
   // Internal helper function for SendRpc().
   template <typename Stub>
@@ -815,19 +815,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     EchoResponse response;
     std::map<std::string, std::string> initial_metadata;
   };
-  void SendRpcsUntil(
-      const grpc_core::DebugLocation& debug_location,
-      std::function<bool(const RpcResult&)> continue_predicate,
-      int timeout_ms = 15000, const RpcOptions& rpc_options = RpcOptions(),
-      std::vector<std::map<std::string, std::string, std::less<>>>*
-          responses_initial_metadata = nullptr);
+  void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
+                     std::function<bool(const RpcResult&)> continue_predicate,
+                     int timeout_ms = 15000,
+                     const RpcOptions& rpc_options = RpcOptions());
 
   // Sends the specified number of RPCs and fails if the RPC fails.
-  void CheckRpcSendOk(
-      const grpc_core::DebugLocation& debug_location, const size_t times = 1,
-      const RpcOptions& rpc_options = RpcOptions(),
-      std::vector<std::map<std::string, std::string, std::less<>>>*
-          responses_initial_metadata = nullptr);
+  void CheckRpcSendOk(const grpc_core::DebugLocation& debug_location,
+                      const size_t times = 1,
+                      const RpcOptions& rpc_options = RpcOptions());
 
   // Sends one RPC, which must fail with the specified status code and
   // a message matching the specified regex.

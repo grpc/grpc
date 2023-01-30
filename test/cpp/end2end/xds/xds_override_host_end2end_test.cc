@@ -51,44 +51,61 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::string raw;
   };
 
-  static std::map<std::string, Cookie, std::less<>> ParseCookies(
-      const std::map<std::string, std::string, std::less<>>& initial_metadata) {
-    auto it = initial_metadata.find("set-cookie");
-    if (it == initial_metadata.end()) {
-      return {};
-    }
-    // Right now we only support a single cookie. This will be revised as
-    // semantics are better understood
-    std::pair<absl::string_view, absl::string_view> name_value =
-        absl::StrSplit(it->second, absl::MaxSplits('=', 1));
-    if (name_value.first.empty()) {
-      return {};
-    }
-    std::pair<absl::string_view, absl::string_view> value_attrs =
-        absl::StrSplit(name_value.second, absl::MaxSplits(';', 1));
-    std::set<std::string> attributes;
-    for (absl::string_view segment : absl::StrSplit(name_value.second, ';')) {
-      attributes.insert(std::string(absl::StripAsciiWhitespace(segment)));
-    }
-    return {{std::string(name_value.first),
-             Cookie({std::string(value_attrs.first), std::move(attributes),
-                     std::string(name_value.second)})}};
+  std::multimap<std::string, std::string> SendRpcGetServerMetadata(
+      const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options) {
+    std::multimap<std::string, std::string> server_initial_metadata;
+    EchoResponse response;
+    grpc::Status status =
+        SendRpc(rpc_options, &response, &server_initial_metadata);
+    EXPECT_TRUE(status.ok())
+        << "code=" << status.error_code()
+        << ", message=" << status.error_message() << "\n"
+        << debug_location.file() << ":" << debug_location.line();
+    EXPECT_EQ(response.message(), kRequestMessage)
+        << debug_location.file() << ":" << debug_location.line();
+    return server_initial_metadata;
   }
 
-  static absl::optional<std::string> GetStatefulSessionCookie(
-      const std::map<std::string, std::string, std::less<>>& initial_metadata,
-      absl::string_view cookie_name = "grpc_session_cookie") {
-    auto cookies = ParseCookies(initial_metadata);
-    auto it = cookies.find(cookie_name);
-    if (it == cookies.end()) {
-      return absl::nullopt;
+  static std::multimap<std::string, Cookie, std::less<>> ParseCookies(
+      const std::multimap<std::string, std::string>& server_initial_metadata) {
+    auto range = server_initial_metadata.equal_range("set-cookie");
+    std::multimap<std::string, Cookie, std::less<>> cookies;
+    for (auto it = range.first; it != range.second; it++) {
+      std::pair<absl::string_view, absl::string_view> name_value =
+          absl::StrSplit(it->second, absl::MaxSplits('=', 1));
+      if (name_value.first.empty()) {
+        return {};
+      }
+      std::pair<absl::string_view, absl::string_view> value_attrs =
+          absl::StrSplit(name_value.second, absl::MaxSplits(';', 1));
+      std::set<std::string> attributes;
+      for (absl::string_view segment : absl::StrSplit(name_value.second, ';')) {
+        attributes.insert(std::string(absl::StripAsciiWhitespace(segment)));
+      }
+      cookies.emplace(
+          std::string(name_value.first),
+          Cookie({std::string(value_attrs.first), std::move(attributes),
+                  std::string(name_value.second)}));
     }
-    Cookie& grpc_session_cookie = it->second;
-    EXPECT_FALSE(grpc_session_cookie.value.empty());
-    EXPECT_NE(grpc_session_cookie.attributes.find("HttpOnly"),
-              grpc_session_cookie.attributes.end())
-        << grpc_session_cookie.raw;
-    return grpc_session_cookie.value;
+    return cookies;
+  }
+
+  static std::vector<std::string> GetStatefulSessionCookie(
+      const std::multimap<std::string, std::string>& server_initial_metadata,
+      absl::string_view cookie_name = "grpc_session_cookie") {
+    auto cookies = ParseCookies(server_initial_metadata);
+    auto range = cookies.equal_range(cookie_name);
+    std::vector<std::string> values;
+    for (auto it = range.first; it != range.second; it++) {
+      Cookie& grpc_session_cookie = it->second;
+      EXPECT_FALSE(grpc_session_cookie.value.empty());
+      EXPECT_NE(grpc_session_cookie.attributes.find("HttpOnly"),
+                grpc_session_cookie.attributes.end())
+          << grpc_session_cookie.raw;
+      values.emplace_back(grpc_session_cookie.value);
+    }
+    return values;
   }
 
   // Builds a Listener with Fault Injection filter config. If the http_fault
@@ -179,12 +196,12 @@ TEST_P(OverrideHostTest, HappyPath) {
                  WaitForBackendOptions());
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions());
-  std::vector<std::map<std::string, std::string, std::less<>>> initial_metadata;
   // First call gets the cookie. RR policy picks the backend we will use.
-  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions(), &initial_metadata);
-  absl::optional<std::string> stateful_session_cookie =
-      GetStatefulSessionCookie(initial_metadata[0]);
-  ASSERT_TRUE(stateful_session_cookie.has_value());
+  auto server_initial_metadata =
+      SendRpcGetServerMetadata(DEBUG_LOCATION, RpcOptions());
+  std::vector<std::string> stateful_session_cookie =
+      GetStatefulSessionCookie(server_initial_metadata);
+  ASSERT_EQ(stateful_session_cookie.size(), 1);
   size_t backend_idx = -1;
   for (size_t i = 0; i < backends_.size(); i++) {
     if (backends_[i]->backend_service()->request_count() == 1) {
@@ -196,11 +213,11 @@ TEST_P(OverrideHostTest, HappyPath) {
   ASSERT_NE(-1, backend_idx);
   CheckBackendCallCounts(0);
   // All requests go to the backend we specified
-  CheckRpcSendOk(DEBUG_LOCATION, 5,
-                 RpcOptions().set_metadata(
-                     {{"cookie", absl::StrFormat("%s=%s", "grpc_session_cookie",
-                                                 *stateful_session_cookie)}}),
-                 &initial_metadata);
+  CheckRpcSendOk(
+      DEBUG_LOCATION, 5,
+      RpcOptions().set_metadata(
+          {{"cookie", absl::StrFormat("%s=%s", "grpc_session_cookie",
+                                      stateful_session_cookie[0])}}));
   CheckBackendCallCounts(
       [=](size_t idx) { return idx == backend_idx ? 5 : 0; });
   // Round-robin spreads the load
@@ -212,9 +229,8 @@ TEST_P(OverrideHostTest, HappyPath) {
       RpcOptions()
           .set_metadata(
               {{"cookie", absl::StrFormat("%s=%s", "grpc_session_cookie",
-                                          *stateful_session_cookie)}})
-          .set_rpc_service(RpcService::SERVICE_ECHO2),
-      &initial_metadata);
+                                          stateful_session_cookie[0])}})
+          .set_rpc_service(RpcService::SERVICE_ECHO2));
   CheckBackendCallCounts([=](size_t idx) { return idx == backend_idx ? 5 : 0; },
                          RpcService::SERVICE_ECHO2);
 }
