@@ -17,16 +17,13 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_BACKEND_METRIC_DATA_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_BACKEND_METRIC_DATA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-// All utilization values must be in [0, 1].
-bool IsUtilizationValid(double utilization);
-// QPS must be in [0, infy).
-bool IsQpsValid(double qps);
 
 // Represents backend metrics reported by the backend to the client.
 struct BackendMetricData {
@@ -45,14 +42,6 @@ struct BackendMetricData {
   /// are determined by the application.  Each value is expressed as a
   /// fraction of total resources available.
   std::map<absl::string_view, double> utilization;
-
-  // All utilization values must be in [0, 1].
-  static bool IsUtilizationValid(double utilization) {
-    return utilization >= 0.0 && utilization <= 1.0;
-  }
-
-  // QPS must be in [0, infy).
-  static bool IsQpsValid(double qps) { return qps >= 0.0; }
 };
 
 }  // namespace grpc_core

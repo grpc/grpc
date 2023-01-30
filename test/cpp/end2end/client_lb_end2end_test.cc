@@ -412,7 +412,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
-    std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
+    experimental::ServerMetricRecorder server_metric_recorder_;
     experimental::OrcaService orca_service_;
     std::unique_ptr<std::thread> thread_;
 
@@ -423,9 +423,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(int port = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
-          server_metric_recorder_(experimental::CreateServerMetricRecorder()),
           orca_service_(
-              server_metric_recorder_.get(),
+              &server_metric_recorder_,
               experimental::OrcaService::Options().set_min_report_duration(
                   absl::Seconds(0.1))) {}
 
@@ -452,7 +451,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
       grpc::ServerBuilder::experimental_type(&builder)
-          .EnableCallMetricRecording(server_metric_recorder_.get());
+          .EnableCallMetricRecording(&server_metric_recorder_);
       server_ = builder.BuildAndStart();
       grpc_core::MutexLock lock(&mu_);
       server_ready_ = true;
@@ -2761,10 +2760,10 @@ TEST_F(OobBackendMetricTest, Basic) {
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.1);
-  servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.2);
-  servers_[0]->server_metric_recorder_->SetQps(0.3);
-  servers_[0]->server_metric_recorder_->SetNamedUtilization(kMetricName, 0.4);
+  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.1);
+  servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.2);
+  servers_[0]->server_metric_recorder_.SetQps(0.3);
+  servers_[0]->server_metric_recorder_.SetNamedUtilization(kMetricName, 0.4);
   // Start client.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("oob_backend_metric_test_lb", response_generator);
@@ -2797,10 +2796,10 @@ TEST_F(OobBackendMetricTest, Basic) {
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
   // data once we see a report with the new CPU utilization value.
-  servers_[0]->server_metric_recorder_->SetNamedUtilization(kMetricName, 0.7);
-  servers_[0]->server_metric_recorder_->SetQps(0.6);
-  servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.5);
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.4);
+  servers_[0]->server_metric_recorder_.SetNamedUtilization(kMetricName, 0.7);
+  servers_[0]->server_metric_recorder_.SetQps(0.6);
+  servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.5);
+  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.4);
   // Wait for client to see new report.
   report_seen = false;
   for (size_t i = 0; i < 5; ++i) {
@@ -2946,12 +2945,12 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 1:3:3 WRR picks.
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
-  servers_[0]->server_metric_recorder_->SetQps(100);
-  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
-  servers_[1]->server_metric_recorder_->SetQps(100);
-  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
-  servers_[2]->server_metric_recorder_->SetQps(100);
+  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_.SetQps(100);
+  servers_[1]->server_metric_recorder_.SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_.SetQps(100);
+  servers_[2]->server_metric_recorder_.SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_.SetQps(100);
   // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator);
@@ -2974,12 +2973,12 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 1:2:4 WRR picks.
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
-  servers_[0]->server_metric_recorder_->SetQps(9);
-  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
-  servers_[1]->server_metric_recorder_->SetQps(6);
-  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
-  servers_[2]->server_metric_recorder_->SetQps(12);
+  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_.SetQps(9);
+  servers_[1]->server_metric_recorder_.SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_.SetQps(6);
+  servers_[2]->server_metric_recorder_.SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_.SetQps(12);
   // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator);

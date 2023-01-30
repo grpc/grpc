@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/string_ref.h>
 
 namespace grpc_core {
@@ -32,6 +33,7 @@ namespace grpc {
 class BackendMetricState;
 
 namespace experimental {
+struct BackendMetricDataState;
 
 /// Records server wide metrics to be reported to the client.
 /// Server implementation creates an instance and reports server metrics to it,
@@ -40,41 +42,61 @@ namespace experimental {
 /// experimental::OrcaService that read metrics to include in the report.
 class ServerMetricRecorder {
  public:
+  ServerMetricRecorder();
   /// Records the server CPU utilization in the range [0, 1].
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
-  virtual void SetCpuUtilization(double value) = 0;
+  void SetCpuUtilization(double value);
   /// Records the server memory utilization in the range [0, 1].
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
-  virtual void SetMemoryUtilization(double value) = 0;
+  void SetMemoryUtilization(double value);
   /// Records number of queries per second to the server in the range [0, infy).
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
-  virtual void SetQps(double value) = 0;
+  void SetQps(double value);
   /// Records a named resource utilization value in the range [0, 1].
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with the same name.
   /// The name string should remain valid while this utilization remains
   /// in this recorder. It is assumed that strings are common names that are
   /// global constants.
-  virtual void SetNamedUtilization(string_ref name, double value) = 0;
+  void SetNamedUtilization(string_ref name, double value);
   /// Replaces all named resource utilization values. No range validation.
   /// The name strings should remain valid while utilization values remain
   /// in this recorder. It is assumed that strings are common names that are
   /// global constants.
-  virtual void SetAllNamedUtilization(std::map<string_ref, double> named_utilization) = 0;
-  /// Clears the server CPU utilization if recorded.
-  virtual void ClearCpuUtilization() = 0;
-  /// Clears the server memory utilization if recorded.
-  virtual void ClearMemoryUtilization() = 0;
-  /// Clears number of queries per second to the server if recorded.
-  virtual void ClearQps() = 0;
-  /// Clears a named utilization value if exists.
-  virtual void ClearNamedUtilization(string_ref name) = 0;
-};
+  void SetAllNamedUtilization(std::map<string_ref, double> named_utilization);
 
-std::unique_ptr<ServerMetricRecorder> CreateServerMetricRecorder();
+  /// Clears the server CPU utilization if recorded.
+  void ClearCpuUtilization();
+  /// Clears the server memory utilization if recorded.
+  void ClearMemoryUtilization();
+  /// Clears number of queries per second to the server if recorded.
+  void ClearQps();
+  /// Clears a named utilization value if exists.
+  void ClearNamedUtilization(string_ref name);
+
+ private:
+  // To access GetMetrics().
+  friend class grpc::BackendMetricState;
+  friend class OrcaService;
+
+  // Updates the metric state by applying `updater` to the data and incrementing
+  // the sequence number.
+  void UpdateBackendMetricDataState(
+      std::function<void(grpc_core::BackendMetricData*)> updater);
+
+  grpc_core::BackendMetricData GetMetrics() const;
+  // Returned metric data is guaranteed to be identical between two calls if the
+  // sequence numbers match.
+  std::shared_ptr<const BackendMetricDataState> GetMetricsIfChanged()
+      const;
+
+  mutable grpc::internal::Mutex mu_;
+  std::shared_ptr<const BackendMetricDataState> metric_state_
+      ABSL_GUARDED_BY(mu_);
+};
 
 }  // namespace experimental
 }  // namespace grpc

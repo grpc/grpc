@@ -30,8 +30,6 @@
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/cpp/server/server_metric_recorder_impl.h"
-
 namespace grpc {
 namespace experimental {
 
@@ -60,7 +58,7 @@ class OrcaService : public Service {
 
   Slice GetOrCreateSerializedResponse();
 
-  const ServerMetricRecorderImpl* const server_metric_recorder_;
+  const ServerMetricRecorder* const server_metric_recorder_;
   const absl::Duration min_report_duration_;
   grpc::internal::Mutex mu_;
   // Contains the last serialized metrics from server_metric_recorder_.

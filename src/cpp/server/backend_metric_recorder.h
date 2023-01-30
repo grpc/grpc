@@ -16,19 +16,26 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_SERVER_BACKEND_METRIC_STATE_H_
-#define GRPC_SRC_CPP_SERVER_BACKEND_METRIC_STATE_H_
+#ifndef GRPC_SRC_CPP_SERVER_METRIC_RECORDER_H_
+#define GRPC_SRC_CPP_SERVER_METRIC_RECORDER_H_
 
 #include <map>
 
 #include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/ext/server_metric_recorder.h>
 
 #include "src/core/ext/filters/backend_metrics/backend_metric_provider.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
-#include "src/cpp/server/server_metric_recorder_impl.h"
 
 namespace grpc {
+namespace experimental {
+
+// Backend metrics and an associated update sequence number.
+struct BackendMetricDataState {
+  grpc_core::BackendMetricData data;
+  uint64_t sequence_number = 0;
+};
+
+}  // namespace experimental
 
 class BackendMetricState : public grpc_core::BackendMetricProvider,
                            public experimental::CallMetricRecorder {
@@ -37,9 +44,7 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
   // merges metrics from `server_metric_recorder` with metrics recorded to this.
   explicit BackendMetricState(
       experimental::ServerMetricRecorder* server_metric_recorder)
-      : server_metric_recorder_(
-            static_cast<experimental::ServerMetricRecorderImpl*>(
-                server_metric_recorder)) {}
+      : server_metric_recorder_(server_metric_recorder) {}
   experimental::CallMetricRecorder& RecordCpuUtilizationMetric(
       double value) override;
   experimental::CallMetricRecorder& RecordMemoryUtilizationMetric(
@@ -53,7 +58,7 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
   grpc_core::BackendMetricData GetBackendMetricData() override;
 
  private:
-  experimental::ServerMetricRecorderImpl* server_metric_recorder_;
+  experimental::ServerMetricRecorder* server_metric_recorder_;
   std::atomic<double> cpu_utilization_{-1.0};
   std::atomic<double> mem_utilization_{-1.0};
   std::atomic<double> qps_{-1.0};
@@ -64,4 +69,4 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
 
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_SERVER_BACKEND_METRIC_STATE_H_
+#endif  // GRPC_SRC_CPP_SERVER_METRIC_RECORDER_H_

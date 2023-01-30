@@ -1803,8 +1803,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpcpp_call_metric_recorder",
-        "grpcpp_backend_metric_state",
-        "grpcpp_server_metric_recorder",
+        "grpcpp_backend_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1819,7 +1818,6 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
-        "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
@@ -1874,8 +1872,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_unsecure",
         "grpcpp_call_metric_recorder",
-        "grpcpp_backend_metric_state",
-        "grpcpp_server_metric_recorder",
+        "grpcpp_backend_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1886,7 +1883,6 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
-        "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
@@ -1983,28 +1979,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpcpp_backend_metric_state",
+    name = "grpcpp_backend_metric_recorder",
     srcs = [
-        "src/cpp/server/backend_metric_state.cc",
+        "src/cpp/server/backend_metric_recorder.cc",
     ],
     hdrs = [
-        "src/cpp/server/backend_metric_state.h"
+        "src/cpp/server/backend_metric_recorder.h"
     ],
-    language = "c++",
-    deps = [
-        "gpr",
-        "grpcpp_call_metric_recorder",
-        "grpcpp_server_metric_recorder",
-        "grpc_server_metric_recorder_impl",
-        "grpc++_public_hdrs",
-        "grpc_trace",
-        "//src/core:grpc_backend_metric_data",
-        "//src/core:grpc_backend_metric_provider",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpcpp_server_metric_recorder",
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/server_metric_recorder.h",
@@ -2012,24 +1993,12 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "gpr",
+        "grpcpp_call_metric_recorder",
         "grpc++_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_server_metric_recorder_impl",
-    srcs = [
-        "src/cpp/server/server_metric_recorder_impl.cc",
-    ],
-    hdrs = [
-        "src/cpp/server/server_metric_recorder_impl.h",
-    ],
-    deps = [
-        "grpcpp_server_metric_recorder",
         "grpc_trace",
         "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_backend_metric_provider",
     ],
-    language = "c++",
 )
 
 grpc_cc_library(
@@ -2054,14 +2023,12 @@ grpc_cc_library(
         "gpr",
         "grpc++",
         "grpc_base",
-        "grpc_server_metric_recorder_impl",
-        "grpcpp_backend_metric_state",
+        "grpcpp_backend_metric_recorder",
         "protobuf_duration_upb",
         "ref_counted_ptr",
         "xds_orca_service_upb",
         "xds_orca_upb",
         "//src/core:default_event_engine",
-        "//src/core:grpc_backend_metric_data",
         "//src/core:ref_counted",
         "//src/core:time",
     ],

@@ -54,12 +54,11 @@
 #include <grpcpp/support/server_interceptor.h>
 #include <grpcpp/support/string_ref.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/call.h"
-#include "src/cpp/server/backend_metric_state.h"
+#include "src/cpp/server/backend_metric_recorder.h"
 
 namespace grpc {
 

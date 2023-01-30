@@ -43,13 +43,13 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/cpp/server/backend_metric_recorder.h"
 
 namespace grpc {
 namespace experimental {
@@ -169,8 +169,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
 OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
                          Options options)
-    : server_metric_recorder_(
-          static_cast<ServerMetricRecorderImpl*>(server_metric_recorder)),
+    : server_metric_recorder_(server_metric_recorder),
       min_report_duration_(options.min_report_duration) {
   GPR_ASSERT(server_metric_recorder_ != nullptr);
   AddMethod(new internal::RpcServiceMethod(
@@ -185,8 +184,8 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
 
 Slice OrcaService::GetOrCreateSerializedResponse() {
   grpc::internal::MutexLock lock(&mu_);
-  std::shared_ptr<const ServerMetricRecorderImpl::BackendMetricDataState>
-      result = server_metric_recorder_->GetMetricsIfChanged();
+  std::shared_ptr<const BackendMetricDataState> result =
+      server_metric_recorder_->GetMetricsIfChanged();
   if (!response_slice_seq_.has_value() ||
       *response_slice_seq_ != result->sequence_number) {
     const auto& data = result->data;
