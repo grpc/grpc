@@ -110,6 +110,7 @@ class ClientChannel {
   static const grpc_channel_filter kFilterVtable;
 
   class LoadBalancedCall;
+  class FilterBasedLoadBalancedCall;
 
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
@@ -177,6 +178,7 @@ class ClientChannel {
 
  private:
   class CallData;
+  class FilterBasedCallData;
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
@@ -385,15 +387,8 @@ class ClientChannel::LoadBalancedCall
     LoadBalancedCall* lb_call_;
   };
 
-  // If on_call_destruction_complete is non-null, then it will be
-  // invoked once the LoadBalancedCall is completely destroyed.
-  // If it is null, then the caller is responsible for checking whether
-  // the LB call has a subchannel call and ensuring that the
-  // on_call_destruction_complete closure passed down from the surface
-  // is not invoked until after the subchannel call stack is destroyed.
   LoadBalancedCall(
-      ClientChannel* chand, const grpc_call_element_args& args,
-      grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
+      ClientChannel* chand,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
   ~LoadBalancedCall() override;
@@ -412,10 +407,81 @@ class ClientChannel::LoadBalancedCall
     return subchannel_call_;
   }
 
+ protected:
+  ClientChannel* chand() const { return chand_; }
+  ConfigSelector::CallDispatchController* call_dispatch_controller() const {
+    return call_dispatch_controller_;
+  }
+  CallTracer::CallAttemptTracer* call_attempt_tracer() const {
+    return call_attempt_tracer_;
+  }
+  grpc_cycle_counter lb_call_start_time() const { return lb_call_start_time_; }
+  ConnectedSubchannel* connected_subchannel() const {
+    return connected_subchannel_.get();
+  }
+  LoadBalancingPolicy::SubchannelCallTrackerInterface*
+  lb_subchannel_call_tracker() const {
+    return lb_subchannel_call_tracker_.get();
+  }
+
+  void RecordCallCompletion(absl::Status status);
+
  private:
-  class LbQueuedCallCanceller;
   class Metadata;
   class BackendMetricAccessor;
+
+  virtual void CreateSubchannelCall() = 0;
+
+  // Helper function for performing an LB pick with a specified picker.
+  // Returns true if the pick is complete.
+  bool PickSubchannelImpl(LoadBalancingPolicy::SubchannelPicker* picker,
+                          grpc_error_handle* error);
+  // Adds the call to the channel's list of queued picks if not already present.
+  void AddCallToLbQueuedCallsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+
+  ClientChannel* chand_;
+
+// FIXME: needed?
+  Slice path_;  // Request path.
+
+  ConfigSelector::CallDispatchController* call_dispatch_controller_;
+  CallTracer::CallAttemptTracer* call_attempt_tracer_;
+
+  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
+
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  const BackendMetricData* backend_metric_data_ = nullptr;
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      lb_subchannel_call_tracker_;
+};
+
+class ClientChannel::FilterBasedLoadBalancedCall
+    : public ClientChannel::LoadBalancedCall {
+ public:
+  // If on_call_destruction_complete is non-null, then it will be
+  // invoked once the LoadBalancedCall is completely destroyed.
+  // If it is null, then the caller is responsible for checking whether
+  // the LB call has a subchannel call and ensuring that the
+  // on_call_destruction_complete closure passed down from the surface
+  // is not invoked until after the subchannel call stack is destroyed.
+  LoadBalancedCall(
+      ClientChannel* chand, const grpc_call_element_args& args,
+      grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
+      ConfigSelector::CallDispatchController* call_dispatch_controller,
+      bool is_transparent_retry);
+  ~LoadBalancedCall() override;
+
+  void Orphan() override;
+
+  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
+
+  RefCountedPtr<SubchannelCall> subchannel_call() const {
+    return subchannel_call_;
+  }
+
+ private:
+  class LbQueuedCallCanceller;
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -451,19 +517,7 @@ class ClientChannel::LoadBalancedCall
   static void RecvMessageReady(void* arg, grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
-  void RecordCallCompletion(absl::Status status);
-
-  void CreateSubchannelCall();
-
-  // Helper function for performing an LB pick with a specified picker.
-  // Returns true if the pick is complete.
-  bool PickSubchannelImpl(LoadBalancingPolicy::SubchannelPicker* picker,
-                          grpc_error_handle* error);
-  // Adds the call to the channel's list of queued picks if not already present.
-  void AddCallToLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
-
-  ClientChannel* chand_;
+  void CreateSubchannelCall() override;
 
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
@@ -476,9 +530,6 @@ class ClientChannel::LoadBalancedCall
   grpc_call_context_element* call_context_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
-  ConfigSelector::CallDispatchController* call_dispatch_controller_;
-
-  CallTracer::CallAttemptTracer* call_attempt_tracer_;
 
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
