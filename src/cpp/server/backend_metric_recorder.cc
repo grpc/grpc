@@ -41,16 +41,23 @@ grpc_core::TraceFlag grpc_backend_metric_trace(false, "backend_metric");
 namespace grpc {
 namespace experimental {
 
+std::unique_ptr<ServerMetricRecorder> ServerMetricRecorder::Create() {
+  return std::unique_ptr<ServerMetricRecorder>(new ServerMetricRecorder());
+}
+
 ServerMetricRecorder::ServerMetricRecorder() {
   // Starts with an empty result.
-  metric_state_ = std::make_shared<const BackendMetricDataState>();
+  metric_state_ =
+      std::make_shared<const ServerMetricRecorder::BackendMetricDataState>();
 }
 
 void ServerMetricRecorder::UpdateBackendMetricDataState(
     std::function<void(BackendMetricData*)> updater) {
   internal::MutexLock lock(&mu_);
-  auto new_state = std::make_shared<BackendMetricDataState>(*metric_state_);
-  updater(&(new_state->data));
+  auto new_state =
+      std::make_shared<ServerMetricRecorder::BackendMetricDataState>(
+          *metric_state_);
+  updater(&new_state->data);
   ++new_state->sequence_number;
   metric_state_ = std::move(new_state);
 }
@@ -168,7 +175,7 @@ grpc_core::BackendMetricData ServerMetricRecorder::GetMetrics() const {
   return result->data;
 }
 
-std::shared_ptr<const BackendMetricDataState>
+std::shared_ptr<const ServerMetricRecorder::BackendMetricDataState>
 ServerMetricRecorder::GetMetricsIfChanged() const {
   std::shared_ptr<const BackendMetricDataState> result;
   {

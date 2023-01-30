@@ -412,7 +412,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
-    experimental::ServerMetricRecorder server_metric_recorder_;
+    std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
     experimental::OrcaService orca_service_;
     std::unique_ptr<std::thread> thread_;
 
@@ -423,8 +423,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(int port = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
+          server_metric_recorder_(experimental::ServerMetricRecorder::Create()),
           orca_service_(
-              &server_metric_recorder_,
+              server_metric_recorder_.get(),
               experimental::OrcaService::Options().set_min_report_duration(
                   absl::Seconds(0.1))) {}
 
@@ -451,7 +452,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
       grpc::ServerBuilder::experimental_type(&builder)
-          .EnableCallMetricRecording(&server_metric_recorder_);
+          .EnableCallMetricRecording(server_metric_recorder_.get());
       server_ = builder.BuildAndStart();
       grpc_core::MutexLock lock(&mu_);
       server_ready_ = true;
@@ -556,46 +557,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
       return state == GRPC_CHANNEL_READY;
     };
     return WaitForChannelState(channel, predicate, true, timeout_seconds);
-  }
-
-  void ExpectWeightedRoundRobinPicks(
-      const grpc_core::DebugLocation& location,
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      const std::vector<size_t>& expected_weights, size_t total_passes,
-      absl::Duration wait_between_rounds = absl::ZeroDuration(),
-      EchoRequest* request_ptr = nullptr) {
-    GPR_ASSERT(expected_weights.size() == servers_.size());
-    size_t total_picks_per_pass = 0;
-    for (size_t picks : expected_weights) {
-      total_picks_per_pass += picks;
-    }
-    size_t num_picks = 0;
-    size_t num_passes = 0;
-    SendRpcsUntil(
-        location, stub,
-        [&](const Status&) {
-          gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-              wait_between_rounds / absl::Milliseconds(1)));
-          if (++num_picks == total_picks_per_pass) {
-            bool match = true;
-            for (size_t i = 0; i < expected_weights.size(); ++i) {
-              if (servers_[i]->service_.request_count() !=
-                  expected_weights[i]) {
-                match = false;
-                break;
-              }
-            }
-            if (match) {
-              if (++num_passes == total_passes) return false;
-            } else {
-              num_passes = 0;
-            }
-            num_picks = 0;
-            ResetCounters();
-          }
-          return true;
-        },
-        request_ptr);
   }
 
   // Updates \a connection_order by appending to it the index of the newly
@@ -2760,10 +2721,10 @@ TEST_F(OobBackendMetricTest, Basic) {
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
-  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.1);
-  servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.2);
-  servers_[0]->server_metric_recorder_.SetQps(0.3);
-  servers_[0]->server_metric_recorder_.SetNamedUtilization(kMetricName, 0.4);
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.1);
+  servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.2);
+  servers_[0]->server_metric_recorder_->SetQps(0.3);
+  servers_[0]->server_metric_recorder_->SetNamedUtilization(kMetricName, 0.4);
   // Start client.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("oob_backend_metric_test_lb", response_generator);
@@ -2796,10 +2757,10 @@ TEST_F(OobBackendMetricTest, Basic) {
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
   // data once we see a report with the new CPU utilization value.
-  servers_[0]->server_metric_recorder_.SetNamedUtilization(kMetricName, 0.7);
-  servers_[0]->server_metric_recorder_.SetQps(0.6);
-  servers_[0]->server_metric_recorder_.SetMemoryUtilization(0.5);
-  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.4);
+  servers_[0]->server_metric_recorder_->SetNamedUtilization(kMetricName, 0.7);
+  servers_[0]->server_metric_recorder_->SetQps(0.6);
+  servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.5);
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.4);
   // Wait for client to see new report.
   report_seen = false;
   for (size_t i = 0; i < 5; ++i) {
@@ -2928,57 +2889,68 @@ const char kServiceConfigOob[] =
     "    {\"weighted_round_robin_experimental\": {\n"
     "      \"blackoutPeriod\": \"0s\",\n"
     "      \"weightUpdatePeriod\": \"0.1s\",\n"
+    "      \"weightExpirationPeriod\": \"2s\",\n"
     "      \"enableOobLoadReport\": true\n"
     "    }}\n"
     "  ]\n"
     "}";
 
-class WeightedRoundRobinParamTest
-    : public ClientLbEnd2endTest,
-      public ::testing::WithParamInterface<const char*> {};
-
-INSTANTIATE_TEST_SUITE_P(WeightedRoundRobin, WeightedRoundRobinParamTest,
-                         ::testing::Values(kServiceConfigPerCall,
-                                           kServiceConfigOob));
-
-TEST_P(WeightedRoundRobinParamTest, Basic) {
-  const int kNumServers = 3;
-  StartServers(kNumServers);
-  // Report server metrics that should give 1:3:3 WRR picks.
-  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.9);
-  servers_[0]->server_metric_recorder_.SetQps(100);
-  servers_[1]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[1]->server_metric_recorder_.SetQps(100);
-  servers_[2]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[2]->server_metric_recorder_.SetQps(100);
-  // Create channel.
-  auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("", response_generator);
-  auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts(), GetParam());
-  // Wait for the right set of WRR picks.
-  ExpectWeightedRoundRobinPicks(
-      DEBUG_LOCATION, stub,
-      /*expected_weighted=*/{1, 3, 3},
-      /*total_passes=*/3,
-      /*wait_between_rounds=*/absl::Milliseconds(100));
-  // Check LB policy name for the channel.
-  EXPECT_EQ("weighted_round_robin_experimental",
-            channel->GetLoadBalancingPolicyName());
-}
-
-using WeightedRoundRobinTest = ClientLbEnd2endTest;
+class WeightedRoundRobinTest : public ClientLbEnd2endTest {
+ protected:
+  void ExpectWeightedRoundRobinPicks(
+      const grpc_core::DebugLocation& location,
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      const std::vector<size_t>& expected_weights, size_t total_passes,
+      EchoRequest* request_ptr = nullptr,
+      int timeout_ms = 15000,
+      absl::Duration wait_between_rounds = absl::ZeroDuration()) {
+    GPR_ASSERT(expected_weights.size() == servers_.size());
+    size_t total_picks_per_pass = 0;
+    for (size_t picks : expected_weights) {
+      total_picks_per_pass += picks;
+    }
+    size_t num_picks = 0;
+    size_t num_passes = 0;
+    SendRpcsUntil(
+        location, stub,
+        [&](const Status&) {
+          if (wait_between_rounds > absl::ZeroDuration()) {
+            gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+                wait_between_rounds / absl::Milliseconds(1)));
+          }
+          if (++num_picks == total_picks_per_pass) {
+            bool match = true;
+            for (size_t i = 0; i < expected_weights.size(); ++i) {
+              if (servers_[i]->service_.request_count() !=
+                  expected_weights[i]) {
+                match = false;
+                break;
+              }
+            }
+            if (match) {
+              if (++num_passes == total_passes) return false;
+            } else {
+              num_passes = 0;
+            }
+            num_picks = 0;
+            ResetCounters();
+          }
+          return true;
+        },
+        request_ptr);
+  }
+};
 
 TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 1:2:4 WRR picks.
-  servers_[0]->server_metric_recorder_.SetCpuUtilization(0.9);
-  servers_[0]->server_metric_recorder_.SetQps(9);
-  servers_[1]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[1]->server_metric_recorder_.SetQps(6);
-  servers_[2]->server_metric_recorder_.SetCpuUtilization(0.3);
-  servers_[2]->server_metric_recorder_.SetQps(12);
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_->SetQps(9);
+  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetQps(6);
+  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_->SetQps(12);
   // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator);
@@ -2991,16 +2963,193 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   request.mutable_param()->mutable_backend_metrics()->set_rps_fractional(100);
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
                                 /*expected_weighted=*/{1, 3, 3},
-                                /*total_passes=*/3,
-                                /*wait_between_rounds=*/absl::Milliseconds(100),
-                                &request);
+                                /*total_passes=*/3, &request,
+                                /*timeout_ms=*/500);
   // Now send requests without per-call reported QPS.
   // This should change WRR picks back to 1:2:4.
+  ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                /*expected_weighted=*/{1, 2, 4},
+                                /*total_passes=*/3,
+                                /*request_ptr=*/nullptr,
+                                /*timeout_ms=*/500);
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
+TEST_F(WeightedRoundRobinTest, WeightExpirationWithOob) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Report server metrics that should give 1:3:3 WRR picks.
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_->SetQps(100);
+  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetQps(100);
+  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_->SetQps(100);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(),
+                                       kServiceConfigOob);
+  // Wait for the right set of WRR picks.
+  ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                /*expected_weighted=*/{1, 3, 3},
+                                /*total_passes=*/3,
+                                /*request_ptr=*/nullptr,
+                                /*timeout_ms=*/500);
+  // Wait for the right set of WRR picks after the expiration.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(2100));
+  ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                /*expected_weighted=*/{1, 1, 1},
+                                /*total_passes=*/3,
+                                /*request_ptr=*/nullptr,
+                                /*timeout_ms=*/500);
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
+class WeightedRoundRobinParamTest
+    : public WeightedRoundRobinTest,
+      public ::testing::WithParamInterface<const char*> {};
+
+INSTANTIATE_TEST_SUITE_P(WeightedRoundRobin, WeightedRoundRobinParamTest,
+                         ::testing::Values(kServiceConfigPerCall,
+                                           kServiceConfigOob));
+
+TEST_P(WeightedRoundRobinParamTest, Basic) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Report server metrics that should give 1:3:3 WRR picks.
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_->SetQps(100);
+  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetQps(100);
+  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_->SetQps(100);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), GetParam());
+  // Wait for the right set of WRR picks.
+  ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                /*expected_weighted=*/{1, 3, 3},
+                                /*total_passes=*/3,
+                                /*request_ptr=*/nullptr,
+                                /*timeout_ms=*/500);
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
+TEST_P(WeightedRoundRobinParamTest, WeightsStay) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Report server metrics that should give 1:3:3 WRR picks.
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_->SetQps(100);
+  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetQps(100);
+  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_->SetQps(100);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), GetParam());
+  // Wait for the right set of WRR picks.
   ExpectWeightedRoundRobinPicks(
       DEBUG_LOCATION, stub,
-      /*expected_weighted=*/{1, 2, 4},
+      /*expected_weighted=*/{1, 3, 3},
       /*total_passes=*/3,
+      /*request_ptr=*/nullptr,
+      /*timeout_ms=*/500,
       /*wait_between_rounds=*/absl::Milliseconds(100));
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
+TEST_P(WeightedRoundRobinParamTest, InvalidWeight) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Report server metrics that should give 1:3:2(=avg) WRR picks.
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_->SetQps(100);
+  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetQps(100);
+  servers_[2]->server_metric_recorder_->SetCpuUtilization(0);
+  servers_[2]->server_metric_recorder_->SetQps(100);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), GetParam());
+  // Wait for the right set of WRR picks.
+  ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                /*expected_weighted=*/{1, 3, 2},
+                                /*total_passes=*/3,
+                                /*request_ptr=*/nullptr,
+                                /*timeout_ms=*/500);
+  // Check LB policy name for the channel.
+  EXPECT_EQ("weighted_round_robin_experimental",
+            channel->GetLoadBalancingPolicyName());
+}
+
+using WeightedRoundRobinWeightBlackoutParamTest =
+    WeightedRoundRobinParamTest;
+
+INSTANTIATE_TEST_SUITE_P(
+    WeightedRoundRobin, WeightedRoundRobinWeightBlackoutParamTest,
+    ::testing::Values("{\n"
+                      "  \"loadBalancingConfig\": [\n"
+                      "    {\"weighted_round_robin_experimental\": {\n"
+                      "     \"blackoutPeriod\": \"1s\",\n"
+                      "     \"weightUpdatePeriod\": \"0.1s\",\n"
+                      "    }}\n"
+                      "  ]\n"
+                      "}",
+                      "{\n"
+                      "  \"loadBalancingConfig\": [\n"
+                      "    {\"weighted_round_robin_experimental\": {\n"
+                      "     \"blackoutPeriod\": \"1s\",\n"
+                      "     \"weightUpdatePeriod\": \"0.1s\",\n"
+                      "     \"enableOobLoadReport\": true\n"
+                      "    }}\n"
+                      "  ]\n"
+                      "}"));
+
+TEST_P(WeightedRoundRobinWeightBlackoutParamTest, Blackout) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Report server metrics that should give 1:3:3 WRR picks after blackout.
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.9);
+  servers_[0]->server_metric_recorder_->SetQps(100);
+  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetQps(100);
+  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_->SetQps(100);
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), GetParam());
+  // Wait for the right set of WRR picks during blackout.
+  ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                /*expected_weighted=*/{1, 1, 1},
+                                /*total_passes=*/3,
+                                /*request_ptr=*/nullptr,
+                                /*timeout_ms=*/200);
+  // Wait for the right set of WRR picks after the blackout.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
+  ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                /*expected_weighted=*/{1, 3, 3},
+                                /*total_passes=*/3,
+                                /*request_ptr=*/nullptr,
+                                /*timeout_ms=*/200);
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());

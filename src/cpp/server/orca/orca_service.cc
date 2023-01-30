@@ -184,7 +184,7 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
 
 Slice OrcaService::GetOrCreateSerializedResponse() {
   grpc::internal::MutexLock lock(&mu_);
-  std::shared_ptr<const BackendMetricDataState> result =
+  std::shared_ptr<const ServerMetricRecorder::BackendMetricDataState> result =
       server_metric_recorder_->GetMetricsIfChanged();
   if (!response_slice_seq_.has_value() ||
       *response_slice_seq_ != result->sequence_number) {

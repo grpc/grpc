@@ -30,7 +30,7 @@ namespace grpc {
 namespace experimental {
 
 // Backend metrics and an associated update sequence number.
-struct BackendMetricDataState {
+struct ServerMetricRecorder::BackendMetricDataState {
   grpc_core::BackendMetricData data;
   uint64_t sequence_number = 0;
 };

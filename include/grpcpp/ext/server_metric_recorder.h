@@ -33,8 +33,6 @@ namespace grpc {
 class BackendMetricState;
 
 namespace experimental {
-struct BackendMetricDataState;
-
 /// Records server wide metrics to be reported to the client.
 /// Server implementation creates an instance and reports server metrics to it,
 /// and then passes it to
@@ -42,7 +40,8 @@ struct BackendMetricDataState;
 /// experimental::OrcaService that read metrics to include in the report.
 class ServerMetricRecorder {
  public:
-  ServerMetricRecorder();
+  // Factory method. Use this to create.
+  static std::unique_ptr<ServerMetricRecorder> Create();
   /// Records the server CPU utilization in the range [0, 1].
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
@@ -81,6 +80,11 @@ class ServerMetricRecorder {
   // To access GetMetrics().
   friend class grpc::BackendMetricState;
   friend class OrcaService;
+
+  struct BackendMetricDataState;
+
+  // No direct creation, use the factory method Create() above.
+  ServerMetricRecorder();
 
   // Updates the metric state by applying `updater` to the data and incrementing
   // the sequence number.
