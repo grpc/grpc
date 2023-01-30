@@ -1802,8 +1802,8 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
-        "grpcpp_call_metric_recorder",
         "grpcpp_backend_metric_recorder",
+        "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1871,8 +1871,8 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_unsecure",
-        "grpcpp_call_metric_recorder",
         "grpcpp_backend_metric_recorder",
+        "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -1984,7 +1984,7 @@ grpc_cc_library(
         "src/cpp/server/backend_metric_recorder.cc",
     ],
     hdrs = [
-        "src/cpp/server/backend_metric_recorder.h"
+        "src/cpp/server/backend_metric_recorder.h",
     ],
     language = "c++",
     public_hdrs = [
@@ -1993,9 +1993,9 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "gpr",
-        "grpcpp_call_metric_recorder",
         "grpc++_public_hdrs",
         "grpc_trace",
+        "grpcpp_call_metric_recorder",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_backend_metric_provider",
     ],

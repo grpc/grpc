@@ -94,8 +94,7 @@ class ServerMetricRecorder {
   grpc_core::BackendMetricData GetMetrics() const;
   // Returned metric data is guaranteed to be identical between two calls if the
   // sequence numbers match.
-  std::shared_ptr<const BackendMetricDataState> GetMetricsIfChanged()
-      const;
+  std::shared_ptr<const BackendMetricDataState> GetMetricsIfChanged() const;
 
   mutable grpc::internal::Mutex mu_;
   std::shared_ptr<const BackendMetricDataState> metric_state_

@@ -2901,8 +2901,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
       const grpc_core::DebugLocation& location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const std::vector<size_t>& expected_weights, size_t total_passes,
-      EchoRequest* request_ptr = nullptr,
-      int timeout_ms = 15000,
+      EchoRequest* request_ptr = nullptr, int timeout_ms = 15000,
       absl::Duration wait_between_rounds = absl::ZeroDuration()) {
     GPR_ASSERT(expected_weights.size() == servers_.size());
     size_t total_picks_per_pass = 0;
@@ -2991,8 +2990,7 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationWithOob) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator);
   auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts(),
-                                       kServiceConfigOob);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfigOob);
   // Wait for the right set of WRR picks.
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
                                 /*expected_weighted=*/{1, 3, 3},
@@ -3099,8 +3097,7 @@ TEST_P(WeightedRoundRobinParamTest, InvalidWeight) {
             channel->GetLoadBalancingPolicyName());
 }
 
-using WeightedRoundRobinWeightBlackoutParamTest =
-    WeightedRoundRobinParamTest;
+using WeightedRoundRobinWeightBlackoutParamTest = WeightedRoundRobinParamTest;
 
 INSTANTIATE_TEST_SUITE_P(
     WeightedRoundRobin, WeightedRoundRobinWeightBlackoutParamTest,

@@ -3634,16 +3634,16 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     language = "c++",
-    deps = [ "//:gpr_platform", ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
     name = "grpc_backend_metric_provider",
-    external_deps = [
-        "absl/types:optional",
-    ],
     hdrs = [
         "ext/filters/backend_metrics/backend_metric_provider.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
     ],
     language = "c++",
 )
