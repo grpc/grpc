@@ -76,7 +76,9 @@ Pod::Spec.new do |s|
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/**"',
+        ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
     # If we don't set these two settings, `include/grpc/support/time.h` and
     # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
     # build.
@@ -1128,6 +1130,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
+                      'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/executor/executor.h',
                       'src/core/lib/event_engine/forkable.cc',
                       'src/core/lib/event_engine/forkable.h',
