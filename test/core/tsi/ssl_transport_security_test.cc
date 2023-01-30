@@ -191,10 +191,11 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
       TSI_OK);
 }
 
-static void check_verified_root_cert_subject(ssl_tsi_test_fixture* /*ssl_fixture*/,
-                                  const tsi_peer* peer) {
+static void check_verified_root_cert_subject(
+    ssl_tsi_test_fixture* /*ssl_fixture*/, const tsi_peer* peer) {
   const tsi_peer_property* verified_root_cert_subject =
-      tsi_peer_get_property_by_name(peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
+      tsi_peer_get_property_by_name(
+          peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
   ASSERT_NE(verified_root_cert_subject, nullptr);
   const char* expected_match =
       "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
