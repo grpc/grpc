@@ -1964,18 +1964,13 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/types:optional",
-        "upb_lib",
     ],
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/call_metric_recorder.h",
     ],
     visibility = ["@grpc:public"],
-    deps = [
-        "grpc++_public_hdrs",
-        "xds_orca_upb",
-        "//src/core:arena",
-    ],
+    deps = ["grpc++_public_hdrs"],
 )
 
 grpc_cc_library(

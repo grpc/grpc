@@ -3643,9 +3643,7 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/backend_metrics/backend_metric_provider.h",
     ],
-    external_deps = [
-        "absl/types:optional",
-    ],
+    external_deps = ["absl/types:optional"],
     language = "c++",
 )
 
@@ -4695,17 +4693,14 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
-        "arena_promise",
         "channel_args",
         "grpc_backend_metric_data",
         "grpc_backend_metric_provider",
         "map",
-        "xds_orca_service_upb",
-        "xds_orca_upb",
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_trace",
-        "//:promise",
+        "//:xds_orca_upb",
     ],
     alwayslink = 1,
 )
