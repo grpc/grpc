@@ -64,9 +64,8 @@ class ExecCtxState {
   }
 
   void IncExecCtxCount() {
-    // If we are in an EventEngine thread, we should not block any ExecCtx
-    // operations. EventEngine threads are expected to be well-behaved on fork,
-    // so this accounting should be unnecessary.
+    // EventEngine is expected to terminate all threads before fork, and so this
+    // extra work is unnecessary
     if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
       gpr_atm_no_barrier_fetch_add(&count_, 1);
       return;
