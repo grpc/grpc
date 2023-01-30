@@ -16,9 +16,9 @@
 from __future__ import print_function
 
 import logging
+from time import sleep
 
 import grpc
-from time import sleep
 import helloworld_pb2
 import helloworld_pb2_grpc
 

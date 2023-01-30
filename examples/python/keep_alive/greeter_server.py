@@ -18,7 +18,6 @@ import logging
 from time import sleep
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
 
