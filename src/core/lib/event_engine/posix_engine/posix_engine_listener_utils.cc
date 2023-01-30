@@ -137,7 +137,7 @@ int GetMaxAcceptQueueSize() {
 absl::Status PrepareSocket(const PosixTcpOptions& options,
                            ListenerSocket& socket) {
   ResolvedAddress sockname_temp;
-  absl::Status error;
+
   int fd = socket.sock.Fd();
   GPR_ASSERT(fd >= 0);
   bool close_fd = true;

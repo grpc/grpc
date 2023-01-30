@@ -1361,7 +1361,6 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     // do nothing
   } else if (error.ok()) {
     // Pass the error reference to calld->recv_initial_metadata_error
-    grpc_error_handle src_error = error;
     error = absl::UnknownError("Missing :authority or :path");
     calld->recv_initial_metadata_error_ = error;
   }
