@@ -630,8 +630,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
         if (t->keepalive_watchdog_timer_handle) {
           if (t->event_engine->Cancel(*t->keepalive_watchdog_timer_handle)) {
             GRPC_CHTTP2_UNREF_TRANSPORT(t, "keepalive watchdog");
+            t->keepalive_watchdog_timer_handle.reset();
           }
-          t->keepalive_watchdog_timer_handle.reset();
         }
         break;
       case GRPC_CHTTP2_KEEPALIVE_STATE_DYING:
@@ -1588,6 +1588,7 @@ void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t) {
 static void retry_initiate_ping_locked(void* tp, grpc_error_handle error) {
   GPR_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
+  GPR_ASSERT(t->ping_state.delayed_ping_timer_handle);
   t->ping_state.delayed_ping_timer_handle.reset();
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING);
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "retry_initiate_ping_locked");
@@ -2646,6 +2647,8 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
   GPR_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
+  GPR_ASSERT(t->keepalive_ping_timer_handle);
+  t->keepalive_ping_timer_handle.reset();
   if (t->destroying || !t->closed_with_error.ok()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
   } else {
@@ -2726,9 +2729,10 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error) {
       if (t->keepalive_watchdog_timer_handle) {
         if (t->event_engine->Cancel(*t->keepalive_watchdog_timer_handle)) {
           GRPC_CHTTP2_UNREF_TRANSPORT(t, "keepalive watchdog");
+          t->keepalive_watchdog_timer_handle.reset();
         }
-        t->keepalive_watchdog_timer_handle.reset();
       }
+      GPR_ASSERT(!t->keepalive_ping_timer_handle);
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
       t->keepalive_ping_timer_handle =
           t->event_engine->RunAfter(t->keepalive_time, [t] {
@@ -2752,6 +2756,8 @@ static void keepalive_watchdog_fired_locked(void* arg,
                                             grpc_error_handle error) {
   GPR_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
+  GPR_ASSERT(t->keepalive_watchdog_timer_handle);
+  t->keepalive_watchdog_timer_handle.reset();
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     gpr_log(GPR_INFO, "%s: Keepalive watchdog fired. Closing transport.",
             t->peer_string.c_str());
