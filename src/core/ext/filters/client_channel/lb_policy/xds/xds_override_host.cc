@@ -796,7 +796,7 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
     auto host_status_list = LoadJsonObjectField<std::vector<std::string>>(
         json.object_value(), args, "overrideHostStatus", errors,
         /*required=*/false);
-    if (host_status_list.has_value() && !host_status_list->empty()) {
+    if (host_status_list.has_value()) {
       for (size_t i = 0; i < host_status_list->size(); ++i) {
         const std::string& host_status = (*host_status_list)[i];
         auto status = XdsHealthStatus::FromString(host_status);

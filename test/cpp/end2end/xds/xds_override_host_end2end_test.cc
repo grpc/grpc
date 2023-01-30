@@ -37,6 +37,7 @@
 namespace grpc {
 namespace testing {
 namespace {
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::filters::http::stateful_session::v3::StatefulSession;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
@@ -187,6 +188,12 @@ TEST_P(OverrideHostTest, HappyPath) {
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(),
                                    default_route_config_);
+  Cluster cluster;
+  auto* lb_config = cluster.mutable_common_lb_config();
+  auto* override_health_status_set = lb_config->mutable_override_host_status();
+  override_health_status_set->add_statuses(HealthStatus::HEALTHY);
+  override_health_status_set->add_statuses(HealthStatus::UNKNOWN);
+  balancer_->ads_service()->SetCdsResource(cluster);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends(DEBUG_LOCATION);
