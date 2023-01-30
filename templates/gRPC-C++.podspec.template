@@ -136,7 +136,9 @@
       'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'${"\\"}
-          ' "$(PODS_TARGET_SRCROOT)/third_party/**"',
+          ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
       'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
       'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
       'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
