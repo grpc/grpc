@@ -40,10 +40,14 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args,
-                                            bool request_status_early) {
+                                            bool request_status_early,
+                                            bool recv_message_separately) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s/request_status_early=%s", test_name,
-          config.name, request_status_early ? "true" : "false");
+  gpr_log(
+      GPR_INFO,
+      "Running test: %s/%s/request_status_early=%s/recv_message_separately=%s",
+      test_name, config.name, request_status_early ? "true" : "false",
+      recv_message_separately ? "true" : "false");
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -108,7 +112,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
   grpc_end2end_test_fixture f =
       begin_test(config, "streaming_error_response", nullptr, nullptr,
-                 request_status_early);
+                 request_status_early, recv_message_separately);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
