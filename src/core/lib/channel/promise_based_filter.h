@@ -356,9 +356,9 @@ class BaseCallData : public Activity, private Wakeable {
     void GotPipe(T* pipe);
     // Called from client/server polling to do the send message part of the
     // work.
-    void WakeInsideCombiner(Flusher* flusher);
+    void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
-    void Done(const ServerMetadata& metadata);
+    void Done(const ServerMetadata& metadata, Flusher* flusher);
     // Return true if we have a batch captured (for debug logs)
     bool HaveCapturedBatch() const { return batch_.is_captured(); }
     // Return true if we're not actively sending a message.
