@@ -813,7 +813,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct RpcResult {
     Status status;
     EchoResponse response;
-    std::map<std::string, std::string> initial_metadata;
   };
   void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
                      std::function<bool(const RpcResult&)> continue_predicate,

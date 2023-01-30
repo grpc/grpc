@@ -71,7 +71,7 @@ class OverrideHostTest : public XdsEnd2endTest {
       const std::multimap<std::string, std::string>& server_initial_metadata) {
     auto range = server_initial_metadata.equal_range("set-cookie");
     std::multimap<std::string, Cookie, std::less<>> cookies;
-    for (auto it = range.first; it != range.second; it++) {
+    for (auto it = range.first; it != range.second; ++it) {
       std::pair<absl::string_view, absl::string_view> name_value =
           absl::StrSplit(it->second, absl::MaxSplits('=', 1));
       if (name_value.first.empty()) {
@@ -97,7 +97,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     auto cookies = ParseCookies(server_initial_metadata);
     auto range = cookies.equal_range(cookie_name);
     std::vector<std::string> values;
-    for (auto it = range.first; it != range.second; it++) {
+    for (auto it = range.first; it != range.second; ++it) {
       Cookie& grpc_session_cookie = it->second;
       EXPECT_FALSE(grpc_session_cookie.value.empty());
       EXPECT_NE(grpc_session_cookie.attributes.find("HttpOnly"),
@@ -155,7 +155,7 @@ class OverrideHostTest : public XdsEnd2endTest {
       absl::variant<std::function<int(size_t backend_idx)>, int> call_count,
       RpcService service = RpcService::SERVICE_ECHO,
       const grpc_core::DebugLocation& debug_location = DEBUG_LOCATION) {
-    for (size_t i = 0; i < backends_.size(); i++) {
+    for (size_t i = 0; i < backends_.size(); ++i) {
       EXPECT_EQ(
           grpc_core::Match(
               call_count,
@@ -181,21 +181,15 @@ class OverrideHostTest : public XdsEnd2endTest {
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, OverrideHostTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
 TEST_P(OverrideHostTest, HappyPath) {
   CreateAndStartBackends(2);
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::ROUND_ROBIN);
-  balancer_->ads_service()->SetCdsResource(cluster);
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(),
                                    default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetRdsResource(RouteConfiguration());
-  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
-                 WaitForBackendOptions());
-  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
-                 WaitForBackendOptions());
+  WaitForAllBackends(DEBUG_LOCATION);
   // First call gets the cookie. RR policy picks the backend we will use.
   auto server_initial_metadata =
       SendRpcGetServerMetadata(DEBUG_LOCATION, RpcOptions());
@@ -203,34 +197,32 @@ TEST_P(OverrideHostTest, HappyPath) {
       GetStatefulSessionCookie(server_initial_metadata);
   ASSERT_EQ(stateful_session_cookie.size(), 1);
   size_t backend_idx = -1;
-  for (size_t i = 0; i < backends_.size(); i++) {
+  for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() == 1) {
-      backends_[i]->backend_service()->ResetCounters();
       backend_idx = i;
       break;
     }
   }
   ASSERT_NE(-1, backend_idx);
-  CheckBackendCallCounts(0);
+  ResetBackendCounters();
+  std::vector<std::pair<std::string, std::string>> session_cookie = {
+      {"cookie", absl::StrFormat("%s=%s", "grpc_session_cookie",
+                                 stateful_session_cookie[0])}};
   // All requests go to the backend we specified
-  CheckRpcSendOk(
-      DEBUG_LOCATION, 5,
-      RpcOptions().set_metadata(
-          {{"cookie", absl::StrFormat("%s=%s", "grpc_session_cookie",
-                                      stateful_session_cookie[0])}}));
+  CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(session_cookie));
   CheckBackendCallCounts(
       [=](size_t idx) { return idx == backend_idx ? 5 : 0; });
   // Round-robin spreads the load
+  ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, backends_.size() * 2);
-  CheckBackendCallCounts(2);
+  EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
   // Call a different service with the same cookie
-  CheckRpcSendOk(
-      DEBUG_LOCATION, 5,
-      RpcOptions()
-          .set_metadata(
-              {{"cookie", absl::StrFormat("%s=%s", "grpc_session_cookie",
-                                          stateful_session_cookie[0])}})
-          .set_rpc_service(RpcService::SERVICE_ECHO2));
+  ResetBackendCounters();
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions()
+                     .set_metadata(session_cookie)
+                     .set_rpc_service(RpcService::SERVICE_ECHO2));
   CheckBackendCallCounts([=](size_t idx) { return idx == backend_idx ? 5 : 0; },
                          RpcService::SERVICE_ECHO2);
 }

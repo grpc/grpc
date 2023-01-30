@@ -580,7 +580,7 @@ XdsOverrideHostLb::GetSubchannelByAddress(
     absl::string_view address, XdsHealthStatusSet overriden_health_statuses) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
-  if (it == subchannel_map_.end()) {
+  if (it == subchannel_map_.end() || it->second.GetSubchannel() == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
       gpr_log(GPR_INFO, "Subchannel %s was not found",
               std::string(address).c_str());
