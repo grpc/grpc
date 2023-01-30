@@ -580,6 +580,29 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
       << decode_result.resource.status();
 }
 
+TEST_F(ClusterTypeTest, AggregateClusterEmptyClusterList) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
+  cluster.mutable_cluster_type()->mutable_typed_config()->PackFrom(
+      ClusterConfig());
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:cluster_type.typed_config.value["
+            "envoy.extensions.clusters.aggregate.v3.ClusterConfig].clusters "
+            "error:must be non-empty]")
+      << decode_result.resource.status();
+}
+
 //
 // LB policy tests
 //
