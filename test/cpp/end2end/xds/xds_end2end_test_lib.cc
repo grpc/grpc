@@ -251,7 +251,7 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
 
 void XdsEnd2endTest::BackendServerThread::RegisterAllServices(
     ServerBuilder* builder) {
-  experimental::EnableCallMetricRecording(builder);
+  ServerBuilder::experimental_type(builder).EnableCallMetricRecording();
   builder->RegisterService(&backend_service_);
   builder->RegisterService(&backend_service1_);
   builder->RegisterService(&backend_service2_);
