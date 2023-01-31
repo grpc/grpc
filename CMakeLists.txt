@@ -13968,7 +13968,7 @@ add_executable(interceptor_list_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
 target_include_directories(interceptor_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
