@@ -252,9 +252,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
             grpc_fake_transport_security_credentials_create())) {}
 
   static void SetUpTestSuite() {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
     grpc_core::SetEnv("grpc_cfstream", "0");
@@ -2737,7 +2734,7 @@ TEST_F(OobBackendMetricTest, Basic) {
             channel->GetLoadBalancingPolicyName());
   // Check report seen by client.
   bool report_seen = false;
-  for (size_t i = 0; i < 10; ++i) {
+  for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
@@ -2763,7 +2760,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   servers_[0]->server_metric_recorder_->SetCpuUtilization(0.4);
   // Wait for client to see new report.
   report_seen = false;
-  for (size_t i = 0; i < 10; ++i) {
+  for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
@@ -3003,6 +3000,9 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
