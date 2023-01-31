@@ -229,6 +229,12 @@ if(WIN32)
   set(_gRPC_PLATFORM_WINDOWS ON)
 endif()
 
+if (APPLE AND NOT DEFINED CMAKE_CXX_STANDARD)
+  # AppleClang defaults to C++98, so we bump it to C++14.
+  message("CMAKE_CXX_STANDARD was undefined, defaulting to C++14.")
+  set(CMAKE_CXX_STANDARD 14)
+endif ()
+
 if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 endif()
