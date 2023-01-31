@@ -157,8 +157,10 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
     }
   }
   if (key_cert_lib->use_cert_signed_by_intermediate_ca) {
-    server_options.pem_key_cert_pairs = key_cert_lib->leaf_signed_by_intermediate_key_cert_pair;
-    server_options.num_key_cert_pairs = key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs;
+    server_options.pem_key_cert_pairs =
+        key_cert_lib->leaf_signed_by_intermediate_key_cert_pair;
+    server_options.num_key_cert_pairs =
+        key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs;
   } else {
     server_options.pem_key_cert_pairs =
         key_cert_lib->use_bad_server_cert
@@ -507,7 +509,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM;
   key_cert_lib->bad_server_num_key_cert_pairs =
       SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM;
-  key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs = 
+  key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs =
       SSL_TSI_TEST_LEAF_SIGNED_BY_INTERMEDIATE_KEY_CERT_PAIRS_NUM;
   key_cert_lib->server_pem_key_cert_pairs =
       static_cast<tsi_ssl_pem_key_cert_pair*>(
@@ -517,10 +519,10 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
                      key_cert_lib->bad_server_num_key_cert_pairs));
-  key_cert_lib->leaf_signed_by_intermediate_key_cert_pair=
-      static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
-                     key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs));
+  key_cert_lib->leaf_signed_by_intermediate_key_cert_pair =
+      static_cast<tsi_ssl_pem_key_cert_pair*>(gpr_malloc(
+          sizeof(tsi_ssl_pem_key_cert_pair) *
+          key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs));
   key_cert_lib->server_pem_key_cert_pairs[0].private_key =
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.key");
   key_cert_lib->server_pem_key_cert_pairs[0].cert_chain =
@@ -541,10 +543,12 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.key");
   key_cert_lib->bad_client_pem_key_cert_pair.cert_chain =
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.pem");
-  key_cert_lib->leaf_signed_by_intermediate_key_cert_pair[0].private_key = 
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "leaf_signed_by_intermediate.key");
-  key_cert_lib->leaf_signed_by_intermediate_key_cert_pair[0].cert_chain = 
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "leaf_signed_by_intermediate.pem");
+  key_cert_lib->leaf_signed_by_intermediate_key_cert_pair[0].private_key =
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR,
+                "leaf_signed_by_intermediate.key");
+  key_cert_lib->leaf_signed_by_intermediate_key_cert_pair[0].cert_chain =
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR,
+                "leaf_signed_by_intermediate.pem");
   key_cert_lib->root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
   key_cert_lib->root_store =
       tsi_ssl_root_certs_store_create(key_cert_lib->root_cert);
