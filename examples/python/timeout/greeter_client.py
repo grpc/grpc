@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""gRPC Python helloworld.Greeter client with channel options and call timeout parameters."""
+"""gRPC Python helloworld.Greeter client with call timeout parameters."""
 
 from __future__ import print_function
 
@@ -30,7 +30,7 @@ def unary_call(stub: helloworld_pb2_grpc.GreeterStub, request_id: int,
                                  timeout=3)
         print(f"Greeter client received: {response.message}")
     except grpc.RpcError as rpc_error:
-        print('Call failed with code: ', rpc_error.code())
+        print(f"Call failed with code: {rpc_error.code()}")
 
 
 def run():

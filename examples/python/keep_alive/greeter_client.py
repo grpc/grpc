@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""gRPC Python helloworld.Greeter client with channel options and call timeout parameters."""
+"""gRPC Python helloworld.Greeter client with keepAlive channel options."""
 
 from __future__ import print_function
 
@@ -46,9 +46,9 @@ def run():
         send a data/header frame.
     For more details, check: https://github.com/grpc/grpc/blob/master/doc/keepalive.md
     """
-    channel_options = [('grpc.keepalive_time_ms', 10000),
-                       ('grpc.keepalive_timeout_ms', 2000),
-                       ('grpc.http2.max_pings_without_data', 0),
+    channel_options = [('grpc.keepalive_time_ms', 8000),
+                       ('grpc.keepalive_timeout_ms', 5000),
+                       ('grpc.http2.max_pings_without_data', 5),
                        ('grpc.keepalive_permit_without_calls', 1)]
 
     with grpc.insecure_channel(target='localhost:50051',
@@ -58,7 +58,7 @@ def run():
         unary_call(stub, 1, 'you')
 
         # Run 30s, run this with GRPC_VERBOSITY=DEBUG GRPC_TRACE=http_keepalive to observe logs.
-        # Client will be closed after 15s due to idleness (no outstanding rpcs).
+        # Client will be closed after receveing GOAWAY from server.
         for i in range(30):
             print(f"{i} seconds paased.")
             sleep(1)
