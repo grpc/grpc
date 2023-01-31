@@ -37,7 +37,6 @@
 namespace grpc {
 namespace testing {
 namespace {
-using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::filters::http::stateful_session::v3::StatefulSession;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
@@ -98,8 +97,7 @@ class OverrideHostTest : public XdsEnd2endTest {
         continue;
       }
       EXPECT_FALSE(cookie->value.empty());
-      EXPECT_NE(cookie->attributes.find("HttpOnly"), cookie->attributes.end())
-          << cookie->raw;
+      EXPECT_THAT(cookie->attributes, ::testing::Contains("HttpOnly"));
       values.emplace_back(cookie->value);
     }
     return values;
