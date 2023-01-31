@@ -68,6 +68,23 @@ def _simple_resource_get(func):
     return _wrap_simple_resource_get
 
 
+def _simple_resource_delete(func):
+
+    def _wrap_simple_resource_delete(self: 'KubernetesNamespace', *args,
+                                     **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except ApiException as e:
+            if e.status == 401:
+                # 401 Unauthorized: token might be expired, attempt auth refresh
+                self.refresh_auth()
+                return func(self, *args, **kwargs)
+            # Reraise for anything else.
+            raise
+
+    return _wrap_simple_resource_delete
+
+
 def label_dict_to_selector(labels: dict) -> str:
     return ','.join(f'{k}=={v}' for k, v in labels.items())
 
@@ -144,6 +161,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def get_service_account(self, name) -> V1Service:
         return self.api.core.read_namespaced_service_account(name, self.name)
 
+    @_simple_resource_delete
     def delete_service(self,
                        name,
                        grace_period_seconds=DELETE_GRACE_PERIOD_SEC):
@@ -154,6 +172,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 propagation_policy='Foreground',
                 grace_period_seconds=grace_period_seconds))
 
+    @_simple_resource_delete
     def delete_service_account(self,
                                name,
                                grace_period_seconds=DELETE_GRACE_PERIOD_SEC):
@@ -168,6 +187,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def get(self) -> V1Namespace:
         return self.api.core.read_namespace(self.name)
 
+    @_simple_resource_delete
     def delete(self, grace_period_seconds=DELETE_GRACE_PERIOD_SEC):
         self.api.core.delete_namespace(
             name=self.name,
@@ -236,6 +256,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def get_deployment(self, name) -> V1Deployment:
         return self.api.apps.read_namespaced_deployment(name, self.name)
 
+    @_simple_resource_delete
     def delete_deployment(
             self,
             name: str,
@@ -304,11 +325,13 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             check_result=lambda deployment: deployment is None)
         retryer(self.get_deployment, deployment_name)
 
+    @_simple_resource_get
     def list_pods_with_labels(self, labels: dict) -> List[V1Pod]:
         pod_list: V1PodList = self.api.core.list_namespaced_pod(
             self.name, label_selector=label_dict_to_selector(labels))
         return pod_list.items
 
+    @_simple_resource_get
     def get_pod(self, name: str) -> V1Pod:
         return self.api.core.read_namespaced_pod(name, self.name)
 
