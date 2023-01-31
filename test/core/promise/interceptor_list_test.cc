@@ -14,6 +14,7 @@
 
 #include "src/core/lib/promise/interceptor_list.h"
 
+#include <initializer_list>
 #include <memory>
 
 #include "gtest/gtest.h"
