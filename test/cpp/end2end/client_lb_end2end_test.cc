@@ -251,13 +251,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
-  static void SetUpTestSuite() {
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-  }
-
   void SetUp() override {
     grpc_init();
     bool localhost_resolves_to_ipv4 = false;
@@ -3003,6 +2996,10 @@ int main(int argc, char** argv) {
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  grpc_core::SetEnv("grpc_cfstream", "0");
+#endif
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
