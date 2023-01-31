@@ -3643,7 +3643,6 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/backend_metrics/backend_metric_provider.h",
     ],
-    external_deps = ["absl/types:optional"],
     language = "c++",
 )
 

@@ -19,8 +19,6 @@
 #ifndef GRPC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_PROVIDER_H
 #define GRPC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_PROVIDER_H
 
-#include "absl/types/optional.h"
-
 namespace grpc_core {
 
 struct BackendMetricData;
