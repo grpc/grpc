@@ -2889,7 +2889,6 @@ const char kServiceConfigOob[] =
     "    {\"weighted_round_robin_experimental\": {\n"
     "      \"blackoutPeriod\": \"0s\",\n"
     "      \"weightUpdatePeriod\": \"0.1s\",\n"
-    "      \"weightExpirationPeriod\": \"2s\",\n"
     "      \"enableOobLoadReport\": true\n"
     "    }}\n"
     "  ]\n"

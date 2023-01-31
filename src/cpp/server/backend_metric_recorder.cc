@@ -47,8 +47,7 @@ std::unique_ptr<ServerMetricRecorder> ServerMetricRecorder::Create() {
 }
 
 ServerMetricRecorder::ServerMetricRecorder()
-    : metric_state_(std::make_shared<
-                    const ServerMetricRecorder::BackendMetricDataState>()) {}
+    : metric_state_(std::make_shared<const BackendMetricDataState>()) {}
 
 void ServerMetricRecorder::UpdateBackendMetricDataState(
     std::function<void(BackendMetricData*)> updater) {
