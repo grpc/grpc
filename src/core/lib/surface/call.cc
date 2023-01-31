@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <initializer_list>
 #include <memory>
 #include <new>
 #include <string>

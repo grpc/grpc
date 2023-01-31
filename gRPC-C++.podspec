@@ -212,7 +212,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20220623.0'
+    abseil_version = '1.20230125.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version

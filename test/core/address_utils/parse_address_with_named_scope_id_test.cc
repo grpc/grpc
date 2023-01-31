@@ -26,6 +26,7 @@
 #include <sys/un.h>
 #endif
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/status/status.h"

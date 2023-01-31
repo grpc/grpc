@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <initializer_list>
 #include <memory>
 
 #include "absl/status/status.h"
