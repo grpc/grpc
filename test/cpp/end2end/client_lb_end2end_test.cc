@@ -128,7 +128,7 @@ class MyTestServiceImpl : public TestServiceImpl {
     return TestServiceImpl::Echo(context, request, response);
   }
 
-  int request_count() {
+  size_t request_count() {
     grpc_core::MutexLock lock(&mu_);
     return request_count_;
   }
@@ -150,7 +150,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   grpc_core::Mutex mu_;
-  int request_count_ ABSL_GUARDED_BY(&mu_) = 0;
+  size_t request_count_ ABSL_GUARDED_BY(&mu_) = 0;
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
@@ -2737,7 +2737,7 @@ TEST_F(OobBackendMetricTest, Basic) {
             channel->GetLoadBalancingPolicyName());
   // Check report seen by client.
   bool report_seen = false;
-  for (size_t i = 0; i < 5; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
@@ -2763,7 +2763,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   servers_[0]->server_metric_recorder_->SetCpuUtilization(0.4);
   // Wait for client to see new report.
   report_seen = false;
-  for (size_t i = 0; i < 5; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
