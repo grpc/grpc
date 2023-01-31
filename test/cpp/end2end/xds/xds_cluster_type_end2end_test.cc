@@ -550,6 +550,58 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
+// This tests a bug seen in the wild where the cds LB policy was
+// incorrectly modifying its copy of the XdsClusterResource for the root
+// cluster when generating the child policy config, so when we later
+// received an update for one of the underlying clusters, we were no
+// longer able to generate a valid child policy config.
+TEST_P(AggregateClusterTest, UpdateOfChildCluster) {
+  CreateAndStartBackends(2);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  // Populate new EDS resources.
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Now reconfigure the underlying cluster to point to a different EDS
+  // resource containing backend 1.
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(DEBUG_LOCATION, 1);
+  response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+}
+
 TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
   // Populate EDS resource.
   CreateAndStartBackends(1);
