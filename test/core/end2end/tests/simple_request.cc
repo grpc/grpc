@@ -238,11 +238,11 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   cq_verifier_destroy(cqv);
 
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   int expected_calls = 1;
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
 
   grpc_stats_collect(after);
 
