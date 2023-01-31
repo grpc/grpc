@@ -144,8 +144,8 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
-  StrictMock<FilterTest::Call> call(*ClientAuthFilter::Create(
-      MakeChannelArgs(absl::AbortedError("nope")), ChannelFilter::Args()));
+  StrictMock<FilterTest::Call> call(FilterTest(*ClientAuthFilter::Create(
+      MakeChannelArgs(absl::AbortedError("nope")), ChannelFilter::Args())));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
   EXPECT_CALL(
       call,

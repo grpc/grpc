@@ -113,7 +113,7 @@ TEST(FilterTestTest, MakeClientMetadata) {
 TEST(FilterTestTest, MakeServerMetadata) {
   StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
   auto md = call.NewServerMetadata({{":status", "200"}});
-  EXPECT_EQ(md->get(HttpStatusMetadata()), 200);
+  EXPECT_EQ(md->get(HttpStatusMetadata()), HttpStatusMetadata::ValueType(200));
 }
 
 TEST(FilterTestTest, CanStart) {
