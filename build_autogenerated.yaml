@@ -7043,6 +7043,7 @@ targets:
   deps:
   - grpc
   - grpc_unsecure
+  uses_polling: false
 - name: flaky_network_test
   gtest: true
   build: test

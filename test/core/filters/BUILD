@@ -54,6 +54,8 @@ grpc_cc_test(
     name = "filter_test_test",
     srcs = ["filter_test_test.cc"],
     external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "filter_test",
         "//:grpc_unsecure",
