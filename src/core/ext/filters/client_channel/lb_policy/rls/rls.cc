@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <initializer_list>
 #include <list>
 #include <map>
 #include <memory>
