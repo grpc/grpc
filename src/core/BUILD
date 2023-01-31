@@ -4764,7 +4764,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "arena",
         "channel_args",
         "grpc_backend_metric_data",
         "grpc_backend_metric_provider",
