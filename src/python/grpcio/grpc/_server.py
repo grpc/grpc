@@ -499,8 +499,12 @@ def _call_behavior(
                     _abort(state, rpc_event.call, cygrpc.StatusCode.unknown,
                            b'RPC Aborted')
                 elif exception not in state.rpc_errors:
-                    details = 'Exception calling application: {}'.format(
-                        exception)
+                    try:
+                        details = 'Exception calling application: {}'.format(
+                            exception)
+                    except Exception:  # pylint: disable=broad-except
+                        details = 'Calling application raised unprintable Exception!'
+                        traceback.print_exc()
                     _LOGGER.exception(details)
                     _abort(state, rpc_event.call, cygrpc.StatusCode.unknown,
                            _common.encode(details))

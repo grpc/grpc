@@ -1354,8 +1354,9 @@ RetryFilter::CallData::CallAttempt::BatchData::~BatchData() {
             this);
   }
   CallAttempt* call_attempt = std::exchange(call_attempt_, nullptr);
-  GRPC_CALL_STACK_UNREF(call_attempt->calld_->owning_call_, "Retry BatchData");
+  grpc_call_stack* owning_call = call_attempt->calld_->owning_call_;
   call_attempt->Unref(DEBUG_LOCATION, "~BatchData");
+  GRPC_CALL_STACK_UNREF(owning_call, "Retry BatchData");
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::

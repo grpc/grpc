@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <type_traits>

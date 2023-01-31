@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
+#include <initializer_list>
 #include <new>
 
 #include "absl/status/status.h"

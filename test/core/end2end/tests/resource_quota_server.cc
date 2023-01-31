@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <initializer_list>
+
 #include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>

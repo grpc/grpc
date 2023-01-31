@@ -54,7 +54,9 @@ Pod::Spec.new do |s|
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/**"',
+        ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
     'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
@@ -210,7 +212,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20220623.0'
+    abseil_version = '1.20230125.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -843,6 +845,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_epoll1_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
+                      'src/core/lib/iomgr/event_engine_shims/closure.h',
                       'src/core/lib/iomgr/event_engine_shims/endpoint.h',
                       'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                       'src/core/lib/iomgr/exec_ctx.h',
@@ -1769,6 +1772,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_epoll1_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
+                              'src/core/lib/iomgr/event_engine_shims/closure.h',
                               'src/core/lib/iomgr/event_engine_shims/endpoint.h',
                               'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                               'src/core/lib/iomgr/exec_ctx.h',

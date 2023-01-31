@@ -119,7 +119,7 @@ class ChannelFilter {
   }
 
  private:
-  // TODO(ctiller): remove once per-channel-stack event engines land
+  // TODO(ctiller): remove once per-channel-stack EventEngines land
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
@@ -292,7 +292,7 @@ class BaseCallData : public Activity, private Wakeable {
     // work.
     void WakeInsideCombiner(Flusher* flusher);
     // Call is completed, we have trailing metadata. Close things out.
-    void Done(const ServerMetadata& metadata);
+    void Done(const ServerMetadata& metadata, Flusher* flusher);
     // Return true if we have a batch captured (for debug logs)
     bool HaveCapturedBatch() const { return batch_.is_captured(); }
     // Return true if we're not actively sending a message.
