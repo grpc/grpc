@@ -20,6 +20,7 @@
 #include <initializer_list>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -49,14 +50,21 @@ namespace promise_filter_detail {
 namespace {
 class FakeActivity final : public Activity {
  public:
+  explicit FakeActivity(Activity* wake_activity)
+      : wake_activity_(wake_activity) {}
   void Orphan() override {}
   void ForceImmediateRepoll() override {}
-  Waker MakeOwningWaker() override { abort(); }
-  Waker MakeNonOwningWaker() override { abort(); }
+  Waker MakeOwningWaker() override { return wake_activity_->MakeOwningWaker(); }
+  Waker MakeNonOwningWaker() override {
+    return wake_activity_->MakeNonOwningWaker();
+  }
   void Run(absl::FunctionRef<void()> f) {
     ScopedActivity activity(this);
     f();
   }
+
+ private:
+  Activity* const wake_activity_;
 };
 
 absl::Status StatusFromMetadata(const ServerMetadata& md) {
@@ -103,7 +111,7 @@ BaseCallData::BaseCallData(
 }
 
 BaseCallData::~BaseCallData() {
-  FakeActivity().Run([this] {
+  FakeActivity(this).Run([this] {
     if (send_message_ != nullptr) {
       send_message_->~SendMessage();
     }
@@ -2279,7 +2287,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
-  FakeActivity().Run([this, filter] {
+  FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),
                  server_initial_metadata_pipe() == nullptr
@@ -2297,11 +2305,6 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   });
   // Poll once.
   WakeInsideCombiner(&flusher);
-  if (auto* closure =
-          std::exchange(original_recv_initial_metadata_ready_, nullptr)) {
-    flusher.AddClosure(closure, absl::OkStatus(),
-                       "original_recv_initial_metadata");
-  }
 }
 
 std::string ServerCallData::DebugString() const {
@@ -2481,9 +2484,20 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
       }
     }
   }
+  if (std::exchange(forward_recv_initial_metadata_callback_, false)) {
+    if (auto* closure =
+            std::exchange(original_recv_initial_metadata_ready_, nullptr)) {
+      flusher->AddClosure(closure, absl::OkStatus(),
+                          "original_recv_initial_metadata");
+    }
+  }
 }
 
-void ServerCallData::OnWakeup() { abort(); }  // not implemented
+void ServerCallData::OnWakeup() {
+  Flusher flusher(this);
+  ScopedContext context(this);
+  WakeInsideCombiner(&flusher);
+}
 
 }  // namespace promise_filter_detail
 }  // namespace grpc_core
