@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"

@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <limits>
 #include <map>
 #include <memory>

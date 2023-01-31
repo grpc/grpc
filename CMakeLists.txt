@@ -113,6 +113,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_civil_time
   absl_cleanup
   absl_cleanup_internal
+  absl_common_policy_traits
   absl_compressed_tuple
   absl_config
   absl_container_common
@@ -126,6 +127,10 @@ set(gRPC_ABSL_USED_TARGETS
   absl_cordz_update_scope
   absl_cordz_update_tracker
   absl_core_headers
+  absl_crc32c
+  absl_crc_cord_state
+  absl_crc_cpu_detect
+  absl_crc_internal
   absl_debugging_internal
   absl_demangle_internal
   absl_dynamic_annotations
@@ -152,6 +157,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_low_level_hash
   absl_malloc_internal
   absl_memory
+  absl_non_temporal_arm_intrinsics
+  absl_non_temporal_memcpy
   absl_numeric_representation
   absl_optional
   absl_prefetch
