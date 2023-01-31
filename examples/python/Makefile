@@ -24,6 +24,14 @@ ARTIFACTS += timeout/helloworld_pb2.py
 ARTIFACTS += timeout/helloworld_pb2_grpc.py
 ARTIFACTS += timeout/helloworld_pb2.pyi
 
+ARTIFACTS += keep_alive/helloworld_pb2.py
+ARTIFACTS += keep_alive/helloworld_pb2_grpc.py
+ARTIFACTS += keep_alive/helloworld_pb2.pyi
+
+ARTIFACTS += health_checking/helloworld_pb2.py
+ARTIFACTS += health_checking/helloworld_pb2_grpc.py
+ARTIFACTS += health_checking/helloworld_pb2.pyi
+
 ARTIFACTS += async_streaming/phone_pb2.py
 ARTIFACTS += async_streaming/phone_pb2_grpc.py
 ARTIFACTS += async_streaming/phone_pb2.pyi
@@ -76,6 +84,12 @@ helloworld/helloworld_pb2.py helloworld/helloworld_pb2_grpc.py helloworld/hellow
 
 timeout/helloworld_pb2.py timeout/helloworld_pb2_grpc.py timeout/helloworld_pb2.pyi: ../protos/helloworld.proto
 	python3 -m grpc_tools.protoc --python_out=timeout --grpc_python_out=timeout --pyi_out=timeout -I ../protos ../protos/helloworld.proto
+
+keep_alive/helloworld_pb2.py keep_alive/helloworld_pb2_grpc.py keep_alive/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=keep_alive --grpc_python_out=keep_alive --pyi_out=keep_alive -I ../protos ../protos/helloworld.proto
+
+health_checking/helloworld_pb2.py health_checking/helloworld_pb2_grpc.py health_checking/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=health_checking --grpc_python_out=health_checking --pyi_out=health_checking -I ../protos ../protos/helloworld.proto
 
 async_streaming/phone_pb2.py async_streaming/phone_pb2_grpc.py async_streaming/phone_pb2.pyi: async_streaming/phone.proto
 	python3 -m grpc_tools.protoc --python_out=async_streaming --grpc_python_out=async_streaming --pyi_out=async_streaming -I async_streaming async_streaming/phone.proto
