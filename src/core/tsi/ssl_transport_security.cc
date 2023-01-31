@@ -485,7 +485,8 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
     }
 
     result = peer_property_from_x509_subject(
-        cert, &peer->properties[current_insert_index++], false);
+        cert, &peer->properties[current_insert_index++],
+        /*is_verified_root_cert=*/false);
     if (result != TSI_OK) break;
 
     result = peer_property_from_x509_common_name(
@@ -883,6 +884,10 @@ static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
 }
 
 static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
+  if (ctx == nullptr) {
+    return preverify_ok;
+  }
+
   // There's a case where this function is set in SSL_CTX_set_verify and a CRL
   // related callback is set with X509_STORE_set_verify_cb. They overlap and
   // this will take precedence, thus we need to ensure the CRL related callback
@@ -893,6 +898,9 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
     preverify_ok = verify_cb(preverify_ok, ctx);
   }
 
+  // If preverify_ok == 0, verification failed. We shouldn't expect to have a
+  // verified chain, so there is no need to attempt to extract the root cert
+  // from it
   if (preverify_ok == 0) {
     return preverify_ok;
   }
@@ -906,7 +914,7 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
   }
 
   // The root cert is the last in the chain
-  auto chain_length = sk_X509_num(chain);
+  size_t chain_length = sk_X509_num(chain);
   if (chain_length == 0) {
     return preverify_ok;
   }
@@ -2204,7 +2212,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                              NullVerifyCallback);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
+                             RootCertExtractCallback);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
