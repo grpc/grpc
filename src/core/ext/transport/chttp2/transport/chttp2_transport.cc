@@ -2779,7 +2779,8 @@ static void keepalive_watchdog_fired_locked(void* arg,
 static void maybe_reset_keepalive_ping_timer(grpc_chttp2_transport* t) {
   if (t->keepalive_ping_timer_handle) {
     if (t->event_engine->Cancel(*t->keepalive_ping_timer_handle)) {
-      // Cancel succeeds, resets the keepalive ping timer.
+      // Cancel succeeds, resets the keepalive ping timer. Note that we don't
+      // need to Ref or Unref here since we still hold the Ref.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
           GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
         gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
@@ -2791,8 +2792,6 @@ static void maybe_reset_keepalive_ping_timer(grpc_chttp2_transport* t) {
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(t);
           });
-      // Note that we don't need to Ref or Unref here since we still hold the
-      // Ref.
     }
   }
 }
