@@ -45,6 +45,7 @@ class FilterTest::Call::Impl {
  public:
   Impl(Call* call, std::shared_ptr<Channel> channel)
       : call_(call), channel_(std::move(channel)) {}
+  ~Impl();
 
   Arena* arena() { return arena_.get(); }
   grpc_call_context_element* legacy_context() { return legacy_context_; }
@@ -91,6 +92,14 @@ class FilterTest::Call::Impl {
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element legacy_context_[GRPC_CONTEXT_COUNT] = {};
 };
+
+FilterTest::Call::Impl::~Impl() {
+  for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+    if (legacy_context_[i].destroy != nullptr) {
+      legacy_context_[i].destroy(legacy_context_[i].value);
+    }
+  }
+}
 
 void FilterTest::Call::Impl::Start(ClientMetadataHandle md) {
   EXPECT_EQ(promise_, absl::nullopt);
