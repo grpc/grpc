@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -47,10 +46,9 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_concurrently.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
@@ -165,32 +163,23 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
                                                *cookie_value);
   }
   // Intercept server initial metadata.
-  auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
-  auto* write_latch =
-      std::exchange(call_args.server_initial_metadata, read_latch);
-  return TryConcurrently(
-             Seq(next_promise_factory(std::move(call_args)),
-                 [cookie_config, cookie_value](ServerMetadataHandle md) {
-                   // If we got a Trailers-Only response, then add the
-                   // cookie to the trailing metadata instead of the
-                   // initial metadata.
-                   if (md->get(GrpcTrailersOnly()).value_or(false)) {
-                     MaybeUpdateServerInitialMetadata(cookie_config,
-                                                      cookie_value, md.get());
-                   }
-                   return md;
-                 }))
-      .NecessaryPull(Seq(read_latch->Wait(),
-                         [write_latch, cookie_config,
-                          cookie_value](ServerMetadata** md) -> absl::Status {
-                           if (*md != nullptr) {
-                             // Add cookie to server initial metadata if needed.
-                             MaybeUpdateServerInitialMetadata(
-                                 cookie_config, cookie_value, *md);
-                           }
-                           write_latch->Set(*md);
-                           return absl::OkStatus();
-                         }));
+  call_args.server_initial_metadata->InterceptAndMap(
+      [cookie_config, cookie_value](ServerMetadataHandle md) {
+        // Add cookie to server initial metadata if needed.
+        MaybeUpdateServerInitialMetadata(cookie_config, cookie_value, md.get());
+        return md;
+      });
+  return Map(next_promise_factory(std::move(call_args)),
+             [cookie_config, cookie_value](ServerMetadataHandle md) {
+               // If we got a Trailers-Only response, then add the
+               // cookie to the trailing metadata instead of the
+               // initial metadata.
+               if (md->get(GrpcTrailersOnly()).value_or(false)) {
+                 MaybeUpdateServerInitialMetadata(cookie_config, cookie_value,
+                                                  md.get());
+               }
+               return md;
+             });
 }
 
 absl::optional<absl::string_view>

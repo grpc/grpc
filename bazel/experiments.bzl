@@ -25,6 +25,7 @@ EXPERIMENTS = {
         ],
         "core_end2end_test": [
             "promise_based_client_call",
+            "promise_based_server_call",
         ],
         "endpoint_test": [
             "tcp_frame_size_tuning",

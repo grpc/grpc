@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
@@ -54,16 +55,17 @@
 
 namespace grpc_core {
 
-inline const grpc_slice& CSliceRef(const grpc_slice& slice) {
+inline const grpc_slice& CSliceRef(const grpc_slice& slice,
+                                   DebugLocation loc = {}) {
   if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Ref();
+    slice.refcount->Ref(loc);
   }
   return slice;
 }
 
-inline void CSliceUnref(const grpc_slice& slice) {
+inline void CSliceUnref(const grpc_slice& slice, DebugLocation loc = {}) {
   if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Unref();
+    slice.refcount->Unref(loc);
   }
 }
 
@@ -391,10 +393,11 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
   Slice Copy() const { return Slice(grpc_slice_copy(c_slice())); }
 
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
-                                    const uint8_t* begin, const uint8_t* end) {
+                                    const uint8_t* begin, const uint8_t* end,
+                                    DebugLocation location = {}) {
     grpc_slice out;
     out.refcount = r;
-    if (r != grpc_slice_refcount::NoopRefcount()) r->Ref();
+    if (r != grpc_slice_refcount::NoopRefcount()) r->Ref(location);
     out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
     out.data.refcounted.length = end - begin;
     return Slice(out);
