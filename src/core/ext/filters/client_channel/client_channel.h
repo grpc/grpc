@@ -531,8 +531,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
 
-  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
-
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_;
 
@@ -542,11 +540,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // Accessed while holding ClientChannel::lb_mu_.
   LbQueuedCallCanceller* lb_call_canceller_
       ABSL_GUARDED_BY(&ClientChannel::lb_mu_) = nullptr;
-
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const BackendMetricData* backend_metric_data_ = nullptr;
-  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
-      lb_subchannel_call_tracker_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
