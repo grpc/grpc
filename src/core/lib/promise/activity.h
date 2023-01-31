@@ -102,6 +102,10 @@ class Waker {
     return wakeable_ == other.wakeable_;
   }
 
+  bool operator!=(const Waker& other) const noexcept {
+    return wakeable_ != other.wakeable_;
+  }
+
   std::string ActivityDebugTag() {
     return wakeable_ == nullptr ? "<unknown>" : wakeable_->ActivityDebugTag();
   }

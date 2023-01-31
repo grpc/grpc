@@ -598,6 +598,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
+    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/dualstack_socket_posix.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -679,8 +680,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
-    src/core/lib/promise/pipe.cc \
     src/core/lib/promise/sleep.cc \
+    src/core/lib/promise/trace.cc \
     src/core/lib/resolver/resolver.cc \
     src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resolver/server_address.cc \
@@ -758,6 +759,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/builtins.cc \
