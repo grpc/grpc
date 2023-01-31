@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <set>
 #include <utility>
 #include <vector>

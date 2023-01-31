@@ -21,6 +21,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/status/status.h"

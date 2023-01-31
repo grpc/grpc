@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"

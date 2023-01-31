@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <initializer_list>
 #include <utility>
 
 #include "absl/status/status.h"

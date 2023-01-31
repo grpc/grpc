@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20220623.0'
+  abseil_version = '1.20230125.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -76,7 +76,9 @@ Pod::Spec.new do |s|
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/**"',
+        ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
     # If we don't set these two settings, `include/grpc/support/time.h` and
     # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
     # build.
