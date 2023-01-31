@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>

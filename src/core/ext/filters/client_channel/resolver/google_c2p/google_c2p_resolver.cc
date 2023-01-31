@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 #include <random>
 #include <string>
