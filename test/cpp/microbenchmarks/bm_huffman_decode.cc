@@ -467,6 +467,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   benchmark::Initialize(&argc, argv);
+  Input();  // Force initialization of input data.
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }
