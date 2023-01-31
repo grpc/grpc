@@ -347,7 +347,7 @@ INSTANTIATE_TEST_SUITE_P(SliceSizedTest, SliceSizedTest,
                            }
                            return out;
                          }()),
-                         [](const testing::TestParamInfo<size_t>& info) {
+                         [](const ::testing::TestParamInfo<size_t>& info) {
                            return std::to_string(info.param);
                          });
 

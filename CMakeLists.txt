@@ -113,6 +113,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_civil_time
   absl_cleanup
   absl_cleanup_internal
+  absl_common_policy_traits
   absl_compressed_tuple
   absl_config
   absl_container_common
@@ -126,6 +127,10 @@ set(gRPC_ABSL_USED_TARGETS
   absl_cordz_update_scope
   absl_cordz_update_tracker
   absl_core_headers
+  absl_crc32c
+  absl_crc_cord_state
+  absl_crc_cpu_detect
+  absl_crc_internal
   absl_debugging_internal
   absl_demangle_internal
   absl_dynamic_annotations
@@ -152,6 +157,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_low_level_hash
   absl_malloc_internal
   absl_memory
+  absl_non_temporal_arm_intrinsics
+  absl_non_temporal_memcpy
   absl_numeric_representation
   absl_optional
   absl_prefetch
@@ -1008,6 +1015,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
+  add_dependencies(buildtests_cxx interceptor_list_test)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
@@ -2202,6 +2210,7 @@ add_library(grpc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/dualstack_socket_posix.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2283,8 +2292,8 @@ add_library(grpc
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
   src/core/lib/promise/sleep.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -2362,6 +2371,7 @@ add_library(grpc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -2885,6 +2895,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/dualstack_socket_posix.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2964,8 +2975,8 @@ add_library(grpc_unsecure
   src/core/lib/load_balancing/lb_policy.cc
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
   src/core/lib/promise/sleep.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -3012,6 +3023,7 @@ add_library(grpc_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -4395,6 +4407,7 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/dualstack_socket_posix.cc
   src/core/lib/iomgr/endpoint.cc
@@ -4474,7 +4487,7 @@ add_library(grpc_authorization_provider
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -4521,6 +4534,7 @@ add_library(grpc_authorization_provider
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -8281,6 +8295,7 @@ add_executable(chunked_vector_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -8295,6 +8310,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10570,6 +10586,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -10578,6 +10595,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11043,6 +11061,7 @@ add_executable(flow_control_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -11056,6 +11075,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
@@ -11112,13 +11132,14 @@ add_executable(for_each_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -11127,6 +11148,7 @@ add_executable(for_each_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11471,6 +11493,7 @@ add_executable(frame_test
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/dualstack_socket_posix.cc
   src/core/lib/iomgr/endpoint.cc
@@ -11549,7 +11572,7 @@ add_executable(frame_test
   src/core/lib/load_balancing/lb_policy.cc
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -11573,6 +11596,7 @@ add_executable(frame_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -13913,6 +13937,77 @@ target_link_libraries(insecure_security_connector_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(interceptor_list_test
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  test/core/promise/interceptor_list_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
+target_include_directories(interceptor_list_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(interceptor_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::any_invocable
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::utility
+  gpr
+  upb
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
@@ -14392,7 +14487,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latch_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/latch_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -14639,13 +14736,14 @@ add_executable(map_pipe_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -14654,6 +14752,7 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16009,6 +16108,7 @@ add_executable(periodic_update_test
   src/core/lib/debug/trace.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -16017,6 +16117,7 @@ add_executable(periodic_update_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16146,30 +16247,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(pipe_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/memory_allocator.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16199,15 +16276,7 @@ target_link_libraries(pipe_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
-  absl::any_invocable
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
-  upb
+  grpc
 )
 
 
@@ -18761,7 +18830,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
+  src/core/lib/debug/trace.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/slice/slice_string_helpers_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -20155,12 +20226,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_slice_buffer_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/slice_buffer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -21508,19 +21581,21 @@ add_executable(try_concurrently_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/try_concurrently_test.cc
   third_party/googletest/googletest/src/gtest-all.cc

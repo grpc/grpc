@@ -18,6 +18,8 @@
 
 #include <stddef.h>
 
+#include <initializer_list>
+
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/gprpp/atomic_utils.h"

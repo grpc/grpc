@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/base/attributes.h"

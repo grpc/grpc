@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/debugging/failure_signal_handler.h"

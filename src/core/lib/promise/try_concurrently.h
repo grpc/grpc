@@ -20,17 +20,22 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <string>
 #include <type_traits>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 
@@ -185,9 +190,18 @@ class TryConcurrently {
       typename PollTraits<decltype(std::declval<PromiseLike<Main>>()())>::Type;
 
   Poll<Result> operator()() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "%sBEGIN POLL: done_bits=%x necessary_bits=%x",
+              DebugTag().c_str(), done_bits_, NecessaryBits());
+    }
     auto r = pre_main_.template Run<Result, 1>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "%sFAIL POLL PRE-MAIN: done_bits=%x necessary_bits=%x",
+                DebugTag().c_str(), done_bits_, NecessaryBits());
+      }
       return std::move(*status);
     }
     if ((done_bits_ & 1) == 0) {
@@ -201,7 +215,16 @@ class TryConcurrently {
     r = post_main_.template Run<Result, 1 + PreMain::Size()>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "%sFAIL POLL POST-MAIN: done_bits=%x necessary_bits=%x",
+                DebugTag().c_str(), done_bits_, NecessaryBits());
+      }
       return std::move(*status);
+    }
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "%sEND POLL: done_bits=%x necessary_bits=%x",
+              DebugTag().c_str(), done_bits_, NecessaryBits());
     }
     if ((done_bits_ & NecessaryBits()) == NecessaryBits()) {
       return std::move(result_);
@@ -233,6 +256,11 @@ class TryConcurrently {
   // Bitmask of done_bits_ specifying which bits correspond to helper promises -
   // that is all promises that are not the main one.
   constexpr uint8_t HelperBits() { return AllBits() ^ 1; }
+
+  std::string DebugTag() {
+    return absl::StrCat(Activity::current()->DebugTag(), " TRY_CONCURRENTLY[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
 
   // done_bits signifies which operations have completed.
   // Bit 0 is set if main_ has completed.
