@@ -506,6 +506,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
+    src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
@@ -610,6 +611,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/event_engine_shims/closure.cc \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
     src/core/lib/iomgr/exec_ctx.cc \
@@ -849,6 +851,14 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc \
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc \
     third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc \
+    third_party/abseil-cpp/absl/crc/crc32c.cc \
+    third_party/abseil-cpp/absl/crc/internal/cpu_detect.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_64.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
     third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
     third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
@@ -892,6 +902,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \
+    third_party/abseil-cpp/absl/strings/internal/damerau_levenshtein_distance.cc \
     third_party/abseil-cpp/absl/strings/internal/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/memutil.cc \
     third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
@@ -901,6 +912,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc \
     third_party/abseil-cpp/absl/strings/internal/str_format/output.cc \
     third_party/abseil-cpp/absl/strings/internal/str_format/parser.cc \
+    third_party/abseil-cpp/absl/strings/internal/stringify_sink.cc \
     third_party/abseil-cpp/absl/strings/internal/utf8.cc \
     third_party/abseil-cpp/absl/strings/match.cc \
     third_party/abseil-cpp/absl/strings/numbers.cc \
@@ -1457,6 +1469,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/container/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/crc)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/crc/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)

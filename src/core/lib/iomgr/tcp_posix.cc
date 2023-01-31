@@ -61,6 +61,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -2016,6 +2017,10 @@ int grpc_tcp_fd(grpc_endpoint* ep) {
 
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done) {
+  if (grpc_event_engine::experimental::grpc_is_event_engine_endpoint(ep)) {
+    return grpc_event_engine::experimental::
+        grpc_event_engine_endpoint_destroy_and_release_fd(ep, fd, done);
+  }
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;
