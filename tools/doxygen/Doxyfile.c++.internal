@@ -952,6 +952,7 @@ include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
+include/grpcpp/ext/server_metric_recorder.h \
 include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
@@ -1071,6 +1072,9 @@ include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
+src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
+src/core/ext/filters/backend_metrics/backend_metric_filter.h \
+src/core/ext/filters/backend_metrics/backend_metric_provider.h \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.h \
@@ -2723,6 +2727,8 @@ src/cpp/common/tls_credentials_options.cc \
 src/cpp/common/validate_service_config.cc \
 src/cpp/common/version_cc.cc \
 src/cpp/server/async_generic_service.cc \
+src/cpp/server/backend_metric_recorder.cc \
+src/cpp/server/backend_metric_recorder.h \
 src/cpp/server/channel_argument_option.cc \
 src/cpp/server/create_default_thread_pool.cc \
 src/cpp/server/dynamic_thread_pool.h \
@@ -2733,7 +2739,6 @@ src/cpp/server/health/default_health_check_service.h \
 src/cpp/server/health/health_check_service.cc \
 src/cpp/server/health/health_check_service_server_builder_option.cc \
 src/cpp/server/insecure_server_credentials.cc \
-src/cpp/server/orca/call_metric_recorder.cc \
 src/cpp/server/secure_server_credentials.cc \
 src/cpp/server/secure_server_credentials.h \
 src/cpp/server/server_builder.cc \

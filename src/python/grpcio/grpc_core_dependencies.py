@@ -15,6 +15,7 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'src/core/ext/filters/backend_metrics/backend_metric_filter.cc',
     'src/core/ext/filters/census/grpc_context.cc',
     'src/core/ext/filters/channel_idle/channel_idle_filter.cc',
     'src/core/ext/filters/channel_idle/idle_filter_state.cc',

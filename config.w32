@@ -6,6 +6,7 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
+    "src\\core\\ext\\filters\\backend_metrics\\backend_metric_filter.cc " +
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\channel_idle\\channel_idle_filter.cc " +
     "src\\core\\ext\\filters\\channel_idle\\idle_filter_state.cc " +
@@ -1266,6 +1267,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\backend_metrics");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\census");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\channel_idle");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel");

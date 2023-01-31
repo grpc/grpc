@@ -877,6 +877,9 @@ include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 src/core/README.md \
 src/core/ext/README.md \
+src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
+src/core/ext/filters/backend_metrics/backend_metric_filter.h \
+src/core/ext/filters/backend_metrics/backend_metric_provider.h \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.h \
