@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 

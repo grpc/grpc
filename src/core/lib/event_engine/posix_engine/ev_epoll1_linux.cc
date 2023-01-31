@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <initializer_list>
 #include <memory>
 
 #include "absl/status/status.h"

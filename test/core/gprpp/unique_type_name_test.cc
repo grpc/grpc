@@ -14,6 +14,7 @@
 
 #include "src/core/lib/gprpp/unique_type_name.h"
 
+#include <initializer_list>
 #include <iosfwd>
 #include <map>
 

@@ -22,6 +22,8 @@
 
 #include <stddef.h>
 
+#include <initializer_list>
+
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
