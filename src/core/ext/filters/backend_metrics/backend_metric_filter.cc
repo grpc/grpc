@@ -9,7 +9,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 

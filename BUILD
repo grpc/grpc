@@ -509,7 +509,6 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
-        "//src/core:backend_metric_filter",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -591,7 +590,6 @@ grpc_cc_library(
         "sockaddr_utils",
         "tsi_base",
         "uri_parser",
-        "//src/core:backend_metric_filter",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -745,6 +743,7 @@ grpc_cc_library(
         "grpc_base",
         # standard plugins
         "census",
+        "//src/core:grpc_backend_metric_filter",
         "//src/core:grpc_deadline_filter",
         "//src/core:grpc_client_authority_filter",
         "//src/core:grpc_lb_policy_grpclb",

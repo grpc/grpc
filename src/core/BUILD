@@ -4750,7 +4750,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "backend_metric_filter",
+    name = "grpc_backend_metric_filter",
     srcs = [
         "ext/filters/backend_metrics/backend_metric_filter.cc",
     ],
@@ -4774,7 +4774,6 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:xds_orca_upb",
     ],
-    alwayslink = 1,
 )
 
 grpc_cc_library(
