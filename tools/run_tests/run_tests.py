@@ -477,7 +477,7 @@ class CLanguage(object):
             _check_compiler(compiler, ['default', 'cmake'])
 
         if compiler == 'default' or compiler == 'cmake':
-            return ('debian11', [])
+            return ('debian11', ["-DCMAKE_CXX_STANDARD=14"])
         elif compiler == 'gcc7':
             return ('gcc_7', [])
         elif compiler == 'gcc10.2':

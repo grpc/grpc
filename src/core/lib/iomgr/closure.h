@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_CLOSURE_H
-#define GRPC_CORE_LIB_IOMGR_CLOSURE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -86,6 +86,8 @@ struct grpc_closure {
   const char* file_initiated;
   int line_initiated;
 #endif
+
+  std::string DebugString() const;
 };
 
 #ifndef NDEBUG
@@ -308,4 +310,4 @@ class Closure {
 };
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_CLOSURE_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H

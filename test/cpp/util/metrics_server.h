@@ -15,8 +15,8 @@
 // limitations under the License.
 // is % allowed in string
 //
-#ifndef GRPC_TEST_CPP_METRICS_SERVER_H
-#define GRPC_TEST_CPP_METRICS_SERVER_H
+#ifndef GRPC_TEST_CPP_UTIL_METRICS_SERVER_H
+#define GRPC_TEST_CPP_UTIL_METRICS_SERVER_H
 
 #include <map>
 #include <mutex>
@@ -95,4 +95,4 @@ class MetricsServiceImpl final : public MetricsService::Service {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_METRICS_SERVER_H
+#endif  // GRPC_TEST_CPP_UTIL_METRICS_SERVER_H

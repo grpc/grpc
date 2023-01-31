@@ -43,12 +43,12 @@ namespace grpc {
 
 void RegisterOpenCensusPlugin() {
   RegisterChannelFilter<
-      internal::CensusClientChannelData,
-      internal::CensusClientChannelData::CensusClientCallData>(
+      internal::OpenCensusClientChannelData,
+      internal::OpenCensusClientChannelData::OpenCensusClientCallData>(
       "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
-  RegisterChannelFilter<internal::CensusChannelData,
-                        internal::CensusServerCallData>(
+  RegisterChannelFilter<internal::OpenCensusChannelData,
+                        internal::OpenCensusServerCallData>(
       "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
 
@@ -64,6 +64,7 @@ void RegisterOpenCensusPlugin() {
   RpcClientRetriesPerCall();
   RpcClientTransparentRetriesPerCall();
   RpcClientRetryDelayPerCall();
+  RpcClientTransportLatency();
 
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
@@ -146,6 +147,9 @@ ABSL_CONST_INIT const absl::string_view
 ABSL_CONST_INIT const absl::string_view kRpcClientRetryDelayPerCallMeasureName =
     "grpc.io/client/retry_delay_per_call";
 
+ABSL_CONST_INIT const absl::string_view kRpcClientTransportLatencyMeasureName =
+    "grpc.io/client/transport_latency";
+
 // Server
 ABSL_CONST_INIT const absl::string_view
     kRpcServerSentMessagesPerRpcMeasureName =
@@ -178,12 +182,30 @@ std::atomic<bool> g_open_census_tracing_enabled(true);
 }  // namespace
 
 //
-// OpenCensusExporterRegistry
+// OpenCensusRegistry
 //
 
-OpenCensusExporterRegistry& OpenCensusExporterRegistry::Get() {
-  static OpenCensusExporterRegistry* registry = new OpenCensusExporterRegistry;
+OpenCensusRegistry& OpenCensusRegistry::Get() {
+  static OpenCensusRegistry* registry = new OpenCensusRegistry;
   return *registry;
+}
+
+::opencensus::tags::TagMap OpenCensusRegistry::PopulateTagMapWithConstantLabels(
+    const ::opencensus::tags::TagMap& tag_map) {
+  std::vector<std::pair<::opencensus::tags::TagKey, std::string>> tags =
+      tag_map.tags();
+  for (const auto& label : constant_labels_) {
+    tags.emplace_back(label.tag_key, label.value);
+  }
+  return ::opencensus::tags::TagMap(std::move(tags));
+}
+
+void OpenCensusRegistry::PopulateCensusContextWithConstantAttributes(
+    grpc::experimental::CensusContext* context) {
+  // We reuse the constant labels for the attributes
+  for (const auto& label : constant_labels_) {
+    context->AddSpanAttribute(label.key, label.value);
+  }
 }
 
 void EnableOpenCensusStats(bool enable) {

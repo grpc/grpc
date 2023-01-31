@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -95,4 +95,4 @@ class ServerAuthFilter final : public ChannelFilter {
 bool grpc_check_security_level(grpc_security_level channel_level,
                                grpc_security_level call_cred_level);
 
-#endif  // GRPC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -62,10 +63,12 @@ namespace grpc_core {
 
 class CompressionFilter : public ChannelFilter {
  protected:
-  explicit CompressionFilter(const ChannelArgs& args);
+  struct DecompressArgs {
+    grpc_compression_algorithm algorithm;
+    absl::optional<uint32_t> max_recv_message_length;
+  };
 
-  class CompressLoop;
-  class DecompressLoop;
+  explicit CompressionFilter(const ChannelArgs& args);
 
   grpc_compression_algorithm default_compression_algorithm() const {
     return default_compression_algorithm_;
@@ -75,15 +78,19 @@ class CompressionFilter : public ChannelFilter {
     return enabled_compression_algorithms_;
   }
 
- private:
+  grpc_compression_algorithm HandleOutgoingMetadata(
+      grpc_metadata_batch& outgoing_metadata);
+  DecompressArgs HandleIncomingMetadata(
+      const grpc_metadata_batch& incoming_metadata);
+
   // Compress one message synchronously.
   MessageHandle CompressMessage(MessageHandle message,
                                 grpc_compression_algorithm algorithm) const;
   // Decompress one message synchronously.
-  absl::StatusOr<MessageHandle> DecompressMessage(
-      MessageHandle message, grpc_compression_algorithm algorithm,
-      absl::optional<uint32_t> max_recv_message_length) const;
+  absl::StatusOr<MessageHandle> DecompressMessage(MessageHandle message,
+                                                  DecompressArgs args) const;
 
+ private:
   // Max receive message length, if set.
   absl::optional<uint32_t> max_recv_size_;
   size_t message_size_service_config_parser_index_;
@@ -129,4 +136,4 @@ class ServerCompressionFilter final : public CompressionFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H

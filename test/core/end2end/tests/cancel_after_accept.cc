@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
@@ -44,6 +46,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
+  gpr_log(GPR_INFO, "%s", std::string(80, '*').c_str());
   gpr_log(GPR_INFO, "Running test: %s/%s/%s/%s", test_name, config.name,
           mode.name, use_service_config ? "service_config" : "client_api");
   f = config.create_fixture(client_args, server_args);

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H
 
 #include <grpc/support/port_platform.h>
 
@@ -371,4 +371,4 @@ class ListenSocketNode : public BaseNode {
 }  // namespace channelz
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H

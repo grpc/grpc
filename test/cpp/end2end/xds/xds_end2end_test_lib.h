@@ -13,6 +13,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+#define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+
 #include <memory>
 #include <set>
 #include <string>
@@ -31,6 +34,7 @@
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -298,6 +302,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
           for (const auto& entry : peer_identity) {
             last_peer_identity_.emplace_back(entry.data(), entry.size());
           }
+          if (load_report_.has_value()) {
+            context->ExperimentalGetCallMetricRecorder()
+                ->RecordCpuUtilizationMetric(load_report_->cpu_utilization())
+                .RecordQpsMetric(load_report_->rps_fractional());
+          }
         }
         return status;
       }
@@ -325,10 +334,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
         return last_peer_identity_;
       }
 
+      // TODO(roth): Once the backend utilization APIs are updated, change
+      // this to use those instead of manually constructing the data for
+      // each call.
+      void set_load_report(
+          absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report) {
+        grpc_core::MutexLock lock(&mu_);
+        load_report_ = std::move(load_report);
+      }
+
      private:
       grpc_core::Mutex mu_;
-      std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
-      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
+      std::set<std::string> clients_ ABSL_GUARDED_BY(&mu_);
+      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(&mu_);
+      absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_
+          ABSL_GUARDED_BY(&mu_);
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
@@ -1064,3 +1084,5 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -188,8 +188,14 @@ struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
-  static Result Get(StoredType p) { return p->get(); };
-  static ReffedResult GetReffed(StoredType p) { return ReffedResult(*p); };
+  static Result Get(StoredType p) {
+    if (p == nullptr) return nullptr;
+    return p->get();
+  };
+  static ReffedResult GetReffed(StoredType p) {
+    if (p == nullptr) return nullptr;
+    return ReffedResult(*p);
+  };
   static ReffedResult GetReffed(StoredType p,
                                 const DebugLocation& /* location */,
                                 const char* /* reason */) {
@@ -542,4 +548,4 @@ void grpc_channel_args_set_client_channel_creation_mutator(
 grpc_channel_args_client_channel_creation_mutator
 grpc_channel_args_get_client_channel_creation_mutator();
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H
-#define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H
+#ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H
+#define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -69,4 +69,4 @@ void grpc_alts_shared_resource_dedicated_init();
 void grpc_alts_shared_resource_dedicated_start(
     const char* handshaker_service_url);
 
-#endif  // GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H
+#endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H

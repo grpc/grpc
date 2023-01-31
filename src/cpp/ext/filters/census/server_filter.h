@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -47,15 +47,15 @@ namespace grpc {
 namespace internal {
 
 // A CallData class will be created for every grpc call within a channel. It is
-// used to store data and methods specific to that call. CensusServerCallData is
-// thread-compatible, however typically only 1 thread should be interacting with
-// a call at a time.
-class CensusServerCallData : public CallData {
+// used to store data and methods specific to that call.
+// OpenCensusServerCallData is thread-compatible, however typically only 1
+// thread should be interacting with a call at a time.
+class OpenCensusServerCallData : public CallData {
  public:
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
 
-  CensusServerCallData()
+  OpenCensusServerCallData()
       : gc_(nullptr),
         auth_context_(nullptr),
         recv_initial_metadata_(nullptr),
@@ -112,4 +112,4 @@ class CensusServerCallData : public CallData {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H

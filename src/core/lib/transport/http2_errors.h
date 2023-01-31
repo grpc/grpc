@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H
-#define GRPC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H
 
 // error codes for RST_STREAM from http2 draft 14 section 7
 typedef enum {
@@ -38,4 +38,4 @@ typedef enum {
   GRPC_HTTP2__ERROR_DO_NOT_USE = -1
 } grpc_http2_error_code;
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H

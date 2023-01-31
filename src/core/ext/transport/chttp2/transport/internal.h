@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -389,12 +389,16 @@ struct grpc_chttp2_transport
   uint32_t incoming_frame_size = 0;
   uint32_t incoming_stream_id = 0;
 
-  // active parser
-  void* parser_data = nullptr;
   grpc_chttp2_stream* incoming_stream = nullptr;
-  grpc_error_handle (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
-                              grpc_chttp2_stream* s, const grpc_slice& slice,
-                              int is_last);
+  // active parser
+  struct Parser {
+    const char* name;
+    grpc_error_handle (*parser)(void* parser_user_data,
+                                grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+                                const grpc_slice& slice, int is_last);
+    void* user_data = nullptr;
+  };
+  Parser parser;
 
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
@@ -807,4 +811,4 @@ void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 
 uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H

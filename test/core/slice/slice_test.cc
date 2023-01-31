@@ -347,7 +347,7 @@ INSTANTIATE_TEST_SUITE_P(SliceSizedTest, SliceSizedTest,
                            }
                            return out;
                          }()),
-                         [](const testing::TestParamInfo<size_t>& info) {
+                         [](const ::testing::TestParamInfo<size_t>& info) {
                            return std::to_string(info.param);
                          });
 
@@ -439,28 +439,6 @@ TEST(SliceTest, SliceCastWorks) {
   EXPECT_EQ(&slice, &test.c_slice());
   const Slice& other = SliceCast<Slice>(slice);
   EXPECT_EQ(&other, &test);
-}
-
-TEST(SliceTest, MutableSliceCastWorks) {
-  using ::grpc_event_engine::experimental::internal::SliceCast;
-  Slice test = Slice::FromCopiedString("hello world!");
-  grpc_slice& slice = SliceCast<grpc_slice>(test);
-  EXPECT_EQ(&slice, &test.c_slice());
-  slice = grpc_slice_from_static_string("goodbye world!");
-  EXPECT_EQ(test.as_string_view(), "goodbye world!");
-
-  MutableSlice& m_cpp_slice = SliceCast<MutableSlice>(test);
-  EXPECT_EQ(&m_cpp_slice.c_slice(), &test.c_slice());
-  m_cpp_slice = MutableSlice::FromCopiedString("hello world again!");
-  // Change the first byte.
-  m_cpp_slice[0] = 'e';
-  EXPECT_EQ(test.as_string_view(), "eello world again!");
-
-  MutableSlice& m_c_slice = SliceCast<MutableSlice>(slice);
-  EXPECT_EQ(&m_c_slice.c_slice(), &slice);
-  // Restore the first byte.
-  GRPC_SLICE_START_PTR(slice)[0] = 'h';
-  EXPECT_EQ(m_c_slice.as_string_view(), "hello world again!");
 }
 
 }  // namespace

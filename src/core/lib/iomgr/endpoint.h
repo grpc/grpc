@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_H
-#define GRPC_CORE_LIB_IOMGR_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
+#define GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -106,4 +106,4 @@ struct grpc_endpoint {
   const grpc_endpoint_vtable* vtable;
 };
 
-#endif  // GRPC_CORE_LIB_IOMGR_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H

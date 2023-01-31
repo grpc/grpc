@@ -106,6 +106,16 @@ UPB_INLINE const upb_MessageDef *envoy_admin_v3_EndpointsConfigDump_DynamicEndpo
   return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.EndpointsConfigDump.DynamicEndpointConfig");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_EcdsConfigDump_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_config_dump_shared_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.EcdsConfigDump");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_config_dump_shared_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.EcdsConfigDump.EcdsFilterConfig");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
