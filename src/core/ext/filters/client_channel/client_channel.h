@@ -164,7 +164,7 @@ class ClientChannel {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
-  OrphanablePtr<LoadBalancedCall> CreateLoadBalancedCall(
+  OrphanablePtr<FilterBasedLoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
@@ -388,7 +388,8 @@ class ClientChannel::LoadBalancedCall
   };
 
   LoadBalancedCall(
-      ClientChannel* chand,
+      ClientChannel* chand, Slice path, Timestamp deadline, Arena* arena,
+      grpc_call_context_element* call_context,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
   ~LoadBalancedCall() override;
@@ -403,19 +404,19 @@ class ClientChannel::LoadBalancedCall
   void RemoveCallFromLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
 
-  RefCountedPtr<SubchannelCall> subchannel_call() const {
-    return subchannel_call_;
-  }
-
  protected:
   ClientChannel* chand() const { return chand_; }
+  Slice path() const { return path_.Ref(); }
+  Timestamp deadline() const { return deadline_; }
+  Arena* arena() const { return arena_; }
+  grpc_call_context_element* call_context() const { return call_context_; }
   ConfigSelector::CallDispatchController* call_dispatch_controller() const {
     return call_dispatch_controller_;
   }
   CallTracer::CallAttemptTracer* call_attempt_tracer() const {
     return call_attempt_tracer_;
   }
-  grpc_cycle_counter lb_call_start_time() const { return lb_call_start_time_; }
+  gpr_cycle_counter lb_call_start_time() const { return lb_call_start_time_; }
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
   }
@@ -424,13 +425,21 @@ class ClientChannel::LoadBalancedCall
     return lb_subchannel_call_tracker_.get();
   }
 
-  void RecordCallCompletion(absl::Status status);
+  void RecordCallCompletion(
+      absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
+      grpc_transport_stream_stats* transport_stream_stats,
+      absl::string_view peer_address);
 
  private:
   class Metadata;
   class BackendMetricAccessor;
 
+  virtual grpc_metadata_batch* send_initial_metadata() const = 0;
   virtual void CreateSubchannelCall() = 0;
+  virtual void PickFailed(grpc_error_handle error) = 0;
+  virtual grpc_polling_entity* pollent() const = 0;
+  virtual void OnAddToQueue() = 0;
+  virtual void OnRemoveFromQueue() = 0;
 
   // Helper function for performing an LB pick with a specified picker.
   // Returns true if the pick is complete.
@@ -442,8 +451,10 @@ class ClientChannel::LoadBalancedCall
 
   ClientChannel* chand_;
 
-// FIXME: needed?
   Slice path_;  // Request path.
+  Timestamp deadline_;
+  Arena* arena_;
+  grpc_call_context_element* call_context_;
 
   ConfigSelector::CallDispatchController* call_dispatch_controller_;
   CallTracer::CallAttemptTracer* call_attempt_tracer_;
@@ -465,12 +476,12 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // the LB call has a subchannel call and ensuring that the
   // on_call_destruction_complete closure passed down from the surface
   // is not invoked until after the subchannel call stack is destroyed.
-  LoadBalancedCall(
+  FilterBasedLoadBalancedCall(
       ClientChannel* chand, const grpc_call_element_args& args,
       grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
-  ~LoadBalancedCall() override;
+  ~FilterBasedLoadBalancedCall() override;
 
   void Orphan() override;
 
@@ -517,17 +528,23 @@ class ClientChannel::FilterBasedLoadBalancedCall
   static void RecvMessageReady(void* arg, grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
+  grpc_metadata_batch* send_initial_metadata() const override {
+    return pending_batches_[0]->payload->send_initial_metadata
+               .send_initial_metadata;
+  }
   void CreateSubchannelCall() override;
+  void PickFailed(grpc_error_handle error) override;
+  grpc_polling_entity* pollent() const override { return pollent_; }
+  void OnAddToQueue() override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+  void OnRemoveFromQueue() override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
 
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
-  Slice path_;  // Request path.
-  Timestamp deadline_;
-  Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
-  grpc_call_context_element* call_context_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
 

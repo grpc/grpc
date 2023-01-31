@@ -357,7 +357,7 @@ class DynamicTerminationFilter::CallData {
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
-  OrphanablePtr<ClientChannel::LoadBalancedCall> lb_call_;
+  OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall> lb_call_;
 };
 
 const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
@@ -1047,15 +1047,16 @@ ClientChannel::~ClientChannel() {
   grpc_pollset_set_destroy(interested_parties_);
 }
 
-OrphanablePtr<ClientChannel::LoadBalancedCall>
+OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
 ClientChannel::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry) {
-  return OrphanablePtr<LoadBalancedCall>(args.arena->New<LoadBalancedCall>(
-      this, args, pollent, on_call_destruction_complete,
-      call_dispatch_controller, is_transparent_retry));
+  return OrphanablePtr<FilterBasedLoadBalancedCall>(
+      args.arena->New<FilterBasedLoadBalancedCall>(
+          this, args, pollent, on_call_destruction_complete,
+          call_dispatch_controller, is_transparent_retry));
 }
 
 ChannelArgs ClientChannel::MakeSubchannelArgs(
@@ -2367,13 +2368,14 @@ ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
 class ClientChannel::LoadBalancedCall::BackendMetricAccessor
     : public LoadBalancingPolicy::BackendMetricAccessor {
  public:
-  explicit BackendMetricAccessor(LoadBalancedCall* lb_call)
-      : lb_call_(lb_call) {}
+  BackendMetricAccessor(LoadBalancedCall* lb_call,
+                        grpc_metadata_batch* recv_trailing_metadata)
+      : lb_call_(lb_call), recv_trailing_metadata_(recv_trailing_metadata) {}
 
   const BackendMetricData* GetBackendMetricData() override {
     if (lb_call_->backend_metric_data_ == nullptr &&
-        lb_call_->recv_trailing_metadata_ != nullptr) {
-      if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
+        recv_trailing_metadata_ != nullptr) {
+      if (const auto* md = recv_trailing_metadata_->get_pointer(
               EndpointLoadMetricsBinMetadata())) {
         BackendMetricAllocator allocator(lb_call_->arena_);
         lb_call_->backend_metric_data_ =
@@ -2401,6 +2403,7 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
   };
 
   LoadBalancedCall* lb_call_;
+  grpc_metadata_batch* recv_trailing_metadata_;
 };
 
 //
@@ -2420,8 +2423,8 @@ CallTracer::CallAttemptTracer* GetCallAttemptTracer(
 }  // namespace
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
-    ClientChannel* chand, const grpc_call_element_args& args,
-    grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
+    ClientChannel* chand, Slice path, Timestamp deadline, Arena* arena,
+    grpc_call_context_element* call_context,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry)
     : InternallyRefCounted(
@@ -2429,17 +2432,13 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
               ? "LoadBalancedCall"
               : nullptr),
       chand_(chand),
-      path_(CSliceRef(args.path)),
-      deadline_(args.deadline),
-      arena_(args.arena),
-      owning_call_(args.call_stack),
-      call_combiner_(args.call_combiner),
-      call_context_(args.context),
-      pollent_(pollent),
-      on_call_destruction_complete_(on_call_destruction_complete),
+      path_(std::move(path)),
+      deadline_(deadline),
+      arena_(arena),
+      call_context_(call_context),
       call_dispatch_controller_(call_dispatch_controller),
       call_attempt_tracer_(
-          GetCallAttemptTracer(args.context, is_transparent_retry)) {
+          GetCallAttemptTracer(call_context, is_transparent_retry)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: created", chand_, this);
   }
@@ -2449,23 +2448,9 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   if (backend_metric_data_ != nullptr) {
     backend_metric_data_->BackendMetricData::~BackendMetricData();
   }
-  // Make sure there are no remaining pending batches.
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    GPR_ASSERT(pending_batches_[i] == nullptr);
-  }
-  if (on_call_destruction_complete_ != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
-                 absl::OkStatus());
-  }
 }
 
 void ClientChannel::LoadBalancedCall::Orphan() {
-  // If the recv_trailing_metadata op was never started, then notify
-  // about call completion here, as best we can.  We assume status
-  // CANCELLED in this case.
-  if (recv_trailing_metadata_ == nullptr) {
-    RecordCallCompletion(absl::CancelledError("call cancelled"));
-  }
   // Compute latency and report it to the tracer.
   if (call_attempt_tracer_ != nullptr) {
     gpr_timespec latency =
@@ -2475,442 +2460,26 @@ void ClientChannel::LoadBalancedCall::Orphan() {
   Unref();
 }
 
-size_t ClientChannel::LoadBalancedCall::GetBatchIndex(
-    grpc_transport_stream_op_batch* batch) {
-  // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in PickSubchannelImpl() assumes it will be.
-  if (batch->send_initial_metadata) return 0;
-  if (batch->send_message) return 1;
-  if (batch->send_trailing_metadata) return 2;
-  if (batch->recv_initial_metadata) return 3;
-  if (batch->recv_message) return 4;
-  if (batch->recv_trailing_metadata) return 5;
-  GPR_UNREACHABLE_CODE(return (size_t)-1);
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannel::LoadBalancedCall::PendingBatchesAdd(
-    grpc_transport_stream_op_batch* batch) {
-  const size_t idx = GetBatchIndex(batch);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: adding pending batch at index %" PRIuPTR,
-            chand_, this, idx);
-  }
-  GPR_ASSERT(pending_batches_[idx] == nullptr);
-  pending_batches_[idx] = batch;
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannel::LoadBalancedCall::FailPendingBatchInCallCombiner(
-    void* arg, grpc_error_handle error) {
-  grpc_transport_stream_op_batch* batch =
-      static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* self = static_cast<LoadBalancedCall*>(batch->handler_private.extra_arg);
-  // Note: This will release the call combiner.
-  grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                     self->call_combiner_);
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannel::LoadBalancedCall::PendingBatchesFail(
-    grpc_error_handle error,
-    YieldCallCombinerPredicate yield_call_combiner_predicate) {
-  GPR_ASSERT(!error.ok());
-  failure_error_ = error;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    size_t num_batches = 0;
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-      if (pending_batches_[i] != nullptr) ++num_batches;
-    }
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: failing %" PRIuPTR " pending batches: %s",
-            chand_, this, num_batches, StatusToString(error).c_str());
-  }
-  CallCombinerClosureList closures;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    grpc_transport_stream_op_batch*& batch = pending_batches_[i];
-    if (batch != nullptr) {
-      batch->handler_private.extra_arg = this;
-      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
-                        FailPendingBatchInCallCombiner, batch,
-                        grpc_schedule_on_exec_ctx);
-      closures.Add(&batch->handler_private.closure, error,
-                   "PendingBatchesFail");
-      batch = nullptr;
-    }
-  }
-  if (yield_call_combiner_predicate(closures)) {
-    closures.RunClosures(call_combiner_);
-  } else {
-    closures.RunClosuresWithoutYielding(call_combiner_);
-  }
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannel::LoadBalancedCall::ResumePendingBatchInCallCombiner(
-    void* arg, grpc_error_handle /*ignored*/) {
-  grpc_transport_stream_op_batch* batch =
-      static_cast<grpc_transport_stream_op_batch*>(arg);
-  SubchannelCall* subchannel_call =
-      static_cast<SubchannelCall*>(batch->handler_private.extra_arg);
-  // Note: This will release the call combiner.
-  subchannel_call->StartTransportStreamOpBatch(batch);
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    size_t num_batches = 0;
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-      if (pending_batches_[i] != nullptr) ++num_batches;
-    }
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: starting %" PRIuPTR
-            " pending batches on subchannel_call=%p",
-            chand_, this, num_batches, subchannel_call_.get());
-  }
-  CallCombinerClosureList closures;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    grpc_transport_stream_op_batch*& batch = pending_batches_[i];
-    if (batch != nullptr) {
-      batch->handler_private.extra_arg = subchannel_call_.get();
-      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
-                        ResumePendingBatchInCallCombiner, batch,
-                        grpc_schedule_on_exec_ctx);
-      closures.Add(&batch->handler_private.closure, absl::OkStatus(),
-                   "resuming pending batch from LB call");
-      batch = nullptr;
-    }
-  }
-  // Note: This will release the call combiner.
-  closures.RunClosures(call_combiner_);
-}
-
-void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
-    grpc_transport_stream_op_batch* batch) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace) ||
-      GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: batch started from above: %s, "
-            "call_attempt_tracer_=%p",
-            chand_, this, grpc_transport_stream_op_batch_string(batch).c_str(),
-            call_attempt_tracer_);
-  }
-  // Handle call tracing.
-  if (call_attempt_tracer_ != nullptr) {
-    // Record send ops in tracer.
-    if (batch->cancel_stream) {
-      call_attempt_tracer_->RecordCancel(
-          batch->payload->cancel_stream.cancel_error);
-    }
-    if (batch->send_initial_metadata) {
-      call_attempt_tracer_->RecordSendInitialMetadata(
-          batch->payload->send_initial_metadata.send_initial_metadata);
-      peer_string_ = batch->payload->send_initial_metadata.peer_string;
-      original_send_initial_metadata_on_complete_ = batch->on_complete;
-      GRPC_CLOSURE_INIT(&send_initial_metadata_on_complete_,
-                        SendInitialMetadataOnComplete, this, nullptr);
-      batch->on_complete = &send_initial_metadata_on_complete_;
-    }
-    if (batch->send_message) {
-      call_attempt_tracer_->RecordSendMessage(
-          *batch->payload->send_message.send_message);
-    }
-    if (batch->send_trailing_metadata) {
-      call_attempt_tracer_->RecordSendTrailingMetadata(
-          batch->payload->send_trailing_metadata.send_trailing_metadata);
-    }
-    // Intercept recv ops.
-    if (batch->recv_initial_metadata) {
-      recv_initial_metadata_ =
-          batch->payload->recv_initial_metadata.recv_initial_metadata;
-      original_recv_initial_metadata_ready_ =
-          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-      GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
-                        this, nullptr);
-      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-          &recv_initial_metadata_ready_;
-    }
-    if (batch->recv_message) {
-      recv_message_ = batch->payload->recv_message.recv_message;
-      original_recv_message_ready_ =
-          batch->payload->recv_message.recv_message_ready;
-      GRPC_CLOSURE_INIT(&recv_message_ready_, RecvMessageReady, this, nullptr);
-      batch->payload->recv_message.recv_message_ready = &recv_message_ready_;
-    }
-  }
-  // Intercept recv_trailing_metadata even if there is no call tracer,
-  // since we may need to notify the LB policy about trailing metadata.
-  if (batch->recv_trailing_metadata) {
-    recv_trailing_metadata_ =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-    transport_stream_stats_ =
-        batch->payload->recv_trailing_metadata.collect_stats;
-    original_recv_trailing_metadata_ready_ =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
-                      this, nullptr);
-    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &recv_trailing_metadata_ready_;
-  }
-  // If we've already gotten a subchannel call, pass the batch down to it.
-  // Note that once we have picked a subchannel, we do not need to acquire
-  // the channel's data plane mutex, which is more efficient (especially for
-  // streaming calls).
-  if (subchannel_call_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: starting batch on subchannel_call=%p",
-              chand_, this, subchannel_call_.get());
-    }
-    subchannel_call_->StartTransportStreamOpBatch(batch);
-    return;
-  }
-  // We do not yet have a subchannel call.
-  //
-  // If we've previously been cancelled, immediately fail any new batches.
-  if (GPR_UNLIKELY(!cancel_error_.ok())) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p lb_call=%p: failing batch with error: %s",
-              chand_, this, StatusToString(cancel_error_).c_str());
-    }
-    // Note: This will release the call combiner.
-    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
-                                                       call_combiner_);
-    return;
-  }
-  // Handle cancellation.
-  if (GPR_UNLIKELY(batch->cancel_stream)) {
-    // Stash a copy of cancel_error in our call data, so that we can use
-    // it for subsequent operations.  This ensures that if the call is
-    // cancelled before any batches are passed down (e.g., if the deadline
-    // is in the past when the call starts), we can return the right
-    // error to the caller when the first batch does get passed down.
-    cancel_error_ = batch->payload->cancel_stream.cancel_error;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p lb_call=%p: recording cancel_error=%s",
-              chand_, this, StatusToString(cancel_error_).c_str());
-    }
-    // Fail all pending batches.
-    PendingBatchesFail(cancel_error_, NoYieldCallCombiner);
-    // Note: This will release the call combiner.
-    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
-                                                       call_combiner_);
-    return;
-  }
-  // Add the batch to the pending list.
-  PendingBatchesAdd(batch);
-  // For batches containing a send_initial_metadata op, acquire the
-  // channel's data plane mutex to pick a subchannel.
-  if (GPR_LIKELY(batch->send_initial_metadata)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand_,
-              this);
-    }
-    PickSubchannel(/*was_queued=*/false);
-  } else {
-    // For all other batches, release the call combiner.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: saved batch, yielding call combiner",
-              chand_, this);
-    }
-    GRPC_CALL_COMBINER_STOP(call_combiner_,
-                            "batch does not include send_initial_metadata");
-  }
-}
-
-void ClientChannel::LoadBalancedCall::SendInitialMetadataOnComplete(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<LoadBalancedCall*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: got on_complete for send_initial_metadata: "
-            "error=%s",
-            self->chand_, self, StatusToString(error).c_str());
-  }
-  self->call_attempt_tracer_->RecordOnDoneSendInitialMetadata(
-      self->peer_string_);
-  Closure::Run(DEBUG_LOCATION,
-               self->original_send_initial_metadata_on_complete_, error);
-}
-
-void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<LoadBalancedCall*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: got recv_initial_metadata_ready: error=%s",
-            self->chand_, self, StatusToString(error).c_str());
-  }
-  if (error.ok()) {
-    // recv_initial_metadata_flags is not populated for clients
-    self->call_attempt_tracer_->RecordReceivedInitialMetadata(
-        self->recv_initial_metadata_, 0 /* recv_initial_metadata_flags */);
-  }
-  Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
-               error);
-}
-
-void ClientChannel::LoadBalancedCall::RecvMessageReady(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<LoadBalancedCall*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO, "chand=%p lb_call=%p: got recv_message_ready: error=%s",
-            self->chand_, self, StatusToString(error).c_str());
-  }
-  if (self->recv_message_->has_value()) {
-    self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
-  }
-  Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_, error);
-}
-
-void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<LoadBalancedCall*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: got recv_trailing_metadata_ready: error=%s "
-            "call_attempt_tracer_=%p lb_subchannel_call_tracker_=%p "
-            "failure_error_=%s",
-            self->chand_, self, StatusToString(error).c_str(),
-            self->call_attempt_tracer_, self->lb_subchannel_call_tracker_.get(),
-            StatusToString(self->failure_error_).c_str());
-  }
-  // Check if we have a tracer or an LB callback to invoke.
-  if (self->call_attempt_tracer_ != nullptr ||
-      self->lb_subchannel_call_tracker_ != nullptr) {
-    // Get the call's status.
-    absl::Status status;
-    if (!error.ok()) {
-      // Get status from error.
-      grpc_status_code code;
-      std::string message;
-      grpc_error_get_status(error, self->deadline_, &code, &message,
-                            /*http_error=*/nullptr, /*error_string=*/nullptr);
-      status = absl::Status(static_cast<absl::StatusCode>(code), message);
-    } else {
-      // Get status from headers.
-      const auto& md = *self->recv_trailing_metadata_;
-      grpc_status_code code =
-          md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
-      if (code != GRPC_STATUS_OK) {
-        absl::string_view message;
-        if (const auto* grpc_message = md.get_pointer(GrpcMessageMetadata())) {
-          message = grpc_message->as_string_view();
-        }
-        status = absl::Status(static_cast<absl::StatusCode>(code), message);
-      }
-    }
-    self->RecordCallCompletion(status);
-  }
-  // Chain to original callback.
-  if (!self->failure_error_.ok()) {
-    error = self->failure_error_;
-    self->failure_error_ = absl::OkStatus();
-  }
-  Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
-               error);
-}
-
 void ClientChannel::LoadBalancedCall::RecordCallCompletion(
-    absl::Status status) {
+    absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
+    grpc_transport_stream_stats* transport_stream_stats,
+    absl::string_view peer_address) {
   // If we have a tracer, notify it.
   if (call_attempt_tracer_ != nullptr) {
     call_attempt_tracer_->RecordReceivedTrailingMetadata(
-        status, recv_trailing_metadata_, transport_stream_stats_);
+        status, recv_trailing_metadata, transport_stream_stats);
   }
   // If the LB policy requested a callback for trailing metadata, invoke
   // the callback.
   if (lb_subchannel_call_tracker_ != nullptr) {
-    Metadata trailing_metadata(recv_trailing_metadata_);
-    BackendMetricAccessor backend_metric_accessor(this);
-    const char* peer_string =
-        peer_string_ != nullptr
-            ? reinterpret_cast<char*>(gpr_atm_acq_load(peer_string_))
-            : "";
+    Metadata trailing_metadata(recv_trailing_metadata);
+    BackendMetricAccessor backend_metric_accessor(this, recv_trailing_metadata);
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-        peer_string, status, &trailing_metadata, &backend_metric_accessor};
+        peer_address, status, &trailing_metadata, &backend_metric_accessor};
     lb_subchannel_call_tracker_->Finish(args);
     lb_subchannel_call_tracker_.reset();
   }
 }
-
-void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
-  SubchannelCall::Args call_args = {
-      std::move(connected_subchannel_), pollent_, path_.Ref(), /*start_time=*/0,
-      deadline_, arena_,
-      // TODO(roth): When we implement hedging support, we will probably
-      // need to use a separate call context for each subchannel call.
-      call_context_, call_combiner_};
-  grpc_error_handle error;
-  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
-            this, subchannel_call_.get(), StatusToString(error).c_str());
-  }
-  if (on_call_destruction_complete_ != nullptr) {
-    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
-    on_call_destruction_complete_ = nullptr;
-  }
-  if (GPR_UNLIKELY(!error.ok())) {
-    PendingBatchesFail(error, YieldCallCombiner);
-  } else {
-    PendingBatchesResume();
-  }
-}
-
-// A class to handle the call combiner cancellation callback for a
-// queued pick.
-// TODO(roth): When we implement hedging support, we won't be able to
-// register a call combiner cancellation closure for each LB pick,
-// because there may be multiple LB picks happening in parallel.
-// Instead, we will probably need to maintain a list in the CallData
-// object of pending LB picks to be cancelled when the closure runs.
-class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
- public:
-  explicit LbQueuedCallCanceller(RefCountedPtr<LoadBalancedCall> lb_call)
-      : lb_call_(std::move(lb_call)) {
-    GRPC_CALL_STACK_REF(lb_call_->owning_call_, "LbQueuedCallCanceller");
-    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this, nullptr);
-    lb_call_->call_combiner_->SetNotifyOnCancel(&closure_);
-  }
-
- private:
-  static void CancelLocked(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<LbQueuedCallCanceller*>(arg);
-    auto* lb_call = self->lb_call_.get();
-    auto* chand = lb_call->chand_;
-    {
-      MutexLock lock(&chand->lb_mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p lb_call=%p: cancelling queued pick: "
-                "error=%s self=%p calld->pick_canceller=%p",
-                chand, lb_call, StatusToString(error).c_str(), self,
-                lb_call->lb_call_canceller_);
-      }
-      if (lb_call->lb_call_canceller_ == self && !error.ok()) {
-        lb_call->call_dispatch_controller_->Commit();
-        // Remove pick from list of queued picks.
-        lb_call->RemoveCallFromLbQueuedCallsLocked();
-        // Remove from queued picks list.
-        chand->lb_queued_calls_.erase(lb_call);
-        // Fail pending batches on the call.
-        lb_call->PendingBatchesFail(error,
-                                    YieldCallCombinerIfPendingBatchesFound);
-      }
-    }
-    GRPC_CALL_STACK_UNREF(lb_call->owning_call_, "LbQueuedCallCanceller");
-    delete self;
-  }
-
-  RefCountedPtr<LoadBalancedCall> lb_call_;
-  grpc_closure closure_;
-};
 
 void ClientChannel::LoadBalancedCall::RemoveCallFromLbQueuedCallsLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -2918,14 +2487,13 @@ void ClientChannel::LoadBalancedCall::RemoveCallFromLbQueuedCallsLocked() {
             chand_, this);
   }
   // Remove pollset_set linkage.
-  grpc_polling_entity_del_from_pollset_set(pollent_,
+  grpc_polling_entity_del_from_pollset_set(pollent(),
                                            chand_->interested_parties_);
-  // Lame the call combiner canceller.
-  lb_call_canceller_ = nullptr;
   // Note: There's no need to actually remove the call from the queue
   // here, beacuse that will be done in either
   // LbQueuedCallCanceller::CancelLocked() or
   // in ClientChannel::UpdateStateAndPickerLocked().
+  OnRemoveFromQueue();
 }
 
 void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
@@ -2935,11 +2503,11 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   }
   // Add call's pollent to channel's interested_parties, so that I/O
   // can be done under the call's CQ.
-  grpc_polling_entity_add_to_pollset_set(pollent_, chand_->interested_parties_);
+  grpc_polling_entity_add_to_pollset_set(pollent(),
+                                         chand_->interested_parties_);
   // Add to queue.
   chand_->lb_queued_calls_.insert(this);
-  // Register call combiner cancellation callback.
-  lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
+  OnAddToQueue();
 }
 
 void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
@@ -2987,7 +2555,7 @@ void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
                 "chand=%p lb_call=%p: failed to pick subchannel: error=%s",
                 chand_, this, StatusToString(error).c_str());
       }
-      PendingBatchesFail(error, YieldCallCombiner);
+      PickFailed(error);
       break;
     }
     // Pick succeeded.
@@ -3009,18 +2577,12 @@ void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
 bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
   GPR_ASSERT(connected_subchannel_ == nullptr);
-  GPR_ASSERT(subchannel_call_ == nullptr);
-  // Grab initial metadata.
-  auto& send_initial_metadata =
-      pending_batches_[0]->payload->send_initial_metadata;
-  grpc_metadata_batch* initial_metadata_batch =
-      send_initial_metadata.send_initial_metadata;
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   pick_args.path = path_.as_string_view();
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
-  Metadata initial_metadata(initial_metadata_batch);
+  Metadata initial_metadata(send_initial_metadata());
   pick_args.initial_metadata = &initial_metadata;
   auto result = picker->Pick(pick_args);
   return HandlePickResult<bool>(
@@ -3067,15 +2629,14 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
         return false;
       },
       // FailPick
-      [this, initial_metadata_batch,
-       &error](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
+      [this, &error](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick failed: %s", chand_,
                   this, fail_pick->status.ToString().c_str());
         }
         // If wait_for_ready is false, then the error indicates the RPC
         // attempt's final status.
-        if (!initial_metadata_batch->GetOrCreatePointer(WaitForReady())
+        if (!send_initial_metadata()->GetOrCreatePointer(WaitForReady())
                  ->value) {
           *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
               std::move(fail_pick->status), "LB pick"));
@@ -3097,6 +2658,482 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
             StatusIntProperty::kLbPolicyDrop, 1);
         return true;
       });
+}
+
+//
+// ClientChannel::FilterBasedLoadBalancedCall
+//
+
+ClientChannel::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
+    ClientChannel* chand, const grpc_call_element_args& args,
+    grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
+    ConfigSelector::CallDispatchController* call_dispatch_controller,
+    bool is_transparent_retry)
+    : LoadBalancedCall(chand, Slice(CSliceRef(args.path)), args.deadline,
+                       args.arena, args.context, call_dispatch_controller,
+                       is_transparent_retry),
+      owning_call_(args.call_stack),
+      call_combiner_(args.call_combiner),
+      pollent_(pollent),
+      on_call_destruction_complete_(on_call_destruction_complete) {}
+
+ClientChannel::FilterBasedLoadBalancedCall::~FilterBasedLoadBalancedCall() {
+  // Make sure there are no remaining pending batches.
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
+    GPR_ASSERT(pending_batches_[i] == nullptr);
+  }
+  if (on_call_destruction_complete_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
+                 absl::OkStatus());
+  }
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::Orphan() {
+  // If the recv_trailing_metadata op was never started, then notify
+  // about call completion here, as best we can.  We assume status
+  // CANCELLED in this case.
+  if (recv_trailing_metadata_ == nullptr) {
+    RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
+                         nullptr, "");
+  }
+  // Delegate to parent.
+  LoadBalancedCall::Orphan();
+}
+
+size_t ClientChannel::FilterBasedLoadBalancedCall::GetBatchIndex(
+    grpc_transport_stream_op_batch* batch) {
+  // Note: It is important the send_initial_metadata be the first entry
+  // here, since the code in PickSubchannelImpl() assumes it will be.
+  if (batch->send_initial_metadata) return 0;
+  if (batch->send_message) return 1;
+  if (batch->send_trailing_metadata) return 2;
+  if (batch->recv_initial_metadata) return 3;
+  if (batch->recv_message) return 4;
+  if (batch->recv_trailing_metadata) return 5;
+  GPR_UNREACHABLE_CODE(return (size_t)-1);
+}
+
+// This is called via the call combiner, so access to calld is synchronized.
+void ClientChannel::FilterBasedLoadBalancedCall::PendingBatchesAdd(
+    grpc_transport_stream_op_batch* batch) {
+  const size_t idx = GetBatchIndex(batch);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: adding pending batch at index %" PRIuPTR,
+            chand(), this, idx);
+  }
+  GPR_ASSERT(pending_batches_[idx] == nullptr);
+  pending_batches_[idx] = batch;
+}
+
+// This is called via the call combiner, so access to calld is synchronized.
+void ClientChannel::FilterBasedLoadBalancedCall::FailPendingBatchInCallCombiner(
+    void* arg, grpc_error_handle error) {
+  grpc_transport_stream_op_batch* batch =
+      static_cast<grpc_transport_stream_op_batch*>(arg);
+  auto* self = static_cast<FilterBasedLoadBalancedCall*>(
+      batch->handler_private.extra_arg);
+  // Note: This will release the call combiner.
+  grpc_transport_stream_op_batch_finish_with_failure(batch, error,
+                                                     self->call_combiner_);
+}
+
+// This is called via the call combiner, so access to calld is synchronized.
+void ClientChannel::FilterBasedLoadBalancedCall::PendingBatchesFail(
+    grpc_error_handle error,
+    YieldCallCombinerPredicate yield_call_combiner_predicate) {
+  GPR_ASSERT(!error.ok());
+  failure_error_ = error;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    size_t num_batches = 0;
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
+      if (pending_batches_[i] != nullptr) ++num_batches;
+    }
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: failing %" PRIuPTR " pending batches: %s",
+            chand(), this, num_batches, StatusToString(error).c_str());
+  }
+  CallCombinerClosureList closures;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
+    grpc_transport_stream_op_batch*& batch = pending_batches_[i];
+    if (batch != nullptr) {
+      batch->handler_private.extra_arg = this;
+      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
+                        FailPendingBatchInCallCombiner, batch,
+                        grpc_schedule_on_exec_ctx);
+      closures.Add(&batch->handler_private.closure, error,
+                   "PendingBatchesFail");
+      batch = nullptr;
+    }
+  }
+  if (yield_call_combiner_predicate(closures)) {
+    closures.RunClosures(call_combiner_);
+  } else {
+    closures.RunClosuresWithoutYielding(call_combiner_);
+  }
+}
+
+// This is called via the call combiner, so access to calld is synchronized.
+void ClientChannel::FilterBasedLoadBalancedCall::ResumePendingBatchInCallCombiner(
+    void* arg, grpc_error_handle /*ignored*/) {
+  grpc_transport_stream_op_batch* batch =
+      static_cast<grpc_transport_stream_op_batch*>(arg);
+  SubchannelCall* subchannel_call =
+      static_cast<SubchannelCall*>(batch->handler_private.extra_arg);
+  // Note: This will release the call combiner.
+  subchannel_call->StartTransportStreamOpBatch(batch);
+}
+
+// This is called via the call combiner, so access to calld is synchronized.
+void ClientChannel::FilterBasedLoadBalancedCall::PendingBatchesResume() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    size_t num_batches = 0;
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
+      if (pending_batches_[i] != nullptr) ++num_batches;
+    }
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: starting %" PRIuPTR
+            " pending batches on subchannel_call=%p",
+            chand(), this, num_batches, subchannel_call_.get());
+  }
+  CallCombinerClosureList closures;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
+    grpc_transport_stream_op_batch*& batch = pending_batches_[i];
+    if (batch != nullptr) {
+      batch->handler_private.extra_arg = subchannel_call_.get();
+      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
+                        ResumePendingBatchInCallCombiner, batch,
+                        grpc_schedule_on_exec_ctx);
+      closures.Add(&batch->handler_private.closure, absl::OkStatus(),
+                   "resuming pending batch from LB call");
+      batch = nullptr;
+    }
+  }
+  // Note: This will release the call combiner.
+  closures.RunClosures(call_combiner_);
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
+    grpc_transport_stream_op_batch* batch) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace) ||
+      GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: batch started from above: %s, "
+            "call_attempt_tracer_=%p",
+            chand(), this, grpc_transport_stream_op_batch_string(batch).c_str(),
+            call_attempt_tracer());
+  }
+  // Handle call tracing.
+  if (call_attempt_tracer() != nullptr) {
+    // Record send ops in tracer.
+    if (batch->cancel_stream) {
+      call_attempt_tracer()->RecordCancel(
+          batch->payload->cancel_stream.cancel_error);
+    }
+    if (batch->send_initial_metadata) {
+      call_attempt_tracer()->RecordSendInitialMetadata(
+          batch->payload->send_initial_metadata.send_initial_metadata);
+      peer_string_ = batch->payload->send_initial_metadata.peer_string;
+      original_send_initial_metadata_on_complete_ = batch->on_complete;
+      GRPC_CLOSURE_INIT(&send_initial_metadata_on_complete_,
+                        SendInitialMetadataOnComplete, this, nullptr);
+      batch->on_complete = &send_initial_metadata_on_complete_;
+    }
+    if (batch->send_message) {
+      call_attempt_tracer()->RecordSendMessage(
+          *batch->payload->send_message.send_message);
+    }
+    if (batch->send_trailing_metadata) {
+      call_attempt_tracer()->RecordSendTrailingMetadata(
+          batch->payload->send_trailing_metadata.send_trailing_metadata);
+    }
+    // Intercept recv ops.
+    if (batch->recv_initial_metadata) {
+      recv_initial_metadata_ =
+          batch->payload->recv_initial_metadata.recv_initial_metadata;
+      original_recv_initial_metadata_ready_ =
+          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+      GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
+                        this, nullptr);
+      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
+          &recv_initial_metadata_ready_;
+    }
+    if (batch->recv_message) {
+      recv_message_ = batch->payload->recv_message.recv_message;
+      original_recv_message_ready_ =
+          batch->payload->recv_message.recv_message_ready;
+      GRPC_CLOSURE_INIT(&recv_message_ready_, RecvMessageReady, this, nullptr);
+      batch->payload->recv_message.recv_message_ready = &recv_message_ready_;
+    }
+  }
+  // Intercept recv_trailing_metadata even if there is no call tracer,
+  // since we may need to notify the LB policy about trailing metadata.
+  if (batch->recv_trailing_metadata) {
+    recv_trailing_metadata_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+    transport_stream_stats_ =
+        batch->payload->recv_trailing_metadata.collect_stats;
+    original_recv_trailing_metadata_ready_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
+                      this, nullptr);
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &recv_trailing_metadata_ready_;
+  }
+  // If we've already gotten a subchannel call, pass the batch down to it.
+  // Note that once we have picked a subchannel, we do not need to acquire
+  // the channel's data plane mutex, which is more efficient (especially for
+  // streaming calls).
+  if (subchannel_call_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p lb_call=%p: starting batch on subchannel_call=%p",
+              chand(), this, subchannel_call_.get());
+    }
+    subchannel_call_->StartTransportStreamOpBatch(batch);
+    return;
+  }
+  // We do not yet have a subchannel call.
+  //
+  // If we've previously been cancelled, immediately fail any new batches.
+  if (GPR_UNLIKELY(!cancel_error_.ok())) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+      gpr_log(GPR_INFO, "chand=%p lb_call=%p: failing batch with error: %s",
+              chand(), this, StatusToString(cancel_error_).c_str());
+    }
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
+                                                       call_combiner_);
+    return;
+  }
+  // Handle cancellation.
+  if (GPR_UNLIKELY(batch->cancel_stream)) {
+    // Stash a copy of cancel_error in our call data, so that we can use
+    // it for subsequent operations.  This ensures that if the call is
+    // cancelled before any batches are passed down (e.g., if the deadline
+    // is in the past when the call starts), we can return the right
+    // error to the caller when the first batch does get passed down.
+    cancel_error_ = batch->payload->cancel_stream.cancel_error;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+      gpr_log(GPR_INFO, "chand=%p lb_call=%p: recording cancel_error=%s",
+              chand(), this, StatusToString(cancel_error_).c_str());
+    }
+    // Fail all pending batches.
+    PendingBatchesFail(cancel_error_, NoYieldCallCombiner);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
+                                                       call_combiner_);
+    return;
+  }
+  // Add the batch to the pending list.
+  PendingBatchesAdd(batch);
+  // For batches containing a send_initial_metadata op, acquire the
+  // channel's data plane mutex to pick a subchannel.
+  if (GPR_LIKELY(batch->send_initial_metadata)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand(),
+              this);
+    }
+    PickSubchannel(/*was_queued=*/false);
+  } else {
+    // For all other batches, release the call combiner.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p lb_call=%p: saved batch, yielding call combiner",
+              chand(), this);
+    }
+    GRPC_CALL_COMBINER_STOP(call_combiner_,
+                            "batch does not include send_initial_metadata");
+  }
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::SendInitialMetadataOnComplete(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: got on_complete for send_initial_metadata: "
+            "error=%s",
+            self->chand(), self, StatusToString(error).c_str());
+  }
+  self->call_attempt_tracer()->RecordOnDoneSendInitialMetadata(
+      self->peer_string_);
+  Closure::Run(DEBUG_LOCATION,
+               self->original_send_initial_metadata_on_complete_, error);
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: got recv_initial_metadata_ready: error=%s",
+            self->chand(), self, StatusToString(error).c_str());
+  }
+  if (error.ok()) {
+    // recv_initial_metadata_flags is not populated for clients
+    self->call_attempt_tracer()->RecordReceivedInitialMetadata(
+        self->recv_initial_metadata_, 0 /* recv_initial_metadata_flags */);
+  }
+  Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
+               error);
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::RecvMessageReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO, "chand=%p lb_call=%p: got recv_message_ready: error=%s",
+            self->chand(), self, StatusToString(error).c_str());
+  }
+  if (self->recv_message_->has_value()) {
+    self->call_attempt_tracer()->RecordReceivedMessage(**self->recv_message_);
+  }
+  Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_, error);
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: got recv_trailing_metadata_ready: error=%s "
+            "call_attempt_tracer_=%p lb_subchannel_call_tracker_=%p "
+            "failure_error_=%s",
+            self->chand(), self, StatusToString(error).c_str(),
+            self->call_attempt_tracer(), self->lb_subchannel_call_tracker(),
+            StatusToString(self->failure_error_).c_str());
+  }
+  // Check if we have a tracer or an LB callback to invoke.
+  if (self->call_attempt_tracer() != nullptr ||
+      self->lb_subchannel_call_tracker() != nullptr) {
+    // Get the call's status.
+    absl::Status status;
+    if (!error.ok()) {
+      // Get status from error.
+      grpc_status_code code;
+      std::string message;
+      grpc_error_get_status(error, self->deadline(), &code, &message,
+                            /*http_error=*/nullptr, /*error_string=*/nullptr);
+      status = absl::Status(static_cast<absl::StatusCode>(code), message);
+    } else {
+      // Get status from headers.
+      const auto& md = *self->recv_trailing_metadata_;
+      grpc_status_code code =
+          md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+      if (code != GRPC_STATUS_OK) {
+        absl::string_view message;
+        if (const auto* grpc_message = md.get_pointer(GrpcMessageMetadata())) {
+          message = grpc_message->as_string_view();
+        }
+        status = absl::Status(static_cast<absl::StatusCode>(code), message);
+      }
+    }
+    const char* peer_string =
+        self->peer_string_ != nullptr
+            ? reinterpret_cast<char*>(gpr_atm_acq_load(self->peer_string_))
+            : "";
+    self->RecordCallCompletion(status, self->recv_trailing_metadata_,
+                               self->transport_stream_stats_, peer_string);
+  }
+  // Chain to original callback.
+  if (!self->failure_error_.ok()) {
+    error = self->failure_error_;
+    self->failure_error_ = absl::OkStatus();
+  }
+  Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
+               error);
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
+  SubchannelCall::Args call_args = {
+      connected_subchannel()->Ref(), pollent_, path(), /*start_time=*/0,
+      deadline(), arena(),
+      // TODO(roth): When we implement hedging support, we will probably
+      // need to use a separate call context for each subchannel call.
+      call_context(), call_combiner_};
+  grpc_error_handle error;
+  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand(),
+            this, subchannel_call_.get(), StatusToString(error).c_str());
+  }
+  if (on_call_destruction_complete_ != nullptr) {
+    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
+    on_call_destruction_complete_ = nullptr;
+  }
+  if (GPR_UNLIKELY(!error.ok())) {
+    PendingBatchesFail(error, YieldCallCombiner);
+  } else {
+    PendingBatchesResume();
+  }
+}
+
+// A class to handle the call combiner cancellation callback for a
+// queued pick.
+// TODO(roth): When we implement hedging support, we won't be able to
+// register a call combiner cancellation closure for each LB pick,
+// because there may be multiple LB picks happening in parallel.
+// Instead, we will probably need to maintain a list in the CallData
+// object of pending LB picks to be cancelled when the closure runs.
+class ClientChannel::FilterBasedLoadBalancedCall::LbQueuedCallCanceller {
+ public:
+  explicit LbQueuedCallCanceller(
+      RefCountedPtr<FilterBasedLoadBalancedCall> lb_call)
+      : lb_call_(std::move(lb_call)) {
+    GRPC_CALL_STACK_REF(lb_call_->owning_call_, "LbQueuedCallCanceller");
+    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this, nullptr);
+    lb_call_->call_combiner_->SetNotifyOnCancel(&closure_);
+  }
+
+ private:
+  static void CancelLocked(void* arg, grpc_error_handle error) {
+    auto* self = static_cast<LbQueuedCallCanceller*>(arg);
+    auto* lb_call = self->lb_call_.get();
+    auto* chand = lb_call->chand();
+    {
+      MutexLock lock(&chand->lb_mu_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p lb_call=%p: cancelling queued pick: "
+                "error=%s self=%p calld->pick_canceller=%p",
+                chand, lb_call, StatusToString(error).c_str(), self,
+                lb_call->lb_call_canceller_);
+      }
+      if (lb_call->lb_call_canceller_ == self && !error.ok()) {
+        lb_call->call_dispatch_controller()->Commit();
+        // Remove pick from list of queued picks.
+        lb_call->RemoveCallFromLbQueuedCallsLocked();
+        // Remove from queued picks list.
+        chand->lb_queued_calls_.erase(lb_call);
+        // Fail pending batches on the call.
+        lb_call->PendingBatchesFail(error,
+                                    YieldCallCombinerIfPendingBatchesFound);
+      }
+    }
+    GRPC_CALL_STACK_UNREF(lb_call->owning_call_, "LbQueuedCallCanceller");
+    delete self;
+  }
+
+  RefCountedPtr<FilterBasedLoadBalancedCall> lb_call_;
+  grpc_closure closure_;
+};
+
+void ClientChannel::FilterBasedLoadBalancedCall::OnRemoveFromQueue() {
+  // Lame the call combiner canceller.
+  lb_call_canceller_ = nullptr;
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::OnAddToQueue() {
+  // Register call combiner cancellation callback.
+  lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::PickFailed(
+    grpc_error_handle error) {
+  PendingBatchesFail(error, YieldCallCombiner);
 }
 
 }  // namespace grpc_core

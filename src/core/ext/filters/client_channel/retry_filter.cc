@@ -451,7 +451,7 @@ class RetryFilter::CallData {
 
     CallData* calld_;
     AttemptDispatchController attempt_dispatch_controller_;
-    OrphanablePtr<ClientChannel::LoadBalancedCall> lb_call_;
+    OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall> lb_call_;
     bool lb_call_committed_ = false;
 
     grpc_timer per_attempt_recv_timer_;
@@ -558,7 +558,8 @@ class RetryFilter::CallData {
   void AddClosureToStartTransparentRetry(CallCombinerClosureList* closures);
   static void StartTransparentRetry(void* arg, grpc_error_handle error);
 
-  OrphanablePtr<ClientChannel::LoadBalancedCall> CreateLoadBalancedCall(
+  OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
+  CreateLoadBalancedCall(
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
 
@@ -589,7 +590,7 @@ class RetryFilter::CallData {
   // LB call used when we've committed to a call attempt and the retry
   // state for that attempt is no longer needed.  This provides a fast
   // path for long-running streaming calls that minimizes overhead.
-  OrphanablePtr<ClientChannel::LoadBalancedCall> committed_call_;
+  OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall> committed_call_;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but
@@ -884,7 +885,7 @@ namespace {
 void StartBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call = static_cast<ClientChannel::LoadBalancedCall*>(
+  auto* lb_call = static_cast<ClientChannel::FilterBasedLoadBalancedCall*>(
       batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
@@ -2304,7 +2305,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   call_attempt_->StartRetriableBatches();
 }
 
-OrphanablePtr<ClientChannel::LoadBalancedCall>
+OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
 RetryFilter::CallData::CreateLoadBalancedCall(
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry) {
