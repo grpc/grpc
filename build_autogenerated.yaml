@@ -13468,7 +13468,6 @@ targets:
 - name: xds_override_host_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/cpp/server/orca/orca_interceptor.h
