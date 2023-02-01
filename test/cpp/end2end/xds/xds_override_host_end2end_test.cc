@@ -118,64 +118,59 @@ class OverrideHostTest : public XdsEnd2endTest {
     return listener;
   }
 
-  std::multimap<std::string, std::string> SendRpcGetServerMetadata(
-      const grpc_core::DebugLocation& debug_location,
-      const RpcOptions& rpc_options) {
-    std::multimap<std::string, std::string> server_initial_metadata;
-    EchoResponse response;
-    grpc::Status status =
-        SendRpc(rpc_options, &response, &server_initial_metadata);
-    EXPECT_TRUE(status.ok())
-        << "code=" << status.error_code()
-        << ", message=" << status.error_message() << "\n"
-        << debug_location.file() << ":" << debug_location.line();
-    EXPECT_EQ(response.message(), kRequestMessage)
-        << debug_location.file() << ":" << debug_location.line();
-    return server_initial_metadata;
-  }
-
-  ClusterLoadAssignment EdsResourceWithChannelHealth(
-      absl::Span<const HealthStatus> backend_health_statuses) {
-    std::vector<EdsResourceArgs::Endpoint> endpoints;
-    int ind = 0;
-    for (HealthStatus status : backend_health_statuses) {
-      endpoints.emplace_back(CreateEndpoint(ind++, status));
+  absl::optional<std::vector<std::pair<std::string, std::string>>>
+  GetAffinityCookieHeaderForBackend(grpc_core::DebugLocation debug_location,
+                                    size_t ind,
+                                    RpcOptions rpc_options = RpcOptions()) {
+    EXPECT_LT(ind, backends_.size());
+    if (ind >= backends_.size()) {
+      return absl::nullopt;
     }
-    return BuildEdsResource(EdsResourceArgs({{"locality0", endpoints}}));
-  }
-
-  size_t FindBackendWithRequest() {
-    for (size_t i = 0; i < backends_.size(); ++i) {
-      if (backends_[i]->backend_service()->request_count() == 1) {
-        return i;
+    const auto& backend = backends_[ind];
+    for (size_t i = 0; i < backends_.size(); i++) {
+      std::multimap<std::string, std::string> server_initial_metadata;
+      grpc::Status status =
+          SendRpc(rpc_options, nullptr, &server_initial_metadata);
+      EXPECT_TRUE(status.ok())
+          << "code=" << status.error_code()
+          << ", message=" << status.error_message() << "\n"
+          << debug_location.file() << ":" << debug_location.line();
+      if (!status.ok()) {
+        return absl::nullopt;
+      }
+      size_t count = backend->backend_service()->request_count() +
+                     backend->backend_service1()->request_count() +
+                     backend->backend_service2()->request_count();
+      ResetBackendCounters();
+      if (count == 1) {
+        return GetHeadersWithSessionCookie(server_initial_metadata);
       }
     }
-    return -1;
+    ADD_FAILURE_AT(debug_location.file(), debug_location.line())
+        << "Desired backend had not been hit";
+    return absl::nullopt;
   }
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, OverrideHostTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-TEST_P(OverrideHostTest, DefaultConfigurationNoDraining) {
+TEST_P(OverrideHostTest, HappyPath) {
   CreateAndStartBackends(3);
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(),
                                    default_route_config_);
-  balancer_->ads_service()->SetEdsResource(EdsResourceWithChannelHealth(
-      {HealthStatus::HEALTHY, HealthStatus::HEALTHY}));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::HEALTHY),
+                         CreateEndpoint(1, HealthStatus::UNKNOWN)}}})));
   WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // First call gets the cookie. RR policy picks the backend we will use.
-  auto server_initial_metadata =
-      SendRpcGetServerMetadata(DEBUG_LOCATION, RpcOptions());
-  auto session_cookie = GetHeadersWithSessionCookie(server_initial_metadata);
-  ASSERT_FALSE(session_cookie.empty());
-  size_t backend_idx = FindBackendWithRequest();
-  ASSERT_NE(-1, backend_idx);
-  ResetBackendCounters();
+  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
+  ASSERT_TRUE(session_cookie.has_value());
   // All requests go to the backend we specified
-  CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(session_cookie));
-  EXPECT_EQ(backends_[backend_idx]->backend_service()->request_count(), 5);
+  CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(*session_cookie));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 5);
   // Round-robin spreads the load
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 4);
@@ -187,26 +182,12 @@ TEST_P(OverrideHostTest, DefaultConfigurationNoDraining) {
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 5,
                  RpcOptions()
-                     .set_metadata(session_cookie)
+                     .set_metadata(*session_cookie)
                      .set_rpc_service(RpcService::SERVICE_ECHO2));
-  EXPECT_EQ(backends_[backend_idx]->backend_service2()->request_count(), 5);
-  // DRAINING is not overridden here so this channel should just disappear
-  std::array<HealthStatus, 3> statuses(
-      {HealthStatus::HEALTHY, HealthStatus::HEALTHY, HealthStatus::HEALTHY});
-  statuses[backend_idx] = HealthStatus::DRAINING;
-  balancer_->ads_service()->SetEdsResource(
-      EdsResourceWithChannelHealth(statuses));
-  WaitForAllBackends(DEBUG_LOCATION);
-  // Draining channel is not overridden
-  CheckRpcSendOk(DEBUG_LOCATION, (backends_.size() - 1) * 2,
-                 RpcOptions().set_metadata(session_cookie));
-  EXPECT_EQ(0, backends_[backend_idx]->backend_service()->request_count());
-  // The second of the "initial backends"
-  EXPECT_EQ(2, backends_[1 - backend_idx]->backend_service()->request_count());
-  EXPECT_EQ(2, backends_[2]->backend_service()->request_count());
+  EXPECT_EQ(backends_[0]->backend_service2()->request_count(), 5);
 }
 
-TEST_P(OverrideHostTest, DefaultConfigurationDrainingOverridden) {
+TEST_P(OverrideHostTest, DrainingIncludedFromOverrideSet) {
   CreateAndStartBackends(3);
   Cluster cluster = default_cluster_;
   auto* lb_config = cluster.mutable_common_lb_config();
@@ -218,41 +199,73 @@ TEST_P(OverrideHostTest, DefaultConfigurationDrainingOverridden) {
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(),
                                    default_route_config_);
-  balancer_->ads_service()->SetEdsResource(EdsResourceWithChannelHealth(
-      {HealthStatus::HEALTHY, HealthStatus::HEALTHY}));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::HEALTHY),
+                         CreateEndpoint(1, HealthStatus::UNKNOWN)}}})));
   WaitForAllBackends(DEBUG_LOCATION, 0, 2);
-  // First call gets the cookie. RR policy picks the backend we will use.
-  auto server_initial_metadata =
-      SendRpcGetServerMetadata(DEBUG_LOCATION, RpcOptions());
-  auto session_cookie = GetHeadersWithSessionCookie(server_initial_metadata);
-  ASSERT_FALSE(session_cookie.empty());
-  size_t backend_idx = FindBackendWithRequest();
-  ASSERT_NE(-1, backend_idx);
+  CheckRpcSendOk(DEBUG_LOCATION, 4);
+  EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
-  std::array<HealthStatus, 3> statuses(
-      {HealthStatus::HEALTHY, HealthStatus::HEALTHY, HealthStatus::HEALTHY});
-  statuses[backend_idx] = HealthStatus::DRAINING;
-  balancer_->ads_service()->SetEdsResource(
-      EdsResourceWithChannelHealth(statuses));
+  // First call gets the cookie. RR policy picks the backend we will use.
+  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
+  ASSERT_TRUE(session_cookie.has_value());
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::DRAINING),
+                         CreateEndpoint(1, HealthStatus::HEALTHY),
+                         CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
   WaitForAllBackends(DEBUG_LOCATION);
   // Draining channel works just fine
-  CheckRpcSendOk(DEBUG_LOCATION, (backends_.size() - 1) * 2,
-                 RpcOptions().set_metadata(session_cookie));
-  std::array<size_t, 3> expected_counts({0, 0, 0});
-  expected_counts[backend_idx] = 4;
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(expected_counts[i],
-              backends_[i]->backend_service()->request_count());
-  }
+  CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
+  EXPECT_EQ(4, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
   // Round robin does not see the draining policy
-  CheckRpcSendOk(DEBUG_LOCATION, (backends_.size() - 1) * 2);
-  expected_counts = {2, 2, 2};
-  expected_counts[backend_idx] = 0;
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(expected_counts[i],
-              backends_[i]->backend_service()->request_count());
-  }
+  CheckRpcSendOk(DEBUG_LOCATION, 4);
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[2]->backend_service()->request_count());
+  ResetBackendCounters();
+}
+TEST_P(OverrideHostTest, DrainingExcludedFromOverrideSet) {
+  CreateAndStartBackends(3);
+  Cluster cluster = default_cluster_;
+  auto* lb_config = cluster.mutable_common_lb_config();
+  auto* override_health_status_set = lb_config->mutable_override_host_status();
+  override_health_status_set->add_statuses(HealthStatus::HEALTHY);
+  override_health_status_set->add_statuses(HealthStatus::UNKNOWN);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::HEALTHY),
+                         CreateEndpoint(1, HealthStatus::UNKNOWN)}}})));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, 4);
+  EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  ResetBackendCounters();
+  // First call gets the cookie. RR policy picks the backend we will use.
+  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
+  ASSERT_TRUE(session_cookie.has_value());
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::DRAINING),
+                         CreateEndpoint(1, HealthStatus::HEALTHY),
+                         CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Draining channel works just fine
+  CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
 }
 }  // namespace
