@@ -50,7 +50,6 @@
 // was adding.  When we have time, we need to go back and write
 // comprehensive tests for all of the functionality in the filter.
 
-using ::testing::_;
 using ::testing::AllOf;
 using ::testing::StrictMock;
 
@@ -89,14 +88,6 @@ class ClientAuthFilterTest : public ::testing::Test {
   ClientAuthFilterTest()
       : channel_creds_(grpc_fake_transport_security_credentials_create()) {}
 
-  ~ClientAuthFilterTest() override {
-    for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-      if (call_context_[i].destroy != nullptr) {
-        call_context_[i].destroy(call_context_[i].value);
-      }
-    }
-  }
-
   ChannelArgs MakeChannelArgs(absl::Status status_for_call_creds) {
     ChannelArgs args;
     auto security_connector = channel_creds_->create_security_connector(
@@ -115,7 +106,6 @@ class ClientAuthFilterTest : public ::testing::Test {
   absl::string_view target() { return "localhost:1234"; }
 
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
-  grpc_call_context_element call_context_[GRPC_CONTEXT_COUNT];
 };
 
 TEST_F(ClientAuthFilterTest, CreateFailsWithoutRequiredChannelArgs) {

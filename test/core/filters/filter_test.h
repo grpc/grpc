@@ -38,7 +38,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/filters/filter_test.h"
 
 // gmock matcher to ensure that metadata has a key/value pair.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {

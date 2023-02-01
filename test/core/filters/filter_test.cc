@@ -325,10 +325,10 @@ ServerMetadataHandle FilterTest::Call::NewServerMetadata(
   return md;
 }
 
-MessageHandle FilterTest::Call::NewMessage(absl::string_view data,
+MessageHandle FilterTest::Call::NewMessage(absl::string_view payload,
                                            uint32_t flags) {
   SliceBuffer buffer;
-  if (!data.empty()) buffer.Append(Slice::FromCopiedString(data));
+  if (!payload.empty()) buffer.Append(Slice::FromCopiedString(payload));
   return impl_->arena()->MakePooled<Message>(std::move(buffer), flags);
 }
 
