@@ -51,6 +51,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
@@ -82,9 +83,13 @@ inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(2); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FLOW_CONTROL_FIXES
 inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(3); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_PRESSURE_CONTROLLER
-inline bool IsMemoryPressureControllerEnabled() { return IsExperimentEnabled(4); }
+inline bool IsMemoryPressureControllerEnabled() {
+  return IsExperimentEnabled(4);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return IsExperimentEnabled(5); }
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
+  return IsExperimentEnabled(5);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_NEW_HPACK_HUFFMAN_DECODER
 inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(6); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -96,7 +101,9 @@ inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(9); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(10); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRANSPORT_SUPPLIES_CLIENT_LATENCY
-inline bool IsTransportSuppliesClientLatencyEnabled() { return IsExperimentEnabled(11); }
+inline bool IsTransportSuppliesClientLatencyEnabled() {
+  return IsExperimentEnabled(11);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(12); }
 
