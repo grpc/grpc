@@ -3487,12 +3487,12 @@ void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
 
 #endif
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 ArenaPromise<ServerMetadataHandle>
 ServerCallContext::MakeTopOfServerCallPromise(
     CallArgs call_args, grpc_completion_queue* cq,
     grpc_metadata_array* publish_initial_metadata,
     absl::FunctionRef<void(grpc_call* call)> publish) {
-#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
   call_->mu()->AssertHeld();
   call_->SetCompletionQueueLocked(cq);
   call_->server_to_client_messages_ = call_args.server_to_client_messages;
@@ -3511,10 +3511,16 @@ ServerCallContext::MakeTopOfServerCallPromise(
     call_->mu()->AssertHeld();
     return call_->PollTopOfCall();
   };
-#else
-  Crash("Promise-based server call is not enabled");
-#endif
 }
+#else
+ArenaPromise<ServerMetadataHandle>
+ServerCallContext::MakeTopOfServerCallPromise(
+    CallArgs, grpc_completion_queue*, grpc_metadata_array*,
+    absl::FunctionRef<void(grpc_call*)>) {
+  (void)call_;
+  Crash("Promise-based server call is not enabled");
+}
+#endif
 
 }  // namespace grpc_core
 

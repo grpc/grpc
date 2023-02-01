@@ -249,8 +249,7 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include \"src/core/lib/experiments/experiments.h\"", file=C)
     print(file=C)
-    print("#ifdef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
-    print("#else", file=C)
+    print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
     print("namespace {", file=C)
     for attr in attrs:
         print("const char* const description_%s = %s;" %
