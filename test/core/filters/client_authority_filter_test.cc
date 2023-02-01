@@ -28,41 +28,38 @@ using ::testing::StrictMock;
 namespace grpc_core {
 namespace {
 
+using ClientAuthorityFilterTest = FilterTest<ClientAuthorityFilter>;
+
 ChannelArgs TestChannelArgs(absl::string_view default_authority) {
   return ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
 }
 
-TEST(ClientAuthorityFilterTest, DefaultFails) {
-  EXPECT_FALSE(
-      ClientAuthorityFilter::Create(ChannelArgs(), ChannelFilter::Args()).ok());
+TEST_F(ClientAuthorityFilterTest, DefaultFails) {
+  EXPECT_FALSE(MakeChannel(ChannelArgs()).ok());
 }
 
-TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
-  EXPECT_EQ(ClientAuthorityFilter::Create(TestChannelArgs("foo.test.google.au"),
-                                          ChannelFilter::Args())
-                .status(),
+TEST_F(ClientAuthorityFilterTest, WithArgSucceeds) {
+  EXPECT_EQ(MakeChannel(TestChannelArgs("foo.test.google.au")).status(),
             absl::OkStatus());
 }
 
-TEST(ClientAuthorityFilterTest, NonStringArgFails) {
-  EXPECT_FALSE(ClientAuthorityFilter::Create(
-                   ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123),
-                   ChannelFilter::Args())
-                   .ok());
+TEST_F(ClientAuthorityFilterTest, NonStringArgFails) {
+  EXPECT_FALSE(
+      MakeChannel(ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123)).ok());
 }
 
-TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
-  StrictMock<FilterTest::Call> call(FilterTest(*ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args())));
+TEST_F(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
+  StrictMock<FilterTest::Call> call(
+      MakeChannel(TestChannelArgs("foo.test.google.au")).value());
   EXPECT_CALL(call,
               Started(HasMetadataKeyValue(":authority", "foo.test.google.au")));
   call.Start(call.NewClientMetadata());
 }
 
-TEST(ClientAuthorityFilterTest,
-     PromiseCompletesImmediatelyAndDoesNotSetAuthority) {
-  StrictMock<FilterTest::Call> call(FilterTest(*ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args())));
+TEST_F(ClientAuthorityFilterTest,
+       PromiseCompletesImmediatelyAndDoesNotSetAuthority) {
+  StrictMock<FilterTest::Call> call(
+      MakeChannel(TestChannelArgs("foo.test.google.au")).value());
   EXPECT_CALL(call,
               Started(HasMetadataKeyValue(":authority", "bar.test.google.au")));
   call.Start(call.NewClientMetadata({{":authority", "bar.test.google.au"}}));

@@ -66,28 +66,46 @@ inline std::ostream& operator<<(std::ostream& os, const Message& msg) {
             << " payload:" << absl::CEscape(msg.payload()->JoinIntoString());
 }
 
-class FilterTest {
- private:
-  struct Channel {
+class FilterTestBase : public ::testing::Test {
+ public:
+  class Call;
+
+  class Channel {
+   private:
+    struct Impl {
+      explicit Impl(std::unique_ptr<ChannelFilter> filter)
+          : filter(std::move(filter)) {}
+      size_t initial_arena_size = 1024;
+      MemoryAllocator memory_allocator =
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test");
+      std::unique_ptr<ChannelFilter> filter;
+    };
+
+   public:
+    void set_initial_arena_size(size_t size) {
+      impl_->initial_arena_size = size;
+    }
+
+    Call MakeCall();
+
+   private:
+    friend class FilterTestBase;
+    friend class Call;
+
     explicit Channel(std::unique_ptr<ChannelFilter> filter)
-        : filter(std::move(filter)) {}
-    size_t initial_arena_size = 1024;
-    MemoryAllocator memory_allocator =
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test");
-    std::unique_ptr<ChannelFilter> filter;
+        : impl_(std::make_shared<Impl>(std::move(filter))) {}
+
+    std::shared_ptr<Impl> impl_;
   };
 
- public:
   // One "call" outstanding against this filter.
   // In reality - this filter is the only thing in the call.
   // Provides mocks to trap events that happen on the call.
   class Call {
    public:
-    explicit Call(const FilterTest& test);
     ~Call();
-
-    Call(const Call&) = delete;
-    Call& operator=(const Call&) = delete;
+    explicit Call(const Channel& channel);
 
     // Construct client metadata in the arena of this call.
     // Optional argument is a list of key/value pairs to add to the metadata.
@@ -134,23 +152,28 @@ class FilterTest {
                 (const ServerMetadata& server_trailing_metadata));
 
    private:
+    friend class Channel;
     class ScopedContext;
     class Impl;
 
     std::unique_ptr<Impl> impl_;
   };
 
-  template <typename Filter>
-  explicit FilterTest(Filter filter)
-      : channel_(std::make_shared<Channel>(
-            std::make_unique<Filter>(std::move(filter)))) {}
-
-  void set_initial_arena_size(size_t size) {
-    channel_->initial_arena_size = size;
+ protected:
+  absl::StatusOr<Channel> MakeChannel(std::unique_ptr<ChannelFilter> filter) {
+    return Channel(std::move(filter));
   }
+};
 
- private:
-  std::shared_ptr<Channel> channel_;
+template <typename Filter>
+class FilterTest : public FilterTestBase {
+ public:
+  absl::StatusOr<Channel> MakeChannel(const ChannelArgs& args) {
+    auto filter = Filter::Create(args, ChannelFilter::Args());
+    if (!filter.ok()) return filter.status();
+    return FilterTestBase::MakeChannel(
+        std::make_unique<Filter>(std::move(*filter)));
+  }
 };
 
 }  // namespace grpc_core

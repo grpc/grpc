@@ -56,7 +56,7 @@ using ::testing::StrictMock;
 namespace grpc_core {
 namespace {
 
-class ClientAuthFilterTest : public ::testing::Test {
+class ClientAuthFilterTest : public FilterTest<ClientAuthFilter> {
  protected:
   class FailCallCreds : public grpc_call_credentials {
    public:
@@ -88,6 +88,10 @@ class ClientAuthFilterTest : public ::testing::Test {
   ClientAuthFilterTest()
       : channel_creds_(grpc_fake_transport_security_credentials_create()) {}
 
+  Channel MakeChannelWithCallCredsResult(absl::Status status) {
+    return MakeChannel(MakeChannelArgs(std::move(status))).value();
+  }
+
   ChannelArgs MakeChannelArgs(absl::Status status_for_call_creds) {
     ChannelArgs args;
     auto security_connector = channel_creds_->create_security_connector(
@@ -114,16 +118,14 @@ TEST_F(ClientAuthFilterTest, CreateFailsWithoutRequiredChannelArgs) {
 }
 
 TEST_F(ClientAuthFilterTest, CreateSucceeds) {
-  auto filter = ClientAuthFilter::Create(MakeChannelArgs(absl::OkStatus()),
-                                         ChannelFilter::Args());
+  auto filter = MakeChannel(MakeChannelArgs(absl::OkStatus()));
   EXPECT_TRUE(filter.ok()) << filter.status();
 }
 
 TEST_F(ClientAuthFilterTest, CallCredsFails) {
   //  initial_metadata_batch_.Set(HttpAuthorityMetadata(), target_.Ref());
-  StrictMock<FilterTest::Call> call(FilterTest(*ClientAuthFilter::Create(
-      MakeChannelArgs(absl::UnauthenticatedError("access denied")),
-      ChannelFilter::Args())));
+  StrictMock<Call> call(MakeChannelWithCallCredsResult(
+      absl::UnauthenticatedError("access denied")));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
   EXPECT_CALL(
       call, Finished(AllOf(
@@ -134,8 +136,8 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
-  StrictMock<FilterTest::Call> call(FilterTest(*ClientAuthFilter::Create(
-      MakeChannelArgs(absl::AbortedError("nope")), ChannelFilter::Args())));
+  StrictMock<Call> call(
+      MakeChannelWithCallCredsResult(absl::AbortedError("nope")));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
   EXPECT_CALL(
       call,

@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -48,7 +49,13 @@ class NoOpFilter final : public ChannelFilter {
       CallArgs args, NextPromiseFactory next) override {
     return next(std::move(args));
   }
+
+  static absl::StatusOr<NoOpFilter> Create(const ChannelArgs&,
+                                           ChannelFilter::Args) {
+    return NoOpFilter();
+  }
 };
+using NoOpFilterTest = FilterTest<NoOpFilter>;
 
 class DelayStartFilter final : public ChannelFilter {
  public:
@@ -63,7 +70,13 @@ class DelayStartFilter final : public ChannelFilter {
         },
         next);
   }
+
+  static absl::StatusOr<DelayStartFilter> Create(const ChannelArgs&,
+                                                 ChannelFilter::Args) {
+    return DelayStartFilter();
+  }
 };
+using DelayStartFilterTest = FilterTest<DelayStartFilter>;
 
 class AddClientInitialMetadataFilter final : public ChannelFilter {
  public:
@@ -73,7 +86,14 @@ class AddClientInitialMetadataFilter final : public ChannelFilter {
                                       Slice::FromCopiedString("foo.bar"));
     return next(std::move(args));
   }
+
+  static absl::StatusOr<AddClientInitialMetadataFilter> Create(
+      const ChannelArgs&, ChannelFilter::Args) {
+    return AddClientInitialMetadataFilter();
+  }
 };
+using AddClientInitialMetadataFilterTest =
+    FilterTest<AddClientInitialMetadataFilter>;
 
 class AddServerTrailingMetadataFilter final : public ChannelFilter {
  public:
@@ -84,7 +104,14 @@ class AddServerTrailingMetadataFilter final : public ChannelFilter {
       return handle;
     });
   }
+
+  static absl::StatusOr<AddServerTrailingMetadataFilter> Create(
+      const ChannelArgs&, ChannelFilter::Args) {
+    return AddServerTrailingMetadataFilter();
+  }
 };
+using AddServerTrailingMetadataFilterTest =
+    FilterTest<AddServerTrailingMetadataFilter>;
 
 class AddServerInitialMetadataFilter final : public ChannelFilter {
  public:
@@ -96,63 +123,69 @@ class AddServerInitialMetadataFilter final : public ChannelFilter {
     });
     return next(std::move(args));
   }
+
+  static absl::StatusOr<AddServerInitialMetadataFilter> Create(
+      const ChannelArgs&, ChannelFilter::Args) {
+    return AddServerInitialMetadataFilter();
+  }
 };
+using AddServerInitialMetadataFilterTest =
+    FilterTest<AddServerInitialMetadataFilter>;
 
-TEST(FilterTestTest, NoOp) { FilterTest test{NoOpFilter()}; }
+TEST_F(NoOpFilterTest, NoOp) {}
 
-TEST(FilterTestTest, MakeCall) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, MakeCall) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
 }
 
-TEST(FilterTestTest, MakeClientMetadata) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, MakeClientMetadata) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   auto md = call.NewClientMetadata({{":path", "foo.bar"}});
   EXPECT_EQ(md->get_pointer(HttpPathMetadata())->as_string_view(), "foo.bar");
 }
 
-TEST(FilterTestTest, MakeServerMetadata) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, MakeServerMetadata) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   auto md = call.NewServerMetadata({{":status", "200"}});
   EXPECT_EQ(md->get(HttpStatusMetadata()), HttpStatusMetadata::ValueType(200));
 }
 
-TEST(FilterTestTest, CanStart) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, CanStart) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.Step();
 }
 
-TEST(FilterTestTest, CanStartWithDelay) {
-  StrictMock<FilterTest::Call> call(FilterTest{DelayStartFilter()});
+TEST_F(DelayStartFilterTest, CanStartWithDelay) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.Step();
 }
 
-TEST(FilterTestTest, CanCancel) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, CanCancel) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.Cancel();
 }
 
-TEST(FilterTestTest, CanCancelWithDelay) {
-  StrictMock<FilterTest::Call> call(FilterTest{DelayStartFilter()});
+TEST_F(DelayStartFilterTest, CanCancelWithDelay) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   call.Start(call.NewClientMetadata());
   call.Cancel();
 }
 
-TEST(FilterTestTest, CanSetClientInitialMetadata) {
-  StrictMock<FilterTest::Call> call(
-      FilterTest{AddClientInitialMetadataFilter()});
+TEST_F(AddClientInitialMetadataFilterTest, CanSetClientInitialMetadata) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(HasMetadataKeyValue(":path", "foo.bar")));
   call.Start(call.NewClientMetadata());
   call.Step();
 }
 
-TEST(FilterTestTest, CanFinish) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, CanFinish) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata());
@@ -160,9 +193,8 @@ TEST(FilterTestTest, CanFinish) {
   call.Step();
 }
 
-TEST(FilterTestTest, CanSetServerTrailingMetadata) {
-  StrictMock<FilterTest::Call> call(
-      FilterTest{AddServerTrailingMetadataFilter()});
+TEST_F(AddServerTrailingMetadataFilterTest, CanSetServerTrailingMetadata) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata());
@@ -170,8 +202,8 @@ TEST(FilterTestTest, CanSetServerTrailingMetadata) {
   call.Step();
 }
 
-TEST(FilterTestTest, CanProcessServerInitialMetadata) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, CanProcessServerInitialMetadata) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
@@ -179,9 +211,8 @@ TEST(FilterTestTest, CanProcessServerInitialMetadata) {
   call.Step();
 }
 
-TEST(FilterTestTest, CanSetServerInitialMetadata) {
-  StrictMock<FilterTest::Call> call(
-      FilterTest{AddServerInitialMetadataFilter()});
+TEST_F(AddServerInitialMetadataFilterTest, CanSetServerInitialMetadata) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
@@ -190,8 +221,8 @@ TEST(FilterTestTest, CanSetServerInitialMetadata) {
   call.Step();
 }
 
-TEST(FilterTestTest, CanProcessClientToServerMessage) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, CanProcessClientToServerMessage) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.ForwardMessageClientToServer(call.NewMessage("abc"));
@@ -199,8 +230,8 @@ TEST(FilterTestTest, CanProcessClientToServerMessage) {
   call.Step();
 }
 
-TEST(FilterTestTest, CanProcessServerToClientMessage) {
-  StrictMock<FilterTest::Call> call(FilterTest{NoOpFilter()});
+TEST_F(NoOpFilterTest, CanProcessServerToClientMessage) {
+  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
