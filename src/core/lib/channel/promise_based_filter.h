@@ -303,7 +303,10 @@ class BaseCallData : public Activity, private Wakeable {
     void GotPipe(PipeSender<MessageHandle>*) override { abort(); }
 
     PipeSender<MessageHandle>* Push() override { return &pipe_.sender; }
-    PipeReceiver<MessageHandle>* Pull() override { return receiver_; }
+    PipeReceiver<MessageHandle>* Pull() override {
+      GPR_ASSERT(receiver_ != nullptr);
+      return receiver_;
+    }
 
    private:
     Pipe<MessageHandle> pipe_;
@@ -326,7 +329,10 @@ class BaseCallData : public Activity, private Wakeable {
       sender_ = sender;
     }
 
-    PipeSender<MessageHandle>* Push() override { return sender_; }
+    PipeSender<MessageHandle>* Push() override {
+      GPR_ASSERT(sender_ != nullptr);
+      return sender_;
+    }
     PipeReceiver<MessageHandle>* Pull() override { return &pipe_.receiver; }
 
    private:
