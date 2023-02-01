@@ -1352,15 +1352,16 @@ grpc_channel_filter MakeConnectedFilter() {
   // In this way the filter can be inserted into either kind of channel stack,
   // and only if all the filters in the stack are promise based will the call
   // be promise based.
-  return {
-      connected_channel_start_transport_stream_op_batch,
-      make_call_promise != nullptr ? [](grpc_channel_element* elem, CallArgs call_args,
+  auto make_call_wrapper = +[](grpc_channel_element* elem, CallArgs call_args,
          NextPromiseFactory next) {
         grpc_transport* transport =
             static_cast<channel_data*>(elem->channel_data)->transport;
         return make_call_promise(transport, std::move(call_args),
                                  std::move(next));
-      } : nullptr,
+      };
+  return {
+      connected_channel_start_transport_stream_op_batch,
+      make_call_promise != nullptr ? make_call_wrapper : nullptr,
       connected_channel_start_transport_op,
       sizeof(call_data),
       connected_channel_init_call_elem,
