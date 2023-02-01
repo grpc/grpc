@@ -25,7 +25,6 @@ struct BackendMetricData;
 class BackendMetricProvider {
  public:
   virtual ~BackendMetricProvider() = default;
-  // Returns nullopt when empty.
   virtual BackendMetricData GetBackendMetricData() = 0;
 };
 
