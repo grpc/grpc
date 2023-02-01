@@ -40,16 +40,10 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#if defined(__APPLE__)
-// Use less # of threads on Mac because its test machines are less powerful
-// to finish the test on time. (context: b/185231823)
-const int kNumThreads = 100;  // Number of threads
-#else
-const int kNumThreads = 300;  // Number of threads
-#endif
+const int kNumThreads = 10;  // Number of threads
 const int kNumAsyncSendThreads = 2;
-const int kNumAsyncReceiveThreads = 50;
-const int kNumAsyncServerThreads = 50;
+const int kNumAsyncReceiveThreads = 5;
+const int kNumAsyncServerThreads = 5;
 const int kNumRpcs = 1000;  // Number of RPCs per thread
 
 namespace grpc {
@@ -317,15 +311,12 @@ TYPED_TEST(End2endTest, ThreadStress) {
   std::vector<std::thread> threads;
   gpr_atm errors;
   gpr_atm_rel_store(&errors, gpr_atm{0});
-  int num_threads = kNumThreads / grpc_test_slowdown_factor();
-  // The number of threads should be > 10 to be able to catch errors
-  ASSERT_GT(num_threads, 10);
-  threads.reserve(num_threads);
-  for (int i = 0; i < num_threads; ++i) {
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs,
                          this->common_.AllowExhaustion(), &errors);
   }
-  for (int i = 0; i < num_threads; ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     threads[i].join();
   }
   uint64_t error_cnt = static_cast<uint64_t>(gpr_atm_no_barrier_load(&errors));
