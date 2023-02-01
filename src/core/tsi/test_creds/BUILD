@@ -28,8 +28,6 @@ exports_files([
     "badclient.pem",
     "multi-domain.key",
     "multi-domain.pem",
-    "intermediate_ca.key",
-    "intermediate_ca.pem",
     "leaf_signed_by_intermediate.key",
-    "leaf_signed_by_intermediate.pem",
+    "leaf_and_intermediate_chain.pem"
 ])

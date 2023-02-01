@@ -15,7 +15,7 @@ common name which is set to badserver.test.google.com.
 
 Valid test credentials:
 =======================
-
+er
 The ca is self-signed:
 ----------------------
 
@@ -110,10 +110,11 @@ $ rm temp.rsa
 $ openssl req -key intermediate_ca.key -new -out temp.csr -config intermediate.cnf
 $ openssl x509 -req -days 3650 -in temp.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out intermediate_ca.pem -extfile intermediate.cnf -extensions 'v3_req'
 
-$ openssl genrsa -out temp.rsa 2048
-$ openssl pkcs8 -topk8 -in temp.rsa -out leaf_signed_by_intermediate.key -nocrypt
-$ openssl req -key leaf_signed_by_intermediate.key -new -out temp.csr -config leaf_signed_by_intermediate.cnf
-$ openssl x509 -req -days 3650 -in temp.csr -CA intermediate_ca.pem -CAkey intermediate_ca.key -CAcreateserial -out leaf_signed_by_intermediate.pem -extfile leaf_signed_by_intermediate.cnf -extensions 'v3_req'
+openssl genrsa -out temp.rsa 2048
+openssl pkcs8 -topk8 -in temp.rsa -out leaf_signed_by_intermediate.key -nocrypt
+openssl req -key leaf_signed_by_intermediate.key -new -out temp.csr -config leaf_signed_by_intermediate.cnf
+openssl x509 -req -days 3650 -in temp.csr -CA intermediate_ca.pem -CAkey intermediate_ca.key -CAcreateserial -out leaf_signed_by_intermediate.pem -extfile leaf_signed_by_intermediate.cnf -extensions 'v3_req'
+cat leaf_signed_by_intermediate.pem intermediate_ca.pem > leaf_and_intermediate_chain.pem
 
 
 
