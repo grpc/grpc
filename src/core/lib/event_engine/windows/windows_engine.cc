@@ -375,10 +375,9 @@ WindowsEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
-  // DO NOT SUBMIT(hork): use the config?
   return absl::make_unique<WindowsEventEngineListener>(
-      std::move(on_accept), std::move(on_shutdown),
-      std::move(memory_allocator_factory));
+      &iocp_, std::move(on_accept), std::move(on_shutdown),
+      std::move(memory_allocator_factory), executor_.get(), config);
 }
 
 }  // namespace experimental

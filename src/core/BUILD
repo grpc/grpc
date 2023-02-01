@@ -1994,9 +1994,13 @@ grpc_cc_library(
         "absl/status",
     ],
     deps = [
+        "common_event_engine_closures",
         "error",
+        "event_engine_executor",
         "event_engine_tcp_socket_utils",
         "event_engine_trace",
+        "windows_endpoint",
+        "windows_iocp",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
