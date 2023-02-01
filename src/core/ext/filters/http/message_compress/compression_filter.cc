@@ -268,8 +268,10 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
       [decompress_err, decompress_args,
        this](MessageHandle message) -> absl::optional<MessageHandle> {
         auto r = DecompressMessage(std::move(message), decompress_args);
-        gpr_log(GPR_DEBUG, "DecompressMessage returned %s",
-                r.status().ToString().c_str());
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_DEBUG, "DecompressMessage returned %s",
+                  r.status().ToString().c_str());
+        }
         if (!r.ok()) {
           decompress_err->Set(ServerMetadataFromStatus(r.status()));
           return absl::nullopt;
