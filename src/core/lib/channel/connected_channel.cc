@@ -1354,13 +1354,13 @@ grpc_channel_filter MakeConnectedFilter() {
   // be promise based.
   return {
       connected_channel_start_transport_stream_op_batch,
-      make_call_promise == nullptr ? nullptr : [](grpc_channel_element* elem, CallArgs call_args,
+      make_call_promise != nullptr ? [](grpc_channel_element* elem, CallArgs call_args,
          NextPromiseFactory next) {
         grpc_transport* transport =
             static_cast<channel_data*>(elem->channel_data)->transport;
         return make_call_promise(transport, std::move(call_args),
                                  std::move(next));
-      },
+      } : nullptr,
       connected_channel_start_transport_op,
       sizeof(call_data),
       connected_channel_init_call_elem,
