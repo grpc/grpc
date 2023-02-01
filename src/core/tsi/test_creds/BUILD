@@ -29,5 +29,5 @@ exports_files([
     "multi-domain.key",
     "multi-domain.pem",
     "leaf_signed_by_intermediate.key",
-    "leaf_and_intermediate_chain.pem"
+    "leaf_and_intermediate_chain.pem",
 ])
