@@ -21,12 +21,16 @@
 
 #include "absl/strings/string_view.h"
 
+// #define GRPC_EXPERIMENTS_ARE_FINAL
+
 namespace grpc_core {
 
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
 // Return true if experiment \a experiment_id is enabled.
 // Experiments are numbered by their order in the g_experiment_metadata array
 // declared in experiments.h.
 bool IsExperimentEnabled(size_t experiment_id);
+#endif
 
 // Print out a list of all experiments that are built into this binary.
 void PrintExperimentsList();
@@ -37,6 +41,12 @@ void PrintExperimentsList();
 // If the experiment does not exist, emits a warning but continues execution.
 // If this is called twice for the same experiment, both calls must agree.
 void ForceEnableExperiment(absl::string_view experiment_name, bool enable);
+
+struct ExperimentMetadata {
+  const char* name;
+  const char* description;
+  bool default_value;
+};
 
 }  // namespace grpc_core
 
