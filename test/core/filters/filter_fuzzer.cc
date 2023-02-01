@@ -66,7 +66,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -436,12 +436,10 @@ class MainLoop {
           CallArgs call_args, NextPromiseFactory) override {
         Call* call = static_cast<Call*>(Activity::current());
         if (call->server_initial_metadata_) {
-          call->server_initial_metadata_push_promise_.emplace(
-              call_args.server_initial_metadata->Push(
-                  ServerMetadataHandle(call->server_initial_metadata_.get(),
-                                       Arena::PooledDeleter(nullptr))));
+          call_args.server_initial_metadata->Set(
+              call->server_initial_metadata_.get());
         } else {
-          call->unpushed_incoming_server_initial_metadata_pipe_ =
+          call->unset_incoming_server_initial_metadata_latch_ =
               call_args.server_initial_metadata;
         }
         return [call]() -> Poll<ServerMetadataHandle> {
@@ -474,10 +472,10 @@ class MainLoop {
          const filter_fuzzer::Metadata& client_initial_metadata, bool is_client)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
-      auto* server_initial_metadata = arena_->New<Pipe<ServerMetadataHandle>>();
+      auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
       CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
                                                  &client_initial_metadata_)),
-                         &server_initial_metadata->sender, nullptr, nullptr};
+                         server_initial_metadata, nullptr, nullptr};
       if (is_client) {
         promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
             std::move(call_args));
@@ -534,12 +532,10 @@ class MainLoop {
     void RecvInitialMetadata(const filter_fuzzer::Metadata& metadata) {
       if (server_initial_metadata_ == nullptr) {
         LoadMetadata(metadata, &server_initial_metadata_);
-        if (auto* pipe = std::exchange(
-                unpushed_incoming_server_initial_metadata_pipe_, nullptr)) {
+        if (auto* latch = std::exchange(
+                unset_incoming_server_initial_metadata_latch_, nullptr)) {
           ScopedContext context(this);
-          server_initial_metadata_push_promise_.emplace(
-              pipe->Push(ServerMetadataHandle(server_initial_metadata_.get(),
-                                              Arena::PooledDeleter(nullptr))));
+          latch->Set(server_initial_metadata_.get());
         }
       }
     }
@@ -629,10 +625,8 @@ class MainLoop {
     std::unique_ptr<filter_fuzzer::FinalInfo> final_info_;
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
     std::unique_ptr<ServerMetadata> server_initial_metadata_;
-    PipeSender<ServerMetadataHandle>*
-        unpushed_incoming_server_initial_metadata_pipe_ = nullptr;
-    absl::optional<PipeSender<ServerMetadataHandle>::PushType>
-        server_initial_metadata_push_promise_;
+    Latch<ServerMetadata*>* unset_incoming_server_initial_metadata_latch_ =
+        nullptr;
     std::unique_ptr<ServerMetadata> server_trailing_metadata_;
     Waker server_trailing_metadata_waker_;
     CallFinalization finalization_;
