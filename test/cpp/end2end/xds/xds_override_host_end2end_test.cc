@@ -156,7 +156,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, OverrideHostTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(OverrideHostTest, HappyPath) {
-  CreateAndStartBackends(3);
+  CreateAndStartBackends(2);
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(),
                                    default_route_config_);
@@ -164,7 +164,7 @@ TEST_P(OverrideHostTest, HappyPath) {
       EdsResourceArgs({{"locality0",
                         {CreateEndpoint(0, HealthStatus::HEALTHY),
                          CreateEndpoint(1, HealthStatus::UNKNOWN)}}})));
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  WaitForAllBackends(DEBUG_LOCATION);
   // First call gets the cookie. RR policy picks the backend we will use.
   auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
   ASSERT_TRUE(session_cookie.has_value());
@@ -176,8 +176,6 @@ TEST_P(OverrideHostTest, HappyPath) {
   CheckRpcSendOk(DEBUG_LOCATION, 4);
   EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
-  // Should be disabled for now
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   // Call a different service with the same cookie
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 5,
@@ -217,8 +215,7 @@ TEST_P(OverrideHostTest, DrainingIncludedFromOverrideSet) {
                         {CreateEndpoint(0, HealthStatus::DRAINING),
                          CreateEndpoint(1, HealthStatus::HEALTHY),
                          CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
-  WaitForAllBackends(DEBUG_LOCATION, 0, 0, nullptr,
-                     WaitForBackendOptions().set_timeout_ms(30000));
+  WaitForAllBackends(DEBUG_LOCATION, 1);
   // Draining channel works just fine
   CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
   EXPECT_EQ(4, backends_[0]->backend_service()->request_count());
@@ -262,8 +259,7 @@ TEST_P(OverrideHostTest, DrainingExcludedFromOverrideSet) {
                         {CreateEndpoint(0, HealthStatus::DRAINING),
                          CreateEndpoint(1, HealthStatus::HEALTHY),
                          CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
-  WaitForAllBackends(DEBUG_LOCATION, 0, 0, nullptr,
-                     WaitForBackendOptions().set_timeout_ms(30000));
+  WaitForAllBackends(DEBUG_LOCATION, 1);
   // Draining channel works just fine
   CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
