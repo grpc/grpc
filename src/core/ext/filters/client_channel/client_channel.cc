@@ -190,20 +190,16 @@ class ClientChannel::CallData {
 
   void CreateDynamicCall(grpc_call_element* elem);
 
+  Arena* arena() const { return deadline_state_.arena; }
+  grpc_call_stack* owning_call() const { return deadline_state_.call_stack; }
+  CallCombiner* call_combiner() const { return deadline_state_.call_combiner; }
+
   // State for handling deadlines.
-  // The code in deadline_filter.c requires this to be the first field.
-  // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
-  // and this struct both independently store pointers to the call stack
-  // and call combiner.  If/when we have time, find a way to avoid this
-  // without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state_;
 
   grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
   Timestamp deadline_;
-  Arena* arena_;
-  grpc_call_stack* owning_call_;
-  CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
   grpc_polling_entity* pollent_ = nullptr;
@@ -1828,9 +1824,6 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
       path_(CSliceRef(args.path)),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
-      arena_(args.arena),
-      owning_call_(args.call_stack),
-      call_combiner_(args.call_combiner),
       call_context_(args.context) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: created call", &chand, this);
@@ -1877,7 +1870,8 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
             calld, grpc_transport_stream_op_batch_string(batch).c_str());
   }
   if (GPR_LIKELY(chand->deadline_checking_enabled_)) {
-    grpc_deadline_state_client_start_transport_stream_op_batch(elem, batch);
+    grpc_deadline_state_client_start_transport_stream_op_batch(
+        &calld->deadline_state_, batch);
   }
   // Intercept recv_trailing_metadata to call CallDispatchController::Commit(),
   // in case we wind up failing the call before we get down to the retry
@@ -1912,7 +1906,7 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
     }
     // Note: This will release the call combiner.
     grpc_transport_stream_op_batch_finish_with_failure(
-        batch, calld->cancel_error_, calld->call_combiner_);
+        batch, calld->cancel_error_, calld->call_combiner());
     return;
   }
   // Handle cancellation.
@@ -1931,7 +1925,7 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
     calld->PendingBatchesFail(elem, calld->cancel_error_, NoYieldCallCombiner);
     // Note: This will release the call combiner.
     grpc_transport_stream_op_batch_finish_with_failure(
-        batch, calld->cancel_error_, calld->call_combiner_);
+        batch, calld->cancel_error_, calld->call_combiner());
     return;
   }
   // Add the batch to the pending list.
@@ -1954,7 +1948,7 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
               "chand=%p calld=%p: saved batch, yielding call combiner", chand,
               calld);
     }
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner(),
                             "batch does not include send_initial_metadata");
   }
 }
@@ -2006,7 +2000,7 @@ void ClientChannel::CallData::FailPendingBatchInCallCombiner(
   CallData* calld = static_cast<CallData*>(batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                     calld->call_combiner_);
+                                                     calld->call_combiner());
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
@@ -2037,9 +2031,9 @@ void ClientChannel::CallData::PendingBatchesFail(
     }
   }
   if (yield_call_combiner_predicate(closures)) {
-    closures.RunClosures(call_combiner_);
+    closures.RunClosures(call_combiner());
   } else {
-    closures.RunClosuresWithoutYielding(call_combiner_);
+    closures.RunClosuresWithoutYielding(call_combiner());
   }
 }
 
@@ -2082,7 +2076,7 @@ void ClientChannel::CallData::PendingBatchesResume(grpc_call_element* elem) {
     }
   }
   // Note: This will release the call combiner.
-  closures.RunClosures(call_combiner_);
+  closures.RunClosures(call_combiner());
 }
 
 //
@@ -2095,10 +2089,10 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
  public:
   explicit ResolverQueuedCallCanceller(grpc_call_element* elem) : elem_(elem) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    GRPC_CALL_STACK_REF(calld->owning_call_, "ResolverQueuedCallCanceller");
+    GRPC_CALL_STACK_REF(calld->owning_call(), "ResolverQueuedCallCanceller");
     GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
                       grpc_schedule_on_exec_ctx);
-    calld->call_combiner_->SetNotifyOnCancel(&closure_);
+    calld->call_combiner()->SetNotifyOnCancel(&closure_);
   }
 
  private:
@@ -2123,7 +2117,7 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
                                   YieldCallCombinerIfPendingBatchesFound);
       }
     }
-    GRPC_CALL_STACK_UNREF(calld->owning_call_, "ResolvingQueuedCallCanceller");
+    GRPC_CALL_STACK_UNREF(calld->owning_call(), "ResolvingQueuedCallCanceller");
     delete self;
   }
 
@@ -2178,7 +2172,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
   if (config_selector != nullptr) {
     // Use the ConfigSelector to determine the config for the call.
     auto call_config =
-        config_selector->GetCallConfig({&path_, initial_metadata, arena_});
+        config_selector->GetCallConfig({&path_, initial_metadata, arena()});
     if (!call_config.ok()) {
       return absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
           call_config.status(), "ConfigSelector"));
@@ -2189,7 +2183,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     // itself in the call context, so that it can be accessed by filters
     // below us in the stack, and it will be cleaned up when the call ends.
     auto* service_config_call_data =
-        arena_->New<ClientChannelServiceConfigCallData>(
+        arena()->New<ClientChannelServiceConfigCallData>(
             std::move(call_config->service_config), call_config->method_configs,
             std::move(call_config->call_attributes),
             call_config->call_dispatch_controller, call_context_);
@@ -2207,7 +2201,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
             method_params->timeout();
         if (per_method_deadline < deadline_) {
           deadline_ = per_method_deadline;
-          grpc_deadline_state_reset(elem, deadline_);
+          grpc_deadline_state_reset(&deadline_state_, deadline_);
         }
       }
       // If the service config set wait_for_ready and the application
@@ -2367,9 +2361,9 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
                                      path_,
                                      call_start_time_,
                                      deadline_,
-                                     arena_,
+                                     arena(),
                                      call_context_,
-                                     call_combiner_};
+                                     call_combiner()};
   grpc_error_handle error;
   DynamicFilters* channel_stack = args.channel_stack.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
