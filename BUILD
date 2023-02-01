@@ -127,7 +127,7 @@ selects.config_setting_group(
         # reducing the binary size is more important.
         ":android",
         ":ios",
-    ]
+    ],
 )
 
 # Fuzzers can be built as fuzzers or as tests

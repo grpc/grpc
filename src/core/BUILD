@@ -108,12 +108,12 @@ grpc_cc_library(
         "lib/experiments/config.h",
         "lib/experiments/experiments.h",
     ],
-    external_deps = ["absl/strings"],
-    language = "c++",
     defines = select({
         "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
         "//conditions:default": [],
     }),
+    external_deps = ["absl/strings"],
+    language = "c++",
     deps = [
         "no_destruct",
         "//:gpr",
