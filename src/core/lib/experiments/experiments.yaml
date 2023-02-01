@@ -119,6 +119,14 @@
   expiry: 2023/04/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: promise_based_server_call
+  description:
+    If set, use the new gRPC promise based call code when it's appropriate
+    (ie when all filters in a stack are promise based)
+  default: false
+  expiry: 2023/06/01
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test"]
 - name: transport_supplies_client_latency
   description:
     If set, use the transport represented value for client latency in opencensus

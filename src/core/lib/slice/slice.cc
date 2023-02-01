@@ -283,7 +283,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
     subset = grpc_slice_sub_no_ref(source, begin, end);
     // Bump the refcount
     if (subset.refcount != grpc_slice_refcount::NoopRefcount()) {
-      subset.refcount->Ref();
+      subset.refcount->Ref({});
     }
   }
   return subset;
@@ -332,7 +332,7 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
           tail.refcount = source->refcount;
           // Bump the refcount
           if (tail.refcount != grpc_slice_refcount::NoopRefcount()) {
-            tail.refcount->Ref();
+            tail.refcount->Ref({});
           }
           break;
       }
@@ -378,7 +378,7 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     head.refcount = source->refcount;
     // Bump the refcount
     if (head.refcount != grpc_slice_refcount::NoopRefcount()) {
-      head.refcount->Ref();
+      head.refcount->Ref({});
     }
     // Point into the source array
     head.data.refcounted.bytes = source->data.refcounted.bytes;
