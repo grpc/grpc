@@ -181,7 +181,15 @@ sensitive.
 
 By default that includes our iOS and Android builds.
 
-Finally, a small array is included that contains the metadata for each experiment.
+Finally, a small array is included that contains the metadata for each
+experiment.
+
+A macro, GRPC_EXPERIMENTS_ARE_FINAL, controls whether we fix experiment
+configuration at build time (if it's defined) or allow it to be tuned at
+runtime (if it's disabled).
+
+If you are using the Bazel build system, that macro can be configured with
+--define=grpc_experiments_are_final=true
 """
 
 with open('src/core/lib/experiments/experiments.h', 'w') as H:
