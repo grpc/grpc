@@ -19,9 +19,17 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 
 #include <functional>
+#include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc {
 
