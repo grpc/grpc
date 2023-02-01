@@ -518,8 +518,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
         Json::Object{
             {"xds_cluster_resolver_experimental",
              Json::Object{
-                 {"xdsLbPolicy",
-                  std::move(it->second.update->lb_policy_config)},
+                 {"xdsLbPolicy", it->second.update->lb_policy_config},
                  {"discoveryMechanisms", std::move(discovery_mechanisms)},
              }},
         },
