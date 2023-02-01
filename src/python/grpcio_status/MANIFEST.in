@@ -1,5 +1,5 @@
 include grpc_version.py
 include grpc_status/google/rpc/status.proto
-recursive-include grpc_status *.py
+recursive-include grpc_status *.py *.pyi
 global-exclude *.pyc
 include LICENSE
