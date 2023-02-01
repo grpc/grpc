@@ -13537,7 +13537,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -13579,7 +13578,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/stateful_session.proto
   - src/proto/grpc/testing/xds/v3/stateful_session_cookie.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_override_host_end2end_test.cc
