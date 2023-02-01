@@ -324,6 +324,8 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/ext/filters/backend_metrics/backend_metric_filter.h
+  - src/core/ext/filters/backend_metrics/backend_metric_provider.h
   - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/client_channel/backend_metric.h
@@ -1093,6 +1095,7 @@ libs:
   - src/core/tsi/transport_security_interface.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/channel_idle/channel_idle_filter.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -1986,6 +1989,8 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/ext/filters/backend_metrics/backend_metric_filter.h
+  - src/core/ext/filters/backend_metrics/backend_metric_provider.h
   - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/client_channel/backend_metric.h
@@ -2369,6 +2374,7 @@ libs:
   - src/core/tsi/transport_security_interface.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/channel_idle/channel_idle_filter.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -2874,6 +2880,7 @@ libs:
   - include/grpcpp/create_channel_posix.h
   - include/grpcpp/ext/call_metric_recorder.h
   - include/grpcpp/ext/health_check_service_server_builder_option.h
+  - include/grpcpp/ext/server_metric_recorder.h
   - include/grpcpp/generic/async_generic_service.h
   - include/grpcpp/generic/generic_stub.h
   - include/grpcpp/grpcpp.h
@@ -3018,6 +3025,7 @@ libs:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -3069,6 +3077,7 @@ libs:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -3076,7 +3085,6 @@ libs:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -3293,6 +3301,7 @@ libs:
   - include/grpcpp/create_channel_posix.h
   - include/grpcpp/ext/call_metric_recorder.h
   - include/grpcpp/ext/health_check_service_server_builder_option.h
+  - include/grpcpp/ext/server_metric_recorder.h
   - include/grpcpp/generic/async_generic_service.h
   - include/grpcpp/generic/generic_stub.h
   - include/grpcpp/grpcpp.h
@@ -3412,6 +3421,7 @@ libs:
   headers:
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -3436,6 +3446,7 @@ libs:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -3443,7 +3454,6 @@ libs:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
@@ -5078,6 +5088,7 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -5129,6 +5140,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -5136,7 +5148,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -5965,7 +5976,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
@@ -5975,7 +5985,6 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - src/cpp/server/orca/orca_service.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
@@ -6435,6 +6444,7 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -6486,6 +6496,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -6493,7 +6504,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -6855,6 +6865,7 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -6906,6 +6917,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -6913,7 +6925,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -12077,6 +12088,7 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -12127,6 +12139,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -12134,7 +12147,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -12469,6 +12481,7 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -12520,6 +12533,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -12527,7 +12541,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -12573,6 +12586,7 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -12624,6 +12638,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
@@ -12631,7 +12646,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/orca/call_metric_recorder.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -12756,7 +12770,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -12795,7 +12808,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
@@ -12842,7 +12854,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -12882,7 +12893,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
@@ -12933,7 +12943,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -12972,7 +12981,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_core_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -13039,7 +13047,6 @@ targets:
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13080,7 +13087,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/cpp/server/csds/csds.cc
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_csds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -13098,7 +13104,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13140,7 +13145,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -13176,7 +13180,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13216,7 +13219,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_fault_injection_end2end_test.cc
@@ -13413,7 +13415,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13453,7 +13454,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
@@ -13470,7 +13470,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -13512,7 +13511,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/stateful_session.proto
   - src/proto/grpc/testing/xds/v3/stateful_session_cookie.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_override_host_end2end_test.cc
@@ -13551,7 +13549,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -13591,7 +13588,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -13609,7 +13605,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
@@ -13651,7 +13646,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -13712,7 +13706,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13752,7 +13745,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_routing_end2end_test.cc
@@ -13769,7 +13761,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -13810,7 +13801,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/wrr_locality.proto
-  - src/cpp/server/orca/orca_interceptor.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
