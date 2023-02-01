@@ -49,6 +49,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
@@ -248,7 +249,8 @@ static void connected_channel_get_channel_info(
 namespace grpc_core {
 namespace {
 
-#if defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) || defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
+#if defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) || \
+    defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
 class ConnectedChannelStream : public Orphanable {
  public:
   grpc_transport* transport() { return transport_; }
@@ -1353,12 +1355,11 @@ grpc_channel_filter MakeConnectedFilter() {
   // and only if all the filters in the stack are promise based will the call
   // be promise based.
   auto make_call_wrapper = +[](grpc_channel_element* elem, CallArgs call_args,
-         NextPromiseFactory next) {
-        grpc_transport* transport =
-            static_cast<channel_data*>(elem->channel_data)->transport;
-        return make_call_promise(transport, std::move(call_args),
-                                 std::move(next));
-      };
+                               NextPromiseFactory next) {
+    grpc_transport* transport =
+        static_cast<channel_data*>(elem->channel_data)->transport;
+    return make_call_promise(transport, std::move(call_args), std::move(next));
+  };
   return {
       connected_channel_start_transport_stream_op_batch,
       make_call_promise != nullptr ? make_call_wrapper : nullptr,

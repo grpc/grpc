@@ -16,10 +16,24 @@
 
 #include "src/core/lib/experiments/config.h"
 
+#include <string.h>
+
+#include <algorithm>
+#include <atomic>
+#include <string>
+
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/crash.h"
+#include <grpc/support/log.h>
+
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
+#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
