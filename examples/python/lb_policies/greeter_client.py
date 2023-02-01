@@ -14,8 +14,8 @@
 """The Python implementation of the GRPC helloworld.Greeter client."""
 
 import logging
-import grpc
 
+import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 

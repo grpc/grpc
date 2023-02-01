@@ -64,6 +64,10 @@ ARTIFACTS += data_transmission/demo_pb2.py
 ARTIFACTS += data_transmission/demo_pb2_grpc.py
 ARTIFACTS += data_transmission/demo_pb2.pyi
 
+ARTIFACTS += lb_policies/helloworld_pb2.py
+ARTIFACTS += lb_policies/helloworld_pb2_grpc.py
+ARTIFACTS += lb_policies/helloworld_pb2.pyi
+
 .PHONY: all
 all: ${ARTIFACTS}
 
@@ -103,6 +107,9 @@ metadata/helloworld_pb2.py metadata/helloworld_pb2_grpc.py metadata/helloworld_p
 
 data_transmission/demo_pb2.py data_transmission/demo_pb2_grpc.py data_transmission/demo_pb2.pyi: data_transmission/demo.proto
 	python3 -m grpc_tools.protoc --python_out=data_transmission --grpc_python_out=data_transmission --pyi_out=data_transmission -I data_transmission data_transmission/demo.proto
+
+lb_policies/helloworld_pb2.py lb_policies/helloworld_pb2_grpc.py lb_policies/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=lb_policies --grpc_python_out=lb_policies --pyi_out=lb_policies -I ../protos ../protos/helloworld.proto
 
 .PHONY: clean
 clean:
