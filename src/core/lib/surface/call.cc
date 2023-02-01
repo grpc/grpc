@@ -1871,8 +1871,6 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-#if defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) || \
-    defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
 class PromiseBasedCall : public Call,
                          public Activity,
                          public Wakeable,
@@ -2719,7 +2717,6 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array) {
   md->Encode(&encoder);
 }
 }  // namespace
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall

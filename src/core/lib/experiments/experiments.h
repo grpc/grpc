@@ -105,12 +105,6 @@ inline bool IsTransportSuppliesClientLatencyEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(13); }
 
-struct ExperimentMetadata {
-  const char* name;
-  const char* description;
-  bool default_value;
-};
-
 constexpr const size_t kNumExperiments = 14;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
