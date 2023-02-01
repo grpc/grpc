@@ -270,10 +270,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       RequestedCall* call) override {
-    gpr_log(GPR_DEBUG, "*** REQUEST CALL: q:%" PRIdPTR " call:%p",
-            request_queue_index, call);
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
-      gpr_log(GPR_DEBUG, "*** FIRST IN QUEUE");
       // this was the first queued request: we need to lock and start
       // matching calls
       struct NextPendingCall {
@@ -297,7 +294,6 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       };
       while (true) {
         NextPendingCall next_pending = pop_next_pending();
-        gpr_log(GPR_DEBUG, "NEXT PENDING CALL: %p", next_pending.rc);
         if (next_pending.rc == nullptr) break;
         auto mr = MatchResult{request_queue_index, next_pending.rc};
         Match(
