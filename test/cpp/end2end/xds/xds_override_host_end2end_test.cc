@@ -97,14 +97,14 @@ class OverrideHostTest : public XdsEnd2endTest {
   // Builds a Listener with Fault Injection filter config. If the http_fault
   // is nullptr, then assign an empty filter config. This filter config is
   // required to enable the fault injection features.
-  static Listener BuildListenerWithStatefulSessionFilter() {
+  Listener BuildListenerWithStatefulSessionFilter() {
     CookieBasedSessionState cookie_state;
     cookie_state.mutable_cookie()->set_name(std::string(kCookieName));
     StatefulSession stateful_session;
     stateful_session.mutable_session_state()->mutable_typed_config()->PackFrom(
         cookie_state);
     HttpConnectionManager http_connection_manager;
-    Listener listener;
+    Listener listener = default_listener_;
     listener.set_name(kServerName);
     HttpFilter* session_filter = http_connection_manager.add_http_filters();
     session_filter->set_name("envoy.stateful_session");
@@ -217,7 +217,8 @@ TEST_P(OverrideHostTest, DrainingIncludedFromOverrideSet) {
                         {CreateEndpoint(0, HealthStatus::DRAINING),
                          CreateEndpoint(1, HealthStatus::HEALTHY),
                          CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 0, nullptr,
+                     WaitForBackendOptions().set_timeout_ms(30000));
   // Draining channel works just fine
   CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
   EXPECT_EQ(4, backends_[0]->backend_service()->request_count());
@@ -231,6 +232,7 @@ TEST_P(OverrideHostTest, DrainingIncludedFromOverrideSet) {
   EXPECT_EQ(2, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
 }
+
 TEST_P(OverrideHostTest, DrainingExcludedFromOverrideSet) {
   CreateAndStartBackends(3);
   Cluster cluster = default_cluster_;
@@ -260,7 +262,8 @@ TEST_P(OverrideHostTest, DrainingExcludedFromOverrideSet) {
                         {CreateEndpoint(0, HealthStatus::DRAINING),
                          CreateEndpoint(1, HealthStatus::HEALTHY),
                          CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 0, nullptr,
+                     WaitForBackendOptions().set_timeout_ms(30000));
   // Draining channel works just fine
   CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
