@@ -1997,9 +1997,7 @@ class PromiseBasedCall : public Call,
 
   // Wakeable methods
   void Wakeup() override {
-    gpr_log(GPR_DEBUG, "%sWAKEUP", ActivityDebugTag().c_str());
     channel()->event_engine()->Run([this] {
-      gpr_log(GPR_DEBUG, "%sAWOKEN", ActivityDebugTag().c_str());
       ApplicationCallbackExecCtx app_exec_ctx;
       ExecCtx exec_ctx;
       {
@@ -2272,7 +2270,6 @@ class PromiseBasedCall : public Call,
     // Activity needs to wake up (if it still exists!) - wake it up, and drop
     // the ref that was kept for this handle.
     void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
-      gpr_log(GPR_DEBUG, "%sNON-OWNING WAKEUP", ActivityDebugTag().c_str());
       // Drop the ref to the handle at end of scope (we have one ref = one
       // wakeup semantics).
       auto unref = absl::MakeCleanup([this]() { Unref(); });
@@ -2282,14 +2279,10 @@ class PromiseBasedCall : public Call,
       // if it is non-zero.
       PromiseBasedCall* call = call_;
       if (call != nullptr && call->RefIfNonZero()) {
-        gpr_log(GPR_DEBUG, "%sSTILL ALIVE, SCHEDULE WAKEUP",
-                call->ActivityDebugTag().c_str());
         lock.Release();
         // Activity still exists and we have a reference: wake it up, which will
         // drop the ref.
         call->Wakeup();
-      } else {
-        gpr_log(GPR_DEBUG, "DIED, SKIPPING WAKEUP");
       }
     }
 

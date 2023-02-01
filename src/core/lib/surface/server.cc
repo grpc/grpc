@@ -380,16 +380,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         }
       }
       if (rc == nullptr) {
-        gpr_log(GPR_DEBUG, "%s[server] Queue call request on server",
-                Activity::current()->DebugTag().c_str());
         auto w = std::make_shared<ActivityWaiter>(
             Activity::current()->MakeOwningWaker());
         pending_.push(w);
         return [w]() -> Poll<absl::StatusOr<MatchResult>> {
           std::unique_ptr<absl::StatusOr<MatchResult>> r(
               w->result.exchange(nullptr, std::memory_order_acq_rel));
-          gpr_log(GPR_DEBUG, "%s[server] Poll call request on server: %p",
-                  w->waker.ActivityDebugTag().c_str(), r.get());
           if (r == nullptr) return Pending{};
           return std::move(*r);
         };
@@ -406,12 +402,6 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::StatusOr<MatchResult> r) {
-      gpr_log(GPR_DEBUG, "%sFINISH: %s%s", waker.ActivityDebugTag().c_str(),
-              r.status().ToString().c_str(),
-              r.ok() ? absl::StrFormat(" cqidx:%" PRIdPTR " rc: %p", r->cq_idx,
-                                       r->requested_call)
-                           .c_str()
-                     : "");
       result.store(new absl::StatusOr<MatchResult>(std::move(r)),
                    std::memory_order_release);
       waker.Wakeup();
