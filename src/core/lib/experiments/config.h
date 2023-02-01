@@ -19,7 +19,7 @@
 
 #include "absl/strings/string_view.h"
 
-#define GRPC_EXPERIMENTS_ARE_FINAL
+//#define GRPC_EXPERIMENTS_ARE_FINAL
 
 namespace grpc_core {
 
