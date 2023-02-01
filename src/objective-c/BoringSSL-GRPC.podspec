@@ -154,6 +154,7 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     # Do not let src/include/openssl/time.h override system API
     'USE_HEADERMAP' => 'NO',
+    'ALWAYS_SEARCH_USER_PATHS' => 'NO',
   }
 
   s.prepare_command = <<-END_OF_COMMAND
