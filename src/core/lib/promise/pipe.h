@@ -18,15 +18,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
-#include <stdlib.h>
 
-#include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
-#include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -34,18 +29,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/interceptor_list.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
+
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_promise_pipe;
 
 namespace grpc_core {
 
@@ -66,24 +56,21 @@ struct Pipe;
 template <typename T>
 class NextResult final {
  public:
-  NextResult() : center_(nullptr) {}
-  explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
-      : center_(std::move(center)) {
-    GPR_ASSERT(center_ != nullptr);
-  }
-  explicit NextResult(bool cancelled)
-      : center_(nullptr), cancelled_(cancelled) {}
+  explicit NextResult(pipe_detail::Center<T>* center) : center_(center) {}
   ~NextResult();
   NextResult(const NextResult&) = delete;
   NextResult& operator=(const NextResult&) = delete;
-  NextResult(NextResult&& other) noexcept = default;
-  NextResult& operator=(NextResult&& other) noexcept = default;
+  NextResult(NextResult&& other) noexcept
+      : center_(std::exchange(other.center_, nullptr)) {}
+  NextResult& operator=(NextResult&& other) noexcept {
+    center_ = std::exchange(other.center_, nullptr);
+    return *this;
+  }
 
   using value_type = T;
 
   void reset();
   bool has_value() const;
-  // Only valid if has_value()
   const T& value() const {
     GPR_ASSERT(has_value());
     return **this;
@@ -94,12 +81,9 @@ class NextResult final {
   }
   const T& operator*() const;
   T& operator*();
-  // Only valid if !has_value()
-  bool cancelled() { return cancelled_; }
 
  private:
-  RefCountedPtr<pipe_detail::Center<T>> center_;
-  bool cancelled_;
+  pipe_detail::Center<T>* center_;
 };
 
 namespace pipe_detail {
@@ -112,39 +96,71 @@ class Next;
 // Center sits between a sender and a receiver to provide a one-deep buffer of
 // Ts
 template <typename T>
-class Center : public InterceptorList<T> {
+class Center {
  public:
   // Initialize with one send ref (held by PipeSender) and one recv ref (held by
   // PipeReceiver)
   Center() {
-    refs_ = 2;
+    send_refs_ = 1;
+    recv_refs_ = 1;
     value_state_ = ValueState::kEmpty;
   }
 
-  // Add one ref to this object, and return this.
-  void IncrementRefCount() {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s", DebugOpString("IncrementRefCount").c_str());
+  // Add one ref to the send side of this object, and return this.
+  Center* RefSend() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("RefSend").c_str());
     }
-    refs_++;
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    send_refs_++;
+    GPR_ASSERT(send_refs_ != 0);
+    return this;
   }
 
-  RefCountedPtr<Center> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<Center>(this);
+  // Add one ref to the recv side of this object, and return this.
+  Center* RefRecv() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("RefRecv").c_str());
+    }
+    recv_refs_++;
+    GPR_ASSERT(recv_refs_ != 0);
+    return this;
   }
 
-  // Drop a ref
+  // Drop a send side ref
+  // If no send refs remain, wake due to send closure
   // If no refs remain, destroy this object
-  void Unref() {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s", DebugOpString("Unref").c_str());
+  void UnrefSend() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("UnrefSend").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ > 0);
-    refs_--;
-    if (0 == refs_) {
-      this->~Center();
+    GPR_DEBUG_ASSERT(send_refs_ > 0);
+    send_refs_--;
+    if (0 == send_refs_) {
+      on_full_.Wake();
+      on_empty_.Wake();
+      if (0 == recv_refs_) {
+        this->~Center();
+      }
+    }
+  }
+
+  // Drop a recv side ref
+  // If no recv refs remain, wake due to recv closure
+  // If no refs remain, destroy this object
+  void UnrefRecv() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("UnrefRecv").c_str());
+    }
+    GPR_DEBUG_ASSERT(recv_refs_ > 0);
+    recv_refs_--;
+    if (0 == recv_refs_) {
+      on_full_.Wake();
+      on_empty_.Wake();
+      if (0 == send_refs_) {
+        this->~Center();
+      } else if (value_state_ == ValueState::kReady) {
+        ResetValue();
+      }
     }
   }
 
@@ -153,45 +169,26 @@ class Center : public InterceptorList<T> {
   // Return true if the value was pushed.
   // Return false if the recv end is closed.
   Poll<bool> Push(T* value) {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Push").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
-    switch (value_state_) {
-      case ValueState::kClosed:
-      case ValueState::kReadyClosed:
-      case ValueState::kCancelled:
-        return false;
-      case ValueState::kReady:
-      case ValueState::kAcked:
-        return on_empty_.pending();
-      case ValueState::kEmpty:
-        value_state_ = ValueState::kReady;
-        value_ = std::move(*value);
-        on_full_.Wake();
-        return true;
-    }
-    GPR_UNREACHABLE_CODE(return false);
+    GPR_DEBUG_ASSERT(send_refs_ != 0);
+    if (recv_refs_ == 0) return false;
+    if (value_state_ != ValueState::kEmpty) return on_empty_.pending();
+    value_state_ = ValueState::kReady;
+    value_ = std::move(*value);
+    on_full_.Wake();
+    return true;
   }
 
   Poll<bool> PollAck() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollAck").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
-    switch (value_state_) {
-      case ValueState::kClosed:
-      case ValueState::kReadyClosed:
-      case ValueState::kCancelled:
-        return false;
-      case ValueState::kReady:
-      case ValueState::kEmpty:
-        return on_empty_.pending();
-      case ValueState::kAcked:
-        value_state_ = ValueState::kEmpty;
-        on_empty_.Wake();
-        return true;
-    }
+    GPR_DEBUG_ASSERT(send_refs_ != 0);
+    if (recv_refs_ == 0) return value_state_ == ValueState::kAcked;
+    if (value_state_ != ValueState::kAcked) return on_empty_.pending();
+    value_state_ = ValueState::kEmpty;
     return true;
   }
 
@@ -199,107 +196,47 @@ class Center : public InterceptorList<T> {
   // Return Pending if there is no value.
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
-  Poll<absl::optional<T>> Next() {
-    if (grpc_trace_promise_primitives.enabled()) {
+  Poll<NextResult<T>> Next() {
+    if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
-    switch (value_state_) {
-      case ValueState::kEmpty:
-      case ValueState::kAcked:
-        return on_full_.pending();
-      case ValueState::kReadyClosed:
-        this->ResetInterceptorList();
-        value_state_ = ValueState::kClosed;
-        ABSL_FALLTHROUGH_INTENDED;
-      case ValueState::kReady:
-        return std::move(value_);
-      case ValueState::kClosed:
-      case ValueState::kCancelled:
-        return absl::nullopt;
+    GPR_DEBUG_ASSERT(recv_refs_ != 0);
+    if (value_state_ != ValueState::kReady) {
+      if (send_refs_ == 0) return NextResult<T>(nullptr);
+      return on_full_.pending();
     }
-    GPR_UNREACHABLE_CODE(return absl::nullopt);
+    return NextResult<T>(RefRecv());
   }
 
   void AckNext() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (grpc_trace_promise_pipe.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
     }
-    switch (value_state_) {
-      case ValueState::kReady:
-        value_state_ = ValueState::kAcked;
-        on_empty_.Wake();
-        break;
-      case ValueState::kReadyClosed:
-        this->ResetInterceptorList();
-        value_state_ = ValueState::kClosed;
-        break;
-      case ValueState::kClosed:
-      case ValueState::kCancelled:
-        break;
-      case ValueState::kEmpty:
-      case ValueState::kAcked:
-        abort();
-    }
+    GPR_DEBUG_ASSERT(value_state_ == ValueState::kReady);
+    value_state_ = ValueState::kAcked;
+    on_empty_.Wake();
+    UnrefRecv();
   }
-
-  void MarkClosed() {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("MarkClosed").c_str());
-    }
-    switch (value_state_) {
-      case ValueState::kEmpty:
-      case ValueState::kAcked:
-        this->ResetInterceptorList();
-        value_state_ = ValueState::kClosed;
-        on_full_.Wake();
-        break;
-      case ValueState::kReady:
-        value_state_ = ValueState::kReadyClosed;
-        break;
-      case ValueState::kReadyClosed:
-      case ValueState::kClosed:
-      case ValueState::kCancelled:
-        break;
-    }
-  }
-
-  void MarkCancelled() {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("MarkCancelled").c_str());
-    }
-    switch (value_state_) {
-      case ValueState::kEmpty:
-      case ValueState::kAcked:
-      case ValueState::kReady:
-      case ValueState::kReadyClosed:
-        this->ResetInterceptorList();
-        value_state_ = ValueState::kCancelled;
-        on_full_.Wake();
-        break;
-      case ValueState::kClosed:
-        value_state_ = ValueState::kCancelled;
-        break;
-      case ValueState::kCancelled:
-        break;
-    }
-  }
-
-  bool cancelled() { return value_state_ == ValueState::kCancelled; }
 
   T& value() { return value_; }
   const T& value() const { return value_; }
 
-  std::string DebugTag() {
-    if (auto* activity = Activity::current()) {
-      return absl::StrCat(activity->DebugTag(), " PIPE[0x",
-                          reinterpret_cast<uintptr_t>(this), "]: ");
-    } else {
-      return absl::StrCat("PIPE[0x", reinterpret_cast<uintptr_t>(this), "]: ");
-    }
-  }
-
  private:
+  std::string DebugTag() {
+    return absl::StrCat(Activity::current()->DebugTag(), "PIPE[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
+  std::string DebugOpString(std::string op) {
+    return absl::StrCat(DebugTag(), op, " send_refs=", send_refs_,
+                        " recv_refs=", recv_refs_,
+                        " value_state=", ValueStateName(value_state_));
+  }
+  void ResetValue() {
+    // Fancy dance to move out of value in the off chance that we reclaim some
+    // memory earlier.
+    [](T) {}(std::move(value_));
+    value_state_ = ValueState::kEmpty;
+  }
   // State of value_.
   enum class ValueState : uint8_t {
     // No value is set, it's possible to send.
@@ -309,52 +246,31 @@ class Center : public InterceptorList<T> {
     // Value has been received and acked, we can unblock senders and transition
     // to empty.
     kAcked,
-    // Pipe is closed successfully, no more values can be sent
-    kClosed,
-    // Pipe is closed successfully, no more values can be sent
-    // (but one value is queued and ready to be received)
-    kReadyClosed,
-    // Pipe is closed unsuccessfully, no more values can be sent
-    kCancelled,
   };
-
-  std::string DebugOpString(std::string op) {
-    return absl::StrCat(DebugTag(), op, " refs=", refs_,
-                        " value_state=", ValueStateName(value_state_),
-                        " on_empty=", on_empty_.DebugString().c_str(),
-                        " on_full=", on_full_.DebugString().c_str());
-  }
-
   static const char* ValueStateName(ValueState state) {
     switch (state) {
       case ValueState::kEmpty:
-        return "Empty";
+        return "kEmpty";
       case ValueState::kReady:
-        return "Ready";
+        return "kReady";
       case ValueState::kAcked:
-        return "Acked";
-      case ValueState::kClosed:
-        return "Closed";
-      case ValueState::kReadyClosed:
-        return "ReadyClosed";
-      case ValueState::kCancelled:
-        return "Cancelled";
+        return "kAcked";
     }
     GPR_UNREACHABLE_CODE(return "unknown");
   }
-
   T value_;
-  // Number of refs
-  uint8_t refs_;
+  // Number of sending objects.
+  // 0 => send is closed.
+  // 1 ref each for PipeSender and Push.
+  uint8_t send_refs_ : 2;
+  // Number of receiving objects.
+  // 0 => recv is closed.
+  // 1 ref each for PipeReceiver, Next, and NextResult.
+  uint8_t recv_refs_ : 2;
   // Current state of the value.
-  ValueState value_state_;
+  ValueState value_state_ : 2;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
-
-  // Make failure to destruct show up in ASAN builds.
-#ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
-#endif
 };
 
 }  // namespace pipe_detail
@@ -367,18 +283,23 @@ class PipeSender {
 
   PipeSender(const PipeSender&) = delete;
   PipeSender& operator=(const PipeSender&) = delete;
-  PipeSender(PipeSender&& other) noexcept = default;
-  PipeSender& operator=(PipeSender&& other) noexcept = default;
+
+  PipeSender(PipeSender&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
+  }
+  PipeSender& operator=(PipeSender&& other) noexcept {
+    if (center_ != nullptr) center_->UnrefSend();
+    center_ = other.center_;
+    other.center_ = nullptr;
+    return *this;
+  }
 
   ~PipeSender() {
-    if (center_ != nullptr) center_->MarkClosed();
+    if (center_ != nullptr) center_->UnrefSend();
   }
 
   void Close() {
-    if (center_ != nullptr) {
-      center_->MarkClosed();
-      center_.reset();
-    }
+    if (auto* center = std::exchange(center_, nullptr)) center->UnrefSend();
   }
 
   void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }
@@ -389,37 +310,32 @@ class PipeSender {
   // receiver is either closed or able to receive another message.
   PushType Push(T value);
 
-  template <typename Fn>
-  void InterceptAndMap(Fn f, DebugLocation from = {}) {
-    center_->PrependMap(std::move(f), from);
-  }
-
-  template <typename Fn, typename OnHalfClose>
-  void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, DebugLocation from = {}) {
-    center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
-  }
-
  private:
   friend struct Pipe<T>;
   explicit PipeSender(pipe_detail::Center<T>* center) : center_(center) {}
-  RefCountedPtr<pipe_detail::Center<T>> center_;
-
-  // Make failure to destruct show up in ASAN builds.
-#ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
-#endif
+  pipe_detail::Center<T>* center_;
 };
 
 // Receive end of a Pipe.
 template <typename T>
 class PipeReceiver {
  public:
+  using NextType = pipe_detail::Next<T>;
+
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
-  PipeReceiver(PipeReceiver&& other) noexcept = default;
-  PipeReceiver& operator=(PipeReceiver&& other) noexcept = default;
+
+  PipeReceiver(PipeReceiver&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
+  }
+  PipeReceiver& operator=(PipeReceiver&& other) noexcept {
+    if (center_ != nullptr) center_->UnrefRecv();
+    center_ = other.center_;
+    other.center_ = nullptr;
+    return *this;
+  }
   ~PipeReceiver() {
-    if (center_ != nullptr) center_->MarkClosed();
+    if (center_ != nullptr) center_->UnrefRecv();
   }
 
   void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
@@ -429,28 +345,12 @@ class PipeReceiver {
   // message was received, or no value if the other end of the pipe was closed.
   // Blocks the promise until the receiver is either closed or a message is
   // available.
-  auto Next();
-
-  template <typename Fn>
-  void InterceptAndMap(Fn f, DebugLocation from = {}) {
-    center_->AppendMap(std::move(f), from);
-  }
-
-  template <typename Fn, typename OnHalfClose>
-  void InterceptAndMapWithHalfClose(Fn f, OnHalfClose cleanup_fn,
-                                    DebugLocation from = {}) {
-    center_->AppendMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
-  }
+  NextType Next();
 
  private:
   friend struct Pipe<T>;
   explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
-  RefCountedPtr<pipe_detail::Center<T>> center_;
-
-  // Make failure to destruct show up in ASAN builds.
-#ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
-#endif
+  pipe_detail::Center<T>* center_;
 };
 
 namespace pipe_detail {
@@ -461,33 +361,42 @@ class Push {
  public:
   Push(const Push&) = delete;
   Push& operator=(const Push&) = delete;
-  Push(Push&& other) noexcept = default;
-  Push& operator=(Push&& other) noexcept = default;
+  Push(Push&& other) noexcept
+      : center_(other.center_), push_(std::move(other.push_)) {
+    other.center_ = nullptr;
+  }
+  Push& operator=(Push&& other) noexcept {
+    if (center_ != nullptr) center_->UnrefSend();
+    center_ = other.center_;
+    other.center_ = nullptr;
+    push_ = std::move(other.push_);
+    return *this;
+  }
+
+  ~Push() {
+    if (center_ != nullptr) center_->UnrefSend();
+  }
 
   Poll<bool> operator()() {
-    if (center_ == nullptr) return false;
-    if (auto* p = absl::get_if<T>(&state_)) {
-      auto r = center_->Push(p);
+    if (push_.has_value()) {
+      auto r = center_->Push(&*push_);
       if (auto* ok = absl::get_if<bool>(&r)) {
-        state_.template emplace<AwaitingAck>();
+        push_.reset();
         if (!*ok) return false;
       } else {
         return Pending{};
       }
     }
-    GPR_DEBUG_ASSERT(absl::holds_alternative<AwaitingAck>(state_));
+    GPR_DEBUG_ASSERT(!push_.has_value());
     return center_->PollAck();
   }
 
  private:
-  struct AwaitingAck {};
-
   friend class PipeSender<T>;
-  explicit Push(RefCountedPtr<pipe_detail::Center<T>> center, T push)
-      : center_(std::move(center)), state_(std::move(push)) {}
-
-  RefCountedPtr<Center<T>> center_;
-  absl::variant<T, AwaitingAck> state_;
+  explicit Push(pipe_detail::Center<T>* center, T push)
+      : center_(center), push_(std::move(push)) {}
+  Center<T>* center_;
+  absl::optional<T> push_;
 };
 
 // Implementation of PipeReceiver::Next promise.
@@ -496,55 +405,45 @@ class Next {
  public:
   Next(const Next&) = delete;
   Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept = default;
-  Next& operator=(Next&& other) noexcept = default;
+  Next(Next&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
+  }
+  Next& operator=(Next&& other) noexcept {
+    if (center_ != nullptr) center_->UnrefRecv();
+    center_ = other.center_;
+    other.center_ = nullptr;
+    return *this;
+  }
 
-  Poll<absl::optional<T>> operator()() { return center_->Next(); }
+  ~Next() {
+    if (center_ != nullptr) center_->UnrefRecv();
+  }
+
+  Poll<NextResult<T>> operator()() {
+    auto r = center_->Next();
+    if (!absl::holds_alternative<Pending>(r)) {
+      std::exchange(center_, nullptr)->UnrefRecv();
+    }
+    return r;
+  }
 
  private:
   friend class PipeReceiver<T>;
-  explicit Next(RefCountedPtr<Center<T>> center) : center_(std::move(center)) {}
-
-  RefCountedPtr<Center<T>> center_;
+  explicit Next(pipe_detail::Center<T>* center) : center_(center) {}
+  Center<T>* center_;
 };
 
 }  // namespace pipe_detail
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
-  return pipe_detail::Push<T>(center_ == nullptr ? nullptr : center_->Ref(),
-                              std::move(value));
+  return pipe_detail::Push<T>(center_->RefSend(), std::move(value));
 }
 
 template <typename T>
-auto PipeReceiver<T>::Next() {
-  return Seq(
-      pipe_detail::Next<T>(center_->Ref()),
-      [center = center_->Ref()](absl::optional<T> value) {
-        bool open = value.has_value();
-        bool cancelled = center->cancelled();
-        return If(
-            open,
-            [center = std::move(center), value = std::move(value)]() mutable {
-              auto run_interceptors = center->Run(std::move(value));
-              return Map(std::move(run_interceptors),
-                         [center = std::move(center)](
-                             absl::optional<T> value) mutable {
-                           if (value.has_value()) {
-                             center->value() = std::move(*value);
-                             return NextResult<T>(std::move(center));
-                           } else {
-                             center->MarkCancelled();
-                             return NextResult<T>(true);
-                           }
-                         });
-            },
-            [cancelled]() { return NextResult<T>(cancelled); });
-      });
+pipe_detail::Next<T> PipeReceiver<T>::Next() {
+  return pipe_detail::Next<T>(center_->RefRecv());
 }
-
-template <typename T>
-using PipeReceiverNextType = decltype(std::declval<PipeReceiver<T>>().Next());
 
 template <typename T>
 bool NextResult<T>::has_value() const {
@@ -568,10 +467,7 @@ NextResult<T>::~NextResult() {
 
 template <typename T>
 void NextResult<T>::reset() {
-  if (center_ != nullptr) {
-    center_->AckNext();
-    center_.reset();
-  }
+  if (auto* p = std::exchange(center_, nullptr)) p->AckNext();
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from

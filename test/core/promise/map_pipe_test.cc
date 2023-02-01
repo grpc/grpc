@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <memory>
 #include <utility>
 

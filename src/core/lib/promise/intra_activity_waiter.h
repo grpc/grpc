@@ -17,8 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -40,10 +38,6 @@ class IntraActivityWaiter {
       waiting_ = false;
       Activity::current()->ForceImmediateRepoll();
     }
-  }
-
-  std::string DebugString() const {
-    return waiting_ ? "WAITING" : "NOT_WAITING";
   }
 
  private:
