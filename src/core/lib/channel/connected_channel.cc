@@ -248,6 +248,7 @@ static void connected_channel_get_channel_info(
 namespace grpc_core {
 namespace {
 
+#if defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) || defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
 class ConnectedChannelStream : public Orphanable {
  public:
   grpc_transport* transport() { return transport_; }
@@ -662,7 +663,9 @@ class ConnectedChannelStream : public Orphanable {
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
 };
+#endif
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 class ClientStream : public ConnectedChannelStream {
  public:
   ClientStream(grpc_transport* transport, CallArgs call_args)
@@ -914,7 +917,9 @@ class ClientConnectedCallPromise {
  private:
   OrphanablePtr<ClientStream> impl_;
 };
+#endif
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 class ServerStream final : public ConnectedChannelStream {
  public:
   ServerStream(grpc_transport* transport,
@@ -1336,6 +1341,7 @@ class ServerConnectedCallPromise {
  private:
   OrphanablePtr<ServerStream> impl_;
 };
+#endif
 
 template <ArenaPromise<ServerMetadataHandle> (*make_call_promise)(
     grpc_transport*, CallArgs, NextPromiseFactory)>
@@ -1348,7 +1354,7 @@ grpc_channel_filter MakeConnectedFilter() {
   // be promise based.
   return {
       connected_channel_start_transport_stream_op_batch,
-      [](grpc_channel_element* elem, CallArgs call_args,
+      make_call_promise == nullptr ? nullptr : [](grpc_channel_element* elem, CallArgs call_args,
          NextPromiseFactory next) {
         grpc_transport* transport =
             static_cast<channel_data*>(elem->channel_data)->transport;
@@ -1386,11 +1392,21 @@ ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
 const grpc_channel_filter kPromiseBasedTransportFilter =
     MakeConnectedFilter<MakeTransportCallPromise>();
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 const grpc_channel_filter kClientEmulatedFilter =
     MakeConnectedFilter<ClientConnectedCallPromise::Make>();
+#else
+const grpc_channel_filter kClientEmulatedFilter =
+    MakeConnectedFilter<nullptr>();
+#endif
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 const grpc_channel_filter kServerEmulatedFilter =
     MakeConnectedFilter<ServerConnectedCallPromise::Make>();
+#else
+const grpc_channel_filter kServerEmulatedFilter =
+    MakeConnectedFilter<nullptr>();
+#endif
 
 }  // namespace
 }  // namespace grpc_core
