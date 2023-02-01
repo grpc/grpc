@@ -461,7 +461,8 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
         key_cert_lib->bad_server_pem_key_cert_pairs[i]);
   }
   gpr_free(key_cert_lib->bad_server_pem_key_cert_pairs);
-  for (size_t i = 0; i < key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs; i++) {
+  for (size_t i = 0;
+       i < key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs; i++) {
     ssl_test_pem_key_cert_pair_destroy(
         key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs[i]);
   }
