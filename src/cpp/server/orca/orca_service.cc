@@ -15,9 +15,26 @@
 //
 
 #include <stddef.h>
+#include <stdint.h>
+
+#include <map>
+#include <memory>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "google/protobuf/duration.upb.h"
+#include "upb/upb.h"
+#include "upb/upb.hpp"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
+#include "xds/service/orca/v3/orca.upb.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpcpp/ext/orca_service.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/server_callback_handlers.h>
@@ -27,20 +44,8 @@
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
-#include <grpcpp/ext/server_metric_recorder.h>
-#include <stdint.h>
-#include <map>
-#include <memory>
-#include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-#include "google/protobuf/duration.upb.h"
-#include "upb/upb.h"
-#include "upb/upb.hpp"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
-#include "xds/service/orca/v3/orca.upb.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -48,8 +53,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/server/backend_metric_recorder.h"
-#include "absl/strings/string_view.h"
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 
 namespace grpc {
 namespace experimental {
