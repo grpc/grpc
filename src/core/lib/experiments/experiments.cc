@@ -18,6 +18,8 @@
 
 #include "src/core/lib/experiments/experiments.h"
 
+#ifdef GRPC_EXPERIMENTS_ARE_FINAL
+#else
 namespace {
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
@@ -81,3 +83,4 @@ const ExperimentMetadata g_experiment_metadata[] = {
 };
 
 }  // namespace grpc_core
+#endif

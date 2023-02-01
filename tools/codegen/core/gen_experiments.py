@@ -49,6 +49,14 @@ DEFAULTS = {
     'release': 'kDefaultForReleaseOnly',
 }
 
+FINAL_RETURN = {
+    'broken': 'return false;',
+    False: 'return false;',
+    True: 'return true;',
+    'debug': '#ifdef NDEBUG\nreturn false;\n#else\nreturn true;\n#endif',
+    'release': '#ifdef NDEBUG\nreturn true;\n#else\nreturn false;\n#endif',
+}
+
 BZL_LIST_FOR_DEFAULTS = {
     'broken': None,
     False: 'off',
@@ -167,6 +175,12 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
+    print("#ifdef GRPC_EXPERIMENTS_ARE_FINAL", file=H)
+    for i, attr in enumerate(attrs):
+        print("inline bool Is%sEnabled() { %s }" %
+              (snake_to_pascal(attr['name']), FINAL_RETURN[attr['default']]),
+              file=H)
+    print("#else", file=H)
     for i, attr in enumerate(attrs):
         print("inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }" %
               (snake_to_pascal(attr['name']), i),
@@ -179,6 +193,7 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
         "extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];",
         file=H)
     print(file=H)
+    print("#endif", file=H)
     print("}  // namespace grpc_core", file=H)
     print(file=H)
     print("#endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
@@ -194,6 +209,8 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include \"src/core/lib/experiments/experiments.h\"", file=C)
     print(file=C)
+    print("#ifdef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
+    print("#else", file=C)
     print("namespace {", file=C)
     for attr in attrs:
         print("const char* const description_%s = %s;" %
@@ -224,6 +241,7 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)
+    print("#endif", file=C)
 
 bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
                                   for key in BZL_LIST_FOR_DEFAULTS.keys()

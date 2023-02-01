@@ -19,12 +19,26 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
 
+#ifdef GRPC_EXPERIMENTS_ARE_FINAL
+inline bool IsTcpFrameSizeTuningEnabled() { return false; }
+inline bool IsTcpRcvLowatEnabled() { return false; }
+inline bool IsPeerStateBasedFramingEnabled() { return false; }
+inline bool IsFlowControlFixesEnabled() { return true; }
+inline bool IsMemoryPressureControllerEnabled() { return false; }
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsNewHpackHuffmanDecoderEnabled() { return true; }
+inline bool IsEventEngineClientEnabled() { return false; }
+inline bool IsMonitoringExperimentEnabled() { return true; }
+inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsFreeLargeAllocatorEnabled() { return false; }
+inline bool IsPromiseBasedServerCallEnabled() { return false; }
+inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
+inline bool IsEventEngineListenerEnabled() { return false; }
+#else
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
 inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(1); }
 inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(2); }
@@ -57,6 +71,7 @@ struct ExperimentMetadata {
 constexpr const size_t kNumExperiments = 14;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
+#endif
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H

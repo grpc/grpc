@@ -17,16 +17,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include "absl/strings/string_view.h"
+
+#define GRPC_EXPERIMENTS_ARE_FINAL
 
 namespace grpc_core {
 
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
 // Return true if experiment \a experiment_id is enabled.
 // Experiments are numbered by their order in the g_experiment_metadata array
 // declared in experiments.h.
 bool IsExperimentEnabled(size_t experiment_id);
+#endif
 
 // Print out a list of all experiments that are built into this binary.
 void PrintExperimentsList();

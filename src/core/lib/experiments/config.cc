@@ -16,24 +16,12 @@
 
 #include "src/core/lib/experiments/config.h"
 
-#include <string.h>
-
-#include <algorithm>
-#include <atomic>
-#include <string>
-
-#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
+#include "src/core/lib/gprpp/crash.h"
 
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_experiments, "",
     "List of grpc experiments to enable (or with a '-' prefix to disable).");
@@ -148,3 +136,12 @@ void ForceEnableExperiment(absl::string_view experiment, bool enable) {
 }
 
 }  // namespace grpc_core
+#else
+namespace grpc_core {
+void PrintExperimentsList() {}
+void ForceEnableExperiment(absl::string_view experiment_name, bool enable) {
+  Crash(absl::StrCat("ForceEnableExperiment(\"", experiment_name,
+                     "\") called in final build"));
+}
+}  // namespace grpc_core
+#endif
