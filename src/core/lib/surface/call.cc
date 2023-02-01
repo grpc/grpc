@@ -3246,31 +3246,6 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
 
-ArenaPromise<ServerMetadataHandle>
-ServerCallContext::MakeTopOfServerCallPromise(
-    CallArgs call_args, grpc_completion_queue* cq,
-    grpc_metadata_array* publish_initial_metadata,
-    absl::FunctionRef<void(grpc_call* call)> publish) {
-  call_->mu()->AssertHeld();
-  call_->SetCompletionQueueLocked(cq);
-  call_->server_to_client_messages_ = call_args.server_to_client_messages;
-  call_->client_to_server_messages_ = call_args.client_to_server_messages;
-  call_->send_initial_metadata_state_ = call_args.server_initial_metadata;
-  call_->incoming_compression_algorithm_ =
-      call_args.client_initial_metadata->get(GrpcEncodingMetadata())
-          .value_or(GRPC_COMPRESS_NONE);
-  call_->client_initial_metadata_ =
-      std::move(call_args.client_initial_metadata);
-  PublishMetadataArray(call_->client_initial_metadata_.get(),
-                       publish_initial_metadata);
-  call_->ExternalRef();
-  publish(call_->c_ptr());
-  return [this]() {
-    call_->mu()->AssertHeld();
-    return call_->PollTopOfCall();
-  };
-}
-
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
     : PromiseBasedCall(arena, 0, *args),
@@ -3511,6 +3486,35 @@ void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
 }
 
 #endif
+
+ArenaPromise<ServerMetadataHandle>
+ServerCallContext::MakeTopOfServerCallPromise(
+    CallArgs call_args, grpc_completion_queue* cq,
+    grpc_metadata_array* publish_initial_metadata,
+    absl::FunctionRef<void(grpc_call* call)> publish) {
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
+  call_->mu()->AssertHeld();
+  call_->SetCompletionQueueLocked(cq);
+  call_->server_to_client_messages_ = call_args.server_to_client_messages;
+  call_->client_to_server_messages_ = call_args.client_to_server_messages;
+  call_->send_initial_metadata_state_ = call_args.server_initial_metadata;
+  call_->incoming_compression_algorithm_ =
+      call_args.client_initial_metadata->get(GrpcEncodingMetadata())
+          .value_or(GRPC_COMPRESS_NONE);
+  call_->client_initial_metadata_ =
+      std::move(call_args.client_initial_metadata);
+  PublishMetadataArray(call_->client_initial_metadata_.get(),
+                       publish_initial_metadata);
+  call_->ExternalRef();
+  publish(call_->c_ptr());
+  return [this]() {
+    call_->mu()->AssertHeld();
+    return call_->PollTopOfCall();
+  };
+#else
+  Crash("Promise-based server call is not enabled");
+#endif
+}
 
 }  // namespace grpc_core
 
