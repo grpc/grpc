@@ -54,6 +54,11 @@ config_setting(
     values = {"define": "grpc_no_xds=true"},
 )
 
+config_setting(
+    name = "grpc_experiments_are_final_define",
+    values = {"define": "grpc_experiments_are_final=true"},
+)
+
 # When gRPC is build as shared library, binder transport code might still
 # get included even when user's code does not depend on it. In that case
 # --define=grpc_no_binder=true can be used to disable binder transport
@@ -107,6 +112,19 @@ selects.config_setting_group(
     match_any = [
         # Disable RLS support on mobile platforms where it is not likely to be
         # needed and where reducing the binary size is more important.
+        ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_experiments_are_final",
+    match_any = [
+        ":grpc_experiments_are_final_define",
+        # In addition to disabling experiments when
+        # --define=grpc_experiments_are_final=true is specified, we also disable
+        # them on mobile platforms where runtime configuration of experiments is unlikely to be needed and where
+        # reducing the binary size is more important.
         ":android",
         ":ios",
     ],
