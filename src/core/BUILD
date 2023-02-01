@@ -384,7 +384,6 @@ grpc_cc_library(
     hdrs = ["lib/promise/try_concurrently.h"],
     external_deps = [
         "absl/status",
-        "absl/strings",
         "absl/types:variant",
     ],
     language = "c++",
@@ -392,7 +391,6 @@ grpc_cc_library(
         "lib/promise/map_pipe.h",
     ],
     deps = [
-        "activity",
         "construct_destruct",
         "for_each",
         "map",
@@ -401,10 +399,8 @@ grpc_cc_library(
         "promise_factory",
         "promise_like",
         "promise_status",
-        "promise_trace",
         "try_seq",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
@@ -419,13 +415,9 @@ grpc_cc_library(
         "for_each",
         "map",
         "pipe",
-        "poll",
         "promise_factory",
-        "promise_trace",
         "try_seq",
-        "//:gpr",
         "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -536,7 +528,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["lib/promise/if.h"],
     deps = [
-        "construct_destruct",
         "poll",
         "promise_factory",
         "promise_like",
@@ -792,18 +783,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "latch",
-    external_deps = ["absl/strings"],
     language = "c++",
     public_hdrs = [
         "lib/promise/latch.h",
     ],
     deps = [
-        "activity",
         "intra_activity_waiter",
         "poll",
-        "promise_trace",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
@@ -828,37 +815,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "interceptor_list",
-    hdrs = [
-        "lib/promise/interceptor_list.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "absl/types:variant",
-    ],
-    deps = [
-        "arena",
-        "construct_destruct",
-        "context",
-        "poll",
-        "promise_factory",
-        "promise_trace",
-        "//:debug_location",
-        "//:gpr",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "pipe",
+    srcs = [
+        "lib/promise/pipe.cc",
+    ],
     hdrs = [
         "lib/promise/pipe.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
-        "absl/memory",
         "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
@@ -868,31 +832,9 @@ grpc_cc_library(
         "activity",
         "arena",
         "context",
-        "if",
-        "interceptor_list",
         "intra_activity_waiter",
-        "map",
         "poll",
-        "promise_trace",
-        "seq",
-        "//:debug_location",
         "//:gpr",
-        "//:grpc_trace",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "promise_trace",
-    srcs = [
-        "lib/promise/trace.cc",
-    ],
-    hdrs = [
-        "lib/promise/trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "//:gpr_platform",
         "//:grpc_trace",
     ],
 )
@@ -918,20 +860,16 @@ grpc_cc_library(
     name = "for_each",
     external_deps = [
         "absl/status",
-        "absl/strings",
         "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = ["lib/promise/for_each.h"],
     deps = [
-        "activity",
         "construct_destruct",
         "poll",
         "promise_factory",
-        "promise_trace",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -1189,9 +1127,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "slice_refcount",
-    srcs = [
-        "lib/slice/slice_refcount.cc",
-    ],
     hdrs = [
         "lib/slice/slice_refcount.h",
     ],
@@ -1199,10 +1134,8 @@ grpc_cc_library(
         "//:include/grpc/slice.h",
     ],
     deps = [
-        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
@@ -1226,7 +1159,6 @@ grpc_cc_library(
     deps = [
         "slice_cast",
         "slice_refcount",
-        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
@@ -1241,7 +1173,6 @@ grpc_cc_library(
         "lib/slice/slice_buffer.h",
         "//:include/grpc/slice_buffer.h",
     ],
-    external_deps = ["absl/memory"],
     deps = [
         "slice",
         "slice_refcount",
@@ -1277,13 +1208,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "closure",
-    srcs = [
-        "lib/iomgr/closure.cc",
-    ],
     hdrs = [
         "lib/iomgr/closure.h",
     ],
-    external_deps = ["absl/strings:str_format"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "error",
@@ -3591,6 +3518,7 @@ grpc_cc_library(
         "ext/filters/stateful_session/stateful_session_service_config_parser.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -3599,6 +3527,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "basic_seq",
         "channel_args",
         "channel_fwd",
         "context",
@@ -3606,12 +3535,12 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
-        "map",
-        "pipe",
-        "poll",
+        "latch",
+        "seq",
         "service_config_parser",
         "slice",
         "time",
+        "try_concurrently",
         "unique_type_name",
         "validation_errors",
         "//:config",
@@ -3649,29 +3578,26 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "arena",
         "arena_promise",
         "channel_args",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
         "closure",
-        "context",
         "error",
         "gpr_atm",
         "grpc_sockaddr",
         "json",
         "json_args",
         "json_object_loader",
+        "latch",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
-        "map",
-        "pipe",
-        "poll",
         "pollset_set",
         "ref_counted",
         "resolved_address",
+        "seq",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -3695,6 +3621,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:orphanable",
+        "//:promise",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
         "//:ref_counted_ptr",
