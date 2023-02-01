@@ -1871,6 +1871,7 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
+#if defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) || defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
 class PromiseBasedCall : public Call,
                          public Activity,
                          public Wakeable,
@@ -2717,10 +2718,12 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array) {
   md->Encode(&encoder);
 }
 }  // namespace
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
@@ -3105,9 +3108,12 @@ void ClientPromiseBasedCall::PublishStatus(
   FinishOpOnCompletion(&recv_status_on_client_completion_,
                        PendingOp::kReceiveStatusOnClient);
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // ServerPromiseBasedCall
+
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 
 class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
@@ -3506,6 +3512,8 @@ void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
   ForceWakeup();
 }
 
+#endif
+
 }  // namespace grpc_core
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3522,16 +3530,20 @@ size_t grpc_call_get_initial_size_estimate() {
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
   if (grpc_core::IsPromiseBasedClientCallEnabled() &&
       args->server_transport_data == nullptr && args->channel->is_promising()) {
     return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
         args, out_call);
   }
+#endif
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
   if (grpc_core::IsPromiseBasedServerCallEnabled() &&
       args->server_transport_data != nullptr && args->channel->is_promising()) {
     return grpc_core::MakePromiseBasedCall<grpc_core::ServerPromiseBasedCall>(
         args, out_call);
   }
+#endif
   return grpc_core::FilterStackCall::Create(args, out_call);
 }
 

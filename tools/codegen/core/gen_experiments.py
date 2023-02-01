@@ -57,6 +57,14 @@ FINAL_RETURN = {
     'release': '#ifdef NDEBUG\nreturn true;\n#else\nreturn false;\n#endif',
 }
 
+FINAL_DEFINE = {
+    'broken': None,
+    False: None,
+    True: '#define %s',
+    'debug': '#ifndef NDEBUG\n#define %s\n#endif',
+    'release': '#ifdef NDEBUG\n#define %s\n#endif',
+}
+
 BZL_LIST_FOR_DEFAULTS = {
     'broken': None,
     False: 'off',
@@ -177,11 +185,15 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     print(file=H)
     print("#ifdef GRPC_EXPERIMENTS_ARE_FINAL", file=H)
     for i, attr in enumerate(attrs):
+        define_fmt = FINAL_DEFINE[attr['default']]
+        if define_fmt:
+            print(define_fmt % ("GRPC_FINAL_EXPERIMENT_IS_INCLUDED_%s" % attr['name'].upper()), file=H)
         print("inline bool Is%sEnabled() { %s }" %
               (snake_to_pascal(attr['name']), FINAL_RETURN[attr['default']]),
               file=H)
     print("#else", file=H)
     for i, attr in enumerate(attrs):
+        print("#define GRPC_EXPERIMENT_IS_INCLUDED_%s" % attr['name'].upper(), file=H)
         print("inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }" %
               (snake_to_pascal(attr['name']), i),
               file=H)
