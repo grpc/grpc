@@ -37,6 +37,7 @@
 namespace grpc {
 namespace testing {
 namespace {
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::filters::http::stateful_session::v3::StatefulSession;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
@@ -52,22 +53,6 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::set<std::string> attributes;
     std::string raw;
   };
-
-  std::multimap<std::string, std::string> SendRpcGetServerMetadata(
-      const grpc_core::DebugLocation& debug_location,
-      const RpcOptions& rpc_options) {
-    std::multimap<std::string, std::string> server_initial_metadata;
-    EchoResponse response;
-    grpc::Status status =
-        SendRpc(rpc_options, &response, &server_initial_metadata);
-    EXPECT_TRUE(status.ok())
-        << "code=" << status.error_code()
-        << ", message=" << status.error_message() << "\n"
-        << debug_location.file() << ":" << debug_location.line();
-    EXPECT_EQ(response.message(), kRequestMessage)
-        << debug_location.file() << ":" << debug_location.line();
-    return server_initial_metadata;
-  }
 
   static absl::optional<Cookie> ParseCookie(absl::string_view header,
                                             absl::string_view cookie_name) {
@@ -86,7 +71,8 @@ class OverrideHostTest : public XdsEnd2endTest {
                    std::string(name_value.second)});
   }
 
-  static std::vector<std::string> GetStatefulSessionCookie(
+  static std::vector<std::pair<std::string, std::string>>
+  GetHeadersWithSessionCookie(
       const std::multimap<std::string, std::string>& server_initial_metadata,
       absl::string_view cookie_name = kCookieName) {
     std::vector<std::string> values;
@@ -100,7 +86,12 @@ class OverrideHostTest : public XdsEnd2endTest {
       EXPECT_THAT(cookie->attributes, ::testing::Contains("HttpOnly"));
       values.emplace_back(cookie->value);
     }
-    return values;
+    EXPECT_EQ(values.size(), 1);
+    if (values.size() == 1) {
+      return {{"cookie", absl::StrFormat("%s=%s", kCookieName, values[0])}};
+    } else {
+      return {};
+    }
   }
 
   // Builds a Listener with Fault Injection filter config. If the http_fault
@@ -126,45 +117,72 @@ class OverrideHostTest : public XdsEnd2endTest {
         http_connection_manager);
     return listener;
   }
+
+  std::multimap<std::string, std::string> SendRpcGetServerMetadata(
+      const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options) {
+    std::multimap<std::string, std::string> server_initial_metadata;
+    EchoResponse response;
+    grpc::Status status =
+        SendRpc(rpc_options, &response, &server_initial_metadata);
+    EXPECT_TRUE(status.ok())
+        << "code=" << status.error_code()
+        << ", message=" << status.error_message() << "\n"
+        << debug_location.file() << ":" << debug_location.line();
+    EXPECT_EQ(response.message(), kRequestMessage)
+        << debug_location.file() << ":" << debug_location.line();
+    return server_initial_metadata;
+  }
+
+  ClusterLoadAssignment EdsResourceWithChannelHealth(
+      absl::Span<const HealthStatus> backend_health_statuses) {
+    std::vector<EdsResourceArgs::Endpoint> endpoints;
+    int ind = 0;
+    for (HealthStatus status : backend_health_statuses) {
+      endpoints.emplace_back(CreateEndpoint(ind++, status));
+    }
+    return BuildEdsResource(EdsResourceArgs({{"locality0", endpoints}}));
+  }
+
+  size_t FindBackendWithRequest() {
+    for (size_t i = 0; i < backends_.size(); ++i) {
+      if (backends_[i]->backend_service()->request_count() == 1) {
+        return i;
+      }
+    }
+    return -1;
+  }
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, OverrideHostTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-TEST_P(OverrideHostTest, HappyPath) {
-  CreateAndStartBackends(2);
+TEST_P(OverrideHostTest, DefaultConfigurationNoDraining) {
+  CreateAndStartBackends(3);
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(),
                                    default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  balancer_->ads_service()->SetEdsResource(EdsResourceWithChannelHealth(
+      {HealthStatus::HEALTHY, HealthStatus::HEALTHY}));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // First call gets the cookie. RR policy picks the backend we will use.
   auto server_initial_metadata =
       SendRpcGetServerMetadata(DEBUG_LOCATION, RpcOptions());
-  std::vector<std::string> stateful_session_cookie =
-      GetStatefulSessionCookie(server_initial_metadata);
-  ASSERT_EQ(stateful_session_cookie.size(), 1);
-  size_t backend_idx = -1;
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    if (backends_[i]->backend_service()->request_count() == 1) {
-      backend_idx = i;
-      break;
-    }
-  }
+  auto session_cookie = GetHeadersWithSessionCookie(server_initial_metadata);
+  ASSERT_FALSE(session_cookie.empty());
+  size_t backend_idx = FindBackendWithRequest();
   ASSERT_NE(-1, backend_idx);
   ResetBackendCounters();
-  std::vector<std::pair<std::string, std::string>> session_cookie = {
-      {"cookie",
-       absl::StrFormat("%s=%s", kCookieName, stateful_session_cookie[0])}};
   // All requests go to the backend we specified
   CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(session_cookie));
   EXPECT_EQ(backends_[backend_idx]->backend_service()->request_count(), 5);
   // Round-robin spreads the load
   ResetBackendCounters();
-  CheckRpcSendOk(DEBUG_LOCATION, backends_.size() * 2);
+  CheckRpcSendOk(DEBUG_LOCATION, 4);
   EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  // Should be disabled for now
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   // Call a different service with the same cookie
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 5,
@@ -172,6 +190,70 @@ TEST_P(OverrideHostTest, HappyPath) {
                      .set_metadata(session_cookie)
                      .set_rpc_service(RpcService::SERVICE_ECHO2));
   EXPECT_EQ(backends_[backend_idx]->backend_service2()->request_count(), 5);
+  // DRAINING is not overridden here so this channel should just disappear
+  std::array<HealthStatus, 3> statuses(
+      {HealthStatus::HEALTHY, HealthStatus::HEALTHY, HealthStatus::HEALTHY});
+  statuses[backend_idx] = HealthStatus::DRAINING;
+  balancer_->ads_service()->SetEdsResource(
+      EdsResourceWithChannelHealth(statuses));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Draining channel is not overridden
+  CheckRpcSendOk(DEBUG_LOCATION, (backends_.size() - 1) * 2,
+                 RpcOptions().set_metadata(session_cookie));
+  EXPECT_EQ(0, backends_[backend_idx]->backend_service()->request_count());
+  // The second of the "initial backends"
+  EXPECT_EQ(2, backends_[1 - backend_idx]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[2]->backend_service()->request_count());
+}
+
+TEST_P(OverrideHostTest, DefaultConfigurationDrainingOverridden) {
+  CreateAndStartBackends(3);
+  Cluster cluster = default_cluster_;
+  auto* lb_config = cluster.mutable_common_lb_config();
+  auto* override_health_status_set = lb_config->mutable_override_host_status();
+  override_health_status_set->add_statuses(HealthStatus::HEALTHY);
+  override_health_status_set->add_statuses(HealthStatus::UNKNOWN);
+  override_health_status_set->add_statuses(HealthStatus::DRAINING);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(EdsResourceWithChannelHealth(
+      {HealthStatus::HEALTHY, HealthStatus::HEALTHY}));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  // First call gets the cookie. RR policy picks the backend we will use.
+  auto server_initial_metadata =
+      SendRpcGetServerMetadata(DEBUG_LOCATION, RpcOptions());
+  auto session_cookie = GetHeadersWithSessionCookie(server_initial_metadata);
+  ASSERT_FALSE(session_cookie.empty());
+  size_t backend_idx = FindBackendWithRequest();
+  ASSERT_NE(-1, backend_idx);
+  ResetBackendCounters();
+  std::array<HealthStatus, 3> statuses(
+      {HealthStatus::HEALTHY, HealthStatus::HEALTHY, HealthStatus::HEALTHY});
+  statuses[backend_idx] = HealthStatus::DRAINING;
+  balancer_->ads_service()->SetEdsResource(
+      EdsResourceWithChannelHealth(statuses));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Draining channel works just fine
+  CheckRpcSendOk(DEBUG_LOCATION, (backends_.size() - 1) * 2,
+                 RpcOptions().set_metadata(session_cookie));
+  std::array<size_t, 3> expected_counts({0, 0, 0});
+  expected_counts[backend_idx] = 4;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(expected_counts[i],
+              backends_[i]->backend_service()->request_count());
+  }
+  ResetBackendCounters();
+  // Round robin does not see the draining policy
+  CheckRpcSendOk(DEBUG_LOCATION, (backends_.size() - 1) * 2);
+  expected_counts = {2, 2, 2};
+  expected_counts[backend_idx] = 0;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(expected_counts[i],
+              backends_[i]->backend_service()->request_count());
+  }
+  ResetBackendCounters();
 }
 }  // namespace
 }  // namespace testing
