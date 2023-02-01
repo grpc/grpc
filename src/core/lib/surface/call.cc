@@ -1997,7 +1997,9 @@ class PromiseBasedCall : public Call,
 
   // Wakeable methods
   void Wakeup() override {
+    gpr_log(GPR_DEBUG, "%sWAKEUP", ActivityDebugTag().c_str());
     channel()->event_engine()->Run([this] {
+      gpr_log(GPR_DEBUG, "%sAWOKEN", ActivityDebugTag().c_str());
       ApplicationCallbackExecCtx app_exec_ctx;
       ExecCtx exec_ctx;
       {
@@ -2270,6 +2272,7 @@ class PromiseBasedCall : public Call,
     // Activity needs to wake up (if it still exists!) - wake it up, and drop
     // the ref that was kept for this handle.
     void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
+      gpr_log(GPR_DEBUG, "%sNON-OWNING WAKEUP", ActivityDebugTag().c_str());
       // Drop the ref to the handle at end of scope (we have one ref = one
       // wakeup semantics).
       auto unref = absl::MakeCleanup([this]() { Unref(); });
@@ -2277,12 +2280,16 @@ class PromiseBasedCall : public Call,
       // Note that activity refcount can drop to zero, but we could win the lock
       // against DropActivity, so we need to only increase activities refcount
       // if it is non-zero.
-      if (call_ != nullptr && call_->RefIfNonZero()) {
-        PromiseBasedCall* call = call_;
+      PromiseBasedCall* call = call_;
+      if (call != nullptr && call->RefIfNonZero()) {
+        gpr_log(GPR_DEBUG, "%sSTILL ALIVE, SCHEDULE WAKEUP",
+                call->ActivityDebugTag().c_str());
         lock.Release();
         // Activity still exists and we have a reference: wake it up, which will
         // drop the ref.
         call->Wakeup();
+      } else {
+        gpr_log(GPR_DEBUG, "DIED, SKIPPING WAKEUP");
       }
     }
 
@@ -3268,7 +3275,7 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
             cancel_send_and_receive_ ? "force-" : "",
             send_trailing_metadata_ != nullptr
                 ? absl::StrCat("send-metadata:",
-                               send_trailing_metadata_->DebugString())
+                               send_trailing_metadata_->DebugString(), " ")
                       .c_str()
                 : " ",
             PollStateDebugString().c_str());

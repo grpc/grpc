@@ -35,6 +35,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
@@ -269,7 +270,10 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       RequestedCall* call) override {
+    gpr_log(GPR_DEBUG, "*** REQUEST CALL: q:%" PRIdPTR " call:%p",
+            request_queue_index, call);
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
+      gpr_log(GPR_DEBUG, "*** FIRST IN QUEUE");
       // this was the first queued request: we need to lock and start
       // matching calls
       struct NextPendingCall {
@@ -293,6 +297,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       };
       while (true) {
         NextPendingCall next_pending = pop_next_pending();
+        gpr_log(GPR_DEBUG, "NEXT PENDING CALL: %p", next_pending.rc);
         if (next_pending.rc == nullptr) break;
         auto mr = MatchResult{request_queue_index, next_pending.rc};
         Match(
@@ -379,12 +384,16 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         }
       }
       if (rc == nullptr) {
+        gpr_log(GPR_DEBUG, "%s[server] Queue call request on server",
+                Activity::current()->DebugTag().c_str());
         auto w = std::make_shared<ActivityWaiter>(
-            Activity::current()->MakeNonOwningWaker());
+            Activity::current()->MakeOwningWaker());
         pending_.push(w);
         return [w]() -> Poll<absl::StatusOr<MatchResult>> {
           std::unique_ptr<absl::StatusOr<MatchResult>> r(
               w->result.exchange(nullptr, std::memory_order_acq_rel));
+          gpr_log(GPR_DEBUG, "%s[server] Poll call request on server: %p",
+                  w->waker.ActivityDebugTag().c_str(), r.get());
           if (r == nullptr) return Pending{};
           return std::move(*r);
         };
@@ -401,6 +410,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::StatusOr<MatchResult> r) {
+      gpr_log(GPR_DEBUG, "%sFINISH: %s%s", waker.ActivityDebugTag().c_str(),
+              r.status().ToString().c_str(),
+              r.ok() ? absl::StrFormat(" cqidx:%" PRIdPTR " rc: %p", r->cq_idx,
+                                       r->requested_call)
+                           .c_str()
+                     : "");
       result.store(new absl::StatusOr<MatchResult>(std::move(r)),
                    std::memory_order_release);
       waker.Wakeup();
