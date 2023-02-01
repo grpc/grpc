@@ -42,6 +42,12 @@ void PrintExperimentsList();
 // If this is called twice for the same experiment, both calls must agree.
 void ForceEnableExperiment(absl::string_view experiment_name, bool enable);
 
+struct ExperimentMetadata {
+  const char* name;
+  const char* description;
+  bool default_value;
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
