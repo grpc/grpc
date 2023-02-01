@@ -17,10 +17,14 @@
 #include "src/cpp/server/backend_metric_recorder.h"
 
 #include <inttypes.h>
-
 #include <grpc/support/log.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
+#include <functional>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/debug/trace.h"
@@ -180,12 +184,12 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     const auto& data = result->data;
-    gpr_log(
-        GPR_INFO,
-        "[%p] GetMetrics() returned: seq:%lu cpu:%f mem:%f qps:%f utilization "
-        "size: %" PRIuPTR,
-        this, result->sequence_number, data.cpu_utilization,
-        data.mem_utilization, data.qps, data.utilization.size());
+    gpr_log(GPR_INFO,
+            "[%p] GetMetrics() returned: seq:%" PRIuPTR
+            " cpu:%f mem:%f qps:%f utilization "
+            "size: %" PRIu64,
+            this, result->sequence_number, data.cpu_utilization,
+            data.mem_utilization, data.qps, data.utilization.size());
   }
   return result;
 }

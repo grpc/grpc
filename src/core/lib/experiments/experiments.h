@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
@@ -28,15 +29,23 @@ inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
 inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(1); }
 inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(2); }
 inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(3); }
-inline bool IsMemoryPressureControllerEnabled() { return IsExperimentEnabled(4); }
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return IsExperimentEnabled(5); }
+inline bool IsMemoryPressureControllerEnabled() {
+  return IsExperimentEnabled(4);
+}
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
+  return IsExperimentEnabled(5);
+}
 inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(6); }
 inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(7); }
 inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(8); }
 inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(9); }
 inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(10); }
-inline bool IsPromiseBasedServerCallEnabled() { return IsExperimentEnabled(11); }
-inline bool IsTransportSuppliesClientLatencyEnabled() { return IsExperimentEnabled(12); }
+inline bool IsPromiseBasedServerCallEnabled() {
+  return IsExperimentEnabled(11);
+}
+inline bool IsTransportSuppliesClientLatencyEnabled() {
+  return IsExperimentEnabled(12);
+}
 inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(13); }
 
 struct ExperimentMetadata {

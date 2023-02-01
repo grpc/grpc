@@ -19,6 +19,7 @@
 #ifndef GRPCPP_EXT_SERVER_METRIC_RECORDER_H
 #define GRPCPP_EXT_SERVER_METRIC_RECORDER_H
 
+#include <functional>
 #include <map>
 #include <memory>
 

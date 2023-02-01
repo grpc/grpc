@@ -16,13 +16,32 @@
 
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stddef.h>
+#include <functional>
+#include <map>
+#include <memory>
+#include <utility>
+
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
-
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/map.h"
+#include "absl/strings/string_view.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 

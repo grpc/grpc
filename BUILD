@@ -1984,6 +1984,10 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/server/backend_metric_recorder.h",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/server_metric_recorder.h",
@@ -2006,6 +2010,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/strings",
         "absl/time",
         "absl/types:optional",
         "upb_lib",
@@ -2027,6 +2032,7 @@ grpc_cc_library(
         "xds_orca_service_upb",
         "xds_orca_upb",
         "//src/core:default_event_engine",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:ref_counted",
         "//src/core:time",
     ],

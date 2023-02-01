@@ -2945,12 +2945,12 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   EchoRequest request;
   request.mutable_param()->mutable_backend_metrics()->set_rps_fractional(100);
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
-                                /*expected_weighted=*/{1, 3, 3},
+                                /*expected_weights=*/{1, 3, 3},
                                 /*total_passes=*/3, &request);
   // Now send requests without per-call reported QPS.
   // This should change WRR picks back to 1:2:4.
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
-                                /*expected_weighted=*/{1, 2, 4});
+                                /*expected_weights=*/{1, 2, 4});
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());
@@ -2981,7 +2981,7 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
   response_generator.SetNextResolution(GetServersPorts(), GetParam());
   // Wait for the right set of WRR picks.
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
-                                /*expected_weighted=*/{1, 3, 3});
+                                /*expected_weights=*/{1, 3, 3});
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin_experimental",
             channel->GetLoadBalancingPolicyName());
