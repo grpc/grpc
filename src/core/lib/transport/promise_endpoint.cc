@@ -38,7 +38,12 @@ PromiseEndpoint::PromiseEndpoint(
       read_result_() {
   GPR_ASSERT(endpoint_ != nullptr);
 
-  /// TODO: Is there a better way to convert?
+  /// TODO: Replace this with `SliceBufferCast<>` when it is available. It
+  /// should be something like the following.
+  ///
+  /// read_buffer_ = std::move(
+  ///     SliceBufferCast<grpc_event_engine::experimental::SliceBuffer&>(
+  ///         already_received));
   grpc_slice_buffer_swap(read_buffer_.c_slice_buffer(),
                          already_received.c_slice_buffer());
 }
@@ -66,63 +71,35 @@ void PromiseEndpoint::WriteCallback(absl::Status status) {
   write_waker_.Wakeup();
 }
 
-void PromiseEndpoint::ReadCallback(absl::Status status,
-                                   size_t num_bytes_requested) {
-  if (!status.ok()) {
-    pending_read_buffer_.Clear();
-    temporary_read_buffer_.Clear();
-
-    grpc_core::MutexLock lock(&read_mutex_);
-    read_result_ = status;
-    read_waker_.Wakeup();
-  } else {
-    temporary_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
-        temporary_read_buffer_.Length(), pending_read_buffer_);
-
-    if (read_buffer_.Length() + pending_read_buffer_.Length() <
-        num_bytes_requested) {
-      /// A further read is needed.
-      endpoint_->Read(std::bind(&PromiseEndpoint::ReadCallback, this,
-                                std::placeholders::_1, num_bytes_requested),
-                      &temporary_read_buffer_,
-                      nullptr /* uses default arguments */);
-    } else {
-      pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
-          pending_read_buffer_.Length(), read_buffer_);
-
-      grpc_core::MutexLock lock(&read_mutex_);
-      read_result_ = status;
-      read_waker_.Wakeup();
-    }
-  }
-}
-
-void PromiseEndpoint::ReadSliceCallback(
+void PromiseEndpoint::ReadCallback(
     absl::Status status, size_t num_bytes_requested,
-    const struct grpc_event_engine::experimental::EventEngine::Endpoint::
-        ReadArgs& requested_read_args) {
+    absl::optional<
+        struct grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs>
+        requested_read_args) {
   if (!status.ok()) {
+    /// invalidates all previous reads
     pending_read_buffer_.Clear();
-    temporary_read_buffer_.Clear();
+    read_buffer_.Clear();
 
     grpc_core::MutexLock lock(&read_mutex_);
     read_result_ = status;
     read_waker_.Wakeup();
   } else {
-    temporary_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
-        temporary_read_buffer_.Length(), pending_read_buffer_);
+    /// appends `pending_read_buffer_` to `read_buffer_`
+    pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
+        pending_read_buffer_.Length(), read_buffer_);
 
     if (read_buffer_.Length() + pending_read_buffer_.Length() <
         num_bytes_requested) {
       /// A further read is needed.
-      endpoint_->Read(std::bind(&PromiseEndpoint::ReadSliceCallback, this,
-                                std::placeholders::_1, num_bytes_requested,
-                                requested_read_args),
-                      &temporary_read_buffer_, &requested_read_args);
+      GPR_DEBUG_ASSERT(pending_read_buffer_.Count() == 0u);
+      endpoint_->Read(
+          std::bind(&PromiseEndpoint::ReadCallback, this, std::placeholders::_1,
+                    num_bytes_requested, requested_read_args),
+          &pending_read_buffer_,
+          requested_read_args.has_value() ? nullptr /* uses default arguments */
+                                          : (&(requested_read_args.value())));
     } else {
-      pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
-          pending_read_buffer_.Length(), read_buffer_);
-
       grpc_core::MutexLock lock(&read_mutex_);
       read_result_ = status;
       read_waker_.Wakeup();
@@ -131,18 +108,16 @@ void PromiseEndpoint::ReadSliceCallback(
 }
 
 void PromiseEndpoint::ReadByteCallback(absl::Status status) {
-  grpc_core::MutexLock lock(&read_mutex_);
   if (!status.ok()) {
+    /// invalidates all previous reads
     pending_read_buffer_.Clear();
-    temporary_read_buffer_.Clear();
-
-    read_result_ = status;
+    read_buffer_.Clear();
   } else {
-    temporary_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
-        temporary_read_buffer_.Length(), read_buffer_);
-
-    read_result_ = status;
+    pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
+        pending_read_buffer_.Length(), read_buffer_);
   }
+  grpc_core::MutexLock lock(&read_mutex_);
+  read_result_ = status;
   read_waker_.Wakeup();
 }
 
