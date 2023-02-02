@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM dockcross/manylinux2014-aarch64:latest
+FROM dockcross/manylinux2014-aarch64:20230202-a61e35f
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
