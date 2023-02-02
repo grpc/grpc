@@ -126,8 +126,7 @@ class ClientChannel::CallData {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
 
  protected:
-  CallData(grpc_call_element* elem, const ClientChannel& chand,
-           const grpc_call_element_args& args);
+  CallData(const ClientChannel& chand, const grpc_call_element_args& args);
   virtual ~CallData();
 
   grpc_slice* path() { return &path_; }
@@ -1786,8 +1785,7 @@ void ClientChannel::RemoveConnectivityWatcher(
 // CallData implementation
 //
 
-ClientChannel::CallData::CallData(grpc_call_element* elem,
-                                  const ClientChannel& chand,
+ClientChannel::CallData::CallData(const ClientChannel& chand,
                                   const grpc_call_element_args& args)
     : path_(CSliceRef(args.path)),
       call_start_time_(args.start_time),
@@ -1967,7 +1965,7 @@ bool ClientChannel::CallData::CheckResolutionLocked(
 ClientChannel::FilterBasedCallData::FilterBasedCallData(
     grpc_call_element* elem, const ClientChannel& chand,
     const grpc_call_element_args& args)
-    : CallData(elem, chand, args),
+    : CallData(chand, args),
       deadline_state_(elem, args,
                       GPR_LIKELY(chand.deadline_checking_enabled_)
                           ? args.deadline
