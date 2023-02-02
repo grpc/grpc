@@ -54,6 +54,11 @@ config_setting(
     values = {"define": "grpc_no_xds=true"},
 )
 
+config_setting(
+    name = "grpc_experiments_are_final_define",
+    values = {"define": "grpc_experiments_are_final=true"},
+)
+
 # When gRPC is build as shared library, binder transport code might still
 # get included even when user's code does not depend on it. In that case
 # --define=grpc_no_binder=true can be used to disable binder transport
@@ -107,6 +112,19 @@ selects.config_setting_group(
     match_any = [
         # Disable RLS support on mobile platforms where it is not likely to be
         # needed and where reducing the binary size is more important.
+        ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_experiments_are_final",
+    match_any = [
+        ":grpc_experiments_are_final_define",
+        # In addition to disabling experiments when
+        # --define=grpc_experiments_are_final=true is specified, we also disable
+        # them on mobile platforms where runtime configuration of experiments is unlikely to be needed and where
+        # reducing the binary size is more important.
         ":android",
         ":ios",
     ],
@@ -701,6 +719,7 @@ grpc_cc_library(
         "debug_location",
         "//src/core:construct_destruct",
         "//src/core:env",
+        "//src/core:event_engine_thread_local",
         "//src/core:examine_stack",
         "//src/core:gpr_atm",
         "//src/core:no_destruct",
@@ -1421,6 +1440,8 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
+        "//src/core:basic_join",
+        "//src/core:basic_seq",
         "//src/core:bitset",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -1449,7 +1470,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
-        "//src/core:latch",
+        "//src/core:map",
         "//src/core:match",
         "//src/core:memory_quota",
         "//src/core:no_destruct",
@@ -1475,6 +1496,8 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:transport_fwd",
+        "//src/core:try_join",
+        "//src/core:try_seq",
         "//src/core:useful",
     ],
 )
@@ -3261,9 +3284,9 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "promise",
+        "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -3271,15 +3294,14 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
-        "//src/core:map_pipe",
+        "//src/core:map",
         "//src/core:percent_encoding",
         "//src/core:pipe",
-        "//src/core:promise_like",
-        "//src/core:seq",
+        "//src/core:poll",
+        "//src/core:race",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:transport_fwd",
-        "//src/core:try_concurrently",
     ],
 )
 
