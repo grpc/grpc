@@ -2603,8 +2603,7 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
   while (true) {
     // Do pick.
     grpc_error_handle error;
-    bool pick_complete =
-        PickSubchannelImpl(pickers.back().get(), &error);
+    bool pick_complete = PickSubchannelImpl(pickers.back().get(), &error);
     if (!pick_complete) {
       MutexLock lock(&chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
