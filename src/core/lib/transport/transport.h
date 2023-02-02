@@ -52,8 +52,8 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
-#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -120,7 +120,8 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
          GRPC_STATUS_OK;
 }
 
-ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
+ServerMetadataHandle ServerMetadataFromStatus(
+    const absl::Status& status, Arena* arena = GetContext<Arena>());
 
 template <>
 struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
@@ -136,6 +137,13 @@ struct StatusCastImpl<ServerMetadataHandle, const absl::Status&> {
   }
 };
 
+template <>
+struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
+  static ServerMetadataHandle Cast(const absl::Status& m) {
+    return ServerMetadataFromStatus(m);
+  }
+};
+
 struct CallArgs {
   // Initial metadata from the client to the server.
   // During promise setup this can be manipulated by filters (and then
@@ -145,11 +153,11 @@ struct CallArgs {
   // Set once when it's available.
   // During promise setup filters can substitute their own latch for this
   // and consequently intercept the sent value and mutate/observe it.
-  Latch<ServerMetadata*>* server_initial_metadata;
+  PipeSender<ServerMetadataHandle>* server_initial_metadata;
   // Messages travelling from the application to the transport.
-  PipeReceiver<MessageHandle>* outgoing_messages;
+  PipeReceiver<MessageHandle>* client_to_server_messages;
   // Messages travelling from the transport to the application.
-  PipeSender<MessageHandle>* incoming_messages;
+  PipeSender<MessageHandle>* server_to_client_messages;
 };
 
 using NextPromiseFactory =

@@ -46,6 +46,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "interceptor_list_test",
+    srcs = ["interceptor_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_context",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:interceptor_list",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
     external_deps = ["gtest"],
@@ -378,7 +396,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:gpr",
+        "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:basic_join",
