@@ -467,8 +467,7 @@ struct grpc_chttp2_transport
   /// the peer
   bool enable_preferred_rx_crypto_frame_advertisement = false;
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine =
-      nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 typedef enum {

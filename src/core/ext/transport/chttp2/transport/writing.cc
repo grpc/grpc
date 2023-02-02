@@ -153,7 +153,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
           next_allowed_ping.milliseconds_after_process_epoch(),
           now.milliseconds_after_process_epoch());
     }
-    if (!t->ping_state.delayed_ping_timer_handle) {
+    if (!t->ping_state.delayed_ping_timer_handle.has_value()) {
       GRPC_CHTTP2_REF_TRANSPORT(t, "retry_initiate_ping_locked");
       t->ping_state.delayed_ping_timer_handle =
           t->event_engine->RunAfter(next_allowed_ping - now, [t] {
