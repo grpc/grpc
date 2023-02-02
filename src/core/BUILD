@@ -2197,6 +2197,7 @@ grpc_cc_library(
         "event_engine_trace",
         "no_destruct",
         "//:config",
+        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
