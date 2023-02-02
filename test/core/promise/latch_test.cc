@@ -43,8 +43,8 @@ TEST(LatchTest, Works) {
                           latch.Set(42);
                           return true;
                         }),
-                   [](std::tuple<int*, bool> result) {
-                     EXPECT_EQ(*std::get<0>(result), 42);
+                   [](std::tuple<int, bool> result) {
+                     EXPECT_EQ(std::get<0>(result), 42);
                      return absl::OkStatus();
                    });
       },

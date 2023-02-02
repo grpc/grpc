@@ -116,9 +116,9 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
                          DEBUG_ARGS const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO,
-            "==> CallCombiner::Start() [%p] closure=%p [" DEBUG_FMT_STR
+            "==> CallCombiner::Start() [%p] closure=%s [" DEBUG_FMT_STR
             "%s] error=%s",
-            this, closure DEBUG_FMT_ARGS, reason,
+            this, closure->DebugString().c_str() DEBUG_FMT_ARGS, reason,
             StatusToString(error).c_str());
   }
   size_t prev_size =
@@ -176,8 +176,8 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
           internal::StatusMoveFromHeapPtr(closure->error_data.error);
       closure->error_data.error = 0;
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
-                closure, StatusToString(error).c_str());
+        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%s error=%s",
+                closure->DebugString().c_str(), StatusToString(error).c_str());
       }
       ScheduleClosure(closure, error);
       break;

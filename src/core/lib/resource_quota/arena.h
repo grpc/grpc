@@ -30,6 +30,7 @@
 #include <stddef.h>
 
 #include <atomic>
+#include <limits>
 #include <memory>
 #include <new>
 #include <utility>
@@ -47,6 +48,11 @@
 namespace grpc_core {
 
 namespace arena_detail {
+
+struct PoolAndSize {
+  size_t alloc_size;
+  size_t pool_index;
+};
 
 template <typename Void, size_t kIndex, size_t kObjectSize,
           size_t... kBucketSize>
@@ -81,10 +87,37 @@ constexpr size_t AllocationSizeFromObjectSize(
   return PoolIndexForSize<void, 0, kObjectSize, kBucketSizes...>::kSize;
 }
 
+template <size_t kIndex, size_t... kBucketSizes>
+struct ChoosePoolForAllocationSizeImpl;
+
+template <size_t kIndex, size_t kBucketSize, size_t... kBucketSizes>
+struct ChoosePoolForAllocationSizeImpl<kIndex, kBucketSize, kBucketSizes...> {
+  static PoolAndSize Fn(size_t n) {
+    if (n <= kBucketSize) return {kBucketSize, kIndex};
+    return ChoosePoolForAllocationSizeImpl<kIndex + 1, kBucketSizes...>::Fn(n);
+  }
+};
+
+template <size_t kIndex>
+struct ChoosePoolForAllocationSizeImpl<kIndex> {
+  static PoolAndSize Fn(size_t n) {
+    return PoolAndSize{n, std::numeric_limits<size_t>::max()};
+  }
+};
+
+template <size_t... kBucketSizes>
+PoolAndSize ChoosePoolForAllocationSize(
+    size_t n, absl::integer_sequence<size_t, kBucketSizes...>) {
+  return ChoosePoolForAllocationSizeImpl<0, kBucketSizes...>::Fn(n);
+}
+
 }  // namespace arena_detail
 
 class Arena {
   using PoolSizes = absl::integer_sequence<size_t, 256, 512, 768>;
+  struct FreePoolNode {
+    FreePoolNode* next;
+  };
 
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
@@ -133,7 +166,8 @@ class Arena {
 
   class PooledDeleter {
    public:
-    explicit PooledDeleter(Arena* arena) : arena_(arena) {}
+    explicit PooledDeleter(std::atomic<FreePoolNode*>* free_list)
+        : free_list_(free_list) {}
     PooledDeleter() = default;
     template <typename T>
     void operator()(T* p) {
@@ -142,24 +176,57 @@ class Arena {
       // by setting the arena to nullptr.
       // This is a transitional hack and should be removed once promise based
       // filter is removed.
-      if (arena_ != nullptr) arena_->DeletePooled(p);
+      if (free_list_ != nullptr) {
+        p->~T();
+        FreePooled(p, free_list_);
+      }
     }
 
+    bool has_freelist() const { return free_list_ != nullptr; }
+
    private:
-    Arena* arena_;
+    std::atomic<FreePoolNode*>* free_list_;
   };
 
   template <typename T>
   using PoolPtr = std::unique_ptr<T, PooledDeleter>;
 
+  // Make a unique_ptr to T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
   template <typename T, typename... Args>
   PoolPtr<T> MakePooled(Args&&... args) {
+    auto* free_list =
+        &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
     return PoolPtr<T>(
         new (AllocPooled(
             arena_detail::AllocationSizeFromObjectSize<sizeof(T)>(PoolSizes()),
-            &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())]))
-            T(std::forward<Args>(args)...),
-        PooledDeleter(this));
+            free_list)) T(std::forward<Args>(args)...),
+        PooledDeleter(free_list));
+  }
+
+  // Make a unique_ptr to an array of T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // One can use MakePooledArray<char> to allocate a buffer of bytes.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
+  template <typename T>
+  PoolPtr<T[]> MakePooledArray(size_t n) {
+    auto where =
+        arena_detail::ChoosePoolForAllocationSize(n * sizeof(T), PoolSizes());
+    if (where.pool_index == std::numeric_limits<size_t>::max()) {
+      return PoolPtr<T[]>(new (Alloc(where.alloc_size)) T[n],
+                          PooledDeleter(nullptr));
+    } else {
+      return PoolPtr<T[]>(
+          new (AllocPooled(where.alloc_size, &pools_[where.pool_index])) T[n],
+          PooledDeleter(&pools_[where.pool_index]));
+    }
   }
 
  private:
@@ -201,17 +268,6 @@ class Arena {
   ~Arena();
 
   void* AllocZone(size_t size);
-
-  template <typename T>
-  void DeletePooled(T* p) {
-    p->~T();
-    FreePooled(
-        p, &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())]);
-  }
-
-  struct FreePoolNode {
-    FreePoolNode* next;
-  };
 
   void* AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head);
   static void FreePooled(void* p, std::atomic<FreePoolNode*>* head);
