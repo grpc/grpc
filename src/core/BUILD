@@ -108,6 +108,10 @@ grpc_cc_library(
         "lib/experiments/config.h",
         "lib/experiments/experiments.h",
     ],
+    defines = select({
+        "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
+        "//conditions:default": [],
+    }),
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
@@ -1468,6 +1472,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_thread_local",
+    srcs = ["lib/event_engine/thread_local.cc"],
+    hdrs = ["lib/event_engine/thread_local.h"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "event_engine_thread_pool",
     srcs = ["lib/event_engine/thread_pool.cc"],
     hdrs = [
@@ -1480,6 +1491,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_executor",
+        "event_engine_thread_local",
         "forkable",
         "time",
         "useful",
@@ -3690,6 +3702,7 @@ grpc_cc_library(
         "//:grpc_resolver_fake",
         "//:grpc_security_base",
         "//:grpc_trace",
+        "//:iomgr_timer",
         "//:orphanable",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
@@ -3709,6 +3722,14 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     language = "c++",
     deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "grpc_backend_metric_provider",
+    hdrs = [
+        "ext/filters/backend_metrics/backend_metric_provider.h",
+    ],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -4739,6 +4760,41 @@ grpc_cc_library(
         "//:uri_parser",
     ],
     alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpc_backend_metric_filter",
+    srcs = [
+        "ext/filters/backend_metrics/backend_metric_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/backend_metrics/backend_metric_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "arena_promise",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "context",
+        "grpc_backend_metric_data",
+        "grpc_backend_metric_provider",
+        "map",
+        "slice",
+        "//:channel_stack_builder",
+        "//:config",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:xds_orca_upb",
+    ],
 )
 
 grpc_cc_library(

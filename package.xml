@@ -97,6 +97,9 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/census/grpc_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/channel_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/channel_idle_filter.h" role="src" />
@@ -1075,6 +1078,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
