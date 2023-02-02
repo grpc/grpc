@@ -71,6 +71,7 @@ inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 #else
@@ -100,14 +101,18 @@ inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(8); }
 inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(9); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(10); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSPORT_SUPPLIES_CLIENT_LATENCY
-inline bool IsTransportSuppliesClientLatencyEnabled() {
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
+inline bool IsPromiseBasedServerCallEnabled() {
   return IsExperimentEnabled(11);
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSPORT_SUPPLIES_CLIENT_LATENCY
+inline bool IsTransportSuppliesClientLatencyEnabled() {
+  return IsExperimentEnabled(12);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(12); }
+inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(13); }
 
-constexpr const size_t kNumExperiments = 13;
+constexpr const size_t kNumExperiments = 14;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

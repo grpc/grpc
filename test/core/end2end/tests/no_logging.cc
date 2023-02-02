@@ -33,6 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/env.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -284,6 +285,7 @@ static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
 }
 
 void no_logging(grpc_end2end_test_config config) {
+  grpc_core::SetEnv("GRPC_TRACE", "");
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 0);
   gpr_set_log_function(log_dispatcher_func);
