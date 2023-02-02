@@ -116,8 +116,8 @@ class DefaultReactorTestPeer;
 }  // namespace testing
 
 namespace experimental {
+class OrcaServerInterceptor;
 class CallMetricRecorder;
-class ServerMetricRecorder;
 }  // namespace experimental
 
 /// Base class of ServerContext.
@@ -404,6 +404,7 @@ class ServerContextBase {
   friend class grpc::ClientContext;
   friend class grpc::GenericServerContext;
   friend class grpc::GenericCallbackServerContext;
+  friend class grpc::experimental::OrcaServerInterceptor;
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -417,13 +418,7 @@ class ServerContextBase {
   /// Return the tag queued by BeginCompletionOp()
   grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
-  void set_call(grpc_call* call, bool call_metric_recording_enabled,
-                experimental::ServerMetricRecorder* server_metric_recorder) {
-    call_.call = call;
-    if (call_metric_recording_enabled) {
-      CreateCallMetricRecorder(server_metric_recorder);
-    }
-  }
+  void set_call(grpc_call* call) { call_.call = call; }
 
   void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
 
@@ -450,10 +445,7 @@ class ServerContextBase {
     }
   }
 
-  // This should be called only once and only when call metric recording is
-  // enabled.
-  void CreateCallMetricRecorder(
-      experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
+  void CreateCallMetricRecorder();
 
   struct CallWrapper {
     ~CallWrapper();
