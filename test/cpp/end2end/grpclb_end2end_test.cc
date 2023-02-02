@@ -1887,7 +1887,7 @@ TEST_F(SingleBalancerTest, DropAll) {
 }
 
 // Keep this the final test in the SingleBalancerTest test suite.
-// It was causing ~1% of test runs to hang when sandwiched between other tests
+// It was causing ~1% of test runs to stall when sandwiched between other tests
 // above. See https://github.com/grpc/grpc/pull/32269
 TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
