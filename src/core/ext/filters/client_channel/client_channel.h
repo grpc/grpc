@@ -496,8 +496,8 @@ class ClientChannel::FilterBasedLoadBalancedCall
 
   // Work-around for Windows compilers that don't allow nested classes
   // to access protected members of the enclosing class's parent class.
-  using LoadBalancedCall::chand;
   using LoadBalancedCall::call_dispatch_controller;
+  using LoadBalancedCall::chand;
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
