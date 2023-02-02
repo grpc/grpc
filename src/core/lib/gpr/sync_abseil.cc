@@ -71,25 +71,23 @@ void gpr_cv_destroy(gpr_cv* cv) {
 }
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
-  absl::CondVar* const condVar = reinterpret_cast<absl::CondVar*>(cv);
-  absl::Mutex* const mutex = reinterpret_cast<absl::Mutex*>(mu);
+  absl::CondVar* const c = reinterpret_cast<absl::CondVar*>(cv);
+  absl::Mutex* const m = reinterpret_cast<absl::Mutex*>(mu);
   if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
       0) {
-    condVar->Wait(mutex);
+    c->Wait(m);
     return 0;
   }
   // Use WaitWithTimeout if possible instead of WaitWithDeadline hoping that
   // it's going to use a monotonic clock.
   if (abs_deadline.clock_type == GPR_TIMESPAN) {
-    return condVar->WaitWithTimeout(mutex,
-                                    grpc_core::ToAbslDuration(abs_deadline));
+    return c->WaitWithTimeout(m, grpc_core::ToAbslDuration(abs_deadline));
   } else if (abs_deadline.clock_type == GPR_CLOCK_MONOTONIC) {
     absl::Duration duration = grpc_core::ToAbslDuration(
         gpr_time_sub(abs_deadline, gpr_now(GPR_CLOCK_MONOTONIC)));
-    return condVar->WaitWithTimeout(mutex, duration);
+    return c->WaitWithTimeout(m, duration);
   } else {
-    return condVar->WaitWithDeadline(mutex,
-                                     grpc_core::ToAbslTime(abs_deadline));
+    return c->WaitWithDeadline(m, grpc_core::ToAbslTime(abs_deadline));
   }
 }
 
