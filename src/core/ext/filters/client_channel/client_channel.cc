@@ -200,7 +200,7 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
 
   FilterBasedCallData(grpc_call_element* elem, const ClientChannel& chand,
                       const grpc_call_element_args& args);
-  ~FilterBasedCallData();
+  ~FilterBasedCallData() override;
 
   grpc_call_element* elem() const { return deadline_state_.elem; }
   grpc_call_stack* owning_call() const { return deadline_state_.call_stack; }
@@ -212,8 +212,8 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
   Arena* arena() const override { return deadline_state_.arena; }
   grpc_polling_entity* pollent() const override { return pollent_; }
   grpc_metadata_batch* send_initial_metadata() override {
-    return pending_batches_[0]->payload->send_initial_metadata
-               .send_initial_metadata;
+    return pending_batches_[0]
+        ->payload->send_initial_metadata.send_initial_metadata;
   }
 
   void OnAddToQueue() override
@@ -1798,9 +1798,7 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
   }
 }
 
-ClientChannel::CallData::~CallData() {
-  CSliceUnref(path_);
-}
+ClientChannel::CallData::~CallData() { CSliceUnref(path_); }
 
 void ClientChannel::CallData::RemoveCallFromResolverQueuedCallsLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1840,8 +1838,9 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
   }
   if (!config_selector.ok()) return config_selector.status();
   // Use the ConfigSelector to determine the config for the call.
-  auto call_config = (*config_selector)->GetCallConfig(
-      {&path_, send_initial_metadata(), arena()});
+  auto call_config =
+      (*config_selector)
+          ->GetCallConfig({&path_, send_initial_metadata(), arena()});
   if (!call_config.ok()) {
     return absl_status_to_grpc_error(
         MaybeRewriteIllegalStatusCode(call_config.status(), "ConfigSelector"));
@@ -2150,8 +2149,8 @@ void ClientChannel::FilterBasedCallData::FailPendingBatchInCallCombiner(
     void* arg, grpc_error_handle error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* calld = static_cast<FilterBasedCallData*>(
-      batch->handler_private.extra_arg);
+  auto* calld =
+      static_cast<FilterBasedCallData*>(batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                      calld->call_combiner());
@@ -2196,8 +2195,8 @@ void ClientChannel::FilterBasedCallData::ResumePendingBatchInCallCombiner(
     void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* calld = static_cast<FilterBasedCallData*>(
-      batch->handler_private.extra_arg);
+  auto* calld =
+      static_cast<FilterBasedCallData*>(batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   calld->dynamic_call_->StartTransportStreamOpBatch(batch);
 }
@@ -2308,14 +2307,9 @@ void ClientChannel::FilterBasedCallData::
 }
 
 void ClientChannel::FilterBasedCallData::CreateDynamicCall() {
-  DynamicFilters::Call::Args args = {dynamic_filters(),
-                                     pollent_,
-                                     *path(),
-                                     call_start_time(),
-                                     deadline(),
-                                     arena(),
-                                     call_context(),
-                                     call_combiner()};
+  DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,       *path(),
+                                     call_start_time(), deadline(),     arena(),
+                                     call_context(),    call_combiner()};
   grpc_error_handle error;
   DynamicFilters* channel_stack = args.channel_stack.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2702,7 +2696,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
         }
         // If wait_for_ready is false, then the error indicates the RPC
         // attempt's final status.
-        if (!send_initial_metadata()->GetOrCreatePointer(WaitForReady())
+        if (!send_initial_metadata()
+                 ->GetOrCreatePointer(WaitForReady())
                  ->value) {
           *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
               std::move(fail_pick->status), "LB pick"));
@@ -2840,8 +2835,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::PendingBatchesFail(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ClientChannel::FilterBasedLoadBalancedCall::ResumePendingBatchInCallCombiner(
-    void* arg, grpc_error_handle /*ignored*/) {
+void ClientChannel::FilterBasedLoadBalancedCall::
+    ResumePendingBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   SubchannelCall* subchannel_call =

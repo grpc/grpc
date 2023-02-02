@@ -425,10 +425,10 @@ class ClientChannel::LoadBalancedCall
     return lb_subchannel_call_tracker_.get();
   }
 
-  void RecordCallCompletion(
-      absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-      grpc_transport_stream_stats* transport_stream_stats,
-      absl::string_view peer_address);
+  void RecordCallCompletion(absl::Status status,
+                            grpc_metadata_batch* recv_trailing_metadata,
+                            grpc_transport_stream_stats* transport_stream_stats,
+                            absl::string_view peer_address);
 
  private:
   class Metadata;
@@ -529,8 +529,8 @@ class ClientChannel::FilterBasedLoadBalancedCall
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
   grpc_metadata_batch* send_initial_metadata() const override {
-    return pending_batches_[0]->payload->send_initial_metadata
-               .send_initial_metadata;
+    return pending_batches_[0]
+        ->payload->send_initial_metadata.send_initial_metadata;
   }
   void CreateSubchannelCall() override;
   void PickFailed(grpc_error_handle error) override;
