@@ -238,6 +238,8 @@ def replace_copyright(license_text, file_text, filename):
         rewritten_text = license_text + file_text[m.end():]
         with open(filename, 'w') as f:
             f.write(rewritten_text)
+        return True
+    return False
 
 
 # scan files, validate the text
@@ -282,11 +284,14 @@ for filename in filename_list:
     if m:
         pass
     elif enforce_cpp_style_comment:
-        log(1, 'copyright missing or does not use cpp comment style', filename)
+        log(1, 'copyright missing or does not use cpp-style copyright header',
+            filename)
         if args.fix:
-            # attempt fix; search for c-style comment license and replace it
-            # with cpp-style comment license
-            replace_copyright(license_text, text, filename)
+            # Attempt fix: search for c-style copyright header and replace it
+            # with cpp-style copyright header. If that doesn't work
+            # (e.g. missing copyright header), write cpp-style copyright header.
+            if not replace_copyright(license_text, text, filename):
+                write_copyright(license_text, text, filename)
         ok = False
     elif 'DO NOT EDIT' not in text:
         if args.fix:
