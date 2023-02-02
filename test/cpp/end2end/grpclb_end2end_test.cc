@@ -1016,19 +1016,6 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  GTEST_FLAG_SET(death_test_style, "threadsafe");
-  // Make sure that we blow up (via abort() from the security connector) when
-  // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED(
-      {
-        ResetStub(0, kApplicationTargetName_ + ";lb");
-        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
-        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
-      },
-      "");
-}
-
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   SetNextResolutionAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
@@ -1897,6 +1884,19 @@ TEST_F(SingleBalancerTest, DropAll) {
   } while (status.ok());
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
+}
+
+TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH_IF_SUPPORTED(
+      {
+        ResetStub(0, kApplicationTargetName_ + ";lb");
+        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
+        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
+      },
+      "");
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
