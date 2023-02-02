@@ -60,7 +60,7 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     })
 """
 _SUBPROCESS_TIMEOUT_S = 80
-_GDB_TIMEOUT_S = 40
+_GDB_TIMEOUT_S = 60
 
 
 @unittest.skipUnless(

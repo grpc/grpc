@@ -35,7 +35,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
-_GDB_TIMEOUT_S = 40
+_GDB_TIMEOUT_S = 60
 
 
 def _channel(args):
