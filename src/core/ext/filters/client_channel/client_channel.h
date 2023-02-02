@@ -111,6 +111,7 @@ class ClientChannel {
 
   class LoadBalancedCall;
   class FilterBasedLoadBalancedCall;
+  class PromiseBasedLoadBalancedCall;
 
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
@@ -119,6 +120,10 @@ class ClientChannel {
   // Returns the ClientChannel object from channel, or null if channel
   // is not a client channel.
   static ClientChannel* GetFromChannel(Channel* channel);
+
+  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      grpc_channel_element* elem, CallArgs call_args,
+      NextPromiseFactory next_promise_factory);
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
@@ -170,6 +175,9 @@ class ClientChannel {
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
 
+  ArenaPromise<ServerMetadataHandle> CreateLoadBalancedCallPromise(
+      CallArgs call_args, bool is_transparent_retry);
+
   // Exposed for testing only.
   static ChannelArgs MakeSubchannelArgs(
       const ChannelArgs& channel_args, const ChannelArgs& address_args,
@@ -179,6 +187,7 @@ class ClientChannel {
  private:
   class CallData;
   class FilterBasedCallData;
+  class PromiseBasedCallData;
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
@@ -592,6 +601,26 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // passed the batch down to the subchannel call and are not
   // intercepting any of its callbacks).
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
+};
+
+class ClientChannel::PromiseBasedLoadBalancedCall
+    : public ClientChannel::LoadBalancedCall {
+ public:
+  PromiseBasedLoadBalancedCall(ClientChannel* chand, bool is_transparent_retry);
+
+  ~PromiseBasedLoadBalancedCall() override;
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
+
+ private:
+  grpc_metadata_batch* send_initial_metadata() const override;
+  void CreateSubchannelCall() override;
+  void PickFailed(grpc_error_handle error) override;
+  grpc_polling_entity* pollent() const override;
+  void OnAddToQueue() override;
+  void OnRemoveFromQueue() override;
+
+  Waker waker_;
 };
 
 // A sub-class of ServiceConfigCallData used to access the

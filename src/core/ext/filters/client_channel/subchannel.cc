@@ -133,6 +133,30 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
          channel_stack_->call_stack_size;
 }
 
+ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
+    CallArgs call_args) {
+  return OnCancel(
+      Seq(
+          channel_stack_->MakeClientCallPromise(std::move(call_args)),
+          [self = Ref()](ServerMetadataHandle metadata) {
+            channelz::SubchannelNode* channelz_subchannel =
+                self->channelz_subchannel();
+            GPR_ASSERT(channelz_subchannel != nullptr);
+            if (metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN)
+                != GRPC_STATUS_OK) {
+              channelz_subchannel->RecordCallFailed();
+            } else {
+              channelz_subchannel->RecordCallSucceeded();
+            }
+          }),
+      [self = Ref()]() {
+        channelz::SubchannelNode* channelz_subchannel =
+            self->channelz_subchannel();
+        GPR_ASSERT(channelz_subchannel != nullptr);
+        channelz_subchannel->RecordCallFailed();
+      });
+}
+
 //
 // SubchannelCall
 //
