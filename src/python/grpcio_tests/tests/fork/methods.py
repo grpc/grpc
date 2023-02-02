@@ -230,8 +230,7 @@ class _ChildProcess(object):
             self._print_backtraces()
             raise RuntimeError('Child process did not terminate')
         if self._rc != 0:
-            raise ValueError('Child process failed with exitcode %d' %
-                             self._rc)
+            raise ValueError('Child process failed with exitcode %d' % self._rc)
         try:
             exception = self._exceptions.get(block=False)
             raise ValueError('Child process failed: "%s": "%s"' %

@@ -384,8 +384,8 @@ void Epoll1Poller::Close() {
   }
 
   while (!free_epoll1_handles_list_.empty()) {
-    Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
-        free_epoll1_handles_list_.front());
+    Epoll1EventHandle* handle =
+        reinterpret_cast<Epoll1EventHandle*>(free_epoll1_handles_list_.front());
     free_epoll1_handles_list_.pop_front();
     delete handle;
   }
