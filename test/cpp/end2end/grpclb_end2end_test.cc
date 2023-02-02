@@ -1886,6 +1886,9 @@ TEST_F(SingleBalancerTest, DropAll) {
   EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
+// Keep this the final test in the SingleBalancerTest test suite.
+// It was causing ~1% of test runs to hang when sandwiched between other tests
+// above. See https://github.com/grpc/grpc/pull/32269
 TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
   // Make sure that we blow up (via abort() from the security connector) when
