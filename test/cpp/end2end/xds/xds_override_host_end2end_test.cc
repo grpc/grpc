@@ -103,31 +103,30 @@ class OverrideHostTest : public XdsEnd2endTest {
     StatefulSession stateful_session;
     stateful_session.mutable_session_state()->mutable_typed_config()->PackFrom(
         cookie_state);
-    HttpConnectionManager http_connection_manager;
+    // HttpConnectionManager http_connection_manager;
     Listener listener = default_listener_;
-    listener.set_name(kServerName);
-    HttpFilter* session_filter = http_connection_manager.add_http_filters();
+    HttpConnectionManager http_connection_manager =
+        ClientHcmAccessor().Unpack(listener);
+    // Insert new filter ahead of the existing router filter.
+    HttpFilter* session_filter =
+        http_connection_manager.mutable_http_filters(0);
+    *http_connection_manager.add_http_filters() = *session_filter;
     session_filter->set_name("envoy.stateful_session");
     session_filter->mutable_typed_config()->PackFrom(stateful_session);
-    HttpFilter* router_filter = http_connection_manager.add_http_filters();
-    router_filter->set_name("router");
-    router_filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
-    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-        http_connection_manager);
+    ClientHcmAccessor().Pack(http_connection_manager, &listener);
     return listener;
   }
 
-  absl::optional<std::vector<std::pair<std::string, std::string>>>
+  std::vector<std::pair<std::string, std::string>>
   GetAffinityCookieHeaderForBackend(grpc_core::DebugLocation debug_location,
-                                    size_t ind,
+                                    size_t backend_index,
                                     RpcOptions rpc_options = RpcOptions()) {
-    EXPECT_LT(ind, backends_.size());
-    if (ind >= backends_.size()) {
-      return absl::nullopt;
+    EXPECT_LT(backend_index, backends_.size());
+    if (backend_index >= backends_.size()) {
+      return {};
     }
-    const auto& backend = backends_[ind];
-    for (size_t i = 0; i < backends_.size(); i++) {
+    const auto& backend = backends_[backend_index];
+    for (size_t i = 0; i < backends_.size(); ++i) {
       std::multimap<std::string, std::string> server_initial_metadata;
       grpc::Status status =
           SendRpc(rpc_options, nullptr, &server_initial_metadata);
@@ -136,7 +135,7 @@ class OverrideHostTest : public XdsEnd2endTest {
           << ", message=" << status.error_message() << "\n"
           << debug_location.file() << ":" << debug_location.line();
       if (!status.ok()) {
-        return absl::nullopt;
+        return {};
       }
       size_t count = backend->backend_service()->request_count() +
                      backend->backend_service1()->request_count() +
@@ -148,7 +147,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     }
     ADD_FAILURE_AT(debug_location.file(), debug_location.line())
         << "Desired backend had not been hit";
-    return absl::nullopt;
+    return {};
   }
 };
 
@@ -165,22 +164,22 @@ TEST_P(OverrideHostTest, HappyPath) {
                         {CreateEndpoint(0, HealthStatus::HEALTHY),
                          CreateEndpoint(1, HealthStatus::UNKNOWN)}}})));
   WaitForAllBackends(DEBUG_LOCATION);
-  // First call gets the cookie. RR policy picks the backend we will use.
+  // Get cookie for backend #0.
   auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
-  ASSERT_TRUE(session_cookie.has_value());
+  ASSERT_FALSE(session_cookie.empty());
   // All requests go to the backend we specified
-  CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(*session_cookie));
+  CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(session_cookie));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 5);
   // Round-robin spreads the load
   ResetBackendCounters();
-  CheckRpcSendOk(DEBUG_LOCATION, 4);
+  CheckRpcSendOk(DEBUG_LOCATION, backends_.size() * 2);
   EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
   // Call a different service with the same cookie
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 5,
                  RpcOptions()
-                     .set_metadata(*session_cookie)
+                     .set_metadata(session_cookie)
                      .set_rpc_service(RpcService::SERVICE_ECHO2));
   EXPECT_EQ(backends_[0]->backend_service2()->request_count(), 5);
 }
@@ -200,29 +199,29 @@ TEST_P(OverrideHostTest, DrainingIncludedFromOverrideSet) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(
       EdsResourceArgs({{"locality0",
                         {CreateEndpoint(0, HealthStatus::HEALTHY),
-                         CreateEndpoint(1, HealthStatus::UNKNOWN)}}})));
+                         CreateEndpoint(1, HealthStatus::HEALTHY)}}})));
   WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   CheckRpcSendOk(DEBUG_LOCATION, 4);
   EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
-  // First call gets the cookie. RR policy picks the backend we will use.
+  // Get cookie for backend #0.
   auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
-  ASSERT_TRUE(session_cookie.has_value());
+  ASSERT_FALSE(session_cookie.empty());
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(
       EdsResourceArgs({{"locality0",
                         {CreateEndpoint(0, HealthStatus::DRAINING),
                          CreateEndpoint(1, HealthStatus::HEALTHY),
-                         CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
-  WaitForAllBackends(DEBUG_LOCATION, 1);
-  // Draining channel works just fine
-  CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
+                         CreateEndpoint(2, HealthStatus::HEALTHY)}}})));
+  WaitForAllBackends(DEBUG_LOCATION, 2);
+  // Draining subchannel works when used as an override host.
+  CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(session_cookie));
   EXPECT_EQ(4, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
-  // Round robin does not see the draining policy
+  // Round robin does not see the draining backend
   CheckRpcSendOk(DEBUG_LOCATION, 4);
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
@@ -244,24 +243,24 @@ TEST_P(OverrideHostTest, DrainingExcludedFromOverrideSet) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(
       EdsResourceArgs({{"locality0",
                         {CreateEndpoint(0, HealthStatus::HEALTHY),
-                         CreateEndpoint(1, HealthStatus::UNKNOWN)}}})));
+                         CreateEndpoint(1, HealthStatus::HEALTHY)}}})));
   WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   CheckRpcSendOk(DEBUG_LOCATION, 4);
   EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
-  // First call gets the cookie. RR policy picks the backend we will use.
+  // Get a cookie for backends_[0].
   auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
-  ASSERT_TRUE(session_cookie.has_value());
+  ASSERT_FALSE(session_cookie.empty());
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(
       EdsResourceArgs({{"locality0",
                         {CreateEndpoint(0, HealthStatus::DRAINING),
                          CreateEndpoint(1, HealthStatus::HEALTHY),
                          CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
-  WaitForAllBackends(DEBUG_LOCATION, 1);
-  // Draining channel works just fine
-  CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(*session_cookie));
+  WaitForAllBackends(DEBUG_LOCATION, 2);
+  // Override for the draining host is not honored, RR is used instead.
+  CheckRpcSendOk(DEBUG_LOCATION, 4, RpcOptions().set_metadata(session_cookie));
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[2]->backend_service()->request_count());
