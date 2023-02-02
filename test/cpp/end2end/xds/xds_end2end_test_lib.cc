@@ -808,8 +808,9 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   return grpc::CreateCustomChannel(uri, channel_creds, *args);
 }
 
-Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
-                               EchoResponse* response) {
+Status XdsEnd2endTest::SendRpc(
+    const RpcOptions& rpc_options, EchoResponse* response,
+    std::multimap<std::string, std::string>* server_initial_metadata) {
   EchoResponse local_response;
   if (response == nullptr) response = &local_response;
   ClientContext context;
@@ -833,6 +834,15 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
       status =
           SendRpcMethod(stub2_.get(), rpc_options, &context, request, response);
       break;
+  }
+  if (server_initial_metadata != nullptr) {
+    for (const auto& it : context.GetServerInitialMetadata()) {
+      std::string header(it.first.data(), it.first.size());
+      // Guard against implementation-specific header case - RFC 2616
+      absl::AsciiStrToLower(&header);
+      server_initial_metadata->emplace(
+          header, std::string(it.second.data(), it.second.size()));
+    }
   }
   return status;
 }

@@ -24,6 +24,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
@@ -63,6 +64,12 @@ class ExecCtxState {
   }
 
   void IncExecCtxCount() {
+    // EventEngine is expected to terminate all threads before fork, and so this
+    // extra work is unnecessary
+    if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
+      gpr_atm_no_barrier_fetch_add(&count_, 1);
+      return;
+    }
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
     while (true) {
       if (count <= BLOCKED(1)) {

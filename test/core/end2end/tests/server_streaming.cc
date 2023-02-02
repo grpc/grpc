@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <memory>
+#include <string>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -38,9 +39,11 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
                                             grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+                                            grpc_channel_args* server_args,
+                                            int num_messages) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "%s\nRunning test: %s/%s/%d", std::string(100, '*').c_str(),
+          test_name, config.name, num_messages);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -94,8 +97,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // writing, and expects to get the status after the messages.
 static void test_server_streaming(grpc_end2end_test_config config,
                                   int num_messages) {
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_server_streaming", nullptr, nullptr);
+  grpc_end2end_test_fixture f = begin_test(config, "test_server_streaming",
+                                           nullptr, nullptr, num_messages);
   grpc_call* c;
   grpc_call* s;
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);

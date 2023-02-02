@@ -36,8 +36,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
 
-extern const grpc_channel_filter grpc_server_auth_filter;
-
 namespace grpc_core {
 
 // Handles calling out to credentials to fill in metadata per call.
@@ -62,6 +60,30 @@ class ClientAuthFilter final : public ChannelFilter {
 
   // Contains refs to security connector and auth context.
   grpc_call_credentials::GetRequestMetadataArgs args_;
+};
+
+class ServerAuthFilter final : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<ServerAuthFilter> Create(const ChannelArgs& args,
+                                                 ChannelFilter::Args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
+                   RefCountedPtr<grpc_auth_context> auth_context);
+
+  class RunApplicationCode;
+
+  ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
+      CallArgs call_args);
+
+  RefCountedPtr<grpc_server_credentials> server_credentials_;
+  RefCountedPtr<grpc_auth_context> auth_context_;
 };
 
 }  // namespace grpc_core
