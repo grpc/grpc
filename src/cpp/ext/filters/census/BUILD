@@ -1,0 +1,62 @@
+# Copyright 2023 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+)
+
+licenses(["reciprocal"])
+
+package(
+    default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
+)
+
+# This is needed as a transitionary mechanism to build the targets in the top-level BUILD file that have not yet been moved here. Should go away
+# once the transition is complete.
+exports_files(
+    glob(["**"]),
+    visibility = ["//:__subpackages__"],
+)
+
+grpc_cc_library(
+    name = "environment_autodetect",
+    srcs = [
+        "environment_autodetect.cc",
+    ],
+    hdrs = [
+        "environment_autodetect.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
+    language = "c++",
+    visibility = [
+        "//src/cpp/ext/gcp:__subpackages__",
+        "//test:__subpackages__",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//src/core:default_event_engine",
+        "//src/core:env",
+        "//src/core:load_file",
+        "//src/core:status_helper",
+    ],
+)
