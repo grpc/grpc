@@ -27,6 +27,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -1572,14 +1573,10 @@ void ClientChannel::UpdateStateAndPickerLocked(
   {
     MutexLock lock(&lb_mu_);
     picker_.swap(picker);
-    // Reprocess queued picks asynchronously.
+    // Reprocess queued picks.
     for (LoadBalancedCall* call : lb_queued_calls_) {
       call->RemoveCallFromLbQueuedCallsLocked();
-      owning_stack_->EventEngine()->Run([call]() {
-        ApplicationCallbackExecCtx application_exec_ctx;
-        ExecCtx exec_ctx;
-        call->PickSubchannel(/*was_queued=*/true);
-      });
+      call->RetryPickLocked();
     }
     lb_queued_calls_.clear();
   }
@@ -2551,7 +2548,6 @@ void ClientChannel::LoadBalancedCall::RemoveCallFromLbQueuedCallsLocked() {
   // here, beacuse that will be done in either
   // LbQueuedCallCanceller::CancelLocked() or
   // in ClientChannel::UpdateStateAndPickerLocked().
-  OnRemoveFromQueue();
 }
 
 void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
@@ -2565,41 +2561,50 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
                                          chand_->interested_parties_);
   // Add to queue.
   chand_->lb_queued_calls_.insert(this);
-  OnAddToQueue();
+  OnAddToQueueLocked();
 }
 
-void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
-  // Grab mutex and take a ref to the picker.
-  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-  {
-    MutexLock lock(&chand_->lb_mu_);
-    picker = chand_->picker_;
-  }
+absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
+    bool was_queued) {
   // We may accumulate multiple pickers here, because if a picker says
   // to queue the call, we check again to see if the picker has been
   // updated before we queue it.
-  std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
-      pickers_to_unref;
+  // We need to unref pickers in the WorkSerializer.
+  std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
+  auto cleanup = absl::MakeCleanup([&]() {
+    chand_->work_serializer_->Run(
+        [pickers = std::move(pickers)]() mutable {
+          for (auto& picker : pickers) {
+            picker.reset(DEBUG_LOCATION, "PickSubchannel");
+          }
+        },
+        DEBUG_LOCATION);
+  });
+  // Grab mutex and take a ref to the picker.
+  {
+    MutexLock lock(&chand_->lb_mu_);
+    pickers.emplace_back(chand_->picker_);
+  }
   while (true) {
     // Do pick.
     grpc_error_handle error;
-    bool pick_complete = PickSubchannelImpl(picker.get(), &error);
+    bool pick_complete =
+        PickSubchannelImpl(pickers.back().get(), &error);
     if (!pick_complete) {
       MutexLock lock(&chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
-      if (chand_->picker_ != picker) {
+      if (chand_->picker_ != pickers.back()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO,
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
         }
-        pickers_to_unref.emplace_back(std::move(picker));
-        picker = chand_->picker_;
+        pickers.emplace_back(chand_->picker_);
         continue;
       }
       // Otherwise queue the pick to try again later when we get a new picker.
       AddCallToLbQueuedCallsLocked();
-      break;
+      return absl::nullopt;
     }
     // Pick is complete.
     // If it was queued, add a trace annotation.
@@ -2613,23 +2618,12 @@ void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
                 "chand=%p lb_call=%p: failed to pick subchannel: error=%s",
                 chand_, this, StatusToString(error).c_str());
       }
-      PickFailed(error);
-      break;
+      return error;
     }
     // Pick succeeded.
     call_dispatch_controller_->Commit();
-    CreateSubchannelCall();
-    break;
+    return absl::OkStatus();
   }
-  pickers_to_unref.emplace_back(std::move(picker));
-  // Unref pickers in WorkSerializer.
-  chand_->work_serializer_->Run(
-      [pickers_to_unref = std::move(pickers_to_unref)]() mutable {
-        for (auto& picker : pickers_to_unref) {
-          picker.reset(DEBUG_LOCATION, "PickSubchannel");
-        }
-      },
-      DEBUG_LOCATION);
 }
 
 bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
@@ -2994,7 +2988,7 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
               "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand(),
               this);
     }
-    PickSubchannel(/*was_queued=*/false);
+    TryPick(/*was_queued=*/false);
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3105,31 +3099,6 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
                error);
 }
 
-void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
-  SubchannelCall::Args call_args = {
-      connected_subchannel()->Ref(), pollent_, path(), /*start_time=*/0,
-      deadline(), arena(),
-      // TODO(roth): When we implement hedging support, we will probably
-      // need to use a separate call context for each subchannel call.
-      call_context(), call_combiner_};
-  grpc_error_handle error;
-  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand(),
-            this, subchannel_call_.get(), StatusToString(error).c_str());
-  }
-  if (on_call_destruction_complete_ != nullptr) {
-    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
-    on_call_destruction_complete_ = nullptr;
-  }
-  if (GPR_UNLIKELY(!error.ok())) {
-    PendingBatchesFail(error, YieldCallCombiner);
-  } else {
-    PendingBatchesResume();
-  }
-}
-
 // A class to handle the call combiner cancellation callback for a
 // queued pick.
 // TODO(roth): When we implement hedging support, we won't be able to
@@ -3180,19 +3149,57 @@ class ClientChannel::FilterBasedLoadBalancedCall::LbQueuedCallCanceller {
   grpc_closure closure_;
 };
 
-void ClientChannel::FilterBasedLoadBalancedCall::OnRemoveFromQueue() {
-  // Lame the call combiner canceller.
-  lb_call_canceller_ = nullptr;
+void ClientChannel::FilterBasedLoadBalancedCall::TryPick(bool was_queued) {
+  auto result = PickSubchannel(was_queued);
+  if (result.has_value()) {
+    if (!result->ok()) {
+      PendingBatchesFail(*result, YieldCallCombiner);
+      return;
+    }
+    CreateSubchannelCall();
+  }
 }
 
-void ClientChannel::FilterBasedLoadBalancedCall::OnAddToQueue() {
+void ClientChannel::FilterBasedLoadBalancedCall::OnAddToQueueLocked() {
   // Register call combiner cancellation callback.
   lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
 }
 
-void ClientChannel::FilterBasedLoadBalancedCall::PickFailed(
-    grpc_error_handle error) {
-  PendingBatchesFail(error, YieldCallCombiner);
+void ClientChannel::FilterBasedLoadBalancedCall::RetryPickLocked() {
+  // Lame the call combiner canceller.
+  lb_call_canceller_ = nullptr;
+  // Do an async callback to resume call processing, so that we're not
+  // doing it while holding the channel's LB mutex.
+  chand()->owning_stack_->EventEngine()->Run([this]() {
+    ApplicationCallbackExecCtx application_exec_ctx;
+    ExecCtx exec_ctx;
+    TryPick(/*was_queued=*/true);
+  });
+}
+
+void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
+  SubchannelCall::Args call_args = {
+      connected_subchannel()->Ref(), pollent_, path(), /*start_time=*/0,
+      deadline(), arena(),
+      // TODO(roth): When we implement hedging support, we will probably
+      // need to use a separate call context for each subchannel call.
+      call_context(), call_combiner_};
+  grpc_error_handle error;
+  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand(),
+            this, subchannel_call_.get(), StatusToString(error).c_str());
+  }
+  if (on_call_destruction_complete_ != nullptr) {
+    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
+    on_call_destruction_complete_ = nullptr;
+  }
+  if (GPR_UNLIKELY(!error.ok())) {
+    PendingBatchesFail(error, YieldCallCombiner);
+  } else {
+    PendingBatchesResume();
+  }
 }
 
 }  // namespace grpc_core
