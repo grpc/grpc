@@ -293,7 +293,8 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<ThreadPool> executor)
     : poller_(grpc_event_engine::experimental::MakeDefaultPoller(this)),
-      executor_(std::move(executor)) {}
+      executor_(std::move(executor)),
+      trigger_shutdown_called_(false) {}
 
 PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
     : poller_(poller),
@@ -316,6 +317,8 @@ void PosixEnginePollerManager::Run(absl::AnyInvocable<void()> cb) {
 }
 
 void PosixEnginePollerManager::TriggerShutdown() {
+  GPR_DEBUG_ASSERT(trigger_shutdown_called_ == false);
+  trigger_shutdown_called_ = true;
   // If the poller is external, dont try to shut it down. Otherwise
   // set poller state to PollerState::kShuttingDown.
   if (poller_state_.exchange(PollerState::kShuttingDown) ==
@@ -347,6 +350,8 @@ PosixEventEngine::PosixEventEngine()
       timer_manager_(executor_) {
   if (NeedPosixEngine()) {
     poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
+    // The threadpool must be instantiated after the poller otherwise, the
+    // process will deadlock when forking.
     if (poller_manager_->Poller() != nullptr) {
       executor_->Run([poller_manager = poller_manager_]() {
         PollerWorkInternal(poller_manager);
