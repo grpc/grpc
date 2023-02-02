@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/windows/windows_listener.h"
+#ifdef GPR_WINDOWS
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -22,6 +23,7 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
+#include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
@@ -35,8 +37,10 @@ WindowsEventEngineListener::SinglePortSocketListener::
     ~SinglePortSocketListener() {
   // Lock to minimize the chance of the OnAccept callback racing on shutdown.
   grpc_core::MutexLock lock(&mu_);
+  GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
+  listener_->iocp_->Ignore(listener_socket_.get());
   listener_socket_->MaybeShutdown(
-      absl::CancelledError("socket listener shutting down"));
+      absl::CancelledError("~SinglePortSocketListener"));
 }
 
 absl::StatusOr<
@@ -101,6 +105,9 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
   // immediately process an accept that happened in the meantime.
   accept_socket_ = accept_socket;
   listener_socket_->NotifyOnRead(&on_accept_);
+  GRPC_EVENT_ENGINE_TRACE(
+      "SinglePortSocketListener::%p listening. listener_socket::%p", this,
+      listener_socket_.get());
   return absl::OkStatus();
 }
 
@@ -319,3 +326,5 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GPR_WINDOWS

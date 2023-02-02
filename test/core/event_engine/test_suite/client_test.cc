@@ -156,6 +156,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   }
   client_endpoint.reset();
   server_endpoint.reset();
+  listener.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 

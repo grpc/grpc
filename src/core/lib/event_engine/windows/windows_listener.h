@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GPR_WINDOWS
+
 #include <list>
 
 #include "absl/status/statusor.h"
@@ -99,9 +101,6 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   absl::StatusOr<SinglePortSocketListener*> AddSinglePortSocketListener(
       SOCKET sock, EventEngine::ResolvedAddress addr);
 
-  // DO NOT SUBMIT(hork): is this necessary?
-  void Shutdown();
-
   IOCP* iocp_;
   AcceptCallback accept_cb_;
   absl::AnyInvocable<void(absl::Status)> on_shutdown_;
@@ -116,5 +115,7 @@ class WindowsEventEngineListener : public EventEngine::Listener {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_LISTENER_H

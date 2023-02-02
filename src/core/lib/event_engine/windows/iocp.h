@@ -18,6 +18,7 @@
 
 #ifdef GPR_WINDOWS
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -47,6 +48,7 @@ class IOCP final : public Poller {
   void Kick() override;
 
   std::unique_ptr<WinSocket> Watch(SOCKET socket);
+  void Ignore(WinSocket* win_socket);
   // Return the set of default flags
   static DWORD GetDefaultSocketFlags();
 
@@ -59,6 +61,9 @@ class IOCP final : public Poller {
   OVERLAPPED kick_overlap_;
   ULONG kick_token_;
   std::atomic<int> outstanding_kicks_{0};
+  // DO NOT SUBMIT(hork): this is not thread safe. Consider a different
+  // ownership structure for OVERLAPPED data to resolve this.
+  absl::flat_hash_set<uintptr_t> ignored_;
 };
 
 }  // namespace experimental
