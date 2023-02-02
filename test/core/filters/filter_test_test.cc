@@ -35,7 +35,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/filters/filter_test.h"
 
 using ::testing::_;
 using ::testing::StrictMock;
