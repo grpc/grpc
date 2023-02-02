@@ -8435,6 +8435,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_auth_filter_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_auth_filter_test.cc
   test/core/filters/filter_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -8473,6 +8478,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_authority_filter_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/client_authority_filter_test.cc
   test/core/filters/filter_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11013,6 +11023,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_test_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/filter_test.cc
   test/core/filters/filter_test_test.cc
   third_party/googletest/googletest/src/gtest-all.cc

@@ -25,12 +25,17 @@
 #include <string>
 #include <utility>
 
+#include <gtest/gtest.h>
+
+#include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -39,6 +44,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/filters/filter_test.h"
 
 // gmock matcher to ensure that metadata has a key/value pair.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
