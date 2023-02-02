@@ -37,7 +37,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/filters/filter_test.h"
 
 namespace grpc_core {
 

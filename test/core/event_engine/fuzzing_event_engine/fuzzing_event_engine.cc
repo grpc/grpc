@@ -25,7 +25,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/time.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
