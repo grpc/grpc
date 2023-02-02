@@ -1848,16 +1848,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_socket_notifier",
-    hdrs = ["lib/event_engine/socket_notifier.h"],
-    external_deps = ["absl/status"],
-    deps = [
-        "//:event_engine_base_hdrs",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "posix_event_engine_tcp_socket_utils",
     srcs = [
         "lib/event_engine/posix_engine/tcp_socket_utils.cc",
@@ -2033,7 +2023,6 @@ grpc_cc_library(
         "error",
         "event_engine_executor",
         "event_engine_poller",
-        "event_engine_socket_notifier",
         "event_engine_time_util",
         "event_engine_trace",
         "//:event_engine_base_hdrs",
