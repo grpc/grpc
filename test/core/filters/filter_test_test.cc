@@ -19,7 +19,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "filter_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -36,6 +35,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "test/core/filters/filter_test.h"
 
 using ::testing::_;
 using ::testing::StrictMock;
