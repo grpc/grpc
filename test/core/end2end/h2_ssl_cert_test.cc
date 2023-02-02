@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdio.h>
 #include <string.h>
@@ -215,7 +215,7 @@ typedef enum { SUCCESS, FAIL } test_result;
         result                                        \
   }
 
-/* All test configurations */
+// All test configurations
 typedef struct grpc_end2end_test_config_wrapper {
   grpc_end2end_test_config config;
   test_result result;
@@ -377,7 +377,7 @@ int main(int argc, char** argv) {
   char* roots_filename;
 
   grpc::testing::TestEnvironment env(&argc, argv);
-  /* Set the SSL roots env var. */
+  // Set the SSL roots env var.
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
   GPR_ASSERT(roots_filename != nullptr);
@@ -391,7 +391,7 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
 
-  /* Cleanup. */
+  // Cleanup.
   remove(roots_filename);
   gpr_free(roots_filename);
 
