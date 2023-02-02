@@ -908,7 +908,12 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
   // If we're here, verification was successful
   // Get the verified chain from the X509_STORE_CTX and put it on the SSL object
   // so that we have access to it when populating the tsi_peer
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
+#else
+  STACK_OF(X509)* chain = X509_STORE_CTX_get_chain(ctx);
+#endif
+
   if (chain == nullptr) {
     return preverify_ok;
   }
