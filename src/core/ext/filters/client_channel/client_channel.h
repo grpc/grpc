@@ -494,6 +494,11 @@ class ClientChannel::FilterBasedLoadBalancedCall
  private:
   class LbQueuedCallCanceller;
 
+  // Work-around for Windows compilers that don't allow nested classes
+  // to access protected members of the enclosing class's parent class.
+  using LoadBalancedCall::chand;
+  using LoadBalancedCall::call_dispatch_controller;
+
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
   void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
