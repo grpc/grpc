@@ -154,14 +154,14 @@ TEST_F(NoOpFilterTest, CanStart) {
   StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
-  call.Step();
+  Step();
 }
 
 TEST_F(DelayStartFilterTest, CanStartWithDelay) {
   StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(_));
   call.Start(call.NewClientMetadata());
-  call.Step();
+  Step();
 }
 
 TEST_F(NoOpFilterTest, CanCancel) {
@@ -181,7 +181,7 @@ TEST_F(AddClientInitialMetadataFilterTest, CanSetClientInitialMetadata) {
   StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
   EXPECT_CALL(call, Started(HasMetadataKeyValue(":path", "foo.bar")));
   call.Start(call.NewClientMetadata());
-  call.Step();
+  Step();
 }
 
 TEST_F(NoOpFilterTest, CanFinish) {
@@ -190,7 +190,7 @@ TEST_F(NoOpFilterTest, CanFinish) {
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata());
   EXPECT_CALL(call, Finished(_));
-  call.Step();
+  Step();
 }
 
 TEST_F(AddServerTrailingMetadataFilterTest, CanSetServerTrailingMetadata) {
@@ -199,7 +199,7 @@ TEST_F(AddServerTrailingMetadataFilterTest, CanSetServerTrailingMetadata) {
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata());
   EXPECT_CALL(call, Finished(HasMetadataKeyValue(":status", "420")));
-  call.Step();
+  Step();
 }
 
 TEST_F(NoOpFilterTest, CanProcessServerInitialMetadata) {
@@ -208,7 +208,7 @@ TEST_F(NoOpFilterTest, CanProcessServerInitialMetadata) {
   call.Start(call.NewClientMetadata());
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
   EXPECT_CALL(call, ForwardedServerInitialMetadata(_));
-  call.Step();
+  Step();
 }
 
 TEST_F(AddServerInitialMetadataFilterTest, CanSetServerInitialMetadata) {
@@ -218,7 +218,7 @@ TEST_F(AddServerInitialMetadataFilterTest, CanSetServerInitialMetadata) {
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
   EXPECT_CALL(call, ForwardedServerInitialMetadata(
                         HasMetadataKeyValue("grpc-encoding", "gzip")));
-  call.Step();
+  Step();
 }
 
 TEST_F(NoOpFilterTest, CanProcessClientToServerMessage) {
@@ -227,7 +227,7 @@ TEST_F(NoOpFilterTest, CanProcessClientToServerMessage) {
   call.Start(call.NewClientMetadata());
   call.ForwardMessageClientToServer(call.NewMessage("abc"));
   EXPECT_CALL(call, ForwardedMessageClientToServer(HasMessagePayload("abc")));
-  call.Step();
+  Step();
 }
 
 TEST_F(NoOpFilterTest, CanProcessServerToClientMessage) {
@@ -238,7 +238,7 @@ TEST_F(NoOpFilterTest, CanProcessServerToClientMessage) {
   call.ForwardMessageServerToClient(call.NewMessage("abc"));
   EXPECT_CALL(call, ForwardedServerInitialMetadata(_));
   EXPECT_CALL(call, ForwardedMessageServerToClient(HasMessagePayload("abc")));
-  call.Step();
+  Step();
 }
 
 }  // namespace

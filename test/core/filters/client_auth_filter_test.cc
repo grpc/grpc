@@ -132,7 +132,7 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
                 HasMetadataKeyValue(
                     "grpc-status", std::to_string(GRPC_STATUS_UNAUTHENTICATED)),
                 HasMetadataKeyValue("grpc-message", "access denied"))));
-  call.Step();
+  Step();
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
@@ -147,7 +147,7 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
           HasMetadataKeyValue("grpc-message",
                               "Illegal status code from call credentials; "
                               "original status: ABORTED: nope"))));
-  call.Step();
+  Step();
 }
 
 }  // namespace

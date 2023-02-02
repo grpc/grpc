@@ -52,6 +52,7 @@ class FuzzingEventEngine : public EventEngine {
 
   void FuzzingDone();
   void Tick();
+  void TickUntilIdle();
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,

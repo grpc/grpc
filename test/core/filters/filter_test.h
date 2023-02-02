@@ -38,6 +38,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 // gmock matcher to ensure that metadata has a key/value pair.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
@@ -73,13 +74,14 @@ class FilterTestBase : public ::testing::Test {
   class Channel {
    private:
     struct Impl {
-      explicit Impl(std::unique_ptr<ChannelFilter> filter)
-          : filter(std::move(filter)) {}
+      Impl(std::unique_ptr<ChannelFilter> filter, FilterTestBase* test)
+          : filter(std::move(filter)), test(test) {}
       size_t initial_arena_size = 1024;
       MemoryAllocator memory_allocator =
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test");
       std::unique_ptr<ChannelFilter> filter;
+      FilterTestBase* const test;
     };
 
    public:
@@ -93,8 +95,9 @@ class FilterTestBase : public ::testing::Test {
     friend class FilterTestBase;
     friend class Call;
 
-    explicit Channel(std::unique_ptr<ChannelFilter> filter)
-        : impl_(std::make_shared<Impl>(std::move(filter))) {}
+    explicit Channel(std::unique_ptr<ChannelFilter> filter,
+                     FilterTestBase* test)
+        : impl_(std::make_shared<Impl>(std::move(filter), test)) {}
 
     std::shared_ptr<Impl> impl_;
   };
@@ -106,6 +109,9 @@ class FilterTestBase : public ::testing::Test {
    public:
     ~Call();
     explicit Call(const Channel& channel);
+
+    Call(const Call&) = delete;
+    Call& operator=(const Call&) = delete;
 
     // Construct client metadata in the arena of this call.
     // Optional argument is a list of key/value pairs to add to the metadata.
@@ -135,8 +141,6 @@ class FilterTestBase : public ::testing::Test {
     // metadata.
     void FinishNextFilter(ServerMetadataHandle md);
 
-    void Step();
-
     // Mock to trap starting the next filter in the chain.
     MOCK_METHOD(void, Started, (const ClientMetadata& client_initial_metadata));
     // Mock to trap receiving server initial metadata in the next filter in the
@@ -156,13 +160,23 @@ class FilterTestBase : public ::testing::Test {
     class ScopedContext;
     class Impl;
 
-    std::unique_ptr<Impl> impl_;
+    std::shared_ptr<Impl> impl_;
   };
 
  protected:
+  FilterTestBase();
   absl::StatusOr<Channel> MakeChannel(std::unique_ptr<ChannelFilter> filter) {
-    return Channel(std::move(filter));
+    return Channel(std::move(filter), this);
   }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() {
+    return &event_engine_;
+  }
+
+  void Step();
+
+ private:
+  grpc_event_engine::experimental::FuzzingEventEngine event_engine_;
 };
 
 template <typename Filter>

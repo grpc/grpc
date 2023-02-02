@@ -15,6 +15,7 @@
 #include "test/core/filters/filter_test.h"
 
 #include <algorithm>
+#include <chrono>
 #include <memory>
 #include <queue>
 
@@ -23,6 +24,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "filter_test.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/channel/context.h"
@@ -39,9 +41,10 @@
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
-// FilterTest::Call::Impl
+// FilterTestBase::Call::Impl
 
-class FilterTestBase::Call::Impl {
+class FilterTestBase::Call::Impl
+    : public std::enable_shared_from_this<FilterTestBase::Call::Impl> {
  public:
   Impl(Call* call, std::shared_ptr<Channel::Impl> channel)
       : call_(call), channel_(std::move(channel)) {}
@@ -57,10 +60,16 @@ class FilterTestBase::Call::Impl {
   void ForwardMessageServerToClient(MessageHandle msg);
   void FinishNextFilter(ServerMetadataHandle md);
 
-  bool StepOnce();
+  void StepLoop();
+
+  grpc_event_engine::experimental::EventEngine* event_engine() {
+    return channel_->test->event_engine();
+  }
 
  private:
+  bool StepOnce();
   Poll<ServerMetadataHandle> PollNextFilter();
+  void ForceWakeup();
 
   Call* const call_;
   std::shared_ptr<Channel::Impl> const channel_;
@@ -117,6 +126,7 @@ void FilterTestBase::Call::Impl::Start(ClientMetadataHandle md) {
         return [this]() { return PollNextFilter(); };
       });
   EXPECT_NE(promise_, absl::nullopt);
+  ForceWakeup();
 }
 
 Poll<ServerMetadataHandle> FilterTestBase::Call::Impl::PollNextFilter() {
@@ -127,24 +137,29 @@ void FilterTestBase::Call::Impl::ForwardServerInitialMetadata(
     ServerMetadataHandle md) {
   EXPECT_FALSE(forward_server_initial_metadata_.has_value());
   forward_server_initial_metadata_ = std::move(md);
+  ForceWakeup();
 }
 
 void FilterTestBase::Call::Impl::ForwardMessageClientToServer(
     MessageHandle msg) {
   forward_client_to_server_messages_.push(std::move(msg));
+  ForceWakeup();
 }
 
 void FilterTestBase::Call::Impl::ForwardMessageServerToClient(
     MessageHandle msg) {
   forward_server_to_client_messages_.push(std::move(msg));
+  ForceWakeup();
 }
 
 void FilterTestBase::Call::Impl::FinishNextFilter(ServerMetadataHandle md) {
   poll_next_filter_result_ = std::move(md);
+  ForceWakeup();
 }
 
 bool FilterTestBase::Call::Impl::StepOnce() {
-  EXPECT_NE(promise_, absl::nullopt);
+  if (!promise_.has_value()) return true;
+
   if (forward_server_initial_metadata_.has_value() &&
       !push_server_initial_metadata_.has_value()) {
     push_server_initial_metadata_.emplace(server_initial_metadata_sender_->Push(
@@ -242,56 +257,76 @@ bool FilterTestBase::Call::Impl::StepOnce() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// FilterTest::Call::ScopedContext
+// FilterTestBase::Call::ScopedContext
 
 class FilterTestBase::Call::ScopedContext final
     : public Activity,
       public promise_detail::Context<Arena>,
       public promise_detail::Context<grpc_call_context_element> {
- public:
-  explicit ScopedContext(Call* call)
-      : promise_detail::Context<Arena>(call->impl_->arena()),
-        promise_detail::Context<grpc_call_context_element>(
-            call->impl_->legacy_context()),
-        call_(call) {}
-
-  void Orphan() override { Crash("Orphan called on Call::ScopedContext"); }
-  void ForceImmediateRepoll() override { repoll_ = true; }
-  Waker MakeOwningWaker() override { return Waker(new NoOpWakeable(this)); }
-  Waker MakeNonOwningWaker() override { return Waker(new NoOpWakeable(this)); }
-  std::string DebugTag() const override {
-    return absl::StrFormat("FILTER_TEST_CALL[%p]", call_);
-  }
-
-  bool repoll() const { return repoll_; }
-
  private:
-  class NoOpWakeable final : public Wakeable {
+  class TestWakeable final : public Wakeable {
    public:
-    explicit NoOpWakeable(ScopedContext* ctx) : tag_(ctx->DebugTag()) {}
-    void Wakeup() override { delete this; }
+    explicit TestWakeable(ScopedContext* ctx)
+        : tag_(ctx->DebugTag()), impl_(ctx->impl_) {}
+    void Wakeup() override {
+      std::unique_ptr<TestWakeable> self(this);
+      auto impl = impl_.lock();
+      if (impl == nullptr) return;
+      impl->event_engine()->Run([weak_impl = impl_]() {
+        auto impl = weak_impl.lock();
+        if (impl != nullptr) impl->StepLoop();
+      });
+    }
     void Drop() override { delete this; }
     std::string ActivityDebugTag() const override { return tag_; }
 
    private:
     const std::string tag_;
+    const std::weak_ptr<Impl> impl_;
   };
 
+ public:
+  explicit ScopedContext(std::shared_ptr<Impl> impl)
+      : promise_detail::Context<Arena>(impl->arena()),
+        promise_detail::Context<grpc_call_context_element>(
+            impl->legacy_context()),
+        impl_(std::move(impl)) {}
+
+  void Orphan() override { Crash("Orphan called on Call::ScopedContext"); }
+  void ForceImmediateRepoll() override { repoll_ = true; }
+  Waker MakeOwningWaker() override { return Waker(new TestWakeable(this)); }
+  Waker MakeNonOwningWaker() override { return Waker(new TestWakeable(this)); }
+  std::string DebugTag() const override {
+    return absl::StrFormat("FILTER_TEST_CALL[%p]", impl_.get());
+  }
+
+  bool repoll() const { return repoll_; }
+
+ private:
   ScopedActivity scoped_activity_{this};
-  Call* const call_;
+  const std::shared_ptr<Impl> impl_;
   bool repoll_ = false;
 };
 
+void FilterTestBase::Call::Impl::StepLoop() {
+  for (;;) {
+    ScopedContext ctx(shared_from_this());
+    if (!StepOnce() && ctx.repoll()) continue;
+    return;
+  }
+}
+
+void FilterTestBase::Call::Impl::ForceWakeup() {
+  ScopedContext(shared_from_this()).MakeOwningWaker().Wakeup();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
-// FilterTest::Call
+// FilterTestBase::Call
 
 FilterTestBase::Call::Call(const Channel& channel)
     : impl_(std::make_unique<Impl>(this, channel.impl_)) {}
 
-FilterTestBase::Call::~Call() {
-  ScopedContext ctx(this);
-  impl_.reset();
-}
+FilterTestBase::Call::~Call() { ScopedContext x(std::move(impl_)); }
 
 ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
@@ -335,12 +370,12 @@ MessageHandle FilterTestBase::Call::NewMessage(absl::string_view payload,
 }
 
 void FilterTestBase::Call::Start(ClientMetadataHandle md) {
-  ScopedContext ctx(this);
+  ScopedContext ctx(impl_);
   impl_->Start(std::move(md));
 }
 
 void FilterTestBase::Call::Cancel() {
-  ScopedContext ctx(this);
+  ScopedContext ctx(impl_);
   impl_ = absl::make_unique<Impl>(this, impl_->channel());
 }
 
@@ -361,15 +396,19 @@ void FilterTestBase::Call::FinishNextFilter(ServerMetadataHandle md) {
   impl_->FinishNextFilter(std::move(md));
 }
 
-void FilterTestBase::Call::Step() {
-  for (;;) {
-    ScopedContext ctx(this);
-    if (!impl_->StepOnce() && ctx.repoll()) continue;
-    return;
-  }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-// FilterTest
+// FilterTestBase
+
+FilterTestBase::FilterTestBase()
+    : event_engine_(
+          []() {
+            grpc_event_engine::experimental::FuzzingEventEngine::Options
+                options;
+            options.final_tick_length = std::chrono::milliseconds(1);
+            return options;
+          }(),
+          fuzzing_event_engine::Actions()) {}
+
+void FilterTestBase::Step() { event_engine_.TickUntilIdle(); }
 
 }  // namespace grpc_core

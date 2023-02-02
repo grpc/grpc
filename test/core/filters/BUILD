@@ -32,6 +32,7 @@ grpc_cc_library(
         "gtest",
     ],
     language = "c++",
+    tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
     deps = [
         "//:gpr",
         "//:grpc",
@@ -47,6 +48,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/event_engine/fuzzing_event_engine",
     ],
 )
 

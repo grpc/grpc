@@ -21,6 +21,8 @@
 #include <ratio>
 #include <vector>
 
+#include "fuzzing_event_engine.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -121,6 +123,16 @@ void FuzzingEventEngine::Tick() {
   }
   for (auto& closure : to_run) {
     closure();
+  }
+}
+
+void FuzzingEventEngine::TickUntilIdle() {
+  while (true) {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      if (tasks_by_id_.empty()) return;
+    }
+    Tick();
   }
 }
 
