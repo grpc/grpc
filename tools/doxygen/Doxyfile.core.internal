@@ -1863,7 +1863,6 @@ src/core/lib/event_engine/shim.cc \
 src/core/lib/event_engine/shim.h \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
-src/core/lib/event_engine/socket_notifier.h \
 src/core/lib/event_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_local.cc \

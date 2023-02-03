@@ -811,7 +811,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
-  - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -2146,7 +2145,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
-  - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -3601,7 +3599,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
-  - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -7416,7 +7413,6 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
-  - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h

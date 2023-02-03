@@ -602,8 +602,12 @@ const char* BaseCallData::ReceiveMessage::StateString(State state) {
       return "CANCELLED";
     case State::kCancelledWhilstForwarding:
       return "CANCELLED_WHILST_FORWARDING";
+    case State::kCancelledWhilstForwardingNoPipe:
+      return "CANCELLED_WHILST_FORWARDING_NO_PIPE";
     case State::kBatchCompletedButCancelled:
       return "BATCH_COMPLETED_BUT_CANCELLED";
+    case State::kBatchCompletedButCancelledNoPipe:
+      return "BATCH_COMPLETED_BUT_CANCELLED_NO_PIPE";
     case State::kCancelledWhilstIdle:
       return "CANCELLED_WHILST_IDLE";
     case State::kCompletedWhilePulledFromPipe:
@@ -629,7 +633,9 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
       state_ = State::kForwardedBatch;
       break;
     case State::kCancelledWhilstForwarding:
+    case State::kCancelledWhilstForwardingNoPipe:
     case State::kBatchCompletedButCancelled:
+    case State::kBatchCompletedButCancelledNoPipe:
     case State::kForwardedBatch:
     case State::kForwardedBatchNoPipe:
     case State::kBatchCompleted:
@@ -680,8 +686,10 @@ void BaseCallData::ReceiveMessage::GotPipe(T* pipe_end) {
     case State::kCompletedWhilePushedToPipe:
     case State::kCompletedWhileBatchCompleted:
     case State::kCancelledWhilstForwarding:
+    case State::kCancelledWhilstForwardingNoPipe:
     case State::kCancelledWhilstIdle:
     case State::kBatchCompletedButCancelled:
+    case State::kBatchCompletedButCancelledNoPipe:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelled:
       return;
@@ -705,6 +713,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kBatchCompletedNoPipe:
     case State::kCancelled:
     case State::kBatchCompletedButCancelled:
+    case State::kBatchCompletedButCancelledNoPipe:
     case State::kCancelledWhilstIdle:
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
@@ -717,6 +726,9 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
       break;
     case State::kCancelledWhilstForwarding:
       state_ = State::kBatchCompletedButCancelled;
+      break;
+    case State::kCancelledWhilstForwardingNoPipe:
+      state_ = State::kBatchCompletedButCancelledNoPipe;
       break;
   }
   completed_status_ = status;
@@ -770,9 +782,11 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
     } break;
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
+    case State::kBatchCompletedButCancelledNoPipe:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelledWhilstIdle:
     case State::kCancelledWhilstForwarding:
+    case State::kCancelledWhilstForwardingNoPipe:
     case State::kCancelled:
       break;
   }
@@ -795,6 +809,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kForwardedBatch:
     case State::kCancelled:
     case State::kCancelledWhilstForwarding:
+    case State::kCancelledWhilstForwardingNoPipe:
     case State::kBatchCompletedNoPipe:
       break;
     case State::kCancelledWhilstIdle:
@@ -804,6 +819,11 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kBatchCompletedButCancelled:
     case State::kCompletedWhileBatchCompleted:
       interceptor()->Push()->Close();
+      state_ = State::kCancelled;
+      flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
+                          completed_status_, "recv_message");
+      break;
+    case State::kBatchCompletedButCancelledNoPipe:
       state_ = State::kCancelled;
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                           completed_status_, "recv_message");
