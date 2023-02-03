@@ -2023,12 +2023,14 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
     ],
     deps = [
+        "dual_ref_counted",
         "error",
         "event_engine_executor",
         "event_engine_poller",
         "event_engine_tcp_socket_utils",
         "event_engine_time_util",
         "event_engine_trace",
+        "ref_counted",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
@@ -2077,6 +2079,7 @@ grpc_cc_library(
     ],
     deps = [
         "common_event_engine_closures",
+        "dual_ref_counted",
         "error",
         "event_engine_executor",
         "event_engine_tcp_socket_utils",

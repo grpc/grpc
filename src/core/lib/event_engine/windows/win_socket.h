@@ -24,12 +24,13 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/executor/executor.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class WinSocket {
+class WinSocket : public grpc_core::DualRefCounted<WinSocket> {
  public:
   // State related to a Read or Write socket operation
   class OpState {
@@ -76,12 +77,10 @@ class WinSocket {
   void NotifyOnWrite(EventEngine::Closure* on_write);
   void SetReadable();
   void SetWritable();
-  // Schedule a shutdown of the socket operations. Will call the pending
-  // operations to abort them. We need to do that this way because of the
-  // various callsites of that function, which happens to be in various
-  // mutex hold states, and that'd be unsafe to call them directly.
-  void MaybeShutdown(absl::Status why);
   bool IsShutdown();
+  // Calls MaybeShutdown and sets an abandoned bit.
+  void Orphan() override;
+  bool abandoned() { return abandoned_; }
 
   // Return the appropriate OpState for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.
@@ -93,6 +92,11 @@ class WinSocket {
   SOCKET socket();
 
  private:
+  // Schedule a shutdown of the socket operations. Will call the pending
+  // operations to abort them. We need to do that this way because of the
+  // various callsites of that function, which happens to be in various
+  // mutex hold states, and that'd be unsafe to call them directly.
+  void MaybeShutdown(absl::Status why);
   void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
 
   SOCKET socket_;
@@ -109,6 +113,7 @@ class WinSocket {
   // have undefined behavior.
   OpState read_info_;
   OpState write_info_;
+  bool abandoned_{false};
 };
 
 // Attempt to configure default socket settings

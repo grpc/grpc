@@ -25,6 +25,7 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -35,12 +36,7 @@ namespace experimental {
 
 WindowsEventEngineListener::SinglePortSocketListener::
     ~SinglePortSocketListener() {
-  // Lock to minimize the chance of the OnAccept callback racing on shutdown.
-  grpc_core::MutexLock lock(&mu_);
   GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
-  listener_->iocp_->Ignore(listener_socket_.get());
-  listener_socket_->MaybeShutdown(
-      absl::CancelledError("~SinglePortSocketListener"));
 }
 
 absl::StatusOr<
@@ -182,7 +178,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
 
 WindowsEventEngineListener::SinglePortSocketListener::SinglePortSocketListener(
     WindowsEventEngineListener* listener, LPFN_ACCEPTEX AcceptEx,
-    std::unique_ptr<WinSocket> win_socket, int port)
+    grpc_core::RefCountedPtr<WinSocket> win_socket, int port)
     : listener_(listener),
       AcceptEx(AcceptEx),
       listener_socket_(std::move(win_socket)),

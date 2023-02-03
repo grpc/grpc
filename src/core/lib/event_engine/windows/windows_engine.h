@@ -33,6 +33,7 @@
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -101,7 +102,7 @@ class WindowsEventEngine : public EventEngine,
     EventEngine::OnConnectCallback on_connected_user_callback
         ABSL_GUARDED_BY(mu);
     EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);
-    std::unique_ptr<WinSocket> socket ABSL_GUARDED_BY(mu);
+    grpc_core::RefCountedPtr<WinSocket> socket ABSL_GUARDED_BY(mu);
     EventEngine::ResolvedAddress address ABSL_GUARDED_BY(mu);
     MemoryAllocator allocator ABSL_GUARDED_BY(mu);
   };

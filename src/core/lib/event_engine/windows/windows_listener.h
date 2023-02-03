@@ -27,6 +27,7 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -51,9 +52,9 @@ class WindowsEventEngineListener : public EventEngine::Listener {
     ~SinglePortSocketListener();
     // This factory will create a bound, listening WinSocket, registered with
     // the listener's IOCP poller.
-    static absl::StatusOr<std::unique_ptr<SinglePortSocketListener>> Create(
-        WindowsEventEngineListener* listener, SOCKET sock,
-        EventEngine::ResolvedAddress addr);
+    static absl::StatusOr<std::unique_ptr<SinglePortSocketListener>>
+    Create(WindowsEventEngineListener* listener, SOCKET sock,
+           EventEngine::ResolvedAddress addr);
 
     // Two-stage initialization, allows creation of all bound sockets before the
     // listener is started.
@@ -70,7 +71,8 @@ class WindowsEventEngineListener : public EventEngine::Listener {
    private:
     SinglePortSocketListener(WindowsEventEngineListener* listener,
                              LPFN_ACCEPTEX AcceptEx,
-                             std::unique_ptr<WinSocket> win_socket, int port);
+                             grpc_core::RefCountedPtr<WinSocket> win_socket,
+                             int port);
 
     // Bind a recently-created socket for listening
     static absl::StatusOr<int> PrepareListenerSocket(
@@ -95,7 +97,7 @@ class WindowsEventEngineListener : public EventEngine::Listener {
     // This will hold the socket for the next accept.
     SOCKET accept_socket_ ABSL_GUARDED_BY(mu_) = INVALID_SOCKET;
     // The listener winsocket.
-    std::unique_ptr<WinSocket> listener_socket_ ABSL_GUARDED_BY(mu_);
+    grpc_core::RefCountedPtr<WinSocket> listener_socket_ ABSL_GUARDED_BY(mu_);
     EventEngine::ResolvedAddress listener_sockname_;
   };
   absl::StatusOr<SinglePortSocketListener*> AddSinglePortSocketListener(

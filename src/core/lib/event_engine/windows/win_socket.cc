@@ -36,7 +36,10 @@ namespace grpc_event_engine {
 namespace experimental {
 
 WinSocket::WinSocket(SOCKET socket, Executor* executor) noexcept
-    : socket_(socket),
+    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_endpoint_trace)
+                         ? "WinSocket"
+                         : nullptr),
+      socket_(socket),
       executor_(executor),
       read_info_(OpState(this)),
       write_info_(OpState(this)) {}
@@ -47,6 +50,11 @@ WinSocket::~WinSocket() {
 }
 
 SOCKET WinSocket::socket() { return socket_; }
+
+void WinSocket::Orphan() {
+  abandoned_ = true;
+  MaybeShutdown(absl::OkStatus());
+}
 
 void WinSocket::MaybeShutdown(absl::Status why) {
   // if already shutdown, return early. Otherwise, set the shutdown flag.

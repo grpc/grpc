@@ -192,9 +192,9 @@ void WindowsEventEngine::OnConnectCompleted(
   if (!Cancel(state->timer_handle)) return;
   auto write_info = state->socket->write_info();
   if (write_info->wsa_error() != 0) {
-    auto error = GRPC_WSA_ERROR(write_info->wsa_error(), "ConnectEx");
-    state->socket->MaybeShutdown(error);
-    state->on_connected_user_callback(error);
+    state->socket->Unref(DEBUG_LOCATION, "ConnectEx failure");
+    state->on_connected_user_callback(
+        GRPC_WSA_ERROR(write_info->wsa_error(), "ConnectEx"));
     return;
   }
   // This code should be running in an executor thread already, so the callback
@@ -285,7 +285,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       Run([on_connect = std::move(on_connect), status]() mutable {
         on_connect(status);
       });
-      watched_socket->MaybeShutdown(status);
+      watched_socket->Unref(DEBUG_LOCATION, "ConnectEx failure");
       return EventEngine::kInvalidConnectionHandle;
     }
   }
@@ -358,8 +358,7 @@ bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
 
 bool WindowsEventEngine::CancelConnectInternalStateLocked(
     ConnectionState* connection_state) {
-  connection_state->socket->MaybeShutdown(
-      absl::CancelledError("CancelConnect"));
+  connection_state->socket->Unref(DEBUG_LOCATION, "CancelConnect");
   // Release the connection_state shared_ptr. connection_state is now invalid.
   delete connection_state->on_connected;
   GRPC_EVENT_ENGINE_TRACE("Successfully cancelled connection %s",

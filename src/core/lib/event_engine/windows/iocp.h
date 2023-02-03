@@ -26,6 +26,7 @@
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -47,8 +48,7 @@ class IOCP final : public Poller {
                   absl::FunctionRef<void()> schedule_poll_again) override;
   void Kick() override;
 
-  std::unique_ptr<WinSocket> Watch(SOCKET socket);
-  void Ignore(WinSocket* win_socket);
+  grpc_core::RefCountedPtr<WinSocket> Watch(SOCKET socket);
   // Return the set of default flags
   static DWORD GetDefaultSocketFlags();
 
@@ -61,9 +61,6 @@ class IOCP final : public Poller {
   OVERLAPPED kick_overlap_;
   ULONG kick_token_;
   std::atomic<int> outstanding_kicks_{0};
-  // DO NOT SUBMIT(hork): this is not thread safe. Consider a different
-  // ownership structure for OVERLAPPED data to resolve this.
-  absl::flat_hash_set<uintptr_t> ignored_;
 };
 
 }  // namespace experimental
