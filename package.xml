@@ -1072,7 +1072,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/shim.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.cc" role="src" />
