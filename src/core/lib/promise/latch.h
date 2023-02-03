@@ -135,7 +135,7 @@ class Latch<void> {
     return *this;
   }
 
-  // Produce a promise to wait for a value from this latch.
+  // Produce a promise to wait for this latch.
   auto Wait() {
 #ifndef NDEBUG
     has_had_waiters_ = true;
@@ -153,7 +153,7 @@ class Latch<void> {
     };
   }
 
-  // Set the value of the latch. Can only be called once.
+  // Set the latch. Can only be called once.
   void Set() {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
