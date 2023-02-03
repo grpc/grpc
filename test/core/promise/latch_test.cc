@@ -58,13 +58,12 @@ TEST(LatchTest, Void) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [&latch] {
-        return Seq(
-            Join(latch.Wait(),
-                 [&latch]() {
-                   latch.Set();
-                   return true;
-                 }),
-            [](std::tuple<Empty, bool> result) { return absl::OkStatus(); });
+        return Seq(Join(latch.Wait(),
+                        [&latch]() {
+                          latch.Set();
+                          return true;
+                        }),
+                   [](std::tuple<Empty, bool>) { return absl::OkStatus(); });
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
