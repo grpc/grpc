@@ -23,9 +23,12 @@ import sys
 
 
 def build_valid_guard(fpath):
-    prefix = 'GRPC_' if not fpath.startswith('include/') else ''
-    return prefix + '_'.join(
-        fpath.replace('++', 'XX').replace('.', '_').upper().split('/')[1:])
+    guard_components = fpath.replace('++', 'XX').replace('.',
+                                                         '_').upper().split('/')
+    if fpath.startswith('include/'):
+        return '_'.join(guard_components[1:])
+    else:
+        return 'GRPC_' + '_'.join(guard_components)
 
 
 def load(fpath):
@@ -186,7 +189,7 @@ argp.add_argument('-f', '--fix', default=False, action='store_true')
 argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
 
-grep_filter = r"grep -E '^(include|src/core)/.*\.h$'"
+grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp)/.*\.h$'"
 if args.precommit:
     git_command = 'git diff --name-only HEAD'
 else:

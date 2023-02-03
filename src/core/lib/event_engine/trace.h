@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_TRACE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_TRACE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_TRACE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_TRACE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,4 +40,4 @@ extern grpc_core::TraceFlag grpc_event_engine_endpoint_trace;
     gpr_log(GPR_DEBUG, "(event_engine poller) " format, __VA_ARGS__); \
   }
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_TRACE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_TRACE_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_PARSE_JSON_H
-#define TEST_QPS_PARSE_JSON_H
+#ifndef GRPC_TEST_CPP_QPS_PARSE_JSON_H
+#define GRPC_TEST_CPP_QPS_PARSE_JSON_H
 
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
@@ -34,4 +34,4 @@ std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_QPS_PARSE_JSON_H
+#endif  // GRPC_TEST_CPP_QPS_PARSE_JSON_H

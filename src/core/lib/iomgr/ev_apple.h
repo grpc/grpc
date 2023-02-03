@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_APPLE_H
-#define GRPC_CORE_LIB_IOMGR_EV_APPLE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_EV_APPLE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_EV_APPLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,4 +40,4 @@ extern grpc_pollset_set_vtable grpc_apple_pollset_set_vtable;
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_EV_APPLE_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_EV_APPLE_H

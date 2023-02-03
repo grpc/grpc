@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_TCP_WINDOWS_H
 //
 // Low level TCP "bottom half" implementation, for use by transports built on
 // top of a TCP connection.
@@ -49,4 +49,4 @@ grpc_error_handle grpc_tcp_set_non_block(SOCKET sock);
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_TCP_WINDOWS_H

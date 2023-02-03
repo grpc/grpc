@@ -743,8 +743,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   // Check the type_url of the resource.
   if (result_.type_url != type_url) {
     result_.errors.emplace_back(
-        absl::StrCat(error_prefix, "incorrect resource type ", type_url,
-                     " (should be ", result_.type_url, ")"));
+        absl::StrCat(error_prefix, "incorrect resource type \"", type_url,
+                     "\" (should be \"", result_.type_url, "\")"));
     return;
   }
   // Parse the resource.
@@ -982,7 +982,12 @@ void XdsClient::ChannelState::AdsCallState::UnsubscribeLocked(
   if (authority_map.empty()) {
     type_state_map.subscribed_resources.erase(name.authority);
   }
-  if (!delay_unsubscription) SendMessageLocked(type);
+  // Don't need to send unsubscription message if this was the last
+  // resource we were subscribed to, since we'll be closing the stream
+  // immediately in that case.
+  if (!delay_unsubscription && HasSubscribedResources()) {
+    SendMessageLocked(type);
+  }
 }
 
 bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {

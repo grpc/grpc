@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
-#define GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
+#ifndef GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
+#define GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
 
 #include <string>
 #include <unordered_set>
@@ -84,4 +84,4 @@ class ProtoServerReflection final
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
+#endif  // GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H

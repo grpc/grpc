@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -97,4 +97,4 @@ class ChannelzRegistry {
 }  // namespace channelz
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H

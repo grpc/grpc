@@ -952,10 +952,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster3->set_name(kNotUsedClusterName);
   weighted_cluster3->mutable_weight()->set_value(0);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
@@ -982,6 +978,88 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs,
               ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
+}
+
+TEST_P(LdsRdsTest, XdsRoutingWeightedClusterNoIntegerOverflow) {
+  CreateAndStartBackends(3);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const size_t kNumEchoRpcs = 10;  // RPCs that will go to a fixed backend.
+  const uint32_t kWeight1 = std::numeric_limits<uint32_t>::max() / 3;
+  const uint32_t kWeight2 = std::numeric_limits<uint32_t>::max() - kWeight1;
+  const double kErrorTolerance = 0.05;
+  const double kWeight1Percent =
+      static_cast<double>(kWeight1) / std::numeric_limits<uint32_t>::max();
+  const double kWeight2Percent =
+      static_cast<double>(kWeight2) / std::numeric_limits<uint32_t>::max();
+  const size_t kNumEcho1Rpcs =
+      ComputeIdealNumRpcs(kWeight2Percent, kErrorTolerance);
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(2, 3)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight1);
+  auto* weighted_cluster2 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight2);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const int weight1_request_count =
+      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const int weight2_request_count =
+      backends_[2]->backend_service1()->request_count();
+  gpr_log(GPR_INFO, "target1 received %d rpcs and target2 received %d rpcs",
+          weight1_request_count, weight2_request_count);
+  EXPECT_THAT(static_cast<double>(weight1_request_count) / kNumEcho1Rpcs,
+              ::testing::DoubleNear(kWeight1Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight2_request_count) / kNumEcho1Rpcs,
+              ::testing::DoubleNear(kWeight2Percent, kErrorTolerance));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
@@ -1035,10 +1113,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForAllBackends(DEBUG_LOCATION, 1, 3);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
@@ -1124,10 +1198,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
@@ -1264,10 +1334,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kDefaultClusterName);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);

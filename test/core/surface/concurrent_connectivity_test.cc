@@ -154,6 +154,7 @@ void bad_server_thread(void* vargs) {
   ASSERT_TRUE(error.ok());
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
+  resolved_addr.len = sizeof(grpc_sockaddr_in);
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
   ASSERT_TRUE(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   ASSERT_GT(port, 0);

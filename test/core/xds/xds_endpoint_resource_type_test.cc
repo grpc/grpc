@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <limits>
 #include <map>
 #include <memory>
@@ -961,7 +962,7 @@ TEST_F(XdsEndpointTest, IgnoresEndpointsInUnsupportedStates) {
 
 TEST_F(XdsEndpointTest, EndpointHealthStatus) {
   ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();

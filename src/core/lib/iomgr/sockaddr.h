@@ -20,8 +20,8 @@
 // order, so it should be included first. As a consequence, it should not be
 // included in any other header.
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,4 +29,4 @@
 #include "src/core/lib/iomgr/sockaddr_posix.h"    // IWYU pragma: export
 #include "src/core/lib/iomgr/sockaddr_windows.h"  // IWYU pragma: export
 
-#endif  // GRPC_CORE_LIB_IOMGR_SOCKADDR_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_H

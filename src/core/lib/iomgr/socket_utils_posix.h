@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -252,4 +252,4 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
     grpc_socket_factory* factory, const grpc_resolved_address* addr, int type,
     int protocol, grpc_dualstack_mode* dsmode, int* newfd);
 
-#endif  // GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H

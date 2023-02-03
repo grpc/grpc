@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
-#define TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
 
 #include <condition_variable>
 #include <memory>
@@ -47,4 +47,4 @@ class CallbackStreamingTestService : public EchoTestService::CallbackService {
 };
 }  // namespace testing
 }  // namespace grpc
-#endif  // TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H

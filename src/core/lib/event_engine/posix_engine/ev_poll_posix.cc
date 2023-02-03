@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <initializer_list>
 #include <list>
 #include <memory>
 #include <utility>
@@ -378,12 +379,12 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
       grpc_core::StatusSetInt(&shutdown_error_,
                               grpc_core::StatusIntProperty::kRpcStatus,
                               GRPC_STATUS_UNAVAILABLE);
-      // signal read/write closed to OS so that future operations fail.
-      if (!released_) {
-        shutdown(fd_, SHUT_RDWR);
-      }
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
+    }
+    // signal read/write closed to OS so that future operations fail.
+    if (!released_) {
+      shutdown(fd_, SHUT_RDWR);
     }
     if (!IsWatched()) {
       CloseFd();
@@ -455,8 +456,6 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
       grpc_core::StatusSetInt(&shutdown_error_,
                               grpc_core::StatusIntProperty::kRpcStatus,
                               GRPC_STATUS_UNAVAILABLE);
-      // signal read/write closed to OS so that future operations fail.
-      shutdown(fd_, SHUT_RDWR);
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }
@@ -715,7 +714,7 @@ Poller::WorkResult PollPoller::Work(
       // well instead of crashing. This is because the poller::Work is called
       // right after an event enging is constructed. Even if phony poll is
       // expected to be used, we dont want to check for it until some actual
-      // event handles are registered. Otherwise the event engine construction
+      // event handles are registered. Otherwise the EventEngine construction
       // may crash.
       r = poll(pfds, pfd_count, timeout_ms);
     } else {

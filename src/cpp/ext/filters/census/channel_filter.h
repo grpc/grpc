@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -38,4 +38,4 @@ class OpenCensusChannelData : public ChannelData {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H

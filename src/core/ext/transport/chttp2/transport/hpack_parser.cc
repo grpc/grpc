@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <string>
 #include <utility>
 
@@ -1300,9 +1301,9 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
 }
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
-  if (ParseInputInner(&input)) {
-    return absl::OkStatus();
-  }
+  bool parsed_ok = ParseInputInner(&input);
+  if (is_last) global_stats().IncrementHttp2MetadataSize(frame_length_);
+  if (parsed_ok) return absl::OkStatus();
   if (input.eof_error()) {
     if (GPR_UNLIKELY(is_last && is_boundary())) {
       return GRPC_ERROR_CREATE(
@@ -1311,7 +1312,6 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
     unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
     return absl::OkStatus();
   }
-  global_stats().IncrementHttp2MetadataSize(frame_length_);
   return input.TakeError();
 }
 

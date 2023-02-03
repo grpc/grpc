@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#define GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -32,4 +32,4 @@ void RegisterLoggingFilter(LoggingSink* sink);
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H

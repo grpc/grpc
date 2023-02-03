@@ -104,6 +104,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "google/api:monitored_resource_cc_proto",
         "googleapis_logging_cc_proto",
         "googleapis_logging_grpc_service",
         "protobuf_headers",

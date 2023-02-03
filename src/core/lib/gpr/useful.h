@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPR_USEFUL_H
-#define GRPC_CORE_LIB_GPR_USEFUL_H
+#ifndef GRPC_SRC_CORE_LIB_GPR_USEFUL_H
+#define GRPC_SRC_CORE_LIB_GPR_USEFUL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -181,4 +181,4 @@ inline uint32_t RoundUpToPowerOf2(uint32_t v) {
 
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
 
-#endif  // GRPC_CORE_LIB_GPR_USEFUL_H
+#endif  // GRPC_SRC_CORE_LIB_GPR_USEFUL_H

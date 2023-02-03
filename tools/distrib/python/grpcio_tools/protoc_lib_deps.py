@@ -20,4 +20,4 @@ PROTO_FILES=['google/protobuf/any.proto', 'google/protobuf/api.proto', 'google/p
 CC_INCLUDE='third_party/protobuf/src'
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="24487dd1045c7f3d64a21f38a3f0c06cc4cf2edb"
+PROTOBUF_SUBMODULE_VERSION="f0dc78d7e6e331b8c6bb2d5283e06aa26883ca7c"

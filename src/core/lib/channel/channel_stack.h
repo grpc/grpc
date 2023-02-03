@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
 
 //////////////////////////////////////////////////////////////////////////////
 // IMPORTANT NOTE:
@@ -391,4 +391,4 @@ extern grpc_core::TraceFlag grpc_trace_channel;
     }                                                  \
   } while (0)
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_H

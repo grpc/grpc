@@ -29,7 +29,7 @@ namespace internal {
 
 grpc_error_handle OpenCensusChannelData::Init(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  OpenCensusExporterRegistry::Get().RunRegistryPostInit();
+  OpenCensusRegistry::Get().RunFunctionsPostInit();
   return absl::OkStatus();
 }
 

@@ -15,7 +15,7 @@ settings:
   core_version: 30.0.0
   csharp_major_version: 2
   g_stands_for: glockenspiel
-  protobuf_version: 3.21.6
+  protobuf_version: 3.21.12
   version: 1.53.0-dev
 configs:
   asan:

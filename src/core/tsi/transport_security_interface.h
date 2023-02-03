@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
-#define GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
+#ifndef GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
+#define GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -518,4 +518,4 @@ void tsi_init();
 // This method destroys the shared objects created by tsi_init.
 void tsi_destroy();
 
-#endif  // GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
+#endif  // GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H

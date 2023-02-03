@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H
-#define GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
+#define GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -211,4 +211,4 @@ class CallCombinerClosureList {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H

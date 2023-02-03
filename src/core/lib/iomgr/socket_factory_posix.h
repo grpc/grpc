@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -66,4 +66,4 @@ int grpc_socket_factory_compare(grpc_socket_factory* a, grpc_socket_factory* b);
 grpc_socket_factory* grpc_socket_factory_ref(grpc_socket_factory* factory);
 void grpc_socket_factory_unref(grpc_socket_factory* factory);
 
-#endif  // GRPC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H

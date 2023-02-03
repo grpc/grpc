@@ -130,15 +130,16 @@ static void chttp2_init_server_socketpair(
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
   GPR_ASSERT(!f->server);
-  f->server = grpc_server_create(server_args, nullptr);
+  f->server = grpc_server_create(grpc_core::ChannelArgs::FromC(server_args)
+                                     .Set(GRPC_ARG_MINIMAL_STACK, true)
+                                     .ToC()
+                                     .get(),
+                                 nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  auto final_server_args = grpc_core::CoreConfiguration::Get()
-                               .channel_args_preconditioning()
-                               .PreconditionChannelArgs(server_args)
-                               .Set(GRPC_ARG_MINIMAL_STACK, true);
-  transport = grpc_create_chttp2_transport(final_server_args,
-                                           fixture_data->ep.server, false);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::Server::FromC(f->server)->channel_args(),
+      fixture_data->ep.server, false);
   server_setup_transport(f, transport);
 }
 

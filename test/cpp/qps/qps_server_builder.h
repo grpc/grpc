@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_QPS_SERVER_BUILDER_H
-#define GRPC_QPS_SERVER_BUILDER_H
+#ifndef GRPC_TEST_CPP_QPS_QPS_SERVER_BUILDER_H
+#define GRPC_TEST_CPP_QPS_QPS_SERVER_BUILDER_H
 
 #include <functional>
 #include <memory>
@@ -43,4 +43,4 @@ void SetCreateQpsServerBuilderFunc(
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_QPS_SERVER_BUILDER_H
+#endif  // GRPC_TEST_CPP_QPS_QPS_SERVER_BUILDER_H

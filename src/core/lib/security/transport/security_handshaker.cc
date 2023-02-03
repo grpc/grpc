@@ -44,6 +44,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -360,6 +362,13 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   }
   connector_->check_peer(peer, args_->endpoint, args_->args, &auth_context_,
                          &on_peer_checked_);
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (!prop ||
+      !strcmp(tsi_security_level_to_string(TSI_SECURITY_NONE), prop->value)) {
+    global_stats().IncrementInsecureConnectionsCreated();
+  }
   return absl::OkStatus();
 }
 

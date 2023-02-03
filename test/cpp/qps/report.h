@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_REPORT_H
-#define TEST_QPS_REPORT_H
+#ifndef GRPC_TEST_CPP_QPS_REPORT_H
+#define GRPC_TEST_CPP_QPS_REPORT_H
 
 #include <memory>
 #include <set>
@@ -143,4 +143,4 @@ class RpcReporter : public Reporter {
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_REPORT_H

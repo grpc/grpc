@@ -20,7 +20,9 @@
 
 #include "src/cpp/ext/filters/census/server_filter.h"
 
+#include <algorithm>
 #include <utility>
+#include <vector>
 
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
@@ -31,6 +33,7 @@
 #include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -117,8 +120,10 @@ void OpenCensusServerCallData::OnDoneRecvInitialMetadataCb(
           calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
     }
     if (OpenCensusStatsEnabled()) {
-      ::opencensus::stats::Record({{RpcServerStartedRpcs(), 1}},
-                                  {{ServerMethodTagKey(), calld->method_}});
+      std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+          calld->context_.tags().tags();
+      tags.emplace_back(ServerMethodTagKey(), std::string(calld->method_));
+      ::opencensus::stats::Record({{RpcServerStartedRpcs(), 1}}, tags);
     }
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
@@ -180,14 +185,19 @@ void OpenCensusServerCallData::Destroy(grpc_call_element* /*elem*/,
     const uint64_t request_size = GetOutgoingDataSize(final_info);
     const uint64_t response_size = GetIncomingDataSize(final_info);
     double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
+    std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+        context_.tags().tags();
+    tags.emplace_back(ServerMethodTagKey(), std::string(method_));
+    tags.emplace_back(
+        ServerStatusTagKey(),
+        std::string(StatusCodeToString(final_info->final_status)));
     ::opencensus::stats::Record(
         {{RpcServerSentBytesPerRpc(), static_cast<double>(response_size)},
          {RpcServerReceivedBytesPerRpc(), static_cast<double>(request_size)},
          {RpcServerServerLatency(), elapsed_time_ms},
          {RpcServerSentMessagesPerRpc(), sent_message_count_},
          {RpcServerReceivedMessagesPerRpc(), recv_message_count_}},
-        {{ServerMethodTagKey(), method_},
-         {ServerStatusTagKey(), StatusCodeToString(final_info->final_status)}});
+        tags);
   }
   if (OpenCensusTracingEnabled()) {
     context_.EndSpan();

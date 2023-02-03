@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -69,4 +69,4 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline,
     grpc_endpoint** ep);
 
-#endif  // GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H

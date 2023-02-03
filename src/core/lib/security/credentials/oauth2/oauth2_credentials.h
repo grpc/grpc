@@ -16,12 +16,13 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <initializer_list>
 #include <string>
 #include <utility>
 
@@ -217,4 +218,4 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options);
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H

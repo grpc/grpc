@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
 #include <grpc/support/port_platform.h>
 
@@ -73,4 +73,4 @@ typedef char* (*grpc_jwt_encode_and_sign_override)(
 void grpc_jwt_encode_and_sign_set_override(
     grpc_jwt_encode_and_sign_override func);
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H

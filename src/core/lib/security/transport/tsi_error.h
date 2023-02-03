@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H
+#define GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,4 +27,4 @@
 grpc_error_handle grpc_set_tsi_error_result(grpc_error_handle error,
                                             tsi_result result);
 
-#endif  // GRPC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H

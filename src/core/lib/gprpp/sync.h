@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_SYNC_H
-#define GRPC_CORE_LIB_GPRPP_SYNC_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_SYNC_H
+#define GRPC_SRC_CORE_LIB_GPRPP_SYNC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -197,4 +197,4 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_SYNC_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_SYNC_H

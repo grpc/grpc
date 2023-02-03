@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -46,4 +46,4 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
 // Test-only function for disabling ping ack
 void grpc_set_disable_ping_ack(bool disable_ping_ack);
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H

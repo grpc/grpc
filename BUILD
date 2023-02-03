@@ -54,6 +54,11 @@ config_setting(
     values = {"define": "grpc_no_xds=true"},
 )
 
+config_setting(
+    name = "grpc_experiments_are_final_define",
+    values = {"define": "grpc_experiments_are_final=true"},
+)
+
 # When gRPC is build as shared library, binder transport code might still
 # get included even when user's code does not depend on it. In that case
 # --define=grpc_no_binder=true can be used to disable binder transport
@@ -107,6 +112,19 @@ selects.config_setting_group(
     match_any = [
         # Disable RLS support on mobile platforms where it is not likely to be
         # needed and where reducing the binary size is more important.
+        ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_experiments_are_final",
+    match_any = [
+        ":grpc_experiments_are_final_define",
+        # In addition to disabling experiments when
+        # --define=grpc_experiments_are_final=true is specified, we also disable
+        # them on mobile platforms where runtime configuration of experiments is unlikely to be needed and where
+        # reducing the binary size is more important.
         ":android",
         ":ios",
     ],
@@ -701,6 +719,7 @@ grpc_cc_library(
         "debug_location",
         "//src/core:construct_destruct",
         "//src/core:env",
+        "//src/core:event_engine_thread_local",
         "//src/core:examine_stack",
         "//src/core:gpr_atm",
         "//src/core:no_destruct",
@@ -751,6 +770,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_priority",
         "//src/core:grpc_lb_policy_ring_hash",
         "//src/core:grpc_lb_policy_round_robin",
+        "//src/core:grpc_lb_policy_weighted_round_robin",
         "//src/core:grpc_lb_policy_weighted_target",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_message_size_filter",
@@ -1172,7 +1192,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base",
     srcs = [
-        "//src/core:lib/address_utils/parse_address.cc",
         "//src/core:lib/channel/channel_stack.cc",
         "//src/core:lib/channel/channel_stack_builder_impl.cc",
         "//src/core:lib/channel/channel_trace.cc",
@@ -1203,8 +1222,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/gethostname_fallback.cc",
         "//src/core:lib/iomgr/gethostname_host_name_max.cc",
         "//src/core:lib/iomgr/gethostname_sysconf.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_posix.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_unsupported.cc",
         "//src/core:lib/iomgr/internal_errqueue.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
         "//src/core:lib/iomgr/iomgr.cc",
@@ -1272,9 +1289,16 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
+    ] +
+    # TODO(vigneshbabu): remove these
+    # These headers used to be vended by this target, but they have to be
+    # removed after landing EventEngine.
+    [
+        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
     ],
     hdrs = [
-        "//src/core:lib/address_utils/parse_address.h",
         "//src/core:lib/channel/call_finalization.h",
         "//src/core:lib/channel/call_tracer.h",
         "//src/core:lib/channel/channel_stack.h",
@@ -1302,7 +1326,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_poll_posix.h",
         "//src/core:lib/iomgr/ev_posix.h",
         "//src/core:lib/iomgr/gethostname.h",
-        "//src/core:lib/iomgr/grpc_if_nametoindex.h",
         "//src/core:lib/iomgr/internal_errqueue.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
@@ -1357,6 +1380,14 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
         "//src/core:lib/transport/transport_impl.h",
+    ] +
+    # TODO(vigneshbabu): remove these
+    # These headers used to be vended by this target, but they have to be
+    # removed after landing EventEngine.
+    [
+        "//src/core:lib/iomgr/event_engine_shims/closure.h",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.h",
     ],
     defines = select({
         "systemd": ["HAVE_LIBSYSTEMD"],
@@ -1398,6 +1429,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "orphanable",
+        "parse_address",
         "promise",
         "ref_counted_ptr",
         "sockaddr_utils",
@@ -1408,6 +1440,8 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
+        "//src/core:basic_join",
+        "//src/core:basic_seq",
         "//src/core:bitset",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -1421,6 +1455,10 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:error",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_shim",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:experiments",
         "//src/core:gpr_atm",
@@ -1432,7 +1470,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
-        "//src/core:latch",
+        "//src/core:map",
         "//src/core:match",
         "//src/core:memory_quota",
         "//src/core:no_destruct",
@@ -1441,6 +1479,7 @@ grpc_cc_library(
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:pollset_set",
+        "//src/core:posix_event_engine_base_hdrs",
         "//src/core:promise_status",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
@@ -1457,6 +1496,8 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:transport_fwd",
+        "//src/core:try_join",
+        "//src/core:try_seq",
         "//src/core:useful",
     ],
 )
@@ -1630,6 +1671,7 @@ grpc_cc_library(
         "handshaker",
         "promise",
         "ref_counted_ptr",
+        "stats",
         "tsi_base",
         "//src/core:activity",
         "//src/core:arena",
@@ -1653,6 +1695,7 @@ grpc_cc_library(
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_refcount",
+        "//src/core:stats_data",
         "//src/core:status_helper",
         "//src/core:try_seq",
         "//src/core:unique_type_name",
@@ -2167,6 +2210,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_stack_type",
         "//src/core:closure",
+        "//src/core:experiments",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -2482,6 +2526,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "parse_address",
+    srcs = [
+        "//src/core:lib/address_utils/parse_address.cc",
+        "//src/core:lib/iomgr/grpc_if_nametoindex_posix.cc",
+        "//src/core:lib/iomgr/grpc_if_nametoindex_unsupported.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/address_utils/parse_address.h",
+        "//src/core:lib/iomgr/grpc_if_nametoindex.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "gpr",
+        "uri_parser",
+        "//src/core:error",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_port",
+        "//src/core:resolved_address",
+        "//src/core:status_helper",
+    ],
+)
+
+grpc_cc_library(
     name = "backoff",
     srcs = [
         "//src/core:lib/backoff/backoff.cc",
@@ -2676,6 +2748,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/lb_call_state_internal.h",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
+        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/retry_filter.h",
         "//src/core:ext/filters/client_channel/retry_service_config.h",
@@ -2807,6 +2880,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "orphanable",
+        "parse_address",
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
@@ -3209,9 +3283,9 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "promise",
+        "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -3219,15 +3293,14 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
-        "//src/core:map_pipe",
+        "//src/core:map",
         "//src/core:percent_encoding",
         "//src/core:pipe",
-        "//src/core:promise_like",
-        "//src/core:seq",
+        "//src/core:poll",
+        "//src/core:race",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:transport_fwd",
-        "//src/core:try_concurrently",
     ],
 )
 
@@ -3747,6 +3820,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
 )
 
 grpc_upb_proto_library(

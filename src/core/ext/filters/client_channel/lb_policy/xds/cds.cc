@@ -465,9 +465,9 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     mechanism["lrsLoadReportingServer"] =
         state.update->lrs_load_reporting_server->ToJson();
   }
-  if (!state.update->host_override_statuses.empty()) {
+  if (!state.update->override_host_statuses.empty()) {
     Json::Array status_list;
-    for (const auto& status : state.update->host_override_statuses) {
+    for (const auto& status : state.update->override_host_statuses) {
       status_list.emplace_back(status.ToString());
     }
     mechanism["overrideHostStatus"] = std::move(status_list);
@@ -518,8 +518,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
         Json::Object{
             {"xds_cluster_resolver_experimental",
              Json::Object{
-                 {"xdsLbPolicy",
-                  std::move(it->second.update->lb_policy_config)},
+                 {"xdsLbPolicy", it->second.update->lb_policy_config},
                  {"discoveryMechanisms", std::move(discovery_mechanisms)},
              }},
         },

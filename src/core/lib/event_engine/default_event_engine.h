@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -22,6 +22,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/context.h"
 
 namespace grpc_core {
@@ -36,7 +37,8 @@ namespace experimental {
 ///
 /// The concept of a global EventEngine may go away in a post-iomgr world.
 /// Strongly consider whether you could use \a CreateEventEngine instead.
-std::shared_ptr<EventEngine> GetDefaultEventEngine();
+std::shared_ptr<EventEngine> GetDefaultEventEngine(
+    grpc_core::SourceLocation location = grpc_core::SourceLocation());
 
 /// On ingress, ensure that an EventEngine exists in channel args via
 /// preconditioning.
@@ -46,4 +48,4 @@ void RegisterEventEngineChannelArgPreconditioning(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H

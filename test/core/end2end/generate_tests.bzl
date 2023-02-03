@@ -261,7 +261,7 @@ END2END_TESTS = {
         exclude_inproc = True,
         exclude_minstack = True,
     ),
-    "max_connection_age": _test_options(exclude_inproc = True),
+    "max_connection_age": _test_options(exclude_minstack = True, exclude_inproc = True),
     "max_connection_idle": _test_options(needs_fullstack = True, proxyable = False),
     "max_message_length": _test_options(exclude_minstack = True),
     "negative_deadline": _test_options(exclude_minstack = True),

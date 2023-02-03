@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -58,6 +58,9 @@ class ThreadPool final : public Forkable, public Executor {
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
+
+  // Returns true if the current thread is a thread pool thread.
+  static bool IsThreadPoolThread();
 
  private:
   class Queue {
@@ -134,4 +137,4 @@ class ThreadPool final : public Forkable, public Executor {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
