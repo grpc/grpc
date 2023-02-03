@@ -28,6 +28,8 @@
 
       <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' and '$(Protobuf_ToolsOs)' == 'windows' "
            >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)\$(gRPC_PluginFileName).exe</gRPC_PluginFullPath>
+      <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' and '$(_Protobuf_ToolsLinuxDistroId)' == 'alpine' "
+           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_alpine_$(Protobuf_ToolsCpu)\$(gRPC_PluginFileName)</gRPC_PluginFullPath>
       <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' "
            >$(Protobuf_PackagedToolsPath)/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/$(gRPC_PluginFileName)</gRPC_PluginFullPath>
     </PropertyGroup>

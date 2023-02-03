@@ -41,6 +41,12 @@ namespace Grpc.Tools
         [Output]
         public string Cpu { get; set; }
 
+        /// <summary>
+        /// Return the linux distribution id (if known), e.g. 'alpine', 'ubuntu'
+        /// If the it is unknown, the property is not set.
+        /// </summary>
+        [Output]
+        public string LinuxDistroId { get; set; }
 
         public override bool Execute()
         {
@@ -60,6 +66,8 @@ namespace Grpc.Tools
                 default: Cpu = ""; break;
             }
 
+            LinuxDistroId = LinuxDistroDetection.GetLinuxDistroId();
+
             // Use x64 on macosx arm64 until a native protoc is shipped
             if (Os == "macosx" && Cpu == "arm64")
             {
@@ -73,5 +81,7 @@ namespace Grpc.Tools
 
             return true;
         }
+
+
     };
 }
