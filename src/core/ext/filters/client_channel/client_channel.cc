@@ -118,7 +118,9 @@ class ClientChannel::CallData {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) = 0;
 
  protected:
-  CallData(const ClientChannel& chand, const grpc_call_element_args& args);
+  CallData(const ClientChannel* chand, const grpc_slice& path,
+           gpr_cycle_counter call_start_time, Timestamp deadline,
+           grpc_call_context_element* call_context);
   virtual ~CallData();
 
   grpc_slice* path() { return &path_; }
@@ -161,7 +163,7 @@ class ClientChannel::CallData {
 
   // Called when adding the call to the resolver queue.
   virtual void OnAddToQueueLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) = 0;
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) {}
 
   // Applies service config to the call.  Must be invoked once we know
   // that the resolver has returned results to the channel.
@@ -196,7 +198,7 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
  private:
   class ResolverQueuedCallCanceller;
 
-  FilterBasedCallData(grpc_call_element* elem, const ClientChannel& chand,
+  FilterBasedCallData(grpc_call_element* elem, const ClientChannel* chand,
                       const grpc_call_element_args& args);
   ~FilterBasedCallData() override;
 
@@ -288,16 +290,31 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
   grpc_error_handle cancel_error_;
 };
 
-class ClientChannel::PromiseBasedCallData {
+class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
  public:
-  explicit PromiseBasedCallData(ClientChannel* chand) : chand_(chand) {}
+  explicit PromiseBasedCallData(ClientChannel* chand)
+      : CallData(chand,
+                 // FIXME
+                 const grpc_slice& path,
+                 gpr_cycle_counter call_start_time, Timestamp deadline,
+                 grpc_call_context_element* call_context),
+        chand_(chand) {}
 
-  ArenaPromise<absl::StatusOr<CallArgs>> MakeNameResolutionPromise(
+  Poll<absl::StatusOr<CallArgs>> MakeNameResolutionPromise(
       CallArgs args) {
-    return [this]() -> Poll<absl::Status> {
-// FIXME
-      MutexLock lock(&mu_);
-      return CheckResolutionLocked();
+    client_initial_metadata_ = std::move(call_args.client_initial_metadata);
+    return [this, call_args = std::move(call_args)]() mutable
+        -> Poll<absl::StatusOr<CallArgs>> {
+      auto result = CheckResolution(was_queued_);
+      if (!result.has_value()) {
+        waker_ = Activity::current()->MakeNonOwningWaker();
+        was_queued_ = true;
+        return kPending;
+      }
+      if (!result->ok()) return *result;
+      call_args.client_initial_metadata = std::move(client_initial_metadata_);
+      return Immediate<absl::StatusOr<CallArgs>>(
+          absl::StatusOr<CallArgs>(std::move(call_args)));
     };
   }
 
@@ -308,28 +325,18 @@ class ClientChannel::PromiseBasedCallData {
     return GetContext<CallContext>()->polling_entity();
   }
   grpc_metadata_batch* send_initial_metadata() override {
-// FIXME
+    return client_initial_metadata_.get();
   }
 
-  void OnAddToQueue() override {
-    waker_ = Activity::current()->MakeNonOwningWaker();
-  }
-
-  void OnRemoveFromQueue() override { waker_->Wakeup(); }
+  void RetryCheckResolutionLocked() override { waker_->Wakeup(); }
 
   void ResetDeadline(Timestamp deadline) override {
     // FIXME
   }
 
-  void CreateDynamicCall() override {
-    // FIXME: resume call
-  }
-
-  void FailCall(grpc_error_handle error) override {
-    // FIXME: fail call
-  }
-
   ClientChannel* chand_;
+  ClientMetadataHandle client_initial_metadata_;
+  bool was_queued_ = false;
   Waker waker_;
 };
 
@@ -1866,14 +1873,16 @@ void ClientChannel::RemoveConnectivityWatcher(
 // CallData implementation
 //
 
-ClientChannel::CallData::CallData(const ClientChannel& chand,
-                                  const grpc_call_element_args& args)
-    : path_(CSliceRef(args.path)),
-      call_start_time_(args.start_time),
-      deadline_(args.deadline),
-      call_context_(args.context) {
+ClientChannel::CallData::CallData(
+    const ClientChannel* chand, const grpc_slice& path,
+    gpr_cycle_counter call_start_time,
+    Timestamp deadline, grpc_call_context_element* call_context)
+    : path_(CSliceRef(path)),
+      call_start_time_(call_start_time),
+      deadline_(deadline),
+      call_context_(call_context) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: created call", &chand, this);
+    gpr_log(GPR_INFO, "chand=%p calld=%p: created call", chand, this);
   }
 }
 
@@ -2042,11 +2051,11 @@ bool ClientChannel::CallData::CheckResolutionLocked(
 //
 
 ClientChannel::FilterBasedCallData::FilterBasedCallData(
-    grpc_call_element* elem, const ClientChannel& chand,
+    grpc_call_element* elem, const ClientChannel* chand,
     const grpc_call_element_args& args)
-    : CallData(chand, args),
+    : CallData(chand, args.path, args.start_time, args.deadline, args.context),
       deadline_state_(elem, args,
-                      GPR_LIKELY(chand.deadline_checking_enabled_)
+                      GPR_LIKELY(chand->deadline_checking_enabled_)
                           ? args.deadline
                           : Timestamp::InfFuture()) {}
 
@@ -2060,7 +2069,7 @@ ClientChannel::FilterBasedCallData::~FilterBasedCallData() {
 grpc_error_handle ClientChannel::FilterBasedCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
-  new (elem->call_data) FilterBasedCallData(elem, *chand, *args);
+  new (elem->call_data) FilterBasedCallData(elem, chand, *args);
   return absl::OkStatus();
 }
 

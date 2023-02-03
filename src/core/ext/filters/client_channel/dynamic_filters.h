@@ -99,7 +99,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
 
   RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
 
-  grpc_channel_stack* channel_stack() const { return channel_stack_; }
+  grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
 
  private:
   RefCountedPtr<grpc_channel_stack> channel_stack_;

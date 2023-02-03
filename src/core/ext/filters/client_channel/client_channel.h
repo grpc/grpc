@@ -567,7 +567,7 @@ class ClientChannel::FilterBasedLoadBalancedCall
   void TryPick(bool was_queued);
 
   void OnAddToQueueLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) {}
 
   void RetryPickLocked() override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
@@ -633,12 +633,10 @@ class ClientChannel::PromiseBasedLoadBalancedCall
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
 
  private:
-  grpc_metadata_batch* send_initial_metadata() const override;
-  void CreateSubchannelCall() override;
-  void PickFailed(grpc_error_handle error) override;
   grpc_polling_entity* pollent() const override;
-  void OnAddToQueue() override;
-  void OnRemoveFromQueue() override;
+  grpc_metadata_batch* send_initial_metadata() const override;
+
+  void RetryPickLocked() override;
 
   Waker waker_;
 };
