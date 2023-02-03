@@ -41,7 +41,9 @@ namespace {
 class MetadataQuery {
  public:
   MetadataQuery(std::string attribute, grpc_polling_entity* pollent,
-                absl::AnyInvocable<void(std::string)> callback)
+                absl::AnyInvocable<void(std::string /* attribute */,
+                                        std::string /* result */)>
+                    callback)
       : attribute_(std::move(attribute)), callback_(std::move(callback)) {
     GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
     auto uri = grpc_core::URI::Create("http", "metadata.google.internal.",
@@ -77,17 +79,29 @@ class MetadataQuery {
       gpr_log(
           GPR_ERROR, "MetadataServer Query received non-200 status for %s: %s",
           self->attribute_.c_str(), grpc_core::StatusToString(error).c_str());
+    } else if (self->attribute_ == "computeMetadata/v1/instance/zone") {
+      absl::string_view body(self->response_.body, self->response_.body_length);
+      size_t pos = result.find_last_of('/');
+      if (pos == body.npos) {
+        gpr_log(GPR_ERROR, "MetadataServer Could not parse zone: %s",
+                std::string(body).c_str());
+      } else {
+        result = std::string(body.substr(pos + 1));
+      }
     } else {
       result = self->response_.body;
     }
     auto callback = std::move(self->callback_);
+    auto attribute = std::move(self->attribute_);
     delete self;
-    return self->callback_(self->response_.body);
+    return callback(std::move(attribute), std::move(result));
   }
 
   grpc_closure on_done_;
   std::string attribute_;
-  absl::AnyInvocable<void(std::string)> callback_;
+  absl::AnyInvocable<void(std::string /* attribute */,
+                          std::string /* result */)>
+      callback_;
   grpc_http_response response_;
 };
 
@@ -165,6 +179,7 @@ class EnvironmentAutoDetectHelper {
       : project_id_(std::move(project_id)),
         pollent_(pollent),
         on_done_(std::move(on_done)) {
+    grpc_core::MutexLock lock(&mu_);
     // GKE
     resource_.labels.emplace("project_id", project_id_);
     if (grpc_core::GetEnv("KUBERNETES_SERVICE_HOST").has_value()) {
@@ -207,11 +222,12 @@ class EnvironmentAutoDetectHelper {
     else {
       assuming_gce_ = true;
       resource_.resource_type = "gce_instance";
-      resource_.labels.emplace("instance_id", "computeMetadata/v1/instance/id");
-      resource_.labels.emplace("instance_id",
-                               "computeMetadata/v1/instance/zone");
+      attributes_to_fetch_.push_back(
+          {"instance_id", "computeMetadata/v1/instance/id"});
+      attributes_to_fetch_.push_back(
+          {"instance_id", "computeMetadata/v1/instance/zone"});
     }
-    FetchMetadataServerAttributesAsynchronously();
+    FetchMetadataServerAttributesAsynchronouslyLocked();
   }
 
  private:
@@ -220,32 +236,54 @@ class EnvironmentAutoDetectHelper {
     std::string metadata_server_atttribute;
   };
 
-  std::string project_id_;
+  const std::string project_id_;
   grpc_polling_entity* pollent_;
   absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done_;
-  std::deque<Attribute> attributes_to_fetch_;
-  EnvironmentAutoDetect::ResourceType resource_;
+  grpc_core::Mutex mu_;
+  std::list<Attribute> attributes_to_fetch_ ABSL_GUARDED_BY(mu_);
+  EnvironmentAutoDetect::ResourceType resource_ ABSL_GUARDED_BY(mu_);
   // This would be true if we are assuming the resource to be GCE. In this case,
   // there is a chance that it will fail and we should instead just use
   // "global".
-  bool assuming_gce_ = false;
+  bool assuming_gce_ ABSL_GUARDED_BY(mu_) = false;
 
-  void FetchMetadataServerAttributesAsynchronously() {
-    // Done detecting the environment. Invoke the callback with the detected
-    // resource.
-    if (attributes_to_fetch_.empty()) {
-      auto on_done = std::move(on_done_);
-      auto resource = std::move(resource_);
-      delete this;
-      return on_done_(std::move(resource));
+  void FetchMetadataServerAttributesAsynchronouslyLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    for (const auto& element : attributes_to_fetch_) {
+      new MetadataQuery(
+          element.metadata_server_atttribute, pollent_,
+          [this](std::string attribute, std::string result) {
+            absl::optional<EnvironmentAutoDetect::ResourceType> resource;
+            {
+              grpc_core::MutexLock lock(&mu_);
+              // If fetching from the MetadataServer failed and we were assuming
+              // a GCE environment, fallback to "global".
+              if (assuming_gce_ && result.empty()) {
+                assuming_gce_ = false;
+                resource_.resource_type = "global";
+              }
+              for (auto it = attributes_to_fetch_.begin();
+                   it != attributes_to_fetch_.end(); ++it) {
+                if (it->metadata_server_atttribute == attribute) {
+                  attributes_to_fetch_.erase(it);
+                  if (!result.empty()) {
+                    resource_.labels.emplace(it->resource_attribute,
+                                             std::move(result));
+                  }
+                  break;
+                }
+              }
+              if (attributes_to_fetch_.empty()) {
+                resource = std::move(resource_);
+              }
+            }
+            if (resource.has_value()) {
+              auto on_done = std::move(on_done_);
+              delete this;
+              on_done(std::move(resource).value());
+            }
+          });
     }
-    new MetadataQuery(attributes_to_fetch_.front().metadata_server_atttribute,
-                      pollent_, [this](std::string result) {
-                        resource_.labels.emplace(
-                            attributes_to_fetch_.front().resource_attribute,
-                            result);
-                        FetchMetadataServerAttributesAsynchronously();
-                      });
   }
 };
 
@@ -288,7 +326,7 @@ void EnvironmentAutoDetect::NotifyOnDone(grpc_polling_entity* pollent,
           grpc_core::MutexLock lock(&mu_);
           resource_ = std::make_unique<EnvironmentAutoDetect::ResourceType>(
               std::move(resource));
-          callbacks_ = std::move(callbacks);
+          callbacks = std::move(callbacks_);
         }
         for (auto& callback : callbacks) {
           callback();

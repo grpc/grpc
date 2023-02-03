@@ -18,11 +18,16 @@
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_ENVIRONMENT_AUTODETECT_H
 
 #include <grpc/support/port_platform.h>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
-
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "absl/base/thread_annotations.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc {
 namespace internal {
@@ -33,12 +38,18 @@ class EnvironmentAutoDetect {
     // For example, "gce_instance", "gke_container", etc.
     std::string resource_type;
     // Values for all the labels listed in the associa
-    std::map<std::string, std::string> labels;
+    absl::flat_hash_map<std::string, std::string> labels;
   };
 
+  // A Create() call properly sets up the environment detector with the
+  // project_id. All subsequent calls can use a Get() without needing to mention
+  // the project_id.
+  static EnvironmentAutoDetect& Create(std::string project_id);
   static EnvironmentAutoDetect& Get();
-  // Use this, if project_id is already known
-  static EnvironmentAutoDetect& GetWithProjectId(std::string project_id);
+
+  // Exposed for testing purposes only
+  explicit EnvironmentAutoDetect(std::string project_id)
+      : project_id_(std::move(project_id)) {}
 
   // Provides \a pollent that might be uesd by EnvironmentAutoDetect for
   // detecting the environment, and \a callback that will be invoked once the
@@ -52,9 +63,6 @@ class EnvironmentAutoDetect {
   }
 
  private:
-  explicit EnvironmentAutoDetect(std::string project_id)
-      : project_id_(std::move(project_id)) {}
-
   const std::string project_id_;
   grpc_core::Mutex mu_;
   std::unique_ptr<ResourceType> resource_ ABSL_GUARDED_BY(mu_);
