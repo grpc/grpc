@@ -73,6 +73,7 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -1251,7 +1252,9 @@ static void perform_stream_op_locked(void* stream_op,
       t->channelz_socket->RecordStreamStartedFromLocal();
     }
     GPR_ASSERT(s->send_initial_metadata_finished == nullptr);
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    if (!grpc_event_engine_run_in_background()) {
+      on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    }
 
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
@@ -1311,14 +1314,16 @@ static void perform_stream_op_locked(void* stream_op,
     t->num_messages_in_next_write++;
     grpc_core::global_stats().IncrementHttp2SendMessageSize(
         op->payload->send_message.send_message->Length());
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    if (!grpc_event_engine_run_in_background()) {
+      on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    }
     s->send_message_finished = add_closure_barrier(op->on_complete);
     const uint32_t flags = op_payload->send_message.flags;
     if (s->write_closed) {
       op->payload->send_message.stream_write_closed = true;
       // We should NOT return an error here, so as to avoid a cancel OP being
-      // started. The surface layer will notice that the stream has been closed
-      // for writes and fail the send message op.
+      // started. The surface layer will notice that the stream has been
+      // closed for writes and fail the send message op.
       grpc_chttp2_complete_closure_step(t, s, &s->send_message_finished,
                                         absl::OkStatus(),
                                         "fetching_send_message_finished");
@@ -1385,7 +1390,9 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->send_trailing_metadata) {
     GPR_ASSERT(s->send_trailing_metadata_finished == nullptr);
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    if (!grpc_event_engine_run_in_background()) {
+      on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    }
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->send_trailing_metadata =
         op_payload->send_trailing_metadata.send_trailing_metadata;
