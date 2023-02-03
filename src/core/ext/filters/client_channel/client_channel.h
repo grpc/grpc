@@ -382,6 +382,7 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
+  // TODO(roth): Make this private.
   class LbCallState : public LbCallStateInternal {
    public:
     explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
@@ -405,13 +406,14 @@ class ClientChannel::LoadBalancedCall
 
   void Orphan() override;
 
-  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
-
-  void PickSubchannel(bool was_queued);
-
   // Called by channel when removing a call from the list of queued calls.
   void RemoveCallFromLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+
+  // Called by the channel for each queued call when a new picker
+  // becomes available.
+  virtual void RetryPickLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) = 0;
 
  protected:
   ClientChannel* chand() const { return chand_; }
@@ -434,6 +436,18 @@ class ClientChannel::LoadBalancedCall
     return lb_subchannel_call_tracker_.get();
   }
 
+  // Attempts an LB pick.  The following outcomes are possible:
+  // - No pick result is available yet.  The call will be queued and
+  //   nullopt will be returned.  The channel will later call
+  //   RetryPickLocked() when a new picker is available and the pick
+  //   should be retried.
+  // - The pick failed.  If the call is not wait_for_ready, a non-OK
+  //   status will be returned.  (If the call *is* wait_for_ready,
+  //   it will be queued instead.)
+  // - The pick completed successfully.  A connected subchannel is
+  //   stored and an OK status will be returned.
+  absl::optional<absl::Status> PickSubchannel(bool was_queued);
+
   void RecordCallCompletion(absl::Status status,
                             grpc_metadata_batch* recv_trailing_metadata,
                             grpc_transport_stream_stats* transport_stream_stats,
@@ -443,12 +457,8 @@ class ClientChannel::LoadBalancedCall
   class Metadata;
   class BackendMetricAccessor;
 
-  virtual grpc_metadata_batch* send_initial_metadata() const = 0;
-  virtual void CreateSubchannelCall() = 0;
-  virtual void PickFailed(grpc_error_handle error) = 0;
   virtual grpc_polling_entity* pollent() const = 0;
-  virtual void OnAddToQueue() = 0;
-  virtual void OnRemoveFromQueue() = 0;
+  virtual grpc_metadata_batch* send_initial_metadata() const = 0;
 
   // Helper function for performing an LB pick with a specified picker.
   // Returns true if the pick is complete.
@@ -457,6 +467,10 @@ class ClientChannel::LoadBalancedCall
   // Adds the call to the channel's list of queued picks if not already present.
   void AddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+
+  // Called when adding the call to the LB queue.
+  virtual void OnAddToQueueLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) = 0;
 
   ClientChannel* chand_;
 
@@ -505,8 +519,14 @@ class ClientChannel::FilterBasedLoadBalancedCall
 
   // Work-around for Windows compilers that don't allow nested classes
   // to access protected members of the enclosing class's parent class.
-  using LoadBalancedCall::chand;
   using LoadBalancedCall::call_dispatch_controller;
+  using LoadBalancedCall::chand;
+
+  grpc_polling_entity* pollent() const override { return pollent_; }
+  grpc_metadata_batch* send_initial_metadata() const override {
+    return pending_batches_[0]
+        ->payload->send_initial_metadata.send_initial_metadata;
+  }
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -542,17 +562,17 @@ class ClientChannel::FilterBasedLoadBalancedCall
   static void RecvMessageReady(void* arg, grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
-  grpc_metadata_batch* send_initial_metadata() const override {
-    return pending_batches_[0]
-        ->payload->send_initial_metadata.send_initial_metadata;
-  }
-  void CreateSubchannelCall() override;
-  void PickFailed(grpc_error_handle error) override;
-  grpc_polling_entity* pollent() const override { return pollent_; }
-  void OnAddToQueue() override
+  // Called to perform a pick, both when the call is initially started
+  // and when it is queued and the channel gets a new picker.
+  void TryPick(bool was_queued);
+
+  void OnAddToQueueLocked() override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
-  void OnRemoveFromQueue() override
+
+  void RetryPickLocked() override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+
+  void CreateSubchannelCall();
 
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
@@ -626,6 +646,7 @@ class ClientChannel::PromiseBasedLoadBalancedCall
 // A sub-class of ServiceConfigCallData used to access the
 // CallDispatchController.  Allocated on the arena, stored in the call
 // context, and destroyed when the call is destroyed.
+// TODO(roth): Combine this with lb_call_state_internal.h.
 class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
  public:
   ClientChannelServiceConfigCallData(
