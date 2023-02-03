@@ -43,9 +43,9 @@ constexpr int64_t kDefaultTargetReadSize = 8192;
 constexpr int kMaxWSABUFCount = 16;
 
 void AbortOnEvent(absl::Status) {
-  GPR_ASSERT(false &&
-             "INTERNAL ERROR: Asked to handle read/write event with an invalid "
-             "callback");
+  grpc_core::Crash(
+      "INTERNAL ERROR: Asked to handle read/write event with an invalid "
+      "callback");
 }
 
 }  // namespace
@@ -60,13 +60,16 @@ WindowsEndpoint::WindowsEndpoint(
       handle_read_event_(this),
       handle_write_event_(this),
       executor_(executor) {
-  sockaddr addr;
+  char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
   int addr_len = sizeof(addr);
-  if (getsockname(socket_->socket(), &addr, &addr_len) < 0) {
-    gpr_log(GPR_ERROR, "Unrecoverable error: Failed to get local socket name.");
-    abort();
+  if (getsockname(socket_->socket(), reinterpret_cast<sockaddr*>(addr),
+                  &addr_len) < 0) {
+    grpc_core::Crash(absl::StrFormat(
+        "Unrecoverable error: Failed to get local socket name. %s",
+        GRPC_WSA_ERROR(WSAGetLastError(), "getsockname").ToString().c_str()));
   }
-  local_address_ = EventEngine::ResolvedAddress(&addr, addr_len);
+  local_address_ =
+      EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(addr), addr_len);
   local_address_string_ = *ResolvedAddressToURI(local_address_);
   peer_address_string_ = *ResolvedAddressToURI(peer_address_);
 }
@@ -152,7 +155,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   DWORD bytes_sent;
   int status = WSASend(socket_->socket(), buffers.data(), (DWORD)buffers.size(),
                        &bytes_sent, 0, nullptr, nullptr);
-  size_t async_buffers_offset;
+  size_t async_buffers_offset = 0;
   if (status == 0) {
     if (bytes_sent == data->Length()) {
       // Write completed, exiting early
@@ -213,7 +216,7 @@ const EventEngine::ResolvedAddress& WindowsEndpoint::GetLocalAddress() const {
 // ---- Handle{Read|Write}Closure
 
 WindowsEndpoint::BaseEventClosure::BaseEventClosure(WindowsEndpoint* endpoint)
-    : endpoint_(endpoint), cb_(&AbortOnEvent) {}
+    : cb_(&AbortOnEvent), endpoint_(endpoint) {}
 
 void WindowsEndpoint::HandleReadClosure::Run() {
   GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p Handling Read Event", endpoint_);

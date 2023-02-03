@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -30,17 +30,12 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
-
-namespace {
-// TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
-// current thread (with nullptr indicating not a threadpool thread).
-thread_local bool g_threadpool_thread;
-}  // namespace
 
 void ThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
   state->thread_count.Add();
@@ -76,7 +71,7 @@ void ThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
       "event_engine",
       [](void* arg) {
         std::unique_ptr<ThreadArg> a(static_cast<ThreadArg*>(arg));
-        g_threadpool_thread = true;
+        ThreadLocal::SetIsEventEngineThread(true);
         switch (a->reason) {
           case StartThreadReason::kInitialPool:
             break;
@@ -128,8 +123,9 @@ bool ThreadPool::Queue::Step() {
   switch (state_) {
     case State::kRunning:
       break;
-    case State::kShutdown:
     case State::kForking:
+      return false;
+    case State::kShutdown:
       if (!callbacks_.empty()) break;
       return false;
   }
@@ -147,14 +143,18 @@ ThreadPool::ThreadPool() {
   }
 }
 
+bool ThreadPool::IsThreadPoolThread() {
+  return ThreadLocal::IsEventEngineThread();
+}
+
 void ThreadPool::Quiesce() {
   state_->queue.SetShutdown();
   // Wait until all threads are exited.
   // Note that if this is a threadpool thread then we won't exit this thread
   // until the callstack unwinds a little, so we need to wait for just one
   // thread running instead of zero.
-  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0,
-                                             "shutting down");
+  state_->thread_count.BlockUntilThreadCount(
+      ThreadLocal::IsEventEngineThread() ? 1 : 0, "shutting down");
   quiesced_.store(true, std::memory_order_relaxed);
 }
 

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -28,29 +28,30 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 namespace {
 
-/* Main struct for local TSI zero-copy frame protector. */
+// Main struct for local TSI zero-copy frame protector.
 typedef struct local_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
 } local_zero_copy_grpc_protector;
 
-/* Main struct for local TSI handshaker result. */
+// Main struct for local TSI handshaker result.
 typedef struct local_tsi_handshaker_result {
   tsi_handshaker_result base;
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
 } local_tsi_handshaker_result;
 
-/* Main struct for local TSI handshaker. */
+// Main struct for local TSI handshaker.
 typedef struct local_tsi_handshaker {
   tsi_handshaker base;
 } local_tsi_handshaker;
 
-/* --- tsi_handshaker_result methods implementation. --- */
+// --- tsi_handshaker_result methods implementation. ---
 
 tsi_result handshaker_result_extract_peer(const tsi_handshaker_result* /*self*/,
                                           tsi_peer* /*peer*/) {
@@ -92,8 +93,8 @@ void handshaker_result_destroy(tsi_handshaker_result* self) {
 const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_extract_peer,
     handshaker_result_get_frame_protector_type,
-    nullptr, /* handshaker_result_create_zero_copy_grpc_protector */
-    nullptr, /* handshaker_result_create_frame_protector */
+    nullptr,  // handshaker_result_create_zero_copy_grpc_protector
+    nullptr,  // handshaker_result_create_frame_protector
     handshaker_result_get_unused_bytes,
     handshaker_result_destroy};
 
@@ -117,7 +118,7 @@ tsi_result create_handshaker_result(const unsigned char* received_bytes,
   return TSI_OK;
 }
 
-/* --- tsi_handshaker methods implementation. --- */
+// --- tsi_handshaker methods implementation. ---
 
 tsi_result handshaker_next(tsi_handshaker* self,
                            const unsigned char* received_bytes,
@@ -132,9 +133,9 @@ tsi_result handshaker_next(tsi_handshaker* self,
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  /* Note that there is no interaction between TSI peers, and all operations are
-   * local.
-   */
+  // Note that there is no interaction between TSI peers, and all operations are
+  // local.
+  //
   *bytes_to_send_size = 0;
   create_handshaker_result(received_bytes, received_bytes_size, result);
   return TSI_OK;
@@ -150,14 +151,14 @@ void handshaker_destroy(tsi_handshaker* self) {
 }
 
 const tsi_handshaker_vtable handshaker_vtable = {
-    nullptr, /* get_bytes_to_send_to_peer -- deprecated */
-    nullptr, /* process_bytes_from_peer   -- deprecated */
-    nullptr, /* get_result                -- deprecated */
-    nullptr, /* extract_peer              -- deprecated */
-    nullptr, /* create_frame_protector    -- deprecated */
+    nullptr,  // get_bytes_to_send_to_peer -- deprecated
+    nullptr,  // process_bytes_from_peer   -- deprecated
+    nullptr,  // get_result                -- deprecated
+    nullptr,  // extract_peer              -- deprecated
+    nullptr,  // create_frame_protector    -- deprecated
     handshaker_destroy,
     handshaker_next,
-    nullptr, /* shutdown */
+    nullptr,  // shutdown
 };
 
 }  // namespace

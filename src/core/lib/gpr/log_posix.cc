@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
@@ -43,7 +44,7 @@ static intptr_t sys_gettid(void) { return (intptr_t)pthread_self(); }
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
-  /* Avoid message construction if gpr_log_message won't log */
+  // Avoid message construction if gpr_log_message won't log
   if (gpr_should_log(severity) == 0) {
     return;
   }
@@ -107,4 +108,4 @@ void gpr_default_log(gpr_log_func_args* args) {
   }
 }
 
-#endif /* defined(GPR_POSIX_LOG) */
+#endif  // defined(GPR_POSIX_LOG)

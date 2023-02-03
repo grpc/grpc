@@ -99,6 +99,9 @@ RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 # Install prerequisites for the clang-tidy script
 RUN apt-get update && apt-get install -y jq git
 
+# Install prerequisites for the iwyu script
+RUN apt-get update && apt-get install -y jq git cmake zlib1g-dev libtinfo-dev libclang-15-dev && apt-get clean
+
 #========================
 # Bazel installation
 

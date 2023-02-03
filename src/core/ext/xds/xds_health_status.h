@@ -14,14 +14,19 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
-#define GRPC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 
 #include "src/core/lib/resolver/server_address.h"
 
@@ -47,6 +52,32 @@ class XdsHealthStatus {
 
  private:
   HealthStatus status_;
+};
+
+class XdsHealthStatusSet {
+ public:
+  XdsHealthStatusSet() = default;
+
+  explicit XdsHealthStatusSet(absl::Span<const XdsHealthStatus> statuses) {
+    for (XdsHealthStatus status : statuses) {
+      Add(status);
+    }
+  }
+
+  bool operator==(const XdsHealthStatusSet& other) const {
+    return status_mask_ == other.status_mask_;
+  }
+
+  void Clear() { status_mask_ = 0; }
+
+  void Add(XdsHealthStatus status) { status_mask_ |= (0x1 << status.status()); }
+
+  bool Contains(XdsHealthStatus status) const {
+    return status_mask_ & (0x1 << status.status());
+  }
+
+ private:
+  int status_mask_ = 0;
 };
 
 bool operator<(const XdsHealthStatus& hs1, const XdsHealthStatus& hs2);
@@ -75,4 +106,4 @@ class XdsEndpointHealthStatusAttribute
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H

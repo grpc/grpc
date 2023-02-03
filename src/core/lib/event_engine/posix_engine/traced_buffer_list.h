@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
 
 #include <grpc/support/port_platform.h>
 
@@ -32,58 +32,58 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-struct ConnectionMetrics { /* Delivery rate in Bytes/s. */
+struct ConnectionMetrics {  // Delivery rate in Bytes/s.
   absl::optional<uint64_t> delivery_rate;
-  /* If the delivery rate is limited by the application, this is set to true. */
+  // If the delivery rate is limited by the application, this is set to true.
   absl::optional<bool> is_delivery_rate_app_limited;
-  /* Total packets retransmitted. */
+  // Total packets retransmitted.
   absl::optional<uint32_t> packet_retx;
-  /* Total packets retransmitted spuriously. This metric is smaller than or
-  equal to packet_retx. */
+  // Total packets retransmitted spuriously. This metric is smaller than or
+  // equal to packet_retx.
   absl::optional<uint32_t> packet_spurious_retx;
-  /* Total packets sent. */
+  // Total packets sent.
   absl::optional<uint32_t> packet_sent;
-  /* Total packets delivered. */
+  // Total packets delivered.
   absl::optional<uint32_t> packet_delivered;
-  /* Total packets delivered with ECE marked. This metric is smaller than or
-  equal to packet_delivered. */
+  // Total packets delivered with ECE marked. This metric is smaller than or
+  // equal to packet_delivered.
   absl::optional<uint32_t> packet_delivered_ce;
-  /* Total bytes lost so far. */
+  // Total bytes lost so far.
   absl::optional<uint64_t> data_retx;
-  /* Total bytes sent so far. */
+  // Total bytes sent so far.
   absl::optional<uint64_t> data_sent;
-  /* Total bytes in write queue but not sent. */
+  // Total bytes in write queue but not sent.
   absl::optional<uint64_t> data_notsent;
-  /* Pacing rate of the connection in Bps */
+  // Pacing rate of the connection in Bps
   absl::optional<uint64_t> pacing_rate;
-  /* Minimum RTT observed in usec. */
+  // Minimum RTT observed in usec.
   absl::optional<uint32_t> min_rtt;
-  /* Smoothed RTT in usec */
+  // Smoothed RTT in usec
   absl::optional<uint32_t> srtt;
-  /* Send congestion window. */
+  // Send congestion window.
   absl::optional<uint32_t> congestion_window;
-  /* Slow start threshold in packets. */
+  // Slow start threshold in packets.
   absl::optional<uint32_t> snd_ssthresh;
-  /* Maximum degree of reordering (i.e., maximum number of packets reodered)
-   on the connection. */
+  // Maximum degree of reordering (i.e., maximum number of packets reodered)
+  // on the connection.
   absl::optional<uint32_t> reordering;
-  /* Represents the number of recurring retransmissions of the first sequence
-  that is not acknowledged yet. */
+  // Represents the number of recurring retransmissions of the first sequence
+  // that is not acknowledged yet.
   absl::optional<uint8_t> recurring_retrans;
-  /* The cumulative time (in usec) that the transport protocol was busy
-   sending data. */
+  // The cumulative time (in usec) that the transport protocol was busy
+  // sending data.
   absl::optional<uint64_t> busy_usec;
-  /* The cumulative time (in usec) that the transport protocol was limited by
-   the receive window size. */
+  // The cumulative time (in usec) that the transport protocol was limited by
+  // the receive window size.
   absl::optional<uint64_t> rwnd_limited_usec;
-  /* The cumulative time (in usec) that the transport protocol was limited by
-   the send buffer size. */
+  // The cumulative time (in usec) that the transport protocol was limited by
+  // the send buffer size.
   absl::optional<uint64_t> sndbuf_limited_usec;
 };
 
 struct BufferTimestamp {
   gpr_timespec time;
-  ConnectionMetrics metrics; /* Metrics collected with this timestamp */
+  ConnectionMetrics metrics;  // Metrics collected with this timestamp
 };
 
 struct Timestamps {
@@ -92,11 +92,11 @@ struct Timestamps {
   BufferTimestamp sent_time;
   BufferTimestamp acked_time;
 
-  uint32_t byte_offset; /* byte offset relative to the start of the RPC */
+  uint32_t byte_offset;  // byte offset relative to the start of the RPC
 
 #ifdef GRPC_LINUX_ERRQUEUE
-  tcp_info info; /* tcp_info collected on sendmsg */
-#endif           /* GRPC_LINUX_ERRQUEUE */
+  tcp_info info;  // tcp_info collected on sendmsg
+#endif            // GRPC_LINUX_ERRQUEUE
 };
 
 // TracedBuffer is a class to keep track of timestamps for a specific buffer in
@@ -148,9 +148,9 @@ class TracedBufferList {
     friend class TracedBufferList;
     gpr_timespec last_timestamp_;
     TracedBuffer* next_ = nullptr;
-    uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
-    void* arg_;       /* The arg to pass to timestamps_callback */
-    Timestamps ts_;   /* The timestamps corresponding to this buffer */
+    uint32_t seq_no_;  // The sequence number for the last byte in the buffer
+    void* arg_;        // The arg to pass to timestamps_callback
+    Timestamps ts_;    // The timestamps corresponding to this buffer
   };
   grpc_core::Mutex mu_;
   // TracedBuffers are ordered by sequence number and would need to be processed
@@ -161,7 +161,7 @@ class TracedBufferList {
   TracedBuffer* tail_ = nullptr;
 };
 
-#else  /* GRPC_LINUX_ERRQUEUE */
+#else   // GRPC_LINUX_ERRQUEUE
 // TracedBufferList implementation is a no-op for this platform.
 class TracedBufferList {
  public:
@@ -172,7 +172,7 @@ class TracedBufferList {
   int Size() { return 0; }
   void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/) {}
 };
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE
 
 // Sets the callback function to call when timestamps for a write are collected.
 // This is expected to be called atmost once.
@@ -182,4 +182,4 @@ void TcpSetWriteTimestampsCallback(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H */
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H

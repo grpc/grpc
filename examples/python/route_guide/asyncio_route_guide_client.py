@@ -46,10 +46,16 @@ async def guide_get_one_feature(stub: route_guide_pb2_grpc.RouteGuideStub,
 
 
 async def guide_get_feature(stub: route_guide_pb2_grpc.RouteGuideStub) -> None:
-    await guide_get_one_feature(
-        stub, route_guide_pb2.Point(latitude=409146138, longitude=-746188906))
-    await guide_get_one_feature(stub,
-                                route_guide_pb2.Point(latitude=0, longitude=0))
+    # The following two coroutines will be wrapped in a Future object
+    # and scheduled in the event loop so that they can run concurrently
+    task_group = asyncio.gather(
+        guide_get_one_feature(
+            stub, route_guide_pb2.Point(latitude=409146138,
+                                        longitude=-746188906)),
+        guide_get_one_feature(stub,
+                              route_guide_pb2.Point(latitude=0, longitude=0)))
+    # Wait until the Future is resolved
+    await task_group
 
 
 # Performs a server-streaming call

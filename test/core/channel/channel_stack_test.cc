@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channel_stack.h"
 
@@ -127,14 +127,14 @@ TEST(ChannelStackTest, CreateChannelStack) {
   call_stack =
       static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
   const grpc_call_element_args args = {
-      call_stack,                        /* call_stack */
-      nullptr,                           /* server_transport_data */
-      nullptr,                           /* context */
-      path,                              /* path */
-      gpr_get_cycle_counter(),           /* start_time */
-      grpc_core::Timestamp::InfFuture(), /* deadline */
-      nullptr,                           /* arena */
-      nullptr,                           /* call_combiner */
+      call_stack,                         // call_stack
+      nullptr,                            // server_transport_data
+      nullptr,                            // context
+      path,                               // path
+      gpr_get_cycle_counter(),            // start_time
+      grpc_core::Timestamp::InfFuture(),  // deadline
+      nullptr,                            // arena
+      nullptr,                            // call_combiner
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);

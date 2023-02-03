@@ -1069,10 +1069,10 @@ class Sanity(object):
                 environ['DISABLE_BAZEL_WRAPPER'] = 'true'
             return [
                 self.config.job_spec(cmd['script'].split(),
-                                     timeout_seconds=30 * 60,
+                                     timeout_seconds=45 * 60,
                                      environ=environ,
                                      cpu_cost=cmd.get('cpu_cost', 1))
-                for cmd in yaml.load(f)
+                for cmd in yaml.safe_load(f)
             ]
 
     def pre_build_steps(self):

@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,14 +25,15 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "upb/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -39,8 +41,10 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,6 +56,7 @@
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
@@ -105,9 +110,8 @@ class XdsClusterTest : public ::testing::Test {
         "  }\n"
         "}");
     if (!bootstrap.ok()) {
-      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              bootstrap.status().ToString().c_str());
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
@@ -1313,12 +1317,12 @@ TEST_F(HostOverrideStatusTest, IgnoredWhenNotEnabled) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses, ::testing::ElementsAre());
+  EXPECT_THAT(resource.override_host_statuses, ::testing::ElementsAre());
 }
 
 TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1338,7 +1342,7 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses,
+  EXPECT_THAT(resource.override_host_statuses,
               ::testing::UnorderedElementsAre(
                   XdsHealthStatus(XdsHealthStatus::kUnknown),
                   XdsHealthStatus(XdsHealthStatus::kHealthy),

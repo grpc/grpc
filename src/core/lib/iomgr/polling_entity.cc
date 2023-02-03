@@ -1,27 +1,31 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/polling_entity.h"
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
     grpc_pollset_set* pollset_set) {
@@ -70,8 +74,8 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_add_pollset_set(pss_dst, pollent->pollent.pollset_set);
   } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
-    abort();
+    grpc_core::Crash(
+        absl::StrFormat("Invalid grpc_polling_entity tag '%d'", pollent->tag));
   }
 }
 
@@ -90,7 +94,7 @@ void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);
   } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
-    abort();
+    grpc_core::Crash(
+        absl::StrFormat("Invalid grpc_polling_entity tag '%d'", pollent->tag));
   }
 }

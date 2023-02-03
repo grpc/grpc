@@ -3,6 +3,8 @@
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
 build --cxxopt='-std=c++14'
+build --host_copt=-DGRPC_BAZEL_BUILD
+build --host_cxxopt='-std=c++14'
 build --action_env=GRPC_BAZEL_RUNTIME=1
 build --define=use_fast_cpp_protos=true
 
@@ -43,6 +45,11 @@ build:fuzzer_asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
 build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+
+build:fork_support --cxxopt=-DGRPC_ENABLE_FORK_SUPPORT=1
+build:fork_support --cxxopt=-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1
+build:fork_support --action_env=GRPC_ENABLE_FORK_SUPPORT=1
+
 
 # We have a separate ASAN config for Mac OS to workaround a couple of bugs:
 # 1. https://github.com/bazelbuild/bazel/issues/6932

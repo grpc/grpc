@@ -46,6 +46,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "interceptor_list_test",
+    srcs = ["interceptor_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_context",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:interceptor_list",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
     external_deps = ["gtest"],
@@ -362,7 +380,6 @@ grpc_cc_test(
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
-        "//src/core:try_seq",
     ],
 )
 
@@ -379,7 +396,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:gpr",
+        "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:basic_join",
@@ -390,6 +407,25 @@ grpc_cc_test(
         "//src/core:pipe",
         "//src/core:resource_quota",
         "//src/core:seq",
+    ],
+)
+
+grpc_cc_test(
+    name = "mpsc_test",
+    srcs = ["mpsc_test.cc"],
+    external_deps = [
+        "absl/types:optional",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:mpsc",
     ],
 )
 
@@ -432,6 +468,26 @@ grpc_cc_test(
     deps = [
         "//src/core:activity",
         "//src/core:exec_ctx_wakeup_scheduler",
+        "//src/core:poll",
+    ],
+)
+
+grpc_cc_test(
+    name = "event_engine_wakeup_scheduler_test",
+    srcs = ["event_engine_wakeup_scheduler_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:activity",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:notification",
         "//src/core:poll",
     ],
 )

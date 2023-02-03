@@ -18,8 +18,6 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
-
 namespace grpc_core {
 namespace testing {
 

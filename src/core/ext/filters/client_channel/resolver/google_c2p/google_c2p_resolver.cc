@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 #include <random>
 #include <string>
@@ -34,7 +35,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 
@@ -26,7 +26,7 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-/* test creation & destruction */
+// test creation & destruction
 static void test_no_op(void) {
   grpc_chttp2_stream_map map;
 
@@ -36,7 +36,7 @@ static void test_no_op(void) {
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* test lookup on an empty map */
+// test lookup on an empty map
 static void test_empty_find(void) {
   grpc_chttp2_stream_map map;
 
@@ -47,7 +47,7 @@ static void test_empty_find(void) {
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* test add & lookup */
+// test add & lookup
 static void test_basic_add_find(uint32_t n) {
   grpc_chttp2_stream_map map;
   uint32_t i;
@@ -71,7 +71,7 @@ static void test_basic_add_find(uint32_t n) {
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* verify that for_each gets the right values during test_delete_evens_XXX */
+// verify that for_each gets the right values during test_delete_evens_XXX
 static void verify_for_each(void* user_data, uint32_t stream_id, void* ptr) {
   uint32_t* for_each_check = static_cast<uint32_t*>(user_data);
   ASSERT_TRUE(ptr);
@@ -103,8 +103,8 @@ static void check_delete_evens(grpc_chttp2_stream_map* map, uint32_t n) {
   }
 }
 
-/* add a bunch of keys, delete the even ones, and make sure the map is
-   consistent */
+// add a bunch of keys, delete the even ones, and make sure the map is
+// consistent
 static void test_delete_evens_sweep(uint32_t n) {
   grpc_chttp2_stream_map map;
   uint32_t i;
@@ -125,8 +125,8 @@ static void test_delete_evens_sweep(uint32_t n) {
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* add a bunch of keys, delete the even ones immediately, and make sure the map
-   is consistent */
+// add a bunch of keys, delete the even ones immediately, and make sure the map
+// is consistent
 static void test_delete_evens_incremental(uint32_t n) {
   grpc_chttp2_stream_map map;
   uint32_t i;
@@ -145,8 +145,8 @@ static void test_delete_evens_incremental(uint32_t n) {
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* add a bunch of keys, delete old ones after some time, ensure the
-   backing array does not grow */
+// add a bunch of keys, delete old ones after some time, ensure the
+// backing array does not grow
 static void test_periodic_compaction(uint32_t n) {
   grpc_chttp2_stream_map map;
   uint32_t i;

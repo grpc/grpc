@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/tsi/ssl_transport_security.h"
 
@@ -32,6 +32,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -115,7 +116,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ASSERT_NE(ssl_fixture->alpn_lib, nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
-  /* Create client handshaker factory. */
+  // Create client handshaker factory.
   tsi_ssl_client_handshaker_options client_options;
   client_options.pem_root_certs = key_cert_lib->root_cert;
   if (ssl_fixture->force_client_auth) {
@@ -140,7 +141,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &client_options, &ssl_fixture->client_handshaker_factory),
             TSI_OK);
-  /* Create server handshaker factory. */
+  // Create server handshaker factory.
   tsi_ssl_server_handshaker_options server_options;
   if (alpn_lib->alpn_mode == ALPN_SERVER_NO_CLIENT ||
       alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
@@ -174,7 +175,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                 &server_options, &ssl_fixture->server_handshaker_factory),
             TSI_OK);
-  /* Create server and client handshakers. */
+  // Create server and client handshakers.
   ASSERT_EQ(
       tsi_ssl_client_handshaker_factory_create_handshaker(
           ssl_fixture->client_handshaker_factory,
@@ -395,7 +396,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
   if (ssl_fixture == nullptr) {
     return;
   }
-  /* Destroy ssl_alpn_lib. */
+  // Destroy ssl_alpn_lib.
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   for (size_t i = 0; i < alpn_lib->num_server_alpn_protocols; i++) {
     gpr_free(const_cast<char*>(alpn_lib->server_alpn_protocols[i]));
@@ -406,7 +407,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
   }
   gpr_free(alpn_lib->client_alpn_protocols);
   gpr_free(alpn_lib);
-  /* Destroy ssl_key_cert_lib. */
+  // Destroy ssl_key_cert_lib.
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
   for (size_t i = 0; i < key_cert_lib->server_num_key_cert_pairs; i++) {
     ssl_test_pem_key_cert_pair_destroy(
@@ -427,7 +428,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
   if (ssl_fixture->session_cache != nullptr) {
     tsi_ssl_session_cache_unref(ssl_fixture->session_cache);
   }
-  /* Unreference others. */
+  // Unreference others.
   tsi_ssl_server_handshaker_factory_unref(
       ssl_fixture->server_handshaker_factory);
   tsi_ssl_client_handshaker_factory_unref(
@@ -457,7 +458,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   tsi_test_fixture_init(&ssl_fixture->base);
   ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
-  /* Create ssl_key_cert_lib. */
+  // Create ssl_key_cert_lib.
   ssl_key_cert_lib* key_cert_lib = grpc_core::Zalloc<ssl_key_cert_lib>();
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
@@ -499,7 +500,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       tsi_ssl_root_certs_store_create(key_cert_lib->root_cert);
   EXPECT_NE(key_cert_lib->root_store, nullptr);
   ssl_fixture->key_cert_lib = key_cert_lib;
-  /* Create ssl_alpn_lib. */
+  // Create ssl_alpn_lib.
   ssl_alpn_lib* alpn_lib = grpc_core::Zalloc<ssl_alpn_lib>();
   alpn_lib->server_alpn_protocols = static_cast<const char**>(
       gpr_zalloc(sizeof(char*) * SSL_TSI_TEST_ALPN_NUM));
@@ -586,7 +587,7 @@ void ssl_tsi_test_do_handshake_with_client_authentication_and_root_store() {
 void ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain() {
   gpr_log(GPR_INFO,
           "ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain");
-  /* server1 cert contains "waterzooi.test.google.be" in SAN. */
+  // server1 cert contains "waterzooi.test.google.be" in SAN.
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
@@ -600,7 +601,7 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
   gpr_log(
       GPR_INFO,
       "ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain");
-  /* server1 cert contains "*.test.google.fr" in SAN. */
+  // server1 cert contains "*.test.google.fr" in SAN.
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
@@ -613,7 +614,7 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
 void ssl_tsi_test_do_handshake_with_wrong_server_name_indication() {
   gpr_log(GPR_INFO,
           "ssl_tsi_test_do_handshake_with_wrong_server_name_indication");
-  /* server certs do not contain "test.google.cn". */
+  // server certs do not contain "test.google.cn".
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
@@ -893,8 +894,8 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
   ssl_test_pem_key_cert_pair_destroy(cert_pair);
 }
 
-/* Attempting to create a handshaker factory with invalid parameters should fail
- * but not crash. */
+// Attempting to create a handshaker factory with invalid parameters should fail
+// but not crash.
 void test_tsi_ssl_client_handshaker_factory_bad_params() {
   const char* cert_chain = "This is not a valid PEM file.";
 

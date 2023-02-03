@@ -21,7 +21,6 @@
 #include <ratio>
 #include <vector>
 
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -54,7 +53,7 @@ FuzzingEventEngine::FuzzingEventEngine(
   // epoch to allow for some fancy atomic stuff.
   now_ = Time() + std::chrono::seconds(5);
 
-  // Whilst a fuzzing event engine is active we override grpc's now function.
+  // Whilst a fuzzing EventEngine is active we override grpc's now function.
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
 
   auto update_delay = [](std::map<intptr_t, Duration>* map,

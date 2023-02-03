@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 
+#include <benchmark/benchmark.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
@@ -151,17 +153,61 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
   event.DestroyEvent();
 }
 
+namespace {
+
+// A trivial callback sceduler which inherits from the Scheduler interface but
+// immediatey runs the callback/closure.
+class BechmarkCallbackScheduler : public Scheduler {
+ public:
+  BechmarkCallbackScheduler() = default;
+  void Run(
+      grpc_event_engine::experimental::EventEngine::Closure* closure) override {
+    closure->Run();
+  }
+
+  void Run(absl::AnyInvocable<void()> cb) override { cb(); }
+};
+
+// A benchmark which repeatedly registers a NotifyOn callback and invokes the
+// callback with SetReady. This benchmark is intended to measure the cost of
+// NotifyOn and SetReady implementations of the lock free event.
+void BM_LockFreeEvent(benchmark::State& state) {
+  BechmarkCallbackScheduler cb_scheduler;
+  LockfreeEvent event(&cb_scheduler);
+  event.InitEvent();
+  PosixEngineClosure* notify_on_closure =
+      PosixEngineClosure::ToPermanentClosure([](absl::Status /*status*/) {});
+  for (auto s : state) {
+    event.NotifyOn(notify_on_closure);
+    event.SetReady();
+  }
+  event.SetShutdown(absl::CancelledError("Shutting down"));
+  delete notify_on_closure;
+  event.DestroyEvent();
+}
+BENCHMARK(BM_LockFreeEvent)->ThreadRange(1, 64);
+
+}  // namespace
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  benchmark::Initialize(&argc, argv);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();
   g_scheduler = new TestScheduler(
       grpc_event_engine::experimental::GetDefaultEventEngine());
   int r = RUN_ALL_TESTS();
+  benchmark::RunTheBenchmarksNamespaced();
   grpc_shutdown();
   return r;
 }

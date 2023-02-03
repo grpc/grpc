@@ -25,7 +25,6 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
-#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/bitset.h"

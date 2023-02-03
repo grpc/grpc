@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -43,7 +44,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 
-/* --- Constants. --- */
+// --- Constants. ---
 
 typedef enum {
   GRPC_CREDENTIALS_OK = 0,
@@ -73,20 +74,20 @@ typedef enum {
 #define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING \
   "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
 
-/* --- Google utils --- */
+// --- Google utils ---
 
-/* It is the caller's responsibility to gpr_free the result if not NULL. */
+// It is the caller's responsibility to gpr_free the result if not NULL.
 std::string grpc_get_well_known_google_credentials_file_path(void);
 
-/* Implementation function for the different platforms. */
+// Implementation function for the different platforms.
 std::string grpc_get_well_known_google_credentials_file_path_impl(void);
 
-/* Override for testing only. Not thread-safe */
+// Override for testing only. Not thread-safe
 typedef std::string (*grpc_well_known_credentials_path_getter)(void);
 void grpc_override_well_known_credentials_path_getter(
     grpc_well_known_credentials_path_getter getter);
 
-/* --- grpc_channel_credentials. --- */
+// --- grpc_channel_credentials. ---
 
 #define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.internal.channel_credentials"
 
@@ -159,24 +160,24 @@ struct grpc_channel_credentials
 // args.  For example, we'll want to expose it to LB policies by adding
 // methods on the helper API.
 
-/* Util to encapsulate the channel credentials in a channel arg. */
+// Util to encapsulate the channel credentials in a channel arg.
 grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials* credentials);
 
-/* Util to get the channel credentials from a channel arg. */
+// Util to get the channel credentials from a channel arg.
 grpc_channel_credentials* grpc_channel_credentials_from_arg(
     const grpc_arg* arg);
 
-/* Util to find the channel credentials from channel args. */
+// Util to find the channel credentials from channel args.
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     const grpc_channel_args* args);
 
-/* --- grpc_core::CredentialsMetadataArray. --- */
+// --- grpc_core::CredentialsMetadataArray. ---
 
 namespace grpc_core {
 using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 }
 
-/* --- grpc_call_credentials. --- */
+// --- grpc_call_credentials. ---
 
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
@@ -241,12 +242,12 @@ struct grpc_call_credentials
   const grpc_security_level min_security_level_;
 };
 
-/* Metadata-only credentials with the specified key and value where
-   asynchronicity can be simulated for testing. */
+// Metadata-only credentials with the specified key and value where
+// asynchronicity can be simulated for testing.
 grpc_call_credentials* grpc_md_only_test_credentials_create(
     const char* md_key, const char* md_value);
 
-/* --- grpc_server_credentials. --- */
+// --- grpc_server_credentials. ---
 
 #define GRPC_SERVER_CREDENTIALS_ARG "grpc.internal.server_credentials"
 
@@ -295,4 +296,4 @@ grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args);
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/slice/b64.h"
 
@@ -51,7 +51,7 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
   grpc_slice orig_decoded;
   for (i = 0; i < sizeof(orig); i++) orig[i] = static_cast<uint8_t>(i);
 
-  /* Try all the different paddings. */
+  // Try all the different paddings.
   for (i = 0; i < 3; i++) {
     grpc_core::ExecCtx exec_ctx;
     b64 = grpc_base64_encode(orig, sizeof(orig) - i, url_safe, multiline);

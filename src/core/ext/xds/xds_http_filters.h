@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,7 +30,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/arena.h"
 #include "upb/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
@@ -179,4 +178,4 @@ class XdsHttpFilterRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H

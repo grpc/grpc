@@ -1,28 +1,28 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* This test verifies -
- * 1) grpc_call_final_info passed to the filters on destroying a call contains
- * the proper status.
- * 2) If the response has both an HTTP status code and a gRPC status code, then
- * we should prefer the gRPC status code as mentioned in
- * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
- */
+// This test verifies -
+// 1) grpc_call_final_info passed to the filters on destroying a call contains
+// the proper status.
+// 2) If the response has both an HTTP status code and a gRPC status code, then
+// we should prefer the gRPC status code as mentioned in
+// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+//
 
 #include <limits.h>
 #include <stdint.h>
@@ -39,6 +39,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -262,9 +263,9 @@ static void test_request(grpc_end2end_test_config config) {
   gpr_mu_unlock(&g_mu);
 }
 
-/*******************************************************************************
- * Test status_code filter
- */
+//******************************************************************************
+// Test status_code filter
+//
 
 typedef struct final_status_data {
   grpc_call_stack* call;
@@ -279,7 +280,7 @@ static void server_start_transport_stream_op_batch(
       auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
       auto* status = batch->get_pointer(grpc_core::HttpStatusMetadata());
       if (status != nullptr) {
-        /* Replace the HTTP status with 404 */
+        // Replace the HTTP status with 404
         *status = 404;
       }
     }
@@ -362,9 +363,9 @@ static const grpc_channel_filter test_server_filter = {
     grpc_channel_next_get_info,
     "server_filter_status_code"};
 
-/*******************************************************************************
- * Registration
- */
+//******************************************************************************
+// Registration
+//
 
 void filter_status_code(grpc_end2end_test_config config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
