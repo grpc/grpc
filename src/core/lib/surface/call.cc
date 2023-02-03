@@ -2288,11 +2288,11 @@ class PromiseBasedCall : public Call,
       // = one wakeup semantics).
       auto unref = absl::MakeCleanup([this]() { Unref(); });
       ReleasableMutexLock lock(&mu_);
-      // Note that activity refcount can drop to zero, but we could
-      // win the lock against DropActivity, so we need to only
-      // increase activities refcount if it is non-zero.
-      if (call_ != nullptr && call_->RefIfNonZero()) {
-        PromiseBasedCall* call = call_;
+      // Note that activity refcount can drop to zero, but we could win the lock
+      // against DropActivity, so we need to only increase activities refcount
+      // if it is non-zero.
+      PromiseBasedCall* call = call_;
+      if (call != nullptr && call->RefIfNonZero()) {
         lock.Release();
         // Activity still exists and we have a reference: wake it up,
         // which will drop the ref.
@@ -2762,6 +2762,7 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array) {
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
@@ -3169,9 +3170,12 @@ void ClientPromiseBasedCall::PublishStatus(
   FinishOpOnCompletion(&recv_status_on_client_completion_,
                        PendingOp::kReceiveStatusOnClient);
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // ServerPromiseBasedCall
+
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 
 class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
@@ -3314,6 +3318,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   ClientMetadataHandle client_initial_metadata_ ABSL_GUARDED_BY(mu());
 };
 
+<<<<<<< HEAD
 ArenaPromise<ServerMetadataHandle>
 ServerCallContext::MakeTopOfServerCallPromise(
     CallArgs call_args, grpc_completion_queue* cq,
@@ -3344,6 +3349,8 @@ ServerCallContext::MakeTopOfServerCallPromise(
   };
 }
 
+=======
+>>>>>>> 947b30b231697da919893cd6ce6119bd65059be4
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
     : PromiseBasedCall(arena, 0, *args),
@@ -3366,7 +3373,7 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
             cancel_send_and_receive_ ? "force-" : "",
             send_trailing_metadata_ != nullptr
                 ? absl::StrCat("send-metadata:",
-                               send_trailing_metadata_->DebugString())
+                               send_trailing_metadata_->DebugString(), " ")
                       .c_str()
                 : " ",
             PollStateDebugString().c_str());
@@ -3622,6 +3629,43 @@ void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
   ForceWakeup();
 }
 
+#endif
+
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
+ArenaPromise<ServerMetadataHandle>
+ServerCallContext::MakeTopOfServerCallPromise(
+    CallArgs call_args, grpc_completion_queue* cq,
+    grpc_metadata_array* publish_initial_metadata,
+    absl::FunctionRef<void(grpc_call* call)> publish) {
+  call_->mu()->AssertHeld();
+  call_->SetCompletionQueueLocked(cq);
+  call_->server_to_client_messages_ = call_args.server_to_client_messages;
+  call_->client_to_server_messages_ = call_args.client_to_server_messages;
+  call_->send_initial_metadata_state_ = call_args.server_initial_metadata;
+  call_->incoming_compression_algorithm_ =
+      call_args.client_initial_metadata->get(GrpcEncodingMetadata())
+          .value_or(GRPC_COMPRESS_NONE);
+  call_->client_initial_metadata_ =
+      std::move(call_args.client_initial_metadata);
+  PublishMetadataArray(call_->client_initial_metadata_.get(),
+                       publish_initial_metadata);
+  call_->ExternalRef();
+  publish(call_->c_ptr());
+  return [this]() {
+    call_->mu()->AssertHeld();
+    return call_->PollTopOfCall();
+  };
+}
+#else
+ArenaPromise<ServerMetadataHandle>
+ServerCallContext::MakeTopOfServerCallPromise(
+    CallArgs, grpc_completion_queue*, grpc_metadata_array*,
+    absl::FunctionRef<void(grpc_call*)>) {
+  (void)call_;
+  Crash("Promise-based server call is not enabled");
+}
+#endif
+
 }  // namespace grpc_core
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3638,16 +3682,20 @@ size_t grpc_call_get_initial_size_estimate() {
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
   if (grpc_core::IsPromiseBasedClientCallEnabled() &&
       args->server_transport_data == nullptr && args->channel->is_promising()) {
     return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
         args, out_call);
   }
+#endif
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
   if (grpc_core::IsPromiseBasedServerCallEnabled() &&
       args->server_transport_data != nullptr && args->channel->is_promising()) {
     return grpc_core::MakePromiseBasedCall<grpc_core::ServerPromiseBasedCall>(
         args, out_call);
   }
+#endif
   return grpc_core::FilterStackCall::Create(args, out_call);
 }
 

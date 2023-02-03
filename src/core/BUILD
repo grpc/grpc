@@ -108,6 +108,10 @@ grpc_cc_library(
         "lib/experiments/config.h",
         "lib/experiments/experiments.h",
     ],
+    defines = select({
+        "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
+        "//conditions:default": [],
+    }),
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
@@ -1468,6 +1472,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_thread_local",
+    srcs = ["lib/event_engine/thread_local.cc"],
+    hdrs = ["lib/event_engine/thread_local.h"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "event_engine_thread_pool",
     srcs = ["lib/event_engine/thread_pool.cc"],
     hdrs = [
@@ -1480,6 +1491,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_executor",
+        "event_engine_thread_local",
         "forkable",
         "time",
         "useful",
@@ -1673,6 +1685,7 @@ grpc_cc_library(
     deps = [
         "event_engine_poller",
         "event_engine_time_util",
+        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",

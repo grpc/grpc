@@ -798,7 +798,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kBatchCompletedNoPipe:
       break;
     case State::kCancelledWhilstIdle:
-      interceptor_->Push()->Close();
+      interceptor()->Push()->Close();
       state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
@@ -876,11 +876,11 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                   StateString(state_));
         }
       }
-    }
       if (state_ != State::kPulledFromPipe &&
           state_ != State::kCompletedWhilePulledFromPipe) {
         break;
       }
+    }
       ABSL_FALLTHROUGH_INTENDED;
     case State::kCompletedWhilePulledFromPipe:
     case State::kPulledFromPipe: {

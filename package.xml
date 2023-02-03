@@ -1075,6 +1075,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />

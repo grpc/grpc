@@ -380,7 +380,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       }
       if (rc == nullptr) {
         auto w = std::make_shared<ActivityWaiter>(
-            Activity::current()->MakeNonOwningWaker());
+            Activity::current()->MakeOwningWaker());
         pending_.push(w);
         return [w]() -> Poll<absl::StatusOr<MatchResult>> {
           std::unique_ptr<absl::StatusOr<MatchResult>> r(

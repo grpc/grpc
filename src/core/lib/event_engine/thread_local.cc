@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2019 gRPC authors.
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,21 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
+#include <grpc/support/port_platform.h>
 
-#ifndef GRPCPP_SECURITY_CRONET_CREDENTIALS_H
-#define GRPCPP_SECURITY_CRONET_CREDENTIALS_H
+#include "src/core/lib/event_engine/thread_local.h"
 
-#include <memory>
+namespace grpc_event_engine {
+namespace experimental {
 
-namespace grpc {
+namespace {
+thread_local bool g_thread_local{false};
+}  // namespace
 
-class ChannelCredentials;
+void ThreadLocal::SetIsEventEngineThread(bool is) { g_thread_local = is; }
+bool ThreadLocal::IsEventEngineThread() { return g_thread_local; }
 
-/// Credentials for a channel using Cronet.
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
-
-}  // namespace grpc
-
-#endif  // GRPCPP_SECURITY_CRONET_CREDENTIALS_H
+}  // namespace experimental
+}  // namespace grpc_event_engine
