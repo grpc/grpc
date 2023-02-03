@@ -54,7 +54,6 @@ class CallbackGenericService;
 
 namespace experimental {
 class ServerInterceptorFactoryInterface;
-class ServerMetricRecorder;
 }  // namespace experimental
 
 class ServerInterface : public internal::CallHook {
@@ -186,8 +185,6 @@ class ServerInterface : public internal::CallHook {
     internal::Call call_wrapper_;
     internal::InterceptorBatchMethodsImpl interceptor_methods_;
     bool done_intercepting_;
-    bool call_metric_recording_enabled_;
-    experimental::ServerMetricRecorder* server_metric_recorder_;
   };
 
   /// RegisteredAsyncRequest is not part of the C++ API
@@ -352,13 +349,6 @@ class ServerInterface : public internal::CallHook {
   interceptor_creators() {
     return nullptr;
   }
-
-  // Whether per-call load reporting is enabled.
-  virtual bool call_metric_recording_enabled() const = 0;
-
-  // Interface to read or update server-wide metrics. Returns null when not set.
-  virtual experimental::ServerMetricRecorder* server_metric_recorder()
-      const = 0;
 
   // A method to get the callbackable completion queue associated with this
   // server. If the return value is nullptr, this server doesn't support
