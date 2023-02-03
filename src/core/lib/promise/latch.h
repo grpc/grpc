@@ -117,6 +117,74 @@ class Latch {
   IntraActivityWaiter waiter_;
 };
 
+// Specialization for void.
+template <>
+class Latch<void> {
+ public:
+  Latch() = default;
+  Latch(const Latch&) = delete;
+  Latch& operator=(const Latch&) = delete;
+  Latch(Latch&& other) noexcept : is_set_(other.is_set_) {
+#ifndef NDEBUG
+    GPR_DEBUG_ASSERT(!other.has_had_waiters_);
+#endif
+  }
+  Latch& operator=(Latch&& other) noexcept {
+#ifndef NDEBUG
+    GPR_DEBUG_ASSERT(!other.has_had_waiters_);
+#endif
+    is_set_ = other.is_set_;
+    return *this;
+  }
+
+  // Produce a promise to wait for this latch.
+  auto Wait() {
+#ifndef NDEBUG
+    has_had_waiters_ = true;
+#endif
+    return [this]() -> Poll<Empty> {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
+                StateString().c_str());
+      }
+      if (is_set_) {
+        return Empty{};
+      } else {
+        return waiter_.pending();
+      }
+    };
+  }
+
+  // Set the latch. Can only be called once.
+  void Set() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
+    }
+    GPR_DEBUG_ASSERT(!is_set_);
+    is_set_ = true;
+    waiter_.Wake();
+  }
+
+ private:
+  std::string DebugTag() {
+    return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
+
+  std::string StateString() {
+    return absl::StrCat("is_set:", is_set_ ? "true" : "false",
+                        " waiter:", waiter_.DebugString());
+  }
+
+  // True if we have a value set, false otherwise.
+  bool is_set_ = false;
+#ifndef NDEBUG
+  // Has this latch ever had waiters.
+  bool has_had_waiters_ = false;
+#endif
+  IntraActivityWaiter waiter_;
+};
+
 template <typename T>
 using LatchWaitPromise = decltype(std::declval<Latch<T>>().Wait());
 
