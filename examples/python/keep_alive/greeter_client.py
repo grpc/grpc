@@ -13,8 +13,6 @@
 # limitations under the License.
 """gRPC Python helloworld.Greeter client with keepAlive channel options."""
 
-from __future__ import print_function
-
 import logging
 from time import sleep
 
@@ -54,7 +52,7 @@ def run():
     with grpc.insecure_channel(target='localhost:50051',
                                options=channel_options) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        # Should success
+        # Should succeed
         unary_call(stub, 1, 'you')
 
         # Run 30s, run this with GRPC_VERBOSITY=DEBUG GRPC_TRACE=http_keepalive to observe logs.

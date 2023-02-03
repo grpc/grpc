@@ -13,8 +13,6 @@
 # limitations under the License.
 """The Python implementation of the GRPC helloworld.Greeter client with reflection."""
 
-from __future__ import print_function
-
 import logging
 
 from google.protobuf.descriptor_pool import DescriptorPool
@@ -43,10 +41,6 @@ def run():
         request_desc = desc_pool.FindMessageTypeByName(
             "helloworld.HelloRequest")
         print(f"found request name: {request_desc.full_name}")
-
-        stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-    print("Greeter client received: " + response.message)
 
 
 if __name__ == '__main__':

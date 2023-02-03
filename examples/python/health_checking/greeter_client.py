@@ -13,8 +13,6 @@
 # limitations under the License.
 """gRPC Python helloworld.Greeter client with health checking."""
 
-from __future__ import print_function
-
 import logging
 from time import sleep
 
@@ -44,7 +42,7 @@ def run():
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         health_stub = health_pb2_grpc.HealthStub(channel)
-        # Should success
+        # Should succeed
         unary_call(stub, 'you')
 
         # Check health status every 1 second for 30 seconds

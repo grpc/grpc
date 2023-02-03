@@ -13,8 +13,6 @@
 # limitations under the License.
 """gRPC Python helloworld.Greeter client with call timeout parameters."""
 
-from __future__ import print_function
-
 import logging
 
 import grpc
