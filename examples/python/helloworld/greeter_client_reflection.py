@@ -19,8 +19,6 @@ from google.protobuf.descriptor_pool import DescriptorPool
 import grpc
 from grpc_reflection.v1alpha.proto_reflection_descriptor_database import \
     ProtoReflectionDescriptorDatabase
-import helloworld_pb2
-import helloworld_pb2_grpc
 
 
 def run():
