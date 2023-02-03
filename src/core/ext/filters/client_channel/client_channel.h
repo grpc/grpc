@@ -35,7 +35,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"

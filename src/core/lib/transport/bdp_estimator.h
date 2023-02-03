@@ -23,6 +23,8 @@
 
 #include <inttypes.h>
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>

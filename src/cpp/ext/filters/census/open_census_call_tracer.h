@@ -28,7 +28,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
-#include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 

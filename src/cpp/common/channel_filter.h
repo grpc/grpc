@@ -30,7 +30,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/atm.h>
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/channel/channel_fwd.h"

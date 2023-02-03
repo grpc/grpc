@@ -24,8 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <string>
-
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
