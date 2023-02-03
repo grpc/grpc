@@ -1177,9 +1177,9 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
           " write_state=", write_state_name(t->write_state), " refs=",
           closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
           closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT));
-      cl_err = grpc_error_set_str(
-          cl_err, grpc_core::StatusStrProperty::kTargetAddress,
-          std::string(t->peer_string.as_string_view()));
+      cl_err = grpc_error_set_str(cl_err,
+                                  grpc_core::StatusStrProperty::kTargetAddress,
+                                  std::string(t->peer_string.as_string_view()));
     }
     cl_err = grpc_error_add_child(cl_err, error);
     closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);
@@ -1622,12 +1622,12 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
       return;
     }
     if (t_->destroying || !t_->closed_with_error.ok()) {
-      GRPC_CHTTP2_IF_TRACING(gpr_log(
-          GPR_INFO,
-          "transport:%p %s peer:%s Transport already shutting down. "
-          "Graceful GOAWAY abandoned.",
-          t_, t_->is_client ? "CLIENT" : "SERVER",
-          std::string(t_->peer_string.as_string_view()).c_str()));
+      GRPC_CHTTP2_IF_TRACING(
+          gpr_log(GPR_INFO,
+                  "transport:%p %s peer:%s Transport already shutting down. "
+                  "Graceful GOAWAY abandoned.",
+                  t_, t_->is_client ? "CLIENT" : "SERVER",
+                  std::string(t_->peer_string.as_string_view()).c_str()));
       return;
     }
     // Ping completed. Send final goaway.

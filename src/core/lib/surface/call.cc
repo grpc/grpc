@@ -1071,8 +1071,8 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
       if (status_code != GRPC_STATUS_OK) {
         Slice peer = GetPeerString();
         error = grpc_error_set_int(
-            GRPC_ERROR_CREATE(absl::StrCat(
-                "Error received from peer ", peer.as_string_view())),
+            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
+                                           peer.as_string_view())),
             StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
       }
       auto grpc_message = b->Take(GrpcMessageMetadata());
