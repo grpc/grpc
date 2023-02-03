@@ -625,8 +625,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           GPR_INFO,
           "transport:%p SERVER peer:%s Final GOAWAY sent. Ignoring new "
           "grpc_chttp2_stream request id=%d, last grpc_chttp2_stream id=%d",
-          t, t->peer_string.c_str(), t->incoming_stream_id,
-          t->last_new_stream_id));
+          t, std::string(t->peer_string.as_string_view()).c_str(),
+          t->incoming_stream_id, t->last_new_stream_id));
       return init_header_skip_frame_parser(t, priority_type);
     }
     t->last_new_stream_id = t->incoming_stream_id;

@@ -201,9 +201,9 @@ class Call : public CppImplOf<Call, grpc_call> {
     send_deadline_ = send_deadline;
   }
 
-  Slice PeerString() const {
+  Slice GetPeerString() const {
     MutexLock lock(&peer_mu_);
-    return peer_string_;
+    return peer_string_.Ref();
   }
 
   void SetPeerString(Slice peer_string) {
@@ -211,7 +211,7 @@ class Call : public CppImplOf<Call, grpc_call> {
     peer_string_ = std::move(peer_string);
   }
 
-  void ClearPeerString() { SetPeerString(EmptySlice()); }
+  void ClearPeerString() { SetPeerString(Slice(grpc_empty_slice())); }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -225,8 +225,8 @@ class Call : public CppImplOf<Call, grpc_call> {
   // Peer name is protected by a mutex because it can be accessed by the
   // application at the same moment as it is being set by the completion
   // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
-  Mutex peer_mu_;
-  Slice peer_string_ ABSL_GUARDED_BY(&mu_);
+  mutable Mutex peer_mu_;
+  Slice peer_string_ ABSL_GUARDED_BY(&peer_mu_);
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -348,11 +348,11 @@ void Call::PropagateCancellationToChildren() {
 }
 
 char* Call::GetPeer() {
-  Slice peer_slice = PeerString();
+  Slice peer_slice = GetPeerString();
   if (!peer_slice.empty()) {
     absl::string_view peer_string_view = peer_slice.as_string_view();
     char* peer_string =
-        static_cast<char*>(gpr_malloc(peer_string_.size() + 1));
+        static_cast<char*>(gpr_malloc(peer_string_view.size() + 1));
     memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
     peer_string[peer_string_view.size()] = '\0';
     return peer_string;
@@ -1069,7 +1069,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
       grpc_status_code status_code = *grpc_status;
       grpc_error_handle error;
       if (status_code != GRPC_STATUS_OK) {
-        Slice peer = PeerString();
+        Slice peer = GetPeerString();
         error = grpc_error_set_int(
             GRPC_ERROR_CREATE(absl::StrCat(
                 "Error received from peer ", peer.as_string_view())),
@@ -1323,8 +1323,8 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     // TODO(ctiller): this could be moved into recv_initial_filter now
     ValidateFilteredMetadata();
 
-    Slice peer_string = md->get(PeerString());
-    if (!peer_string.empty()) SetPeerString(std::move(peer_string));
+    Slice* peer_string = md->get_pointer(PeerString());
+    if (peer_string != nullptr) call->SetPeerString(peer_string->Ref());
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
@@ -2958,8 +2958,8 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
   incoming_compression_algorithm_ =
       metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
-  Slice peer_string = md->get(PeerString());
-  if (!peer_string.empty()) SetPeerString(std::move(peer_string));
+  Slice* peer_string = metadata->get_pointer(PeerString());
+  if (peer_string != nullptr) SetPeerString(peer_string->Ref());
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
   PublishMetadataArray(metadata,

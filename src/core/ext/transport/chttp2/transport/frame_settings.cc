@@ -229,7 +229,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           parser->incoming_settings[id] = parser->value;
           if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
             gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
-                    t->is_client ? "CLI" : "SVR", t->peer_string.c_str(),
+                    t->is_client ? "CLI" : "SVR",
+                    std::string(t->peer_string.as_string_view()).c_str(),
                     sp->name, parser->value);
           }
         } else if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {

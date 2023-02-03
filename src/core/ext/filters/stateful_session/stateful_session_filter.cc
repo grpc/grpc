@@ -89,8 +89,8 @@ void MaybeUpdateServerInitialMetadata(
     absl::optional<absl::string_view> cookie_value,
     ServerMetadata* server_initial_metadata) {
   // Get peer string.
-  auto peer_string = server_initial_metadata->get(PeerString());
-  if (!peer_string.has_value()) return;  // Nothing we can do.
+  Slice* peer_string = server_initial_metadata->get_pointer(PeerString());
+  if (peer_string == nullptr) return;  // Nothing we can do.
   // If there was no cookie or if the address changed, set the cookie.
   if (!cookie_value.has_value() ||
       peer_string->as_string_view() != *cookie_value) {

@@ -2922,10 +2922,14 @@ void ClientChannel::LoadBalancedCall::RecordCallCompletion(
   if (lb_subchannel_call_tracker_ != nullptr) {
     Metadata trailing_metadata(recv_trailing_metadata_);
     BackendMetricAccessor backend_metric_accessor(this);
-    const char* peer_string =
-        peer_string_ != nullptr
-            ? reinterpret_cast<char*>(gpr_atm_acq_load(peer_string_))
-            : "";
+    absl::string_view peer_string;
+    if (recv_initial_metadata_ != nullptr) {
+      Slice* peer_string_slice =
+          recv_initial_metadata_->get_pointer(PeerString());
+      if (peer_string_slice != nullptr) {
+        peer_string = peer_string_slice->as_string_view();
+      }
+    }
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
         peer_string, status, &trailing_metadata, &backend_metric_accessor};
     lb_subchannel_call_tracker_->Finish(args);

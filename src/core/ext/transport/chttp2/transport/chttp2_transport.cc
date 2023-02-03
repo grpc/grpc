@@ -472,7 +472,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                   ? "chttp2_refcount"
                   : nullptr),
       ep(ep),
-      peer_string(Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),
+      peer_string(
+          grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner(absl::StrCat(
@@ -1809,7 +1810,8 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
       grpc_slice_buffer_reset_and_unref(&s->frame_storage);
     }
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
-    s->recv_initial_metadata->Set(grpc_core::PeerString(), t->peer_string);
+    s->recv_initial_metadata->Set(grpc_core::PeerString(),
+                                  t->peer_string.Ref());
     // If we didn't receive initial metadata from the wire and instead faked a
     // status (due to stream cancellations for example), let upper layers know
     // that trailing metadata is immediately available.

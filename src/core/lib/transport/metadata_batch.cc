@@ -281,7 +281,7 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
   GPR_UNREACHABLE_CODE(return "unknown value");
 }
 
-std::string PeerString::DisplayValue(ValueType x) {
+std::string PeerString::DisplayValue(const ValueType& x) {
   return std::string(x.as_string_view());
 }
 
