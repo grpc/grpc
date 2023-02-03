@@ -3025,9 +3025,11 @@ void ClientPromiseBasedCall::UpdateOnce() {
             promise_.has_value() ? "true" : "false");
   }
   if (client_initial_metadata_sent_.has_value()) {
-    auto p = (*client_initial_metadata_sent_)();
-    if (!absl::holds_alternative<Pending>(p)) {
+    Poll<bool> p = (*client_initial_metadata_sent_)();
+    bool* r = absl::get_if<bool>(&p);
+    if (r != nullptr) {
       client_initial_metadata_sent_.reset();
+      if (!*r) FailCompletion(send_initial_metadata_completion_);
       FinishOpOnCompletion(&send_initial_metadata_completion_,
                            PendingOp::kSendInitialMetadata);
     }

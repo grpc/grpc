@@ -758,7 +758,8 @@ class ClientStream : public ConnectedChannelStream {
     }
     if (std::exchange(need_to_clear_client_initial_metadata_outstanding_token_,
                       false)) {
-      client_initial_metadata_outstanding_token_.Clear();
+      client_initial_metadata_outstanding_token_.Complete(
+          client_initial_metadata_send_result_);
     }
     if (server_initial_metadata_state_ ==
         ServerInitialMetadataState::kReceivedButNotPushed) {
@@ -854,6 +855,7 @@ class ClientStream : public ConnectedChannelStream {
     {
       MutexLock lock(mu());
       need_to_clear_client_initial_metadata_outstanding_token_ = true;
+      client_initial_metadata_send_result_ = error.ok();
       send_initial_metadata_waker_.Wakeup();
     }
     Unref("metadata_batch_done");
@@ -932,6 +934,7 @@ class ClientStream : public ConnectedChannelStream {
   bool requested_metadata_ = false;
   bool need_to_clear_client_initial_metadata_outstanding_token_
       ABSL_GUARDED_BY(mu()) = false;
+  bool client_initial_metadata_send_result_ ABSL_GUARDED_BY(mu());
   ServerInitialMetadataState server_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = ServerInitialMetadataState::kNotReceived;
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu()) = false;

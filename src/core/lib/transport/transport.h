@@ -150,8 +150,12 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
 // end of the local call stack.
 // Interested observers can call Wait() to obtain a promise that will resolve
 // when all local client_initial_metadata processing has completed.
-// This is automatically triggered by the destructor of this type - so that the
-// edge cannot be accidentally missed.
+// The result of this token is either true on successful completion, or false
+// if the metadata was not sent.
+// To set a successful completion, call Complete(true). For failure, call
+// Complete(false).
+// If Complete is not called, the destructor of a still held token will complete
+// with failure.
 // Transports should hold this token until client_initial_metadata has passed
 // any flow control (eg MAX_CONCURRENT_STREAMS for http2).
 class ClientInitialMetadataOutstandingToken {
@@ -170,19 +174,16 @@ class ClientInitialMetadataOutstandingToken {
     return *this;
   }
   ~ClientInitialMetadataOutstandingToken() {
-    if (latch_ != nullptr) latch_->Set();
+    if (latch_ != nullptr) latch_->Set(false);
   }
-  void Clear() {
-    if (latch_ != nullptr) latch_->Set();
-    latch_ = nullptr;
-  }
+  void Complete(bool success) { std::exchange(latch_, nullptr)->Set(success); }
 
   // Returns a promise that will resolve when this object (or its moved-from
   // ancestor) is dropped.
   auto Wait() { return latch_->Wait(); }
 
  private:
-  Latch<void>* latch_ = GetContext<Arena>()->New<Latch<void>>();
+  Latch<bool>* latch_ = GetContext<Arena>()->New<Latch<bool>>();
 };
 
 using ClientInitialMetadataOutstandingTokenWaitType =
