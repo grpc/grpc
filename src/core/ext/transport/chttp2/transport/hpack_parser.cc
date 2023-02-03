@@ -20,7 +20,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
-#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -47,7 +46,6 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
