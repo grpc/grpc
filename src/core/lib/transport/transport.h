@@ -54,6 +54,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -144,6 +145,49 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
   }
 };
 
+// Move only type that tracks call startup.
+// Allows observation of when client_initial_metadata has been processed by the
+// end of the local call stack.
+// Interested observers can call Wait() to obtain a promise that will resolve
+// when all local client_initial_metadata processing has completed.
+// This is automatically triggered by the destructor of this type - so that the
+// edge cannot be accidentally missed.
+// Transports should hold this token until client_initial_metadata has passed
+// any flow control (eg MAX_CONCURRENT_STREAMS for http2).
+class ClientInitialMetadataOutstandingToken {
+ public:
+  ClientInitialMetadataOutstandingToken() = default;
+  ClientInitialMetadataOutstandingToken(
+      const ClientInitialMetadataOutstandingToken&) = delete;
+  ClientInitialMetadataOutstandingToken& operator=(
+      const ClientInitialMetadataOutstandingToken&) = delete;
+  ClientInitialMetadataOutstandingToken(
+      ClientInitialMetadataOutstandingToken&& other) noexcept
+      : latch_(std::exchange(other.latch_, nullptr)) {}
+  ClientInitialMetadataOutstandingToken& operator=(
+      ClientInitialMetadataOutstandingToken&& other) noexcept {
+    latch_ = std::exchange(other.latch_, nullptr);
+    return *this;
+  }
+  ~ClientInitialMetadataOutstandingToken() {
+    if (latch_ != nullptr) latch_->Set();
+  }
+  void Clear() {
+    if (latch_ != nullptr) latch_->Set();
+    latch_ = nullptr;
+  }
+
+  // Returns a promise that will resolve when this object (or its moved-from
+  // ancestor) is dropped.
+  auto Wait() { return latch_->Wait(); }
+
+ private:
+  Latch<void>* latch_ = GetContext<Arena>()->New<Latch<void>>();
+};
+
+using ClientInitialMetadataOutstandingTokenWaitType =
+    decltype(std::declval<ClientInitialMetadataOutstandingToken>().Wait());
+
 struct CallArgs {
   // Initial metadata from the client to the server.
   // During promise setup this can be manipulated by filters (and then
@@ -158,6 +202,10 @@ struct CallArgs {
   PipeReceiver<MessageHandle>* client_to_server_messages;
   // Messages travelling from the transport to the application.
   PipeSender<MessageHandle>* server_to_client_messages;
+  // Token indicating that client_initial_metadata is still being processed.
+  // This should be moved around and only destroyed when the transport is
+  // satisfied that the metadata has passed any flow control measures it has.
+  ClientInitialMetadataOutstandingToken client_initial_metadata_outstanding;
 };
 
 using NextPromiseFactory =

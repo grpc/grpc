@@ -2100,6 +2100,7 @@ class PromiseBasedCall : public Call,
     // We're in the midst of starting a batch of operations
     kStartingBatch = 0,
     // The following correspond with the batch operations from above
+    kSendInitialMetadata,
     kReceiveInitialMetadata,
     kReceiveStatusOnClient,
     kReceiveCloseOnServer = kReceiveStatusOnClient,
@@ -2113,6 +2114,8 @@ class PromiseBasedCall : public Call,
     switch (reason) {
       case PendingOp::kStartingBatch:
         return "StartingBatch";
+      case PendingOp::kSendInitialMetadata:
+        return "SendInitialMetadata";
       case PendingOp::kReceiveInitialMetadata:
         return "ReceiveInitialMetadata";
       case PendingOp::kReceiveStatusOnClient:
@@ -2843,7 +2846,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       arena()};
   Pipe<MessageHandle> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
   Pipe<MessageHandle> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
-
   ClientMetadataHandle send_initial_metadata_;
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
   absl::variant<absl::monostate,
@@ -2852,6 +2854,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       recv_status_on_client_ ABSL_GUARDED_BY(mu());
   absl::optional<PipeReceiverNextType<ServerMetadataHandle>>
       server_initial_metadata_ready_;
+  absl::optional<ClientInitialMetadataOutstandingTokenWaitType>
+      client_initial_metadata_sent_;
+  Completion send_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
   Completion close_send_completion_ ABSL_GUARDED_BY(mu());
@@ -2861,12 +2866,12 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 void ClientPromiseBasedCall::StartPromise(
     ClientMetadataHandle client_initial_metadata) {
   GPR_ASSERT(!promise_.has_value());
+  ClientInitialMetadataOutstandingToken token;
+  client_initial_metadata_sent_.emplace(token.Wait());
   promise_ = channel()->channel_stack()->MakeClientCallPromise(CallArgs{
-      std::move(client_initial_metadata),
-      &server_initial_metadata_.sender,
-      &client_to_server_messages_.receiver,
-      &server_to_client_messages_.sender,
-  });
+      std::move(client_initial_metadata), &server_initial_metadata_.sender,
+      &client_to_server_messages_.receiver, &server_to_client_messages_.sender,
+      std::move(token)});
 }
 
 void ClientPromiseBasedCall::CancelWithErrorLocked(grpc_error_handle error) {
@@ -2930,6 +2935,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   (op.flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) != 0,
                   (op.flags &
                    GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) != 0});
+          send_initial_metadata_completion_ =
+              AddOpToCompletion(completion, PendingOp::kSendInitialMetadata);
           StartPromise(std::move(send_initial_metadata_));
         }
       } break;
@@ -3016,6 +3023,14 @@ void ClientPromiseBasedCall::UpdateOnce() {
                 .c_str(),
             PollStateDebugString().c_str(),
             promise_.has_value() ? "true" : "false");
+  }
+  if (client_initial_metadata_sent_.has_value()) {
+    auto p = (*client_initial_metadata_sent_)();
+    if (!absl::holds_alternative<Pending>(p)) {
+      client_initial_metadata_sent_.reset();
+      FinishOpOnCompletion(&send_initial_metadata_completion_,
+                           PendingOp::kSendInitialMetadata);
+    }
   }
   if (server_initial_metadata_ready_.has_value()) {
     Poll<NextResult<ServerMetadataHandle>> r =

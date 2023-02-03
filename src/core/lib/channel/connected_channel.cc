@@ -683,6 +683,8 @@ class ClientStream : public ConnectedChannelStream {
  public:
   ClientStream(grpc_transport* transport, CallArgs call_args)
       : ConnectedChannelStream(transport),
+        client_initial_metadata_outstanding_token_(
+            std::move(call_args.client_initial_metadata_outstanding)),
         server_initial_metadata_pipe_(call_args.server_initial_metadata),
         client_to_server_messages_(call_args.client_to_server_messages),
         server_to_client_messages_(call_args.server_to_client_messages),
@@ -716,12 +718,14 @@ class ClientStream : public ConnectedChannelStream {
                                  nullptr, GetContext<Arena>());
       grpc_transport_set_pops(transport(), stream(),
                               GetContext<CallContext>()->polling_entity());
-      memset(&metadata_, 0, sizeof(metadata_));
-      metadata_.send_initial_metadata = true;
-      metadata_.recv_initial_metadata = true;
-      metadata_.recv_trailing_metadata = true;
-      metadata_.payload = batch_payload();
-      metadata_.on_complete = &metadata_batch_done_;
+      memset(&send_metadata_, 0, sizeof(send_metadata_));
+      memset(&recv_metadata_, 0, sizeof(recv_metadata_));
+      send_metadata_.send_initial_metadata = true;
+      recv_metadata_.recv_initial_metadata = true;
+      recv_metadata_.recv_trailing_metadata = true;
+      send_metadata_.payload = batch_payload();
+      recv_metadata_.payload = batch_payload();
+      send_metadata_.on_complete = &send_metadata_batch_done_;
       batch_payload()->send_initial_metadata.send_initial_metadata =
           client_initial_metadata_.get();
       batch_payload()->send_initial_metadata.peer_string =
@@ -746,9 +750,15 @@ class ClientStream : public ConnectedChannelStream {
       IncrementRefCount("metadata_batch_done");
       IncrementRefCount("initial_metadata_ready");
       IncrementRefCount("trailing_metadata_ready");
-      initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
-      trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
-      SchedulePush(&metadata_);
+      recv_initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
+      recv_trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
+      send_initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
+      SchedulePush(&send_metadata_);
+      SchedulePush(&recv_metadata_);
+    }
+    if (std::exchange(need_to_clear_client_initial_metadata_outstanding_token_,
+                      false)) {
+      client_initial_metadata_outstanding_token_.Clear();
     }
     if (server_initial_metadata_state_ ==
         ServerInitialMetadataState::kReceivedButNotPushed) {
@@ -802,13 +812,13 @@ class ClientStream : public ConnectedChannelStream {
       MutexLock lock(mu());
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_DEBUG, "%s[connected] RecvInitialMetadataReady: error=%s",
-                initial_metadata_waker_.ActivityDebugTag().c_str(),
+                recv_initial_metadata_waker_.ActivityDebugTag().c_str(),
                 error.ToString().c_str());
       }
       server_initial_metadata_state_ =
           error.ok() ? ServerInitialMetadataState::kReceivedButNotPushed
                      : ServerInitialMetadataState::kError;
-      initial_metadata_waker_.Wakeup();
+      recv_initial_metadata_waker_.Wakeup();
     }
     Unref("initial_metadata_ready");
   }
@@ -832,15 +842,20 @@ class ClientStream : public ConnectedChannelStream {
                 "%s[connected] RecvTrailingMetadataReady: "
                 "queued_trailing_metadata_ "
                 "set to true; active_ops: %s",
-                trailing_metadata_waker_.ActivityDebugTag().c_str(),
+                recv_trailing_metadata_waker_.ActivityDebugTag().c_str(),
                 ActiveOpsString().c_str());
       }
-      trailing_metadata_waker_.Wakeup();
+      recv_trailing_metadata_waker_.Wakeup();
     }
     Unref("trailing_metadata_ready");
   }
 
-  void MetadataBatchDone(grpc_error_handle error) {
+  void SendMetadataBatchDone(grpc_error_handle error) {
+    {
+      MutexLock lock(mu());
+      need_to_clear_client_initial_metadata_outstanding_token_ = true;
+      send_initial_metadata_waker_.Wakeup();
+    }
     Unref("metadata_batch_done");
   }
 
@@ -870,10 +885,10 @@ class ClientStream : public ConnectedChannelStream {
     if (finished()) ops.push_back("FINISHED");
     // Outstanding Operations on Transport
     std::vector<std::string> waiting;
-    if (initial_metadata_waker_ != Waker()) {
+    if (recv_initial_metadata_waker_ != Waker()) {
       waiting.push_back("initial_metadata");
     }
-    if (trailing_metadata_waker_ != Waker()) {
+    if (recv_trailing_metadata_waker_ != Waker()) {
       waiting.push_back("trailing_metadata");
     }
     if (!waiting.empty()) {
@@ -915,11 +930,16 @@ class ClientStream : public ConnectedChannelStream {
   }
 
   bool requested_metadata_ = false;
+  bool need_to_clear_client_initial_metadata_outstanding_token_
+      ABSL_GUARDED_BY(mu()) = false;
   ServerInitialMetadataState server_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = ServerInitialMetadataState::kNotReceived;
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu()) = false;
-  Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu());
-  Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu());
+  Waker recv_initial_metadata_waker_ ABSL_GUARDED_BY(mu());
+  Waker send_initial_metadata_waker_ ABSL_GUARDED_BY(mu());
+  Waker recv_trailing_metadata_waker_ ABSL_GUARDED_BY(mu());
+  ClientInitialMetadataOutstandingToken
+      client_initial_metadata_outstanding_token_;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_pipe_;
   PipeReceiver<MessageHandle>* client_to_server_messages_;
   PipeSender<MessageHandle>* server_to_client_messages_;
@@ -935,9 +955,10 @@ class ClientStream : public ConnectedChannelStream {
   ServerMetadataHandle server_trailing_metadata_;
   absl::optional<PipeSender<ServerMetadataHandle>::PushType>
       server_initial_metadata_push_promise_;
-  grpc_transport_stream_op_batch metadata_;
-  grpc_closure metadata_batch_done_ =
-      MakeMemberClosure<ClientStream, &ClientStream::MetadataBatchDone>(
+  grpc_transport_stream_op_batch send_metadata_;
+  grpc_transport_stream_op_batch recv_metadata_;
+  grpc_closure send_metadata_batch_done_ =
+      MakeMemberClosure<ClientStream, &ClientStream::SendMetadataBatchDone>(
           this, DEBUG_LOCATION);
 };
 
