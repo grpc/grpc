@@ -186,6 +186,8 @@ class ServerInterface : public internal::CallHook {
     internal::Call call_wrapper_;
     internal::InterceptorBatchMethodsImpl interceptor_methods_;
     bool done_intercepting_;
+    bool call_metric_recording_enabled_;
+    experimental::ServerMetricRecorder* server_metric_recorder_;
   };
 
   /// RegisteredAsyncRequest is not part of the C++ API
