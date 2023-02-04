@@ -97,8 +97,8 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
       return fail(GRPC_WSA_ERROR(last_error, "AcceptEx"));
     }
   }
-  // We're ready to do the accept. Calling grpc_socket_notify_on_read may
-  // immediately process an accept that happened in the meantime.
+  // We're ready to do the accept. Calling NotifyOnRead may immediately process
+  // an accept that happened in the meantime.
   accept_socket_ = accept_socket;
   listener_socket_->NotifyOnRead(&on_accept_);
   GRPC_EVENT_ENGINE_TRACE(
@@ -143,7 +143,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
     return close_socket_and_restart();
   }
   EventEngine::ResolvedAddress peer_address;
-  int peer_name_len;
+  int peer_name_len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   err =
       getpeername(accept_socket_, const_cast<sockaddr*>(peer_address.address()),
                   &peer_name_len);
