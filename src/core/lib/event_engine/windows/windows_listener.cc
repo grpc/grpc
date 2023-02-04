@@ -110,11 +110,12 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
 void WindowsEventEngineListener::SinglePortSocketListener::
     OnAcceptCallbackImpl() {
   grpc_core::MutexLock lock(&mu_);
-  auto close_socket_and_restart = [&](bool do_close_socket = true) {
-    if (do_close_socket) closesocket(accept_socket_);
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start", StartLocked()));
-  };
+  auto close_socket_and_restart =
+      [&](bool do_close_socket = true) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        if (do_close_socket) closesocket(accept_socket_);
+        GPR_ASSERT(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
+                                     StartLocked()));
+      };
   auto read_info = listener_socket_->read_info();
   if (read_info->wsa_error() != 0) {
     gpr_log(GPR_INFO, "%s",
@@ -179,11 +180,11 @@ void WindowsEventEngineListener::SinglePortSocketListener::
 WindowsEventEngineListener::SinglePortSocketListener::SinglePortSocketListener(
     WindowsEventEngineListener* listener, LPFN_ACCEPTEX AcceptEx,
     grpc_core::OrphanablePtr<WinSocket> win_socket, int port)
-    : listener_(listener),
-      AcceptEx(AcceptEx),
-      listener_socket_(std::move(win_socket)),
+    : AcceptEx(AcceptEx),
+      listener_(listener),
+      on_accept_([this]() { OnAcceptCallbackImpl(); }),
       port_(port),
-      on_accept_([this]() { OnAcceptCallbackImpl(); }) {
+      listener_socket_(std::move(win_socket)) {
   EventEngine::ResolvedAddress tmp_addr;
   int sockname_temp_len = sizeof(struct sockaddr_storage);
   if (getsockname(listener_socket_->socket(),
@@ -241,8 +242,8 @@ WindowsEventEngineListener::WindowsEventEngineListener(
       accept_cb_(std::move(accept_cb)),
       on_shutdown_(std::move(on_shutdown)),
       memory_allocator_factory_(std::move(memory_allocator_factory)),
-      executor_(executor),
-      config_(config) {}
+      config_(config),
+      executor_(executor) {}
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
   auto shutdown_msg =
