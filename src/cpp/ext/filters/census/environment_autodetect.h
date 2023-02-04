@@ -18,16 +18,18 @@
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_ENVIRONMENT_AUTODETECT_H
 
 #include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "absl/base/thread_annotations.h"
+
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 
 namespace grpc {
 namespace internal {
@@ -37,8 +39,8 @@ class EnvironmentAutoDetect {
   struct ResourceType {
     // For example, "gce_instance", "gke_container", etc.
     std::string resource_type;
-    // Values for all the labels listed in the associa
-    absl::flat_hash_map<std::string, std::string> labels;
+    // Values for all the labels listed in the associated resource type.
+    std::map<std::string, std::string> labels;
   };
 
   // A Create() call properly sets up the environment detector with the
