@@ -1092,6 +1092,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_listener.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.cc" role="src" />

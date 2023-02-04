@@ -1883,6 +1883,8 @@ src/core/lib/event_engine/windows/windows_endpoint.cc \
 src/core/lib/event_engine/windows/windows_endpoint.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
+src/core/lib/event_engine/windows/windows_listener.cc \
+src/core/lib/event_engine/windows/windows_listener.h \
 src/core/lib/experiments/config.cc \
 src/core/lib/experiments/config.h \
 src/core/lib/experiments/experiments.cc \

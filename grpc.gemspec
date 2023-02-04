@@ -1110,6 +1110,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.h )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.cc )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.h )
+  s.files += %w( src/core/lib/event_engine/windows/windows_listener.cc )
+  s.files += %w( src/core/lib/event_engine/windows/windows_listener.h )
   s.files += %w( src/core/lib/experiments/config.cc )
   s.files += %w( src/core/lib/experiments/config.h )
   s.files += %w( src/core/lib/experiments/experiments.cc )
