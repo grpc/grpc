@@ -2094,6 +2094,11 @@ class PromiseBasedCall : public Call,
   ~PromiseBasedCall() override {
     if (non_owning_wakeable_) non_owning_wakeable_->DropActivity();
     if (cq_) GRPC_CQ_INTERNAL_UNREF(cq_, "bind");
+    for (int i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+      if (context_[i].destroy) {
+        context_[i].destroy(context_[i].value);
+      }
+    }
   }
 
   // Enumerates why a Completion is still pending
