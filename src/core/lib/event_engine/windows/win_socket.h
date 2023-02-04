@@ -24,13 +24,14 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/executor/executor.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class WinSocket : public grpc_core::DualRefCounted<WinSocket> {
+class WinSocket : public grpc_core::Orphanable {
  public:
   // State related to a Read or Write socket operation
   class OpState {
@@ -80,6 +81,8 @@ class WinSocket : public grpc_core::DualRefCounted<WinSocket> {
   bool IsShutdown();
   // Calls MaybeShutdown and sets an abandoned bit.
   void Orphan() override;
+  void Orphan(const grpc_core::DebugLocation& location,
+              absl::string_view reason);
   bool abandoned() { return abandoned_; }
 
   // Return the appropriate OpState for a given OVERLAPPED

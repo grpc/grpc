@@ -18,7 +18,6 @@
 
 #ifdef GPR_WINDOWS
 
-#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -26,7 +25,7 @@
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -48,7 +47,7 @@ class IOCP final : public Poller {
                   absl::FunctionRef<void()> schedule_poll_again) override;
   void Kick() override;
 
-  grpc_core::RefCountedPtr<WinSocket> Watch(SOCKET socket);
+  grpc_core::OrphanablePtr<WinSocket> Watch(SOCKET socket);
   // Return the set of default flags
   static DWORD GetDefaultSocketFlags();
 

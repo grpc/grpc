@@ -20,7 +20,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -28,7 +28,7 @@ namespace experimental {
 class WindowsEndpoint : public EventEngine::Endpoint {
  public:
   WindowsEndpoint(const EventEngine::ResolvedAddress& peer_address,
-                  grpc_core::RefCountedPtr<WinSocket> socket,
+                  grpc_core::OrphanablePtr<WinSocket> socket,
                   MemoryAllocator&& allocator, const EndpointConfig& config,
                   Executor* Executor);
   ~WindowsEndpoint() override;
@@ -80,7 +80,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   std::string peer_address_string_;
   EventEngine::ResolvedAddress local_address_;
   std::string local_address_string_;
-  grpc_core::RefCountedPtr<WinSocket> socket_;
+  grpc_core::OrphanablePtr<WinSocket> socket_;
   MemoryAllocator allocator_;
   HandleReadClosure handle_read_event_;
   HandleWriteClosure handle_write_event_;

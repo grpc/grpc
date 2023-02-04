@@ -27,7 +27,7 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -53,7 +53,7 @@ void AbortOnEvent(absl::Status) {
 
 WindowsEndpoint::WindowsEndpoint(
     const EventEngine::ResolvedAddress& peer_address,
-    grpc_core::RefCountedPtr<WinSocket> socket, MemoryAllocator&& allocator,
+    grpc_core::OrphanablePtr<WinSocket> socket, MemoryAllocator&& allocator,
     const EndpointConfig& /* config */, Executor* executor)
     : peer_address_(peer_address),
       socket_(std::move(socket)),

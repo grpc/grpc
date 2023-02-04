@@ -21,6 +21,8 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -36,10 +38,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 WinSocket::WinSocket(SOCKET socket, Executor* executor) noexcept
-    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_endpoint_trace)
-                         ? "WinSocket"
-                         : nullptr),
-      socket_(socket),
+    : socket_(socket),
       executor_(executor),
       read_info_(OpState(this)),
       write_info_(OpState(this)) {}
@@ -54,6 +53,13 @@ SOCKET WinSocket::socket() { return socket_; }
 void WinSocket::Orphan() {
   abandoned_ = true;
   MaybeShutdown(absl::OkStatus());
+}
+
+void WinSocket::Orphan(const grpc_core::DebugLocation& location,
+                       absl::string_view reason) {
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p Orphaned from %s:%d",
+                                   location.file(), location.line());
+  Orphan();
 }
 
 void WinSocket::MaybeShutdown(absl::Status why) {

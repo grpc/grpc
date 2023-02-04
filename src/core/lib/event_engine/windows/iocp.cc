@@ -27,7 +27,7 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
@@ -44,14 +44,11 @@ IOCP::IOCP(Executor* executor) noexcept
 // Shutdown must be called prior to deletion
 IOCP::~IOCP() {}
 
-grpc_core::RefCountedPtr<WinSocket> IOCP::Watch(SOCKET socket) {
-  auto wrapped_socket = grpc_core::MakeRefCounted<WinSocket>(socket, executor_);
-  // weak ref lives on the heap, managed by iocp
-  auto* iocp_owned_wrapped_socket = new grpc_core::WeakRefCountedPtr<WinSocket>(
-      std::move(wrapped_socket->WeakRef(DEBUG_LOCATION, "iocp")));
+grpc_core::OrphanablePtr<WinSocket> IOCP::Watch(SOCKET socket) {
+  auto wrapped_socket = grpc_core::MakeOrphanable<WinSocket>(socket, executor_);
   HANDLE ret = CreateIoCompletionPort(
       reinterpret_cast<HANDLE>(socket), iocp_handle_,
-      reinterpret_cast<uintptr_t>(iocp_owned_wrapped_socket), 0);
+      reinterpret_cast<uintptr_t>(wrapped_socket.get()), 0);
   if (!ret) {
     grpc_core::Crash(
         GRPC_WSA_ERROR(WSAGetLastError(), "Unable to add socket to iocp")
@@ -96,17 +93,16 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   }
   GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p got event on OVERLAPPED::%p", this,
                                  overlapped);
-  auto* socket = reinterpret_cast<grpc_core::WeakRefCountedPtr<WinSocket>*>(
-      completion_key);
-  if ((*socket)->abandoned()) {
+  auto* socket = reinterpret_cast<WinSocket*>(completion_key);
+  if (socket->abandoned()) {
     GRPC_EVENT_ENGINE_POLLER_TRACE(
-        "IOCP::%p weak unref abandoned WinSocket::%p", this, socket->get());
-    (*socket)->WeakUnref(DEBUG_LOCATION, "iocp fount WinSocket abandoned");
+        "IOCP::%p deleting abandoned WinSocket::%p", this, socket);
+    delete socket;
     return Poller::WorkResult::kOk;
   }
-  WinSocket::OpState* info = (*socket)->GetOpInfoForOverlapped(overlapped);
+  WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);
   GPR_ASSERT(info != nullptr);
-  if ((*socket)->IsShutdown()) {
+  if (socket->IsShutdown()) {
     info->SetError(WSAESHUTDOWN);
   } else {
     info->GetOverlappedResult();
