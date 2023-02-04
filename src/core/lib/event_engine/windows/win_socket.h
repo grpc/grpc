@@ -79,11 +79,13 @@ class WinSocket : public grpc_core::Orphanable {
   void SetReadable();
   void SetWritable();
   bool IsShutdown();
-  // Calls MaybeShutdown and sets an abandoned bit.
+  // Shutdown socket operations, but do not delete the WinSocket.
+  // Connections will be disconnected, and the socket will be closed.
+  // If the socket is managed by IOCP (most are), then IOCP will delete the
+  // WinSocket when the overlapped event comes back for the socket closure.
   void Orphan() override;
   void Orphan(const grpc_core::DebugLocation& location,
               absl::string_view reason);
-  bool abandoned() { return abandoned_; }
 
   // Return the appropriate OpState for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.
@@ -95,11 +97,6 @@ class WinSocket : public grpc_core::Orphanable {
   SOCKET socket();
 
  private:
-  // Schedule a shutdown of the socket operations. Will call the pending
-  // operations to abort them. We need to do that this way because of the
-  // various callsites of that function, which happens to be in various
-  // mutex hold states, and that'd be unsafe to call them directly.
-  void MaybeShutdown(absl::Status why);
   void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
 
   SOCKET socket_;
@@ -116,7 +113,6 @@ class WinSocket : public grpc_core::Orphanable {
   // have undefined behavior.
   OpState read_info_;
   OpState write_info_;
-  bool abandoned_{false};
 };
 
 // Attempt to configure default socket settings

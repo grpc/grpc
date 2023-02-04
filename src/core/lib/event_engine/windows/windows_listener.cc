@@ -147,14 +147,14 @@ void WindowsEventEngineListener::SinglePortSocketListener::
   err =
       getpeername(accept_socket_, const_cast<sockaddr*>(peer_address.address()),
                   &peer_name_len);
-  peer_address =
-      EventEngine::ResolvedAddress(peer_address.address(), peer_name_len);
   if (err != 0) {
     gpr_log(
         GPR_ERROR, "%s",
         GRPC_WSA_ERROR(WSAGetLastError(), "getpeername").ToString().c_str());
     return close_socket_and_restart();
   }
+  peer_address =
+      EventEngine::ResolvedAddress(peer_address.address(), peer_name_len);
   auto addr_uri = ResolvedAddressToURI(peer_address);
   std::string peer_name = "unknown";
   if (!addr_uri.ok()) {

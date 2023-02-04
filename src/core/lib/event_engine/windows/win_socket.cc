@@ -51,27 +51,13 @@ WinSocket::~WinSocket() {
 SOCKET WinSocket::socket() { return socket_; }
 
 void WinSocket::Orphan() {
-  abandoned_ = true;
-  MaybeShutdown(absl::OkStatus());
-}
-
-void WinSocket::Orphan(const grpc_core::DebugLocation& location,
-                       absl::string_view reason) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p Orphaned from %s:%d",
-                                   location.file(), location.line());
-  Orphan();
-}
-
-void WinSocket::MaybeShutdown(absl::Status why) {
   // if already shutdown, return early. Otherwise, set the shutdown flag.
   if (is_shutdown_.exchange(true)) {
     GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p already shutting down",
                                      this);
     return;
   }
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-      "WinSocket::%p shutting down now. Reason: %s", this,
-      why.ToString().c_str());
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p shutting down now.", this);
   // Grab the function pointer for DisconnectEx for that specific socket.
   // It may change depending on the interface.
   GUID guid = WSAID_DISCONNECTEX;
@@ -91,6 +77,13 @@ void WinSocket::MaybeShutdown(absl::Status why) {
   }
   closesocket(socket_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);
+}
+
+void WinSocket::Orphan(const grpc_core::DebugLocation& location,
+                       absl::string_view reason) {
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p Orphaned from %s:%d", this,
+                                   location.file(), location.line());
+  Orphan();
 }
 
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {

@@ -94,19 +94,15 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p got event on OVERLAPPED::%p", this,
                                  overlapped);
   auto* socket = reinterpret_cast<WinSocket*>(completion_key);
-  if (socket->abandoned()) {
-    GRPC_EVENT_ENGINE_POLLER_TRACE(
-        "IOCP::%p deleting abandoned WinSocket::%p", this, socket);
+  if (socket->IsShutdown()) {
+    GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p deleting abandoned WinSocket::%p",
+                                   this, socket);
     delete socket;
     return Poller::WorkResult::kOk;
   }
   WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);
   GPR_ASSERT(info != nullptr);
-  if (socket->IsShutdown()) {
-    info->SetError(WSAESHUTDOWN);
-  } else {
-    info->GetOverlappedResult();
-  }
+  info->GetOverlappedResult();
   if (info->closure() != nullptr) {
     schedule_poll_again();
     executor_->Run(info->closure());
