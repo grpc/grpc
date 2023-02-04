@@ -75,8 +75,6 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     char read_char_buffer[2048];
     read_wsabuf.buf = read_char_buffer;
     DWORD bytes_rcvd;
-    memset(wrapped_client_socket->read_info()->overlapped(), 0,
-           sizeof(OVERLAPPED));
     int status =
         WSARecv(wrapped_client_socket->socket(), &read_wsabuf, 1, &bytes_rcvd,
                 &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
@@ -137,8 +135,9 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
 
   delete on_read;
   delete on_write;
-  wrapped_client_socket->MaybeShutdown(absl::OkStatus());
-  wrapped_server_socket->MaybeShutdown(absl::OkStatus());
+  wrapped_client_socket->Orphan();
+  wrapped_server_socket->Orphan();
+  iocp.Shutdown();
   executor.Quiesce();
 }
 
@@ -159,8 +158,6 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     char read_char_buffer[2048];
     read_wsabuf.buf = read_char_buffer;
     DWORD bytes_rcvd;
-    memset(wrapped_client_socket->read_info()->overlapped(), 0,
-           sizeof(OVERLAPPED));
     int status =
         WSARecv(wrapped_client_socket->socket(), &read_wsabuf, 1, &bytes_rcvd,
                 &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
@@ -207,7 +204,8 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   // wait for the callbacks to run
   read_called.WaitForNotification();
   delete on_read;
-  wrapped_client_socket->MaybeShutdown(absl::OkStatus());
+  wrapped_client_socket->Orphan();
+  iocp.Shutdown();
   executor.Quiesce();
 }
 
@@ -302,14 +300,14 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
             [&read_count,
              win_socket = std::move(wrapped_client_socket)]() mutable {
               read_count.fetch_add(1);
-              win_socket->MaybeShutdown(absl::OkStatus());
+              win_socket->Orphan();
             }));
         auto* pserver = wrapped_server_socket.get();
         pserver->NotifyOnWrite(SelfDeletingClosure::Create(
             [&write_count,
              win_socket = std::move(wrapped_server_socket)]() mutable {
               write_count.fetch_add(1);
-              win_socket->MaybeShutdown(absl::OkStatus());
+              win_socket->Orphan();
             }));
         {
           // Set the client to receive

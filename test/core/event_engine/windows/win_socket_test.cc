@@ -61,8 +61,8 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
     }
   }
   ASSERT_TRUE(read_called);
-  wrapped_client_socket.MaybeShutdown(absl::CancelledError("done"));
-  wrapped_server_socket.MaybeShutdown(absl::CancelledError("done"));
+  wrapped_client_socket.Orphan();
+  wrapped_server_socket.Orphan();
   executor.Quiesce();
 }
 
@@ -71,7 +71,7 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   WinSocket wrapped_client_socket(sockpair[0], &executor);
-  wrapped_client_socket.MaybeShutdown(absl::CancelledError("testing"));
+  wrapped_client_socket.Orphan();
   bool read_called = false;
   AnyInvocableClosure closure([&wrapped_client_socket, &read_called] {
     ASSERT_EQ(wrapped_client_socket.read_info()->bytes_transferred(), 0);

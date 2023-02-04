@@ -94,9 +94,9 @@ TEST_F(WindowsEndpointTest, Conversation) {
   // Test
   struct AppState {
     AppState(const EventEngine::ResolvedAddress& addr,
-             std::unique_ptr<WinSocket> client,
-             std::unique_ptr<WinSocket> server, grpc_core::MemoryQuota& quota,
-             Executor& executor)
+             grpc_core::OrphanablePtr<WinSocket> client,
+             grpc_core::OrphanablePtr<WinSocket> server,
+             grpc_core::MemoryQuota& quota, Executor& executor)
         : client(addr, std::move(client), quota.CreateMemoryAllocator("client"),
                  ChannelArgsEndpointConfig(), &executor),
           server(addr, std::move(server), quota.CreateMemoryAllocator("server"),
