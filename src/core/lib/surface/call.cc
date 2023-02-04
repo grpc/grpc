@@ -3454,6 +3454,15 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
   CancelSendMessage();
   CancelRecvMessage();
   set_completed();
+  // TODO(ctiller): this will probably need to be inlined somehow for
+  // performance
+  InternalRef("propagate_cancel");
+  channel()->event_engine()->Run([this]() {
+    ApplicationCallbackExecCtx callback_exec_ctx;
+    ExecCtx exec_ctx;
+    PropagateCancellationToChildren();
+    InternalUnref("propagate_cancel");
+  });
 }
 
 grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
