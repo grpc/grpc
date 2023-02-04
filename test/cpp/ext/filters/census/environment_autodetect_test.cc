@@ -64,7 +64,7 @@ class EnvironmentAutoDetectTest : public ::testing::Test {
     });
   }
 
-  ~EnvironmentAutoDetectTest() {
+  ~EnvironmentAutoDetectTest() override {
     grpc_core::ExecCtx exec_ctx;
     poller_.join();
     grpc_pollset_shutdown(

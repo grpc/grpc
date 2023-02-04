@@ -35,6 +35,12 @@ namespace internal {
 
 namespace {
 
+constexpr const char kZoneAttribute[] = "/computeMetadata/v1/instance/zone";
+constexpr const char kClusterNameAttribute[] =
+    "/computeMetadata/v1/instance/attributes/cluster-name";
+constexpr const char kRegionAttribute[] = "/computeMetadata/v1/instance/region";
+constexpr const char kInstanceIdAttribute[] = "/computeMetadata/v1/instance/id";
+
 // Fire and Forget class (Cleans up after itself.)
 // Fetches the value of an attribute from the MetadataServer on a GCP
 // environment.
@@ -46,9 +52,9 @@ class MetadataQuery {
                     callback)
       : attribute_(std::move(attribute)), callback_(std::move(callback)) {
     GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
-    auto uri = grpc_core::URI::Create("http", "metadata.google.internal.",
-                                      std::move(attribute),
-                                      {} /* query params */, "" /* fragment */);
+    auto uri =
+        grpc_core::URI::Create("http", "metadata.google.internal.", attribute_,
+                               {} /* query params */, "" /* fragment */);
     GPR_ASSERT(uri.ok());  // params are hardcoded
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
@@ -56,8 +62,8 @@ class MetadataQuery {
                                const_cast<char*>("Google")};
     request.hdr_count = 1;
     request.hdrs = &header;
-    // The http call is local. If it takes more than one sec, it is for sure not
-    // on compute engine.
+    // The http call is local. If it takes more than one sec, it is probably not
+    // on GCP.
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, pollent, &request,
         grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(1),
@@ -79,7 +85,7 @@ class MetadataQuery {
       gpr_log(
           GPR_ERROR, "MetadataServer Query received non-200 status for %s: %s",
           self->attribute_.c_str(), grpc_core::StatusToString(error).c_str());
-    } else if (self->attribute_ == "computeMetadata/v1/instance/zone") {
+    } else if (self->attribute_ == kZoneAttribute) {
       absl::string_view body(self->response_.body, self->response_.body_length);
       size_t pos = result.find_last_of('/');
       if (pos == body.npos) {
@@ -187,19 +193,15 @@ class EnvironmentAutoDetectHelper {
       resource_.labels.emplace("namespace_name", GetNamespaceName());
       resource_.labels.emplace("pod_name", GetPodName());
       resource_.labels.emplace("container_name", GetContainerName());
-      attributes_to_fetch_.push_back(
-          {"location", "computeMetadata/v1/instance/zone"});
-      attributes_to_fetch_.push_back(
-          {"cluster_name",
-           "computeMetadata/v1/instance/attributes/cluster-name"});
+      attributes_to_fetch_.push_back({"location", kZoneAttribute});
+      attributes_to_fetch_.push_back({"cluster_name", kClusterNameAttribute});
     }
     // Cloud Functions
     else if (grpc_core::GetEnv("FUNCTION_NAME").has_value() ||
              grpc_core::GetEnv("FUNCTION_TARGET").has_value()) {
       resource_.resource_type = "cloud_function";
       resource_.labels.emplace("function_name", GetFunctionName());
-      attributes_to_fetch_.push_back(
-          {"region", "computeMetadata/v1/instance/region"});
+      attributes_to_fetch_.push_back({"region", kRegionAttribute});
     }
     // Cloud Run
     else if (grpc_core::GetEnv("K_CONFIGURATION").has_value()) {
@@ -207,25 +209,21 @@ class EnvironmentAutoDetectHelper {
       resource_.labels.emplace("revision_name", GetRevisionName());
       resource_.labels.emplace("service_name", GetServiceName());
       resource_.labels.emplace("configuration_name", GetConfiguratioName());
-      attributes_to_fetch_.push_back(
-          {"location", "computeMetadata/v1/instance/region"});
+      attributes_to_fetch_.push_back({"location", kRegionAttribute});
     }
     // App Engine
     else if (grpc_core::GetEnv("GAE_SERVICE").has_value()) {
       resource_.resource_type = "gae_app";
       resource_.labels.emplace("module_id", GetModuleId());
       resource_.labels.emplace("version_id", GetVersionId());
-      attributes_to_fetch_.push_back(
-          {"zone", "computeMetadata/v1/instance/zone"});
+      attributes_to_fetch_.push_back({"zone", kZoneAttribute});
     }
     // Assume GCE
     else {
       assuming_gce_ = true;
       resource_.resource_type = "gce_instance";
-      attributes_to_fetch_.push_back(
-          {"instance_id", "computeMetadata/v1/instance/id"});
-      attributes_to_fetch_.push_back(
-          {"instance_id", "computeMetadata/v1/instance/zone"});
+      attributes_to_fetch_.push_back({"instance_id", kInstanceIdAttribute});
+      attributes_to_fetch_.push_back({"zone", kZoneAttribute});
     }
     FetchMetadataServerAttributesAsynchronouslyLocked();
   }
@@ -256,8 +254,6 @@ class EnvironmentAutoDetectHelper {
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
-              // If fetching from the MetadataServer failed and we were assuming
-              // a GCE environment, fallback to "global".
               if (assuming_gce_ && result.empty()) {
                 assuming_gce_ = false;
                 resource_.resource_type = "global";
@@ -265,11 +261,17 @@ class EnvironmentAutoDetectHelper {
               for (auto it = attributes_to_fetch_.begin();
                    it != attributes_to_fetch_.end(); ++it) {
                 if (it->metadata_server_atttribute == attribute) {
-                  attributes_to_fetch_.erase(it);
                   if (!result.empty()) {
-                    resource_.labels.emplace(it->resource_attribute,
+                    resource_.labels.emplace(std::move(it->resource_attribute),
                                              std::move(result));
                   }
+                  // If fetching from the MetadataServer failed and we were
+                  // assuming a GCE environment, fallback to "global".
+                  else if (assuming_gce_) {
+                    assuming_gce_ = false;
+                    resource_.resource_type = "global";
+                  }
+                  attributes_to_fetch_.erase(it);
                   break;
                 }
               }
@@ -289,12 +291,9 @@ class EnvironmentAutoDetectHelper {
 
 }  // namespace
 
-EnvironmentAutoDetect& EnvironmentAutoDetect::Get() {
-  return GetWithProjectId("");
-}
+EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return Create(""); }
 
-EnvironmentAutoDetect& EnvironmentAutoDetect::GetWithProjectId(
-    std::string project_id) {
+EnvironmentAutoDetect& EnvironmentAutoDetect::Create(std::string project_id) {
   static EnvironmentAutoDetect auto_detector(std::move(project_id));
   return auto_detector;
 }
