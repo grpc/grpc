@@ -68,7 +68,7 @@ typedef struct {
   size_t pseudo_refcount;
 } test_processor_state;
 
-static void process_oauth2_success(void* state, grpc_auth_context* ctx,
+static void process_oauth2_success(void* state, grpc_auth_context*,
                                    const grpc_metadata* md, size_t md_count,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
