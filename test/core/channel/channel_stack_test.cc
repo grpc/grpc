@@ -18,11 +18,10 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <limits.h>
-
 #include <string>
 
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>

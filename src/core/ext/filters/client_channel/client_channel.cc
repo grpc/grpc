@@ -36,7 +36,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "client_channel.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
@@ -47,6 +46,7 @@
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"

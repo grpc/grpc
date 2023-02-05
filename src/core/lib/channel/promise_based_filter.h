@@ -44,7 +44,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
