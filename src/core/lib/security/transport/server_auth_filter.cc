@@ -18,13 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
