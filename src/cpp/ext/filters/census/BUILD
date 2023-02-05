@@ -46,6 +46,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/meta:type_traits",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
