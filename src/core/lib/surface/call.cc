@@ -3275,6 +3275,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
           state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
           return false;
         case kFinishedWithFailure:
+          return false;
         case kFinishedWithSuccess:
           abort();  // unreachable
         default:
@@ -3625,6 +3626,7 @@ void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
   if (!promise_.has_value()) return;
   cancel_send_and_receive_ = true;
   send_trailing_metadata_ = ServerMetadataFromStatus(error, arena());
+  send_trailing_metadata_->Set(GrpcStatusFromWire(), false);
   ForceWakeup();
 }
 

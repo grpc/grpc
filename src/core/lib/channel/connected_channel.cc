@@ -1275,13 +1275,15 @@ class ServerStream final : public ConnectedChannelStream {
               waker.ActivityDebugTag().c_str(), result.ToString().c_str(),
               completing.sent ? "true" : "false", md->DebugString().c_str());
     }
-    md->Set(GrpcStatusFromWire(), completing.sent);
     if (!result.ok()) {
       md->Clear();
       md->Set(GrpcStatusMetadata(),
               static_cast<grpc_status_code>(result.code()));
       md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(result.message()));
       md->Set(GrpcStatusFromWire(), false);
+    }
+    if (!md->get(GrpcStatusFromWire()).has_value()) {
+      md->Set(GrpcStatusFromWire(), completing.sent);
     }
     call_state_.emplace<Complete>(Complete{std::move(md)});
     waker.Wakeup();
