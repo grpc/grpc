@@ -1114,6 +1114,7 @@ class ServerStream final : public ConnectedChannelStream {
       incoming_messages_ = &pipes_.client_to_server.sender;
       auto promise = p->next_promise_factory(CallArgs{
           std::move(p->client_initial_metadata),
+          ClientInitialMetadataOutstandingToken::Empty(),
           &pipes_.server_initial_metadata.sender,
           &pipes_.client_to_server.receiver, &pipes_.server_to_client.sender});
       call_state_.emplace<MessageLoop>(

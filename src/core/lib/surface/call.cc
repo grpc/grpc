@@ -2872,12 +2872,12 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 void ClientPromiseBasedCall::StartPromise(
     ClientMetadataHandle client_initial_metadata) {
   GPR_ASSERT(!promise_.has_value());
-  ClientInitialMetadataOutstandingToken token;
+  auto token = ClientInitialMetadataOutstandingToken::New();
   client_initial_metadata_sent_.emplace(token.Wait());
   promise_ = channel()->channel_stack()->MakeClientCallPromise(CallArgs{
-      std::move(client_initial_metadata), &server_initial_metadata_.sender,
-      &client_to_server_messages_.receiver, &server_to_client_messages_.sender,
-      std::move(token)});
+      std::move(client_initial_metadata), std::move(token),
+      &server_initial_metadata_.sender, &client_to_server_messages_.receiver,
+      &server_to_client_messages_.sender});
 }
 
 void ClientPromiseBasedCall::CancelWithErrorLocked(grpc_error_handle error) {
@@ -3355,7 +3355,8 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   MutexLock lock(mu());
   ScopedContext activity_context(this);
   promise_ = channel()->channel_stack()->MakeServerCallPromise(
-      CallArgs{nullptr, nullptr, nullptr, nullptr});
+      CallArgs{nullptr, ClientInitialMetadataOutstandingToken::Empty(), nullptr,
+               nullptr, nullptr});
 }
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {

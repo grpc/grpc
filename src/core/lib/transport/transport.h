@@ -161,7 +161,15 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
 // any flow control (eg MAX_CONCURRENT_STREAMS for http2).
 class ClientInitialMetadataOutstandingToken {
  public:
-  ClientInitialMetadataOutstandingToken() = default;
+  static ClientInitialMetadataOutstandingToken Empty() {
+    return ClientInitialMetadataOutstandingToken();
+  }
+  static ClientInitialMetadataOutstandingToken New() {
+    ClientInitialMetadataOutstandingToken token;
+    token.latch_ = GetContext<Arena>()->New<Latch<bool>>();
+    return token;
+  }
+
   ClientInitialMetadataOutstandingToken(
       const ClientInitialMetadataOutstandingToken&) = delete;
   ClientInitialMetadataOutstandingToken& operator=(
@@ -184,7 +192,9 @@ class ClientInitialMetadataOutstandingToken {
   auto Wait() { return latch_->Wait(); }
 
  private:
-  Latch<bool>* latch_ = GetContext<Arena>()->New<Latch<bool>>();
+  ClientInitialMetadataOutstandingToken() = default;
+
+  Latch<bool>* latch_ = nullptr;
 };
 
 using ClientInitialMetadataOutstandingTokenWaitType =
@@ -195,6 +205,10 @@ struct CallArgs {
   // During promise setup this can be manipulated by filters (and then
   // passed on to the next filter).
   ClientMetadataHandle client_initial_metadata;
+  // Token indicating that client_initial_metadata is still being processed.
+  // This should be moved around and only destroyed when the transport is
+  // satisfied that the metadata has passed any flow control measures it has.
+  ClientInitialMetadataOutstandingToken client_initial_metadata_outstanding;
   // Initial metadata from the server to the client.
   // Set once when it's available.
   // During promise setup filters can substitute their own latch for this
@@ -204,10 +218,6 @@ struct CallArgs {
   PipeReceiver<MessageHandle>* client_to_server_messages;
   // Messages travelling from the transport to the application.
   PipeSender<MessageHandle>* server_to_client_messages;
-  // Token indicating that client_initial_metadata is still being processed.
-  // This should be moved around and only destroyed when the transport is
-  // satisfied that the metadata has passed any flow control measures it has.
-  ClientInitialMetadataOutstandingToken client_initial_metadata_outstanding;
 };
 
 using NextPromiseFactory =
