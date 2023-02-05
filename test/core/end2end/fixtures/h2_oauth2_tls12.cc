@@ -45,8 +45,6 @@
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 static const char oauth2_md[] = "Bearer aaslkfjs424535asdf";
-static const char* client_identity_property_name = "smurf_name";
-static const char* client_identity = "Brainy Smurf";
 
 struct fullstack_secure_fixture_data {
   std::string localaddr;
@@ -82,10 +80,6 @@ static void process_oauth2_success(void* state, grpc_auth_context* ctx,
   s = static_cast<test_processor_state*>(state);
   GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != nullptr);
-  grpc_auth_context_add_cstring_property(ctx, client_identity_property_name,
-                                         client_identity);
-  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
-                 ctx, client_identity_property_name) == 1);
   cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_OK, nullptr);
 }
 
