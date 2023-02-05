@@ -73,12 +73,12 @@ namespace internal {
 
 void RegisterChannelFilter(
     grpc_channel_stack_type stack_type, int priority,
-    std::function<bool(const grpc_channel_args&)> include_filter,
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter,
     const grpc_channel_filter* filter) {
   auto maybe_add_filter = [include_filter,
                            filter](grpc_core::ChannelStackBuilder* builder) {
     if (include_filter != nullptr) {
-      if (!include_filter(*builder->channel_args().ToC())) {
+      if (!include_filter(builder->channel_args())) {
         return true;
       }
     }
