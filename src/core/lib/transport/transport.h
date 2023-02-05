@@ -164,9 +164,10 @@ class ClientInitialMetadataOutstandingToken {
   static ClientInitialMetadataOutstandingToken Empty() {
     return ClientInitialMetadataOutstandingToken();
   }
-  static ClientInitialMetadataOutstandingToken New() {
+  static ClientInitialMetadataOutstandingToken New(
+      Arena* arena = GetContext<Arena>()) {
     ClientInitialMetadataOutstandingToken token;
-    token.latch_ = GetContext<Arena>()->New<Latch<bool>>();
+    token.latch_ = arena->New<Latch<bool>>();
     return token;
   }
 

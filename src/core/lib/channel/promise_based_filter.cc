@@ -1298,7 +1298,11 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
           [args]() {
             return args->arena->New<ReceiveInterceptor>(args->arena);
           },
-          [args]() { return args->arena->New<SendInterceptor>(args->arena); }) {
+          [args]() { return args->arena->New<SendInterceptor>(args->arena); }),
+      initial_metadata_outstanding_token_(
+          (flags & kFilterIsLast) != 0
+              ? ClientInitialMetadataOutstandingToken::New(arena())
+              : ClientInitialMetadataOutstandingToken::Empty()) {
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
@@ -1567,7 +1571,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               ClientInitialMetadataOutstandingToken::Empty(),
+               std::move(initial_metadata_outstanding_token_),
                server_initial_metadata_pipe() == nullptr
                    ? nullptr
                    : &server_initial_metadata_pipe()->sender,

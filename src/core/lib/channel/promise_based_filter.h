@@ -673,6 +673,8 @@ class ClientCallData : public BaseCallData {
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
   // Polling related data. Non-null if we're actively polling
   PollContext* poll_ctx_ = nullptr;
+  // Initial metadata outstanding token
+  ClientInitialMetadataOutstandingToken initial_metadata_outstanding_token_;
 };
 
 class ServerCallData : public BaseCallData {
