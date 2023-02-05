@@ -48,10 +48,10 @@ class EnvironmentAutoDetectTest : public ::testing::Test {
     pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
     // Start a thread for polling.
     poller_ = std::thread([&]() {
+      gpr_mu_lock(mu_);
       while (!done_) {
         grpc_core::ExecCtx exec_ctx;
         grpc_pollset_worker* worker = nullptr;
-        gpr_mu_lock(mu_);
         if (!GRPC_LOG_IF_ERROR(
                 "pollset_work",
                 grpc_pollset_work(grpc_polling_entity_pollset(&pollent_),
@@ -60,8 +60,8 @@ class EnvironmentAutoDetectTest : public ::testing::Test {
                                       grpc_core::Duration::Seconds(1)))) {
           done_ = true;
         }
-        gpr_mu_unlock(mu_);
       }
+      gpr_mu_unlock(mu_);
     });
   }
 
