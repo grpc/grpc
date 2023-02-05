@@ -29,6 +29,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -97,6 +98,10 @@ class EnvironmentAutoDetectTest : public ::testing::Test {
   std::thread poller_;
 };
 
+// TODO(yashykt): We could create a mock MetadataServer to test this more end to
+// end, but given that that should be covered by our integration testing so
+// deferring to that.
+
 TEST_F(EnvironmentAutoDetectTest, Basic) {
   grpc_core::ExecCtx exec_ctx;
   grpc::internal::EnvironmentAutoDetect env("project");
@@ -110,6 +115,70 @@ TEST_F(EnvironmentAutoDetectTest, Basic) {
   EXPECT_EQ(env.resource()->resource_type, "global");
   EXPECT_THAT(env.resource()->labels,
               UnorderedElementsAre(Pair("project_id", "project")));
+}
+
+TEST_F(EnvironmentAutoDetectTest, GkeEnvironment) {
+  grpc_core::SetEnv("KUBERNETES_SERVICE_HOST", "k8s_service_host");
+  grpc_core::ExecCtx exec_ctx;
+  grpc::internal::EnvironmentAutoDetect env("project");
+  EXPECT_TRUE(env.resource() == nullptr);
+
+  absl::Notification notify;
+  GetNotifiedOnEnvironmentDetection(&env, &notify);
+  notify.WaitForNotification();
+
+  // Unless we test in a specific GCP resource, we should get "global" here.
+  EXPECT_EQ(env.resource()->resource_type, "k8s_container");
+  EXPECT_EQ((env.resource()->labels).at("project_id"), "project");
+  grpc_core::UnsetEnv("KUBERNETES_SERVICE_HOST");
+}
+
+TEST_F(EnvironmentAutoDetectTest, CloudFunctions) {
+  grpc_core::SetEnv("FUNCTION_NAME", "function_name");
+  grpc_core::ExecCtx exec_ctx;
+  grpc::internal::EnvironmentAutoDetect env("project");
+  EXPECT_TRUE(env.resource() == nullptr);
+
+  absl::Notification notify;
+  GetNotifiedOnEnvironmentDetection(&env, &notify);
+  notify.WaitForNotification();
+
+  // Unless we test in a specific GCP resource, we should get "global" here.
+  EXPECT_EQ(env.resource()->resource_type, "cloud_function");
+  EXPECT_EQ((env.resource()->labels).at("project_id"), "project");
+  grpc_core::UnsetEnv("FUNCTION_NAME");
+}
+
+TEST_F(EnvironmentAutoDetectTest, CloudRun) {
+  grpc_core::SetEnv("K_CONFIGURATION", "config");
+  grpc_core::ExecCtx exec_ctx;
+  grpc::internal::EnvironmentAutoDetect env("project");
+  EXPECT_TRUE(env.resource() == nullptr);
+
+  absl::Notification notify;
+  GetNotifiedOnEnvironmentDetection(&env, &notify);
+  notify.WaitForNotification();
+
+  // Unless we test in a specific GCP resource, we should get "global" here.
+  EXPECT_EQ(env.resource()->resource_type, "cloud_run_revision");
+  EXPECT_EQ((env.resource()->labels).at("project_id"), "project");
+  grpc_core::UnsetEnv("K_CONFIGURATION");
+}
+
+TEST_F(EnvironmentAutoDetectTest, AppEngine) {
+  grpc_core::SetEnv("K_CONFIGURATION", "config");
+  grpc_core::ExecCtx exec_ctx;
+  grpc::internal::EnvironmentAutoDetect env("project");
+  EXPECT_TRUE(env.resource() == nullptr);
+
+  absl::Notification notify;
+  GetNotifiedOnEnvironmentDetection(&env, &notify);
+  notify.WaitForNotification();
+
+  // Unless we test in a specific GCP resource, we should get "global" here.
+  EXPECT_EQ(env.resource()->resource_type, "cloud_run_revision");
+  EXPECT_EQ((env.resource()->labels).at("project_id"), "project");
+  grpc_core::UnsetEnv("K_CONFIGURATION");
 }
 
 TEST_F(EnvironmentAutoDetectTest, MultipleNotifyWaiters) {

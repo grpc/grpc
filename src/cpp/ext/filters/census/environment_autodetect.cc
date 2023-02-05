@@ -20,15 +20,34 @@
 
 #include "src/cpp/ext/filters/census/environment_autodetect.h"
 
-#include <deque>
+#include <string.h>
+
+#include <algorithm>
 #include <memory>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc {
 namespace internal {
@@ -74,7 +93,7 @@ class MetadataQuery {
   }
 
  private:
-  static void OnDone(void* arg, grpc_error_handle error) {
+  static void OnDone(void* arg, absl::Status error) {
     auto* self = static_cast<MetadataQuery*>(arg);
     std::string result;
     if (!error.ok()) {
@@ -193,15 +212,15 @@ class EnvironmentAutoDetectHelper {
       resource_.labels.emplace("namespace_name", GetNamespaceName());
       resource_.labels.emplace("pod_name", GetPodName());
       resource_.labels.emplace("container_name", GetContainerName());
-      attributes_to_fetch_.push_back({"location", kZoneAttribute});
-      attributes_to_fetch_.push_back({"cluster_name", kClusterNameAttribute});
+      attributes_to_fetch_.emplace(kZoneAttribute, "location");
+      attributes_to_fetch_.emplace(kClusterNameAttribute, "cluster_name");
     }
     // Cloud Functions
     else if (grpc_core::GetEnv("FUNCTION_NAME").has_value() ||
              grpc_core::GetEnv("FUNCTION_TARGET").has_value()) {
       resource_.resource_type = "cloud_function";
       resource_.labels.emplace("function_name", GetFunctionName());
-      attributes_to_fetch_.push_back({"region", kRegionAttribute});
+      attributes_to_fetch_.emplace(kRegionAttribute, "region");
     }
     // Cloud Run
     else if (grpc_core::GetEnv("K_CONFIGURATION").has_value()) {
@@ -209,21 +228,21 @@ class EnvironmentAutoDetectHelper {
       resource_.labels.emplace("revision_name", GetRevisionName());
       resource_.labels.emplace("service_name", GetServiceName());
       resource_.labels.emplace("configuration_name", GetConfiguratioName());
-      attributes_to_fetch_.push_back({"location", kRegionAttribute});
+      attributes_to_fetch_.emplace(kRegionAttribute, "location");
     }
     // App Engine
     else if (grpc_core::GetEnv("GAE_SERVICE").has_value()) {
       resource_.resource_type = "gae_app";
       resource_.labels.emplace("module_id", GetModuleId());
       resource_.labels.emplace("version_id", GetVersionId());
-      attributes_to_fetch_.push_back({"zone", kZoneAttribute});
+      attributes_to_fetch_.emplace(kZoneAttribute, "zone");
     }
     // Assume GCE
     else {
       assuming_gce_ = true;
       resource_.resource_type = "gce_instance";
-      attributes_to_fetch_.push_back({"instance_id", kInstanceIdAttribute});
-      attributes_to_fetch_.push_back({"zone", kZoneAttribute});
+      attributes_to_fetch_.emplace(kInstanceIdAttribute, "instance_id");
+      attributes_to_fetch_.emplace(kZoneAttribute, "zone");
     }
     FetchMetadataServerAttributesAsynchronouslyLocked();
   }
@@ -238,7 +257,9 @@ class EnvironmentAutoDetectHelper {
   grpc_polling_entity* pollent_;
   absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done_;
   grpc_core::Mutex mu_;
-  std::list<Attribute> attributes_to_fetch_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string /* metadata_server_attribute */,
+                      std::string /* resource_attribute */>
+      attributes_to_fetch_ ABSL_GUARDED_BY(mu_);
   EnvironmentAutoDetect::ResourceType resource_ ABSL_GUARDED_BY(mu_);
   // This would be true if we are assuming the resource to be GCE. In this case,
   // there is a chance that it will fail and we should instead just use
@@ -247,33 +268,33 @@ class EnvironmentAutoDetectHelper {
 
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    GPR_ASSERT(!attributes_to_fetch_.empty());
     for (const auto& element : attributes_to_fetch_) {
       new MetadataQuery(
-          element.metadata_server_atttribute, pollent_,
+          element.first, pollent_,
           [this](std::string attribute, std::string result) {
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
-              if (assuming_gce_ && result.empty()) {
-                assuming_gce_ = false;
-                resource_.resource_type = "global";
-              }
-              for (auto it = attributes_to_fetch_.begin();
-                   it != attributes_to_fetch_.end(); ++it) {
-                if (it->metadata_server_atttribute == attribute) {
-                  if (!result.empty()) {
-                    resource_.labels.emplace(std::move(it->resource_attribute),
-                                             std::move(result));
-                  }
-                  // If fetching from the MetadataServer failed and we were
-                  // assuming a GCE environment, fallback to "global".
-                  else if (assuming_gce_) {
-                    assuming_gce_ = false;
-                    resource_.resource_type = "global";
-                  }
-                  attributes_to_fetch_.erase(it);
-                  break;
+              auto it = attributes_to_fetch_.find(attribute);
+              if (it != attributes_to_fetch_.end()) {
+                if (!result.empty()) {
+                  resource_.labels.emplace(std::move(it->second),
+                                           std::move(result));
                 }
+                // If fetching from the MetadataServer failed and we were
+                // assuming a GCE environment, fallback to "global".
+                else if (assuming_gce_) {
+                  assuming_gce_ = false;
+                  resource_.resource_type = "global";
+                }
+                attributes_to_fetch_.erase(it);
+              } else {
+                // This should not happen
+                gpr_log(GPR_ERROR,
+                        "An unexpected attribute was seen from the "
+                        "MetadataServer: %s",
+                        attribute.c_str());
               }
               if (attributes_to_fetch_.empty()) {
                 resource = std::move(resource_);

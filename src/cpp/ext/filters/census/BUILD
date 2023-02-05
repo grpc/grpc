@@ -42,8 +42,13 @@ grpc_cc_library(
         "environment_autodetect.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/meta:type_traits",
+        "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = [
@@ -51,12 +56,19 @@ grpc_cc_library(
         "//test:__subpackages__",
     ],
     deps = [
+        "//:gpr",
         "//:gpr_platform",
+        "//:grpc_base",
         "//:grpc_security_base",
         "//:httpcli",
+        "//:ref_counted_ptr",
+        "//:uri_parser",
+        "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:load_file",
+        "//src/core:slice",
         "//src/core:status_helper",
+        "//src/core:time",
     ],
 )
