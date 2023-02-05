@@ -23,6 +23,7 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
