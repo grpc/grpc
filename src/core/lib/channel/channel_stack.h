@@ -76,7 +76,7 @@
 
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
-  const grpc_channel_args* channel_args;
+  grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
 };

@@ -873,7 +873,7 @@ struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
     GPR_ASSERT(args->is_last == ((kFlags & kFilterIsLast) != 0));
-    auto status = F::Create(ChannelArgs::FromC(args->channel_args),
+    auto status = F::Create(args->channel_args,
                             ChannelFilter::Args(args->channel_stack, elem));
     if (!status.ok()) {
       static_assert(
