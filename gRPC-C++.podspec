@@ -91,6 +91,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/create_channel_posix.h',
                       'include/grpcpp/ext/call_metric_recorder.h',
                       'include/grpcpp/ext/health_check_service_server_builder_option.h',
+                      'include/grpcpp/ext/server_metric_recorder.h',
                       'include/grpcpp/generic/async_generic_service.h',
                       'include/grpcpp/generic/generic_stub.h',
                       'include/grpcpp/grpcpp.h',
@@ -238,7 +239,9 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+    ss.source_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                      'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                      'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                       'src/core/ext/filters/channel_idle/idle_filter_state.h',
                       'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
@@ -1100,6 +1103,8 @@ Pod::Spec.new do |s|
                       'src/cpp/common/validate_service_config.cc',
                       'src/cpp/common/version_cc.cc',
                       'src/cpp/server/async_generic_service.cc',
+                      'src/cpp/server/backend_metric_recorder.cc',
+                      'src/cpp/server/backend_metric_recorder.h',
                       'src/cpp/server/channel_argument_option.cc',
                       'src/cpp/server/create_default_thread_pool.cc',
                       'src/cpp/server/dynamic_thread_pool.h',
@@ -1110,7 +1115,6 @@ Pod::Spec.new do |s|
                       'src/cpp/server/health/health_check_service.cc',
                       'src/cpp/server/health/health_check_service_server_builder_option.cc',
                       'src/cpp/server/insecure_server_credentials.cc',
-                      'src/cpp/server/orca/call_metric_recorder.cc',
                       'src/cpp/server/secure_server_credentials.cc',
                       'src/cpp/server/secure_server_credentials.h',
                       'src/cpp/server/server_builder.cc',
@@ -1185,7 +1189,9 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.hpp',
                       'third_party/xxhash/xxhash.h'
 
-    ss.private_header_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+    ss.private_header_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                              'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                              'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                               'src/core/ext/filters/channel_idle/idle_filter_state.h',
                               'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -2003,6 +2009,7 @@ Pod::Spec.new do |s|
                               'src/cpp/client/secure_credentials.h',
                               'src/cpp/common/channel_filter.h',
                               'src/cpp/common/secure_auth_context.h',
+                              'src/cpp/server/backend_metric_recorder.h',
                               'src/cpp/server/dynamic_thread_pool.h',
                               'src/cpp/server/external_connection_acceptor_impl.h',
                               'src/cpp/server/health/default_health_check_service.h',
