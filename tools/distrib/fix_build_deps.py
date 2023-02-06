@@ -288,8 +288,10 @@ def _get_filename(name, parsing_path):
          (parsing_path and not name.startswith('//')) else ''), name)
     filename = filename.replace('//:', '')
     filename = filename.replace('//src/core:', 'src/core/')
-    filename = filename.replace('//src/cpp/ext/filters/census:', 'src/cpp/ext/filters/census/')
+    filename = filename.replace('//src/cpp/ext/filters/census:',
+                                'src/cpp/ext/filters/census/')
     return filename
+
 
 def grpc_cc_library(name,
                     hdrs=[],
