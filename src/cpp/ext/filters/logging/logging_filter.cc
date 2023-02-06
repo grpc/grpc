@@ -88,13 +88,6 @@ uint64_t GetCallId() {
   return absl::Uniform(gen, 0u, std::numeric_limits<uint64_t>::max());
 }
 
-class LoggingFilter : public grpc_core::ChannelFilter {
- protected:
-  explicit LoggingFilter() {}
-
- private:
-};
-
 class MetadataEncoder {
  public:
   MetadataEncoder(LoggingSink::Entry::Payload* payload,
