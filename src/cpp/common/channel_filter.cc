@@ -18,8 +18,6 @@
 
 #include "src/cpp/common/channel_filter.h"
 
-#include <memory>
-
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
