@@ -380,35 +380,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "try_concurrently",
-    hdrs = ["lib/promise/try_concurrently.h"],
-    external_deps = [
-        "absl/status",
-        "absl/strings",
-        "absl/types:variant",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "lib/promise/map_pipe.h",
-    ],
-    deps = [
-        "activity",
-        "construct_destruct",
-        "for_each",
-        "map",
-        "pipe",
-        "poll",
-        "promise_factory",
-        "promise_like",
-        "promise_status",
-        "promise_trace",
-        "try_seq",
-        "//:gpr",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "map_pipe",
     external_deps = ["absl/status"],
     language = "c++",
