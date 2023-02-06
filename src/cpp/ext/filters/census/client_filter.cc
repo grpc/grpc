@@ -54,7 +54,6 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -79,9 +78,9 @@ constexpr uint32_t
 //
 
 const grpc_channel_filter OpenCensusClientFilter::kFilter =
-    grpc_core::MakePromiseBasedFilter<
-        OpenCensusClientFilter, grpc_core::FilterEndpoint::kClient,
-        grpc_core::kFilterExaminesServerInitialMetadata>("opencensus_client");
+    grpc_core::MakePromiseBasedFilter<OpenCensusClientFilter,
+                                      grpc_core::FilterEndpoint::kClient, 0>(
+        "opencensus_client");
 
 absl::StatusOr<OpenCensusClientFilter> OpenCensusClientFilter::Create(
     const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
@@ -222,7 +221,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
-    grpc_error_handle /*cancel_error*/) {
+    absl::Status /*cancel_error*/) {
   status_code_ = absl::StatusCode::kCancelled;
 }
 
