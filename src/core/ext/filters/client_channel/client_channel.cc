@@ -285,9 +285,8 @@ class DynamicTerminationFilter {
                              const grpc_channel_info* /*info*/) {}
 
  private:
-  explicit DynamicTerminationFilter(const grpc_channel_args* args)
-      : chand_(grpc_channel_args_find_pointer<ClientChannel>(
-            args, GRPC_ARG_CLIENT_CHANNEL)) {}
+  explicit DynamicTerminationFilter(const ChannelArgs& args)
+      : chand_(args.GetObject<ClientChannel>()) {}
 
   ClientChannel* chand_;
 };
@@ -975,7 +974,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 
 ClientChannel::ClientChannel(grpc_channel_element_args* args,
                              grpc_error_handle* error)
-    : channel_args_(ChannelArgs::FromC(args->channel_args)),
+    : channel_args_(args->channel_args),
       deadline_checking_enabled_(grpc_deadline_checking_enabled(channel_args_)),
       owning_stack_(args->channel_stack),
       client_channel_factory_(channel_args_.GetObject<ClientChannelFactory>()),
