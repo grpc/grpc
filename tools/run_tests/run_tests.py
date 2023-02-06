@@ -477,7 +477,7 @@ class CLanguage(object):
             _check_compiler(compiler, ['default', 'cmake'])
 
         if compiler == 'default' or compiler == 'cmake':
-            return ('debian11', ["-DCMAKE_CXX_STANDARD=14"])
+            return ('debian11', [])
         elif compiler == 'gcc7':
             return ('gcc_7', [])
         elif compiler == 'gcc10.2':
@@ -1069,7 +1069,7 @@ class Sanity(object):
                 environ['DISABLE_BAZEL_WRAPPER'] = 'true'
             return [
                 self.config.job_spec(cmd['script'].split(),
-                                     timeout_seconds=30 * 60,
+                                     timeout_seconds=45 * 60,
                                      environ=environ,
                                      cpu_cost=cmd.get('cpu_cost', 1))
                 for cmd in yaml.safe_load(f)

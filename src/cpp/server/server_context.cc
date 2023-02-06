@@ -21,6 +21,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <functional>
+#include <initializer_list>
 #include <map>
 #include <new>
 #include <string>

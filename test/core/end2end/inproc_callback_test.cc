@@ -19,6 +19,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <initializer_list>
+
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>

@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
