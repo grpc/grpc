@@ -88,9 +88,13 @@
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_DNS_RECONNECT_JITTER 0.2
 
+#define USE_EVENT_ENGINE_IMPL 1
+
 namespace grpc_core {
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 class AresClientChannelDNSResolver : public PollingResolver {
  public:
@@ -104,10 +108,15 @@ class AresClientChannelDNSResolver : public PollingResolver {
    public:
     explicit AresRequestWrapper(
         RefCountedPtr<AresClientChannelDNSResolver> resolver)
-        : resolver_(std::move(resolver)) {
+        : resolver_(std::move(resolver)),
+          dns_resolver_(
+              resolver_->channel_args()
+                  .GetObject<EventEngine>()
+                  ->GetDNSResolver({.dns_server = resolver_->authority()})) {
       // TODO(hork): replace this callback bookkeeping with promises.
       // Locking to prevent completion before all records are queried
       MutexLock lock(&on_resolved_mu_);
+#ifndef USE_EVENT_ENGINE_IMPL
       Ref(DEBUG_LOCATION, "OnHostnameResolved").release();
       GRPC_CLOSURE_INIT(&on_hostname_resolved_, OnHostnameResolved, this,
                         nullptr);
@@ -115,6 +124,19 @@ class AresClientChannelDNSResolver : public PollingResolver {
           resolver_->authority().c_str(), resolver_->name_to_resolve().c_str(),
           kDefaultSecurePort, resolver_->interested_parties(),
           &on_hostname_resolved_, &addresses_, resolver_->query_timeout_ms_));
+#else
+      hostname_request_handle_ = dns_resolver_->LookupHostname(
+          /*on_resolve=*/
+          [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
+              absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> res) {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            self->OnHostnameResolved(std::move(res));
+          },
+          /*name=*/resolver_->name_to_resolve(),
+          /*default_port=*/kDefaultSecurePort,
+          /*timeout=*/std::chrono::milliseconds(resolver_->query_timeout_ms_));
+#endif
       GRPC_CARES_TRACE_LOG(
           "resolver:%p Started resolving hostnames. hostname_request_:%p",
           resolver_.get(), hostname_request_.get());
@@ -172,11 +194,21 @@ class AresClientChannelDNSResolver : public PollingResolver {
     static void OnHostnameResolved(void* arg, grpc_error_handle error);
     static void OnSRVResolved(void* arg, grpc_error_handle error);
     static void OnTXTResolved(void* arg, grpc_error_handle error);
+
+    void OnHostnameResolved(
+        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>&& result);
+    void OnSRVResolved(
+        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>&& result);
+    void OnTXTResolved(
+        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>&& result);
+
     absl::optional<Result> OnResolvedLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
     Mutex on_resolved_mu_;
     RefCountedPtr<AresClientChannelDNSResolver> resolver_;
+    std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
+
     grpc_closure on_hostname_resolved_;
     std::unique_ptr<grpc_ares_request> hostname_request_
         ABSL_GUARDED_BY(on_resolved_mu_);
@@ -186,6 +218,11 @@ class AresClientChannelDNSResolver : public PollingResolver {
     grpc_closure on_txt_resolved_;
     std::unique_ptr<grpc_ares_request> txt_request_
         ABSL_GUARDED_BY(on_resolved_mu_);
+
+    EventEngine::DNSResolver::LookupTaskHandle hostname_request_handle_;
+    EventEngine::DNSResolver::LookupTaskHandle srv_request_handle_;
+    EventEngine::DNSResolver::LookupTaskHandle txt_request_handle_;
+
     // Output fields from ares request.
     std::unique_ptr<ServerAddressList> addresses_
         ABSL_GUARDED_BY(on_resolved_mu_);
@@ -374,6 +411,14 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
     self->resolver_->OnRequestComplete(std::move(*result));
   }
   self->Unref(DEBUG_LOCATION, "OnTXTResolved");
+}
+
+void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>&& res) {
+  {
+    MutexLock lock(&on_resolved_mu_);
+    // TODO(yijiem): continue
+  }
 }
 
 // Returns a Result if resolution is complete.
