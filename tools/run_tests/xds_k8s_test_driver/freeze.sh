@@ -16,7 +16,7 @@
 
 set -exo pipefail
 
-readonly VENV_NAME="venv-${RANDOM}"
+readonly VENV_NAME="venv-$(mktemp -d)"
 
 python3 -m virtualenv "${VENV_NAME}"
 
