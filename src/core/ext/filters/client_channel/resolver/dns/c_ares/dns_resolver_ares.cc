@@ -116,7 +116,6 @@ class AresClientChannelDNSResolver : public PollingResolver {
       // TODO(hork): replace this callback bookkeeping with promises.
       // Locking to prevent completion before all records are queried
       MutexLock lock(&on_resolved_mu_);
-#ifndef USE_EVENT_ENGINE_IMPL
       Ref(DEBUG_LOCATION, "OnHostnameResolved").release();
       GRPC_CLOSURE_INIT(&on_hostname_resolved_, OnHostnameResolved, this,
                         nullptr);
@@ -124,7 +123,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
           resolver_->authority().c_str(), resolver_->name_to_resolve().c_str(),
           kDefaultSecurePort, resolver_->interested_parties(),
           &on_hostname_resolved_, &addresses_, resolver_->query_timeout_ms_));
-#else
+#ifdef 0
       hostname_request_handle_ = dns_resolver_->LookupHostname(
           /*on_resolve=*/
           [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
@@ -771,6 +770,7 @@ class AresDNSResolver : public DNSResolver {
     const std::function<void(absl::StatusOr<std::string>)> on_resolved_;
   };
 
+#ifndef USE_EVENT_ENGINE_IMPL
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -785,6 +785,40 @@ class AresDNSResolver : public DNSResolver {
     auto handle = request->task_handle();
     open_requests_.insert(handle);
     return handle;
+  }
+#else
+  TaskHandle LookupHostname(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view name, absl::string_view default_port, Duration timeout,
+      grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override {
+    // TODO(yijiem): not thread-safe
+    if (!dns_resolver_) {
+      dns_resolver_ = GetDefaultEventEngine()->GetDNSResolver({.dns_server = name_server});
+    }
+    return dns_resolver_->LookupHostname(
+        /*on_resolve=*/absl::bind_front(&AresDNSResolver::OnResolve, this,
+                                        on_resolved),
+        /*name=*/name,
+        /*default_port=*/default_port,
+        /*timeout=*/timeout);
+  }
+#endif
+
+  void OnResolve(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+          resolved_addresses) {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    if (!resolved_addresses.ok()) {
+      on_resolved(resolved_addresses.status());
+      return;
+    }
+    on_resolved(reinterpret_cast<std::vector<grpc_resolved_address>&>(
+        *resolved_addresses));
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
@@ -849,6 +883,7 @@ class AresDNSResolver : public DNSResolver {
 
   // the previous default DNS resolver, used to delegate blocking DNS calls to
   std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
   Mutex mu_;
   grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
       ABSL_GUARDED_BY(mu_);
