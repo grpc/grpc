@@ -313,8 +313,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
       }
       if (!result->ok()) return *result;
       call_args.client_initial_metadata = std::move(client_initial_metadata_);
-      return Immediate<absl::StatusOr<CallArgs>>(
-          absl::StatusOr<CallArgs>(std::move(call_args)));
+      return std::move(call_args);
     };
   }
 
@@ -2043,7 +2042,7 @@ ClientChannel::FilterBasedCallData::FilterBasedCallData(
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       deadline_state_(elem, args,
-                      GPR_LIKELY(chand()->deadline_checking_enabled_)
+                      GPR_LIKELY(static_cast<ClientChannel*>(elem->channel_data)->deadline_checking_enabled_)
                           ? args.deadline
                           : Timestamp::InfFuture()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2510,7 +2509,7 @@ absl::string_view
 ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
     UniqueTypeName type) {
   auto* service_config_call_data =
-      GetServiceConfigCallData(lb_call_->call_context_);
+      GetServiceConfigCallData(lb_call_->call_context());
   auto& call_attributes = service_config_call_data->call_attributes();
   auto it = call_attributes.find(type);
   if (it == call_attributes.end()) return absl::string_view();
@@ -2533,7 +2532,7 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
         recv_trailing_metadata_ != nullptr) {
       if (const auto* md = recv_trailing_metadata_->get_pointer(
               EndpointLoadMetricsBinMetadata())) {
-        BackendMetricAllocator allocator(lb_call_->arena_);
+        BackendMetricAllocator allocator(lb_call_->arena());
         lb_call_->backend_metric_data_ =
             ParseBackendMetricData(md->as_string_view(), &allocator);
       }
@@ -2579,8 +2578,7 @@ CallTracer::CallAttemptTracer* GetCallAttemptTracer(
 }  // namespace
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
-    ClientChannel* chand, Slice path, Timestamp deadline, Arena* arena,
-    grpc_call_context_element* call_context,
+    ClientChannel* chand, grpc_call_context_element* call_context,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry)
     : InternallyRefCounted(
@@ -2588,10 +2586,6 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
               ? "LoadBalancedCall"
               : nullptr),
       chand_(chand),
-      path_(std::move(path)),
-      deadline_(deadline),
-      arena_(arena),
-      call_context_(call_context),
       call_dispatch_controller_(call_dispatch_controller),
       call_attempt_tracer_(
           GetCallAttemptTracer(call_context, is_transparent_retry)) {
@@ -2731,7 +2725,9 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
   GPR_ASSERT(connected_subchannel_ == nullptr);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
-  pick_args.path = path_.as_string_view();
+  Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
+  GPR_ASSERT(path != nullptr);
+  pick_args.path = path->as_string_view();
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
   Metadata initial_metadata(send_initial_metadata());
@@ -2822,9 +2818,11 @@ ClientChannel::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
     grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry)
-    : LoadBalancedCall(chand, Slice(CSliceRef(args.path)), args.deadline,
-                       args.arena, args.context, call_dispatch_controller,
+    : LoadBalancedCall(chand, args.context, call_dispatch_controller,
                        is_transparent_retry),
+      deadline_(args.deadline),
+      arena_(args.arena),
+      call_context_(args.context),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       pollent_(pollent),
@@ -3167,7 +3165,7 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
       // Get status from error.
       grpc_status_code code;
       std::string message;
-      grpc_error_get_status(error, self->deadline(), &code, &message,
+      grpc_error_get_status(error, self->deadline_, &code, &message,
                             /*http_error=*/nullptr, /*error_string=*/nullptr);
       status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
@@ -3278,12 +3276,14 @@ void ClientChannel::FilterBasedLoadBalancedCall::RetryPickLocked() {
 }
 
 void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
+  Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
+  GPR_ASSERT(path != nullptr);
   SubchannelCall::Args call_args = {
-      connected_subchannel()->Ref(), pollent_, path(), /*start_time=*/0,
-      deadline(), arena(),
+      connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
+      deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
-      call_context(), call_combiner_};
+      call_context_, call_combiner_};
   grpc_error_handle error;
   subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3309,54 +3309,91 @@ void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
 ClientChannel::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
     ClientChannel* chand, bool is_transparent_retry)
     : LoadBalancedCall(
-          chand,
+          chand, GetContext<grpc_call_context_element>(),
           GetCallDispatchController(GetContext<grpc_call_context_element>()),
           is_transparent_retry) {}
 
-ClientChannel::PromiseBasedLoadBalancedCall::~PromiseBasedLoadBalancedCall() {
-// FIXME: finish args
-  lb_subchannel_call_tracker()->Finish(...);
+void ClientChannel::PromiseBasedLoadBalancedCall::Orphan() {
+  // If we were cancelled without recording call completion, then notify
+  // about call completion here, as best we can.  We assume status
+  // CANCELLED in this case.
+  if (!recorded_completion_) {
+    RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
+                         nullptr, "");
+  }
+  // Delegate to parent.
+  LoadBalancedCall::Orphan();
 }
 
 ArenaPromise<ServerMetadataHandle>
 ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
     CallArgs call_args) {
-  return TrySeq(
-      // LB pick.
-// FIXME
-      MakeLbPickPromise(),
-      // Start call on subchannel.
-      [this, call_args = std::move(call_args)](
-          RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
-        call_dispatch_controller()->Commit();
-        return connected_subchannel->MakeCallPromise(std::move(call_args));
+  client_initial_metadata_ = std::move(call_args.client_initial_metadata);
+  return Seq(
+      TrySeq(
+        // LB pick.
+        [this, call_args = std::move(call_args)]() mutable
+            -> Poll<absl::StatusOr<CallArgs>> {
+          auto result = PickSubchannel(was_queued_);
+          if (!result.has_value()) {
+            waker_ = Activity::current()->MakeNonOwningWaker();
+            was_queued_ = true;
+            return Pending{};
+          }
+          if (!result->ok()) return *result;
+          call_args.client_initial_metadata =
+              std::move(client_initial_metadata_);
+          return std::move(call_args);
+        },
+        // Start call on subchannel.
+        [this](CallArgs call_args) {
+          call_dispatch_controller()->Commit();
+          return connected_subchannel()->MakeCallPromise(std::move(call_args));
+        }),
+      // Record call completion.
+      [this](ServerMetadataHandle metadata) {
+        absl::Status status;
+        grpc_status_code code =
+            metadata->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+        if (code != GRPC_STATUS_OK) {
+          absl::string_view message;
+          if (const auto* grpc_message =
+                  metadata->get_pointer(GrpcMessageMetadata())) {
+            message = grpc_message->as_string_view();
+          }
+          status = absl::Status(static_cast<absl::StatusCode>(code), message);
+        }
+        RecordCallCompletion(
+            status, metadata.get(),
+            &GetContext<CallContext>()->call_stats()->transport_stream_stats,
+            // FIXME: peer address
+            "");
+        recorded_completion_ = true;
+        return metadata;
       });
+}
+
+Arena* ClientChannel::PromiseBasedLoadBalancedCall::arena() const {
+  return GetContext<Arena>();
+}
+
+grpc_call_context_element*
+ClientChannel::PromiseBasedLoadBalancedCall::call_context() const {
+  return GetContext<grpc_call_context_element>();
+}
+
+grpc_polling_entity* ClientChannel::PromiseBasedLoadBalancedCall::pollent()
+    const {
+  return GetContext<CallContext>()->polling_entity();
 }
 
 grpc_metadata_batch*
 ClientChannel::PromiseBasedLoadBalancedCall::send_initial_metadata() const {
-// FIXME
+  return client_initial_metadata_.get();
 }
 
-void ClientChannel::PromiseBasedLoadBalancedCall::CreateSubchannelCall() {
-// FIXME
-}
-
-void ClientChannel::PromiseBasedLoadBalancedCall::PickFailed(
-    grpc_error_handle error) {
-// FIXME
-}
-
-grpc_polling_entity* ClientChannel::PromiseBasedLoadBalancedCall::pollent() {
-  return GetContext<CallContext>()->polling_entity();
-}
-
-void ClientChannel::PromiseBasedLoadBalancedCall::OnAddToQueue() {
-  waker_ = Activity::current()->MakeNonOwningWaker();
-}
-
-void ClientChannel::PromiseBasedLoadBalancedCall::OnRemoveFromQueue() {
-  waker_->Wakeup();
+void ClientChannel::PromiseBasedLoadBalancedCall::RetryPickLocked() {
+  waker_.Wakeup();
 }
 
 }  // namespace grpc_core

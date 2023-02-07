@@ -387,7 +387,7 @@ class ClientChannel::LoadBalancedCall
    public:
     explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
 
-    void* Alloc(size_t size) override { return lb_call_->arena_->Alloc(size); }
+    void* Alloc(size_t size) override { return lb_call_->arena()->Alloc(size); }
 
     // Internal API to allow first-party LB policies to access per-call
     // attributes set by the ConfigSelector.
@@ -398,8 +398,7 @@ class ClientChannel::LoadBalancedCall
   };
 
   LoadBalancedCall(
-      ClientChannel* chand, Slice path, Timestamp deadline, Arena* arena,
-      grpc_call_context_element* call_context,
+      ClientChannel* chand, grpc_call_context_element* call_context,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
   ~LoadBalancedCall() override;
@@ -417,10 +416,6 @@ class ClientChannel::LoadBalancedCall
 
  protected:
   ClientChannel* chand() const { return chand_; }
-  Slice path() const { return path_.Ref(); }
-  Timestamp deadline() const { return deadline_; }
-  Arena* arena() const { return arena_; }
-  grpc_call_context_element* call_context() const { return call_context_; }
   ConfigSelector::CallDispatchController* call_dispatch_controller() const {
     return call_dispatch_controller_;
   }
@@ -457,6 +452,8 @@ class ClientChannel::LoadBalancedCall
   class Metadata;
   class BackendMetricAccessor;
 
+  virtual Arena* arena() const = 0;
+  virtual grpc_call_context_element* call_context() const = 0;
   virtual grpc_polling_entity* pollent() const = 0;
   virtual grpc_metadata_batch* send_initial_metadata() const = 0;
 
@@ -473,11 +470,6 @@ class ClientChannel::LoadBalancedCall
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) {}
 
   ClientChannel* chand_;
-
-  Slice path_;  // Request path.
-  Timestamp deadline_;
-  Arena* arena_;
-  grpc_call_context_element* call_context_;
 
   ConfigSelector::CallDispatchController* call_dispatch_controller_;
   CallTracer::CallAttemptTracer* call_attempt_tracer_;
@@ -522,6 +514,10 @@ class ClientChannel::FilterBasedLoadBalancedCall
   using LoadBalancedCall::call_dispatch_controller;
   using LoadBalancedCall::chand;
 
+  Arena* arena() const override { return arena_; }
+  grpc_call_context_element* call_context() const override {
+    return call_context_;
+  }
   grpc_polling_entity* pollent() const override { return pollent_; }
   grpc_metadata_batch* send_initial_metadata() const override {
     return pending_batches_[0]
@@ -577,6 +573,9 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
+  Timestamp deadline_;
+  Arena* arena_;
+  grpc_call_context_element* call_context_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;
@@ -628,17 +627,22 @@ class ClientChannel::PromiseBasedLoadBalancedCall
  public:
   PromiseBasedLoadBalancedCall(ClientChannel* chand, bool is_transparent_retry);
 
-  ~PromiseBasedLoadBalancedCall() override;
+  void Orphan() override;
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
 
  private:
+  Arena* arena() const override;
+  grpc_call_context_element* call_context() const override;
   grpc_polling_entity* pollent() const override;
   grpc_metadata_batch* send_initial_metadata() const override;
 
   void RetryPickLocked() override;
 
+  ClientMetadataHandle client_initial_metadata_;
   Waker waker_;
+  bool was_queued_ = false;
+  bool recorded_completion_ = false;
 };
 
 // A sub-class of ServiceConfigCallData used to access the
