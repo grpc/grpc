@@ -221,7 +221,7 @@ versions ranges may be specified. `requirements.lock` is generated from
 transitive dependency tree.
 
 When updating `requirements.txt`, you must also update `requirements.lock`. To
-do this, navigate to this directory and run `./freeze.sh`.
+do this, navigate to this directory and run `./bin/freeze.sh`.
 
 ### Setup test configuration
 
