@@ -512,18 +512,3 @@ grpc_cc_test(
         "//test/core/event_engine:mock_event_engine",
     ],
 )
-
-grpc_cc_test(
-    name = "try_concurrently_test",
-    srcs = ["try_concurrently_test.cc"],
-    external_deps = [
-        "absl/status",
-        "absl/strings",
-        "gtest",
-    ],
-    language = "c++",
-    tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = ["//src/core:try_concurrently"],
-)

@@ -99,6 +99,28 @@ multi-domain-openssl.cnf
 $ openssl req -x509 -new -extensions v3_req -key multi-domain.key -out
 multi-domain.pem -days 3650 -config multi-domain-openssl.cnf
 
+
+Generate a chain with a leaf cert signed by an intermediate CA
+----------------------------------------------------------------------------
+
+The fully verified chain will be root_ca -> intermediate_ca -> leaf
+
+Generating the intermediate CA
+$ openssl genrsa -out temp.rsa 2048
+$ openssl pkcs8 -topk8 -in temp.rsa -out intermediate_ca.key -nocrypt
+$ rm temp.rsa
+$ openssl req -key intermediate_ca.key -new -out temp.csr -config intermediate.cnf
+$ openssl x509 -req -days 3650 -in temp.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out intermediate_ca.pem -extfile intermediate.cnf -extensions 'v3_req'
+
+Generating the leaf and chain
+$ openssl genrsa -out temp.rsa 2048
+$ openssl pkcs8 -topk8 -in temp.rsa -out leaf_signed_by_intermediate.key -nocrypt
+$ openssl req -key leaf_signed_by_intermediate.key -new -out temp.csr -config leaf_signed_by_intermediate.cnf
+$ openssl x509 -req -days 3650 -in temp.csr -CA intermediate_ca.pem -CAkey intermediate_ca.key -CAcreateserial -out leaf_signed_by_intermediate.pem -extfile leaf_signed_by_intermediate.cnf -extensions 'v3_req'
+$ cat leaf_signed_by_intermediate.pem intermediate_ca.pem > leaf_and_intermediate_chain.pem
+
+
+
 Clean up:
 ---------
 $ rm *.rsa
