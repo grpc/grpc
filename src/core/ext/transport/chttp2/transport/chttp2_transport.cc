@@ -35,6 +35,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
@@ -454,15 +455,21 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
   if (t->keepalive_time != grpc_core::Duration::Infinity()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
+    // The timer can fire on an EventEngine thread before RunAfter returns,
+    // causing issue with overriding the handle. Thus use a mutex here.
+    // Hopefully this only happens once during init.
+    std::shared_ptr<absl::Mutex> mu = std::make_shared<absl::Mutex>();
+    absl::MutexLock lock(&*mu);
     t->keepalive_ping_timer_handle =
-        t->event_engine->RunAfter(t->keepalive_time, [t] {
+        t->event_engine->RunAfter(t->keepalive_time, [t, mu] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
+          absl::MutexLock lock(&*mu);
           init_keepalive_ping(t);
         });
   } else {
     // Use GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED to indicate there are no
-    //   inflight keeaplive timers
+    // inflight keepalive timers
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
 }
