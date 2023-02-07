@@ -1948,7 +1948,8 @@ ClientChannel::FilterBasedCallData::FilterBasedCallData(
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       deadline_state_(elem, args,
-                      GPR_LIKELY(static_cast<ClientChannel*>(elem->channel_data)->deadline_checking_enabled_)
+                      GPR_LIKELY(static_cast<ClientChannel*>(elem->channel_data)
+                                     ->deadline_checking_enabled_)
                           ? args.deadline
                           : Timestamp::InfFuture()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
