@@ -220,7 +220,8 @@ def _get_cs_files_to_generate(protofile, proto_to_generated):
     return cs_files_to_generate
 
 
-def _generate_cs_files(protofile, cs_files_to_generate, grpc_out_dir, csharp_out_dir, projectdir):
+def _generate_cs_files(protofile, cs_files_to_generate, grpc_out_dir,
+                       csharp_out_dir, projectdir):
     """Create expected cs files."""
     _write_debug("\ngenerate_cs_files")
 
@@ -239,7 +240,7 @@ def _generate_cs_files(protofile, cs_files_to_generate, grpc_out_dir, csharp_out
     # Ensure directories exist
     if not os.path.isdir(grpc_out_dir):
         os.makedirs(grpc_out_dir)
-    
+
     if not os.path.isdir(csharp_out_dir):
         os.makedirs(csharp_out_dir)
 
@@ -291,6 +292,7 @@ def _getenv(name):
         value = os.getenv(name.lower())
     return value
 
+
 def _get_last_value_or_none(protoc_arg_dict, name):
     # If argument was passed multiple times, take the last occurrence.
     # TODO(jtattermusch): handle multiple occurrences of the same argument
@@ -299,6 +301,7 @@ def _get_last_value_or_none(protoc_arg_dict, name):
     if values is not None:
         return values[-1]
     return None
+
 
 def main():
     # Check environment variables for the additional arguments used in the tests.
@@ -339,14 +342,15 @@ def main():
 
     # If argument was passed multiple times, take the last occurrence of it.
     # TODO(jtattermusch): handle multiple occurrences of the same argument
-    dependencyfile = _get_last_value_or_none(protoc_arg_dict, '--dependency_out')
+    dependencyfile = _get_last_value_or_none(protoc_arg_dict,
+                                             '--dependency_out')
     grpcout = _get_last_value_or_none(protoc_arg_dict, '--grpc_out')
     csharpout = _get_last_value_or_none(protoc_arg_dict, '--csharp_out')
 
     # --grpc_out might not be set in which case use --csharp_out
     if grpcout is None:
         grpcout = csharpout
-    
+
     if len(protoc_arg_dict.get('protofile')) != 1:
         # regular protoc can process multiple .proto files passed at once, but we know
         # the Grpc.Tools msbuild integration only ever passes one .proto file per invocation.
