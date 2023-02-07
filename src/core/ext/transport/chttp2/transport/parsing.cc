@@ -29,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "internal.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -59,6 +60,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 
 using grpc_core::HPackParser;
@@ -807,10 +809,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                          &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
-      s->forced_close_error = err;
-      grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
-                                               GRPC_HTTP2_PROTOCOL_ERROR,
-                                               &s->stats.outgoing);
+      grpc_chttp2_cancel_stream(t, s, std::exchange(err, absl::OkStatus()));
     }
   }
   return err;
