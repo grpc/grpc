@@ -60,6 +60,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -137,15 +138,13 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
 ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
     CallArgs call_args) {
   return OnCancel(
-      Seq(
-          channel_stack_->MakeClientCallPromise(std::move(call_args)),
+      Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
           [self = Ref()](ServerMetadataHandle metadata) {
             channelz::SubchannelNode* channelz_subchannel =
                 self->channelz_subchannel();
             GPR_ASSERT(channelz_subchannel != nullptr);
             if (metadata->get(GrpcStatusMetadata())
-                    .value_or(GRPC_STATUS_UNKNOWN)
-                != GRPC_STATUS_OK) {
+                    .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
               channelz_subchannel->RecordCallFailed();
             } else {
               channelz_subchannel->RecordCallSucceeded();

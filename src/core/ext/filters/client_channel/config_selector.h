@@ -28,7 +28,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 // Channel arg key for ConfigSelector.

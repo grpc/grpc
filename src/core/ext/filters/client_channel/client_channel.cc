@@ -76,12 +76,16 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -303,8 +307,8 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
   ArenaPromise<absl::StatusOr<CallArgs>> MakeNameResolutionPromise(
       CallArgs call_args) {
     client_initial_metadata_ = std::move(call_args.client_initial_metadata);
-    return [this, call_args = std::move(call_args)]() mutable
-        -> Poll<absl::StatusOr<CallArgs>> {
+    return [this, call_args = std::move(
+                      call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
       auto result = CheckResolution(was_queued_);
       if (!result.has_value()) {
         waker_ = Activity::current()->MakeNonOwningWaker();
@@ -466,8 +470,7 @@ class DynamicTerminationFilter::CallData {
                                    /*start_time=*/0,     calld->deadline_,
                                    calld->arena_,        calld->call_combiner_};
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
-        args, pollent, nullptr,
-        GetCallDispatchController(calld->call_context_),
+        args, pollent, nullptr, GetCallDispatchController(calld->call_context_),
         /*is_transparent_retry=*/false);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO,
@@ -1214,9 +1217,8 @@ ClientChannel::CreateLoadBalancedCall(
 
 ArenaPromise<ServerMetadataHandle> ClientChannel::CreateLoadBalancedCallPromise(
     CallArgs call_args, bool is_transparent_retry) {
-  auto* lb_call =
-      GetContext<Arena>()->ManagedNew<PromiseBasedLoadBalancedCall>(
-          this, is_transparent_retry);
+  auto* lb_call = GetContext<Arena>()->ManagedNew<PromiseBasedLoadBalancedCall>(
+      this, is_transparent_retry);
   return lb_call->MakeCallPromise(std::move(call_args));
 }
 
@@ -3338,25 +3340,26 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
   client_initial_metadata_ = std::move(call_args.client_initial_metadata);
   return Seq(
       TrySeq(
-        // LB pick.
-        [this, call_args = std::move(call_args)]() mutable
-            -> Poll<absl::StatusOr<CallArgs>> {
-          auto result = PickSubchannel(was_queued_);
-          if (!result.has_value()) {
-            waker_ = Activity::current()->MakeNonOwningWaker();
-            was_queued_ = true;
-            return Pending{};
-          }
-          if (!result->ok()) return *result;
-          call_args.client_initial_metadata =
-              std::move(client_initial_metadata_);
-          return std::move(call_args);
-        },
-        // Start call on subchannel.
-        [this](CallArgs call_args) {
-          call_dispatch_controller()->Commit();
-          return connected_subchannel()->MakeCallPromise(std::move(call_args));
-        }),
+          // LB pick.
+          [this, call_args = std::move(
+                     call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
+            auto result = PickSubchannel(was_queued_);
+            if (!result.has_value()) {
+              waker_ = Activity::current()->MakeNonOwningWaker();
+              was_queued_ = true;
+              return Pending{};
+            }
+            if (!result->ok()) return *result;
+            call_args.client_initial_metadata =
+                std::move(client_initial_metadata_);
+            return std::move(call_args);
+          },
+          // Start call on subchannel.
+          [this](CallArgs call_args) {
+            call_dispatch_controller()->Commit();
+            return connected_subchannel()->MakeCallPromise(
+                std::move(call_args));
+          }),
       // Record call completion.
       [this](ServerMetadataHandle metadata) {
         absl::Status status;
