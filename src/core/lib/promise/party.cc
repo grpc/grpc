@@ -81,32 +81,28 @@ void Party::DrainAdds(uint64_t& wakeups) {
 
 void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
   // Lock
-  while (true) {
-    auto prev_wakeups_and_refs =
-        wakeups_and_refs_.fetch_or(kAwoken, std::memory_order_relaxed);
-    if ((prev_wakeups_and_refs & kAwoken) != 0) {
-      // Already locked: add to the list of things to add
-      auto* add = new AddingParticipant{std::move(participant), nullptr};
-      while (!adding_.compare_exchange_weak(add->next, add,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_relaxed)) {
-      }
-      // And signal that there are adds waiting
-      prev_wakeups_and_refs = wakeups_and_refs_.fetch_or(
-          kAwoken | kAddsPending, std::memory_order_relaxed);
-      if ((prev_wakeups_and_refs & kAwoken) == 0) {
-        // We queued the add but the lock was released before we signalled that.
-        // We acquired the lock though, so now we can run.
-        Run();
-      }
-      return;
-    }
-    break;
+  auto prev_wakeups_and_refs =
+      wakeups_and_refs_.fetch_or(kAwoken, std::memory_order_relaxed);
+  if ((prev_wakeups_and_refs & kAwoken) == 0) {
+    // Lock acquired
+    wakeups_and_refs_.fetch_or(
+        1 << SituateNewParticipant(std::move(participant)));
+    Run();
+    return;
   }
-
-  wakeups_and_refs_.fetch_or(1
-                             << SituateNewParticipant(std::move(participant)));
-  Run();
+  // Already locked: add to the list of things to add
+  auto* add = new AddingParticipant{std::move(participant), nullptr};
+  while (!adding_.compare_exchange_weak(
+      add->next, add, std::memory_order_acq_rel, std::memory_order_relaxed)) {
+  }
+  // And signal that there are adds waiting
+  prev_wakeups_and_refs = wakeups_and_refs_.fetch_or(kAwoken | kAddsPending,
+                                                     std::memory_order_relaxed);
+  if ((prev_wakeups_and_refs & kAwoken) == 0) {
+    // We queued the add but the lock was released before we signalled that.
+    // We acquired the lock though, so now we can run.
+    Run();
+  }
 }
 
 size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
