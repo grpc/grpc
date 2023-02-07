@@ -27,8 +27,7 @@
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
 #include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/support/config.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
@@ -55,6 +54,12 @@ CallMetricRecorder& CallMetricRecorder::RecordMemoryUtilizationMetric(
     double value) {
   internal::MutexLock lock(&mu_);
   backend_metric_data_->mem_utilization = value;
+  return *this;
+}
+
+CallMetricRecorder& CallMetricRecorder::RecordQpsMetric(double value) {
+  internal::MutexLock lock(&mu_);
+  backend_metric_data_->qps = value;
   return *this;
 }
 
@@ -93,6 +98,10 @@ absl::optional<std::string> CallMetricRecorder::CreateSerializedReport() {
   if (backend_metric_data_->mem_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(
         response, backend_metric_data_->mem_utilization);
+  }
+  if (backend_metric_data_->qps != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(
+        response, backend_metric_data_->qps);
   }
   for (const auto& p : backend_metric_data_->request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(

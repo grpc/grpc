@@ -12,15 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <stddef.h>
 
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/status.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/promise/test_context.h"
 
 // TODO(roth): Need to add a lot more tests here.  I created this file
@@ -123,15 +153,14 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
   TestContext<Arena> context(arena_.get());
   TestContext<grpc_call_context_element> promise_call_context(call_context_);
   auto promise = filter->MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle(&initial_metadata_batch_,
+                                    Arena::PooledDeleter(nullptr)),
+               nullptr, nullptr, nullptr},
       [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch_);
+              return ServerMetadataHandle(&trailing_metadata_batch_,
+                                          Arena::PooledDeleter(nullptr));
             });
       });
   auto result = promise();
@@ -145,7 +174,6 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
       (*server_metadata)->get_pointer(GrpcMessageMetadata());
   ASSERT_TRUE(message_md != nullptr);
   EXPECT_EQ(message_md->as_string_view(), "access denied");
-  (*server_metadata)->~ServerMetadata();
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
@@ -155,15 +183,14 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   TestContext<Arena> context(arena_.get());
   TestContext<grpc_call_context_element> promise_call_context(call_context_);
   auto promise = filter->MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle(&initial_metadata_batch_,
+                                    Arena::PooledDeleter(nullptr)),
+               nullptr, nullptr, nullptr},
       [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch_);
+              return ServerMetadataHandle(&trailing_metadata_batch_,
+                                          Arena::PooledDeleter(nullptr));
             });
       });
   auto result = promise();
@@ -179,7 +206,6 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   EXPECT_EQ(message_md->as_string_view(),
             "Illegal status code from call credentials; original status: "
             "ABORTED: nope");
-  (*server_metadata)->~ServerMetadata();
 }
 
 }  // namespace

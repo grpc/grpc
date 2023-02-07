@@ -49,12 +49,11 @@ class LoggingTest(unittest.TestCase):
     def test_can_configure_logger(self):
         script = """if True:
             import logging
-            import six
 
             import grpc
+            import io
 
-
-            intended_stream = six.StringIO()
+            intended_stream = io.StringIO()
             logging.basicConfig(stream=intended_stream)
 
             if len(logging.getLogger().handlers) != 1:

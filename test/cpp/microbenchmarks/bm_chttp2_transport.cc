@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Microbenchmarks around CHTTP2 transport operations */
+// Microbenchmarks around CHTTP2 transport operations
 
 #include <string.h>
 
@@ -33,16 +33,13 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
@@ -73,7 +70,7 @@ class PhonyEndpoint : public grpc_endpoint {
       return;
     }
     grpc_slice_buffer_add(slices_, slice);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_cb_, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_cb_, absl::OkStatus());
     read_cb_ = nullptr;
   }
 
@@ -88,7 +85,7 @@ class PhonyEndpoint : public grpc_endpoint {
     if (have_slice_) {
       have_slice_ = false;
       grpc_slice_buffer_add(slices, buffered_slice_);
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
       return;
     }
     read_cb_ = cb;
@@ -103,7 +100,7 @@ class PhonyEndpoint : public grpc_endpoint {
 
   static void write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
                     grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
   }
 
   static void add_to_pollset(grpc_endpoint* /*ep*/, grpc_pollset* /*pollset*/) {
@@ -199,7 +196,7 @@ class Stream {
   explicit Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
-    arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
+    arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
   }
 
   ~Stream() {
@@ -215,7 +212,7 @@ class Stream {
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
       arena_->Destroy();
-      arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
+      arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
@@ -251,6 +248,10 @@ class Stream {
 
   Fixture* f_;
   grpc_stream_refcount refcount_;
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::Arena* arena_;
   size_t stream_size_;
   void* stream_;
@@ -265,7 +266,6 @@ std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_StreamCreateDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
-  TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
@@ -273,7 +273,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
   op = {};
   op.cancel_stream = true;
   op.payload = &op_payload;
-  op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  op_payload.cancel_stream.cancel_error = absl::CancelledError();
   std::unique_ptr<TestClosure> next =
       MakeTestClosure([&, s](grpc_error_handle /*error*/) {
         if (!state.KeepRunning()) {
@@ -284,9 +284,8 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
         s->Op(&op);
         s->DestroyThen(next.get());
       });
-  grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), absl::OkStatus());
   f.FlushExecCtx();
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_StreamCreateDestroy);
 
@@ -318,7 +317,6 @@ class RepresentativeClientInitialMetadata {
 
 template <class Metadata>
 static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
@@ -332,7 +330,11 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
   Metadata::Prepare(&b);
 
@@ -355,20 +357,18 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   done = MakeTestClosure([&](grpc_error_handle /*error*/) {
     reset_op();
     op.cancel_stream = true;
-    op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+    op.payload->cancel_stream.cancel_error = absl::CancelledError();
     s->Op(&op);
     s->DestroyThen(start.get());
   });
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), absl::OkStatus());
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
-  track_counters.Finish(state);
 }
 BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
                    RepresentativeClientInitialMetadata);
 
 static void BM_TransportEmptyOp(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
@@ -386,16 +386,16 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
         op.on_complete = c.get();
         s->Op(&op);
       });
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c.get(), GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c.get(), absl::OkStatus());
   f.FlushExecCtx();
   reset_op();
   op.cancel_stream = true;
-  op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  op_payload.cancel_stream.cancel_error = absl::CancelledError();
   gpr_event* stream_cancel_done = new gpr_event;
   gpr_event_init(stream_cancel_done);
   std::unique_ptr<TestClosure> stream_cancel_closure =
       MakeTestClosure([&](grpc_error_handle error) {
-        GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+        GPR_ASSERT(error.ok());
         gpr_event_set(stream_cancel_done, reinterpret_cast<void*>(1));
       });
   op.on_complete = stream_cancel_closure.get();
@@ -406,7 +406,6 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   s->DestroyThen(
       MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
   f.FlushExecCtx();
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_TransportEmptyOp);
 

@@ -19,7 +19,7 @@
 #ifndef GRPCPP_XDS_SERVER_BUILDER_H
 #define GRPCPP_XDS_SERVER_BUILDER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <grpcpp/server_builder.h>
 
@@ -106,18 +106,6 @@ class XdsServerBuilder : public grpc::ServerBuilder {
   int drain_grace_time_ms_ = -1;
 };
 
-namespace experimental {
-// TODO(yashykt): Delete this after the 1.42 release.
-GRPC_DEPRECATED(
-    "Use grpc::XdsServerServingStatusNotifierInterface instead. The "
-    "experimental version will be deleted after the 1.42 release.")
-typedef grpc::XdsServerServingStatusNotifierInterface
-    XdsServerServingStatusNotifierInterface;
-GRPC_DEPRECATED(
-    "Use grpc::XdsServerBuilder instead. The experimental version will be "
-    "deleted after the 1.42 release.")
-typedef grpc::XdsServerBuilder XdsServerBuilder;
-}  // namespace experimental
 }  // namespace grpc
 
-#endif /* GRPCPP_XDS_SERVER_BUILDER_H */
+#endif  // GRPCPP_XDS_SERVER_BUILDER_H

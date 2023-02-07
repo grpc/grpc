@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H
-#define GRPC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H
+#define GRPC_SRC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -21,6 +21,7 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -69,7 +70,23 @@ class ValidationErrors {
         : errors_(errors) {
       errors_->PushField(field_name);
     }
-    ~ScopedField() { errors_->PopField(); }
+
+    // Not copyable.
+    ScopedField(const ScopedField& other) = delete;
+    ScopedField& operator=(const ScopedField& other) = delete;
+
+    // Movable.
+    ScopedField(ScopedField&& other) noexcept
+        : errors_(std::exchange(other.errors_, nullptr)) {}
+    ScopedField& operator=(ScopedField&& other) noexcept {
+      if (errors_ != nullptr) errors_->PopField();
+      errors_ = std::exchange(other.errors_, nullptr);
+      return *this;
+    }
+
+    ~ScopedField() {
+      if (errors_ != nullptr) errors_->PopField();
+    }
 
    private:
     ValidationErrors* errors_;
@@ -107,4 +124,4 @@ class ValidationErrors {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H

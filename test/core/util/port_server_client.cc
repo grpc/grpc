@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include <cmath>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -30,6 +31,7 @@
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -154,10 +156,10 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   int failed = 0;
   grpc_http_response* response = &pr->response;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   } else if (response->status != 200) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",

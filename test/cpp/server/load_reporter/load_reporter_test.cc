@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
@@ -58,8 +58,7 @@ class MockCensusViewProvider : public CensusViewProvider {
  public:
   MOCK_METHOD0(FetchViewData, CensusViewProvider::ViewDataMap());
 
-  const ::opencensus::stats::ViewDescriptor& FindViewDescriptor(
-      const std::string& view_name) {
+  const ViewDescriptor& FindViewDescriptor(const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
     GPR_ASSERT(it != view_descriptor_map().end());
     return it->second;
@@ -140,7 +139,7 @@ class LoadReporterTest : public ::testing::Test {
     EXPECT_CALL(*mock_cpu, GetCpuStats())
         .WillOnce(Return(initial_cpu_stats_))
         .RetiresOnSaturation();
-    load_reporter_ = absl::make_unique<LoadReporter>(
+    load_reporter_ = std::make_unique<LoadReporter>(
         kFeedbackSampleWindowSeconds,
         std::unique_ptr<CensusViewProvider>(mock_census),
         std::unique_ptr<CpuStatsProvider>(mock_cpu));

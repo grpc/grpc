@@ -1,23 +1,24 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -27,7 +28,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
@@ -49,8 +49,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   const int server_port = grpc_pick_unused_port_or_die();
   ffd->server_addr = grpc_core::JoinHostPort("localhost", server_port);
 
-  /* Passing client_args to proxy_create for the case of checking for proxy auth
-   */
+  // Passing client_args to proxy_create for the case of checking for proxy auth
+  //
   ffd->proxy = grpc_end2end_http_proxy_create(client_args);
 
   f.fixture_data = ffd;
@@ -63,7 +63,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
                                   const grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
-  /* If testing for proxy auth, add credentials to proxy uri */
+  // If testing for proxy auth, add credentials to proxy uri
   const char* proxy_auth_str = grpc_channel_args_find_string(
       client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
   std::string proxy_uri;
@@ -75,9 +75,12 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
         absl::StrFormat("http://%s@%s", proxy_auth_str,
                         grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   }
-  grpc_core::SetEnv("http_proxy", proxy_uri.c_str());
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_channel_create(ffd->server_addr.c_str(), creds, client_args);
+  f->client = grpc_channel_create(ffd->server_addr.c_str(), creds,
+                                  grpc_core::ChannelArgs::FromC(client_args)
+                                      .Set(GRPC_ARG_HTTP_PROXY, proxy_uri)
+                                      .ToC()
+                                      .get());
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }
@@ -105,7 +108,7 @@ void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
   delete ffd;
 }
 
-/* All test configurations */
+// All test configurations
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |

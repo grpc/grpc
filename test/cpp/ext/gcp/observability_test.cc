@@ -14,10 +14,10 @@
 // limitations under the License.
 //
 
-#include "src/cpp/ext/gcp/observability.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#include <grpcpp/ext/gcp_observability.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "test/core/util/test_config.h"
@@ -28,8 +28,8 @@ TEST(GcpObservabilityTest, RegistrationTest) {
   auto status = grpc::experimental::GcpObservabilityInit();
   EXPECT_EQ(status,
             absl::FailedPreconditionError(
-                "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
-                "GRPC_OBSERVABILITY_CONFIG "
+                "Environment variables GRPC_GCP_OBSERVABILITY_CONFIG_FILE or "
+                "GRPC_GCP_OBSERVABILITY_CONFIG "
                 "not defined"));
 
   grpc_core::CoreConfiguration::Reset();

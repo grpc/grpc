@@ -1,24 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -32,14 +33,15 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-/* These routines are here to facilitate debugging - they produce string
-   representations of various transport data structures */
+// These routines are here to facilitate debugging - they produce string
+// representations of various transport data structures
 
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op) {
@@ -86,7 +88,7 @@ std::string grpc_transport_stream_op_batch_string(
   if (op->cancel_stream) {
     out.push_back(absl::StrCat(
         " CANCEL:",
-        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
+        grpc_core::StatusToString(op->payload->cancel_stream.cancel_error)));
   }
 
   return absl::StrJoin(out, "");
@@ -107,14 +109,14 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
                                   op->stop_connectivity_watch));
   }
 
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
+  if (!op->disconnect_with_error.ok()) {
     out.push_back(absl::StrCat(
-        " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
+        " DISCONNECT:", grpc_core::StatusToString(op->disconnect_with_error)));
   }
 
-  if (!GRPC_ERROR_IS_NONE(op->goaway_error)) {
-    out.push_back(
-        absl::StrCat(" SEND_GOAWAY:", grpc_error_std_string(op->goaway_error)));
+  if (!op->goaway_error.ok()) {
+    out.push_back(absl::StrCat(" SEND_GOAWAY:",
+                               grpc_core::StatusToString(op->goaway_error)));
   }
 
   if (op->set_accept_stream) {

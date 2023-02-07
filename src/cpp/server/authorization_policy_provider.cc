@@ -19,7 +19,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/authorization_policy_provider.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
 namespace grpc {

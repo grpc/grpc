@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <climits>
 #include <iostream>
@@ -36,17 +36,13 @@
 #include <grpcpp/test/default_reactor_test_peer.h>
 #include <grpcpp/test/mock_stream.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::testing::DefaultReactorTestPeer;
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::EchoTestService;
-using grpc::testing::MockClientReaderWriter;
 using std::vector;
 using ::testing::_;
 using ::testing::AtLeast;
@@ -109,7 +105,7 @@ class FakeClient {
     std::unique_ptr<ClientReaderInterface<EchoResponse>> cstream =
         stub_->ResponseStream(&context, request);
 
-    std::string exp = "";
+    std::string exp;
     EXPECT_TRUE(cstream->Read(&response));
     exp.append(response.message() + " ");
 
@@ -255,7 +251,7 @@ class TestServiceImpl : public EchoTestService::Service {
                        ServerReader<EchoRequest>* reader,
                        EchoResponse* response) override {
     EchoRequest request;
-    std::string resp("");
+    std::string resp;
     while (reader->Read(&request)) {
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       resp.append(request.message());
@@ -290,7 +286,7 @@ class TestServiceImpl : public EchoTestService::Service {
 
  private:
   vector<std::string> split(const std::string& input) {
-    std::string buff("");
+    std::string buff;
     vector<std::string> result;
 
     for (auto n : input) {

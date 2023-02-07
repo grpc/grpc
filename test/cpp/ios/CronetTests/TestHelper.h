@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef TESTHELPER_H
-#define TESTHELPER_H
+#ifndef GRPC_TEST_CPP_IOS_CRONETTESTS_TESTHELPER_H
+#define GRPC_TEST_CPP_IOS_CRONETTESTS_TESTHELPER_H
 
 #import <XCTest/XCTest.h>
 
@@ -25,9 +25,9 @@
 #import <sstream>
 
 #import <grpc/support/time.h>
-#import <grpcpp/impl/codegen/config.h>
-#import <grpcpp/impl/codegen/string_ref.h>
 #import <grpcpp/support/client_interceptor.h>
+#import <grpcpp/support/config.h>
+#import <grpcpp/support/string_ref.h>
 
 #import "src/proto/grpc/testing/echo.grpc.pb.h"
 
@@ -80,4 +80,4 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
                                grpc::testing::EchoRequest>* stream);
 };
 
-#endif /* TESTHELPER_H */
+#endif  // GRPC_TEST_CPP_IOS_CRONETTESTS_TESTHELPER_H

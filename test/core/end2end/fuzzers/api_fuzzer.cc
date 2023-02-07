@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -65,7 +64,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -109,35 +107,30 @@ static std::atomic<bool> g_channel_force_delete{false};
 // dns resolution
 
 typedef struct addr_req {
-  grpc_timer timer;
   char* addr;
   grpc_closure* on_done;
   std::unique_ptr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
-static void finish_resolve(void* arg, grpc_error_handle error) {
-  addr_req* r = static_cast<addr_req*>(arg);
-
-  if (GRPC_ERROR_IS_NONE(error) && 0 == strcmp(r->addr, "server")) {
-    *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
+static void finish_resolve(addr_req r) {
+  if (0 == strcmp(r.addr, "server")) {
+    *r.addresses = std::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
         grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
-    (*r->addresses)
+    (*r.addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done, absl::OkStatus());
   } else {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
-                            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                "Resolution failed", &error, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done,
+                            absl::UnknownError("Resolution failed"));
   }
-
-  gpr_free(r->addr);
-  delete r;
+  gpr_free(r.addr);
 }
 
 namespace {
 
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
@@ -149,39 +142,35 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_done)
         : name_(std::string(name)), on_done_(std::move(on_done)) {
-      grpc_timer_init(
-          &timer_,
-          grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
-          GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
+      GetDefaultEventEngine()->RunAfter(
+          grpc_core::Duration::Seconds(1), [this] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            FinishResolve();
+          });
     }
 
    private:
-    static void FinishResolve(void* arg, grpc_error_handle error) {
-      FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
-      if (GRPC_ERROR_IS_NONE(error) && self->name_ == "server") {
+    void FinishResolve() {
+      if (name_ == "server") {
         std::vector<grpc_resolved_address> addrs;
         grpc_resolved_address addr;
         addr.len = 0;
         addrs.push_back(addr);
-        self->on_done_(std::move(addrs));
+        on_done_(std::move(addrs));
       } else {
-        self->on_done_(absl::UnknownError("Resolution failed"));
+        on_done_(absl::UnknownError("Resolution failed"));
       }
-      delete self;
+      delete this;
     }
 
     const std::string name_;
     const std::function<void(
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done_;
-    grpc_timer timer_;
   };
 
-  // Gets the singleton instance, possibly creating it first
-  static FuzzerDNSResolver* GetOrCreate() {
-    static FuzzerDNSResolver* instance = new FuzzerDNSResolver();
-    return instance;
-  }
+  explicit FuzzerDNSResolver(FuzzingEventEngine* engine) : engine_(engine) {}
 
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -206,7 +195,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
@@ -221,7 +210,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
@@ -232,6 +221,9 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
   // FuzzerDNSResolver does not support cancellation.
   bool Cancel(TaskHandle /*handle*/) override { return false; }
+
+ private:
+  FuzzingEventEngine* engine_;
 };
 
 }  // namespace
@@ -241,13 +233,15 @@ grpc_ares_request* my_dns_lookup_ares(
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     int /*query_timeout*/) {
-  addr_req* r = new addr_req();
-  r->addr = gpr_strdup(addr);
-  r->on_done = on_done;
-  r->addresses = addresses;
-  grpc_timer_init(
-      &r->timer, grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
-      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
+  addr_req r;
+  r.addr = gpr_strdup(addr);
+  r.on_done = on_done;
+  r.addresses = addresses;
+  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    finish_resolve(r);
+  });
   return nullptr;
 }
 
@@ -261,22 +255,17 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
                           gpr_timespec deadline);
 
 typedef struct {
-  grpc_timer timer;
   grpc_closure* closure;
   grpc_endpoint** ep;
   gpr_timespec deadline;
 } future_connect;
 
-static void do_connect(void* arg, grpc_error_handle error) {
-  future_connect* fc = static_cast<future_connect*>(arg);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    *fc->ep = nullptr;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
-  } else if (g_server != nullptr) {
+static void do_connect(future_connect fc) {
+  if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr, true);
-    *fc->ep = client;
+    *fc.ep = client;
     start_scheduling_grpc_passthru_endpoint_channel_effects(client,
                                                             g_channel_actions);
 
@@ -289,30 +278,29 @@ static void do_connect(void* arg, grpc_error_handle error) {
                                     core_server->channel_args(), nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc.closure, absl::OkStatus());
   } else {
-    sched_connect(fc->closure, fc->ep, fc->deadline);
+    sched_connect(fc.closure, fc.ep, fc.deadline);
   }
-  gpr_free(fc);
 }
 
 static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
                           gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = nullptr;
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connect deadline exceeded"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                            GRPC_ERROR_CREATE("Connect deadline exceeded"));
     return;
   }
-
-  future_connect* fc = static_cast<future_connect*>(gpr_malloc(sizeof(*fc)));
-  fc->closure = closure;
-  fc->ep = ep;
-  fc->deadline = deadline;
-  grpc_timer_init(
-      &fc->timer, grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
-      GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
+  future_connect fc;
+  fc.closure = closure;
+  fc.ep = ep;
+  fc.deadline = deadline;
+  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [fc] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    do_connect(fc);
+  });
 }
 
 static int64_t my_tcp_client_connect(
@@ -467,7 +455,7 @@ class Call : public std::enable_shared_from_this<Call> {
     memset(&op, 0, sizeof(op));
     switch (batch_op.op_case()) {
       case api_fuzzer::BatchOp::OP_NOT_SET:
-        /* invalid value */
+        // invalid value
         return {};
       case api_fuzzer::BatchOp::kSendInitialMetadata:
         if (sent_initial_metadata_) {
@@ -774,7 +762,7 @@ static grpc_call_credentials* ReadCallCreds(
       return grpc_google_iam_credentials_create(
           creds.iam().auth_token().c_str(), creds.iam().auth_selector().c_str(),
           nullptr);
-      /* TODO(ctiller): more cred types here */
+      // TODO(ctiller): more cred types here
   }
 }
 
@@ -814,27 +802,26 @@ static grpc_channel_credentials* ReadChannelCreds(
 }
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
-  grpc_event_engine::experimental::ResetDefaultEventEngine();
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
-  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
-  grpc_event_engine::experimental::SetDefaultEventEngineFactory(
+  grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
-        return absl::make_unique<
-            grpc_event_engine::experimental::FuzzingEventEngine>(
-            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-            actions);
+        return std::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
       });
-  grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
+  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
-  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate());
+  grpc_core::ResetDNSResolver(
+      std::make_unique<FuzzerDNSResolver>(engine.get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
@@ -871,14 +858,10 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   while (action_index < msg.actions_size() || g_channel != nullptr ||
          g_server != nullptr || pending_channel_watches > 0 ||
          pending_pings > 0 || ActiveCall() != nullptr) {
-    static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-        grpc_event_engine::experimental::GetDefaultEventEngine())
-        ->Tick();
+    engine->Tick();
 
     if (action_index == msg.actions_size()) {
-      static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-          grpc_event_engine::experimental::GetDefaultEventEngine())
-          ->FuzzingDone();
+      engine->FuzzingDone();
       if (g_channel != nullptr) {
         grpc_channel_destroy(g_channel);
         g_channel = nullptr;
@@ -1225,4 +1208,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
   grpc_resource_quota_unref(g_resource_quota);
   grpc_shutdown_blocking();
+  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
 }

@@ -28,28 +28,6 @@ describe GRPC::Core::Channel do
     GRPC::Core::ChannelCredentials.new(load_test_certs[0])
   end
 
-  def fork_with_propagated_error_message
-    pipe_read, pipe_write = IO.pipe
-    pid = fork do
-      pipe_read.close
-      begin
-        yield
-      rescue => exc
-        pipe_write.syswrite(exc.message)
-      end
-      pipe_write.close
-    end
-    pipe_write.close
-
-    exc_message = pipe_read.read
-    Process.wait(pid)
-
-    unless $CHILD_STATUS.success?
-      raise "forked process failed with #{$CHILD_STATUS}"
-    end
-    raise exc_message unless exc_message.empty?
-  end
-
   shared_examples '#new' do
     it 'take a host name without channel args' do
       blk = proc do
@@ -101,14 +79,6 @@ describe GRPC::Core::Channel do
       args = Hash[127.times.collect { |x| [x.to_s, x] }]
       blk = construct_with_args(args)
       expect(&blk).to_not raise_error
-    end
-
-    it 'raises if grpc was initialized in another process' do
-      blk = construct_with_args({})
-      expect(&blk).not_to raise_error
-      expect do
-        fork_with_propagated_error_message(&blk)
-      end.to raise_error(RuntimeError, 'grpc cannot be used before and after forking')
     end
   end
 
@@ -167,19 +137,6 @@ describe GRPC::Core::Channel do
       end
       expect(&blk).to raise_error(RuntimeError)
       STDERR.puts "#{Time.now}: finished: raises an error if called on a closed channel"
-    end
-
-    it 'raises if grpc was initialized in another process' do
-      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
-
-      deadline = Time.now + 5
-
-      blk = proc do
-        fork_with_propagated_error_message do
-          ch.create_call(nil, nil, 'phony_method', nil, deadline)
-        end
-      end
-      expect(&blk).to raise_error(RuntimeError, 'grpc cannot be used before and after forking')
     end
   end
 

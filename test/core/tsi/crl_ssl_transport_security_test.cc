@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -228,7 +229,7 @@ class CrlSslTransportSecurityTest
     static char* LoadFile(absl::string_view file_path) {
       grpc_slice slice;
       GPR_ASSERT(grpc_load_file(file_path.data(), 1, &slice) ==
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
       char* data = grpc_slice_to_c_string(slice);
       grpc_slice_unref(slice);
       return data;

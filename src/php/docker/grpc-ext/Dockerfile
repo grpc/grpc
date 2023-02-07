@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:7.2-stretch
+FROM php:7.4-buster
 
 RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
@@ -36,4 +36,10 @@ RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests"]
+RUN curl -sS https://getcomposer.org/installer | php && \
+  chmod +x composer.phar && \
+  mv composer.phar /usr/local/bin/composer
+
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
+     "--ignore-valgrind-undef-errors"]
+

@@ -86,7 +86,9 @@ TEST(StringMatcherTest, InvalidRegex) {
   EXPECT_FALSE(string_matcher.ok());
   EXPECT_EQ(string_matcher.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(string_matcher.status().message(),
-            "Invalid regex string specified in matcher.");
+            "Invalid regex string specified in matcher: "
+            "invalid character class range: b-a")
+      << string_matcher.status();
 }
 
 TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
@@ -161,7 +163,9 @@ TEST(HeaderMatcherTest, InvalidRegex) {
   EXPECT_FALSE(header_matcher.ok());
   EXPECT_EQ(header_matcher.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(header_matcher.status().message(),
-            "Invalid regex string specified in matcher.");
+            "Invalid regex string specified in matcher: "
+            "invalid character class range: b-a")
+      << header_matcher.status();
 }
 
 TEST(HeaderMatcherTest, RangeMatcherValidRange) {

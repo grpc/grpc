@@ -19,6 +19,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 namespace grpc_binder {
 namespace end2end_testing {
 
@@ -84,7 +86,7 @@ absl::Status FakeReadableParcel::ReadBinder(std::unique_ptr<Binder>* data) {
   }
   void* endpoint = absl::get<void*>(data_[data_position_++]);
   if (!endpoint) return absl::InternalError("ReadBinder failed");
-  *data = absl::make_unique<FakeBinder>(static_cast<FakeEndpoint*>(endpoint));
+  *data = std::make_unique<FakeBinder>(static_cast<FakeEndpoint*>(endpoint));
   return absl::OkStatus();
 }
 
@@ -122,13 +124,13 @@ FakeTransactionReceiver::FakeTransactionReceiver(
     TransactionReceiver::OnTransactCb transact_cb) {
   persistent_tx_receiver_ = &g_transaction_processor->NewPersistentTxReceiver(
       std::move(wire_reader_ref), std::move(transact_cb),
-      absl::make_unique<FakeBinderTunnel>());
+      std::make_unique<FakeBinderTunnel>());
 }
 
 std::unique_ptr<TransactionReceiver> FakeBinder::ConstructTxReceiver(
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) const {
-  return absl::make_unique<FakeTransactionReceiver>(wire_reader_ref, cb);
+  return std::make_unique<FakeTransactionReceiver>(wire_reader_ref, cb);
 }
 
 void* FakeTransactionReceiver::GetRawBinder() {
@@ -136,7 +138,7 @@ void* FakeTransactionReceiver::GetRawBinder() {
 }
 
 std::unique_ptr<Binder> FakeTransactionReceiver::GetSender() const {
-  return absl::make_unique<FakeBinder>(
+  return std::make_unique<FakeBinder>(
       persistent_tx_receiver_->tunnel_->GetSendEndpoint());
 }
 
@@ -208,7 +210,7 @@ void TransactionProcessor::Flush() {
     mu_.Unlock();
     auto* tx_receiver =
         static_cast<PersistentFakeTransactionReceiver*>(target->owner);
-    auto parcel = absl::make_unique<FakeReadableParcel>(std::move(data));
+    auto parcel = std::make_unique<FakeReadableParcel>(std::move(data));
     tx_receiver->Receive(tx_code, parcel.get()).IgnoreError();
   }
 }
@@ -232,7 +234,7 @@ void TransactionProcessor::ProcessLoop() {
     mu_.Unlock();
     auto* tx_receiver =
         static_cast<PersistentFakeTransactionReceiver*>(target->owner);
-    auto parcel = absl::make_unique<FakeReadableParcel>(std::move(data));
+    auto parcel = std::make_unique<FakeReadableParcel>(std::move(data));
     tx_receiver->Receive(tx_code, parcel.get()).IgnoreError();
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -257,15 +259,15 @@ void TransactionProcessor::EnQueueTransaction(FakeEndpoint* target,
 }
 
 FakeBinderTunnel::FakeBinderTunnel()
-    : send_endpoint_(absl::make_unique<FakeEndpoint>(this)),
-      recv_endpoint_(absl::make_unique<FakeEndpoint>(this)) {
+    : send_endpoint_(std::make_unique<FakeEndpoint>(this)),
+      recv_endpoint_(std::make_unique<FakeEndpoint>(this)) {
   send_endpoint_->other_end = recv_endpoint_.get();
   recv_endpoint_->other_end = send_endpoint_.get();
 }
 
 std::pair<std::unique_ptr<Binder>, std::unique_ptr<TransactionReceiver>>
 NewBinderPair(TransactionReceiver::OnTransactCb transact_cb) {
-  auto tx_receiver = absl::make_unique<FakeTransactionReceiver>(
+  auto tx_receiver = std::make_unique<FakeTransactionReceiver>(
       nullptr, std::move(transact_cb));
   std::unique_ptr<Binder> sender = tx_receiver->GetSender();
   return std::make_pair(std::move(sender), std::move(tx_receiver));

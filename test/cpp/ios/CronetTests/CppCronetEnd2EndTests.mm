@@ -20,14 +20,14 @@
 #import <XCTest/XCTest.h>
 
 #import <grpc/grpc_cronet.h>
+#import <grpcpp/client_context.h>
 #import <grpcpp/create_channel.h>
-#import <grpcpp/impl/codegen/client_context.h>
-#import <grpcpp/impl/codegen/config.h>
 #import <grpcpp/resource_quota.h>
 #import <grpcpp/security/cronet_credentials.h>
 #import <grpcpp/server_builder.h>
 #import <grpcpp/server_context.h>
 #import <grpcpp/support/client_interceptor.h>
+#import <grpcpp/support/config.h>
 #import <src/proto/grpc/testing/echo.grpc.pb.h>
 
 #import "TestHelper.h"
@@ -39,10 +39,10 @@
 #import <vector>
 
 using namespace grpc::testing;
-using std::chrono::system_clock;
-using grpc::Status;
-using grpc::ServerContext;
 using grpc::ClientContext;
+using grpc::ServerContext;
+using grpc::Status;
+using std::chrono::system_clock;
 
 @interface CppCronetEnd2EndTests : XCTestCase
 

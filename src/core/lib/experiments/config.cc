@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <memory>
 #include <string>
 
 #include "absl/strings/ascii.h"
@@ -31,9 +30,12 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_experiments, "",
     "List of grpc experiments to enable (or with a '-' prefix to disable).");
@@ -58,7 +60,11 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
-    experiments.enabled[i] = g_experiment_metadata[i].default_value;
+    if (!g_forced_experiments[i].forced) {
+      experiments.enabled[i] = g_experiment_metadata[i].default_value;
+    } else {
+      experiments.enabled[i] = g_forced_experiments[i].value;
+    }
   }
   // Get the global config.
   auto experiments_str = GPR_GLOBAL_CONFIG_GET(grpc_experiments);
@@ -144,3 +150,12 @@ void ForceEnableExperiment(absl::string_view experiment, bool enable) {
 }
 
 }  // namespace grpc_core
+#else
+namespace grpc_core {
+void PrintExperimentsList() {}
+void ForceEnableExperiment(absl::string_view experiment_name, bool) {
+  Crash(absl::StrCat("ForceEnableExperiment(\"", experiment_name,
+                     "\") called in final build"));
+}
+}  // namespace grpc_core
+#endif

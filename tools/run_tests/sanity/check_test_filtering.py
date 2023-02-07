@@ -29,6 +29,14 @@ _LIST_OF_LANGUAGE_LABELS = [
     'c', 'c++', 'csharp', 'grpc-node', 'objc', 'php', 'php7', 'python', 'ruby'
 ]
 _LIST_OF_PLATFORM_LABELS = ['linux', 'macos', 'windows']
+_LIST_OF_SANITY_TESTS = ['sanity', 'clang-tidy', 'iwyu']
+
+
+def has_sanity_tests(job):
+    for test in _LIST_OF_SANITY_TESTS:
+        if test in job.labels:
+            return True
+    return False
 
 
 class TestFilteringTest(unittest.TestCase):
@@ -59,25 +67,27 @@ class TestFilteringTest(unittest.TestCase):
         sanity_tests_in_all_jobs = 0
         sanity_tests_in_filtered_jobs = 0
         for job in all_jobs:
-            if "sanity" in job.labels:
+            if has_sanity_tests(job):
                 sanity_tests_in_all_jobs += 1
-        all_jobs = [job for job in all_jobs if "sanity" not in job.labels]
+        all_jobs = [job for job in all_jobs if has_sanity_tests(job)]
         for job in filtered_jobs:
-            if "sanity" in job.labels:
+            if has_sanity_tests(job):
                 sanity_tests_in_filtered_jobs += 1
-        filtered_jobs = [
-            job for job in filtered_jobs if "sanity" not in job.labels
-        ]
+        filtered_jobs = [job for job in filtered_jobs if has_sanity_tests(job)]
         self.assertEqual(sanity_tests_in_all_jobs,
                          sanity_tests_in_filtered_jobs)
 
         for label in labels:
             for job in filtered_jobs:
+                if has_sanity_tests(job):
+                    continue
                 self.assertNotIn(label, job.labels)
 
         jobs_matching_labels = 0
         for label in labels:
             for job in all_jobs:
+                if has_sanity_tests(job):
+                    continue
                 if (label in job.labels):
                     jobs_matching_labels += 1
         self.assertEqual(len(filtered_jobs),

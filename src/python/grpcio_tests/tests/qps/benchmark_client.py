@@ -15,11 +15,11 @@
 
 import abc
 from concurrent import futures
+import queue
 import threading
 import time
 
 import grpc
-from six.moves import queue
 
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
 from src.proto.grpc.testing import messages_pb2

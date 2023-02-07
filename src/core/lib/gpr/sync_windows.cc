@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Win32 code for gpr synchronization support. */
+// Win32 code for gpr synchronization support.
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   InitializeCriticalSection(&mu->cs);
@@ -48,21 +50,21 @@ void gpr_mu_unlock(gpr_mu* mu) {
 int gpr_mu_trylock(gpr_mu* mu) {
   int result = TryEnterCriticalSection(&mu->cs);
   if (result) {
-    if (mu->locked) {                /* This thread already holds the lock. */
-      LeaveCriticalSection(&mu->cs); /* Decrement lock count. */
-      result = 0;                    /* Indicate failure */
+    if (mu->locked) {                 // This thread already holds the lock.
+      LeaveCriticalSection(&mu->cs);  // Decrement lock count.
+      result = 0;                     // Indicate failure
     }
     mu->locked = 1;
   }
   return result;
 }
 
-/*----------------------------------------*/
+//----------------------------------------
 
 void gpr_cv_init(gpr_cv* cv) { InitializeConditionVariable(cv); }
 
 void gpr_cv_destroy(gpr_cv* cv) {
-  /* Condition variables don't need destruction in Win32. */
+  // Condition variables don't need destruction in Win32.
 }
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
@@ -98,7 +100,7 @@ void gpr_cv_signal(gpr_cv* cv) { WakeConditionVariable(cv); }
 
 void gpr_cv_broadcast(gpr_cv* cv) { WakeAllConditionVariable(cv); }
 
-/*----------------------------------------*/
+//----------------------------------------
 
 static void* phony;
 struct run_once_func_arg {
@@ -116,5 +118,5 @@ void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   InitOnceExecuteOnce(once, run_once_func, &arg, &phony);
 }
 
-#endif /* defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) && \
-          !defined(GPR_CUSTOM_SYNC) */
+#endif  // defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) && \
+       // !defined(GPR_CUSTOM_SYNC)

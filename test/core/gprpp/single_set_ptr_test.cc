@@ -14,9 +14,11 @@
 
 #include "src/core/lib/gprpp/single_set_ptr.h"
 
+#include <algorithm>
 #include <thread>
+#include <vector>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

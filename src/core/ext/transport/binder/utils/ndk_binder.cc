@@ -24,7 +24,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace {
@@ -46,7 +46,7 @@ grpc_core::Mutex g_jvm_mu;
 
 // Whether the thread has already attached to JVM (this is to prevent
 // repeated attachment in `AttachJvm()`)
-GPR_THREAD_LOCAL(bool) g_is_jvm_attached = false;
+thread_local bool g_is_jvm_attached = false;
 
 void SetJvm(JNIEnv* env) {
   // OK to lock here since this function will only be called once for each

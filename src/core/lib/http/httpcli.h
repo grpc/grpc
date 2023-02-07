@@ -1,37 +1,38 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_HTTP_HTTPCLI_H
-#define GRPC_CORE_LIB_HTTP_HTTPCLI_H
+#ifndef GRPC_SRC_CORE_LIB_HTTP_HTTPCLI_H
+#define GRPC_SRC_CORE_LIB_HTTP_HTTPCLI_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
@@ -53,10 +54,10 @@
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-/* User agent this library reports */
+// User agent this library reports
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 
-/* override functions return 1 if they handled the request, 0 otherwise */
+// override functions return 1 if they handled the request, 0 otherwise
 typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
                                          const char* host, const char* path,
                                          grpc_core::Timestamp deadline,
@@ -195,8 +196,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void OnRead(void* user_data, grpc_error_handle error) {
     HttpRequest* req = static_cast<HttpRequest*>(user_data);
     ExecCtx::Run(DEBUG_LOCATION,
-                 &req->continue_on_read_after_schedule_on_exec_ctx_,
-                 GRPC_ERROR_REF(error));
+                 &req->continue_on_read_after_schedule_on_exec_ctx_, error);
   }
 
   // Needed since OnRead may be called inline from grpc_endpoint_read
@@ -215,8 +215,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void DoneWrite(void* arg, grpc_error_handle error) {
     HttpRequest* req = static_cast<HttpRequest*>(arg);
     ExecCtx::Run(DEBUG_LOCATION,
-                 &req->continue_done_write_after_schedule_on_exec_ctx_,
-                 GRPC_ERROR_REF(error));
+                 &req->continue_done_write_after_schedule_on_exec_ctx_, error);
   }
 
   // Needed since DoneWrite may be called inline from grpc_endpoint_write
@@ -261,11 +260,12 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
-  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
+  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
+  std::shared_ptr<DNSResolver> resolver_;
   absl::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_H */
+#endif  // GRPC_SRC_CORE_LIB_HTTP_HTTPCLI_H

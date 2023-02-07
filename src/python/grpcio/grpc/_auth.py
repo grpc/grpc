@@ -14,31 +14,39 @@
 """GRPCAuthMetadataPlugins for standard authentication."""
 
 import inspect
+from typing import Any, Optional
 
 import grpc
 
 
-def _sign_request(callback, token, error):
+def _sign_request(callback: grpc.AuthMetadataPluginCallback,
+                  token: Optional[str], error: Optional[Exception]):
     metadata = (('authorization', 'Bearer {}'.format(token)),)
     callback(metadata, error)
 
 
 class GoogleCallCredentials(grpc.AuthMetadataPlugin):
     """Metadata wrapper for GoogleCredentials from the oauth2client library."""
+    _is_jwt: bool
+    _credentials: Any
 
-    def __init__(self, credentials):
+    # TODO(xuanwn): Give credentials an actual type.
+    def __init__(self, credentials: Any):
         self._credentials = credentials
         # Hack to determine if these are JWT creds and we need to pass
         # additional_claims when getting a token
         self._is_jwt = 'additional_claims' in inspect.getfullargspec(
             credentials.get_access_token).args
 
-    def __call__(self, context, callback):
+    def __call__(self, context: grpc.AuthMetadataContext,
+                 callback: grpc.AuthMetadataPluginCallback):
         try:
             if self._is_jwt:
                 access_token = self._credentials.get_access_token(
                     additional_claims={
-                        'aud': context.service_url
+                        'aud':
+                            context.
+                            service_url  # pytype: disable=attribute-error
                     }).access_token
             else:
                 access_token = self._credentials.get_access_token().access_token
@@ -50,9 +58,11 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
 
 class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
     """Metadata wrapper for raw access token credentials."""
+    _access_token: str
 
-    def __init__(self, access_token):
+    def __init__(self, access_token: str):
         self._access_token = access_token
 
-    def __call__(self, context, callback):
+    def __call__(self, context: grpc.AuthMetadataContext,
+                 callback: grpc.AuthMetadataPluginCallback):
         _sign_request(callback, self._access_token, None)

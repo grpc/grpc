@@ -35,7 +35,7 @@ grpc_cc_test(
     deps = [
         "//:backoff",
         "//:exec_ctx",
-        "//:time",
+        "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
 )

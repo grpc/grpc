@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_STATUS_HELPER_H
-#define GRPC_CORE_LIB_GPRPP_STATUS_HELPER_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H
+#define GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -38,10 +38,15 @@ struct google_rpc_Status;
 struct upb_Arena;
 }
 
+#define GRPC_RETURN_IF_ERROR(expr)      \
+  do {                                  \
+    const absl::Status status = (expr); \
+    if (!status.ok()) return status;    \
+  } while (0)
+
 namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusIntProperty {
   /// 'errno' from the operating system
   kErrorNo,
@@ -79,7 +84,6 @@ enum class StatusIntProperty {
 };
 
 /// This enum should have the same value of grpc_error_strs
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusStrProperty {
   /// top-level textual description of this error
   kDescription,
@@ -182,4 +186,4 @@ absl::Status StatusMoveFromHeapPtr(uintptr_t ptr);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_STATUS_HELPER_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H

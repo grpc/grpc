@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/security/security_connector/security_connector.h"
 
@@ -30,6 +30,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -55,12 +56,12 @@ static int check_peer_property(const tsi_peer* peer,
       return 1;
     }
   }
-  return 0; /* Not found... */
+  return 0;  // Not found...
 }
 
 static int check_ssl_peer_equivalence(const tsi_peer* original,
                                       const tsi_peer* reconstructed) {
-  /* The reconstructed peer only has CN, SAN and pem cert properties. */
+  // The reconstructed peer only has CN, SAN and pem cert properties.
   size_t i;
   for (i = 0; i < original->property_count; i++) {
     const tsi_peer_property* prop = &original->properties[i];
@@ -663,8 +664,8 @@ static void test_default_ssl_roots(void) {
   fwrite(roots_for_env_var, 1, strlen(roots_for_env_var), roots_env_var_file);
   fclose(roots_env_var_file);
 
-  /* First let's get the root through the override: set the env to an invalid
-     value. */
+  // First let's get the root through the override: set the env to an invalid
+  // value.
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
   grpc_slice roots =
@@ -674,8 +675,8 @@ static void test_default_ssl_roots(void) {
   ASSERT_STREQ(roots_contents, roots_for_override_api);
   gpr_free(roots_contents);
 
-  /* Now let's set the env var: We should get the contents pointed value
-     instead. */
+  // Now let's set the env var: We should get the contents pointed value
+  // instead.
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
                         roots_env_var_file_path);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
@@ -684,8 +685,8 @@ static void test_default_ssl_roots(void) {
   ASSERT_STREQ(roots_contents, roots_for_env_var);
   gpr_free(roots_contents);
 
-  /* Now reset the env var. We should fall back to the value overridden using
-     the api. */
+  // Now reset the env var. We should fall back to the value overridden using
+  // the api.
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
@@ -693,8 +694,8 @@ static void test_default_ssl_roots(void) {
   ASSERT_STREQ(roots_contents, roots_for_override_api);
   gpr_free(roots_contents);
 
-  /* Now setup a permanent failure for the overridden roots and we should get
-     an empty slice. */
+  // Now setup a permanent failure for the overridden roots and we should get
+  // an empty slice.
   GPR_GLOBAL_CONFIG_SET(grpc_not_use_system_ssl_roots, true);
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
@@ -703,7 +704,7 @@ static void test_default_ssl_roots(void) {
       grpc_core::TestDefaultSslRootStore::GetRootStore();
   ASSERT_EQ(root_store, nullptr);
 
-  /* Cleanup. */
+  // Cleanup.
   remove(roots_env_var_file_path);
   gpr_free(roots_env_var_file_path);
 }
@@ -720,9 +721,8 @@ static void test_peer_alpn_check(void) {
                                          strlen(alpn), &peer.properties[0]),
       TSI_OK);
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  ASSERT_FALSE(GRPC_ERROR_IS_NONE(error));
+  ASSERT_FALSE(error.ok());
   tsi_peer_destruct(&peer);
-  GRPC_ERROR_UNREF(error);
   // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property but with an incorrect
   // property value.
   ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
@@ -731,9 +731,8 @@ static void test_peer_alpn_check(void) {
                                                &peer.properties[0]),
             TSI_OK);
   error = grpc_ssl_check_alpn(&peer);
-  ASSERT_FALSE(GRPC_ERROR_IS_NONE(error));
+  ASSERT_FALSE(error.ok());
   tsi_peer_destruct(&peer);
-  GRPC_ERROR_UNREF(error);
   // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property with a correct property
   // value.
   ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
@@ -741,10 +740,10 @@ static void test_peer_alpn_check(void) {
       tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, alpn,
                                          strlen(alpn), &peer.properties[0]),
       TSI_OK);
-  ASSERT_EQ(grpc_ssl_check_alpn(&peer), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_ssl_check_alpn(&peer), absl::OkStatus());
   tsi_peer_destruct(&peer);
 #else
-  ASSERT_EQ(grpc_ssl_check_alpn(nullptr), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_ssl_check_alpn(nullptr), absl::OkStatus());
 #endif
 }
 

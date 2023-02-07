@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <algorithm>
+#include <memory>
 #include <thread>
+#include <utility>
+#include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <benchmark/benchmark.h>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/time/time.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -26,13 +34,14 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/sync.h"
 
-using ::grpc_event_engine::posix_engine::Scheduler;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::Scheduler;
 
 namespace {
 class TestScheduler : public Scheduler {
  public:
-  explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
-      : engine_(engine) {}
+  explicit TestScheduler(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)) {}
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
     engine_->Run(closure);
@@ -43,7 +52,7 @@ class TestScheduler : public Scheduler {
   }
 
  private:
-  grpc_event_engine::experimental::EventEngine* engine_;
+  std::shared_ptr<EventEngine> engine_;
 };
 
 TestScheduler* g_scheduler;
@@ -51,7 +60,7 @@ TestScheduler* g_scheduler;
 }  // namespace
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 TEST(LockFreeEventTest, BasicTest) {
   LockfreeEvent event(g_scheduler);
@@ -144,14 +153,61 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
   event.DestroyEvent();
 }
 
-}  // namespace posix_engine
+namespace {
+
+// A trivial callback sceduler which inherits from the Scheduler interface but
+// immediatey runs the callback/closure.
+class BechmarkCallbackScheduler : public Scheduler {
+ public:
+  BechmarkCallbackScheduler() = default;
+  void Run(
+      grpc_event_engine::experimental::EventEngine::Closure* closure) override {
+    closure->Run();
+  }
+
+  void Run(absl::AnyInvocable<void()> cb) override { cb(); }
+};
+
+// A benchmark which repeatedly registers a NotifyOn callback and invokes the
+// callback with SetReady. This benchmark is intended to measure the cost of
+// NotifyOn and SetReady implementations of the lock free event.
+void BM_LockFreeEvent(benchmark::State& state) {
+  BechmarkCallbackScheduler cb_scheduler;
+  LockfreeEvent event(&cb_scheduler);
+  event.InitEvent();
+  PosixEngineClosure* notify_on_closure =
+      PosixEngineClosure::ToPermanentClosure([](absl::Status /*status*/) {});
+  for (auto s : state) {
+    event.NotifyOn(notify_on_closure);
+    event.SetReady();
+  }
+  event.SetShutdown(absl::CancelledError("Shutting down"));
+  delete notify_on_closure;
+  event.DestroyEvent();
+}
+BENCHMARK(BM_LockFreeEvent)->ThreadRange(1, 64);
+
+}  // namespace
+
+}  // namespace experimental
 }  // namespace grpc_event_engine
+
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_event_engine::experimental::EventEngine* engine =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
-  EXPECT_NE(engine, nullptr);
-  g_scheduler = new TestScheduler(engine);
-  return RUN_ALL_TESTS();
+  benchmark::Initialize(&argc, argv);
+  // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
+  // until we clear out the iomgr shutdown code.
+  grpc_init();
+  g_scheduler = new TestScheduler(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
+  int r = RUN_ALL_TESTS();
+  benchmark::RunTheBenchmarksNamespaced();
+  grpc_shutdown();
+  return r;
 }

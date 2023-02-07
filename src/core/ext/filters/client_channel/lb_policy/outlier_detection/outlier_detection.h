@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,8 +30,6 @@
 #include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
-
-bool XdsOutlierDetectionEnabled();
 
 struct OutlierDetectionConfig {
   Duration interval = Duration::Seconds(10);
@@ -54,6 +52,7 @@ struct OutlierDetectionConfig {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
@@ -71,6 +70,7 @@ struct OutlierDetectionConfig {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   absl::optional<SuccessRateEjection> success_rate_ejection;
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;
@@ -91,4 +91,4 @@ struct OutlierDetectionConfig {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H

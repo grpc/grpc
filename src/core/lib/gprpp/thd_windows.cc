@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Windows implementation for gpr threads. */
+// Windows implementation for gpr threads.
 
 #include <grpc/support/port_platform.h>
 
@@ -30,7 +30,7 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 
@@ -38,13 +38,13 @@ namespace {
 class ThreadInternalsWindows;
 struct thd_info {
   ThreadInternalsWindows* thread;
-  void (*body)(void* arg); /* body of a thread */
-  void* arg;               /* argument to a thread */
-  HANDLE join_event;       /* the join event */
-  bool joinable;           /* whether it is joinable */
+  void (*body)(void* arg);  // body of a thread
+  void* arg;                // argument to a thread
+  HANDLE join_event;        // the join event
+  bool joinable;            // whether it is joinable
 };
 
-GPR_THREAD_LOCAL(struct thd_info*) g_thd_info;
+thread_local struct thd_info* g_thd_info;
 
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {
@@ -170,4 +170,4 @@ gpr_thd_id gpr_thd_currentid(void) {
   return reinterpret_cast<gpr_thd_id>(g_thd_info);
 }
 
-#endif /* GPR_WINDOWS */
+#endif  // GPR_WINDOWS

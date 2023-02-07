@@ -1,24 +1,26 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <inttypes.h>
 #include <unistd.h>
 
+#include <atomic>
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -31,7 +33,7 @@
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/test_config.h"
 
-static int unique = 1;
+static std::atomic<int> unique{1};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
     const grpc_channel_args* /*client_args*/,
@@ -56,7 +58,7 @@ static void chttp2_init_server_fullstack_uds(
   grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, UDS);
 }
 
-/* All test configurations */
+// All test configurations
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack_local_uds_percent_encoded",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |

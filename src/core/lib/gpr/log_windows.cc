@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -30,13 +30,14 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
-  /* Avoid message construction if gpr_log_message won't log */
+  // Avoid message construction if gpr_log_message won't log
   if (gpr_should_log(severity) == 0) {
     return;
   }
@@ -45,23 +46,23 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   va_list args;
   int ret;
 
-  /* Determine the length. */
+  // Determine the length.
   va_start(args, format);
   ret = _vscprintf(format, args);
   va_end(args);
   if (ret < 0) {
     message = NULL;
   } else {
-    /* Allocate a new buffer, with space for the NUL terminator. */
+    // Allocate a new buffer, with space for the NUL terminator.
     size_t strp_buflen = (size_t)ret + 1;
     message = (char*)gpr_malloc(strp_buflen);
 
-    /* Print to the buffer. */
+    // Print to the buffer.
     va_start(args, format);
     ret = vsnprintf_s(message, strp_buflen, _TRUNCATE, format, args);
     va_end(args);
     if ((size_t)ret != strp_buflen - 1) {
-      /* This should never happen. */
+      // This should never happen.
       gpr_free(message);
       message = NULL;
     }
@@ -71,7 +72,7 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   gpr_free(message);
 }
 
-/* Simple starter implementation */
+// Simple starter implementation
 void gpr_default_log(gpr_log_func_args* args) {
   const char* final_slash;
   const char* display_file;
@@ -112,4 +113,4 @@ void gpr_default_log(gpr_log_func_args* args) {
   fflush(stderr);
 }
 
-#endif /* GPR_WINDOWS_LOG */
+#endif  // GPR_WINDOWS_LOG

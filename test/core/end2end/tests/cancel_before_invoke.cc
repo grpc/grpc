@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -22,10 +22,11 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -89,7 +90,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Cancel before invoke */
+// Cancel before invoke
 static void test_cancel_before_invoke(grpc_end2end_test_config config,
                                       size_t test_ops) {
   grpc_op ops[6];
@@ -160,7 +161,11 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, test_ops, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(1), true);
+  // Filter based stack tracks this as a failed op, promise based stack tracks
+  // it as a successful one with a failed request. The latter probably makes
+  // more sense, but since we can't tell from outside which case we have we
+  // accept either.
+  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);

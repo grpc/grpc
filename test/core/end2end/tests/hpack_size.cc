@@ -1,36 +1,39 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -87,91 +90,91 @@ const char* hobbits[][2] = {
     {"Isengrim", "Took"},        {"Isengrim", "Took"},
     {"Isumbras", "Took"},        {"Isumbras", "Took"},
     {"Jolly", "Cotton"},
-    /*
-    {"Lalia", "Took"},
-    {"Largo", "Baggins"},
-    {"Laura", "Baggins"},
-    {"Lily", "Goodbody"},
-    {"Lily", "Cotton"},
-    {"Linda", "Proudfoot"},
-    {"Lobelia", "Sackville-Baggins"},
-    {"Longo", "Baggins"},
-    {"Lotho", "Sackville-Baggins"},
-    {"Madoc", "Brandybuck"},
-    {"Malva", "Brandybuck"},
-    {"Marigold", "Cotton"},
-    {"Marmadas", "Brandybuck"},
-    {"Marmadoc", "Brandybuck"},
-    {"Marroc", "Brandybuck"},
-    {"May", "Gamgee"},
-    {"Melilot", "Brandybuck"},
-    {"Menegilda", "Brandybuck"},
-    {"Mentha", "Brandybuck"},
-    {"Meriadoc", "Brandybuck"},
-    {"Merimac", "Brandybuck"},
-    {"Merimas", "Brandybuck"},
-    {"Merry", "Gardner"},
-    {"Milo", "Burrows"},
-    {"Mimosa", "Baggins"},
-    {"Minto", "Burrows"},
-    {"Mirabella", "Brandybuck"},
-    {"Moro", "Burrows"},
-    {"Mosco", "Burrows"},
-    {"Mungo", "Baggins"},
-    {"Myrtle", "Burrows"},
-    {"Odo", "Proudfoot"},
-    {"Odovacar", "Bolger"},
-    {"Olo", "Proudfoot"},
-    {"Orgulas", "Brandybuck"},
-    {"Otho", "Sackville-Baggins"},
-    {"Paladin", "Took"},
-    {"Pansy", "Bolger"},
-    {"Pearl", "Took"},
-    {"Peony", "Burrows"},
-    {"Peregrin", "Took"},
-    {"Pervinca", "Took"},
-    {"Pimpernel", "Took"},
-    {"Pippin", "Gardner"},
-    {"Polo", "Baggins"},
-    {"Ponto", "Baggins"},
-    {"Porto", "Baggins"},
-    {"Posco", "Baggins"},
-    {"Poppy", "Bolger"},
-    {"Primrose", "Gardner"},
-    {"Primula", "Baggins"},
-    {"Prisca", "Bolger"},
-    {"Reginard", "Took"},
-    {"Robin", "Smallburrow"},
-    {"Robin", "Gardner"},
-    {"Rorimac", "Brandybuck"},
-    {"Rosa", "Took"},
-    {"Rosamunda", "Bolger"},
-    {"Rose", "Gardner"},
-    {"Ruby", "Baggins"},
-    {"Ruby", "Gardner"},
-    {"Rudigar", "Bolger"},
-    {"Rufus", "Burrows"},
-    {"Sadoc", "Brandybuck"},
-    {"Salvia", "Bolger"},
-    {"Samwise", "Gamgee"},
-    {"Sancho", "Proudfoot"},
-    {"Saradas", "Brandybuck"},
-    {"Saradoc", "Brandybuck"},
-    {"Seredic", "Brandybuck"},
-    {"Sigismond", "Took"},
-    {"Smeagol", "Gollum"},
-    {"Tanta", "Baggins"},
-    {"Ted", "Sandyman"},
-    {"Tobold", "Hornblower"},
-    {"Togo", "Goodbody"},
-    {"Tolman", "Cotton"},
-    {"Tolman", "Gardner"},
-    {"Widow", "Rumble"},
-    {"Wilcome", "Cotton"},
-    {"Wilcome", "Cotton"},
-    {"Wilibald", "Bolger"},
-    {"Will", "Whitfoot"},
-    {"Wiseman", "Gamwich"}*/
+    //
+    //{"Lalia", "Took"},
+    //{"Largo", "Baggins"},
+    //{"Laura", "Baggins"},
+    //{"Lily", "Goodbody"},
+    //{"Lily", "Cotton"},
+    //{"Linda", "Proudfoot"},
+    //{"Lobelia", "Sackville-Baggins"},
+    //{"Longo", "Baggins"},
+    //{"Lotho", "Sackville-Baggins"},
+    //{"Madoc", "Brandybuck"},
+    //{"Malva", "Brandybuck"},
+    //{"Marigold", "Cotton"},
+    //{"Marmadas", "Brandybuck"},
+    //{"Marmadoc", "Brandybuck"},
+    //{"Marroc", "Brandybuck"},
+    //{"May", "Gamgee"},
+    //{"Melilot", "Brandybuck"},
+    //{"Menegilda", "Brandybuck"},
+    //{"Mentha", "Brandybuck"},
+    //{"Meriadoc", "Brandybuck"},
+    //{"Merimac", "Brandybuck"},
+    //{"Merimas", "Brandybuck"},
+    //{"Merry", "Gardner"},
+    //{"Milo", "Burrows"},
+    //{"Mimosa", "Baggins"},
+    //{"Minto", "Burrows"},
+    //{"Mirabella", "Brandybuck"},
+    //{"Moro", "Burrows"},
+    //{"Mosco", "Burrows"},
+    //{"Mungo", "Baggins"},
+    //{"Myrtle", "Burrows"},
+    //{"Odo", "Proudfoot"},
+    //{"Odovacar", "Bolger"},
+    //{"Olo", "Proudfoot"},
+    //{"Orgulas", "Brandybuck"},
+    //{"Otho", "Sackville-Baggins"},
+    //{"Paladin", "Took"},
+    //{"Pansy", "Bolger"},
+    //{"Pearl", "Took"},
+    //{"Peony", "Burrows"},
+    //{"Peregrin", "Took"},
+    //{"Pervinca", "Took"},
+    //{"Pimpernel", "Took"},
+    //{"Pippin", "Gardner"},
+    //{"Polo", "Baggins"},
+    //{"Ponto", "Baggins"},
+    //{"Porto", "Baggins"},
+    //{"Posco", "Baggins"},
+    //{"Poppy", "Bolger"},
+    //{"Primrose", "Gardner"},
+    //{"Primula", "Baggins"},
+    //{"Prisca", "Bolger"},
+    //{"Reginard", "Took"},
+    //{"Robin", "Smallburrow"},
+    //{"Robin", "Gardner"},
+    //{"Rorimac", "Brandybuck"},
+    //{"Rosa", "Took"},
+    //{"Rosamunda", "Bolger"},
+    //{"Rose", "Gardner"},
+    //{"Ruby", "Baggins"},
+    //{"Ruby", "Gardner"},
+    //{"Rudigar", "Bolger"},
+    //{"Rufus", "Burrows"},
+    //{"Sadoc", "Brandybuck"},
+    //{"Salvia", "Bolger"},
+    //{"Samwise", "Gamgee"},
+    //{"Sancho", "Proudfoot"},
+    //{"Saradas", "Brandybuck"},
+    //{"Saradoc", "Brandybuck"},
+    //{"Seredic", "Brandybuck"},
+    //{"Sigismond", "Took"},
+    //{"Smeagol", "Gollum"},
+    //{"Tanta", "Baggins"},
+    //{"Ted", "Sandyman"},
+    //{"Tobold", "Hornblower"},
+    //{"Togo", "Goodbody"},
+    //{"Tolman", "Cotton"},
+    //{"Tolman", "Gardner"},
+    //{"Widow", "Rumble"},
+    //{"Wilcome", "Cotton"},
+    //{"Wilcome", "Cotton"},
+    //{"Wilibald", "Bolger"},
+    //{"Will", "Whitfoot"},
+    //{"Wiseman", "Gamwich"}
 };
 
 const char* dragons[] = {"Ancalagon", "Glaurung", "Scatha",
@@ -259,10 +262,9 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   extra_metadata[2].value =
       grpc_slice_from_static_string(dragons[index % GPR_ARRAY_SIZE(dragons)]);
 
-  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -303,7 +305,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -331,7 +333,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

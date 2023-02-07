@@ -1,33 +1,29 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Test of gpr time support. */
+// Test of gpr time support.
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "test/core/util/test_config.h"
@@ -36,8 +32,8 @@ static void to_fp(void* arg, const char* buf, size_t len) {
   fwrite(buf, 1, len, static_cast<FILE*>(arg));
 }
 
-/* Convert gpr_intmax x to ascii base b (2..16), and write with
-   (*writer)(arg, ...), zero padding to "chars" digits).  */
+// Convert gpr_intmax x to ascii base b (2..16), and write with
+// (*writer)(arg, ...), zero padding to "chars" digits).
 static void i_to_s(intmax_t x, int base, int chars,
                    void (*writer)(void* arg, const char* buf, size_t len),
                    void* arg) {
@@ -49,7 +45,7 @@ static void i_to_s(intmax_t x, int base, int chars,
   (*writer)(arg, buf, strlen(buf));
 }
 
-/* Convert ts to ascii, and write with (*writer)(arg, ...).  */
+// Convert ts to ascii, and write with (*writer)(arg, ...).
 static void ts_to_s(gpr_timespec t,
                     void (*writer)(void* arg, const char* buf, size_t len),
                     void* arg) {
@@ -105,7 +101,7 @@ TEST(TimeTest, Values) {
                 x.tv_nsec == (i % GPR_MS_PER_SEC) * GPR_NS_PER_MS);
   }
 
-  /* Test possible overflow in conversion of -ve values. */
+  // Test possible overflow in conversion of -ve values.
   x = gpr_time_from_micros(-(INT64_MAX - 999997), GPR_TIMESPAN);
   ASSERT_LT(x.tv_sec, 0);
   ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
@@ -125,7 +121,7 @@ TEST(TimeTest, Values) {
              x.tv_nsec / (GPR_NS_PER_SEC / GPR_MS_PER_SEC)),
             -(INT64_MAX - 997));
 
-  /* Test general -ve values. */
+  // Test general -ve values.
   for (i = -1; i > -1000 * 1000 * 1000; i *= 7) {
     x = gpr_time_from_micros(i, GPR_TIMESPAN);
     ASSERT_EQ(x.tv_sec * GPR_US_PER_SEC + x.tv_nsec / GPR_NS_PER_US, i);
@@ -140,7 +136,7 @@ TEST(TimeTest, AddSub) {
   int i;
   int j;
   int k;
-  /* Basic addition and subtraction. */
+  // Basic addition and subtraction.
   for (i = -100; i <= 100; i++) {
     for (j = -100; j <= 100; j++) {
       for (k = 1; k <= 10000000; k *= 10) {
@@ -174,7 +170,7 @@ TEST(TimeTest, AddSub) {
 }
 
 TEST(TimeTest, Overflow) {
-  /* overflow */
+  // overflow
   gpr_timespec x = gpr_time_from_micros(1, GPR_TIMESPAN);
   do {
     x = gpr_time_add(x, x);
@@ -199,7 +195,7 @@ TEST(TimeTest, StickyInfinities) {
   addend[1] = gpr_inf_past(GPR_TIMESPAN);
   addend[2] = gpr_time_0(GPR_TIMESPAN);
 
-  /* Infinities are sticky */
+  // Infinities are sticky
   for (i = 0; i != sizeof(infinity) / sizeof(infinity[0]); i++) {
     for (j = 0; j != sizeof(addend) / sizeof(addend[0]); j++) {
       gpr_timespec x = gpr_time_add(infinity[i], addend[j]);

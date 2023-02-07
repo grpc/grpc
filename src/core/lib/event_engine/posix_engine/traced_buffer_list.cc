@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -36,7 +37,7 @@
 #include <sys/socket.h>  // IWYU pragma: keep
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 // Fills gpr_timespec gts based on values from timespec ts.
@@ -197,50 +198,70 @@ void ExtractOptStatsFromCmsg(ConnectionMetrics* metrics,
 }
 }  // namespace.
 
-void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
-  buffer_list_.emplace_back(seq_no, arg);
-  TracedBuffer& new_elem = buffer_list_.back();
-  // Store the current time as the sendmsg time.
-  new_elem.ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
-  new_elem.ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  new_elem.ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  new_elem.ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
+bool TracedBufferList::TracedBuffer::Finished(gpr_timespec ts) {
+  constexpr int kGrpcMaxPendingAckTimeMillis = 10000;
+  return gpr_time_to_millis(gpr_time_sub(ts, last_timestamp_)) >
+         kGrpcMaxPendingAckTimeMillis;
+}
 
-  if (GetSocketTcpInfo(&new_elem.ts_.info, fd) == 0) {
-    ExtractOptStatsFromTcpInfo(&new_elem.ts_.sendmsg_time.metrics,
-                               &new_elem.ts_.info);
+void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
+  TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
+  // Store the current time as the sendmsg time.
+  new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
+  new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  if (GetSocketTcpInfo(&(new_elem->ts_.info), fd) == 0) {
+    ExtractOptStatsFromTcpInfo(&(new_elem->ts_.sendmsg_time.metrics),
+                               &(new_elem->ts_.info));
+  }
+  new_elem->last_timestamp_ = new_elem->ts_.sendmsg_time.time;
+  grpc_core::MutexLock lock(&mu_);
+  if (!head_) {
+    head_ = tail_ = new_elem;
+  } else {
+    tail_->next_ = new_elem;
+    tail_ = new_elem;
   }
 }
 
 void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
                                         struct cmsghdr* opt_stats,
                                         struct scm_timestamping* tss) {
-  auto it = buffer_list_.begin();
-  while (it != buffer_list_.end()) {
-    TracedBuffer& elem = (*it);
+  grpc_core::MutexLock lock(&mu_);
+  TracedBuffer* elem = head_;
+  TracedBuffer* prev = nullptr;
+  while (elem != nullptr) {
     // The byte number refers to the sequence number of the last byte which this
     // timestamp relates to.
-    if (serr->ee_data >= elem.seq_no_) {
+    if (serr->ee_data >= elem->seq_no_) {
       switch (serr->ee_info) {
         case SCM_TSTAMP_SCHED:
-          FillGprFromTimestamp(&(elem.ts_.scheduled_time.time), &(tss->ts[0]));
-          ExtractOptStatsFromCmsg(&(elem.ts_.scheduled_time.metrics),
+          FillGprFromTimestamp(&(elem->ts_.scheduled_time.time), &(tss->ts[0]));
+          ExtractOptStatsFromCmsg(&(elem->ts_.scheduled_time.metrics),
                                   opt_stats);
-          ++it;
+          elem->last_timestamp_ = elem->ts_.scheduled_time.time;
+          elem = elem->next_;
           break;
         case SCM_TSTAMP_SND:
-          FillGprFromTimestamp(&(elem.ts_.sent_time.time), &(tss->ts[0]));
-          ExtractOptStatsFromCmsg(&(elem.ts_.sent_time.metrics), opt_stats);
-          ++it;
+          FillGprFromTimestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
+          ExtractOptStatsFromCmsg(&(elem->ts_.sent_time.metrics), opt_stats);
+          elem->last_timestamp_ = elem->ts_.sent_time.time;
+          elem = elem->next_;
           break;
         case SCM_TSTAMP_ACK:
-          FillGprFromTimestamp(&(elem.ts_.acked_time.time), &(tss->ts[0]));
-          ExtractOptStatsFromCmsg(&(elem.ts_.acked_time.metrics), opt_stats);
+          FillGprFromTimestamp(&(elem->ts_.acked_time.time), &(tss->ts[0]));
+          ExtractOptStatsFromCmsg(&(elem->ts_.acked_time.metrics), opt_stats);
           // Got all timestamps. Do the callback and free this TracedBuffer. The
           // thing below can be passed by value if we don't want the restriction
           // on the lifetime.
-          g_timestamps_callback(elem.arg_, &(elem.ts_), absl::OkStatus());
-          it = buffer_list_.erase(it);
+          g_timestamps_callback(elem->arg_, &(elem->ts_), absl::OkStatus());
+          // Safe to update head_ to elem->next_ because the list is ordered by
+          // seq_no. Thus if elem is to be deleted, it has to be the first
+          // element in the list.
+          head_ = elem->next_;
+          delete elem;
+          elem = head_;
           break;
         default:
           abort();
@@ -249,17 +270,40 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
       break;
     }
   }
+
+  elem = head_;
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  while (elem != nullptr) {
+    if (!elem->Finished(now)) {
+      prev = elem;
+      elem = elem->next_;
+      continue;
+    }
+    if (prev != nullptr) {
+      prev->next_ = elem->next_;
+      delete elem;
+      elem = prev->next_;
+    } else {
+      head_ = elem->next_;
+      delete elem;
+      elem = head_;
+    }
+  }
+  tail_ = (head_ == nullptr) ? head_ : prev;
 }
 
 void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
-  while (!buffer_list_.empty()) {
-    TracedBuffer& elem = buffer_list_.front();
-    g_timestamps_callback(elem.arg_, &(elem.ts_), shutdown_err);
-    buffer_list_.pop_front();
+  grpc_core::MutexLock lock(&mu_);
+  while (head_) {
+    TracedBuffer* elem = head_;
+    g_timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
+    head_ = head_->next_;
+    delete elem;
   }
   if (remaining != nullptr) {
     g_timestamps_callback(remaining, nullptr, shutdown_err);
   }
+  tail_ = head_;
 }
 
 void TcpSetWriteTimestampsCallback(
@@ -267,20 +311,22 @@ void TcpSetWriteTimestampsCallback(
   g_timestamps_callback = std::move(fn);
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#else /* GRPC_LINUX_ERRQUEUE */
+#else  // GRPC_LINUX_ERRQUEUE
+
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> /*fn*/) {
-  GPR_ASSERT(false && "Timestamps callback is not enabled for this platform");
+  grpc_core::Crash("Timestamps callback is not enabled for this platform");
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE

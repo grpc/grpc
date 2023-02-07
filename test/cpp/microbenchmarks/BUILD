@@ -36,9 +36,53 @@ grpc_cc_test(
         "absl/container:btree",
     ],
     deps = [
-        "//:channel_args",
         "//:grpc++",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "bm_exec_ctx",
+    srcs = ["bm_exec_ctx.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = [
+        "benchmark",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [":helpers"],
+)
+
+grpc_cc_test(
+    name = "bm_event_engine_run",
+    size = "small",
+    srcs = ["bm_event_engine_run.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = [
+        "absl/debugging:leak_check",
+        "benchmark",
+    ],
+    uses_polling = False,
+    deps = [
+        ":helpers",
+        "//src/core:common_event_engine_closures",
+    ],
+)
+
+grpc_cc_test(
+    name = "bm_thread_pool",
+    size = "small",
+    srcs = ["bm_thread_pool.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = [
+        "benchmark",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":helpers",
+        "//src/core:common_event_engine_closures",
     ],
 )
 
@@ -93,7 +137,10 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:closure",
+    ],
 )
 
 grpc_cc_test(
@@ -169,7 +216,10 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:channel_args",
+    ],
 )
 
 grpc_cc_test(
@@ -279,7 +329,10 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:slice",
+    ],
 )
 
 grpc_cc_test(
@@ -291,7 +344,11 @@ grpc_cc_test(
         "no_windows",
         "nomsan",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:closure",
+        "//src/core:slice",
+    ],
 )
 
 grpc_cc_test(
@@ -388,4 +445,24 @@ grpc_cc_test(
         "notap",
     ],
     deps = [":callback_streaming_ping_pong_h"],
+)
+
+grpc_cc_test(
+    name = "bm_work_queue",
+    srcs = ["bm_work_queue.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = ["benchmark"],
+    tags = [
+        "manual",
+        "no_windows",
+        "notap",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_work_queue",
+        "//test/core/util:grpc_test_util",
+    ],
 )

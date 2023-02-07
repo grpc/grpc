@@ -1,29 +1,28 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <stdbool.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/util/test_config.h"
 
 static bool log_func_reached = false;
@@ -39,7 +38,7 @@ static void test_should_log(gpr_log_func_args* /*args*/) {
 }
 
 static void test_should_not_log(gpr_log_func_args* /*args*/) {
-  GPR_ASSERT(false);
+  grpc_core::Crash("unreachable");
 }
 
 #define test_log_function_reached(SEVERITY)     \
@@ -59,11 +58,11 @@ static void test_should_not_log(gpr_log_func_args* /*args*/) {
   gpr_set_log_function(nullptr);
 
 TEST(LogTest, Basic) {
-  /* test logging at various verbosity levels */
+  // test logging at various verbosity levels
   gpr_log(GPR_DEBUG, "%s", "hello world");
   gpr_log(GPR_INFO, "%s", "hello world");
   gpr_log(GPR_ERROR, "%s", "hello world");
-  /* should succeed */
+  // should succeed
   GPR_ASSERT(1);
   gpr_set_log_function(test_callback);
   gpr_log_message(GPR_INFO, "hello 1 2 3");

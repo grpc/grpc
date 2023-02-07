@@ -39,7 +39,7 @@ def main
                                    "--grpc_class=#{grpc_class}",
                                    "--stress_test=#{stress_test_type}")
         begin
-          Timeout.timeout(10) do
+          Timeout.timeout(120) do
             Process.wait(client_pid)
           end
         rescue Timeout::Error

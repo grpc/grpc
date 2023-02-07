@@ -50,6 +50,7 @@ extern const upb_MiniTable envoy_config_rbac_v3_Action_msginit;
 struct envoy_config_core_v3_CidrRange;
 struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_route_v3_HeaderMatcher;
+struct envoy_type_matcher_v3_FilterStateMatcher;
 struct envoy_type_matcher_v3_MetadataMatcher;
 struct envoy_type_matcher_v3_PathMatcher;
 struct envoy_type_matcher_v3_StringMatcher;
@@ -59,6 +60,7 @@ struct google_api_expr_v1alpha1_Expr;
 extern const upb_MiniTable envoy_config_core_v3_CidrRange_msginit;
 extern const upb_MiniTable envoy_config_core_v3_TypedExtensionConfig_msginit;
 extern const upb_MiniTable envoy_config_route_v3_HeaderMatcher_msginit;
+extern const upb_MiniTable envoy_type_matcher_v3_FilterStateMatcher_msginit;
 extern const upb_MiniTable envoy_type_matcher_v3_MetadataMatcher_msginit;
 extern const upb_MiniTable envoy_type_matcher_v3_PathMatcher_msginit;
 extern const upb_MiniTable envoy_type_matcher_v3_StringMatcher_msginit;
@@ -681,6 +683,7 @@ typedef enum {
   envoy_config_rbac_v3_Principal_identifier_header = 6,
   envoy_config_rbac_v3_Principal_identifier_url_path = 9,
   envoy_config_rbac_v3_Principal_identifier_metadata = 7,
+  envoy_config_rbac_v3_Principal_identifier_filter_state = 12,
   envoy_config_rbac_v3_Principal_identifier_not_id = 8,
   envoy_config_rbac_v3_Principal_identifier_NOT_SET = 0
 } envoy_config_rbac_v3_Principal_identifier_oneofcases;
@@ -785,6 +788,15 @@ UPB_INLINE void envoy_config_rbac_v3_Principal_clear_remote_ip(const envoy_confi
 }
 UPB_INLINE const struct envoy_config_core_v3_CidrRange* envoy_config_rbac_v3_Principal_remote_ip(const envoy_config_rbac_v3_Principal* msg) {
   return UPB_READ_ONEOF(msg, const struct envoy_config_core_v3_CidrRange*, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 11, NULL);
+}
+UPB_INLINE bool envoy_config_rbac_v3_Principal_has_filter_state(const envoy_config_rbac_v3_Principal* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 12;
+}
+UPB_INLINE void envoy_config_rbac_v3_Principal_clear_filter_state(const envoy_config_rbac_v3_Principal* msg) {
+  UPB_WRITE_ONEOF(msg, struct envoy_type_matcher_v3_FilterStateMatcher*, UPB_SIZE(4, 8), 0, UPB_SIZE(0, 0), envoy_config_rbac_v3_Principal_identifier_NOT_SET);
+}
+UPB_INLINE const struct envoy_type_matcher_v3_FilterStateMatcher* envoy_config_rbac_v3_Principal_filter_state(const envoy_config_rbac_v3_Principal* msg) {
+  return UPB_READ_ONEOF(msg, const struct envoy_type_matcher_v3_FilterStateMatcher*, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 12, NULL);
 }
 
 UPB_INLINE void envoy_config_rbac_v3_Principal_set_and_ids(envoy_config_rbac_v3_Principal *msg, envoy_config_rbac_v3_Principal_Set* value) {
@@ -907,6 +919,18 @@ UPB_INLINE struct envoy_config_core_v3_CidrRange* envoy_config_rbac_v3_Principal
     sub = (struct envoy_config_core_v3_CidrRange*)_upb_Message_New(&envoy_config_core_v3_CidrRange_msginit, arena);
     if (!sub) return NULL;
     envoy_config_rbac_v3_Principal_set_remote_ip(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_rbac_v3_Principal_set_filter_state(envoy_config_rbac_v3_Principal *msg, struct envoy_type_matcher_v3_FilterStateMatcher* value) {
+  UPB_WRITE_ONEOF(msg, struct envoy_type_matcher_v3_FilterStateMatcher*, UPB_SIZE(4, 8), value, UPB_SIZE(0, 0), 12);
+}
+UPB_INLINE struct envoy_type_matcher_v3_FilterStateMatcher* envoy_config_rbac_v3_Principal_mutable_filter_state(envoy_config_rbac_v3_Principal* msg, upb_Arena* arena) {
+  struct envoy_type_matcher_v3_FilterStateMatcher* sub = (struct envoy_type_matcher_v3_FilterStateMatcher*)envoy_config_rbac_v3_Principal_filter_state(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_matcher_v3_FilterStateMatcher*)_upb_Message_New(&envoy_type_matcher_v3_FilterStateMatcher_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_rbac_v3_Principal_set_filter_state(msg, sub);
   }
   return sub;
 }

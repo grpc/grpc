@@ -1,30 +1,35 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/transport.h"
@@ -94,8 +99,18 @@ static void test_invoke_request_with_flags(
       grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_invoke_request_with_flags", nullptr, nullptr);
+  grpc_end2end_test_fixture f = begin_test(
+      config,
+      absl::StrCat("test_invoke_request_with_flags[",
+                   absl::Hex(flags_for_op[GRPC_OP_SEND_INITIAL_METADATA]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_SEND_MESSAGE]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_SEND_CLOSE_FROM_CLIENT]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_RECV_INITIAL_METADATA]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_RECV_STATUS_ON_CLIENT]),
+                   "]=>",
+                   grpc_call_error_to_string(call_start_batch_expected_result))
+          .c_str(),
+      nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -154,6 +169,9 @@ static void test_invoke_request_with_flags(
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {
+    if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES) {
+      GPR_ASSERT(GRPC_CALL_OK == grpc_call_cancel(c, nullptr));
+    }
     cqv.Expect(tag(1), true);
     cqv.Verify();
     grpc_slice_unref(details);
@@ -178,8 +196,8 @@ void request_with_flags(grpc_end2end_test_config config) {
   uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
   {
-    /* check that all grpc_op_types fail when their flag value is set to an
-     * invalid value */
+    // check that all grpc_op_types fail when their flag value is set to an
+    // invalid value
     int indices[] = {GRPC_OP_SEND_INITIAL_METADATA, GRPC_OP_SEND_MESSAGE,
                      GRPC_OP_SEND_CLOSE_FROM_CLIENT,
                      GRPC_OP_RECV_INITIAL_METADATA,
@@ -192,7 +210,7 @@ void request_with_flags(grpc_end2end_test_config config) {
     }
   }
   {
-    /* check valid operation with allowed flags for GRPC_OP_SEND_BUFFER */
+    // check valid operation with allowed flags for GRPC_OP_SEND_BUFFER
     uint32_t flags[] = {GRPC_WRITE_BUFFER_HINT, GRPC_WRITE_NO_COMPRESS,
                         GRPC_WRITE_INTERNAL_COMPRESS};
     for (i = 0; i < GPR_ARRAY_SIZE(flags); ++i) {

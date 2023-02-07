@@ -24,8 +24,8 @@
 #include "src/core/lib/iomgr/error.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
-/* Nasty workaround for nasty bug when using the 64 bits msys compiler
-   in conjunction with Microsoft Windows headers. */
+// Nasty workaround for nasty bug when using the 64 bits msys compiler
+// in conjunction with Microsoft Windows headers.
 #define GRPC_FIONBIO _IOW('f', 126, uint32_t)
 #else
 #define GRPC_FIONBIO FIONBIO
@@ -98,7 +98,9 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
 }
 
 WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
-    : win_socket_(win_socket), closure_(nullptr) {}
+    : win_socket_(win_socket), closure_(nullptr) {
+  memset(&overlapped_, 0, sizeof(OVERLAPPED));
+}
 
 void WinSocket::OpState::SetReady() {
   GPR_ASSERT(!has_pending_iocp_);
@@ -151,7 +153,7 @@ grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
   status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
                     NULL, NULL);
   return status == 0
-             ? GRPC_ERROR_NONE
+             ? absl::OkStatus()
              : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
 }
 
@@ -161,7 +163,7 @@ static grpc_error_handle set_dualstack(SOCKET sock) {
   status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&param,
                       sizeof(param));
   return status == 0
-             ? GRPC_ERROR_NONE
+             ? absl::OkStatus()
              : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
@@ -173,7 +175,7 @@ static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
   if (status == SOCKET_ERROR) {
     status = WSAGetLastError();
   }
-  return status == 0 ? GRPC_ERROR_NONE
+  return status == 0 ? absl::OkStatus()
                      : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
 }
 
@@ -182,12 +184,12 @@ static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
 absl::Status PrepareSocket(SOCKET sock) {
   absl::Status err;
   err = grpc_tcp_set_non_block(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  if (!err.ok()) return err;
   err = enable_socket_low_latency(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  if (!err.ok()) return err;
   err = set_dualstack(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
-  return GRPC_ERROR_NONE;
+  if (!err.ok()) return err;
+  return absl::OkStatus();
 }
 
 }  // namespace experimental

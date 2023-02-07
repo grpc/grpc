@@ -1,27 +1,27 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -96,8 +96,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Client sends a request, then waits for the keepalive watchdog timeouts before
- * returning status. */
+// Client sends a request, then waits for the keepalive watchdog timeouts before
+// returning status.
 static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_call* c;
 
@@ -125,7 +125,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_call_error error;
   grpc_slice details;
 
-  /* Disable ping ack to trigger the keepalive timeout */
+  // Disable ping ack to trigger the keepalive timeout
   grpc_set_disable_ping_ack(true);
 
   gpr_timespec deadline = five_seconds_from_now();
@@ -172,14 +172,14 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-/* Verify that reads reset the keepalive ping timer. The client sends 30 pings
- * with a sleep of 10ms in between. It has a configured keepalive timer of
- * 200ms. In the success case, each ping ack should reset the keepalive timer so
- * that the keepalive ping is never sent. */
+// Verify that reads reset the keepalive ping timer. The client sends 30 pings
+// with a sleep of 10ms in between. It has a configured keepalive timer of
+// 200ms. In the success case, each ping ack should reset the keepalive timer so
+// that the keepalive ping is never sent.
 static void test_read_delays_keepalive(grpc_end2end_test_config config) {
 #ifdef GRPC_POSIX_SOCKET
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  /* It is hard to get the timing right for the polling engine poll. */
+  // It is hard to get the timing right for the polling engine poll.
   if ((0 == strcmp(poller.get(), "poll"))) {
     return;
   }
@@ -199,7 +199,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
                                       keepalive_arg_elems};
   grpc_end2end_test_fixture f = begin_test(config, "test_read_delays_keepalive",
                                            &keepalive_args, nullptr);
-  /* Disable ping ack to trigger the keepalive timeout */
+  // Disable ping ack to trigger the keepalive timeout
   grpc_set_disable_ping_ack(true);
   grpc_call* c;
   grpc_call* s;
@@ -332,7 +332,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     grpc_byte_buffer_destroy(response_payload);
     grpc_byte_buffer_destroy(request_payload_recv);
     grpc_byte_buffer_destroy(response_payload_recv);
-    /* Sleep for a short interval to check if the client sends any pings */
+    // Sleep for a short interval to check if the client sends any pings
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(kPingIntervalMS));
   }
 

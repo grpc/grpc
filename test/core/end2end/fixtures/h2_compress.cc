@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
@@ -28,19 +28,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/compression/args_utils.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 struct fullstack_compression_fixture_data {
-  ~fullstack_compression_fixture_data() {
-    grpc_channel_args_destroy(client_args_compression);
-    grpc_channel_args_destroy(server_args_compression);
-  }
   std::string localaddr;
-  const grpc_channel_args* client_args_compression = nullptr;
-  const grpc_channel_args* server_args_compression = nullptr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
@@ -63,16 +56,14 @@ void chttp2_init_client_fullstack_compression(
     grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
-  if (ffd->client_args_compression != nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(ffd->client_args_compression);
-  }
-  ffd->client_args_compression =
-      grpc_channel_args_set_channel_default_compression_algorithm(
-          client_args, GRPC_COMPRESS_GZIP);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds,
-                                  ffd->client_args_compression);
+  f->client = grpc_channel_create(
+      ffd->localaddr.c_str(), creds,
+      grpc_core::ChannelArgs::FromC(client_args)
+          .SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                      GRPC_COMPRESS_GZIP)
+          .ToC()
+          .get());
   grpc_channel_credentials_release(creds);
 }
 
@@ -80,17 +71,16 @@ void chttp2_init_server_fullstack_compression(
     grpc_end2end_test_fixture* f, const grpc_channel_args* server_args) {
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
-  if (ffd->server_args_compression != nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(ffd->server_args_compression);
-  }
-  ffd->server_args_compression =
-      grpc_channel_args_set_channel_default_compression_algorithm(
-          server_args, GRPC_COMPRESS_GZIP);
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(ffd->server_args_compression, nullptr);
+  f->server = grpc_server_create(
+      grpc_core::ChannelArgs::FromC(server_args)
+          .SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                      GRPC_COMPRESS_GZIP)
+          .ToC()
+          .get(),
+      nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
@@ -107,7 +97,7 @@ void chttp2_tear_down_fullstack_compression(grpc_end2end_test_fixture* f) {
   delete ffd;
 }
 
-/* All test configurations */
+// All test configurations
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack_compression",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |

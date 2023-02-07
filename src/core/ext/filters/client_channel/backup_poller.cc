@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -117,9 +117,9 @@ static void g_poller_unref() {
 
 static void run_poller(void* arg, grpc_error_handle error) {
   backup_poller* p = static_cast<backup_poller*>(arg);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    if (error != GRPC_ERROR_CANCELLED) {
-      GRPC_LOG_IF_ERROR("run_poller", GRPC_ERROR_REF(error));
+  if (!error.ok()) {
+    if (error != absl::CancelledError()) {
+      GRPC_LOG_IF_ERROR("run_poller", error);
     }
     backup_poller_shutdown_unref(p);
     return;
@@ -166,10 +166,10 @@ void grpc_client_channel_start_backup_polling(
   gpr_mu_lock(&g_poller_mu);
   g_poller_init_locked();
   gpr_ref(&g_poller->refs);
-  /* Get a reference to g_poller->pollset before releasing g_poller_mu to make
-   * TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after
-   * releasing the lock and setting g_poller to NULL in g_poller_unref() is
-   * being flagged as a data-race by TSAN */
+  // Get a reference to g_poller->pollset before releasing g_poller_mu to make
+  // TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after
+  // releasing the lock and setting g_poller to NULL in g_poller_unref() is
+  // being flagged as a data-race by TSAN
   grpc_pollset* pollset = g_poller->pollset;
   gpr_mu_unlock(&g_poller_mu);
 

@@ -16,6 +16,8 @@
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 
+#include <string>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -30,8 +32,10 @@
 
 #include <cstddef>
 
+#include "src/core/lib/gprpp/strerror.h"
+
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
 int GetSocketTcpInfo(struct tcp_info* info, int fd) {
@@ -48,7 +52,7 @@ bool KernelSupportsErrqueue() {
     // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
-      gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
+      gpr_log(GPR_ERROR, "uname: %s", grpc_core::StrError(errno).c_str());
       return false;
     }
     char* release = buffer.release;
@@ -67,7 +71,7 @@ bool KernelSupportsErrqueue() {
   return errqueue_supported;
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_POSIX_SOCKET_TCP

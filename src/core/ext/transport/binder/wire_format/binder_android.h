@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
 
 #include <grpc/support/port_platform.h>
 
@@ -80,7 +80,7 @@ class BinderAndroid final : public Binder {
  public:
   explicit BinderAndroid(ndk_util::SpAIBinder binder)
       : binder_(binder),
-        input_parcel_(absl::make_unique<WritableParcelAndroid>()) {}
+        input_parcel_(std::make_unique<WritableParcelAndroid>()) {}
   ~BinderAndroid() override = default;
 
   void* GetRawBinder() override { return binder_.get(); }
@@ -117,6 +117,6 @@ class TransactionReceiverAndroid final : public TransactionReceiver {
 
 }  // namespace grpc_binder
 
-#endif /*GPR_SUPPORT_BINDER_TRANSPORT*/
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H

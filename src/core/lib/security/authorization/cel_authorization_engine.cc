@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
@@ -63,7 +62,7 @@ CelAuthorizationEngine::CreateCelAuthorizationEngine(
                          policy and one allow policy, in that order.");
     return nullptr;
   } else {
-    return absl::make_unique<CelAuthorizationEngine>(rbac_policies);
+    return std::make_unique<CelAuthorizationEngine>(rbac_policies);
   }
 }
 

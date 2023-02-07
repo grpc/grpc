@@ -14,8 +14,10 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
+#include <algorithm>
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #include <gtest/gtest.h>
 

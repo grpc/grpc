@@ -17,6 +17,7 @@
 #include <stddef.h>
 
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -32,13 +33,12 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpcpp/ext/orca_service.h>
-#include <grpcpp/impl/codegen/server_callback_handlers.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_callback_handlers.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
@@ -54,7 +54,6 @@ namespace grpc {
 namespace experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 //
 // OrcaService::Reactor
@@ -64,7 +63,9 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
                              public grpc_core::RefCounted<Reactor> {
  public:
   explicit Reactor(OrcaService* service, const ByteBuffer* request_buffer)
-      : RefCounted("OrcaService::Reactor"), service_(service) {
+      : RefCounted("OrcaService::Reactor"),
+        service_(service),
+        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
     // Get slice from request.
     Slice slice;
     GPR_ASSERT(request_buffer->DumpToSingleSlice(&slice).ok());
@@ -125,7 +126,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   bool MaybeScheduleTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
     if (cancelled_) return false;
-    timer_handle_ = GetDefaultEventEngine()->RunAfter(
+    timer_handle_ = engine_->RunAfter(
         report_interval_,
         [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
     return true;
@@ -134,8 +135,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   bool MaybeCancelTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
     cancelled_ = true;
-    if (timer_handle_.has_value() &&
-        GetDefaultEventEngine()->Cancel(*timer_handle_)) {
+    if (timer_handle_.has_value() && engine_->Cancel(*timer_handle_)) {
       timer_handle_.reset();
       return true;
     }
@@ -159,6 +159,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
   grpc_core::Duration report_interval_;
   ByteBuffer response_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 //
@@ -201,6 +202,18 @@ void OrcaService::DeleteMemoryUtilization() {
   response_slice_.reset();
 }
 
+void OrcaService::SetQps(double qps) {
+  grpc::internal::MutexLock lock(&mu_);
+  qps_ = qps;
+  response_slice_.reset();
+}
+
+void OrcaService::DeleteQps() {
+  grpc::internal::MutexLock lock(&mu_);
+  qps_ = -1;
+  response_slice_.reset();
+}
+
 void OrcaService::SetNamedUtilization(std::string name, double utilization) {
   grpc::internal::MutexLock lock(&mu_);
   named_utilization_[std::move(name)] = utilization;
@@ -233,6 +246,9 @@ Slice OrcaService::GetOrCreateSerializedResponse() {
     if (memory_utilization_ != -1) {
       xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
                                                           memory_utilization_);
+    }
+    if (qps_ != -1) {
+      xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, qps_);
     }
     for (const auto& p : named_utilization_) {
       xds_data_orca_v3_OrcaLoadReport_utilization_set(

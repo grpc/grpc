@@ -15,6 +15,8 @@
 #include <inttypes.h>
 #include <unistd.h>
 
+#include <atomic>
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -27,7 +29,7 @@
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/test_config.h"
 
-static int unique{0};
+static std::atomic<int> unique{0};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
     const grpc_channel_args* /*client_args*/,
@@ -52,7 +54,7 @@ static void chttp2_init_server_fullstack_uds(
   grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, UDS);
 }
 
-/* All test configurations */
+// All test configurations
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack_local_abstract_uds_percent_encoded",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |

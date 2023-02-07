@@ -1,35 +1,37 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
 
 #include <new>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -37,10 +39,10 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -296,7 +298,7 @@ class FailFirstCallFilter {
     static grpc_error_handle Init(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
 
     static void Destroy(grpc_call_element* elem,
@@ -317,9 +319,9 @@ class FailFirstCallFilter {
       if (calld->fail_ && !batch->cancel_stream) {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
-            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "FailFirstCallFilter failing batch"),
-                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE("FailFirstCallFilter failing batch"),
+                grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_ABORTED),
             calld->call_combiner_);
         return;
       }
@@ -337,7 +339,7 @@ class FailFirstCallFilter {
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
     new (elem->channel_data) FailFirstCallFilter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* elem) {

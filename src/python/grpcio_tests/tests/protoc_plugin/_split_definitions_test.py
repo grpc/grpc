@@ -27,7 +27,6 @@ import unittest
 import grpc
 from grpc_tools import protoc
 import pkg_resources
-import six
 
 from tests.unit import test_common
 
@@ -178,7 +177,7 @@ _PROTOC_STYLES = (
 
 @unittest.skipIf(platform.python_implementation() == 'PyPy',
                  'Skip test if run with PyPy!')
-class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
+class _Test(unittest.TestCase, metaclass=abc.ABCMeta):
 
     def setUp(self):
         self._directory = tempfile.mkdtemp(suffix=self.NAME, dir='.')

@@ -63,11 +63,13 @@ extern const upb_MiniTable envoy_service_discovery_v3_DynamicParameterConstraint
 extern const upb_MiniTable envoy_service_discovery_v3_Resource_msginit;
 extern const upb_MiniTable envoy_service_discovery_v3_Resource_CacheControl_msginit;
 struct envoy_config_core_v3_ControlPlane;
+struct envoy_config_core_v3_Metadata;
 struct envoy_config_core_v3_Node;
 struct google_protobuf_Any;
 struct google_protobuf_Duration;
 struct google_rpc_Status;
 extern const upb_MiniTable envoy_config_core_v3_ControlPlane_msginit;
+extern const upb_MiniTable envoy_config_core_v3_Metadata_msginit;
 extern const upb_MiniTable envoy_config_core_v3_Node_msginit;
 extern const upb_MiniTable google_protobuf_Any_msginit;
 extern const upb_MiniTable google_protobuf_Duration_msginit;
@@ -1249,6 +1251,15 @@ UPB_INLINE void envoy_service_discovery_v3_Resource_clear_resource_name(const en
 UPB_INLINE const envoy_service_discovery_v3_ResourceName* envoy_service_discovery_v3_Resource_resource_name(const envoy_service_discovery_v3_Resource* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(36, 72), const envoy_service_discovery_v3_ResourceName*);
 }
+UPB_INLINE bool envoy_service_discovery_v3_Resource_has_metadata(const envoy_service_discovery_v3_Resource* msg) {
+  return _upb_hasbit(msg, 5);
+}
+UPB_INLINE void envoy_service_discovery_v3_Resource_clear_metadata(const envoy_service_discovery_v3_Resource* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 80), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_Metadata* envoy_service_discovery_v3_Resource_metadata(const envoy_service_discovery_v3_Resource* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(40, 80), const struct envoy_config_core_v3_Metadata*);
+}
 
 UPB_INLINE void envoy_service_discovery_v3_Resource_set_version(envoy_service_discovery_v3_Resource *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
@@ -1314,6 +1325,19 @@ UPB_INLINE struct envoy_service_discovery_v3_ResourceName* envoy_service_discove
     sub = (struct envoy_service_discovery_v3_ResourceName*)_upb_Message_New(&envoy_service_discovery_v3_ResourceName_msginit, arena);
     if (!sub) return NULL;
     envoy_service_discovery_v3_Resource_set_resource_name(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_service_discovery_v3_Resource_set_metadata(envoy_service_discovery_v3_Resource *msg, struct envoy_config_core_v3_Metadata* value) {
+  _upb_sethas(msg, 5);
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 80), struct envoy_config_core_v3_Metadata*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_Metadata* envoy_service_discovery_v3_Resource_mutable_metadata(envoy_service_discovery_v3_Resource* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_Metadata* sub = (struct envoy_config_core_v3_Metadata*)envoy_service_discovery_v3_Resource_metadata(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_Metadata*)_upb_Message_New(&envoy_config_core_v3_Metadata_msginit, arena);
+    if (!sub) return NULL;
+    envoy_service_discovery_v3_Resource_set_metadata(msg, sub);
   }
   return sub;
 }

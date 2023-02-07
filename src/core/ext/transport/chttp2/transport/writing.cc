@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -24,11 +24,14 @@
 #include <algorithm>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
@@ -47,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -58,7 +62,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -81,11 +84,11 @@ static void finish_write_cb(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   if (grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
-    /* no ping needed: wait */
+    // no ping needed: wait
     return;
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
-    /* ping already in-flight: wait */
+    // ping already in-flight: wait
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -96,7 +99,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   }
   if (t->is_client && t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
-    /* need to receive something of substance before sending a ping again */
+    // need to receive something of substance before sending a ping again
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -119,8 +122,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         (t->keepalive_permit_without_calls == 0 &&
          grpc_chttp2_stream_map_size(&t->stream_map) == 0)
             ? grpc_core::Duration::Hours(2)
-            : grpc_core::Duration::Seconds(1); /* A second is added to deal with
-                         network delays and timing imprecision */
+            : grpc_core::Duration::Seconds(
+                  1);  // A second is added to deal with
+                       // network delays and timing imprecision
   } else if (t->sent_goaway_state != GRPC_CHTTP2_GRACEFUL_GOAWAY) {
     // The gRPC keepalive spec doesn't call for any throttling on the server
     // side, but we are adding some throttling for protection anyway, unless
@@ -134,7 +138,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
 
   if (next_allowed_ping > now) {
-    /* not enough elapsed time between successive pings */
+    // not enough elapsed time between successive pings
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -169,7 +173,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
-  GRPC_STATS_INC_HTTP2_PINGS_SENT();
+  grpc_core::global_stats().IncrementHttp2PingsSent();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -193,13 +197,12 @@ static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     grpc_chttp2_write_cb* next = cb->next;
     if (cb->call_at_byte <= *ctr) {
       sched_any = true;
-      finish_write_cb(t, s, cb, GRPC_ERROR_REF(error));
+      finish_write_cb(t, s, cb, error);
     } else {
       add_to_write_list(list, cb);
     }
     cb = next;
   }
-  GRPC_ERROR_UNREF(error);
   return sched_any;
 }
 
@@ -219,7 +222,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         t->flow_control.remote_window(),
         static_cast<uint32_t>(std::max(
-            int64_t(0),
+            int64_t{0},
             s->flow_control.remote_window_delta() +
                 static_cast<int64_t>(
                     t->settings[GRPC_PEER_SETTINGS]
@@ -228,7 +231,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
 }
 
-/* How many bytes would we like to put on the wire during a single syscall */
+// How many bytes would we like to put on the wire during a single syscall
 static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
   return 1024 * 1024;
 }
@@ -264,7 +267,7 @@ namespace {
 class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
-    GRPC_STATS_INC_HTTP2_WRITES_BEGUN();
+    grpc_core::global_stats().IncrementHttp2WritesBegun();
   }
 
   void FlushSettings() {
@@ -277,12 +280,12 @@ class WriteContext {
       t_->force_send_settings = false;
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
-      GRPC_STATS_INC_HTTP2_SETTINGS_WRITES();
+      grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }
 
   void FlushQueuedBuffers() {
-    /* simple writes are queued to qbuf, and flushed here */
+    // simple writes are queued to qbuf, and flushed here
     grpc_slice_buffer_move_into(&t_->qbuf, &t_->outbuf);
     t_->num_pending_induced_frames = 0;
     GPR_ASSERT(t_->qbuf.count == 0);
@@ -317,7 +320,7 @@ class WriteContext {
   void UpdateStreamsNoLongerStalled() {
     grpc_chttp2_stream* s;
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
-      if (GRPC_ERROR_IS_NONE(t_->closed_with_error) &&
+      if (t_->closed_with_error.ok() &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
         if (!s->refcount->refs.RefIfNonZero()) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
@@ -357,8 +360,8 @@ class WriteContext {
  private:
   grpc_chttp2_transport* const t_;
 
-  /* stats histogram counters: we increment these throughout this function,
-     and at the end publish to the central stats histograms */
+  // stats histogram counters: we increment these throughout this function,
+  // and at the end publish to the central stats histograms
   int flow_control_writes_ = 0;
   int initial_metadata_writes_ = 0;
   int trailing_metadata_writes_ = 0;
@@ -377,7 +380,7 @@ class DataSendContext {
 
   uint32_t stream_remote_window() const {
     return static_cast<uint32_t>(std::max(
-        int64_t(0),
+        int64_t{0},
         s_->flow_control.remote_window_delta() +
             static_cast<int64_t>(
                 t_->settings[GRPC_PEER_SETTINGS]
@@ -387,15 +390,17 @@ class DataSendContext {
   uint32_t max_outgoing() const {
     return static_cast<uint32_t>(std::min(
         t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-        static_cast<uint32_t>(std::min(int64_t(stream_remote_window()),
-                                       t_->flow_control.remote_window()))));
+        static_cast<uint32_t>(
+            std::min(static_cast<int64_t>(stream_remote_window()),
+                     t_->flow_control.remote_window()))));
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
 
   void FlushBytes() {
-    uint32_t send_bytes = static_cast<uint32_t>(
-        std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
+    uint32_t send_bytes =
+        static_cast<uint32_t>(std::min(static_cast<size_t>(max_outgoing()),
+                                       s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
@@ -412,7 +417,7 @@ class DataSendContext {
             t_, s_,
             static_cast<int64_t>(s_->sending_bytes - sending_bytes_before_),
             &s_->on_flow_controlled_cbs, &s_->flow_controlled_bytes_flowed,
-            GRPC_ERROR_NONE)) {
+            absl::OkStatus())) {
       write_context_->NoteScheduledResults();
     }
   }
@@ -438,7 +443,7 @@ class StreamWriteContext {
   }
 
   void FlushInitialMetadata() {
-    /* send initial metadata if it's available */
+    // send initial metadata if it's available
     if (s_->sent_initial_metadata) return;
     if (s_->send_initial_metadata == nullptr) return;
 
@@ -474,14 +479,14 @@ class StreamWriteContext {
     s_->sent_initial_metadata = true;
     write_context_->NoteScheduledResults();
     grpc_chttp2_complete_closure_step(
-        t_, s_, &s_->send_initial_metadata_finished, GRPC_ERROR_NONE,
+        t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
   }
 
   void FlushWindowUpdates() {
     if (s_->read_closed) return;
 
-    /* send any window updates */
+    // send any window updates
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
 
@@ -503,11 +508,11 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
-        GRPC_STATS_INC_HTTP2_TRANSPORT_STALLS();
+        grpc_core::global_stats().IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
-        GRPC_STATS_INC_HTTP2_STREAM_STALLS();
+        grpc_core::global_stats().IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }
@@ -568,7 +573,7 @@ class StreamWriteContext {
 
     write_context_->NoteScheduledResults();
     grpc_chttp2_complete_closure_step(
-        t_, s_, &s_->send_trailing_metadata_finished, GRPC_ERROR_NONE,
+        t_, s_, &s_->send_trailing_metadata_finished, absl::OkStatus(),
         "send_trailing_metadata_finished");
   }
 
@@ -601,7 +606,7 @@ class StreamWriteContext {
                            s_->id, GRPC_HTTP2_NO_ERROR, &s_->stats.outgoing));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
-                                   GRPC_ERROR_NONE);
+                                   absl::OkStatus());
   }
 
   WriteContext* const write_context_;
@@ -626,8 +631,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     ctx.UpdateStreamsNoLongerStalled();
   }
 
-  /* for each grpc_chttp2_stream that's become writable, frame it's data
-     (according to available window sizes) and add to the output buffer */
+  // for each grpc_chttp2_stream that's become writable, frame it's data
+  // (according to available window sizes) and add to the output buffer
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.length;
@@ -636,7 +641,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     stream_ctx.FlushData();
     stream_ctx.FlushTrailingMetadata();
     if (t->outbuf.length > orig_len) {
-      /* Add this stream to the list of the contexts to be traced at TCP */
+      // Add this stream to the list of the contexts to be traced at TCP
       s->byte_counter += t->outbuf.length - orig_len;
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
         grpc_core::ContextList::Append(&t->cl, s);
@@ -644,10 +649,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
     if (stream_ctx.stream_became_writable()) {
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {
-        /* already in writing list: drop ref */
+        // already in writing list: drop ref
         GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:already_writing");
       } else {
-        /* ref will be dropped at end of write */
+        // ref will be dropped at end of write
       }
     } else {
       GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:no_write");
@@ -673,11 +678,10 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     if (s->sending_bytes != 0) {
       update_list(t, s, static_cast<int64_t>(s->sending_bytes),
                   &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,
-                  GRPC_ERROR_REF(error));
+                  error);
       s->sending_bytes = 0;
     }
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:end");
   }
-  grpc_slice_buffer_reset_and_unref_internal(&t->outbuf);
-  GRPC_ERROR_UNREF(error);
+  grpc_slice_buffer_reset_and_unref(&t->outbuf);
 }

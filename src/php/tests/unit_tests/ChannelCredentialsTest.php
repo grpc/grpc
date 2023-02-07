@@ -17,7 +17,7 @@
  *
  */
 
-class ChanellCredentialsTest extends \PHPUnit\Framework\TestCase
+class ChannelCredentialsTest extends \PHPUnit\Framework\TestCase
 {
     public function setUp(): void
     {

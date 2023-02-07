@@ -27,9 +27,11 @@ namespace grpc_core {
 // Useful for very limited tests.
 struct NoWakeupScheduler {
   template <typename ActivityType>
-  void ScheduleWakeup(ActivityType*) {
-    abort();
-  }
+  class BoundScheduler {
+   public:
+    explicit BoundScheduler(NoWakeupScheduler) {}
+    void ScheduleWakeup() { abort(); }
+  };
 };
 
 // A wakeup scheduler that simply runs the callback immediately.
@@ -37,9 +39,13 @@ struct NoWakeupScheduler {
 // ordering problems.
 struct InlineWakeupScheduler {
   template <typename ActivityType>
-  void ScheduleWakeup(ActivityType* activity) {
-    activity->RunScheduledWakeup();
-  }
+  class BoundScheduler {
+   public:
+    explicit BoundScheduler(InlineWakeupScheduler) {}
+    void ScheduleWakeup() {
+      static_cast<ActivityType*>(this)->RunScheduledWakeup();
+    }
+  };
 };
 
 // Mock for something that can schedule callbacks.
@@ -58,11 +64,20 @@ class MockCallbackScheduler {
 struct UseMockCallbackScheduler {
   MockCallbackScheduler* scheduler;
   template <typename ActivityType>
-  void ScheduleWakeup(ActivityType* activity) {
-    scheduler->Schedule([activity] { activity->RunScheduledWakeup(); });
-  }
+  class BoundScheduler {
+   public:
+    explicit BoundScheduler(UseMockCallbackScheduler use_scheduler)
+        : scheduler(use_scheduler.scheduler) {}
+    void ScheduleWakeup() {
+      scheduler->Schedule(
+          [this] { static_cast<ActivityType*>(this)->RunScheduledWakeup(); });
+    }
+
+   private:
+    MockCallbackScheduler* scheduler;
+  };
 };
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_PROMISE_TEST_WAKEUP_SCHEDULERS_H

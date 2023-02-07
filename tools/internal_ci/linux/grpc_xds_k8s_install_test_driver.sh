@@ -16,7 +16,7 @@
 set -eo pipefail
 
 # Constants
-readonly PYTHON_VERSION="${PYTHON_VERSION:-3.6}"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.7}"
 # Test driver
 readonly TEST_DRIVER_REPO_NAME="grpc"
 readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
@@ -42,11 +42,11 @@ readonly GKE_CLUSTER_PSM_BASIC="psm-basic"
 activate_gke_cluster() {
   case $1 in
     GKE_CLUSTER_PSM_LB)
-      GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
+      GKE_CLUSTER_NAME="psm-interop-lb-primary"
       GKE_CLUSTER_ZONE="us-central1-a"
       ;;
     GKE_CLUSTER_PSM_SECURITY)
-      GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+      GKE_CLUSTER_NAME="psm-interop-security"
       GKE_CLUSTER_ZONE="us-central1-a"
       ;;
     GKE_CLUSTER_PSM_BASIC)
@@ -75,11 +75,7 @@ activate_gke_cluster() {
 activate_secondary_gke_cluster() {
   case $1 in
     GKE_CLUSTER_PSM_LB)
-      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
-      SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
-      ;;
-    GKE_CLUSTER_PSM_SECURITY)
-      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
+      SECONDARY_GKE_CLUSTER_NAME="psm-interop-lb-secondary"
       SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
       ;;
     *)

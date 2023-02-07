@@ -19,15 +19,17 @@
 
 #include <new>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -36,9 +38,9 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -279,7 +281,7 @@ class InjectStatusFilter {
     static grpc_error_handle Init(grpc_call_element* elem,
                                   const grpc_call_element_args* /*args*/) {
       new (elem->call_data) CallData();
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
 
     static void Destroy(grpc_call_element* elem,
@@ -312,9 +314,9 @@ class InjectStatusFilter {
       auto* calld = static_cast<CallData*>(arg);
       grpc_core::Closure::Run(
           DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("injected error"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT));
+          grpc_error_set_int(GRPC_ERROR_CREATE("injected error"),
+                             grpc_core::StatusIntProperty::kRpcStatus,
+                             GRPC_STATUS_INVALID_ARGUMENT));
     }
 
     grpc_closure recv_trailing_metadata_ready_;
@@ -323,7 +325,7 @@ class InjectStatusFilter {
 
   static grpc_error_handle Init(grpc_channel_element* /*elem*/,
                                 grpc_channel_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* /*elem*/) {}

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,13 +33,14 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
+#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -260,7 +261,7 @@ class ClientChannel {
   void UpdateStateAndPickerLocked(
       grpc_connectivity_state state, const absl::Status& status,
       const char* reason,
-      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker)
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateServiceConfigInControlPlaneLocked(
@@ -332,7 +333,7 @@ class ClientChannel {
   // Fields used in the data plane.  Guarded by data_plane_mu_.
   //
   mutable Mutex data_plane_mu_;
-  std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
       ABSL_GUARDED_BY(data_plane_mu_);
   // Linked list of calls queued waiting for LB pick.
   LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(data_plane_mu_) = nullptr;
@@ -362,8 +363,7 @@ class ClientChannel {
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(*work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
-  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_) =
-      GRPC_ERROR_NONE;
+  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -391,7 +391,7 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
-  class LbCallState : public LoadBalancingPolicy::CallState {
+  class LbCallState : public LbCallStateInternal {
    public:
     explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
 
@@ -399,7 +399,7 @@ class ClientChannel::LoadBalancedCall
 
     // Internal API to allow first-party LB policies to access per-call
     // attributes set by the ConfigSelector.
-    absl::string_view GetCallAttribute(UniqueTypeName type);
+    absl::string_view GetCallAttribute(UniqueTypeName type) override;
 
    private:
     LoadBalancedCall* lb_call_;
@@ -508,10 +508,10 @@ class ClientChannel::LoadBalancedCall
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error_;
 
   // Set when we fail inside the LB call.
-  grpc_error_handle failure_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle failure_error_;
 
   grpc_closure pick_closure_;
 
@@ -624,4 +624,4 @@ class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H

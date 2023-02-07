@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -95,7 +96,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {
     const char* expected_error_msg = static_cast<const char*>(arg);
     if (expected_error_msg == nullptr) {
-      EXPECT_EQ(error, GRPC_ERROR_NONE);
+      EXPECT_EQ(error, absl::OkStatus());
     } else {
       EXPECT_EQ(GetErrorMsg(error), expected_error_msg);
     }
@@ -104,7 +105,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   static std::string GetErrorMsg(grpc_error_handle error) {
     std::string error_str;
     GPR_ASSERT(
-        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_str));
+        grpc_error_get_str(error, StatusStrProperty::kDescription, &error_str));
     return error_str;
   }
 
@@ -324,12 +325,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
-  distributor->SetErrorForCert(
-      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
-      absl::nullopt);
-  distributor->SetErrorForCert(
-      kIdentityCertName, absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  distributor->SetErrorForCert(kRootCertName, GRPC_ERROR_CREATE(kErrorMessage),
+                               absl::nullopt);
+  distributor->SetErrorForCert(kIdentityCertName, absl::nullopt,
+                               GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
@@ -877,12 +876,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
-  distributor->SetErrorForCert(
-      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
-      absl::nullopt);
-  distributor->SetErrorForCert(
-      kIdentityCertName, absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  distributor->SetErrorForCert(kRootCertName, GRPC_ERROR_CREATE(kErrorMessage),
+                               absl::nullopt);
+  distributor->SetErrorForCert(kIdentityCertName, absl::nullopt,
+                               GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);

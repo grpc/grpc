@@ -66,6 +66,7 @@ def run_default_test(test_proc)
   thd.join
 end
 
+# rubocop:disable Metrics/CyclomaticComplexity
 def get_test_proc(grpc_class)
   case grpc_class
   when 'channel'
@@ -117,6 +118,7 @@ def get_test_proc(grpc_class)
     fail "bad --grpc_class=#{grpc_class} param"
   end
 end
+# rubocop:enable Metrics/CyclomaticComplexity
 
 def main
   grpc_class = ''
