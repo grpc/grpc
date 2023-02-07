@@ -80,6 +80,7 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"

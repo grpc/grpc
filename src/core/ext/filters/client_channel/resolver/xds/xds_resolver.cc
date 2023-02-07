@@ -47,6 +47,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/slice/slice.h"
 
 #define XXH_INLINE_ALL
 #include "xxhash.h"
@@ -85,7 +86,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 
