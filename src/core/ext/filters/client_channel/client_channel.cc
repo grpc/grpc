@@ -117,17 +117,13 @@ class ClientChannel::CallData {
   virtual void RetryCheckResolutionLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) = 0;
 
- protected:
-  CallData(const ClientChannel& chand, const grpc_call_element_args& args);
-  virtual ~CallData();
-
-  grpc_slice* path() { return &path_; }
-  gpr_cycle_counter call_start_time() const { return call_start_time_; }
-  Timestamp deadline() const { return deadline_; }
-  grpc_call_context_element* call_context() const { return call_context_; }
   RefCountedPtr<DynamicFilters> dynamic_filters() const {
     return dynamic_filters_;
   }
+
+ protected:
+  CallData() = default;
+  virtual ~CallData() = default;
 
   // Checks whether a resolver result is available.  The following
   // outcomes are possible:
@@ -147,6 +143,7 @@ class ClientChannel::CallData {
   virtual Arena* arena() const = 0;
   virtual grpc_polling_entity* pollent() const = 0;
   virtual grpc_metadata_batch* send_initial_metadata() = 0;
+  virtual grpc_call_context_element* call_context() const = 0;
 
   // Helper function for CheckResolution().  Returns true if the call
   // can continue (i.e., there is a valid resolution result, or there is
@@ -161,7 +158,7 @@ class ClientChannel::CallData {
 
   // Called when adding the call to the resolver queue.
   virtual void OnAddToQueueLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) = 0;
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) {}
 
   // Applies service config to the call.  Must be invoked once we know
   // that the resolver has returned results to the channel.
@@ -172,12 +169,7 @@ class ClientChannel::CallData {
 
   // Called to reset the deadline based on the service config obtained
   // from the resolver.
-  virtual void ResetDeadline(Timestamp deadline) = 0;
-
-  grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
-  Timestamp deadline_;
-  grpc_call_context_element* call_context_;
+  virtual void ResetDeadline(Duration timeout) = 0;
 
   RefCountedPtr<DynamicFilters> dynamic_filters_;
 };
@@ -196,7 +188,7 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
  private:
   class ResolverQueuedCallCanceller;
 
-  FilterBasedCallData(grpc_call_element* elem, const ClientChannel& chand,
+  FilterBasedCallData(grpc_call_element* elem,
                       const grpc_call_element_args& args);
   ~FilterBasedCallData() override;
 
@@ -212,6 +204,9 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
   grpc_metadata_batch* send_initial_metadata() override {
     return pending_batches_[0]
         ->payload->send_initial_metadata.send_initial_metadata;
+  }
+  grpc_call_context_element* call_context() const override {
+    return call_context_;
   }
 
   // Returns the index into pending_batches_ to be used for batch.
@@ -254,14 +249,24 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
   void RetryCheckResolutionLocked() override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
 
-  void ResetDeadline(Timestamp deadline) override {
-    grpc_deadline_state_reset(&deadline_state_, deadline);
+  void ResetDeadline(Duration timeout) override {
+    const Timestamp per_method_deadline =
+        Timestamp::FromCycleCounterRoundUp(call_start_time_) + timeout;
+    if (per_method_deadline < deadline_) {
+      deadline_ = per_method_deadline;
+      grpc_deadline_state_reset(&deadline_state_, deadline_);
+    }
   }
 
   void CreateDynamicCall();
 
   static void RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
       void* arg, grpc_error_handle error);
+
+  grpc_slice path_;  // Request path.
+  grpc_call_context_element* call_context_;
+  gpr_cycle_counter call_start_time_;
+  Timestamp deadline_;
 
   // State for handling deadlines.
   grpc_deadline_state deadline_state_;
@@ -1781,19 +1786,6 @@ void ClientChannel::RemoveConnectivityWatcher(
 // CallData implementation
 //
 
-ClientChannel::CallData::CallData(const ClientChannel& chand,
-                                  const grpc_call_element_args& args)
-    : path_(CSliceRef(args.path)),
-      call_start_time_(args.start_time),
-      deadline_(args.deadline),
-      call_context_(args.context) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: created call", &chand, this);
-  }
-}
-
-ClientChannel::CallData::~CallData() { CSliceUnref(path_); }
-
 void ClientChannel::CallData::RemoveCallFromResolverQueuedCallsLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
@@ -1832,8 +1824,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
   if (!config_selector.ok()) return config_selector.status();
   // Use the ConfigSelector to determine the config for the call.
   auto call_config =
-      (*config_selector)
-          ->GetCallConfig({&path_, send_initial_metadata(), arena()});
+      (*config_selector)->GetCallConfig({send_initial_metadata(), arena()});
   if (!call_config.ok()) {
     return absl_status_to_grpc_error(
         MaybeRewriteIllegalStatusCode(call_config.status(), "ConfigSelector"));
@@ -1847,7 +1838,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
       arena()->New<ClientChannelServiceConfigCallData>(
           std::move(call_config->service_config), call_config->method_configs,
           std::move(call_config->call_attributes),
-          call_config->call_dispatch_controller, call_context_);
+          call_config->call_dispatch_controller, call_context());
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
@@ -1857,13 +1848,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     // from the client API, reset the deadline timer.
     if (chand()->deadline_checking_enabled_ &&
         method_params->timeout() != Duration::Zero()) {
-      const Timestamp per_method_deadline =
-          Timestamp::FromCycleCounterRoundUp(call_start_time_) +
-          method_params->timeout();
-      if (per_method_deadline < deadline_) {
-        deadline_ = per_method_deadline;
-        ResetDeadline(deadline_);
-      }
+      ResetDeadline(method_params->timeout());
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.
@@ -1911,8 +1896,8 @@ absl::optional<absl::Status> ClientChannel::CallData::CheckResolution(
   }
   // If the call was queued, add trace annotation.
   if (was_queued) {
-    auto* call_tracer =
-        static_cast<CallTracer*>(call_context_[GRPC_CONTEXT_CALL_TRACER].value);
+    auto* call_tracer = static_cast<CallTracer*>(
+        call_context()[GRPC_CONTEXT_CALL_TRACER].value);
     if (call_tracer != nullptr) {
       call_tracer->RecordAnnotation("Delayed name resolution complete.");
     }
@@ -1957,15 +1942,22 @@ bool ClientChannel::CallData::CheckResolutionLocked(
 //
 
 ClientChannel::FilterBasedCallData::FilterBasedCallData(
-    grpc_call_element* elem, const ClientChannel& chand,
-    const grpc_call_element_args& args)
-    : CallData(chand, args),
+    grpc_call_element* elem, const grpc_call_element_args& args)
+    : path_(CSliceRef(args.path)),
+      call_context_(args.context),
+      call_start_time_(args.start_time),
+      deadline_(args.deadline),
       deadline_state_(elem, args,
-                      GPR_LIKELY(chand.deadline_checking_enabled_)
+                      GPR_LIKELY(static_cast<ClientChannel*>(elem->channel_data)->deadline_checking_enabled_)
                           ? args.deadline
-                          : Timestamp::InfFuture()) {}
+                          : Timestamp::InfFuture()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+    gpr_log(GPR_INFO, "chand=%p calld=%p: created call", chand(), this);
+  }
+}
 
 ClientChannel::FilterBasedCallData::~FilterBasedCallData() {
+  CSliceUnref(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i] == nullptr);
@@ -1974,8 +1966,7 @@ ClientChannel::FilterBasedCallData::~FilterBasedCallData() {
 
 grpc_error_handle ClientChannel::FilterBasedCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
-  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
-  new (elem->call_data) FilterBasedCallData(elem, *chand, *args);
+  new (elem->call_data) FilterBasedCallData(elem, *args);
   return absl::OkStatus();
 }
 
@@ -2294,9 +2285,9 @@ void ClientChannel::FilterBasedCallData::RetryCheckResolutionLocked() {
 }
 
 void ClientChannel::FilterBasedCallData::CreateDynamicCall() {
-  DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,       *path(),
-                                     call_start_time(), deadline(),     arena(),
-                                     call_context(),    call_combiner()};
+  DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,       path_,
+                                     call_start_time_,  deadline_,      arena(),
+                                     call_context_,     call_combiner()};
   grpc_error_handle error;
   DynamicFilters* channel_stack = args.channel_stack.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2424,7 +2415,7 @@ absl::string_view
 ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
     UniqueTypeName type) {
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      lb_call_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+      lb_call_->call_context()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   auto& call_attributes = service_config_call_data->call_attributes();
   auto it = call_attributes.find(type);
   if (it == call_attributes.end()) return absl::string_view();
@@ -2447,7 +2438,7 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
         recv_trailing_metadata_ != nullptr) {
       if (const auto* md = recv_trailing_metadata_->get_pointer(
               EndpointLoadMetricsBinMetadata())) {
-        BackendMetricAllocator allocator(lb_call_->arena_);
+        BackendMetricAllocator allocator(lb_call_->arena());
         lb_call_->backend_metric_data_ =
             ParseBackendMetricData(md->as_string_view(), &allocator);
       }
@@ -2493,8 +2484,7 @@ CallTracer::CallAttemptTracer* GetCallAttemptTracer(
 }  // namespace
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
-    ClientChannel* chand, Slice path, Timestamp deadline, Arena* arena,
-    grpc_call_context_element* call_context,
+    ClientChannel* chand, grpc_call_context_element* call_context,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry)
     : InternallyRefCounted(
@@ -2502,10 +2492,6 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
               ? "LoadBalancedCall"
               : nullptr),
       chand_(chand),
-      path_(std::move(path)),
-      deadline_(deadline),
-      arena_(arena),
-      call_context_(call_context),
       call_dispatch_controller_(call_dispatch_controller),
       call_attempt_tracer_(
           GetCallAttemptTracer(call_context, is_transparent_retry)) {
@@ -2645,7 +2631,9 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
   GPR_ASSERT(connected_subchannel_ == nullptr);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
-  pick_args.path = path_.as_string_view();
+  Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
+  GPR_ASSERT(path != nullptr);
+  pick_args.path = path->as_string_view();
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
   Metadata initial_metadata(send_initial_metadata());
@@ -2736,9 +2724,11 @@ ClientChannel::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
     grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry)
-    : LoadBalancedCall(chand, Slice(CSliceRef(args.path)), args.deadline,
-                       args.arena, args.context, call_dispatch_controller,
+    : LoadBalancedCall(chand, args.context, call_dispatch_controller,
                        is_transparent_retry),
+      deadline_(args.deadline),
+      arena_(args.arena),
+      call_context_(args.context),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       pollent_(pollent),
@@ -3081,7 +3071,7 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
       // Get status from error.
       grpc_status_code code;
       std::string message;
-      grpc_error_get_status(error, self->deadline(), &code, &message,
+      grpc_error_get_status(error, self->deadline_, &code, &message,
                             /*http_error=*/nullptr, /*error_string=*/nullptr);
       status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
@@ -3192,12 +3182,14 @@ void ClientChannel::FilterBasedLoadBalancedCall::RetryPickLocked() {
 }
 
 void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
+  Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
+  GPR_ASSERT(path != nullptr);
   SubchannelCall::Args call_args = {
-      connected_subchannel()->Ref(), pollent_, path(), /*start_time=*/0,
-      deadline(), arena(),
+      connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
+      deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
-      call_context(), call_combiner_};
+      call_context_, call_combiner_};
   grpc_error_handle error;
   subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {

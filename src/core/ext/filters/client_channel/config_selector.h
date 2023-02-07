@@ -65,7 +65,6 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   };
 
   struct GetCallConfigArgs {
-    grpc_slice* path;
     grpc_metadata_batch* initial_metadata;
     Arena* arena;
   };
@@ -132,8 +131,10 @@ class DefaultConfigSelector : public ConfigSelector {
 
   absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;
+    Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
+    GPR_ASSERT(path != nullptr);
     call_config.method_configs =
-        service_config_->GetMethodParsedConfigVector(*args.path);
+        service_config_->GetMethodParsedConfigVector(path->c_slice());
     call_config.service_config = service_config_;
     return call_config;
   }

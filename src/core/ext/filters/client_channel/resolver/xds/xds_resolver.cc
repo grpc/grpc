@@ -659,8 +659,10 @@ absl::optional<uint64_t> HeaderHashHelper(
 
 absl::StatusOr<ConfigSelector::CallConfig>
 XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
+  Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
+  GPR_ASSERT(path != nullptr);
   auto route_index = XdsRouting::GetRouteForRequest(
-      RouteListIterator(&route_table_), StringViewFromSlice(*args.path),
+      RouteListIterator(&route_table_), path->as_string_view(),
       args.initial_metadata);
   if (!route_index.has_value()) {
     return absl::UnavailableError(
