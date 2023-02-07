@@ -23,13 +23,13 @@
 
 #include <initializer_list>
 #include <string>
+#include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "internal.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -60,7 +60,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 
 using grpc_core::HPackParser;
