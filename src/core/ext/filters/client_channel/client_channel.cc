@@ -2042,7 +2042,8 @@ ClientChannel::FilterBasedCallData::FilterBasedCallData(
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       deadline_state_(elem, args,
-                      GPR_LIKELY(static_cast<ClientChannel*>(elem->channel_data)->deadline_checking_enabled_)
+                      GPR_LIKELY(static_cast<ClientChannel*>(elem->channel_data)
+                                     ->deadline_checking_enabled_)
                           ? args.deadline
                           : Timestamp::InfFuture()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2381,7 +2382,7 @@ void ClientChannel::FilterBasedCallData::RetryCheckResolutionLocked() {
 void ClientChannel::FilterBasedCallData::CreateDynamicCall() {
   DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,       path_,
                                      call_start_time_,  deadline_,      arena(),
-                                     call_context(),    call_combiner()};
+                                     call_context_,     call_combiner()};
   grpc_error_handle error;
   DynamicFilters* channel_stack = args.channel_stack.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
