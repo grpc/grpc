@@ -9,7 +9,7 @@
             ],
             "--plugin": [
                 "protoc-gen-grpc=dummy-plugin-not-used",
-                "protoc-gen-myplugin=D:\\myplugin.exe"
+                "REGEX:protoc-gen-myplugin=.*myplugin.exe"
             ],
             "--grpc_out": [
                 "${TEST_OUT_DIR}/obj/Debug/netstandard2.0"
