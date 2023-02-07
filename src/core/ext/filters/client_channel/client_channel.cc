@@ -414,8 +414,7 @@ class DynamicTerminationFilter {
                              const grpc_channel_info* /*info*/) {}
 
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      grpc_channel_element* elem, CallArgs call_args,
-      NextPromiseFactory next_promise_factory) {
+      grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     return chand->chand_->CreateLoadBalancedCallPromise(
         std::move(call_args), /*is_transparent_retry=*/false);
@@ -1188,8 +1187,7 @@ ClientChannel::~ClientChannel() {
 }
 
 ArenaPromise<ServerMetadataHandle> ClientChannel::MakeCallPromise(
-    grpc_channel_element* elem, CallArgs call_args,
-    NextPromiseFactory next_promise_factory) {
+    grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
   auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   // TODO(roth): Is this the right lifetime story for calld?
   auto* calld = GetContext<Arena>()->ManagedNew<PromiseBasedCallData>(chand);
