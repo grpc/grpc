@@ -66,6 +66,7 @@
 #include <address_sorting/address_sorting.h>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -74,8 +75,10 @@
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
@@ -795,7 +798,9 @@ class AresDNSResolver : public DNSResolver {
       absl::string_view name_server) override {
     // TODO(yijiem): not thread-safe
     if (!dns_resolver_) {
-      dns_resolver_ = GetDefaultEventEngine()->GetDNSResolver({.dns_server = name_server});
+      dns_resolver_ =
+          ::grpc_event_engine::experimental::GetDefaultEventEngine()
+              ->GetDNSResolver({.dns_server = std::string(name_server)});
     }
     return dns_resolver_->LookupHostname(
         /*on_resolve=*/absl::bind_front(&AresDNSResolver::OnResolve, this,
