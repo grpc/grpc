@@ -3328,6 +3328,12 @@ void ClientChannel::PromiseBasedLoadBalancedCall::Orphan() {
 ArenaPromise<ServerMetadataHandle>
 ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
     CallArgs call_args) {
+  // Extract peer name from server initial metadata.
+  call_args.server_initial_metadata->InterceptAndMap(
+      [this](ServerMetadataHandle metadata) {
+        peer_string_ = metadata->get(PeerString()).value_or("");
+        return metadata;
+      });
   client_initial_metadata_ = std::move(call_args.client_initial_metadata);
   return Seq(
       TrySeq(
@@ -3366,8 +3372,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
         RecordCallCompletion(
             status, metadata.get(),
             &GetContext<CallContext>()->call_stats()->transport_stream_stats,
-            // FIXME: peer address
-            "");
+            peer_string_);
         recorded_completion_ = true;
         return metadata;
       });

@@ -643,6 +643,7 @@ class ClientChannel::PromiseBasedLoadBalancedCall
   Waker waker_;
   bool was_queued_ = false;
   bool recorded_completion_ = false;
+  absl::string_view peer_string_;
 };
 
 // A sub-class of ServiceConfigCallData used to access the
