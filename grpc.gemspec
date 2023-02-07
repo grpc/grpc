@@ -1387,6 +1387,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/activity.cc )
   s.files += %w( src/core/lib/promise/activity.h )
   s.files += %w( src/core/lib/promise/arena_promise.h )
+  s.files += %w( src/core/lib/promise/cancel_callback.h )
   s.files += %w( src/core/lib/promise/context.h )
   s.files += %w( src/core/lib/promise/detail/basic_join.h )
   s.files += %w( src/core/lib/promise/detail/basic_seq.h )

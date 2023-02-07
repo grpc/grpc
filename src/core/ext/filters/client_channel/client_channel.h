@@ -470,7 +470,7 @@ class ClientChannel::LoadBalancedCall
 
   // Called when adding the call to the LB queue.
   virtual void OnAddToQueueLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) = 0;
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) {}
 
   ClientChannel* chand_;
 
@@ -567,7 +567,7 @@ class ClientChannel::FilterBasedLoadBalancedCall
   void TryPick(bool was_queued);
 
   void OnAddToQueueLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) {}
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
 
   void RetryPickLocked() override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);

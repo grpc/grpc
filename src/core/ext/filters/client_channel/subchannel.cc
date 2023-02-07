@@ -59,6 +59,7 @@
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -142,12 +143,14 @@ ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
             channelz::SubchannelNode* channelz_subchannel =
                 self->channelz_subchannel();
             GPR_ASSERT(channelz_subchannel != nullptr);
-            if (metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN)
+            if (metadata->get(GrpcStatusMetadata())
+                    .value_or(GRPC_STATUS_UNKNOWN)
                 != GRPC_STATUS_OK) {
               channelz_subchannel->RecordCallFailed();
             } else {
               channelz_subchannel->RecordCallSucceeded();
             }
+            return metadata;
           }),
       [self = Ref()]() {
         channelz::SubchannelNode* channelz_subchannel =
