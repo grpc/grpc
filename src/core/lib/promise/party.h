@@ -25,9 +25,7 @@ namespace grpc_core {
 // A Party is an Activity with multiple participant promises.
 class Party : public Activity, private Wakeable {
  public:
-  Party(Arena* arena,
-        grpc_event_engine::experimental::EventEngine* event_engine)
-      : arena_(arena), event_engine_(event_engine) {}
+  explicit Party(Arena* arena) : arena_(arena) {}
 
   template <typename Promise, typename OnComplete>
   void Spawn(Promise promise, OnComplete on_complete);
@@ -95,7 +93,6 @@ class Party : public Activity, private Wakeable {
   // clang-format on
 
   Arena* const arena_;
-  grpc_event_engine::experimental::EventEngine* const event_engine_;
   absl::InlinedVector<Arena::PoolPtr<Participant>, 1> participants_;
   std::atomic<uint64_t> wakeups_and_refs_{0};
   std::atomic<AddingParticipant*> adding_{nullptr};
