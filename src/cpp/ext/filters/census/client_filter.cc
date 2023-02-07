@@ -73,9 +73,8 @@ constexpr uint32_t
 
 grpc_error_handle OpenCensusClientChannelData::Init(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
-  bool observability_enabled = grpc_core::ChannelArgs::FromC(args->channel_args)
-                                   .GetInt(GRPC_ARG_ENABLE_OBSERVABILITY)
-                                   .value_or(true);
+  bool observability_enabled =
+      args->channel_args.GetInt(GRPC_ARG_ENABLE_OBSERVABILITY).value_or(true);
   // Only run the Post-Init Registry if observability is enabled to avoid
   // running into a cyclic loop for exporter channels.
   if (observability_enabled) {

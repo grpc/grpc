@@ -161,6 +161,9 @@ class PythonArtifact:
             environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
             if self.arch == 'aarch64':
                 environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
+                # As we won't strip the binary with auditwheel (see below), strip
+                # it at link time.
+                environ['LDFLAGS'] = '-s'
             else:
                 # only run auditwheel if we're not crosscompiling
                 environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
@@ -366,7 +369,7 @@ def targets():
         PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38', presubmit=True),
         PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp310-cp310'),
-        # TODO(https://github.com/grpc/grpc/issues/30927): Support aarch64 with 3.11. Blocked on dockcross support.
+        PythonArtifact('manylinux2014', 'aarch64', 'cp311-cp311'),
         PythonArtifact('linux_extra', 'armv7', 'cp37-cp37m', presubmit=True),
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
