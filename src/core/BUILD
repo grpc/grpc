@@ -442,6 +442,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena_promise",
+        "//:gpr",
     ],
 )
 
