@@ -15,6 +15,7 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
+#include <cstdint>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -42,44 +43,94 @@ Waker Party::MakeOwningWaker() {
 
 void Party::ForceImmediateRepoll() {
   GPR_ASSERT(currently_polling_ != kNotPolling);
-  repoll_participants_ |= 1 << currently_polling_;
+  wakeups_and_refs_.fetch_or(1 << currently_polling_,
+                             std::memory_order_relaxed);
 }
 
 void Party::Run() {
-  MutexLock lock(&mu_);
   ScopedActivity activity(this);
-  uint32_t prev_wakeups_and_refs;
+  uint64_t prev_wakeups_and_refs;
   do {
     prev_wakeups_and_refs = wakeups_and_refs_.fetch_and(
-                                kRefMask | kAwoken, std::memory_order_relaxed) |
-                            std::exchange(repoll_participants_, 0);
-    const uint32_t wakeups = prev_wakeups_and_refs & kParticipantMask;
+        kRefMask | kAwoken, std::memory_order_relaxed);
+    uint64_t wakeups = prev_wakeups_and_refs & kParticipantMask;
+    if (prev_wakeups_and_refs & kAddsPending) DrainAdds(wakeups);
     prev_wakeups_and_refs &= kRefMask | kAwoken;
-    if (wakeups != 0) {
-      for (uint32_t i = 0; i < 16; i++) {
-        if ((wakeups & (1 << i)) != 0 && participants_[i] != nullptr) {
-          currently_polling_ = i;
-          participants_[i]->Poll();
-          currently_polling_ = kNotPolling;
-        }
-      }
+    for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
+      if ((wakeups & 1) == 0) continue;
+      if (participants_[i] == nullptr) continue;
+      currently_polling_ = i;
+      if (participants_[i]->Poll()) participants_[i].reset();
+      currently_polling_ = kNotPolling;
     }
-  } while (repoll_participants_ != 0 ||
-           !wakeups_and_refs_.compare_exchange_weak(
-               prev_wakeups_and_refs,
-               (prev_wakeups_and_refs & kRefMask) - kOneRef,
-               std::memory_order_acq_rel, std::memory_order_relaxed));
+  } while (!wakeups_and_refs_.compare_exchange_weak(
+      prev_wakeups_and_refs,
+      // Clear awoken bit and unref
+      (prev_wakeups_and_refs & kRefMask), std::memory_order_acq_rel,
+      std::memory_order_relaxed));
+}
+
+void Party::DrainAdds(uint64_t& wakeups) {
+  AddingParticipant* adding =
+      adding_.exchange(nullptr, std::memory_order_acquire);
+  while (adding != nullptr) {
+    wakeups |= 1 << SituateNewParticipant(std::move(adding->participant));
+    delete std::exchange(adding, adding->next);
+  }
+}
+
+void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
+  // Lock
+  while (true) {
+    auto prev_wakeups_and_refs =
+        wakeups_and_refs_.fetch_or(kAwoken, std::memory_order_relaxed);
+    if ((prev_wakeups_and_refs & kAwoken) != 0) {
+      // Already locked: add to the list of things to add
+      auto* add = new AddingParticipant{std::move(participant), nullptr};
+      while (!adding_.compare_exchange_weak(add->next, add,
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_relaxed)) {
+      }
+      // And signal that there are adds waiting
+      prev_wakeups_and_refs = wakeups_and_refs_.fetch_or(
+          kAwoken | kAddsPending, std::memory_order_relaxed);
+      if ((prev_wakeups_and_refs & kAwoken) == 0) {
+        // We queued the add but the lock was released before we signalled that.
+        // We acquired the lock though, so now we can run.
+        Run();
+      }
+      return;
+    }
+    break;
+  }
+
+  wakeups_and_refs_.fetch_or(1
+                             << SituateNewParticipant(std::move(participant)));
+  Run();
+}
+
+size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
+  for (size_t i = 0; i < participants_.size(); i++) {
+    if (participants_[i] != nullptr) continue;
+    participants_[i] = std::move(participant);
+    return i;
+  }
+
+  participants_.push_back(std::move(participant));
+  return participants_.size() - 1;
+}
+
+void Party::ScheduleWakeup(uint64_t participant_index) {
+  uint64_t prev_wakeups =
+      wakeups_and_refs_.fetch_or((1 << participant_index) | kAwoken);
+  if ((prev_wakeups & kAwoken) == 0) {
+    Run();
+  }
+  Unref();
 }
 
 void Party::Wakeup(void* arg) {
-  const uint32_t i = reinterpret_cast<uintptr_t>(arg);
-  uint32_t prev_wakeups =
-      wakeups_and_refs_.fetch_or((1 << i) | kAwoken) & kAwoken;
-  if (prev_wakeups == 0) {
-    event_engine_->Run([this]() { Run(); });
-  } else {
-    Unref();
-  }
+  ScheduleWakeup(reinterpret_cast<uintptr_t>(arg));
 }
 
 void Party::Drop(void* arg) { Unref(); }
