@@ -51,12 +51,12 @@ class Wakeable {
  public:
   // Wake up the underlying activity.
   // After calling, this Wakeable cannot be used again.
-  virtual void Wakeup() = 0;
+  virtual void Wakeup(void* arg) = 0;
   // Drop this wakeable without waking up the underlying activity.
-  virtual void Drop() = 0;
+  virtual void Drop(void* arg) = 0;
 
   // Return the underlying activity debug tag, or "<unknown>" if not available.
-  virtual std::string ActivityDebugTag() const = 0;
+  virtual std::string ActivityDebugTag(void* arg) const = 0;
 
  protected:
   inline ~Wakeable() {}
@@ -64,95 +64,73 @@ class Wakeable {
 
 namespace promise_detail {
 struct Unwakeable final : public Wakeable {
-  void Wakeup() override {}
-  void Drop() override {}
-  std::string ActivityDebugTag() const override;
+  void Wakeup(void*) override {}
+  void Drop(void*) override {}
+  std::string ActivityDebugTag(void*) const override;
 };
 static Unwakeable* unwakeable() {
   return NoDestructSingleton<Unwakeable>::Get();
 }
 }  // namespace promise_detail
 
-class AtomicWaker;
-
 // An owning reference to a Wakeable.
 // This type is non-copyable but movable.
 class Waker {
  public:
-  explicit Waker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  Waker() : Waker(promise_detail::unwakeable()) {}
-  ~Waker() { wakeable_->Drop(); }
+  Waker(Wakeable* wakeable, void* arg) : wakeable_and_arg_{wakeable, arg} {}
+  Waker() : Waker(promise_detail::unwakeable(), nullptr) {}
+  ~Waker() { wakeable_and_arg_.Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
-  Waker(Waker&& other) noexcept : wakeable_(other.Take()) {}
+  Waker(Waker&& other) noexcept : wakeable_and_arg_(other.Take()) {}
   Waker& operator=(Waker&& other) noexcept {
-    std::swap(wakeable_, other.wakeable_);
+    std::swap(wakeable_and_arg_, other.wakeable_and_arg_);
     return *this;
   }
 
   // Wake the underlying activity.
-  void Wakeup() { Take()->Wakeup(); }
+  void Wakeup() { Take().Wakeup(); }
 
   template <typename H>
   friend H AbslHashValue(H h, const Waker& w) {
-    return H::combine(std::move(h), w.wakeable_);
+    return H::combine(H::combine(std::move(h), w.wakeable_and_arg_.wakeable),
+                      w.wakeable_and_arg_.arg);
   }
 
   bool operator==(const Waker& other) const noexcept {
-    return wakeable_ == other.wakeable_;
+    return wakeable_and_arg_ == other.wakeable_and_arg_;
   }
 
   bool operator!=(const Waker& other) const noexcept {
-    return wakeable_ != other.wakeable_;
+    return !operator==(other);
   }
 
   std::string ActivityDebugTag() {
-    return wakeable_ == nullptr ? "<unknown>" : wakeable_->ActivityDebugTag();
+    return wakeable_and_arg_.ActivityDebugTag();
   }
 
  private:
-  friend class AtomicWaker;
+  struct WakeableAndArg {
+    Wakeable* wakeable;
+    void* arg;
 
-  Wakeable* Take() {
-    return std::exchange(wakeable_, promise_detail::unwakeable());
+    void Wakeup() { wakeable->Wakeup(arg); }
+    void Drop() { wakeable->Drop(arg); }
+    std::string ActivityDebugTag() const {
+      return wakeable == nullptr ? "<unknown>"
+                                 : wakeable->ActivityDebugTag(arg);
+    }
+    bool operator==(const WakeableAndArg& other) const noexcept {
+      return wakeable == other.wakeable && arg == other.arg;
+    }
+  };
+
+  WakeableAndArg Take() {
+    return std::exchange(wakeable_and_arg_,
+                         {promise_detail::unwakeable(), nullptr});
   }
 
-  Wakeable* wakeable_;
-};
-
-// An atomic variant of Waker - this type is non-copyable and non-movable.
-class AtomicWaker {
- public:
-  explicit AtomicWaker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  AtomicWaker() : AtomicWaker(promise_detail::unwakeable()) {}
-  explicit AtomicWaker(Waker waker) : AtomicWaker(waker.Take()) {}
-  ~AtomicWaker() { wakeable_.load(std::memory_order_acquire)->Drop(); }
-  AtomicWaker(const AtomicWaker&) = delete;
-  AtomicWaker& operator=(const AtomicWaker&) = delete;
-  AtomicWaker(AtomicWaker&& other) noexcept = delete;
-  AtomicWaker& operator=(AtomicWaker&& other) noexcept = delete;
-
-  // Wake the underlying activity.
-  void Wakeup() { Take()->Wakeup(); }
-
-  // Return true if there is a not-unwakeable wakeable present.
-  bool Armed() const noexcept {
-    return wakeable_.load(std::memory_order_relaxed) !=
-           promise_detail::unwakeable();
-  }
-
-  // Set to some new waker
-  void Set(Waker waker) {
-    wakeable_.exchange(waker.Take(), std::memory_order_acq_rel)->Wakeup();
-  }
-
- private:
-  Wakeable* Take() {
-    return wakeable_.exchange(promise_detail::unwakeable(),
-                              std::memory_order_acq_rel);
-  }
-
-  std::atomic<Wakeable*> wakeable_;
+  WakeableAndArg wakeable_and_arg_;
 };
 
 // An Activity tracks execution of a single promise.

@@ -14,41 +14,74 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <atomic>
+#include <utility>
+
 #include "absl/cleanup/cleanup.h"
+
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 
-void Party::Participant::Ref() { refs_.Ref(); }
-
-void Party::Participant::Unref() {
-  if (refs_.Unref()) party_->Farewell(this);
+void Party::Ref() {
+  wakeups_and_refs_.fetch_add(kOneRef, std::memory_order_relaxed);
 }
 
-void Party::Participant::Wakeup() {
-  party_->ScheduleWakeupFor(this);
-  Unref();
+void Party::Unref() {
+  auto prev = wakeups_and_refs_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+  if (prev == kOneRef) {
+    delete this;
+  }
+  GPR_DEBUG_ASSERT((prev & kRefMask) != 0);
 }
 
-void Party::Participant::Drop() { Unref(); }
+Waker Party::MakeOwningWaker() {
+  Ref();
+  return Waker(this, reinterpret_cast<void*>(currently_polling_));
+}
+
+void Party::ForceImmediateRepoll() {
+  GPR_ASSERT(currently_polling_ != kNotPolling);
+  repoll_participants_ |= 1 << currently_polling_;
+}
 
 void Party::Run() {
-  GPR_ASSERT(polling_participant_ == nullptr);
+  MutexLock lock(&mu_);
   ScopedActivity activity(this);
-  while (!wakeup_participants_.empty()) {
-    polling_participant_ = wakeup_participants_.back();
-    wakeup_participants_.pop_back();
-    polling_participant_->Poll();
-    polling_participant_->Unref();
-    polling_participant_ = nullptr;
+  uint32_t prev_wakeups_and_refs;
+  do {
+    prev_wakeups_and_refs = wakeups_and_refs_.fetch_and(
+                                kRefMask | kAwoken, std::memory_order_relaxed) |
+                            std::exchange(repoll_participants_, 0);
+    const uint32_t wakeups = prev_wakeups_and_refs & kParticipantMask;
+    prev_wakeups_and_refs &= kRefMask | kAwoken;
+    if (wakeups != 0) {
+      for (uint32_t i = 0; i < 16; i++) {
+        if ((wakeups & (1 << i)) != 0 && participants_[i] != nullptr) {
+          currently_polling_ = i;
+          participants_[i]->Poll();
+          currently_polling_ = kNotPolling;
+        }
+      }
+    }
+  } while (repoll_participants_ != 0 ||
+           !wakeups_and_refs_.compare_exchange_weak(
+               prev_wakeups_and_refs,
+               (prev_wakeups_and_refs & kRefMask) - kOneRef,
+               std::memory_order_acq_rel, std::memory_order_relaxed));
+}
+
+void Party::Wakeup(void* arg) {
+  const uint32_t i = reinterpret_cast<uintptr_t>(arg);
+  uint32_t prev_wakeups =
+      wakeups_and_refs_.fetch_or((1 << i) | kAwoken) & kAwoken;
+  if (prev_wakeups == 0) {
+    event_engine_->Run([this]() { Run(); });
+  } else {
+    Unref();
   }
 }
 
-void Party::ScheduleWakeupFor(Participant* participant) {
-  for (auto p : wakeup_participants_) {
-    if (p == participant) return;
-  }
-  wakeup_participants_.push_back(participant);
-  participant->Ref();
-}
+void Party::Drop(void* arg) { Unref(); }
 
 }  // namespace grpc_core

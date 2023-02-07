@@ -15,46 +15,41 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 
+#include "activity.h"
+
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 
 namespace grpc_core {
 
 // A Party is an Activity with multiple participant promises.
-class Party : public Activity {
+class Party : public Activity, private Wakeable {
  public:
+  Party(Arena* arena,
+        grpc_event_engine::experimental::EventEngine* event_engine)
+      : arena_(arena), event_engine_(event_engine) {}
+
   template <typename Promise, typename OnComplete>
   void Spawn(Promise promise, OnComplete on_complete);
+
+  void Orphan() final;
 
   void ForceImmediateRepoll() final;
   Waker MakeOwningWaker() final;
   Waker MakeNonOwningWaker() final;
 
  private:
-  class Participant : public Wakeable {
+  class Participant {
    public:
-    explicit Participant(Party* party);
     // Poll the participant.
     virtual void Poll() = 0;
-
-    void Ref();
-    void Unref();
-    void Wakeup() final;
-    void Drop() final;
-    std::string ActivityDebugTag() const final;
-
-   private:
-    RefCount refs_;
-    Party* const party_;
   };
 
   template <typename Promise, typename OnComplete>
   class ParticipantImpl final : public Participant {
    public:
-    ParticipantImpl(Party* party, Promise promise, OnComplete on_complete)
-        : Participant(party),
-          promise_(std::move(promise)),
-          on_complete_(std::move(on_complete)) {}
+    ParticipantImpl(Promise promise, OnComplete on_complete)
+        : promise_(std::move(promise)), on_complete_(std::move(on_complete)) {}
 
     void Poll() override {
       auto p = promise_();
@@ -68,25 +63,47 @@ class Party : public Activity {
     OnComplete on_complete_;
   };
 
-  void Farewell(Participant* participant);
-  void ScheduleWakeupFor(Participant* participant);
+  void Wakeup(void* arg) final;
+  void Drop(void* arg) final;
+
+  void Ref();
+  void Unref();
+  void ScheduleWakeup(uint32_t participant_index);
+
   // Derived types will likely want to override this to set up their contexts
   // before polling.
   virtual void Run();
 
+  static constexpr uint8_t kNotPolling = 255;
+
+  static constexpr uint32_t kParticipantMask = 0x7fff;
+  static constexpr uint32_t kAwoken = 0x8000;
+  static constexpr uint32_t kRefMask = 0xffff0000;
+  static constexpr uint32_t kOneRef = 0x00010000;
+
   Arena* const arena_;
-  absl::InlinedVector<Participant*, 1> active_participants_;
-  absl::InlinedVector<Participant*, 1> wakeup_participants_;
-  absl::InlinedVector<Participant*, 1> farewell_participants_;
-  Participant* polling_participant_ = nullptr;
-  grpc_event_engine::experimental::EventEngine* event_engine_ = nullptr;
+  grpc_event_engine::experimental::EventEngine* const event_engine_;
+  Mutex mu_;
+  absl::InlinedVector<Arena::PoolPtr<Participant>, 1> participants_
+      ABSL_GUARDED_BY(mu_);
+  std::atomic<uint32_t> wakeups_and_refs_{0};
+  uint16_t repoll_participants_ = 0;
+  uint8_t currently_polling_ = kNotPolling;
 };
 
 template <typename Promise, typename OnComplete>
 void Party::Spawn(Promise promise, OnComplete on_complete) {
-  active_participants_.push_back(
-      arena_->New<ParticipantImpl<Promise, OnComplete>>(
-          this, std::move(promise), std::move(on_complete)));
+  for (size_t i = 0; i < participants_.size(); i++) {
+    if (participants_[i] == nullptr) {
+      participants_[i] =
+          arena_->MakePooled<ParticipantImpl<Promise, OnComplete>>(
+              std::move(promise), std::move(on_complete));
+      return;
+    }
+  }
+  participants_.push_back(
+      arena_->MakePooled<ParticipantImpl<Promise, OnComplete>>(
+          std::move(promise), std::move(on_complete)));
 }
 
 }  // namespace grpc_core
