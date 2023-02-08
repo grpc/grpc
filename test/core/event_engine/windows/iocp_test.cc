@@ -341,9 +341,12 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
           memset(pserver->write_info()->overlapped(), 0, sizeof(OVERLAPPED));
           int status = WSASend(pserver->socket(), &write_wsabuf, 1, &bytes_sent,
                                0, pserver->write_info()->overlapped(), NULL);
-          EXPECT_EQ(status, 0);
           if (status != 0) {
-            LogErrorMessage(WSAGetLastError(), "WSASend");
+            int wsa_error = WSAGetLastError();
+            if (wsa_error != WSA_IO_PENDING) {
+              LogErrorMessage(wsa_error, "WSASend");
+              FAIL() << "Error in WSASend. See logs";
+            }
           }
         }
       }
