@@ -3269,18 +3269,18 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     // Mark the call as having completed.
     // Returns true if this finishes a previous
     // RequestReceiveCloseOnServer.
-    bool CompleteCall(bool success) {
+    bool CompleteCallWithCancelledSetTo(bool cancelled) {
       switch (state_) {
         case kUnset:
-          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
+          state_ = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
           return false;
         case kFinishedWithFailure:
           return false;
         case kFinishedWithSuccess:
           abort();  // unreachable
         default:
-          *reinterpret_cast<int*>(state_) = success ? 0 : 1;
-          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
+          *reinterpret_cast<int*>(state_) = cancelled ? 1 : 0;
+          state_ = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
           return true;
       }
     }
@@ -3441,8 +3441,8 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
             DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
             result->DebugString().c_str());
   }
-  if (recv_close_op_cancel_state_.CompleteCall(
-          result->get(GrpcStatusFromWire()).value_or(false))) {
+  if (recv_close_op_cancel_state_.CompleteCallWithCancelledSetTo(
+          result->get(GrpcCallWasCancelled()).value_or(true))) {
     FinishOpOnCompletion(&recv_close_completion_,
                          PendingOp::kReceiveCloseOnServer);
   }
@@ -3627,7 +3627,7 @@ void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
   if (!promise_.has_value()) return;
   cancel_send_and_receive_ = true;
   send_trailing_metadata_ = ServerMetadataFromStatus(error, arena());
-  send_trailing_metadata_->Set(GrpcStatusFromWire(), false);
+  send_trailing_metadata_->Set(GrpcCallWasCancelled(), true);
   ForceWakeup();
 }
 

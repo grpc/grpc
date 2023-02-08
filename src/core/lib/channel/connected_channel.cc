@@ -1285,10 +1285,10 @@ class ServerStream final : public ConnectedChannelStream {
       md->Set(GrpcStatusMetadata(),
               static_cast<grpc_status_code>(result.code()));
       md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(result.message()));
-      md->Set(GrpcStatusFromWire(), false);
+      md->Set(GrpcCallWasCancelled(), true);
     }
-    if (!md->get(GrpcStatusFromWire()).has_value()) {
-      md->Set(GrpcStatusFromWire(), completing.sent);
+    if (!md->get(GrpcCallWasCancelled()).has_value()) {
+      md->Set(GrpcCallWasCancelled(), !completing.sent);
     }
     call_state_.emplace<Complete>(Complete{std::move(md)});
     waker.Wakeup();
