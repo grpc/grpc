@@ -206,7 +206,10 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
+    ss.source_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.cc',
+                      'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                      'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                      'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/channel_idle/channel_idle_filter.cc',
                       'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                       'src/core/ext/filters/channel_idle/idle_filter_state.cc',
@@ -1181,7 +1184,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/shim.h',
                       'src/core/lib/event_engine/slice.cc',
                       'src/core/lib/event_engine/slice_buffer.cc',
-                      'src/core/lib/event_engine/socket_notifier.h',
                       'src/core/lib/event_engine/tcp_socket_utils.cc',
                       'src/core/lib/event_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/thread_local.cc',
@@ -1893,7 +1895,9 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
                       'third_party/xxhash/xxhash.h'
-    ss.private_header_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+    ss.private_header_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                              'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                              'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                               'src/core/ext/filters/channel_idle/idle_filter_state.h',
                               'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -2378,7 +2382,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
                               'src/core/lib/event_engine/resolved_address_internal.h',
                               'src/core/lib/event_engine/shim.h',
-                              'src/core/lib/event_engine/socket_notifier.h',
                               'src/core/lib/event_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/thread_local.h',
                               'src/core/lib/event_engine/thread_pool.h',

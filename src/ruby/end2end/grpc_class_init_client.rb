@@ -46,15 +46,14 @@ def run_gc_stress_test(test_proc)
 end
 
 def run_concurrency_stress_test(test_proc)
+  thds = []
   100.times do
-    Thread.new do
+    thds << Thread.new do
       test_proc.call
     end
   end
-
   test_proc.call
-
-  fail '(expected) exception thrown while child thread initing class'
+  thds.each(&:join)
 end
 
 # default (no gc_stress and no concurrency_stress)
@@ -139,13 +138,13 @@ def main
   # clean shutdown in a different way
   case stress_test
   when 'gc'
-    p 'run gc stress'
+    p "run gc stress: #{grpc_class}"
     run_gc_stress_test(test_proc)
   when 'concurrency'
-    p 'run concurrency stress'
+    p "run concurrency stress: #{grpc_class}"
     run_concurrency_stress_test(test_proc)
   when ''
-    p 'run default'
+    p "run default: #{grpc_class}"
     run_default_test(test_proc)
   else
     fail "bad --stress_test=#{stress_test} param"

@@ -125,6 +125,7 @@ class PosixEnginePollerManager
   grpc_event_engine::experimental::PosixEventPoller* poller_ = nullptr;
   std::atomic<PollerState> poller_state_{PollerState::kOk};
   std::shared_ptr<ThreadPool> executor_;
+  bool trigger_shutdown_called_;
 };
 #endif  // GRPC_POSIX_SOCKET_TCP
 
