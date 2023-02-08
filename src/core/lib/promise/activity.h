@@ -280,7 +280,7 @@ class FreestandingActivity : public Activity, private Wakeable {
  public:
   Waker MakeOwningWaker() final {
     Ref();
-    return Waker(this);
+    return Waker(this, nullptr);
   }
   Waker MakeNonOwningWaker() final;
 
@@ -329,7 +329,7 @@ class FreestandingActivity : public Activity, private Wakeable {
 
   Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
  private:
   class Handle;
@@ -463,7 +463,7 @@ class PromiseActivity final
   // the activity to an external threadpool to run. If the activity is already
   // running on this thread, a note is taken of such and the activity is
   // repolled if it doesn't complete.
-  void Wakeup() final {
+  void Wakeup(void*) final {
     // If there is an active activity, but hey it's us, flag that and we'll loop
     // in RunLoop (that's calling from above here!).
     if (Activity::is_current()) {
@@ -482,7 +482,7 @@ class PromiseActivity final
   }
 
   // Drop a wakeup
-  void Drop() final { this->WakeupComplete(); }
+  void Drop(void*) final { this->WakeupComplete(); }
 
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
