@@ -18,11 +18,10 @@
 
 #include <atomic>
 #include <cstdint>
+#include <memory>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
-
-#include "src/core/lib/gprpp/crash.h"
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
