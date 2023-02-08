@@ -52,14 +52,8 @@ EXPERIMENTS = {
         ],
     },
     "on": {
-        "core_end2end_tests": [
-            "new_hpack_huffman_decoder",
-        ],
         "flow_control_test": [
             "flow_control_fixes",
-        ],
-        "hpack_test": [
-            "new_hpack_huffman_decoder",
         ],
     },
     "opt": {
