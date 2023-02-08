@@ -2164,7 +2164,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
-        "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
@@ -2175,7 +2174,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
-        "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
         "src/cpp/ext/filters/census/grpc_plugin.h",
@@ -2214,6 +2212,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "//src/core:arena",
+        "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_stack_type",
         "//src/core:closure",
