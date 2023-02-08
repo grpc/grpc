@@ -1292,6 +1292,10 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   // Otherwise, we go into TRANSIENT_FAILURE.
   if (lb_policy_ == nullptr) {
     grpc_error_handle error = absl_status_to_grpc_error(status);
+    // Update connectivity state.
+    UpdateStateAndPickerLocked(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
+        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
@@ -1299,10 +1303,6 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
           MaybeRewriteIllegalStatusCode(status, "resolver");
       ReprocessQueuedResolverCalls();
     }
-    // Update connectivity state.
-    UpdateStateAndPickerLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
-        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
   }
 }
 
