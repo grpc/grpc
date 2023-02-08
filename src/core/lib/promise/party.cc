@@ -17,7 +17,6 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
-#include <cstdint>
 #include <memory>
 #include <utility>
 
