@@ -37,7 +37,7 @@ class OpenCensusServerFilter : public grpc_core::ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<OpenCensusServerFilter> Create(
-      const grpc_core::ChannelArgs& args,
+      const grpc_core::ChannelArgs& /*args*/,
       grpc_core::ChannelFilter::Args /*filter_args*/);
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(

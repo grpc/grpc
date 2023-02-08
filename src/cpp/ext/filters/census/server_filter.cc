@@ -204,7 +204,7 @@ const grpc_channel_filter OpenCensusServerFilter::kFilter =
             grpc_core::kFilterExaminesOutboundMessages>("opencensus_server");
 
 absl::StatusOr<OpenCensusServerFilter> OpenCensusServerFilter::Create(
-    const grpc_core::ChannelArgs& args,
+    const grpc_core::ChannelArgs& /*args*/,
     grpc_core::ChannelFilter::Args /*filter_args*/) {
   OpenCensusRegistry::Get().RunFunctionsPostInit();
   return OpenCensusServerFilter();
