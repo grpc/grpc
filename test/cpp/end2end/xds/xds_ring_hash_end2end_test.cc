@@ -994,11 +994,8 @@ TEST_P(RingHashTest, ReattemptWhenAllEndpointsUnreachable) {
   ShutdownBackend(0);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "ring hash cannot find a connected subchannel; first failure: "
-      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: FD shutdown)",
+      MakeConnectionFailureRegex(
+          "ring hash cannot find a connected subchannel; first failure: "),
       RpcOptions().set_metadata(std::move(metadata)));
   StartBackend(0);
   // Ensure we are actively connecting without any traffic.
@@ -1036,11 +1033,8 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   gpr_log(GPR_INFO, "=== SENDING FIRST RPC ===");
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "ring hash cannot find a connected subchannel; first failure: "
-      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: FD shutdown)",
+      MakeConnectionFailureRegex(
+          "ring hash cannot find a connected subchannel; first failure: "),
       rpc_options);
   gpr_log(GPR_INFO, "=== DONE WITH FIRST RPC ===");
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
@@ -1075,11 +1069,8 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   gpr_log(GPR_INFO, "=== SENDING SECOND RPC ===");
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "ring hash cannot find a connected subchannel; first failure: "
-      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: FD shutdown)",
+      MakeConnectionFailureRegex(
+          "ring hash cannot find a connected subchannel; first failure: "),
       rpc_options);
   gpr_log(GPR_INFO, "=== STARTING BACKEND 1 ===");
   StartBackend(1);
