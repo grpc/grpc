@@ -1293,9 +1293,8 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   if (lb_policy_ == nullptr) {
     grpc_error_handle error = absl_status_to_grpc_error(status);
     // Update connectivity state.
-    UpdateStateAndPickerLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
-        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
+    UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                      "resolver failure");
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
@@ -1439,9 +1438,8 @@ void ClientChannel::CreateResolverLocked() {
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
-  UpdateStateAndPickerLocked(
-      GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+  UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status(),
+                    "started resolving");
   resolver_->StartLocked();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p: created resolver=%p", this, resolver_.get());
@@ -1467,10 +1465,26 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
   }
 }
 
+void ClientChannel::UpdateStateLocked(
+    grpc_connectivity_state state, const absl::Status& status,
+    const char* reason) {
+  state_tracker_.SetState(state, status, reason);
+  if (channelz_node_ != nullptr) {
+    channelz_node_->SetConnectivityState(state);
+    channelz_node_->AddTraceEvent(
+        channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string(
+            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                state)));
+  }
+}
+
 void ClientChannel::UpdateStateAndPickerLocked(
     grpc_connectivity_state state, const absl::Status& status,
     const char* reason,
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+  // Update connectivity state.
+  UpdateStateLocked(state, status, reason);
   // Special case for IDLE and SHUTDOWN states.
   if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
     saved_service_config_.reset();
@@ -1488,16 +1502,6 @@ void ClientChannel::UpdateStateAndPickerLocked(
       config_selector_to_unref = std::move(config_selector_);
       dynamic_filters_to_unref = std::move(dynamic_filters_);
     }
-  }
-  // Update connectivity state.
-  state_tracker_.SetState(state, status, reason);
-  if (channelz_node_ != nullptr) {
-    channelz_node_->SetConnectivityState(state);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                state)));
   }
   // Grab the LB lock to update the picker and trigger reprocessing of the
   // queued picks.
@@ -1642,6 +1646,9 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(
               grpc_error_to_absl_status(op->disconnect_with_error)));
+      // TODO(roth): If this happens when we're still waiting for a
+      // resolver result, we need to trigger failures for all calls in
+      // the resolver queue here.
     }
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "start_transport_op");
