@@ -2714,11 +2714,6 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   // For batches containing a send_initial_metadata op, acquire the
   // channel's data plane mutex to pick a subchannel.
   if (GPR_LIKELY(batch->send_initial_metadata)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand_,
-              this);
-    }
     PickSubchannel(/*was_queued=*/false);
   } else {
     // For all other batches, release the call combiner.
@@ -2953,6 +2948,11 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
 }
 
 void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand_,
+            this);
+  }
   // Grab mutex and take a ref to the picker.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
   {
@@ -2966,6 +2966,11 @@ void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
       pickers_to_unref;
   while (true) {
     // Do pick.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p lb_call=%p: performing pick with picker=%p", chand_,
+              this, picker.get());
+    }
     grpc_error_handle error;
     bool pick_complete = PickSubchannelImpl(picker.get(), &error);
     if (!pick_complete) {
