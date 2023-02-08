@@ -36,7 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
@@ -455,20 +454,17 @@ static void configure_transport_ping_policy(grpc_chttp2_transport* t) {
           g_default_min_recv_ping_interval_without_data_ms);
 }
 
-static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
+static void init_keepalive_pings_if_enabled_locked(
+    void* arg, GRPC_UNUSED grpc_error_handle error) {
+  GPR_DEBUG_ASSERT(error.ok());
+  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_time != grpc_core::Duration::Infinity()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
-    // The timer can fire on an EventEngine thread before RunAfter returns,
-    // causing issue with overriding the handle. Thus use a mutex here.
-    // Hopefully this only happens once during init.
-    std::shared_ptr<absl::Mutex> mu = std::make_shared<absl::Mutex>();
-    absl::MutexLock lock(&*mu);
     t->keepalive_ping_timer_handle =
-        t->event_engine->RunAfter(t->keepalive_time, [t, mu] {
+        t->event_engine->RunAfter(t->keepalive_time, [t] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
-          absl::MutexLock lock(&*mu);
           init_keepalive_ping(t);
         });
   } else {
@@ -554,7 +550,11 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   ping_recv_state.last_ping_recv_time = grpc_core::Timestamp::InfPast();
   ping_recv_state.ping_strikes = 0;
 
-  init_keepalive_pings_if_enabled(this);
+  grpc_core::ExecCtx exec_ctx;
+  combiner->Run(
+      GRPC_CLOSURE_INIT(&init_keepalive_ping_locked,
+                        init_keepalive_pings_if_enabled_locked, this, nullptr),
+      absl::OkStatus());
 
   if (flow_control.bdp_probe()) {
     bdp_ping_blocked = true;

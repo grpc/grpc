@@ -3633,7 +3633,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
-        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
     ],
