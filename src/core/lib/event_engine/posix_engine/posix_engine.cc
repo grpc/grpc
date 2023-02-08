@@ -24,11 +24,14 @@
 #include <type_traits>
 #include <utility>
 
+#include <ares.h>
+
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "posix_engine.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -476,14 +479,70 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
+class GrpcAresQuery {
+ public:
+  explicit GrpcAresQuery()
+
+      private : GrpcAresQuery* parent_request_;
+  char* host_;
+  uint16_t port_;
+  bool is_balancer_;
+  const char* qtype_;
+};
+
+// per ares-channel linked list of FdNodes
+class FdNode {
+ private:
+  FdNode* next_;
+  /// if the readable closure has been registered
+  bool readable_registered = false;
+  /// if the writable closure has been registered
+  bool writable_registered = false;
+};
+
+PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
+    ResolverOptions const& options,
+    std::shared_ptr<PosixEnginePollerManager> poller_manager)
+    : options_(options), poller_manager_(poller_manager) {}
+
 EventEngine::LookupTaskHandle
 PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
-    absl::string_view default_port, Duration timeout) {}
+    absl::string_view default_port, Duration timeout) {
+  ares_options opts = {};
+  opts.flags |= ARES_FLAG_STAYOPEN;
+  ares_channel channel;
+  int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
+  if (status != ARES_SUCCESS) {
+    gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
+    abort();
+  }
+  // TODO(yijiem): set_request_dns_server if specified
+  // TODO(yijiem): handle ipv6
+  ares_gethostbyname(channel, const char* name, AF_INET,
+                     ares_host_callback callback, void* arg);
+  // TODO(yijiem): get the fd and then?
+  ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+  int socks_bitmask = ares_getsock(channel, socks, ARES_GETSOCK_MAXNUM);
+
+  PosixEventPoller* poller = poller_manager_->Poller();
+  GPR_DEBUG_ASSERT(poller != nullptr);
+  EventHandle* handle =
+      poller->CreateHandle(fd, "c-ares", poller->CanTrackErrors());
+}
+
+static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
+                                      struct hostent* hostent) {
+  if (status != ARES_SUCCESS) {
+    gpr_log(GPR_ERROR, "on_hostbyname_done_locked failed, status: %d", status);
+    abort();
+  }
+}
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
-    EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
-  grpc_core::Crash("unimplemented");
+    EventEngine::DNSResolver::ResolverOptions const& options) {
+  return std::make_unique<PosixEventEngine::PosixDNSResolver>(options,
+                                                              poller_manager_);
 }
 
 bool PosixEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

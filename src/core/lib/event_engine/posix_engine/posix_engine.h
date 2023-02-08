@@ -137,6 +137,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
+    explicit PosixDNSResolver(
+        ResolverOptions const& options,
+        std::shared_ptr<PosixEnginePollerManager> poller_manager);
     ~PosixDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,
@@ -149,6 +152,10 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                absl::string_view name,
                                Duration timeout) override;
     bool CancelLookup(LookupTaskHandle handle) override;
+
+   private:
+    const ResolverOptions options_;
+    std::shared_ptr<PosixEnginePollerManager> poller_manager_;
   };
 
 #ifdef GRPC_POSIX_SOCKET_TCP
