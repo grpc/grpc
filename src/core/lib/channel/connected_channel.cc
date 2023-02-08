@@ -1022,6 +1022,7 @@ class ServerStream final : public ConnectedChannelStream {
         gim.client_initial_metadata.get();
     batch_payload()->recv_initial_metadata.recv_initial_metadata_ready =
         &gim.recv_initial_metadata_ready;
+    IncrementRefCount("RecvInitialMetadata");
     SchedulePush(&gim.recv_initial_metadata);
 
     // Fetch trailing metadata (to catch cancellations)
@@ -1039,8 +1040,9 @@ class ServerStream final : public ConnectedChannelStream {
         &GetContext<CallContext>()->call_stats()->transport_stream_stats;
     batch_payload()->recv_trailing_metadata.recv_trailing_metadata_ready =
         &gtm.recv_trailing_metadata_ready;
-    SchedulePush(&gtm.recv_trailing_metadata);
     gtm.waker = Activity::current()->MakeOwningWaker();
+    IncrementRefCount("RecvTrailingMetadata");
+    SchedulePush(&gtm.recv_trailing_metadata);
   }
 
   Poll<ServerMetadataHandle> PollOnce() {
@@ -1069,6 +1071,7 @@ class ServerStream final : public ConnectedChannelStream {
                   .emplace<ServerMetadataHandle>(std::move(**md))
                   .get();
           batch_payload()->send_initial_metadata.peer_string = nullptr;
+          IncrementRefCount("SendInitialMetadata");
           SchedulePush(&send_initial_metadata_);
           return true;
         } else {
@@ -1168,6 +1171,7 @@ class ServerStream final : public ConnectedChannelStream {
                                ->as_string_view()),
               StatusIntProperty::kRpcStatus, status_code);
         }
+        IncrementRefCount("SendTrailingMetadata");
         SchedulePush(&op);
       }
     }
@@ -1263,6 +1267,7 @@ class ServerStream final : public ConnectedChannelStream {
                            std::move(getting.next_promise_factory)};
     call_state_.emplace<GotInitialMetadata>(std::move(got));
     waker.Wakeup();
+    Unref("RecvInitialMetadata");
   }
 
   void SendTrailingMetadataDone(absl::Status result) {
@@ -1287,6 +1292,7 @@ class ServerStream final : public ConnectedChannelStream {
     }
     call_state_.emplace<Complete>(Complete{std::move(md)});
     waker.Wakeup();
+    Unref("SendTrailingMetadata");
   }
 
   std::string ActiveOpsString() const override
@@ -1338,7 +1344,7 @@ class ServerStream final : public ConnectedChannelStream {
     return absl::StrJoin(ops, " ");
   }
 
-  void SendInitialMetadataDone() {}
+  void SendInitialMetadataDone() { Unref("SendInitialMetadata"); }
 
   void RecvTrailingMetadataReady(absl::Status error) {
     MutexLock lock(mu());
@@ -1362,6 +1368,7 @@ class ServerStream final : public ConnectedChannelStream {
     client_trailing_metadata_state_.emplace<GotClientHalfClose>(
         GotClientHalfClose{error});
     waker.Wakeup();
+    Unref("RecvTrailingMetadata");
   }
 
   struct Pipes {
