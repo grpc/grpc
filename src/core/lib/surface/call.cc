@@ -208,14 +208,14 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   void ClearPeerString() { gpr_atm_rel_store(&peer_string_, 0); }
 
-  // Fixup outgoing metadata before sending - adds compression, protects
-  // internal headers against external modification.
   // TODO(ctiller): cancel_func is for cancellation of the call - filter stack
   // holds no mutexes here, promise stack does, and so locking is different.
   // Remove this and cancel directly once promise conversion is done.
   void ProcessIncomingInitialMetadata(
       grpc_metadata_batch& md,
       absl::FunctionRef<void(absl::Status)> cancel_func);
+  // Fixup outgoing metadata before sending - adds compression, protects
+  // internal headers against external modification.
   void PrepareOutgoingInitialMetadata(const grpc_op& op,
                                       grpc_metadata_batch& md);
   void NoteLastMessageFlags(uint32_t flags) {

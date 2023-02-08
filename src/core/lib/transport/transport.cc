@@ -171,8 +171,6 @@ void grpc_transport_stream_op_batch_finish_with_failure(
 void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures) {
-  gpr_log(GPR_DEBUG, "***finish batch with failure: %s",
-          grpc_transport_stream_op_batch_string(batch).c_str());
   // Construct a list of closures to execute.
   if (batch->recv_initial_metadata) {
     closures->Add(

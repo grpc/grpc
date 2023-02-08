@@ -44,6 +44,7 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -144,9 +145,12 @@ class MessageSizeFilter::CallBuilder {
   auto Interceptor(uint32_t max_length, bool is_send) {
     return [max_length, is_send,
             err = err_](MessageHandle msg) -> absl::optional<MessageHandle> {
-      gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
-              Activity::current()->DebugTag().c_str(),
-              is_send ? "send" : "recv", msg->payload()->Length(), max_length);
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
+                Activity::current()->DebugTag().c_str(),
+                is_send ? "send" : "recv", msg->payload()->Length(),
+                max_length);
+      }
       if (msg->payload()->Length() > max_length) {
         if (err->is_set()) return std::move(msg);
         auto r = GetContext<Arena>()->MakePooled<ServerMetadata>(
