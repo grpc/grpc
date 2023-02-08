@@ -365,6 +365,7 @@ class RlsLb : public LoadBalancingPolicy {
   class Picker : public LoadBalancingPolicy::SubchannelPicker {
    public:
     explicit Picker(RefCountedPtr<RlsLb> lb_policy);
+    ~Picker() override;
 
     PickResult Pick(PickArgs args) override;
 
@@ -1004,6 +1005,19 @@ RlsLb::Picker::Picker(RefCountedPtr<RlsLb> lb_policy)
   if (lb_policy_->default_child_policy_ != nullptr) {
     default_child_policy_ =
         lb_policy_->default_child_policy_->Ref(DEBUG_LOCATION, "Picker");
+  }
+}
+
+RlsLb::Picker::~Picker() {
+  // It's not safe to unref the default child policy in the picker,
+  // since that needs to be done in the WorkSerializer.
+  if (default_child_policy_ != nullptr) {
+    auto* default_child_policy = default_child_policy_.release();
+    lb_policy_->work_serializer()->Run(
+        [default_child_policy]() {
+          default_child_policy->Unref(DEBUG_LOCATION, "Picker");
+        },
+        DEBUG_LOCATION);
   }
 }
 

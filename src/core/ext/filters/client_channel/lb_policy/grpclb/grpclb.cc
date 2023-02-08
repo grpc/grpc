@@ -61,7 +61,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <atomic>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -390,15 +389,19 @@ class GrpcLb : public LoadBalancingPolicy {
     // Returns the LB token to use for a drop, or null if the call
     // should not be dropped.
     //
-    // Note: This is called from the picker, NOT from inside the control
-    // plane work_serializer.
+    // Note: This is called from the picker, so it will be invoked in
+    // the channel's data plane mutex, NOT the control plane
+    // work_serializer.  It should not be accessed by any other part of the LB
+    // policy.
     const char* ShouldDrop();
 
    private:
     std::vector<GrpcLbServer> serverlist_;
 
-    // Accessed from the picker, so needs synchronization.
-    std::atomic<size_t> drop_index_{0};
+    // Guarded by the channel's data plane mutex, NOT the control
+    // plane work_serializer.  It should not be accessed by anything but the
+    // picker via the ShouldDrop() method.
+    size_t drop_index_ = 0;
   };
 
   class Picker : public SubchannelPicker {
@@ -714,8 +717,8 @@ bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
 
 const char* GrpcLb::Serverlist::ShouldDrop() {
   if (serverlist_.empty()) return nullptr;
-  size_t index = drop_index_.fetch_add(1, std::memory_order_relaxed);
-  GrpcLbServer& server = serverlist_[index % serverlist_.size()];
+  GrpcLbServer& server = serverlist_[drop_index_];
+  drop_index_ = (drop_index_ + 1) % serverlist_.size();
   return server.drop ? server.load_balance_token : nullptr;
 }
 
