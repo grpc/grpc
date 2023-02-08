@@ -139,10 +139,9 @@ grpc_error_handle grpc_channel_stack_init(
 
   // init per-filter data
   grpc_error_handle first_error;
-  auto c_channel_args = channel_args.ToC();
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
-    args.channel_args = c_channel_args.get();
+    args.channel_args = channel_args;
     args.is_first = i == 0;
     args.is_last = i == (filter_count - 1);
     elems[i].filter = filters[i];

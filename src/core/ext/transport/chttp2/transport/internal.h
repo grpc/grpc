@@ -390,12 +390,16 @@ struct grpc_chttp2_transport
   uint32_t incoming_frame_size = 0;
   uint32_t incoming_stream_id = 0;
 
-  // active parser
-  void* parser_data = nullptr;
   grpc_chttp2_stream* incoming_stream = nullptr;
-  grpc_error_handle (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
-                              grpc_chttp2_stream* s, const grpc_slice& slice,
-                              int is_last);
+  // active parser
+  struct Parser {
+    const char* name;
+    grpc_error_handle (*parser)(void* parser_user_data,
+                                grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+                                const grpc_slice& slice, int is_last);
+    void* user_data = nullptr;
+  };
+  Parser parser;
 
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
@@ -566,8 +570,6 @@ struct grpc_chttp2_stream {
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
-  /// saw some stream level error
-  grpc_error_handle forced_close_error;
   /// how many header frames have we received?
   uint8_t header_frames_received = 0;
   /// number of bytes received - reset at end of parse thread execution

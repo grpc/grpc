@@ -168,36 +168,33 @@ class RetryFilter {
                              const grpc_channel_info* /*info*/) {}
 
  private:
-  static size_t GetMaxPerRpcRetryBufferSize(const grpc_channel_args* args) {
-    return static_cast<size_t>(grpc_channel_args_find_integer(
-        args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
-        {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX}));
+  static size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
+    return Clamp(args.GetInt(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE)
+                     .value_or(DEFAULT_PER_RPC_RETRY_BUFFER_SIZE),
+                 0, INT_MAX);
   }
 
-  RetryFilter(const grpc_channel_args* args, grpc_error_handle* error)
-      : client_channel_(grpc_channel_args_find_pointer<ClientChannel>(
-            args, GRPC_ARG_CLIENT_CHANNEL)),
+  RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
+      : client_channel_(args.GetObject<ClientChannel>()),
         per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
         service_config_parser_index_(
             internal::RetryServiceConfigParser::ParserIndex()) {
     // Get retry throttling parameters from service config.
-    auto* service_config = grpc_channel_args_find_pointer<ServiceConfig>(
-        args, GRPC_ARG_SERVICE_CONFIG_OBJ);
+    auto* service_config = args.GetObject<ServiceConfig>();
     if (service_config == nullptr) return;
     const auto* config = static_cast<const RetryGlobalConfig*>(
         service_config->GetGlobalParsedConfig(
             RetryServiceConfigParser::ParserIndex()));
     if (config == nullptr) return;
     // Get server name from target URI.
-    const char* server_uri =
-        grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
-    if (server_uri == nullptr) {
+    auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
+    if (!server_uri.has_value()) {
       *error = GRPC_ERROR_CREATE(
           "server URI channel arg missing or wrong type in client channel "
           "filter");
       return;
     }
-    absl::StatusOr<URI> uri = URI::Parse(server_uri);
+    absl::StatusOr<URI> uri = URI::Parse(*server_uri);
     if (!uri.ok() || uri->path().empty()) {
       *error =
           GRPC_ERROR_CREATE("could not extract server name from target URI");
@@ -1354,8 +1351,9 @@ RetryFilter::CallData::CallAttempt::BatchData::~BatchData() {
             this);
   }
   CallAttempt* call_attempt = std::exchange(call_attempt_, nullptr);
-  GRPC_CALL_STACK_UNREF(call_attempt->calld_->owning_call_, "Retry BatchData");
+  grpc_call_stack* owning_call = call_attempt->calld_->owning_call_;
   call_attempt->Unref(DEBUG_LOCATION, "~BatchData");
+  GRPC_CALL_STACK_UNREF(owning_call, "Retry BatchData");
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::
