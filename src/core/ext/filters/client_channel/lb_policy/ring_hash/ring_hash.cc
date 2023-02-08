@@ -254,19 +254,14 @@ class RingHash : public LoadBalancingPolicy {
     explicit Picker(RefCountedPtr<RingHashSubchannelList> subchannel_list)
         : subchannel_list_(std::move(subchannel_list)) {}
 
-    ~Picker() override {
-      // Hop into WorkSerializer to unref the subchannel list, since that may
-      // trigger the unreffing of the underlying subchannels.
-      MakeOrphanable<WorkSerializerRunner>(std::move(subchannel_list_));
-    }
-
     PickResult Pick(PickArgs args) override;
 
    private:
-    // An interface for running a callback in the control plane WorkSerializer.
-    class WorkSerializerRunner : public Orphanable {
+    // A fire-and-forget class that schedules subchannel connection attempts
+    // on the control plane WorkSerializer.
+    class SubchannelConnectionAttempter : public Orphanable {
      public:
-      explicit WorkSerializerRunner(
+      explicit SubchannelConnectionAttempter(
           RefCountedPtr<RingHashSubchannelList> subchannel_list)
           : subchannel_list_(std::move(subchannel_list)) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
@@ -278,17 +273,26 @@ class RingHash : public LoadBalancingPolicy {
         ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
       }
 
-      // Will be invoked inside of the WorkSerializer.
-      virtual void Run() {}
+      void AddSubchannel(RefCountedPtr<SubchannelInterface> subchannel) {
+        subchannels_.push_back(std::move(subchannel));
+      }
 
-     protected:
+      // Will be invoked inside of the WorkSerializer.
+      void Run() {
+        if (!ring_hash_lb()->shutdown_) {
+          for (auto& subchannel : subchannels_) {
+            subchannel->RequestConnection();
+          }
+        }
+      }
+
+     private:
       RingHash* ring_hash_lb() const {
         return static_cast<RingHash*>(subchannel_list_->policy());
       }
 
-     private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<WorkSerializerRunner*>(arg);
+        auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
         self->ring_hash_lb()->work_serializer()->Run(
             [self]() {
               self->Run();
@@ -298,31 +302,8 @@ class RingHash : public LoadBalancingPolicy {
       }
 
       RefCountedPtr<RingHashSubchannelList> subchannel_list_;
-      grpc_closure closure_;
-    };
-
-    // A fire-and-forget class that schedules subchannel connection attempts
-    // on the control plane WorkSerializer.
-    class SubchannelConnectionAttempter : public WorkSerializerRunner {
-     public:
-      explicit SubchannelConnectionAttempter(
-          RefCountedPtr<RingHashSubchannelList> subchannel_list)
-          : WorkSerializerRunner(std::move(subchannel_list)) {}
-
-      void AddSubchannel(RefCountedPtr<SubchannelInterface> subchannel) {
-        subchannels_.push_back(std::move(subchannel));
-      }
-
-      void Run() override {
-        if (!ring_hash_lb()->shutdown_) {
-          for (auto& subchannel : subchannels_) {
-            subchannel->RequestConnection();
-          }
-        }
-      }
-
-     private:
       std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
+      grpc_closure closure_;
     };
 
     RefCountedPtr<RingHashSubchannelList> subchannel_list_;
