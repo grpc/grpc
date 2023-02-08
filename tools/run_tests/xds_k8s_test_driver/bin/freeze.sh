@@ -1,4 +1,4 @@
-#!/usr/bin/env /bin/bash
+#!/usr/bin/env bash
 # Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,8 @@
 
 set -exo pipefail
 
-readonly VENV_NAME="venv-$(mktemp -d)"
+VENV_NAME="venv-$(mktemp -d)"
+readonly VENV_NAME
 
 python3 -m virtualenv "${VENV_NAME}"
 
