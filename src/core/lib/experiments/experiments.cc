@@ -37,9 +37,6 @@ const char* const description_memory_pressure_controller =
     "New memory pressure controller";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
-const char* const description_new_hpack_huffman_decoder =
-    "New HPACK huffman decoder - should be much faster than the existing "
-    "implementation.";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const description_monitoring_experiment =
@@ -70,7 +67,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
-    {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder, true},
     {"event_engine_client", description_event_engine_client, false},
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},

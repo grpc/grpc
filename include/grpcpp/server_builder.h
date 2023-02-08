@@ -59,7 +59,6 @@ class ExternalConnectionAcceptorImpl;
 class CallbackGenericService;
 
 namespace experimental {
-class OrcaServerInterceptorFactory;
 // EXPERIMENTAL API:
 // Interface for a grpc server to build transports with connections created out
 // of band.
@@ -283,6 +282,16 @@ class ServerBuilder {
         std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
             provider);
 
+    /// Enables per-call load reporting. The server will automatically send the
+    /// load metrics after each RPC. The caller can report load metrics for the
+    /// current call to what ServerContext::ExperimentalGetCallMetricRecorder()
+    /// returns. The server merges metrics from the optional
+    /// server_metric_recorder when provided where the call metric recorder take
+    /// a higher precedence. The caller owns and must ensure the server metric
+    /// recorder outlives the server.
+    void EnableCallMetricRecording(
+        experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
+
    private:
     ServerBuilder* builder_;
   };
@@ -355,7 +364,6 @@ class ServerBuilder {
 
  private:
   friend class grpc::testing::ServerBuilderPluginTest;
-  friend class grpc::experimental::OrcaServerInterceptorFactory;
 
   struct SyncServerSettings {
     SyncServerSettings()
@@ -406,14 +414,12 @@ class ServerBuilder {
   std::vector<
       std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
-  std::vector<
-      std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
-      internal_interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
   std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
       authorization_provider_;
+  experimental::ServerMetricRecorder* server_metric_recorder_ = nullptr;
 };
 
 }  // namespace grpc

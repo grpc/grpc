@@ -21,36 +21,31 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/cpp/common/channel_filter.h"
-#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc {
 namespace internal {
 
-class OpenCensusClientChannelData : public ChannelData {
+class OpenCensusClientFilter : public grpc_core::ChannelFilter {
  public:
-  // A CallData class will be created for every grpc call within a channel. It
-  // is used to store data and methods specific to that call.
-  // OpenCensusClientCallData is thread-compatible, however typically only 1
-  // thread should be interacting with a call at a time.
-  class OpenCensusClientCallData : public CallData {
-   public:
-    grpc_error_handle Init(grpc_call_element* /* elem */,
-                           const grpc_call_element_args* args) override;
-    void StartTransportStreamOpBatch(grpc_call_element* elem,
-                                     TransportStreamOpBatch* op) override;
+  static const grpc_channel_filter kFilter;
 
-   private:
-    OpenCensusCallTracer* tracer_ = nullptr;
-  };
+  static absl::StatusOr<OpenCensusClientFilter> Create(
+      const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
 
-  grpc_error_handle Init(grpc_channel_element* elem,
-                         grpc_channel_element_args* args) override;
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
+      grpc_core::CallArgs call_args,
+      grpc_core::NextPromiseFactory next_promise_factory) override;
 
  private:
+  explicit OpenCensusClientFilter(bool tracing_enabled)
+      : tracing_enabled_(tracing_enabled) {}
   bool tracing_enabled_ = true;
 };
 
