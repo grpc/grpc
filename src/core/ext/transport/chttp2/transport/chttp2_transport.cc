@@ -176,23 +176,26 @@ static void finish_bdp_ping(void* tp, grpc_error_handle error);
 static void start_bdp_ping_locked(void* tp, grpc_error_handle error);
 static void finish_bdp_ping_locked(void* tp, grpc_error_handle error);
 static void next_bdp_ping_timer_expired(grpc_chttp2_transport* t);
-static void next_bdp_ping_timer_expired_locked(void* tp,
-                                               grpc_error_handle error);
+static void next_bdp_ping_timer_expired_locked(
+    void* tp, GRPC_UNUSED grpc_error_handle error);
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error);
 static void send_ping_locked(grpc_chttp2_transport* t,
                              grpc_closure* on_initiate, grpc_closure* on_ack);
-static void retry_initiate_ping_locked(void* tp, grpc_error_handle error);
+static void retry_initiate_ping_locked(void* tp,
+                                       GRPC_UNUSED grpc_error_handle error);
 
 // keepalive-relevant functions
 static void init_keepalive_ping(grpc_chttp2_transport* t);
-static void init_keepalive_ping_locked(void* arg, grpc_error_handle error);
+static void init_keepalive_ping_locked(void* arg,
+                                       GRPC_UNUSED grpc_error_handle error);
 static void start_keepalive_ping(void* arg, grpc_error_handle error);
 static void finish_keepalive_ping(void* arg, grpc_error_handle error);
 static void start_keepalive_ping_locked(void* arg, grpc_error_handle error);
 static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error);
 static void keepalive_watchdog_fired(grpc_chttp2_transport* t);
-static void keepalive_watchdog_fired_locked(void* arg, grpc_error_handle error);
+static void keepalive_watchdog_fired_locked(
+    void* arg, GRPC_UNUSED grpc_error_handle error);
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 
 namespace grpc_core {
@@ -1592,7 +1595,8 @@ void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t) {
                    absl::OkStatus());
 }
 
-static void retry_initiate_ping_locked(void* tp, grpc_error_handle error) {
+static void retry_initiate_ping_locked(void* tp,
+                                       GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   GPR_ASSERT(t->ping_state.delayed_ping_timer_handle.has_value());
@@ -2570,8 +2574,8 @@ static void next_bdp_ping_timer_expired(grpc_chttp2_transport* t) {
       absl::OkStatus());
 }
 
-static void next_bdp_ping_timer_expired_locked(void* tp,
-                                               grpc_error_handle error) {
+static void next_bdp_ping_timer_expired_locked(
+    void* tp, GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   GPR_ASSERT(t->next_bdp_ping_timer_handle.has_value());
@@ -2650,7 +2654,8 @@ static void init_keepalive_ping(grpc_chttp2_transport* t) {
                    absl::OkStatus());
 }
 
-static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
+static void init_keepalive_ping_locked(void* arg,
+                                       GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
@@ -2759,8 +2764,8 @@ static void keepalive_watchdog_fired(grpc_chttp2_transport* t) {
       absl::OkStatus());
 }
 
-static void keepalive_watchdog_fired_locked(void* arg,
-                                            grpc_error_handle error) {
+static void keepalive_watchdog_fired_locked(
+    void* arg, GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   GPR_ASSERT(t->keepalive_watchdog_timer_handle.has_value());
