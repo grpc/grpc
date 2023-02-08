@@ -93,14 +93,11 @@ std::string XdsEndpointResource::Priority::ToString() const {
 }
 
 bool XdsEndpointResource::DropConfig::ShouldDrop(
-    const std::string** category_name) {
+    const std::string** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
-    const uint32_t random = [&]() {
-      MutexLock lock(&mu_);
-      return absl::Uniform<uint32_t>(bit_gen_, 0, 1000000);
-    }();
+    const uint32_t random = static_cast<uint32_t>(rand()) % 1000000;
     if (random < drop_category.parts_per_million) {
       *category_name = &drop_category.name;
       return true;
