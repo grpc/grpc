@@ -148,7 +148,7 @@ class MessageSizeFilter::CallBuilder {
               Activity::current()->DebugTag().c_str(),
               is_send ? "send" : "recv", msg->payload()->Length(), max_length);
       if (msg->payload()->Length() > max_length) {
-        if (err->is_set()) return msg;
+        if (err->is_set()) return std::move(msg);
         auto r = GetContext<Arena>()->MakePooled<ServerMetadata>(
             GetContext<Arena>());
         r->Set(GrpcStatusMetadata(), GRPC_STATUS_RESOURCE_EXHAUSTED);
