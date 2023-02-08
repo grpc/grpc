@@ -53,7 +53,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/common/channel_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
@@ -92,12 +91,11 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 }  // namespace
 
-// A CallData class will be created for every grpc call within a channel. It
-// is
-// used to store data and methods specific to that call.
+// An OpenCensusServerCallData class will be created for every grpc call within
+// a channel. It is used to store data and methods specific to that call.
 // OpenCensusServerCallData is thread-compatible, however typically only 1
 // thread should be interacting with a call at a time.
-class OpenCensusServerCallData : public CallData {
+class OpenCensusServerCallData {
  public:
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
