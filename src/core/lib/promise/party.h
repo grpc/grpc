@@ -15,7 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 
-#include "activity.h"
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -108,4 +108,4 @@ void Party::Spawn(Promise promise, OnComplete on_complete) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
