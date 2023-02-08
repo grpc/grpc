@@ -102,7 +102,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   config.init_server(&f, &server_args);
 
   grpc_call* c;
-  grpc_call* s;
+  grpc_call* s = nullptr;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(CALL_DEADLINE_S);
   grpc_op ops[6];
   grpc_op* op;
@@ -157,68 +157,83 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(tag(101), true);
-  cqv->Verify();
 
-  gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
-      static_cast<int>(MAX_CONNECTION_AGE_MS *
-                       MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
-      MAX_CONNECTION_AGE_GRACE_MS + IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
+  grpc_event ev = grpc_completion_queue_next(
+      f.cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(ev.tag == tag(1) || ev.tag == tag(101));
 
-  // Wait for the channel to reach its max age
-  cqv->VerifyEmpty(
-      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
+  if (ev.tag == tag(101)) {
+    // Request got through to the server before connection timeout
 
-  // After the channel reaches its max age, we still do nothing here. And wait
-  // for it to use up its max age grace period.
-  cqv->Expect(tag(1), true);
-  cqv->Verify();
+    // Wait for the channel to reach its max age
+    cqv->VerifyEmpty(
+        grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
 
-  gpr_timespec channel_shutdown_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  GPR_ASSERT(gpr_time_cmp(channel_shutdown_time, expect_shutdown_time) < 0);
+    // After the channel reaches its max age, we still do nothing here. And wait
+    // for it to use up its max age grace period.
+    cqv->Expect(tag(1), true);
+    cqv->Verify();
 
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(tag(102), true);
-  cqv->Verify();
+    gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
+        static_cast<int>(MAX_CONNECTION_AGE_MS *
+                         MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
+        MAX_CONNECTION_AGE_GRACE_MS + IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
+
+    gpr_timespec channel_shutdown_time = gpr_now(GPR_CLOCK_MONOTONIC);
+    GPR_ASSERT(gpr_time_cmp(channel_shutdown_time, expect_shutdown_time) < 0);
+
+    memset(ops, 0, sizeof(ops));
+    op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count = 0;
+    op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+    grpc_slice status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    op->data.recv_close_on_server.cancelled = &was_cancelled;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+    cqv->Expect(tag(102), true);
+    cqv->Verify();
+
+    GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+    GPR_ASSERT(was_cancelled == 1);
+  } else {
+    // Request failed before getting to the server
+  }
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv->Expect(tag(0xdead), true);
+  if (s == nullptr) {
+    cqv->Expect(tag(101), false);
+  }
   cqv->Verify();
 
-  grpc_call_unref(s);
+  if (s != nullptr) {
+    grpc_call_unref(s);
+    grpc_metadata_array_destroy(&request_metadata_recv);
+  }
 
   // The connection should be closed immediately after the max age grace period,
   // the in-progress RPC should fail.
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
   cqv.reset();
@@ -245,7 +260,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   config.init_server(&f, &server_args);
 
   grpc_call* c;
-  grpc_call* s;
+  grpc_call* s = nullptr;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(CALL_DEADLINE_S);
   grpc_op ops[6];
   grpc_op* op;
@@ -300,63 +315,78 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(tag(101), true);
-  cqv->Verify();
 
-  // Wait for the channel to reach its max age
-  cqv->VerifyEmpty(
-      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
+  grpc_event ev = grpc_completion_queue_next(
+      f.cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(ev.tag == tag(1) || ev.tag == tag(101));
 
-  // The connection is shutting down gracefully. In-progress rpc should not be
-  // closed, hence the completion queue should see nothing here.
-  cqv->VerifyEmpty(
-      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S));
+  if (ev.tag == tag(101)) {
+    // Request got through to the server before connection timeout
 
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+    // Wait for the channel to reach its max age
+    cqv->VerifyEmpty(
+        grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
 
-  cqv->Expect(tag(102), true);
-  cqv->Expect(tag(1), true);
-  cqv->Verify();
+    // The connection is shutting down gracefully. In-progress rpc should not be
+    // closed, hence the completion queue should see nothing here.
+    cqv->VerifyEmpty(
+        grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S));
+
+    memset(ops, 0, sizeof(ops));
+    op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count = 0;
+    op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+    grpc_slice status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    op->data.recv_close_on_server.cancelled = &was_cancelled;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    cqv->Expect(tag(102), true);
+    cqv->Expect(tag(1), true);
+    cqv->Verify();
+
+    GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+    GPR_ASSERT(was_cancelled == 0);
+  } else {
+    // Request failed before getting to the server
+  }
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv->Expect(tag(0xdead), true);
+  if (s == nullptr) {
+    cqv->Expect(tag(101), false);
+  }
   cqv->Verify();
 
-  grpc_call_unref(s);
+  if (s != nullptr) {
+    grpc_call_unref(s);
+    grpc_metadata_array_destroy(&request_metadata_recv);
+  }
 
   // The connection is closed gracefully with goaway, the rpc should still be
   // completed.
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
   cqv.reset();
