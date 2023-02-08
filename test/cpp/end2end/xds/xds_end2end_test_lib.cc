@@ -1043,7 +1043,7 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
   return absl::StrCat(
       prefix,
       "(UNKNOWN|UNAVAILABLE): (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "(Failed to connect to remote host: |)"
+      "(Failed to connect to remote host: )?"
       "(Connection refused|Connection reset by peer|"
       "Socket closed|FD shutdown)");
 }
