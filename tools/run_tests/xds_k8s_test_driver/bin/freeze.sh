@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
 
-exports_files([
-    "ca.pem",
-    "server1.key",
-    "server1.pem",
-    "server0.key",
-    "server0.pem",
-    "client.key",
-    "client.pem",
-    "badserver.key",
-    "badserver.pem",
-    "badclient.key",
-    "badclient.pem",
-    "multi-domain.key",
-    "multi-domain.pem",
-    "leaf_signed_by_intermediate.key",
-    "leaf_and_intermediate_chain.pem",
-])
+set -exo pipefail
+
+VENV_NAME="venv-$(mktemp -d)"
+readonly VENV_NAME
+
+python3 -m virtualenv "${VENV_NAME}"
+
+"${VENV_NAME}"/bin/pip install -r requirements.txt
+"${VENV_NAME}"/bin/pip freeze > requirements.lock
+
+rm -rf "${VENV_NAME}"

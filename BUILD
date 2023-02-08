@@ -2207,6 +2207,8 @@ grpc_cc_library(
     visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
         "census",
+        "channel_stack_builder",
+        "config",
         "debug_location",
         "gpr",
         "grpc++",
@@ -2216,6 +2218,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_stack_type",
         "//src/core:closure",
+        "//src/core:context",
         "//src/core:experiments",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -2766,6 +2769,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",

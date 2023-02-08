@@ -752,8 +752,10 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       state_ = State::kCancelledWhilstIdle;
       break;
     case State::kForwardedBatch:
-    case State::kForwardedBatchNoPipe:
       state_ = State::kCancelledWhilstForwarding;
+      break;
+    case State::kForwardedBatchNoPipe:
+      state_ = State::kCancelledWhilstForwardingNoPipe;
       break;
     case State::kCompletedWhileBatchCompleted:
     case State::kBatchCompleted:
