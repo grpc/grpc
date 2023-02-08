@@ -18,16 +18,13 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <algorithm>
-#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -177,7 +174,7 @@ class RoundRobin : public LoadBalancingPolicy {
     // Using pointer value only, no ref held -- do not dereference!
     RoundRobin* parent_;
 
-    std::atomic<size_t> last_picked_index_;
+    size_t last_picked_index_;
     std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
   };
 
@@ -192,8 +189,6 @@ class RoundRobin : public LoadBalancingPolicy {
   RefCountedPtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
 
   bool shutdown_ = false;
-
-  absl::BitGen bit_gen_;
 };
 
 //
@@ -212,26 +207,27 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
   // For discussion on why we generate a random starting index for
   // the picker, see https://github.com/grpc/grpc-go/issues/2580.
-  size_t index =
-      absl::Uniform<size_t>(parent->bit_gen_, 0, subchannels_.size());
-  last_picked_index_.store(index, std::memory_order_relaxed);
+  // TODO(roth): rand(3) is not thread-safe.  This should be replaced with
+  // something better as part of https://github.com/grpc/grpc/issues/17891.
+  last_picked_index_ = rand() % subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " READY subchannels; last_picked_index_=%" PRIuPTR,
-            parent_, this, subchannel_list, subchannels_.size(), index);
+            parent_, this, subchannel_list, subchannels_.size(),
+            last_picked_index_);
   }
 }
 
 RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
-  size_t index = last_picked_index_.fetch_add(1, std::memory_order_relaxed) %
-                 subchannels_.size();
+  last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
-            parent_, this, index, subchannels_[index].get());
+            parent_, this, last_picked_index_,
+            subchannels_[last_picked_index_].get());
   }
-  return PickResult::Complete(subchannels_[index]);
+  return PickResult::Complete(subchannels_[last_picked_index_]);
 }
 
 //

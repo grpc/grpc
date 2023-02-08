@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -47,7 +46,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -140,11 +138,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
    private:
     PickerList pickers_;
-
-    // TODO(roth): Consider using a separate thread-local BitGen for each CPU
-    // to avoid the need for this mutex.
-    Mutex mu_;
-    absl::BitGen bit_gen_ ABSL_GUARDED_BY(&mu_);
+    absl::BitGen bit_gen_;
   };
 
   // Each WeightedChild holds a ref to its parent WeightedTargetLb.
@@ -253,10 +247,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
     PickArgs args) {
   // Generate a random number in [0, total weight).
-  const uint64_t key = [&]() {
-    MutexLock lock(&mu_);
-    return absl::Uniform<uint64_t>(bit_gen_, 0, pickers_.back().first);
-  }();
+  const uint64_t key =
+      absl::Uniform<uint64_t>(bit_gen_, 0, pickers_.back().first);
   // Find the index in pickers_ corresponding to key.
   size_t mid = 0;
   size_t start_index = 0;
