@@ -293,6 +293,7 @@ class RingHash : public LoadBalancingPolicy {
         subchannels_.push_back(std::move(subchannel));
       }
 
+     private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
         self->ring_hash_lb_->work_serializer()->Run(
