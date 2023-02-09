@@ -228,8 +228,7 @@ static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_last);
-  cd->transport = grpc_channel_args_find_pointer<grpc_transport>(
-      args->channel_args, GRPC_ARG_TRANSPORT);
+  cd->transport = args->channel_args.GetObject<grpc_transport>();
   return absl::OkStatus();
 }
 

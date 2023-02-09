@@ -380,35 +380,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "try_concurrently",
-    hdrs = ["lib/promise/try_concurrently.h"],
-    external_deps = [
-        "absl/status",
-        "absl/strings",
-        "absl/types:variant",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "lib/promise/map_pipe.h",
-    ],
-    deps = [
-        "activity",
-        "construct_destruct",
-        "for_each",
-        "map",
-        "pipe",
-        "poll",
-        "promise_factory",
-        "promise_like",
-        "promise_status",
-        "promise_trace",
-        "try_seq",
-        "//:gpr",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "map_pipe",
     external_deps = ["absl/status"],
     language = "c++",
@@ -3732,6 +3703,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_backend_metric_provider",
+    hdrs = [
+        "ext/filters/backend_metrics/backend_metric_provider.h",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_rls",
     srcs = [
         "ext/filters/client_channel/lb_policy/rls/rls.cc",
@@ -4759,6 +4738,41 @@ grpc_cc_library(
         "//:uri_parser",
     ],
     alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpc_backend_metric_filter",
+    srcs = [
+        "ext/filters/backend_metrics/backend_metric_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/backend_metrics/backend_metric_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "arena_promise",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "context",
+        "grpc_backend_metric_data",
+        "grpc_backend_metric_provider",
+        "map",
+        "slice",
+        "//:channel_stack_builder",
+        "//:config",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:xds_orca_upb",
+    ],
 )
 
 grpc_cc_library(
