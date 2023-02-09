@@ -24,11 +24,11 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -222,6 +222,15 @@ class ClientChannel {
     std::atomic<bool> done_{false};
   };
 
+  struct ResolverQueuedCall {
+    grpc_call_element* elem;
+    ResolverQueuedCall* next = nullptr;
+  };
+  struct LbQueuedCall {
+    LoadBalancedCall* lb_call;
+    LbQueuedCall* next = nullptr;
+  };
+
   ClientChannel(grpc_channel_element_args* args, grpc_error_handle* error);
   ~ClientChannel();
 
@@ -236,9 +245,6 @@ class ClientChannel {
 
   // Note: All methods with "Locked" suffix must be invoked from within
   // work_serializer_.
-
-  void ReprocessQueuedResolverCalls()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&resolution_mu_);
 
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
@@ -278,6 +284,20 @@ class ClientChannel {
 
   void TryToConnectLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
+  // These methods all require holding resolution_mu_.
+  void AddResolverQueuedCall(ResolverQueuedCall* call,
+                             grpc_polling_entity* pollent)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(resolution_mu_);
+  void RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
+                                grpc_polling_entity* pollent)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(resolution_mu_);
+
+  // These methods all require holding data_plane_mu_.
+  void AddLbQueuedCall(LbQueuedCall* call, grpc_polling_entity* pollent)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
+  void RemoveLbQueuedCall(LbQueuedCall* to_remove, grpc_polling_entity* pollent)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
+
   //
   // Fields set at construction and never modified.
   //
@@ -296,9 +316,9 @@ class ClientChannel {
   // Fields related to name resolution.  Guarded by resolution_mu_.
   //
   mutable Mutex resolution_mu_;
-  // List of calls queued waiting for resolver result.
-  absl::flat_hash_set<grpc_call_element*> resolver_queued_calls_
-      ABSL_GUARDED_BY(resolution_mu_);
+  // Linked list of calls queued waiting for resolver result.
+  ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
+      nullptr;
   // Data from service config.
   absl::Status resolver_transient_failure_error_
       ABSL_GUARDED_BY(resolution_mu_);
@@ -310,13 +330,13 @@ class ClientChannel {
       ABSL_GUARDED_BY(resolution_mu_);
 
   //
-  // Fields related to LB picks.  Guarded by lb_mu_.
+  // Fields used in the data plane.  Guarded by data_plane_mu_.
   //
-  mutable Mutex lb_mu_;
+  mutable Mutex data_plane_mu_;
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
-      ABSL_GUARDED_BY(lb_mu_);
-  absl::flat_hash_set<LoadBalancedCall*> lb_queued_calls_
-      ABSL_GUARDED_BY(lb_mu_);
+      ABSL_GUARDED_BY(data_plane_mu_);
+  // Linked list of calls queued waiting for LB pick.
+  LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(data_plane_mu_) = nullptr;
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
@@ -340,7 +360,7 @@ class ClientChannel {
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
-  absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_
+  std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(*work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
   grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
@@ -402,11 +422,16 @@ class ClientChannel::LoadBalancedCall
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
-  void PickSubchannel(bool was_queued);
-
-  // Called by channel when removing a call from the list of queued calls.
-  void RemoveCallFromLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+  // Invoked by channel for queued LB picks when the picker is updated.
+  static void PickSubchannel(void* arg, grpc_error_handle error);
+  // Helper function for performing an LB pick while holding the data plane
+  // mutex.  Returns true if the pick is complete, in which case the caller
+  // must invoke PickDone() or AsyncPickDone() with the returned error.
+  bool PickSubchannelLocked(grpc_error_handle* error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
+  // Schedules a callback to process the completed pick.  The callback
+  // will not run until after this method returns.
+  void AsyncPickDone(grpc_error_handle error);
 
   RefCountedPtr<SubchannelCall> subchannel_call() const {
     return subchannel_call_;
@@ -454,14 +479,14 @@ class ClientChannel::LoadBalancedCall
   void RecordCallCompletion(absl::Status status);
 
   void CreateSubchannelCall();
-
-  // Helper function for performing an LB pick with a specified picker.
-  // Returns true if the pick is complete.
-  bool PickSubchannelImpl(LoadBalancingPolicy::SubchannelPicker* picker,
-                          grpc_error_handle* error);
+  // Invoked when a pick is completed, on both success or failure.
+  static void PickDone(void* arg, grpc_error_handle error);
+  // Removes the call from the channel's list of queued picks if present.
+  void MaybeRemoveCallFromLbQueuedCallsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
   // Adds the call to the channel's list of queued picks if not already present.
-  void AddCallToLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+  void MaybeAddCallToLbQueuedCallsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
 
   ClientChannel* chand_;
 
@@ -488,9 +513,15 @@ class ClientChannel::LoadBalancedCall
   // Set when we fail inside the LB call.
   grpc_error_handle failure_error_;
 
-  // Accessed while holding ClientChannel::lb_mu_.
+  grpc_closure pick_closure_;
+
+  // Accessed while holding ClientChannel::data_plane_mu_.
+  ClientChannel::LbQueuedCall queued_call_
+      ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_);
+  bool queued_pending_lb_pick_ ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) =
+      false;
   LbQueuedCallCanceller* lb_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::lb_mu_) = nullptr;
+      ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const BackendMetricData* backend_metric_data_ = nullptr;

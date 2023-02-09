@@ -499,11 +499,8 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   // seconds, and we should disocver in that time that the target backend is
   // down.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)",
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "),
                       RpcOptions().set_timeout_ms(kRpcTimeoutMs));
 }
 
@@ -526,11 +523,8 @@ TEST_P(EdsTest, BackendsRestart) {
                                ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)");
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -1176,14 +1170,9 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  constexpr char kErrorMessageRegex[] =
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      kErrorMessageRegex);
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1195,7 +1184,8 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
       EXPECT_THAT(result.status.error_message(),
-                  ::testing::MatchesRegex(kErrorMessageRegex));
+                  ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                      "connections to all backends failing; last error: ")));
     }
   });
 }

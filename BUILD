@@ -2769,7 +2769,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
@@ -3535,7 +3534,6 @@ grpc_cc_library(
         "stats",
         "//src/core:decode_huff",
         "//src/core:error",
-        "//src/core:experiments",
         "//src/core:hpack_constants",
         "//src/core:slice",
         "//src/core:slice_refcount",
