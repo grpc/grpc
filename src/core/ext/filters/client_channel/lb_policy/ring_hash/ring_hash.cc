@@ -163,7 +163,7 @@ class RingHash : public LoadBalancingPolicy {
 
     const ServerAddress& address() const { return address_; }
 
-    const grpc_connectivity_state logical_connectivity_state() const {
+    grpc_connectivity_state logical_connectivity_state() const {
       return logical_connectivity_state_;
     }
     const absl::Status& logical_connectivity_status() const {
