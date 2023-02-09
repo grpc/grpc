@@ -522,7 +522,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:orphanable",
+        "//:ref_counted_ptr",
         "//src/core:1999",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:memory_quota",
         "//src/core:resource_quota",
     ],
 )

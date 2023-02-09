@@ -17,14 +17,17 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
-#include <cstdint>
+#include <initializer_list>
+#include <memory>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
-#include "activity.h"
 
-#include "src/core/lib/gprpp/crash.h"
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/promise/activity.h"
 
 namespace grpc_core {
 

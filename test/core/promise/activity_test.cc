@@ -16,12 +16,8 @@
 
 #include <stdlib.h>
 
-#include <atomic>
-#include <chrono>
 #include <functional>
-#include <thread>
 #include <tuple>
-#include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

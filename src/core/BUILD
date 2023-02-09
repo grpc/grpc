@@ -409,13 +409,16 @@ grpc_cc_library(
         "lib/promise/party.h",
     ],
     external_deps = [
-        "absl/cleanup",
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
         "absl/strings:str_format",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "activity",
-        "arena_promise",
+        "arena",
+        "poll",
         "//:gpr",
     ],
 )
