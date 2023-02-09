@@ -99,6 +99,12 @@ Wakeable* Party::Participant::MakeNonOwningWakeable(Party* party) {
   return handle_;
 }
 
+Party::Participant::~Participant() {
+  if (handle_ != nullptr) {
+    handle_->DropActivity();
+  }
+}
+
 void Party::Orphan() { Unref(); }
 
 void Party::Ref() {

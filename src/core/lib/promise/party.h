@@ -42,7 +42,7 @@ class Party : public Activity, private Wakeable {
 
   class Participant {
    public:
-    virtual ~Participant() = default;
+    virtual ~Participant();
     // Poll the participant.
     virtual bool Poll() = 0;
 

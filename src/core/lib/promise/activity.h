@@ -109,6 +109,11 @@ class Waker {
     return wakeable_and_arg_.ActivityDebugTag();
   }
 
+  // This is for tests to assert that a waker is occupied or not.
+  bool is_unwakeable() const {
+    return wakeable_and_arg_.wakeable == promise_detail::unwakeable();
+  }
+
  private:
   struct WakeableAndArg {
     Wakeable* wakeable;
