@@ -67,7 +67,6 @@ class TlsCustomVerificationCheckRequest {
   std::vector<grpc::string_ref> dns_names() const;
   std::vector<grpc::string_ref> email_names() const;
   std::vector<grpc::string_ref> ip_names() const;
-  
 
   grpc_tls_custom_verification_check_request* c_request() { return c_request_; }
 
