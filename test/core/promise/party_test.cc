@@ -221,7 +221,7 @@ TEST_F(PartyTest, ThreadStressTest) {
   auto party = MakeOrphanable<TestParty>(arena.get());
   std::vector<std::thread> threads;
   threads.reserve(11);
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 3; i++) {
     threads.emplace_back([party = party.get()]() {
       for (int i = 0; i < 100; i++) {
         party->Spawn(

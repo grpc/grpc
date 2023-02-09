@@ -221,7 +221,7 @@ size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
   }
 
   GPR_ASSERT(participants_.size() < kMaxParticipants);
-  participants_.push_back(std::move(participant));
+  participants_.emplace_back(std::move(participant));
   return participants_.size() - 1;
 }
 
