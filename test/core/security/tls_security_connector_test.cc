@@ -737,6 +737,44 @@ TEST_F(TlsSecurityConnectorTest,
                             on_peer_checked);
 }
 
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorWithVerifiedRootCertSubjectSucceeds) {
+  auto* sync_verifier_ = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  options->set_check_call_host(false);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs new_args;
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
+  EXPECT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
+  char* expected_subject = const_cast<char*>(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
+                 expected_subject, &peer.properties[1]) == TSI_OK);
+  RefCountedPtr<grpc_auth_context> auth_context;
+  ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  ChannelArgs args;
+  tls_connector->check_peer(peer, nullptr, args, &auth_context,
+                            on_peer_checked);
+}
+
 //
 // Tests for Certificate Providers in ServerSecurityConnector.
 //
@@ -1089,6 +1127,38 @@ TEST_F(TlsSecurityConnectorTest,
   core_external_verifier->Unref();
 }
 
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithVerifiedRootSubjectCertSucceeds) {
+  auto* sync_verifier = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  auto provider =
+      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(ChannelArgs());
+  // Construct a basic TSI Peer.
+  char* expected_subject = const_cast<char*>(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
+                 expected_subject, &peer.properties[1]) == TSI_OK);
+  RefCountedPtr<grpc_auth_context> auth_context;
+  ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
+}
 }  // namespace testing
 }  // namespace grpc_core
 

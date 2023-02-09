@@ -66,11 +66,14 @@ grpc::string_ref TlsCustomVerificationCheckRequest::common_name() const {
 }
 
 grpc::string_ref TlsCustomVerificationCheckRequest::verified_root_cert_subject()
-    const {return c_request_->peer_info.verified_root_cert_subject != nullptr
-           ? c_request_->peer_info.verified_root_cert_subject }
+    const {
+  return c_request_->peer_info.verified_root_cert_subject != nullptr
+             ? c_request_->peer_info.verified_root_cert_subject
+             : "";
+}
 
-           std::vector<grpc::string_ref>
-               TlsCustomVerificationCheckRequest::uri_names() const {
+std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::uri_names()
+    const {
   std::vector<grpc::string_ref> uri_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.uri_names_size; ++i) {
     uri_names.emplace_back(c_request_->peer_info.san_names.uri_names[i]);

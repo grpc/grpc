@@ -187,6 +187,56 @@ TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceedsWithoutVerifiedR
       << sync_status.error_code() << " " << sync_status.error_message();
 }
 
+TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierSucceeds) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  char* expected_subject = const_cast<char*>(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  request.peer_info.verified_root_cert_subject = expected_subject;
+  auto verifier =
+      ExternalCertificateVerifier::Create<VerifiedRootCertSubjectVerifier>(
+          expected_subject);
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.error_code() << " " << sync_status.error_message();
+}
+
+TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsNull) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  char* expected_subject = const_cast<char*>(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  request.peer_info.verified_root_cert_subject = nullptr;
+  auto verifier =
+      ExternalCertificateVerifier::Create<VerifiedRootCertSubjectVerifier>(
+          expected_subject);
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(sync_status.error_message(),
+            "VerifiedRootCertSubjectVerifier failed");
+}
+
+TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsMismatch) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  char* expected_subject = const_cast<char*>(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  request.peer_info.verified_root_cert_subject = "BAD_SUBJECT";
+  auto verifier =
+      ExternalCertificateVerifier::Create<VerifiedRootCertSubjectVerifier>(
+          expected_subject);
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(sync_status.error_message(),
+            "VerifiedRootCertSubjectVerifier failed");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

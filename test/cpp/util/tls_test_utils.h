@@ -76,6 +76,25 @@ class AsyncCertificateVerifier
   std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
 };
 
+class VerifiedRootCertSubjectVerifier
+    : public grpc::experimental::ExternalCertificateVerifier {
+ public:
+  explicit VerifiedRootCertSubjectVerifier(char* expected_subject)
+      : expected_subject_(expected_subject) {}
+
+  ~VerifiedRootCertSubjectVerifier() override {}
+
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
+              std::function<void(grpc::Status)> callback,
+              grpc::Status* sync_status) override;
+
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
+
+ private:
+  char* expected_subject_ = nullptr;
+};
+
 }  // namespace testing
 }  // namespace grpc
 
