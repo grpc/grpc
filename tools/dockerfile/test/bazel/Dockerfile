@@ -57,10 +57,14 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 # The binary will work correctly when run on real arm64
 # hardware, when qemu-user-static isn't getting into the way.
 
-
-RUN mkdir -p /var/local/jenkins
+#=================
+# Setup git to access working directory across docker boundary
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
+
+
+RUN mkdir -p /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
