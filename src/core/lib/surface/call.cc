@@ -2461,16 +2461,16 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
 PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     void* tag, bool is_closure, const grpc_op* ops) {
   Completion c(BatchSlotForOp(ops[0].op));
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] StartCompletion %s tag=%p", DebugTag().c_str(),
-            CompletionString(c).c_str(), tag);
-  }
   if (!is_closure) {
     grpc_cq_begin_op(cq(), tag);
   }
   completion_info_[c.index()].pending = {
       PendingOpBit(PendingOp::kStartingBatch), is_closure,
       CompletionSuccess::kSuccess, tag};
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[call] StartCompletion %s tag=%p", DebugTag().c_str(),
+            CompletionString(c).c_str(), tag);
+  }
   return c;
 }
 
@@ -2643,6 +2643,7 @@ void PromiseBasedCall::PollSendMessage() {
 
 void PromiseBasedCall::CancelSendMessage() {
   if (!outstanding_send_.has_value()) return;
+  FailCompletion(send_message_completion_);
   FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
   outstanding_send_.reset();
 }
@@ -2723,6 +2724,7 @@ void PromiseBasedCall::CancelRecvMessage() {
   if (!outstanding_recv_.has_value()) return;
   *recv_message_ = nullptr;
   outstanding_recv_.reset();
+  FailCompletion(recv_message_completion_);
   FinishOpOnCompletion(&recv_message_completion_, PendingOp::kReceiveMessage);
 }
 
