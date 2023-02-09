@@ -1293,6 +1293,8 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   if (lb_policy_ == nullptr) {
     grpc_error_handle error = absl_status_to_grpc_error(status);
     // Update connectivity state.
+    // TODO(roth): We should be updating the connectivity state here but
+    // not the picker.
     UpdateStateAndPickerLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
         MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
@@ -1439,6 +1441,10 @@ void ClientChannel::CreateResolverLocked() {
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
+  // TODO(roth): We should be updating the connectivity state here but
+  // not the picker.  But we need to make sure that we are initializing
+  // the picker to a queueing picker somewhere, in case the LB policy
+  // does not immediately return a new picker.
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
       MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
@@ -1642,6 +1648,9 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(
               grpc_error_to_absl_status(op->disconnect_with_error)));
+      // TODO(roth): If this happens when we're still waiting for a
+      // resolver result, we need to trigger failures for all calls in
+      // the resolver queue here.
     }
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "start_transport_op");
