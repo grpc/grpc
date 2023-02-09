@@ -161,10 +161,12 @@ TEST(TlsCertificateVerifierTest,
   EXPECT_EQ(sync_status.error_message(), "Hostname Verification Check failed.");
 }
 
-TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceedsWithVerifiedRootCertSubject) {
+TEST(TlsCertificateVerifierTest,
+     NoOpCertificateVerifierSucceedsWithVerifiedRootCertSubject) {
   grpc_tls_custom_verification_check_request request;
   memset(&request, 0, sizeof(request));
-  char* expected_subject = const_cast<char*>("CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  char* expected_subject = const_cast<char*>(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
   request.peer_info.verified_root_cert_subject = expected_subject;
   auto verifier = std::make_shared<NoOpCertificateVerifier>();
   TlsCustomVerificationCheckRequest cpp_request(&request);
@@ -175,7 +177,8 @@ TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceedsWithVerifiedRoot
       << sync_status.error_code() << " " << sync_status.error_message();
 }
 
-TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceedsWithoutVerifiedRootCertSubject) {
+TEST(TlsCertificateVerifierTest,
+     NoOpCertificateVerifierSucceedsWithoutVerifiedRootCertSubject) {
   grpc_tls_custom_verification_check_request request;
   memset(&request, 0, sizeof(request));
   auto verifier = std::make_shared<NoOpCertificateVerifier>();
