@@ -81,8 +81,9 @@ void WinSocket::Orphan() {
 
 void WinSocket::Orphan(const grpc_core::DebugLocation& location,
                        absl::string_view reason) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p Orphaned from %s:%d", this,
-                                   location.file(), location.line());
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
+      "WinSocket::%p Orphaned from %s:%d. Reason: %s", this, location.file(),
+      location.line(), reason);
   Orphan();
 }
 

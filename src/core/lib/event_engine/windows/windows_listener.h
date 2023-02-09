@@ -72,10 +72,14 @@ class WindowsEventEngineListener : public EventEngine::Listener {
     SinglePortSocketListener(WindowsEventEngineListener* listener,
                              LPFN_ACCEPTEX AcceptEx,
                              grpc_core::OrphanablePtr<WinSocket> win_socket,
-                             int port);
+                             int port, EventEngine::ResolvedAddress hostbyname);
 
     // Bind a recently-created socket for listening
-    static absl::StatusOr<int> PrepareListenerSocket(
+    struct PrepareListenerSocketResult {
+      int port;
+      EventEngine::ResolvedAddress hostbyname;
+    };
+    static absl::StatusOr<PrepareListenerSocketResult> PrepareListenerSocket(
         SOCKET sock, const EventEngine::ResolvedAddress& addr);
 
     void OnAcceptCallbackImpl();
