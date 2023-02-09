@@ -512,3 +512,17 @@ grpc_cc_test(
         "//test/core/event_engine:mock_event_engine",
     ],
 )
+
+grpc_cc_test(
+    name = "party_test",
+    srcs = ["party_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:1999",
+        "//src/core:resource_quota",
+    ],
+)

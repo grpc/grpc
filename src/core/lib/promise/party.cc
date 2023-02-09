@@ -21,13 +21,103 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/strings/str_format.h"
+#include "activity.h"
 
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 
+// Weak handle to a Party.
+// Handle can persist while Party goes away.
+class Party::Handle final : public Wakeable {
+ public:
+  explicit Handle(Party* party) : party_(party) {}
+
+  // Ref the Handle (not the activity).
+  void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
+
+  // Activity is going away... drop its reference and sever the connection back.
+  void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
+    mu_.Lock();
+    GPR_ASSERT(party_ != nullptr);
+    party_ = nullptr;
+    mu_.Unlock();
+    Unref();
+  }
+
+  // Activity needs to wake up (if it still exists!) - wake it up, and drop the
+  // ref that was kept for this handle.
+  void Wakeup(void* arg) override ABSL_LOCKS_EXCLUDED(mu_) {
+    mu_.Lock();
+    // Note that activity refcount can drop to zero, but we could win the lock
+    // against DropActivity, so we need to only increase activities refcount if
+    // it is non-zero.
+    Party* party = party_;
+    if (party != nullptr && party->RefIfNonZero()) {
+      mu_.Unlock();
+      // Activity still exists and we have a reference: wake it up, which will
+      // drop the ref.
+      party->Wakeup(reinterpret_cast<void*>(arg));
+    } else {
+      // Could not get the activity - it's either gone or going. No need to wake
+      // it up!
+      mu_.Unlock();
+    }
+    // Drop the ref to the handle (we have one ref = one wakeup semantics).
+    Unref();
+  }
+
+  void Drop(void*) override { Unref(); }
+
+  std::string ActivityDebugTag(void*) const override {
+    MutexLock lock(&mu_);
+    return party_ == nullptr ? "<unknown>" : party_->DebugTag();
+  }
+
+ private:
+  // Unref the Handle (not the activity).
+  void Unref() {
+    if (1 == refs_.fetch_sub(1, std::memory_order_acq_rel)) {
+      delete this;
+    }
+  }
+
+  // Two initial refs: one for the waiter that caused instantiation, one for the
+  // party.
+  std::atomic<size_t> refs_{2};
+  mutable Mutex mu_;
+  Party* party_ ABSL_GUARDED_BY(mu_);
+};
+
+Wakeable* Party::Participant::MakeNonOwningWakeable(Party* party) {
+  if (handle_ == nullptr) {
+    handle_ = new Handle(party);
+    return handle_;
+  }
+  handle_->Ref();
+  return handle_;
+}
+
+void Party::Orphan() { Unref(); }
+
 void Party::Ref() {
   wakeups_and_refs_.fetch_add(kOneRef, std::memory_order_relaxed);
+}
+
+bool Party::RefIfNonZero() {
+  auto count = wakeups_and_refs_.load(std::memory_order_acquire);
+  do {
+    // If zero, we are done (without an increment). If not, we must do a CAS
+    // to maintain the contract: do not increment the counter if it is already
+    // zero
+    if (count == 0) {
+      return false;
+    }
+  } while (!wakeups_and_refs_.compare_exchange_weak(count, count + kOneRef,
+                                                    std::memory_order_acq_rel,
+                                                    std::memory_order_acquire));
+  return true;
 }
 
 void Party::Unref() {
@@ -38,9 +128,20 @@ void Party::Unref() {
   GPR_DEBUG_ASSERT((prev & kRefMask) != 0);
 }
 
+std::string Party::ActivityDebugTag(void* arg) const {
+  return absl::StrFormat("%s/%p", DebugTag(), arg);
+}
+
 Waker Party::MakeOwningWaker() {
+  GPR_ASSERT(currently_polling_ != kNotPolling);
   Ref();
   return Waker(this, reinterpret_cast<void*>(currently_polling_));
+}
+
+Waker Party::MakeNonOwningWaker() {
+  GPR_ASSERT(currently_polling_ != kNotPolling);
+  return Waker(participants_[currently_polling_]->MakeNonOwningWakeable(this),
+               reinterpret_cast<void*>(currently_polling_));
 }
 
 void Party::ForceImmediateRepoll() {

@@ -35,13 +35,21 @@ class Party : public Activity, private Wakeable {
   void ForceImmediateRepoll() final;
   Waker MakeOwningWaker() final;
   Waker MakeNonOwningWaker() final;
+  std::string ActivityDebugTag(void* arg) const final;
 
  private:
+  class Handle;
+
   class Participant {
    public:
     virtual ~Participant() = default;
     // Poll the participant.
     virtual bool Poll() = 0;
+
+    Wakeable* MakeNonOwningWakeable(Party* party);
+
+   private:
+    Handle* handle_ = nullptr;
   };
 
   template <typename Promise, typename OnComplete>
@@ -73,6 +81,7 @@ class Party : public Activity, private Wakeable {
   void Drop(void* arg) final;
 
   void Ref();
+  bool RefIfNonZero();
   void Unref();
   void ScheduleWakeup(uint64_t participant_index);
   void AddParticipant(Arena::PoolPtr<Participant> participant);
@@ -95,7 +104,7 @@ class Party : public Activity, private Wakeable {
 
   Arena* const arena_;
   absl::InlinedVector<Arena::PoolPtr<Participant>, 1> participants_;
-  std::atomic<uint64_t> wakeups_and_refs_{0};
+  std::atomic<uint64_t> wakeups_and_refs_{kOneRef};
   std::atomic<AddingParticipant*> adding_{nullptr};
   uint8_t currently_polling_ = kNotPolling;
 };

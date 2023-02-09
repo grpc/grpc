@@ -408,7 +408,10 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/party.h",
     ],
-    external_deps = ["absl/cleanup"],
+    external_deps = [
+        "absl/cleanup",
+        "absl/strings:str_format",
+    ],
     language = "c++",
     deps = [
         "activity",
