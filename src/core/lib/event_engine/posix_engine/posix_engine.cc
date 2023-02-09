@@ -479,25 +479,83 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
-class GrpcAresQuery {
- public:
-  explicit GrpcAresQuery()
+class GrpcAresRequest {};
 
-      private : GrpcAresQuery* parent_request_;
-  char* host_;
-  uint16_t port_;
-  bool is_balancer_;
-  const char* qtype_;
+// per ares-channel linked-list of FdNodes
+class FdNodeList {
+ public:
+  class FdNode {
+   public:
+    explicit FdNode(ares_socket_t as) : as_(as) {}
+
+    bool readable_registered() const { return readable_registered_; }
+    bool writable_registered() const { return writable_registered_; }
+    void set_readable_registered(bool rr) { readable_registered_ = rr; }
+    void set_writable_registered(bool wr) { writable_registered_ = wr; }
+
+    int WrappedFd() const { return static_cast<int>(as_); }
+
+   private:
+    friend class FdNodeList;
+
+    // ares socket
+    ares_socket_t as_;
+    // next fd node
+    FdNode* next_ = nullptr;
+    /// if the readable closure has been registered
+    bool readable_registered_ = false;
+    /// if the writable closure has been registered
+    bool writable_registered_ = false;
+  };
+
+  FdNodeList() = default;
+
+  bool IsEmpty() const { return head_ == nullptr; }
+
+  void PushFdNode(FdNode* fd_node) {
+    fd_node->next_ = head_;
+    head_ = fd_node;
+  }
+
+  FdNode* PopFdNode() {
+    GPR_ASSERT(!IsEmpty());
+    FdNode* ret = head_;
+    head_ = head_->next_;
+    return ret;
+  }
+
+  // Search for as in the FdNode list. This is an O(n) search, the max possible
+  // value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2 in our tests.
+  FdNode* PopFdNode(ares_socket_t as) {
+    FdNode phony_head;
+    phony_head.next_ = head_;
+    FdNode* node = &phony_head;
+    while (node->next_ != nullptr) {
+      if (node->next_->as_ == as) {
+        FdNode* ret = node->next_;
+        node->next_ = node->next_->next_;
+        head_ = phony_head.next_;
+        return ret;
+      }
+      node = node->next_;
+    }
+    return nullptr;
+  }
+
+ private:
+  FdNode* head_ = nullptr;
 };
 
-// per ares-channel linked list of FdNodes
-class FdNode {
+using FdNode = FdNodeList::FdNode;
+class EvDriver {
+ public:
+  std::unique_ptr<FdNodeList>& fd_node_list() { return fd_node_list_; }
+
+  const GrpcAresRequest& request() const { return request_; }
+
  private:
-  FdNode* next_;
-  /// if the readable closure has been registered
-  bool readable_registered = false;
-  /// if the writable closure has been registered
-  bool writable_registered = false;
+  GrpcAresRequest request_;
+  std::unique_ptr<FdNodeList> fd_node_list_;
 };
 
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
@@ -521,14 +579,70 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
   // TODO(yijiem): handle ipv6
   ares_gethostbyname(channel, const char* name, AF_INET,
                      ares_host_callback callback, void* arg);
-  // TODO(yijiem): get the fd and then?
-  ares_socket_t socks[ARES_GETSOCK_MAXNUM];
-  int socks_bitmask = ares_getsock(channel, socks, ARES_GETSOCK_MAXNUM);
 
   PosixEventPoller* poller = poller_manager_->Poller();
   GPR_DEBUG_ASSERT(poller != nullptr);
-  EventHandle* handle =
-      poller->CreateHandle(fd, "c-ares", poller->CanTrackErrors());
+  // TODO(yijiem): magically appeared
+  EvDriver ev_driver;
+  std::unique_ptr<FdNodeList> new_list;
+  ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+  int socks_bitmask = ares_getsock(channel, socks, ARES_GETSOCK_MAXNUM);
+  for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
+    if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
+        ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
+      FdNode* fd_node = ev_driver.fd_node_list()->PopFdNode(socks[i]);
+      if (fd_node == nullptr) {
+        fd_node = new FdNode(socks[i]);
+        // TODO(yijiem): trace
+        // GRPC_CARES_TRACE_LOG("request:%p new fd: %s", ev_driver->request,
+        //                       fdn->grpc_polled_fd->GetName());
+      }
+      // TODO(yijiem): what to do with this handle?
+      EventHandle* handle = poller->CreateHandle(fd_node->WrappedFd(), "c-ares",
+                                                 poller->CanTrackErrors());
+      new_list->PushFdNode(fd_node);
+      // Register read_closure if the socket is readable and read_closure has
+      // not been registered with this socket.
+      if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
+          !fd_node->readable_registered()) {
+        // TODO(yijiem): trace
+        // GRPC_CARES_TRACE_LOG("request:%p notify read on: %s",
+        //                       ev_driver->request,
+        //                       fdn->grpc_polled_fd->GetName());
+        // TODO(yijiem): register read closure
+        PosixEngineClosure on_read;
+        handle->NotifyOnRead(&on_read);
+        fd_node->set_readable_registered(true);
+      }
+      // Register write_closure if the socket is writable and write_closure
+      // has not been registered with this socket.
+      if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
+          !fd_node->writable_registered()) {
+        // TODO(yijiem): trace
+        // GRPC_CARES_TRACE_LOG("request:%p notify write on: %s",
+        //                       ev_driver->request,
+        //                       fdn->grpc_polled_fd->GetName());
+        // TODO(yijiem): register write closure
+        PosixEngineClosure on_write;
+        handle->NotifyOnWrite(&on_write);
+        fd_node->set_writable_registered(true);
+      }
+    }
+  }
+  // Any remaining fds in ev_driver->fds were not returned by ares_getsock() and
+  // are therefore no longer in use, so they can be shut down and removed from
+  // the list.
+  while (!ev_driver.fd_node_list()->IsEmpty()) {
+    FdNode* fd_node = ev_driver.fd_node_list()->PopFdNode();
+    // TODO(yijiem): shutdown the fd_node/handle from the poller
+    if (!fd_node->readable_registered() && !fd_node->writable_registered()) {
+      // TODO(yijiem): other destroy steps
+      delete fd_node;
+    } else {
+      new_list->PushFdNode(fd_node);
+    }
+  }
+  ev_driver.fd_node_list().swap(new_list);
 }
 
 static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
