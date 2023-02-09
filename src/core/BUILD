@@ -4388,6 +4388,7 @@ grpc_cc_library(
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "ref_counted",
         "subchannel_interface",
         "unique_type_name",
         "validation_errors",

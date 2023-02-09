@@ -2951,9 +2951,8 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
 
 void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand_,
-            this);
+    gpr_log(GPR_INFO, "chand=%p lb_call=%p: grabbing LB mutex to perform pick",
+            chand_, this);
   }
   // Grab mutex and take a ref to the picker.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
@@ -2969,9 +2968,8 @@ void ClientChannel::LoadBalancedCall::PickSubchannel(bool was_queued) {
   while (true) {
     // Do pick.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: performing pick with picker=%p", chand_,
-              this, picker.get());
+      gpr_log(GPR_INFO, "chand=%p lb_call=%p: performing pick with picker=%p",
+              chand_, this, picker.get());
     }
     grpc_error_handle error;
     bool pick_complete = PickSubchannelImpl(picker.get(), &error);
