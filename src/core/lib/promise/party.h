@@ -113,9 +113,11 @@ class Party : public Activity, private Wakeable {
   static constexpr uint64_t kOneRef          = 0x0000'0100'0000'0000;
   // clang-format on
 
+  static constexpr size_t kMaxParticipants = 16;
+
   Arena* const arena_;
   absl::InlinedVector<Arena::PoolPtr<Participant>, 1> participants_;
-  std::atomic<uint64_t> wakeups_and_refs_{kOneRef};
+  std::atomic<uint64_t> state_{kOneRef};
   std::atomic<AddingParticipant*> adding_{nullptr};
   uint8_t currently_polling_ = kNotPolling;
 };

@@ -110,12 +110,10 @@ Party::Participant::~Participant() {
 
 void Party::Orphan() { Unref(); }
 
-void Party::Ref() {
-  wakeups_and_refs_.fetch_add(kOneRef, std::memory_order_relaxed);
-}
+void Party::Ref() { state_.fetch_add(kOneRef, std::memory_order_relaxed); }
 
 bool Party::RefIfNonZero() {
-  auto count = wakeups_and_refs_.load(std::memory_order_acquire);
+  auto count = state_.load(std::memory_order_acquire);
   do {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
@@ -123,14 +121,14 @@ bool Party::RefIfNonZero() {
     if (count == 0) {
       return false;
     }
-  } while (!wakeups_and_refs_.compare_exchange_weak(count, count + kOneRef,
-                                                    std::memory_order_acq_rel,
-                                                    std::memory_order_acquire));
+  } while (!state_.compare_exchange_weak(count, count + kOneRef,
+                                         std::memory_order_acq_rel,
+                                         std::memory_order_acquire));
   return true;
 }
 
 void Party::Unref() {
-  auto prev = wakeups_and_refs_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+  auto prev = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
   if (prev == kOneRef) {
     delete this;
   }
@@ -142,29 +140,28 @@ std::string Party::ActivityDebugTag(void* arg) const {
 }
 
 Waker Party::MakeOwningWaker() {
-  GPR_ASSERT(currently_polling_ != kNotPolling);
+  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
   Ref();
   return Waker(this, reinterpret_cast<void*>(currently_polling_));
 }
 
 Waker Party::MakeNonOwningWaker() {
-  GPR_ASSERT(currently_polling_ != kNotPolling);
+  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
   return Waker(participants_[currently_polling_]->MakeNonOwningWakeable(this),
                reinterpret_cast<void*>(currently_polling_));
 }
 
 void Party::ForceImmediateRepoll() {
-  GPR_ASSERT(currently_polling_ != kNotPolling);
-  wakeups_and_refs_.fetch_or(1 << currently_polling_,
-                             std::memory_order_relaxed);
+  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+  state_.fetch_or(1 << currently_polling_, std::memory_order_relaxed);
 }
 
 void Party::Run() {
   ScopedActivity activity(this);
   uint64_t prev_wakeups_and_refs;
   do {
-    prev_wakeups_and_refs = wakeups_and_refs_.fetch_and(
-        kRefMask | kAwoken, std::memory_order_relaxed);
+    prev_wakeups_and_refs =
+        state_.fetch_and(kRefMask | kAwoken, std::memory_order_acq_rel);
     uint64_t wakeups = prev_wakeups_and_refs & kParticipantMask;
     if (prev_wakeups_and_refs & kAddsPending) DrainAdds(wakeups);
     prev_wakeups_and_refs &= kRefMask | kAwoken;
@@ -175,11 +172,11 @@ void Party::Run() {
       if (participants_[i]->Poll()) participants_[i].reset();
       currently_polling_ = kNotPolling;
     }
-  } while (!wakeups_and_refs_.compare_exchange_weak(
-      prev_wakeups_and_refs,
-      // Clear awoken bit and unref
-      (prev_wakeups_and_refs & kRefMask), std::memory_order_acq_rel,
-      std::memory_order_relaxed));
+  } while (!state_.compare_exchange_weak(prev_wakeups_and_refs,
+                                         // Clear awoken bit and unref
+                                         (prev_wakeups_and_refs & kRefMask),
+                                         std::memory_order_acq_rel,
+                                         std::memory_order_acquire));
 }
 
 void Party::DrainAdds(uint64_t& wakeups) {
@@ -194,22 +191,21 @@ void Party::DrainAdds(uint64_t& wakeups) {
 void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
   // Lock
   auto prev_wakeups_and_refs =
-      wakeups_and_refs_.fetch_or(kAwoken, std::memory_order_relaxed);
+      state_.fetch_or(kAwoken, std::memory_order_relaxed);
   if ((prev_wakeups_and_refs & kAwoken) == 0) {
     // Lock acquired
-    wakeups_and_refs_.fetch_or(
-        1 << SituateNewParticipant(std::move(participant)));
+    state_.fetch_or(1 << SituateNewParticipant(std::move(participant)));
     Run();
     return;
   }
   // Already locked: add to the list of things to add
   auto* add = new AddingParticipant{std::move(participant), nullptr};
   while (!adding_.compare_exchange_weak(
-      add->next, add, std::memory_order_acq_rel, std::memory_order_relaxed)) {
+      add->next, add, std::memory_order_acq_rel, std::memory_order_acquire)) {
   }
   // And signal that there are adds waiting
-  prev_wakeups_and_refs = wakeups_and_refs_.fetch_or(kAwoken | kAddsPending,
-                                                     std::memory_order_relaxed);
+  prev_wakeups_and_refs =
+      state_.fetch_or(kAwoken | kAddsPending, std::memory_order_acq_rel);
   if ((prev_wakeups_and_refs & kAwoken) == 0) {
     // We queued the add but the lock was released before we signalled that.
     // We acquired the lock though, so now we can run.
@@ -224,13 +220,14 @@ size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
     return i;
   }
 
+  GPR_ASSERT(participants_.size() < kMaxParticipants);
   participants_.push_back(std::move(participant));
   return participants_.size() - 1;
 }
 
 void Party::ScheduleWakeup(uint64_t participant_index) {
-  uint64_t prev_wakeups =
-      wakeups_and_refs_.fetch_or((1 << participant_index) | kAwoken);
+  uint64_t prev_wakeups = state_.fetch_or((1 << participant_index) | kAwoken,
+                                          std::memory_order_acq_rel);
   if ((prev_wakeups & kAwoken) == 0) {
     Run();
   }
