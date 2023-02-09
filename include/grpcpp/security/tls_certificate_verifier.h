@@ -62,10 +62,12 @@ class TlsCustomVerificationCheckRequest {
   grpc::string_ref peer_cert() const;
   grpc::string_ref peer_cert_full_chain() const;
   grpc::string_ref common_name() const;
+  grpc::string_ref verified_root_cert_subject() const;
   std::vector<grpc::string_ref> uri_names() const;
   std::vector<grpc::string_ref> dns_names() const;
   std::vector<grpc::string_ref> email_names() const;
   std::vector<grpc::string_ref> ip_names() const;
+  
 
   grpc_tls_custom_verification_check_request* c_request() { return c_request_; }
 
