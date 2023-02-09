@@ -2246,7 +2246,8 @@ class PromiseBasedCall : public Call,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void PollRecvMessage(grpc_compression_algorithm compression_algorithm)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void CancelRecvMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void CancelRecvMessage(SourceLocation = {})
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartSendMessage(const grpc_op& op, const Completion& completion,
                         PipeSender<MessageHandle>* sender)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -2259,6 +2260,9 @@ class PromiseBasedCall : public Call,
   void set_completed() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { completed_ = true; }
   bool is_sending() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return outstanding_send_.has_value();
+  }
+  bool is_receiving() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return outstanding_recv_.has_value();
   }
 
  private:
@@ -2720,8 +2724,15 @@ void PromiseBasedCall::PollRecvMessage(
   }
 }
 
-void PromiseBasedCall::CancelRecvMessage() {
+void PromiseBasedCall::CancelRecvMessage(SourceLocation location) {
   if (!outstanding_recv_.has_value()) return;
+  if (grpc_call_trace.enabled()) {
+    gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_DEBUG,
+            "%s[call] CancelRecvMessage: op:%s outstanding_recv:%s",
+            DebugTag().c_str(),
+            CompletionString(recv_message_completion_).c_str(),
+            outstanding_recv_.has_value() ? "present" : "absent");
+  }
   *recv_message_ = nullptr;
   outstanding_recv_.reset();
   FailCompletion(recv_message_completion_);
@@ -3074,6 +3085,9 @@ void ClientPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+      if (!server_initial_metadata_ready_.has_value()) {
+        PollRecvMessage(incoming_compression_algorithm());
+      }
       AcceptTransportStatsFromContext();
       Finish(std::move(*result));
     }
@@ -3431,6 +3445,9 @@ void ServerPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+      if (!(*result)->get(GrpcCallWasCancelled()).value_or(false)) {
+        PollRecvMessage(incoming_compression_algorithm_);
+      }
       Finish(std::move(*result));
       promise_ = ArenaPromise<ServerMetadataHandle>();
     }
