@@ -3468,6 +3468,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:grpc_trace",
     ],
 )
 
