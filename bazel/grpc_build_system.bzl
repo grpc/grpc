@@ -163,6 +163,8 @@ def grpc_cc_library(
     copts = []
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
+    if language.upper() == "C++":
+        copts = copts + ["-std=c++14"]
     linkopts = linkopts + if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
     if select_deps:
         for select_deps_entry in select_deps:
