@@ -90,6 +90,7 @@ static void BM_Arena_MakePooled_Small(benchmark::State& state) {
   for (auto _ : state) {
     a->MakePooled<TestThingToAllocate>();
   }
+  a->Destroy();
 }
 BENCHMARK(BM_Arena_MakePooled_Small);
 
@@ -104,6 +105,7 @@ static void BM_Arena_MakePooled3_Small(benchmark::State& state) {
     auto y = a->MakePooled<TestThingToAllocate>();
     auto z = a->MakePooled<TestThingToAllocate>();
   }
+  a->Destroy();
 }
 BENCHMARK(BM_Arena_MakePooled3_Small);
 
