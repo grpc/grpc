@@ -3130,6 +3130,7 @@ grpc_cc_library(
         "alts_util",
         "gpr",
         "grpc_base",
+        "grpc_security_base",
         "tsi_alts_frame_protector",
         "tsi_base",
         "//src/core:channel_args",
