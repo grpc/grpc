@@ -10641,7 +10641,6 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -15341,7 +15340,6 @@ target_link_libraries(mpsc_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
 )
 
