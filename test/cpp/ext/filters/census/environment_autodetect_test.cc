@@ -46,12 +46,6 @@ class EnvironmentAutoDetectTest : public ::testing::Test {
       grpc::internal::EnvironmentAutoDetect* env, absl::Notification* notify) {
     env->NotifyOnDone([&]() { notify->Notify(); });
   }
-
-  grpc_pollset* pollset_ = nullptr;
-  gpr_mu* mu_ = nullptr;
-  grpc_polling_entity pollent_;
-  bool done_ = false;
-  std::thread poller_;
 };
 
 // TODO(yashykt): We could create a mock MetadataServer to test this more end to

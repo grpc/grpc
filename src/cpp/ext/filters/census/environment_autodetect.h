@@ -18,6 +18,7 @@
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_ENVIRONMENT_AUTODETECT_H
 
 #include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -25,6 +26,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc {

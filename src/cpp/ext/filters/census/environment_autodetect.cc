@@ -16,17 +16,12 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/cpp/ext/filters/census/environment_autodetect.h"
 
-#include <grpc/support/port_platform.h>
 #include <string.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-#include <grpcpp/impl/grpc_library.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
+
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -37,25 +32,34 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/uri/uri_parser.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc {
 namespace internal {
@@ -220,15 +224,10 @@ class EnvironmentAutoDetectHelper
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_poll_);
     pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
-    poller_ = grpc_core::Thread(
-        "environment_autodetecter",
-        [](void* arg) {
-          auto* self = static_cast<EnvironmentAutoDetectHelper*>(arg);
-          self->PollLoop();
-        },
-        this, nullptr,
-        grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
-    poller_.Start();
+    // TODO(yashykt): Note that using EventEngine::Run is not fork-safe. If we
+    // want to make this fork-safe, we might need some re-work here.
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        [this] { PollLoop(); });
     AutoDetect();
   }
 
@@ -243,7 +242,9 @@ class EnvironmentAutoDetectHelper
                       pollset_, nullptr));
   }
 
-  void Orphan() override { GPR_ASSERT(false); }
+  void Orphan() override {
+    grpc_core::Crash("Illegal Orphan() call on EnvironmentAutoDetectHelper.");
+  }
 
  private:
   struct Attribute {
@@ -252,20 +253,24 @@ class EnvironmentAutoDetectHelper
   };
 
   void PollLoop() {
+    grpc_core::ExecCtx exec_ctx;
+    bool done = false;
     gpr_mu_lock(mu_poll_);
-    while (!notify_poller_) {
-      grpc_core::ExecCtx exec_ctx;
-      grpc_pollset_worker* worker = nullptr;
-      if (!GRPC_LOG_IF_ERROR(
-              "pollset_work",
-              grpc_pollset_work(grpc_polling_entity_pollset(&pollent_), &worker,
-                                grpc_core::Timestamp::Now() +
-                                    grpc_core::Duration::Seconds(1)))) {
-        notify_poller_ = true;
-      }
+    grpc_pollset_worker* worker = nullptr;
+    if (!GRPC_LOG_IF_ERROR(
+            "pollset_work",
+            grpc_pollset_work(grpc_polling_entity_pollset(&pollent_), &worker,
+                              grpc_core::Timestamp::InfPast()))) {
+      notify_poller_ = true;
     }
+    done = notify_poller_;
     gpr_mu_unlock(mu_poll_);
-    Unref();
+    if (!done) {
+      grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+          [this] { PollLoop(); });
+    } else {
+      Unref();
+    }
   }
 
   void AutoDetect() {
@@ -362,7 +367,6 @@ class EnvironmentAutoDetectHelper
   grpc_pollset* pollset_ = nullptr;
   grpc_polling_entity pollent_;
   gpr_mu* mu_poll_ = nullptr;
-  grpc_core::Thread poller_;
   absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done_;
   grpc_core::Mutex mu_;
   bool notify_poller_ = false;
