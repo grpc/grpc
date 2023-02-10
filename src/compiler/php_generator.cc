@@ -65,11 +65,47 @@ std::string MessageIdentifierName(const std::string& name,
   return oss.str();
 }
 
+std::string UnderscoresToCamelCase(const std::string& input,
+                                   bool cap_first_letter) {
+  std::string result;
+  for (int i = 0; i < input.size(); i++) {
+    if ('a' <= input[i] && input[i] <= 'z') {
+      if (cap_first_letter) {
+        result += input[i] + ('A' - 'a');
+      } else {
+        result += input[i];
+      }
+      cap_first_letter = false;
+    } else if ('A' <= input[i] && input[i] <= 'Z') {
+      if (i == 0 && !cap_first_letter) {
+        // Force first letter to lower-case unless explicitly told to
+        // capitalize it.
+        result += input[i] + ('a' - 'A');
+      } else {
+        // Capital letters after the first are left as-is.
+        result += input[i];
+      }
+      cap_first_letter = false;
+    } else if ('0' <= input[i] && input[i] <= '9') {
+      result += input[i];
+      cap_first_letter = true;
+    } else {
+      cap_first_letter = true;
+    }
+  }
+  // Add a trailing "_" if the input should be altered.
+  if (input[input.size() - 1] == '#') {
+    result += '_';
+  }
+  return result;
+}
+
 void PrintMethod(const MethodDescriptor* method, Printer* out) {
   const Descriptor* input_type = method->input_type();
   const Descriptor* output_type = method->output_type();
   map<std::string, std::string> vars;
   vars["service_name"] = method->service()->full_name();
+  vars["function_name"] = UnderscoresToCamelCase(method->name(), false);
   vars["name"] = method->name();
   vars["input_type_id"] =
       MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
@@ -88,7 +124,7 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
                " * @param array $$metadata metadata\n"
                " * @param array $$options call options\n"
                " * @return $return_type_id$\n */\n"
-               "public function $name$($$metadata = [], "
+               "public function $function_name$($$metadata = [], "
                "$$options = []) {\n");
     out->Indent();
     out->Indent();
@@ -112,7 +148,7 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
                " * @param array $$metadata metadata\n"
                " * @param array $$options call options\n"
                " * @return $return_type_id$\n */\n"
-               "public function $name$(\\$input_type_id$ $$argument,\n"
+               "public function $function_name$(\\$input_type_id$ $$argument,\n"
                "  $$metadata = [], $$options = []) {\n");
     out->Indent();
     out->Indent();
@@ -137,7 +173,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   const Descriptor* input_type = method->input_type();
   const Descriptor* output_type = method->output_type();
   vars["service_name"] = method->service()->full_name();
-  vars["method_name"] = method->name();
+  vars["function_name"] = UnderscoresToCamelCase(method->name(), false);
   vars["input_type_id"] =
       MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
   vars["output_type_id"] = MessageIdentifierName(
@@ -156,7 +192,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
         " * @param \\Grpc\\ServerContext $$context server request context\n"
         " * @return void\n"
         " */\n"
-        "public function $method_name$(\n"
+        "public function $function_name$(\n"
         "    \\Grpc\\ServerCallReader $$reader,\n"
         "    \\Grpc\\ServerCallWriter $$writer,\n"
         "    \\Grpc\\ServerContext $$context\n"
@@ -174,7 +210,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
         " *     initial metadata (if any) and status (if not ok) should be set "
         "to $$context\n"
         " */\n"
-        "public function $method_name$(\n"
+        "public function $function_name$(\n"
         "    \\Grpc\\ServerCallReader $$reader,\n"
         "    \\Grpc\\ServerContext $$context\n"
         "): ?\\$output_type_id$ {\n"
@@ -189,7 +225,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
         " * @param \\Grpc\\ServerContext $$context server request context\n"
         " * @return void\n"
         " */\n"
-        "public function $method_name$(\n"
+        "public function $function_name$(\n"
         "    \\$input_type_id$ $$request,\n"
         "    \\Grpc\\ServerCallWriter $$writer,\n"
         "    \\Grpc\\ServerContext $$context\n"
@@ -206,7 +242,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
         " *     initial metadata (if any) and status (if not ok) should be set "
         "to $$context\n"
         " */\n"
-        "public function $method_name$(\n"
+        "public function $function_name$(\n"
         "    \\$input_type_id$ $$request,\n"
         "    \\Grpc\\ServerContext $$context\n"
         "): ?\\$output_type_id$ {\n"
