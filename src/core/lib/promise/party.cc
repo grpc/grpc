@@ -23,6 +23,7 @@
 #include <initializer_list>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
