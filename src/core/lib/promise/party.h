@@ -23,8 +23,8 @@
 #include <atomic>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/types/variant.h"
 
 #include "src/core/lib/promise/activity.h"
