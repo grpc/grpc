@@ -14,9 +14,11 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include "gtest/gtest.h"
 
