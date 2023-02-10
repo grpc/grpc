@@ -683,7 +683,6 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
-        "absl/utility",
     ],
     language = "c++",
     public_hdrs = [
@@ -829,7 +828,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
