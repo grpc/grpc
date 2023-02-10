@@ -294,7 +294,7 @@ void Party::Wakeup(void* arg) {
   Unref();
 }
 
-void Party::Drop(void* arg) { Unref(); }
+void Party::Drop(void*) { Unref(); }
 
 std::string Party::StateToString(uint64_t state) {
   std::vector<std::string> parts;
