@@ -1607,6 +1607,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
     //   return;
     // }
     // This test has a race and is flaky in any configurations. See b/268379869.
+    // One possible way to deflake this test is to find a way to disable ping ack on the interop
+    // server for this test case.
     if (/* DISABLES CODE */ (YES)) {
       return;
     }
