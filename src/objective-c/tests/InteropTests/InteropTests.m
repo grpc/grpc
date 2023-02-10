@@ -1614,8 +1614,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
     /* DISABLES CODE */ (
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     if ([[self class] transport] == gGRPCCoreCronetID) {
-    // Cronet does not support keepalive
-    return;
+      // Cronet does not support keepalive
+      return;
     }
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
 
@@ -1624,7 +1624,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     NSNumber *kResponseSize = @31415;
 
     id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:kRequestSize
-                                                requestedResponseSize:kResponseSize];
+                                                 requestedResponseSize:kResponseSize];
     GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
     options.transportType = [[self class] transportType];
     options.transport = [[self class] transport];
@@ -1640,13 +1640,15 @@ static dispatch_once_t initGlobalInterceptorFactory;
                 initWithInitialMetadataCallback:nil
                                 messageCallback:nil
                                   closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-    if (weakService == nil) {
-      return;
-    }
-    XCTAssertNotNil(error);
-    XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE,
-                    @"Received status %@ instead of UNAVAILABLE (14).", @(error.code));
-    [expectation fulfill];
+                                    if (weakService == nil) {
+                                      return;
+                                    }
+                                    XCTAssertNotNil(error);
+                                    XCTAssertEqual(
+                                        error.code, GRPC_STATUS_UNAVAILABLE,
+                                        @"Received status %@ instead of UNAVAILABLE (14).",
+                                        @(error.code));
+                                    [expectation fulfill];
                                   }]
                               callOptions:options];
     [call writeMessage:request];
