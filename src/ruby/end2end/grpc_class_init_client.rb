@@ -38,13 +38,13 @@ def run_gc_stress_test(test_proc)
   GC.disable
   # TODO(b/266212253): run construct_many
   # in this test after "Bus error" flakes are fixed.
-  run_default(test_proc)
+  run_default_test(test_proc)
 
   GC.enable
-  run_default(test_proc)
+  run_default_test(test_proc)
 
   GC.start
-  run_default(test_proc)
+  run_default_test(test_proc)
 end
 
 def run_concurrency_stress_test(test_proc)
