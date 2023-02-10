@@ -155,7 +155,8 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
   auto promise = filter->MakeCallPromise(
       CallArgs{ClientMetadataHandle(&initial_metadata_batch_,
                                     Arena::PooledDeleter(nullptr)),
-               nullptr, nullptr, nullptr},
+               ClientInitialMetadataOutstandingToken::Empty(), nullptr, nullptr,
+               nullptr},
       [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
@@ -185,7 +186,8 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   auto promise = filter->MakeCallPromise(
       CallArgs{ClientMetadataHandle(&initial_metadata_batch_,
                                     Arena::PooledDeleter(nullptr)),
-               nullptr, nullptr, nullptr},
+               ClientInitialMetadataOutstandingToken::Empty(), nullptr, nullptr,
+               nullptr},
       [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
