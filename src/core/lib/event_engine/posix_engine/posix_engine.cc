@@ -479,8 +479,6 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
-class GrpcAresRequest {};
-
 // per ares-channel linked-list of FdNodes
 class FdNodeList {
  public:
@@ -546,18 +544,18 @@ class FdNodeList {
   FdNode* head_ = nullptr;
 };
 
-using FdNode = FdNodeList::FdNode;
-class EvDriver {
+// An inflight name service lookup request
+class GrpcAresRequest {
  public:
   std::unique_ptr<FdNodeList>& fd_node_list() { return fd_node_list_; }
 
-  const GrpcAresRequest& request() const { return request_; }
-
  private:
-  GrpcAresRequest request_;
+  // ares channel
+  ares_channel channel_;
   std::unique_ptr<FdNodeList> fd_node_list_;
 };
 
+using FdNode = FdNodeList::FdNode;
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     ResolverOptions const& options,
     std::shared_ptr<PosixEnginePollerManager> poller_manager)
