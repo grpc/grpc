@@ -233,7 +233,7 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
         return CompressMessage(std::move(message), compression_algorithm);
       });
   auto* decompress_args = GetContext<Arena>()->New<DecompressArgs>(
-      DecompressArgs{GRPC_COMPRESS_NONE, absl::nullopt});
+      DecompressArgs{GRPC_COMPRESS_ALGORITHMS_COUNT, absl::nullopt});
   auto* decompress_err =
       GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
   call_args.server_initial_metadata->InterceptAndMap(
@@ -254,8 +254,8 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
         return std::move(*r);
       });
   // Run the next filter, and race it with getting an error from decompression.
-  return Race(next_promise_factory(std::move(call_args)),
-              decompress_err->Wait());
+  return Race(decompress_err->Wait(),
+              next_promise_factory(std::move(call_args)));
 }
 
 ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
@@ -269,7 +269,8 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
        this](MessageHandle message) -> absl::optional<MessageHandle> {
         auto r = DecompressMessage(std::move(message), decompress_args);
         if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_DEBUG, "DecompressMessage returned %s",
+          gpr_log(GPR_DEBUG, "%s[compression] DecompressMessage returned %s",
+                  Activity::current()->DebugTag().c_str(),
                   r.status().ToString().c_str());
         }
         if (!r.ok()) {
@@ -300,8 +301,8 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
   // - decompress incoming messages
   // - wait for initial metadata to be sent, and then commence compression of
   //   outgoing messages
-  return Race(next_promise_factory(std::move(call_args)),
-              decompress_err->Wait());
+  return Race(decompress_err->Wait(),
+              next_promise_factory(std::move(call_args)));
 }
 
 }  // namespace grpc_core
