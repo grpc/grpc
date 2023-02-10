@@ -66,8 +66,9 @@ class TlsCustomVerificationCheckRequest {
    * The subject name of the root certificate used to verify the peer chain
    * If verification fails or the peer cert is self-signed, this will be an
    * empty string If verification is successful, it is a comma-separated list,
-   * where the entries are of the form "FIELD_ABBREVIATION=string" that are
-   * contained in the certificate
+   * where the entries are of the form "FIELD_ABBREVIATION=string"
+   * ex: "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU"
+   * ex: "CN=GTS Root R1,O=Google Trust Services LLC,C=US"
    */
   grpc::string_ref verified_root_cert_subject() const;
   std::vector<grpc::string_ref> uri_names() const;
