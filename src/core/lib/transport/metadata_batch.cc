@@ -93,7 +93,7 @@ StaticSlice ContentTypeMetadata::Encode(ValueType x) {
       return StaticSlice::FromStaticString("unrepresentable value"));
 }
 
-const char* ContentTypeMetadata::DisplayValue(MementoType content_type) {
+const char* ContentTypeMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case ValueType::kApplicationGrpc:
       return "application/grpc";
@@ -137,7 +137,7 @@ TeMetadata::MementoType TeMetadata::ParseMemento(
   return out;
 }
 
-const char* TeMetadata::DisplayValue(MementoType te) {
+const char* TeMetadata::DisplayValue(ValueType te) {
   switch (te) {
     case ValueType::kTrailers:
       return "trailers";
@@ -168,7 +168,7 @@ StaticSlice HttpSchemeMetadata::Encode(ValueType x) {
   }
 }
 
-const char* HttpSchemeMetadata::DisplayValue(MementoType content_type) {
+const char* HttpSchemeMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case kHttp:
       return "http";
@@ -211,7 +211,7 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
   }
 }
 
-const char* HttpMethodMetadata::DisplayValue(MementoType content_type) {
+const char* HttpMethodMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case kPost:
       return "POST";
@@ -253,7 +253,7 @@ Slice LbCostBinMetadata::Encode(const ValueType& x) {
   return Slice(std::move(slice));
 }
 
-std::string LbCostBinMetadata::DisplayValue(MementoType x) {
+std::string LbCostBinMetadata::DisplayValue(ValueType x) {
   return absl::StrCat(x.name, ":", x.cost);
 }
 
