@@ -285,6 +285,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       Run([on_connect = std::move(on_connect), status]() mutable {
         on_connect(status);
       });
+      watched_socket->Orphan();
       return EventEngine::kInvalidConnectionHandle;
     }
   }

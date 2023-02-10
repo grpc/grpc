@@ -206,7 +206,6 @@ WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     if (sock != INVALID_SOCKET) closesocket(sock);
     return error;
   };
-
   auto error = PrepareSocket(sock);
   if (!error.ok()) return fail(error);
   if (bind(sock, addr.address(), addr.size()) == SOCKET_ERROR) {
@@ -242,9 +241,10 @@ WindowsEventEngineListener::WindowsEventEngineListener(
       executor_(executor) {}
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
-  auto shutdown_msg =
-      absl::StrFormat("WindowsEventEngineListener::%p shutting down", this);
-  GRPC_EVENT_ENGINE_TRACE("%s", shutdown_msg.c_str());
+  GRPC_EVENT_ENGINE_TRACE(
+      "%s",
+      absl::StrFormat("WindowsEventEngineListener::%p shutting down", this)
+          .c_str());
   // Shut down each port listener before destroying this EventEngine::Listener
   for (auto& port_listener : port_listeners_) {
     port_listener.reset();
@@ -254,7 +254,7 @@ WindowsEventEngineListener::~WindowsEventEngineListener() {
 
 absl::StatusOr<int> WindowsEventEngineListener::Bind(
     const EventEngine::ResolvedAddress& addr) {
-  if (started_) {
+  if (started_.load()) {
     return absl::FailedPreconditionError(
         absl::StrFormat("WindowsEventEngineListener::%p is already started, "
                         "ports can no longer be bound",
@@ -297,8 +297,8 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
 }
 
 absl::Status WindowsEventEngineListener::Start() {
+  GPR_ASSERT(!started_.exchange(true));
   grpc_core::MutexLock lock(&socket_listeners_mu_);
-  started_ = true;
   for (auto& port_listener : port_listeners_) {
     GRPC_RETURN_IF_ERROR(port_listener->Start());
   }

@@ -45,7 +45,6 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   absl::Status Start() override;
 
  private:
-  friend class SinglePortSocketListener;
   /// Responsible for listening on a single port.
   class SinglePortSocketListener {
    public:
@@ -106,16 +105,16 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   absl::StatusOr<SinglePortSocketListener*> AddSinglePortSocketListener(
       SOCKET sock, EventEngine::ResolvedAddress addr);
 
-  IOCP* iocp_;
+  IOCP* const iocp_;
+  const EndpointConfig& config_;
+  Executor* const executor_;
+  const std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory_;
   AcceptCallback accept_cb_;
   absl::AnyInvocable<void(absl::Status)> on_shutdown_;
-  bool started_{false};
-  std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory_;
+  std::atomic<bool> started_{false};
   grpc_core::Mutex socket_listeners_mu_;
   std::list<std::unique_ptr<SinglePortSocketListener>> port_listeners_
       ABSL_GUARDED_BY(socket_listeners_mu_);
-  const EndpointConfig& config_;
-  Executor* executor_;
 };
 
 }  // namespace experimental
