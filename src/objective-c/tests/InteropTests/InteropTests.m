@@ -1603,7 +1603,11 @@ static dispatch_once_t initGlobalInterceptorFactory;
   GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     // The test is highly flaky when ran as part of InteropTestsRemote
     // TODO(jtattermusch): fix and re-enable the test.
-    if ([[self class] isRemoteTest]) {
+    // if ([[self class] isRemoteTest]) {
+    //   return;
+    // }
+    // This test has a race and is flaky in any configurations. See b/268379869.
+    if (YES) {
       return;
     }
 
