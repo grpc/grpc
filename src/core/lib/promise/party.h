@@ -48,6 +48,11 @@ class Party : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   std::string ActivityDebugTag(void* arg) const final;
 
+ protected:
+  // Derived types will likely want to override this to set up their contexts
+  // before polling.
+  virtual void Run();
+
  private:
   class Handle;
 
@@ -99,24 +104,27 @@ class Party : public Activity, private Wakeable {
   void DrainAdds(uint64_t& wakeups);
   size_t SituateNewParticipant(Arena::PoolPtr<Participant> new_participant);
 
-  // Derived types will likely want to override this to set up their contexts
-  // before polling.
-  virtual void Run();
+  static std::string StateToString(uint64_t state);
 
   static constexpr uint8_t kNotPolling = 255;
 
   // clang-format off
   static constexpr uint64_t kParticipantMask = 0x0000'0000'0000'ffff;
-  static constexpr uint64_t kAwoken          = 0x0000'0000'0100'0000;
+  static constexpr uint64_t kLocked          = 0x0000'0000'0100'0000;
   static constexpr uint64_t kAddsPending     = 0x0000'0000'1000'0000;
   static constexpr uint64_t kRefMask         = 0xffff'ff00'0000'0000;
   static constexpr uint64_t kOneRef          = 0x0000'0100'0000'0000;
   // clang-format on
 
   static constexpr size_t kMaxParticipants = 16;
+  static constexpr size_t kRefShift = 40;
 
   Arena* const arena_;
+#if 0
   absl::InlinedVector<Arena::PoolPtr<Participant>, 1> participants_;
+#else
+  std::vector<Arena::PoolPtr<Participant>> participants_;
+#endif
   std::atomic<uint64_t> state_{kOneRef};
   std::atomic<AddingParticipant*> adding_{nullptr};
   uint8_t currently_polling_ = kNotPolling;

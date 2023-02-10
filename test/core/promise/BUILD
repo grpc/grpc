@@ -522,11 +522,17 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
+        "//:grpc_unsecure",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:1999",
+        "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
+        "//src/core:notification",
         "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:sleep",
     ],
 )

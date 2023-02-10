@@ -411,6 +411,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/strings",
         "absl/strings:str_format",
         "absl/types:variant",
     ],
@@ -419,6 +420,7 @@ grpc_cc_library(
         "activity",
         "arena",
         "poll",
+        "promise_trace",
         "//:gpr",
     ],
 )

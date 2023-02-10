@@ -14,15 +14,22 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <atomic>
 #include <memory>
 #include <thread>
 
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
@@ -32,6 +39,16 @@ class TestParty final : public Party {
  public:
   using Party::Party;
   std::string DebugTag() const override { return "TestParty"; }
+
+  void Run() override {
+    promise_detail::Context<grpc_event_engine::experimental::EventEngine>
+        ee_ctx(ee_.get());
+    Party::Run();
+  }
+
+ private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 class PartyTest : public ::testing::Test {
@@ -220,25 +237,207 @@ TEST_F(PartyTest, ThreadStressTest) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
   auto party = MakeOrphanable<TestParty>(arena.get());
   std::vector<std::thread> threads;
-  threads.reserve(11);
-  for (int i = 0; i < 3; i++) {
+  threads.reserve(16);
+  for (int i = 0; i < 16; i++) {
     threads.emplace_back([party = party.get()]() {
       for (int i = 0; i < 100; i++) {
+        ExecCtx ctx;  // needed for Sleep
+        Notification promise_complete;
+        party->Spawn(Seq(Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+                         []() -> Poll<int> { return 42; }),
+                     [&promise_complete](int i) {
+                       EXPECT_EQ(i, 42);
+                       promise_complete.Notify();
+                     });
+        promise_complete.WaitForNotification();
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+class PromiseNotification {
+ public:
+  explicit PromiseNotification(bool owning_waker)
+      : owning_waker_(owning_waker) {}
+
+  auto Wait() {
+    return [this]() -> Poll<int> {
+      MutexLock lock(&mu_);
+      if (done_) return 42;
+      if (!polled_) {
+        if (owning_waker_) {
+          waker_ = Activity::current()->MakeOwningWaker();
+        } else {
+          waker_ = Activity::current()->MakeNonOwningWaker();
+        }
+        polled_ = true;
+      }
+      return Pending{};
+    };
+  }
+
+  void Notify() {
+    Waker waker;
+    {
+      MutexLock lock(&mu_);
+      done_ = true;
+      waker = std::move(waker_);
+    }
+    waker.Wakeup();
+  }
+
+ private:
+  Mutex mu_;
+  const bool owning_waker_;
+  bool done_ ABSL_GUARDED_BY(mu_) = false;
+  bool polled_ ABSL_GUARDED_BY(mu_) = false;
+  Waker waker_ ABSL_GUARDED_BY(mu_);
+};
+
+TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto party = MakeOrphanable<TestParty>(arena.get());
+  std::vector<std::thread> threads;
+  threads.reserve(16);
+  for (int i = 0; i < 16; i++) {
+    threads.emplace_back([party = party.get()]() {
+      for (int i = 0; i < 100; i++) {
+        ExecCtx ctx;  // needed for Sleep
+        PromiseNotification promise_start(true);
+        Notification promise_complete;
+        party->Spawn(Seq(promise_start.Wait(),
+                         Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+                         []() -> Poll<int> { return 42; }),
+                     [&promise_complete](int i) {
+                       EXPECT_EQ(i, 42);
+                       promise_complete.Notify();
+                     });
+        promise_start.Notify();
+        promise_complete.WaitForNotification();
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto party = MakeOrphanable<TestParty>(arena.get());
+  std::vector<std::thread> threads;
+  threads.reserve(16);
+  for (int i = 0; i < 16; i++) {
+    threads.emplace_back([party = party.get()]() {
+      for (int i = 0; i < 100; i++) {
+        ExecCtx ctx;  // needed for Sleep
+        PromiseNotification promise_start(false);
+        Notification promise_complete;
+        party->Spawn(Seq(promise_start.Wait(),
+                         Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+                         []() -> Poll<int> { return 42; }),
+                     [&promise_complete](int i) {
+                       EXPECT_EQ(i, 42);
+                       promise_complete.Notify();
+                     });
+        promise_start.Notify();
+        promise_complete.WaitForNotification();
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto party = MakeOrphanable<TestParty>(arena.get());
+  std::vector<std::thread> threads;
+  threads.reserve(16);
+  for (int i = 0; i < 16; i++) {
+    threads.emplace_back([party = party.get()]() {
+      for (int i = 0; i < 10000; i++) {
+        PromiseNotification promise_start(true);
+        Notification promise_complete;
         party->Spawn(
-            [party]() -> Poll<int> {
-              EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-              party->Spawn(
-                  [i = 10]() mutable -> Poll<int> {
-                    EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-                    Activity::current()->ForceImmediateRepoll();
-                    --i;
-                    if (i == 0) return 42;
-                    return Pending{};
-                  },
-                  [](int x) { EXPECT_EQ(x, 42); });
-              return 1234;
-            },
-            [](int x) { EXPECT_EQ(x, 1234); });
+            Seq(promise_start.Wait(), []() -> Poll<int> { return 42; }),
+            [&promise_complete](int i) {
+              EXPECT_EQ(i, 42);
+              promise_complete.Notify();
+            });
+        promise_start.Notify();
+        promise_complete.WaitForNotification();
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto party = MakeOrphanable<TestParty>(arena.get());
+  std::vector<std::thread> threads;
+  threads.reserve(16);
+  for (int i = 0; i < 16; i++) {
+    threads.emplace_back([party = party.get()]() {
+      for (int i = 0; i < 10000; i++) {
+        PromiseNotification promise_start(false);
+        Notification promise_complete;
+        party->Spawn(
+            Seq(promise_start.Wait(), []() -> Poll<int> { return 42; }),
+            [&promise_complete](int i) {
+              EXPECT_EQ(i, 42);
+              promise_complete.Notify();
+            });
+        promise_start.Notify();
+        promise_complete.WaitForNotification();
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto party = MakeOrphanable<TestParty>(arena.get());
+  std::vector<std::thread> threads;
+  threads.reserve(8);
+  for (int i = 0; i < 8; i++) {
+    threads.emplace_back([party = party.get()]() {
+      for (int i = 0; i < 100; i++) {
+        ExecCtx ctx;  // needed for Sleep
+        PromiseNotification inner_start(true);
+        PromiseNotification inner_complete(false);
+        Notification promise_complete;
+        party->Spawn(
+            Seq(
+                [party, &inner_start, &inner_complete]() -> Poll<int> {
+                  party->Spawn(Seq(inner_start.Wait(), []() { return 0; }),
+                               [&inner_complete](int i) {
+                                 EXPECT_EQ(i, 0);
+                                 inner_complete.Notify();
+                               });
+                  return 0;
+                },
+                Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+                [&inner_start]() {
+                  inner_start.Notify();
+                  return 0;
+                },
+                inner_complete.Wait(), []() -> Poll<int> { return 42; }),
+            [&promise_complete](int i) {
+              EXPECT_EQ(i, 42);
+              promise_complete.Notify();
+            });
+        promise_complete.WaitForNotification();
       }
     });
   }
@@ -251,5 +450,8 @@ TEST_F(PartyTest, ThreadStressTest) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

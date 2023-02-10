@@ -17,17 +17,20 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
+#include <cstdint>
 #include <initializer_list>
 #include <memory>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 
@@ -113,7 +116,7 @@ void Party::Orphan() { Unref(); }
 void Party::Ref() { state_.fetch_add(kOneRef, std::memory_order_relaxed); }
 
 bool Party::RefIfNonZero() {
-  auto count = state_.load(std::memory_order_acquire);
+  auto count = state_.load(std::memory_order_relaxed);
   do {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
@@ -123,7 +126,7 @@ bool Party::RefIfNonZero() {
     }
   } while (!state_.compare_exchange_weak(count, count + kOneRef,
                                          std::memory_order_acq_rel,
-                                         std::memory_order_acquire));
+                                         std::memory_order_relaxed));
   return true;
 }
 
@@ -158,13 +161,17 @@ void Party::ForceImmediateRepoll() {
 
 void Party::Run() {
   ScopedActivity activity(this);
-  uint64_t prev_wakeups_and_refs;
+  uint64_t prev_state;
   do {
-    prev_wakeups_and_refs =
-        state_.fetch_and(kRefMask | kAwoken, std::memory_order_acq_rel);
-    uint64_t wakeups = prev_wakeups_and_refs & kParticipantMask;
-    if (prev_wakeups_and_refs & kAddsPending) DrainAdds(wakeups);
-    prev_wakeups_and_refs &= kRefMask | kAwoken;
+    prev_state =
+        state_.fetch_and(kRefMask | kLocked, std::memory_order_acquire);
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "Party::Run(): prev_state=%s",
+              StateToString(prev_state).c_str());
+    }
+    uint64_t wakeups = prev_state & kParticipantMask;
+    if (prev_state & kAddsPending) DrainAdds(wakeups);
+    prev_state &= kRefMask | kLocked;
     for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
       if ((wakeups & 1) == 0) continue;
       if (participants_[i] == nullptr) continue;
@@ -172,9 +179,9 @@ void Party::Run() {
       if (participants_[i]->Poll()) participants_[i].reset();
       currently_polling_ = kNotPolling;
     }
-  } while (!state_.compare_exchange_weak(prev_wakeups_and_refs,
+  } while (!state_.compare_exchange_weak(prev_state,
                                          // Clear awoken bit and unref
-                                         (prev_wakeups_and_refs & kRefMask),
+                                         (prev_state & kRefMask),
                                          std::memory_order_acq_rel,
                                          std::memory_order_acquire));
 }
@@ -190,11 +197,15 @@ void Party::DrainAdds(uint64_t& wakeups) {
 
 void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
   // Lock
-  auto prev_wakeups_and_refs =
-      state_.fetch_or(kAwoken, std::memory_order_relaxed);
-  if ((prev_wakeups_and_refs & kAwoken) == 0) {
+  auto prev_state = state_.fetch_or(kLocked, std::memory_order_acquire);
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "Party::AddParticipant(): prev_state=%s",
+            StateToString(prev_state).c_str());
+  }
+  if ((prev_state & kLocked) == 0) {
     // Lock acquired
-    state_.fetch_or(1 << SituateNewParticipant(std::move(participant)));
+    state_.fetch_or(1 << SituateNewParticipant(std::move(participant)),
+                    std::memory_order_relaxed);
     Run();
     return;
   }
@@ -204,9 +215,13 @@ void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
       add->next, add, std::memory_order_acq_rel, std::memory_order_acquire)) {
   }
   // And signal that there are adds waiting
-  prev_wakeups_and_refs =
-      state_.fetch_or(kAwoken | kAddsPending, std::memory_order_acq_rel);
-  if ((prev_wakeups_and_refs & kAwoken) == 0) {
+  prev_state =
+      state_.fetch_or(kLocked | kAddsPending, std::memory_order_release);
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "Party::AddParticipant(): prev_state=%s",
+            StateToString(prev_state).c_str());
+  }
+  if ((prev_state & kLocked) == 0) {
     // We queued the add but the lock was released before we signalled that.
     // We acquired the lock though, so now we can run.
     Run();
@@ -226,9 +241,13 @@ size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
 }
 
 void Party::ScheduleWakeup(uint64_t participant_index) {
-  uint64_t prev_wakeups = state_.fetch_or((1 << participant_index) | kAwoken,
-                                          std::memory_order_acq_rel);
-  if ((prev_wakeups & kAwoken) == 0) {
+  uint64_t prev_state = state_.fetch_or((1 << participant_index) | kLocked,
+                                        std::memory_order_acquire);
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "Party::ScheduleWakeup(%" PRIu64 "): prev_state=%s",
+            participant_index, StateToString(prev_state).c_str());
+  }
+  if ((prev_state & kLocked) == 0) {
     Run();
   }
   Unref();
@@ -239,5 +258,22 @@ void Party::Wakeup(void* arg) {
 }
 
 void Party::Drop(void* arg) { Unref(); }
+
+std::string Party::StateToString(uint64_t state) {
+  std::vector<std::string> parts;
+  if (state & kLocked) parts.push_back("locked");
+  if (state & kAddsPending) parts.push_back("adds_pending");
+  parts.push_back(
+      absl::StrFormat("refs=%" PRIuPTR, (state & kRefMask) >> kRefShift));
+  std::vector<int> participants;
+  for (size_t i = 0; i < kMaxParticipants; i++) {
+    if ((state & (1 << i)) != 0) participants.push_back(i);
+  }
+  if (!participants.empty()) {
+    parts.push_back(
+        absl::StrFormat("wakeup=%s", absl::StrJoin(participants, ",")));
+  }
+  return absl::StrCat("{", absl::StrJoin(parts, " "), "}");
+}
 
 }  // namespace grpc_core
