@@ -223,6 +223,11 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
            }},
       },
   };
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_wrr_locality_lb %p] generated child policy config: %s", this,
+            child_config_json.Dump(/*indent=*/1).c_str());
+  }
   // Parse config.
   auto child_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
