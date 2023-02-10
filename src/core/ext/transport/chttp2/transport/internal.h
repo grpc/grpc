@@ -24,13 +24,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -59,6 +57,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -148,8 +147,8 @@ struct grpc_chttp2_repeated_ping_policy {
 struct grpc_chttp2_repeated_ping_state {
   grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      delayed_ping_timer_handle;
+  grpc_timer delayed_ping_timer;
+  bool is_delayed_ping_timer_set;
 };
 struct grpc_chttp2_server_ping_recv_state {
   grpc_core::Timestamp last_ping_recv_time;
@@ -411,6 +410,7 @@ struct grpc_chttp2_transport
   grpc_closure finish_bdp_ping_locked;
 
   // if non-NULL, close the transport with this error when writes are finished
+  //
   grpc_error_handle close_transport_on_writes_finished;
 
   // a list of closures to run after writes are finished
@@ -426,27 +426,25 @@ struct grpc_chttp2_transport
   /// destructive cleanup closure
   grpc_closure destructive_reclaimer_locked;
 
+  // next bdp ping timer
+  bool have_next_bdp_ping_timer = false;
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
-  // next bdp ping timer handle
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      next_bdp_ping_timer_handle;
+  grpc_timer next_bdp_ping_timer;
 
   // keep-alive ping support
   /// Closure to initialize a keepalive ping
   grpc_closure init_keepalive_ping_locked;
   /// Closure to run when the keepalive ping is sent
   grpc_closure start_keepalive_ping_locked;
-  /// Closure to run when the keepalive ping ack is received
+  /// Cousure to run when the keepalive ping ack is received
   grpc_closure finish_keepalive_ping_locked;
-  /// Closure to run when the keepalive ping timeouts
+  /// Closrue to run when the keepalive ping timeouts
   grpc_closure keepalive_watchdog_fired_locked;
   /// timer to initiate ping events
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      keepalive_ping_timer_handle;
+  grpc_timer keepalive_ping_timer;
   /// watchdog to kill the transport when waiting for the keepalive ping
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      keepalive_watchdog_timer_handle;
+  grpc_timer keepalive_watchdog_timer;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// grace period for a ping to complete before watchdog kicks in
@@ -469,9 +467,8 @@ struct grpc_chttp2_transport
   bool reading_paused_on_pending_induced_frames = false;
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
+  ///
   bool enable_preferred_rx_crypto_frame_advertisement = false;
-
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 typedef enum {
@@ -806,7 +803,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
 
-void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t);
+void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
 
 void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 
