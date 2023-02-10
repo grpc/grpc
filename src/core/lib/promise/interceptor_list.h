@@ -140,8 +140,7 @@ class InterceptorList {
               async_resolution_.space.get());
           async_resolution_.current_factory =
               async_resolution_.current_factory->next();
-          if (!p->has_value()) async_resolution_.current_factory = nullptr;
-          if (async_resolution_.current_factory == nullptr) {
+          if (async_resolution_.current_factory == nullptr || !p->has_value()) {
             return std::move(*p);
           }
           async_resolution_.current_factory->MakePromise(
