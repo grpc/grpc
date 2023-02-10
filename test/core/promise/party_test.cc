@@ -15,13 +15,14 @@
 #include "src/core/lib/promise/party.h"
 
 #include <algorithm>
-#include <atomic>
 #include <memory>
 #include <thread>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
@@ -29,7 +30,10 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
