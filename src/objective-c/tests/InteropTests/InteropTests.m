@@ -1607,11 +1607,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
     //   return;
     // }
     // This test has a race and is flaky in any configurations. See b/268379869.
-    if (YES) {
+    if (/* DISABLES CODE */ (YES)) {
       return;
     }
 
-    /* DISABLES CODE */ (
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     if ([[self class] transport] == gGRPCCoreCronetID) {
       // Cronet does not support keepalive
@@ -1656,7 +1655,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
     waiterBlock(@[ expectation ], kTestTimeout);
     [call finish];
-    )
   });
 }
 
