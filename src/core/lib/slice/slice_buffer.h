@@ -23,8 +23,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
