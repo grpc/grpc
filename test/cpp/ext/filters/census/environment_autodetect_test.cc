@@ -42,53 +42,9 @@ using ::testing::UnorderedElementsAre;
 
 class EnvironmentAutoDetectTest : public ::testing::Test {
  protected:
-  EnvironmentAutoDetectTest() {
-    pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(pollset_, &mu_);
-    pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
-    // Start a thread for polling.
-    poller_ = std::thread([&]() {
-      gpr_mu_lock(mu_);
-      while (!done_) {
-        grpc_core::ExecCtx exec_ctx;
-        grpc_pollset_worker* worker = nullptr;
-        if (!GRPC_LOG_IF_ERROR(
-                "pollset_work",
-                grpc_pollset_work(grpc_polling_entity_pollset(&pollent_),
-                                  &worker,
-                                  grpc_core::Timestamp::Now() +
-                                      grpc_core::Duration::Seconds(1)))) {
-          done_ = true;
-        }
-      }
-      gpr_mu_unlock(mu_);
-    });
-  }
-
-  ~EnvironmentAutoDetectTest() override {
-    grpc_core::ExecCtx exec_ctx;
-    poller_.join();
-    grpc_pollset_shutdown(
-        pollset_, GRPC_CLOSURE_CREATE(
-                      [](void* arg, absl::Status /* status */) {
-                        grpc_pollset_destroy(static_cast<grpc_pollset*>(arg));
-                        gpr_free(arg);
-                      },
-                      pollset_, nullptr));
-  }
-
   void GetNotifiedOnEnvironmentDetection(
       grpc::internal::EnvironmentAutoDetect* env, absl::Notification* notify) {
-    env->NotifyOnDone(&pollent_, [&]() {
-      gpr_mu_lock(mu_);
-      done_ = true;
-      GRPC_LOG_IF_ERROR(
-          "Pollset kick",
-          grpc_pollset_kick(grpc_polling_entity_pollset(&pollent_), nullptr));
-      gpr_mu_unlock(mu_);
-      notify->Notify();
-    });
-    grpc_core::ExecCtx::Get()->Flush();
+    env->NotifyOnDone([&]() { notify->Notify(); });
   }
 
   grpc_pollset* pollset_ = nullptr;
@@ -103,9 +59,7 @@ class EnvironmentAutoDetectTest : public ::testing::Test {
 // deferring to that.
 
 TEST_F(EnvironmentAutoDetectTest, Basic) {
-  grpc_core::ExecCtx exec_ctx;
   grpc::internal::EnvironmentAutoDetect env("project");
-  EXPECT_TRUE(env.resource() == nullptr);
 
   absl::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
@@ -119,9 +73,7 @@ TEST_F(EnvironmentAutoDetectTest, Basic) {
 
 TEST_F(EnvironmentAutoDetectTest, GkeEnvironment) {
   grpc_core::SetEnv("KUBERNETES_SERVICE_HOST", "k8s_service_host");
-  grpc_core::ExecCtx exec_ctx;
   grpc::internal::EnvironmentAutoDetect env("project");
-  EXPECT_TRUE(env.resource() == nullptr);
 
   absl::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
@@ -135,9 +87,7 @@ TEST_F(EnvironmentAutoDetectTest, GkeEnvironment) {
 
 TEST_F(EnvironmentAutoDetectTest, CloudFunctions) {
   grpc_core::SetEnv("FUNCTION_NAME", "function_name");
-  grpc_core::ExecCtx exec_ctx;
   grpc::internal::EnvironmentAutoDetect env("project");
-  EXPECT_TRUE(env.resource() == nullptr);
 
   absl::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
@@ -151,9 +101,7 @@ TEST_F(EnvironmentAutoDetectTest, CloudFunctions) {
 
 TEST_F(EnvironmentAutoDetectTest, CloudRun) {
   grpc_core::SetEnv("K_CONFIGURATION", "config");
-  grpc_core::ExecCtx exec_ctx;
   grpc::internal::EnvironmentAutoDetect env("project");
-  EXPECT_TRUE(env.resource() == nullptr);
 
   absl::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
@@ -167,9 +115,7 @@ TEST_F(EnvironmentAutoDetectTest, CloudRun) {
 
 TEST_F(EnvironmentAutoDetectTest, AppEngine) {
   grpc_core::SetEnv("K_CONFIGURATION", "config");
-  grpc_core::ExecCtx exec_ctx;
   grpc::internal::EnvironmentAutoDetect env("project");
-  EXPECT_TRUE(env.resource() == nullptr);
 
   absl::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
@@ -182,9 +128,7 @@ TEST_F(EnvironmentAutoDetectTest, AppEngine) {
 }
 
 TEST_F(EnvironmentAutoDetectTest, MultipleNotifyWaiters) {
-  grpc_core::ExecCtx exec_ctx;
   grpc::internal::EnvironmentAutoDetect env("project");
-  EXPECT_TRUE(env.resource() == nullptr);
 
   absl::Notification notify[10];
   for (int i = 0; i < 10; ++i) {

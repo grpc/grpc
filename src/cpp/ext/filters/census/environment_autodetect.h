@@ -18,18 +18,14 @@
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_ENVIRONMENT_AUTODETECT_H
 
 #include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 
 namespace grpc {
 namespace internal {
@@ -50,14 +46,10 @@ class EnvironmentAutoDetect {
   static EnvironmentAutoDetect& Get();
 
   // Exposed for testing purposes only
-  explicit EnvironmentAutoDetect(std::string project_id)
-      : project_id_(std::move(project_id)) {}
+  explicit EnvironmentAutoDetect(std::string project_id);
 
-  // Provides \a pollent that might be uesd by EnvironmentAutoDetect for
-  // detecting the environment, and \a callback that will be invoked once the
-  // environment is done being detected.
-  void NotifyOnDone(grpc_polling_entity* pollent,
-                    absl::AnyInvocable<void()> callback);
+  // \a callback will be invoked once the environment is done being detected.
+  void NotifyOnDone(absl::AnyInvocable<void()> callback);
 
   const ResourceType* resource() {
     grpc_core::MutexLock lock(&mu_);
@@ -68,7 +60,6 @@ class EnvironmentAutoDetect {
   const std::string project_id_;
   grpc_core::Mutex mu_;
   std::unique_ptr<ResourceType> resource_ ABSL_GUARDED_BY(mu_);
-  grpc_polling_entity* pollent_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::vector<absl::AnyInvocable<void()>> callbacks_ ABSL_GUARDED_BY(mu_);
 };
 

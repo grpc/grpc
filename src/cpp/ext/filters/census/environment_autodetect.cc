@@ -16,14 +16,20 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/filters/census/environment_autodetect.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
-
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/meta/type_traits.h"
@@ -31,17 +37,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
@@ -49,6 +50,12 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset.h"
 
 namespace grpc {
 namespace internal {
@@ -197,14 +204,71 @@ std::string GetVersionId() {
 }
 
 // Fire and forget class
-class EnvironmentAutoDetectHelper {
+class EnvironmentAutoDetectHelper
+    : public grpc_core::InternallyRefCounted<EnvironmentAutoDetectHelper>,
+      private internal::GrpcLibrary {
  public:
   explicit EnvironmentAutoDetectHelper(
-      std::string project_id, grpc_polling_entity* pollent,
+      std::string project_id,
       absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done)
-      : project_id_(std::move(project_id)),
-        pollent_(pollent),
+      : InternallyRefCounted(/*trace=*/nullptr, /*initial_refcount=*/2),
+        project_id_(std::move(project_id)),
         on_done_(std::move(on_done)) {
+    grpc_core::ExecCtx exec_ctx;
+    // TODO(yashykt): The pollset stuff should go away once the HTTP library is
+    // ported over to use EventEngine.
+    pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(pollset_, &mu_poll_);
+    pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
+    poller_ = grpc_core::Thread(
+        "environment_autodetecter",
+        [](void* arg) {
+          auto* self = static_cast<EnvironmentAutoDetectHelper*>(arg);
+          self->PollLoop();
+        },
+        this, nullptr,
+        grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
+    poller_.Start();
+    AutoDetect();
+  }
+
+  ~EnvironmentAutoDetectHelper() override {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_pollset_shutdown(
+        pollset_, GRPC_CLOSURE_CREATE(
+                      [](void* arg, absl::Status /* status */) {
+                        grpc_pollset_destroy(static_cast<grpc_pollset*>(arg));
+                        gpr_free(arg);
+                      },
+                      pollset_, nullptr));
+  }
+
+  void Orphan() override { GPR_ASSERT(false); }
+
+ private:
+  struct Attribute {
+    std::string resource_attribute;
+    std::string metadata_server_atttribute;
+  };
+
+  void PollLoop() {
+    gpr_mu_lock(mu_poll_);
+    while (!notify_poller_) {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_pollset_worker* worker = nullptr;
+      if (!GRPC_LOG_IF_ERROR(
+              "pollset_work",
+              grpc_pollset_work(grpc_polling_entity_pollset(&pollent_), &worker,
+                                grpc_core::Timestamp::Now() +
+                                    grpc_core::Duration::Seconds(1)))) {
+        notify_poller_ = true;
+      }
+    }
+    gpr_mu_unlock(mu_poll_);
+    Unref();
+  }
+
+  void AutoDetect() {
     grpc_core::MutexLock lock(&mu_);
     // GKE
     resource_.labels.emplace("project_id", project_id_);
@@ -248,31 +312,12 @@ class EnvironmentAutoDetectHelper {
     FetchMetadataServerAttributesAsynchronouslyLocked();
   }
 
- private:
-  struct Attribute {
-    std::string resource_attribute;
-    std::string metadata_server_atttribute;
-  };
-
-  const std::string project_id_;
-  grpc_polling_entity* pollent_;
-  absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done_;
-  grpc_core::Mutex mu_;
-  absl::flat_hash_map<std::string /* metadata_server_attribute */,
-                      std::string /* resource_attribute */>
-      attributes_to_fetch_ ABSL_GUARDED_BY(mu_);
-  EnvironmentAutoDetect::ResourceType resource_ ABSL_GUARDED_BY(mu_);
-  // This would be true if we are assuming the resource to be GCE. In this case,
-  // there is a chance that it will fail and we should instead just use
-  // "global".
-  bool assuming_gce_ ABSL_GUARDED_BY(mu_) = false;
-
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     GPR_ASSERT(!attributes_to_fetch_.empty());
     for (const auto& element : attributes_to_fetch_) {
       new MetadataQuery(
-          element.first, pollent_,
+          element.first, &pollent_,
           [this](std::string attribute, std::string result) {
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
@@ -301,47 +346,50 @@ class EnvironmentAutoDetectHelper {
                 resource = std::move(resource_);
               }
             }
+            gpr_mu_lock(mu_poll_);
+            notify_poller_ = true;
+            gpr_mu_unlock(mu_poll_);
             if (resource.has_value()) {
               auto on_done = std::move(on_done_);
-              delete this;
+              Unref();
               on_done(std::move(resource).value());
             }
           });
     }
   }
+
+  const std::string project_id_;
+  grpc_pollset* pollset_ = nullptr;
+  grpc_polling_entity pollent_;
+  gpr_mu* mu_poll_ = nullptr;
+  grpc_core::Thread poller_;
+  absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done_;
+  grpc_core::Mutex mu_;
+  bool notify_poller_ = false;
+  absl::flat_hash_map<std::string /* metadata_server_attribute */,
+                      std::string /* resource_attribute */>
+      attributes_to_fetch_ ABSL_GUARDED_BY(mu_);
+  EnvironmentAutoDetect::ResourceType resource_ ABSL_GUARDED_BY(mu_);
+  // This would be true if we are assuming the resource to be GCE. In this case,
+  // there is a chance that it will fail and we should instead just use
+  // "global".
+  bool assuming_gce_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace
-
-EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return Create(""); }
 
 EnvironmentAutoDetect& EnvironmentAutoDetect::Create(std::string project_id) {
   static EnvironmentAutoDetect auto_detector(std::move(project_id));
   return auto_detector;
 }
 
-void EnvironmentAutoDetect::NotifyOnDone(grpc_polling_entity* pollent,
-                                         absl::AnyInvocable<void()> callback) {
-  {
-    grpc_core::ReleasableMutexLock lock(&mu_);
-    // Environment has already been detected
-    if (resource_ != nullptr) {
-      lock.Release();
-      // Execute on the event engine to avoid deadlocks.
-      return grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-          std::move(callback));
-    }
-    callbacks_.push_back(std::move(callback));
-    // We already have a polling entity.
-    if (pollent_ != nullptr) {
-      return;
-    }
-    // We can actually start the detection now.
-    pollent_ = pollent;
-  }
+EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return Create(""); }
+
+EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
+    : project_id_(std::move(project_id)) {
+  GPR_ASSERT(!project_id_.empty());
   new EnvironmentAutoDetectHelper(
-      project_id_, pollent,
-      [this](EnvironmentAutoDetect::ResourceType resource) {
+      project_id_, [this](EnvironmentAutoDetect::ResourceType resource) {
         std::vector<absl::AnyInvocable<void()>> callbacks;
         {
           grpc_core::MutexLock lock(&mu_);
@@ -353,6 +401,20 @@ void EnvironmentAutoDetect::NotifyOnDone(grpc_polling_entity* pollent,
           callback();
         }
       });
+}
+
+void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {
+  {
+    grpc_core::ReleasableMutexLock lock(&mu_);
+    // Environment has already been detected
+    if (resource_ != nullptr) {
+      lock.Release();
+      // Execute on the event engine to avoid deadlocks.
+      return grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+          std::move(callback));
+    }
+    callbacks_.push_back(std::move(callback));
+  }
 }
 
 }  // namespace internal
