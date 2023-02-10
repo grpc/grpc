@@ -24,13 +24,12 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/executor/executor.h"
-#include "src/core/lib/event_engine/socket_notifier.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class WinSocket final : public SocketNotifier {
+class WinSocket {
  public:
   // State related to a Read or Write socket operation
   class OpState {
@@ -70,16 +69,16 @@ class WinSocket final : public SocketNotifier {
   //  - The IOCP already completed in the background, and we need to call
   //    the callback now.
   //  - The IOCP hasn't completed yet, and we're queuing it for later.
-  void NotifyOnRead(EventEngine::Closure* on_read) override;
-  void NotifyOnWrite(EventEngine::Closure* on_write) override;
-  void SetReadable() override;
-  void SetWritable() override;
+  void NotifyOnRead(EventEngine::Closure* on_read);
+  void NotifyOnWrite(EventEngine::Closure* on_write);
+  void SetReadable();
+  void SetWritable();
   // Schedule a shutdown of the socket operations. Will call the pending
   // operations to abort them. We need to do that this way because of the
   // various callsites of that function, which happens to be in various
   // mutex hold states, and that'd be unsafe to call them directly.
-  void MaybeShutdown(absl::Status why) override;
-  bool IsShutdown() override;
+  void MaybeShutdown(absl::Status why);
+  bool IsShutdown();
 
   // Return the appropriate OpState for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.

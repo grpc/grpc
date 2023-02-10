@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/status/statusor.h"

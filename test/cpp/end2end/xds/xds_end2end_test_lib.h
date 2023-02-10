@@ -788,7 +788,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // If response is non-null, it will be populated with the response.
   // Returns the status of the RPC.
   Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
-                 EchoResponse* response = nullptr);
+                 EchoResponse* response = nullptr,
+                 std::multimap<std::string, std::string>*
+                     server_initial_metadata = nullptr);
 
   // Internal helper function for SendRpc().
   template <typename Stub>
@@ -1043,6 +1045,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
             num_rpcs, p, error_tolerance);
     return num_rpcs;
   }
+
+  // Returns a regex that can be matched against an RPC failure status
+  // message for a connection failure.
+  static std::string MakeConnectionFailureRegex(absl::string_view prefix);
 
   // Returns the contents of the specified file.
   static std::string ReadFile(const char* file_path);

@@ -128,12 +128,12 @@ TEST(ActivityTest, DropImmediately) {
 }
 
 template <typename B>
-class BarrierTest : public testing::Test {
+class BarrierTest : public ::testing::Test {
  public:
   using Type = B;
 };
 
-using BarrierTestTypes = testing::Types<Barrier, SingleBarrier>;
+using BarrierTestTypes = ::testing::Types<Barrier, SingleBarrier>;
 TYPED_TEST_SUITE(BarrierTest, BarrierTestTypes);
 
 TYPED_TEST(BarrierTest, Barrier) {

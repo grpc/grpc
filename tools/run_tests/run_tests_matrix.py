@@ -185,7 +185,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs += _generate_jobs(languages=['sanity', 'clang-tidy', 'iwyu'],
                                 configs=['dbg'],
                                 platforms=['linux'],
-                                labels=['basictests'],
+                                labels=['basictests', 'sanity'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)

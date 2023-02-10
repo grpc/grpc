@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20220623.0'
+  abseil_version = '1.20230125.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -76,7 +76,9 @@ Pod::Spec.new do |s|
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/**"',
+        ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
     # If we don't set these two settings, `include/grpc/support/time.h` and
     # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
     # build.
@@ -204,7 +206,10 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
+    ss.source_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.cc',
+                      'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                      'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                      'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/channel_idle/channel_idle_filter.cc',
                       'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                       'src/core/ext/filters/channel_idle/idle_filter_state.cc',
@@ -1179,9 +1184,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/shim.h',
                       'src/core/lib/event_engine/slice.cc',
                       'src/core/lib/event_engine/slice_buffer.cc',
-                      'src/core/lib/event_engine/socket_notifier.h',
                       'src/core/lib/event_engine/tcp_socket_utils.cc',
                       'src/core/lib/event_engine/tcp_socket_utils.h',
+                      'src/core/lib/event_engine/thread_local.cc',
+                      'src/core/lib/event_engine/thread_local.h',
                       'src/core/lib/event_engine/thread_pool.cc',
                       'src/core/lib/event_engine/thread_pool.h',
                       'src/core/lib/event_engine/time_util.cc',
@@ -1319,6 +1325,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/call_combiner.h',
                       'src/core/lib/iomgr/cfstream_handle.cc',
                       'src/core/lib/iomgr/cfstream_handle.h',
+                      'src/core/lib/iomgr/closure.cc',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.cc',
                       'src/core/lib/iomgr/combiner.h',
@@ -1474,19 +1481,19 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/activity.h',
                       'src/core/lib/promise/arena_promise.h',
                       'src/core/lib/promise/context.h',
+                      'src/core/lib/promise/detail/basic_join.h',
                       'src/core/lib/promise/detail/basic_seq.h',
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
                       'src/core/lib/promise/detail/status.h',
                       'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
-                      'src/core/lib/promise/for_each.h',
+                      'src/core/lib/promise/if.h',
+                      'src/core/lib/promise/interceptor_list.h',
                       'src/core/lib/promise/intra_activity_waiter.h',
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
-                      'src/core/lib/promise/map_pipe.h',
-                      'src/core/lib/promise/pipe.cc',
                       'src/core/lib/promise/pipe.h',
                       'src/core/lib/promise/poll.h',
                       'src/core/lib/promise/promise.h',
@@ -1494,7 +1501,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/seq.h',
                       'src/core/lib/promise/sleep.cc',
                       'src/core/lib/promise/sleep.h',
-                      'src/core/lib/promise/try_concurrently.h',
+                      'src/core/lib/promise/trace.cc',
+                      'src/core/lib/promise/trace.h',
+                      'src/core/lib/promise/try_join.h',
                       'src/core/lib/promise/try_seq.h',
                       'src/core/lib/resolver/resolver.cc',
                       'src/core/lib/resolver/resolver.h',
@@ -1649,6 +1658,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_buffer.cc',
                       'src/core/lib/slice/slice_buffer.h',
                       'src/core/lib/slice/slice_internal.h',
+                      'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
@@ -1884,7 +1894,9 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
                       'third_party/xxhash/xxhash.h'
-    ss.private_header_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+    ss.private_header_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                              'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                              'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                               'src/core/ext/filters/channel_idle/idle_filter_state.h',
                               'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -2369,8 +2381,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
                               'src/core/lib/event_engine/resolved_address_internal.h',
                               'src/core/lib/event_engine/shim.h',
-                              'src/core/lib/event_engine/socket_notifier.h',
                               'src/core/lib/event_engine/tcp_socket_utils.h',
+                              'src/core/lib/event_engine/thread_local.h',
                               'src/core/lib/event_engine/thread_pool.h',
                               'src/core/lib/event_engine/time_util.h',
                               'src/core/lib/event_engine/trace.h',
@@ -2515,25 +2527,27 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/activity.h',
                               'src/core/lib/promise/arena_promise.h',
                               'src/core/lib/promise/context.h',
+                              'src/core/lib/promise/detail/basic_join.h',
                               'src/core/lib/promise/detail/basic_seq.h',
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
                               'src/core/lib/promise/detail/status.h',
                               'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
-                              'src/core/lib/promise/for_each.h',
+                              'src/core/lib/promise/if.h',
+                              'src/core/lib/promise/interceptor_list.h',
                               'src/core/lib/promise/intra_activity_waiter.h',
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
-                              'src/core/lib/promise/map_pipe.h',
                               'src/core/lib/promise/pipe.h',
                               'src/core/lib/promise/poll.h',
                               'src/core/lib/promise/promise.h',
                               'src/core/lib/promise/race.h',
                               'src/core/lib/promise/seq.h',
                               'src/core/lib/promise/sleep.h',
-                              'src/core/lib/promise/try_concurrently.h',
+                              'src/core/lib/promise/trace.h',
+                              'src/core/lib/promise/try_join.h',
                               'src/core/lib/promise/try_seq.h',
                               'src/core/lib/resolver/resolver.h',
                               'src/core/lib/resolver/resolver_factory.h',

@@ -306,6 +306,10 @@ XdsClusterResource::Aggregate AggregateClusterParse(
   const upb_StringView* clusters =
       envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
           aggregate_cluster_config, &size);
+  if (size == 0) {
+    ValidationErrors::ScopedField field(errors, ".clusters");
+    errors->AddError("must be non-empty");
+  }
   for (size_t i = 0; i < size; ++i) {
     aggregate.prioritized_cluster_names.emplace_back(
         UpbStringToStdString(clusters[i]));

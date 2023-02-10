@@ -18,6 +18,7 @@
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"
