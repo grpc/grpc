@@ -244,6 +244,68 @@ TEST_F(ArenaTest, CreatePoolArray) {
   EXPECT_TRUE(IsScribbled(p.get(), 5, 1));
 }
 
+TEST_F(ArenaTest, ConcurrentMakePooled) {
+  concurrent_test_args args;
+  gpr_event_init(&args.ev_start);
+  args.arena = Arena::Create(1024, &memory_allocator_);
+
+  class BaseClass {
+   public:
+    virtual ~BaseClass() {}
+    virtual int Foo() = 0;
+  };
+
+  class Type1 : public BaseClass {
+   public:
+    int Foo() override { return 1; }
+  };
+
+  class Type2 : public BaseClass {
+   public:
+    int Foo() override { return 2; }
+  };
+
+  Thread thds1[CONCURRENT_TEST_THREADS / 2];
+  Thread thds2[CONCURRENT_TEST_THREADS / 2];
+
+  for (int i = 0; i < CONCURRENT_TEST_THREADS / 2; i++) {
+    thds1[i] = Thread(
+        "grpc_concurrent_test",
+        [](void* arg) {
+          concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
+          gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
+          for (size_t i = 0; i < concurrent_test_iterations(); i++) {
+            EXPECT_EQ(a->arena->MakePooled<Type1>()->Foo(), 1);
+          }
+        },
+        &args);
+    thds1[i].Start();
+
+    thds2[i] = Thread(
+        "grpc_concurrent_test",
+        [](void* arg) {
+          concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
+          gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
+          for (size_t i = 0; i < concurrent_test_iterations(); i++) {
+            EXPECT_EQ(a->arena->MakePooled<Type2>()->Foo(), 2);
+          }
+        },
+        &args);
+    thds2[i].Start();
+  }
+
+  gpr_event_set(&args.ev_start, reinterpret_cast<void*>(1));
+
+  for (auto& th : thds1) {
+    th.Join();
+  }
+  for (auto& th : thds2) {
+    th.Join();
+  }
+
+  args.arena->Destroy();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char* argv[]) {
