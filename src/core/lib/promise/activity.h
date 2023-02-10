@@ -51,6 +51,8 @@ class Wakeable {
  public:
   // Wake up the underlying activity.
   // After calling, this Wakeable cannot be used again.
+  // arg comes from the Waker object and allows one Wakeable instance to be used
+  // for multiple disjoint subparts of an Activity.
   virtual void Wakeup(void* arg) = 0;
   // Drop this wakeable without waking up the underlying activity.
   virtual void Drop(void* arg) = 0;
