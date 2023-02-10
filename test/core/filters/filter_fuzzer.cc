@@ -477,7 +477,6 @@ class MainLoop {
       auto* server_initial_metadata = arena_->New<Pipe<ServerMetadataHandle>>();
       CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
                                                  &client_initial_metadata_)),
-                         ClientInitialMetadataOutstandingToken::Empty(),
                          &server_initial_metadata->sender, nullptr, nullptr};
       if (is_client) {
         promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
