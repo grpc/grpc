@@ -38,36 +38,51 @@ class Party : public Activity, private Wakeable {
  public:
   explicit Party(Arena* arena) : arena_(arena) {}
 
+  // Spawn one promise onto the arena.
+  // The promise will be polled until it is resolved, or until the party is shut
+  // down.
+  // The on_complete callback will be called with the result of the promise if
+  // it completes.
+  // A maximum of sixteen promises can be spawned onto a party.
   template <typename Promise, typename OnComplete>
   void Spawn(Promise promise, OnComplete on_complete);
 
   void Orphan() final;
 
+  // Activity implementation: not allowed to be overridden by derived types.
   void ForceImmediateRepoll() final;
   Waker MakeOwningWaker() final;
   Waker MakeNonOwningWaker() final;
   std::string ActivityDebugTag(void* arg) const final;
 
  protected:
-  // Derived types will likely want to override this to set up their contexts
-  // before polling.
+  // Main run loop. Must be locked.
+  // Polls participants and drains the add queue until there is no work left to
+  // be done.
+  // Derived types will likely want to override this to set up their
+  // contexts before polling.
   virtual void Run();
 
  private:
+  // Non-owning wakeup handle.
   class Handle;
 
+  // One participant in the party.
   class Participant {
    public:
     virtual ~Participant();
-    // Poll the participant.
+    // Poll the participant. Return true if complete.
     virtual bool Poll() = 0;
 
+    // Return a Handle instance for this participant.
     Wakeable* MakeNonOwningWakeable(Party* party);
 
    private:
     Handle* handle_ = nullptr;
   };
 
+  // Concrete implementation of a participant for some promise & oncomplete
+  // type.
   template <typename Promise, typename OnComplete>
   class ParticipantImpl final : public Participant {
    public:
@@ -88,43 +103,75 @@ class Party : public Activity, private Wakeable {
     GPR_NO_UNIQUE_ADDRESS OnComplete on_complete_;
   };
 
+  // One participant that's been spawned, but has not yet made it into
+  // participants_.
+  // Since it's impossible to block on locking this type, we form a queue of
+  // participants waiting and drain that prior to polling.
   struct AddingParticipant {
     Arena::PoolPtr<Participant> participant;
     AddingParticipant* next;
   };
 
+  // Wakeable implementation
   void Wakeup(void* arg) final;
   void Drop(void* arg) final;
 
+  // Internal ref counting
   void Ref();
   bool RefIfNonZero();
   void Unref();
+
+  // Organize to wake up one participant.
   void ScheduleWakeup(uint64_t participant_index);
+  // Start adding a participant to the party.
+  // Backs Spawn() after type erasure.
   void AddParticipant(Arena::PoolPtr<Participant> participant);
+  // Drain the add queue.
   void DrainAdds(uint64_t& wakeups);
+  // Take a new participant, and add it to the participants_ array.
+  // Returns the index of the participant in the array.
   size_t SituateNewParticipant(Arena::PoolPtr<Participant> new_participant);
 
+  // Convert a state into a string.
   static std::string StateToString(uint64_t state);
 
+  // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
 
+  // State bits:
+  // The atomic state_ field is composed of the following:
+  //   - 24 bits for ref counts
+  //     1 is owned by the party prior to Orphan()
+  //     All others are owned by owning wakers
+  //   - 1 bit to indicate whether the party is locked
+  //     The first thread to set this owns the party until it is unlocked
+  //     That thread will run the main loop until no further work needs to be
+  //     done.
+  //   - 1 bit to indicate whether there are participants waiting to be added
+  //   - 16 bits, one per participant, indicating which participants have been
+  //     woken up and should be polled next time the main loop runs.
+
   // clang-format off
-  static constexpr uint64_t kParticipantMask = 0x0000'0000'0000'ffff;
-  static constexpr uint64_t kLocked          = 0x0000'0000'0100'0000;
-  static constexpr uint64_t kAddsPending     = 0x0000'0000'1000'0000;
-  static constexpr uint64_t kRefMask         = 0xffff'ff00'0000'0000;
-  static constexpr uint64_t kOneRef          = 0x0000'0100'0000'0000;
+  // Bits used to store 16 bits of wakeups
+  static constexpr uint64_t kWakeupMask  = 0x0000'0000'0000'ffff;
+  // Bit indicating locked or not
+  static constexpr uint64_t kLocked      = 0x0000'0000'0100'0000;
+  // Bit indicating whether there are adds pending
+  static constexpr uint64_t kAddsPending = 0x0000'0000'1000'0000;
+  // Bits used to store 24 bits of ref counts
+  static constexpr uint64_t kRefMask     = 0xffff'ff00'0000'0000;
   // clang-format on
 
+  // Number of bits reserved for wakeups gives us the maximum number of
+  // participants.
   static constexpr size_t kMaxParticipants = 16;
+  // How far to shift to get the refcount
   static constexpr size_t kRefShift = 40;
+  // One ref count
+  static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
   Arena* const arena_;
-#if 0
   absl::InlinedVector<Arena::PoolPtr<Participant>, 1> participants_;
-#else
-  std::vector<Arena::PoolPtr<Participant>> participants_;
-#endif
   std::atomic<uint64_t> state_{kOneRef};
   std::atomic<AddingParticipant*> adding_{nullptr};
   uint8_t currently_polling_ = kNotPolling;

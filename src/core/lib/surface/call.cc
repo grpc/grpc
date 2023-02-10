@@ -1969,17 +1969,17 @@ class PromiseBasedCall : public Call,
      public:
       explicit AsanWaker(PromiseBasedCall* call) : call_(call) {}
 
-      void Wakeup() override {
-        call_->Wakeup();
+      void Wakeup(void*) override {
+        call_->Wakeup(nullptr);
         delete this;
       }
 
-      void Drop() override {
-        call_->Drop();
+      void Drop(void*) override {
+        call_->Drop(nullptr);
         delete this;
       }
 
-      std::string ActivityDebugTag() const override {
+      std::string ActivityDebugTag(void*) const override {
         return call_->DebugTag();
       }
 

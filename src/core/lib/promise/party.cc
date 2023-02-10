@@ -156,6 +156,8 @@ Waker Party::MakeNonOwningWaker() {
 
 void Party::ForceImmediateRepoll() {
   GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+  // Or in the bit for the currently polling participant.
+  // Will be grabbed next round to force a repoll of this promise.
   state_.fetch_or(1 << currently_polling_, std::memory_order_relaxed);
 }
 
@@ -163,34 +165,58 @@ void Party::Run() {
   ScopedActivity activity(this);
   uint64_t prev_state;
   do {
+    // Grab the current state, and clear the wakeup bits & add flag.
     prev_state =
         state_.fetch_and(kRefMask | kLocked, std::memory_order_acquire);
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_DEBUG, "Party::Run(): prev_state=%s",
               StateToString(prev_state).c_str());
     }
-    uint64_t wakeups = prev_state & kParticipantMask;
+    // From the previous state, extract which participants we're to wakeup.
+    uint64_t wakeups = prev_state & kWakeupMask;
+    // If there were adds pending, drain them.
+    // We pass in wakeups here so that the new participants are polled
+    // immediately (draining will situate them).
     if (prev_state & kAddsPending) DrainAdds(wakeups);
+    // Now update prev_state to be what we want the CAS to see below.
     prev_state &= kRefMask | kLocked;
+    // For each wakeup bit...
     for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
+      // If the bit is not set, skip.
       if ((wakeups & 1) == 0) continue;
+      // If the participant is null, skip.
+      // This allows participants to complete whilst wakers still exist
+      // somewhere.
       if (participants_[i] == nullptr) continue;
+      // Poll the participant.
       currently_polling_ = i;
       if (participants_[i]->Poll()) participants_[i].reset();
       currently_polling_ = kNotPolling;
     }
-  } while (!state_.compare_exchange_weak(prev_state,
-                                         // Clear awoken bit and unref
-                                         (prev_state & kRefMask),
+    // Try to CAS the state we expected to have (with no wakeups or adds)
+    // back to unlocked (by masking in only the ref mask - sans locked bit).
+    // If this succeeds then no wakeups were added, no adds were added, and we
+    // have successfully unlocked.
+    // Otherwise, we need to loop again.
+    // Note that if an owning waker is created or the weak cas spuriously fails
+    // we will also loop again, but in that case see no wakeups or adds and so
+    // will get back here fairly quickly.
+    // TODO(ctiller): consider mitigations for the accidental wakeup on owning
+    // waker creation case -- I currently expect this will be more expensive
+    // than this quick loop.
+  } while (!state_.compare_exchange_weak(prev_state, (prev_state & kRefMask),
                                          std::memory_order_acq_rel,
                                          std::memory_order_acquire));
 }
 
 void Party::DrainAdds(uint64_t& wakeups) {
+  // Grab the list of adds.
   AddingParticipant* adding =
       adding_.exchange(nullptr, std::memory_order_acquire);
+  // For each add, situate it and add it to the wakeup mask.
   while (adding != nullptr) {
     wakeups |= 1 << SituateNewParticipant(std::move(adding->participant));
+    // Don't leak the add request.
     delete std::exchange(adding, adding->next);
   }
 }
@@ -214,7 +240,10 @@ void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
   while (!adding_.compare_exchange_weak(
       add->next, add, std::memory_order_acq_rel, std::memory_order_acquire)) {
   }
-  // And signal that there are adds waiting
+  // And signal that there are adds waiting.
+  // This needs to happen after the add above: Run() will examine this bit
+  // first, and then decide to drain the queue - so if the ordering was reversed
+  // it might examine the adds pending bit, and then observe no add to drain.
   prev_state =
       state_.fetch_or(kLocked | kAddsPending, std::memory_order_release);
   if (grpc_trace_promise_primitives.enabled()) {
@@ -229,32 +258,35 @@ void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
 }
 
 size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
+  // First search for a free index in the participants array.
+  // If we find one, use it.
   for (size_t i = 0; i < participants_.size(); i++) {
     if (participants_[i] != nullptr) continue;
     participants_[i] = std::move(participant);
     return i;
   }
 
+  // Otherwise, add it to the end.
   GPR_ASSERT(participants_.size() < kMaxParticipants);
   participants_.emplace_back(std::move(participant));
   return participants_.size() - 1;
 }
 
 void Party::ScheduleWakeup(uint64_t participant_index) {
+  // Or in the wakeup bit for the participant, AND the locked bit.
   uint64_t prev_state = state_.fetch_or((1 << participant_index) | kLocked,
                                         std::memory_order_acquire);
   if (grpc_trace_promise_primitives.enabled()) {
     gpr_log(GPR_DEBUG, "Party::ScheduleWakeup(%" PRIu64 "): prev_state=%s",
             participant_index, StateToString(prev_state).c_str());
   }
-  if ((prev_state & kLocked) == 0) {
-    Run();
-  }
-  Unref();
+  // If the lock was not held now we hold it, so we need to run.
+  if ((prev_state & kLocked) == 0) Run();
 }
 
 void Party::Wakeup(void* arg) {
   ScheduleWakeup(reinterpret_cast<uintptr_t>(arg));
+  Unref();
 }
 
 void Party::Drop(void* arg) { Unref(); }
