@@ -79,7 +79,7 @@ class AsyncCertificateVerifier
 class VerifiedRootCertSubjectVerifier
     : public grpc::experimental::ExternalCertificateVerifier {
  public:
-  explicit VerifiedRootCertSubjectVerifier(char* expected_subject)
+  explicit VerifiedRootCertSubjectVerifier(const std::string& expected_subject)
       : expected_subject_(expected_subject) {}
 
   ~VerifiedRootCertSubjectVerifier() override {}
@@ -92,7 +92,7 @@ class VerifiedRootCertSubjectVerifier
   }
 
  private:
-  char* expected_subject_ = nullptr;
+  std::string expected_subject_ = nullptr;
 };
 
 }  // namespace testing

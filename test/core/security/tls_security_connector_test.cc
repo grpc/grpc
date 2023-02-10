@@ -739,8 +739,8 @@ TEST_F(TlsSecurityConnectorTest,
 
 TEST_F(TlsSecurityConnectorTest,
        ChannelSecurityConnectorWithVerifiedRootCertSubjectSucceeds) {
-  auto* sync_verifier_ = new SyncExternalVerifier(true);
-  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  auto* sync_verifier = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
   RefCountedPtr<grpc_tls_credentials_options> options =
       MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
@@ -756,7 +756,7 @@ TEST_F(TlsSecurityConnectorTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a basic TSI Peer.
-  char* expected_subject = const_cast<char*>(
+  std::string expected_subject = const_cast<char*>(
       "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
   tsi_peer peer;
   GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
@@ -765,7 +765,7 @@ TEST_F(TlsSecurityConnectorTest,
                                                 &peer.properties[0]) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
-                 expected_subject, &peer.properties[1]) == TSI_OK);
+                 expected_subject.c_str(), &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
