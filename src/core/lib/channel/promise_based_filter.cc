@@ -2178,10 +2178,12 @@ void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
     case SendTrailingState::kForwarded:
       send_trailing_state_ = SendTrailingState::kCancelled;
       if (!error.ok()) {
+        call_stack()->IncrementRefCount();
         auto* batch = grpc_make_transport_stream_op(
-            NewClosure([call_combiner = call_combiner()](absl::Status) {
-              gpr_log(GPR_DEBUG, "ON COMPLETE DONE");
+            NewClosure([call_combiner = call_combiner(),
+                        call_stack = call_stack()](absl::Status) {
               GRPC_CALL_COMBINER_STOP(call_combiner, "done-cancel");
+              call_stack->Unref();
             }));
         batch->cancel_stream = true;
         batch->payload->cancel_stream.cancel_error = error;
