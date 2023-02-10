@@ -79,7 +79,6 @@ ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
   if (args.server_to_client_messages != nullptr) {
     args.server_to_client_messages->Close();
   }
-  args.client_initial_metadata_outstanding.Complete(true);
   return Immediate(ServerMetadataFromStatus(error_));
 }
 
