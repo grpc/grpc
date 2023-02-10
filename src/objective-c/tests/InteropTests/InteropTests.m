@@ -1612,48 +1612,48 @@ static dispatch_once_t initGlobalInterceptorFactory;
     }
 
     /* DISABLES CODE */ (
-      RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
-      if ([[self class] transport] == gGRPCCoreCronetID) {
-      // Cronet does not support keepalive
+    RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
+    if ([[self class] transport] == gGRPCCoreCronetID) {
+    // Cronet does not support keepalive
+    return;
+    }
+    __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
+
+    const NSTimeInterval kTestTimeout = 5;
+    NSNumber *kRequestSize = @27182;
+    NSNumber *kResponseSize = @31415;
+
+    id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:kRequestSize
+                                                requestedResponseSize:kResponseSize];
+    GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+    options.transportType = [[self class] transportType];
+    options.transport = [[self class] transport];
+    options.PEMRootCertificates = [[self class] PEMRootCertificates];
+    options.hostNameOverride = [[self class] hostNameOverride];
+    options.keepaliveInterval = 1.5;
+    options.keepaliveTimeout = 0;
+
+    __weak RMTTestService *weakService = service;
+    GRPCStreamingProtoCall *call = [service
+        fullDuplexCallWithResponseHandler:
+            [[InteropTestsBlockCallbacks alloc]
+                initWithInitialMetadataCallback:nil
+                                messageCallback:nil
+                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+    if (weakService == nil) {
       return;
-      }
-      __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
+    }
+    XCTAssertNotNil(error);
+    XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE,
+                    @"Received status %@ instead of UNAVAILABLE (14).", @(error.code));
+    [expectation fulfill];
+                                  }]
+                              callOptions:options];
+    [call writeMessage:request];
+    [call start];
 
-      const NSTimeInterval kTestTimeout = 5;
-      NSNumber *kRequestSize = @27182;
-      NSNumber *kResponseSize = @31415;
-
-      id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:kRequestSize
-                                                  requestedResponseSize:kResponseSize];
-      GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-      options.transportType = [[self class] transportType];
-      options.transport = [[self class] transport];
-      options.PEMRootCertificates = [[self class] PEMRootCertificates];
-      options.hostNameOverride = [[self class] hostNameOverride];
-      options.keepaliveInterval = 1.5;
-      options.keepaliveTimeout = 0;
-
-      __weak RMTTestService *weakService = service;
-      GRPCStreamingProtoCall *call = [service
-          fullDuplexCallWithResponseHandler:
-              [[InteropTestsBlockCallbacks alloc]
-                  initWithInitialMetadataCallback:nil
-                                  messageCallback:nil
-                                    closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-      if (weakService == nil) {
-        return;
-      }
-      XCTAssertNotNil(error);
-      XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE,
-                     @"Received status %@ instead of UNAVAILABLE (14).", @(error.code));
-      [expectation fulfill];
-                                    }]
-                                callOptions:options];
-      [call writeMessage:request];
-      [call start];
-
-      waiterBlock(@[ expectation ], kTestTimeout);
-      [call finish];
+    waiterBlock(@[ expectation ], kTestTimeout);
+    [call finish];
     )
   });
 }
