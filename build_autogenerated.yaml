@@ -10198,7 +10198,6 @@ targets:
   - src/core/lib/backoff/random_early_detection.cc
   - test/core/backoff/random_early_detection_test.cc
   deps:
-  - absl/random:distributions
   - absl/random:random
   uses_polling: false
 - name: raw_end2end_test

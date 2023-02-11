@@ -16954,7 +16954,6 @@ target_link_libraries(random_early_detection_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::random_distributions
   absl::random_random
 )
 
