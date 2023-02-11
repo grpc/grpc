@@ -3689,6 +3689,7 @@ grpc_cc_library(
         "absl/random",
         "absl/random:distributions",
     ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
