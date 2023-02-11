@@ -89,6 +89,8 @@ class Latch {
     waiter_.Wake();
   }
 
+  bool is_set() const { return has_value_; }
+
  private:
   std::string DebugTag() {
     return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
@@ -165,7 +167,7 @@ class Latch<void> {
 
  private:
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
+    return absl::StrCat(Activity::current()->DebugTag(), " LATCH(void)[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
