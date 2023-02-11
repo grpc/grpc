@@ -3678,6 +3678,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "random_early_detection",
+    srcs = [
+        "lib/backoff/random_early_detection.cc",
+    ],
+    hdrs = [
+        "lib/backoff/random_early_detection.h",
+    ],
+    external_deps = [
+        "absl/random",
+        "absl/random:distributions",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_backend_metric_data",
     hdrs = [
         "ext/filters/client_channel/lb_policy/backend_metric_data.h",
