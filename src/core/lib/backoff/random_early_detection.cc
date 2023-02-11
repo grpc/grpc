@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/backoff/random_early_detection.h"
+
+#include "absl/random/distributions.h"
 
 namespace grpc_core {
 

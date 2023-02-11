@@ -15,9 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_BACKOFF_RANDOM_EARLY_DETECTION_H
 #define GRPC_SRC_CORE_LIB_BACKOFF_RANDOM_EARLY_DETECTION_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 
-#include "absl/random/distributions.h"
 #include "absl/random/random.h"
 
 namespace grpc_core {
@@ -52,4 +53,4 @@ class RandomEarlyDetection {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_BACKOFF_RANDOM_EARLY_DETECTION_H
