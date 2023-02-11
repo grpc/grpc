@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
@@ -494,7 +493,7 @@ class PromiseActivity final
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
   void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    GPR_ASSERT(!absl::exchange(done_, true));
+    GPR_ASSERT(!std::exchange(done_, true));
     ScopedContext contexts(this);
     Destruct(&promise_holder_.promise);
   }

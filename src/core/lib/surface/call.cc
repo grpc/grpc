@@ -85,6 +85,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -134,11 +135,13 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual void InternalRef(const char* reason) = 0;
   virtual void InternalUnref(const char* reason) = 0;
 
-  virtual grpc_compression_algorithm test_only_compression_algorithm() = 0;
-  virtual uint32_t test_only_message_flags() = 0;
-  virtual uint32_t test_only_encodings_accepted_by_peer() = 0;
-  virtual grpc_compression_algorithm compression_for_level(
-      grpc_compression_level level) = 0;
+  grpc_compression_algorithm test_only_compression_algorithm() {
+    return incoming_compression_algorithm_;
+  }
+  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
+  CompressionAlgorithmSet encodings_accepted_by_peer() {
+    return encodings_accepted_by_peer_;
+  }
 
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
@@ -205,6 +208,29 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   void ClearPeerString() { gpr_atm_rel_store(&peer_string_, 0); }
 
+  // TODO(ctiller): cancel_func is for cancellation of the call - filter stack
+  // holds no mutexes here, promise stack does, and so locking is different.
+  // Remove this and cancel directly once promise conversion is done.
+  void ProcessIncomingInitialMetadata(
+      grpc_metadata_batch& md,
+      absl::FunctionRef<void(absl::Status)> cancel_func);
+  // Fixup outgoing metadata before sending - adds compression, protects
+  // internal headers against external modification.
+  void PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                      grpc_metadata_batch& md);
+  void NoteLastMessageFlags(uint32_t flags) {
+    test_only_last_message_flags_ = flags;
+  }
+  grpc_compression_algorithm incoming_compression_algorithm() const {
+    return incoming_compression_algorithm_;
+  }
+
+  static void HandleCompressionAlgorithmDisabled(
+      grpc_compression_algorithm compression_algorithm,
+      absl::FunctionRef<void(absl::Status)> cancel_func) GPR_ATTRIBUTE_NOINLINE;
+  void HandleCompressionAlgorithmNotAccepted(
+      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
+
  private:
   RefCountedPtr<Channel> channel_;
   Arena* const arena_;
@@ -216,6 +242,13 @@ class Call : public CppImplOf<Call, grpc_call> {
   bool cancellation_is_inherited_ = false;
   // A char* indicating the peer name.
   gpr_atm peer_string_ = 0;
+  // Compression algorithm for *incoming* data
+  grpc_compression_algorithm incoming_compression_algorithm_ =
+      GRPC_COMPRESS_NONE;
+  // Supported encodings (compression algorithms), a bitset.
+  // Always support no compression.
+  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
+  uint32_t test_only_last_message_flags_ = 0;
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -352,6 +385,92 @@ void Call::DeleteThis() {
   arena->Destroy();
 }
 
+void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                          grpc_metadata_batch& md) {
+  // TODO(juanlishen): If the user has already specified a compression
+  // algorithm by setting the initial metadata with key of
+  // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
+  // with the compression algorithm mapped from compression level.
+  // process compression level
+  grpc_compression_level effective_compression_level = GRPC_COMPRESS_LEVEL_NONE;
+  bool level_set = false;
+  if (op.data.send_initial_metadata.maybe_compression_level.is_set) {
+    effective_compression_level =
+        op.data.send_initial_metadata.maybe_compression_level.level;
+    level_set = true;
+  } else {
+    const grpc_compression_options copts = channel()->compression_options();
+    if (copts.default_level.is_set) {
+      level_set = true;
+      effective_compression_level = copts.default_level.level;
+    }
+  }
+  // Currently, only server side supports compression level setting.
+  if (level_set && !is_client()) {
+    const grpc_compression_algorithm calgo =
+        encodings_accepted_by_peer().CompressionAlgorithmForLevel(
+            effective_compression_level);
+    // The following metadata will be checked and removed by the message
+    // compression filter. It will be used as the call's compression
+    // algorithm.
+    md.Set(GrpcInternalEncodingRequest(), calgo);
+  }
+  // Ignore any te metadata key value pairs specified.
+  md.Remove(TeMetadata());
+}
+
+void Call::ProcessIncomingInitialMetadata(
+    grpc_metadata_batch& md,
+    absl::FunctionRef<void(absl::Status)> cancel_func) {
+  incoming_compression_algorithm_ =
+      md.Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  encodings_accepted_by_peer_ =
+      md.Take(GrpcAcceptEncodingMetadata())
+          .value_or(CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
+
+  const grpc_compression_options compression_options =
+      channel_->compression_options();
+  const grpc_compression_algorithm compression_algorithm =
+      incoming_compression_algorithm_;
+  if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
+                        compression_options.enabled_algorithms_bitset)
+                        .IsSet(compression_algorithm))) {
+    // check if algorithm is supported by current channel config
+    HandleCompressionAlgorithmDisabled(compression_algorithm, cancel_func);
+  }
+  // GRPC_COMPRESS_NONE is always set.
+  GPR_DEBUG_ASSERT(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
+  if (GPR_UNLIKELY(!encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+      HandleCompressionAlgorithmNotAccepted(compression_algorithm);
+    }
+  }
+}
+
+void Call::HandleCompressionAlgorithmNotAccepted(
+    grpc_compression_algorithm compression_algorithm) {
+  const char* algo_name = nullptr;
+  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
+  gpr_log(GPR_ERROR,
+          "Compression algorithm ('%s') not present in the "
+          "accepted encodings (%s)",
+          algo_name,
+          std::string(encodings_accepted_by_peer_.ToString()).c_str());
+}
+
+void Call::HandleCompressionAlgorithmDisabled(
+    grpc_compression_algorithm compression_algorithm,
+    absl::FunctionRef<void(absl::Status)> cancel_func) {
+  const char* algo_name = nullptr;
+  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
+  std::string error_msg =
+      absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
+  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
+  cancel_func(grpc_error_set_int(absl::UnimplementedError(error_msg),
+                                 StatusIntProperty::kRpcStatus,
+                                 GRPC_STATUS_UNIMPLEMENTED));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // FilterStackCall
 // To be removed once promise conversion is complete
@@ -410,11 +529,6 @@ class FilterStackCall final : public Call {
     return context_[elem].value;
   }
 
-  grpc_compression_algorithm compression_for_level(
-      grpc_compression_level level) override {
-    return encodings_accepted_by_peer_.CompressionAlgorithmForLevel(level);
-  }
-
   bool is_trailers_only() const override {
     bool result = is_trailers_only_;
     GPR_DEBUG_ASSERT(!result || recv_initial_metadata_.TransportSize() == 0);
@@ -430,18 +544,6 @@ class FilterStackCall final : public Call {
         recv_initial_metadata_.get_pointer(HttpAuthorityMetadata());
     if (authority_metadata == nullptr) return "";
     return authority_metadata->as_string_view();
-  }
-
-  grpc_compression_algorithm test_only_compression_algorithm() override {
-    return incoming_compression_algorithm_;
-  }
-
-  uint32_t test_only_message_flags() override {
-    return test_only_last_message_flags_;
-  }
-
-  uint32_t test_only_encodings_accepted_by_peer() override {
-    return encodings_accepted_by_peer_.ToLegacyBitmask();
   }
 
   static size_t InitialSizeEstimate() {
@@ -524,7 +626,6 @@ class FilterStackCall final : public Call {
     void FinishStep(PendingOp op);
     void ProcessDataAfterMetadata();
     void ReceivingStreamReady(grpc_error_handle error);
-    void ValidateFilteredMetadata();
     void ReceivingInitialMetadataReady(grpc_error_handle error);
     void ReceivingTrailingMetadataReady(grpc_error_handle error);
     void FinishBatch(grpc_error_handle error);
@@ -549,10 +650,6 @@ class FilterStackCall final : public Call {
                     grpc_closure* start_batch_closure);
   void SetFinalStatus(grpc_error_handle error);
   BatchControl* ReuseOrAllocateBatchControl(const grpc_op* ops);
-  void HandleCompressionAlgorithmDisabled(
-      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
-  void HandleCompressionAlgorithmNotAccepted(
-      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
   bool PrepareApplicationMetadata(size_t count, grpc_metadata* metadata,
                                   bool is_trailing);
   void PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing);
@@ -596,13 +693,6 @@ class FilterStackCall final : public Call {
   // completed
   grpc_call_final_info final_info_;
 
-  // Compression algorithm for *incoming* data
-  grpc_compression_algorithm incoming_compression_algorithm_ =
-      GRPC_COMPRESS_NONE;
-  // Supported encodings (compression algorithms), a bitset.
-  // Always support no compression.
-  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
-
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
@@ -616,7 +706,6 @@ class FilterStackCall final : public Call {
   grpc_closure receiving_stream_ready_;
   grpc_closure receiving_initial_metadata_ready_;
   grpc_closure receiving_trailing_metadata_ready_;
-  uint32_t test_only_last_message_flags_ = 0;
   // Status about operation of call
   bool sent_server_trailing_metadata_ = false;
   gpr_atm cancelled_with_error_ = 0;
@@ -1033,11 +1122,8 @@ void FilterStackCall::PublishAppMetadata(grpc_metadata_batch* b,
 }
 
 void FilterStackCall::RecvInitialFilter(grpc_metadata_batch* b) {
-  incoming_compression_algorithm_ =
-      b->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
-  encodings_accepted_by_peer_ =
-      b->Take(GrpcAcceptEncodingMetadata())
-          .value_or(CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
+  ProcessIncomingInitialMetadata(
+      *b, [this](absl::Status err) { CancelWithError(std::move(err)); });
   PublishAppMetadata(b, false);
 }
 
@@ -1204,11 +1290,11 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
     call->receiving_message_ = false;
     FinishStep(PendingOp::kRecvMessage);
   } else {
-    call->test_only_last_message_flags_ = call->receiving_stream_flags_;
+    call->NoteLastMessageFlags(call->receiving_stream_flags_);
     if ((call->receiving_stream_flags_ & GRPC_WRITE_INTERNAL_COMPRESS) &&
-        (call->incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
+        (call->incoming_compression_algorithm() != GRPC_COMPRESS_NONE)) {
       *call->receiving_buffer_ = grpc_raw_compressed_byte_buffer_create(
-          nullptr, 0, call->incoming_compression_algorithm_);
+          nullptr, 0, call->incoming_compression_algorithm());
     } else {
       *call->receiving_buffer_ = grpc_raw_byte_buffer_create(nullptr, 0);
     }
@@ -1249,50 +1335,6 @@ void FilterStackCall::BatchControl::ReceivingStreamReady(
   }
 }
 
-void FilterStackCall::HandleCompressionAlgorithmDisabled(
-    grpc_compression_algorithm compression_algorithm) {
-  const char* algo_name = nullptr;
-  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  std::string error_msg =
-      absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
-  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
-  CancelWithStatus(GRPC_STATUS_UNIMPLEMENTED, error_msg.c_str());
-}
-
-void FilterStackCall::HandleCompressionAlgorithmNotAccepted(
-    grpc_compression_algorithm compression_algorithm) {
-  const char* algo_name = nullptr;
-  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  gpr_log(GPR_ERROR,
-          "Compression algorithm ('%s') not present in the "
-          "accepted encodings (%s)",
-          algo_name,
-          std::string(encodings_accepted_by_peer_.ToString()).c_str());
-}
-
-void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
-  FilterStackCall* call = call_;
-
-  const grpc_compression_options compression_options =
-      call->channel()->compression_options();
-  const grpc_compression_algorithm compression_algorithm =
-      call->incoming_compression_algorithm_;
-  if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
-                        compression_options.enabled_algorithms_bitset)
-                        .IsSet(compression_algorithm))) {
-    // check if algorithm is supported by current channel config
-    call->HandleCompressionAlgorithmDisabled(compression_algorithm);
-  }
-  // GRPC_COMPRESS_NONE is always set.
-  GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
-  if (GPR_UNLIKELY(
-          !call->encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-      call->HandleCompressionAlgorithmNotAccepted(compression_algorithm);
-    }
-  }
-}
-
 void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_error_handle error) {
   FilterStackCall* call = call_;
@@ -1302,9 +1344,6 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
   if (error.ok()) {
     grpc_metadata_batch* md = &call->recv_initial_metadata_;
     call->RecvInitialFilter(md);
-
-    // TODO(ctiller): this could be moved into recv_initial_filter now
-    ValidateFilteredMetadata();
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
@@ -1454,36 +1493,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        // TODO(juanlishen): If the user has already specified a compression
-        // algorithm by setting the initial metadata with key of
-        // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
-        // with the compression algorithm mapped from compression level.
-        // process compression level
-        grpc_compression_level effective_compression_level =
-            GRPC_COMPRESS_LEVEL_NONE;
-        bool level_set = false;
-        if (op->data.send_initial_metadata.maybe_compression_level.is_set) {
-          effective_compression_level =
-              op->data.send_initial_metadata.maybe_compression_level.level;
-          level_set = true;
-        } else {
-          const grpc_compression_options copts =
-              channel()->compression_options();
-          if (copts.default_level.is_set) {
-            level_set = true;
-            effective_compression_level = copts.default_level.level;
-          }
-        }
-        // Currently, only server side supports compression level setting.
-        if (level_set && !is_client()) {
-          const grpc_compression_algorithm calgo =
-              encodings_accepted_by_peer_.CompressionAlgorithmForLevel(
-                  effective_compression_level);
-          // The following metadata will be checked and removed by the message
-          // compression filter. It will be used as the call's compression
-          // algorithm.
-          send_initial_metadata_.Set(GrpcInternalEncodingRequest(), calgo);
-        }
         if (op->data.send_initial_metadata.count > INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
@@ -1496,8 +1505,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
-        // Ignore any te metadata key value pairs specified.
-        send_initial_metadata_.Remove(TeMetadata());
+        PrepareOutgoingInitialMetadata(*op, send_initial_metadata_);
         // TODO(ctiller): just make these the same variable?
         if (is_client() && send_deadline() != Timestamp::InfFuture()) {
           send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
@@ -2030,16 +2038,6 @@ class PromiseBasedCall : public Call,
     }
   }
 
-  grpc_compression_algorithm test_only_compression_algorithm() override {
-    abort();
-  }
-  uint32_t test_only_message_flags() override { abort(); }
-  uint32_t test_only_encodings_accepted_by_peer() override { abort(); }
-  grpc_compression_algorithm compression_for_level(
-      grpc_compression_level) override {
-    abort();
-  }
-
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
@@ -2097,6 +2095,11 @@ class PromiseBasedCall : public Call,
   ~PromiseBasedCall() override {
     if (non_owning_wakeable_) non_owning_wakeable_->DropActivity();
     if (cq_) GRPC_CQ_INTERNAL_UNREF(cq_, "bind");
+    for (int i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+      if (context_[i].destroy) {
+        context_[i].destroy(context_[i].value);
+      }
+    }
   }
 
   // Enumerates why a Completion is still pending
@@ -2104,6 +2107,7 @@ class PromiseBasedCall : public Call,
     // We're in the midst of starting a batch of operations
     kStartingBatch = 0,
     // The following correspond with the batch operations from above
+    kSendInitialMetadata,
     kReceiveInitialMetadata,
     kReceiveStatusOnClient,
     kReceiveCloseOnServer = kReceiveStatusOnClient,
@@ -2117,6 +2121,8 @@ class PromiseBasedCall : public Call,
     switch (reason) {
       case PendingOp::kStartingBatch:
         return "StartingBatch";
+      case PendingOp::kSendInitialMetadata:
+        return "SendInitialMetadata";
       case PendingOp::kReceiveInitialMetadata:
         return "ReceiveInitialMetadata";
       case PendingOp::kReceiveStatusOnClient:
@@ -2147,10 +2153,23 @@ class PromiseBasedCall : public Call,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Stringify a completion
   std::string CompletionString(const Completion& completion) const {
+    auto& pending = completion_info_[completion.index()].pending;
+    const char* success_string = ":unknown";
+    switch (pending.success) {
+      case CompletionSuccess::kSuccess:
+        success_string = "";
+        break;
+      case CompletionSuccess::kFailure:
+        success_string = ":failure";
+        break;
+      case CompletionSuccess::kForceSuccess:
+        success_string = ":force-success";
+        break;
+    }
     return completion.has_value()
-               ? absl::StrFormat(
-                     "%d:tag=%p", static_cast<int>(completion.index()),
-                     completion_info_[completion.index()].pending.tag)
+               ? absl::StrFormat("%d:tag=%p%s",
+                                 static_cast<int>(completion.index()),
+                                 pending.tag, success_string)
                : "no-completion";
   }
   // Finish one op on the completion. Must have been previously been added.
@@ -2160,6 +2179,9 @@ class PromiseBasedCall : public Call,
   // Mark the completion as failed. Does not finish it.
   void FailCompletion(const Completion& completion,
                       SourceLocation source_location = {});
+  // Mark the completion as infallible. Overrides FailCompletion to report
+  // success always.
+  void ForceCompletionSuccess(const Completion& completion);
   // Run the promise polling loop until it stalls.
   void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Update the promise state once.
@@ -2223,13 +2245,13 @@ class PromiseBasedCall : public Call,
   void StartRecvMessage(const grpc_op& op, const Completion& completion,
                         PipeReceiver<MessageHandle>* receiver)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void PollRecvMessage(grpc_compression_algorithm compression_algorithm)
+  void PollRecvMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void CancelRecvMessage(SourceLocation = {})
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void CancelRecvMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartSendMessage(const grpc_op& op, const Completion& completion,
                         PipeSender<MessageHandle>* sender)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  bool PollSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void PollSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void CancelSendMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   bool completed() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -2239,14 +2261,18 @@ class PromiseBasedCall : public Call,
   bool is_sending() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return outstanding_send_.has_value();
   }
+  bool is_receiving() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return outstanding_recv_.has_value();
+  }
 
  private:
+  enum class CompletionSuccess : uint8_t { kSuccess, kFailure, kForceSuccess };
   union CompletionInfo {
     struct Pending {
       // Bitmask of PendingOps
       uint8_t pending_op_bits;
       bool is_closure;
-      bool success;
+      CompletionSuccess success;
       void* tag;
     } pending;
     grpc_cq_completion completion;
@@ -2259,8 +2285,8 @@ class PromiseBasedCall : public Call,
     // Ref the Handle (not the activity).
     void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
 
-    // Activity is going away... drop its reference and sever the connection
-    // back.
+    // Activity is going away... drop its reference and sever the
+    // connection back.
     void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
       auto unref = absl::MakeCleanup([this]() { Unref(); });
       MutexLock lock(&mu_);
@@ -2303,9 +2329,9 @@ class PromiseBasedCall : public Call,
     }
 
     mutable Mutex mu_;
-    // We have two initial refs: one for the wakeup that this is created for,
-    // and will be dropped by Wakeup, and the other for the activity which is
-    // dropped by DropActivity.
+    // We have two initial refs: one for the wakeup that this is
+    // created for, and will be dropped by Wakeup, and the other for
+    // the activity which is dropped by DropActivity.
     std::atomic<size_t> refs_{2};
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
@@ -2439,15 +2465,16 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
 PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     void* tag, bool is_closure, const grpc_op* ops) {
   Completion c(BatchSlotForOp(ops[0].op));
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] StartCompletion %s tag=%p", DebugTag().c_str(),
-            CompletionString(c).c_str(), tag);
-  }
   if (!is_closure) {
     grpc_cq_begin_op(cq(), tag);
   }
   completion_info_[c.index()].pending = {
-      PendingOpBit(PendingOp::kStartingBatch), is_closure, true, tag};
+      PendingOpBit(PendingOp::kStartingBatch), is_closure,
+      CompletionSuccess::kSuccess, tag};
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[call] StartCompletion %s tag=%p", DebugTag().c_str(),
+            CompletionString(c).c_str(), tag);
+  }
   return c;
 }
 
@@ -2472,7 +2499,27 @@ void PromiseBasedCall::FailCompletion(const Completion& completion,
             "%s[call] FailCompletion %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
   }
-  completion_info_[completion.index()].pending.success = false;
+  auto& success = completion_info_[completion.index()].pending.success;
+  switch (success) {
+    case CompletionSuccess::kSuccess:
+      success = CompletionSuccess::kFailure;
+      break;
+    case CompletionSuccess::kFailure:
+    case CompletionSuccess::kForceSuccess:
+      break;
+  }
+}
+
+void PromiseBasedCall::ForceCompletionSuccess(const Completion& completion) {
+  auto& success = completion_info_[completion.index()].pending.success;
+  switch (success) {
+    case CompletionSuccess::kSuccess:
+    case CompletionSuccess::kFailure:
+      success = CompletionSuccess::kForceSuccess;
+      break;
+    case CompletionSuccess::kForceSuccess:
+      break;
+  }
 }
 
 void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
@@ -2480,7 +2527,8 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
   if (grpc_call_trace.enabled()) {
     auto pending_op_bits =
         completion_info_[completion->index()].pending.pending_op_bits;
-    bool success = completion_info_[completion->index()].pending.success;
+    bool success = completion_info_[completion->index()].pending.success !=
+                   CompletionSuccess::kFailure;
     std::vector<const char*> pending;
     for (size_t i = 0; i < 8 * sizeof(pending_op_bits); i++) {
       if (static_cast<PendingOp>(i) == reason) continue;
@@ -2489,7 +2537,9 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
       }
     }
     gpr_log(
-        GPR_INFO, "%s[call] FinishOpOnCompletion tag:%p %s %s %s",
+        GPR_INFO,
+        "%s[call] FinishOpOnCompletion tag:%p completion:%s "
+        "finish:%s %s",
         DebugTag().c_str(), completion_info_[completion->index()].pending.tag,
         CompletionString(*completion).c_str(), PendingOpString(reason),
         (pending.empty()
@@ -2502,8 +2552,9 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
   CompletionInfo::Pending& pending = completion_info_[i].pending;
   GPR_ASSERT(pending.pending_op_bits & PendingOpBit(reason));
   pending.pending_op_bits &= ~PendingOpBit(reason);
-  auto error = pending.success ? absl::OkStatus() : absl::CancelledError();
   if (pending.pending_op_bits == 0) {
+    const bool success = pending.success != CompletionSuccess::kFailure;
+    auto error = success ? absl::OkStatus() : absl::CancelledError();
     if (pending.is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
                    error);
@@ -2580,26 +2631,23 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
   }
 }
 
-bool PromiseBasedCall::PollSendMessage() {
-  if (!outstanding_send_.has_value()) return true;
+void PromiseBasedCall::PollSendMessage() {
+  if (!outstanding_send_.has_value()) return;
   Poll<bool> r = (*outstanding_send_)();
   if (const bool* result = absl::get_if<bool>(&r)) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%sPollSendMessage completes %s", DebugTag().c_str(),
               *result ? "successfully" : "with failure");
     }
-    if (!*result) {
-      FailCompletion(send_message_completion_);
-      return false;
-    }
+    if (!*result) FailCompletion(send_message_completion_);
     FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
     outstanding_send_.reset();
   }
-  return true;
 }
 
 void PromiseBasedCall::CancelSendMessage() {
   if (!outstanding_send_.has_value()) return;
+  FailCompletion(send_message_completion_);
   FinishOpOnCompletion(&send_message_completion_, PendingOp::kSendMessage);
   outstanding_send_.reset();
 }
@@ -2614,18 +2662,18 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
   outstanding_recv_.emplace(receiver->Next());
 }
 
-void PromiseBasedCall::PollRecvMessage(
-    grpc_compression_algorithm incoming_compression_algorithm) {
+void PromiseBasedCall::PollRecvMessage() {
   if (!outstanding_recv_.has_value()) return;
   Poll<NextResult<MessageHandle>> r = (*outstanding_recv_)();
   if (auto* result = absl::get_if<NextResult<MessageHandle>>(&r)) {
     outstanding_recv_.reset();
     if (result->has_value()) {
       MessageHandle& message = **result;
+      NoteLastMessageFlags(message->flags());
       if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
-          (incoming_compression_algorithm != GRPC_COMPRESS_NONE)) {
+          (incoming_compression_algorithm() != GRPC_COMPRESS_NONE)) {
         *recv_message_ = grpc_raw_compressed_byte_buffer_create(
-            nullptr, 0, incoming_compression_algorithm);
+            nullptr, 0, incoming_compression_algorithm());
       } else {
         *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
       }
@@ -2633,7 +2681,8 @@ void PromiseBasedCall::PollRecvMessage(
                                   &(*recv_message_)->data.raw.slice_buffer);
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv "
+                "finishes: received "
                 "%" PRIdPTR " byte message",
                 DebugTag().c_str(),
                 (*recv_message_)->data.raw.slice_buffer.length);
@@ -2641,7 +2690,8 @@ void PromiseBasedCall::PollRecvMessage(
     } else if (result->cancelled()) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv "
+                "finishes: received "
                 "end-of-stream with error",
                 DebugTag().c_str());
       }
@@ -2650,7 +2700,8 @@ void PromiseBasedCall::PollRecvMessage(
     } else {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "%s[call] PollRecvMessage: outstanding_recv finishes: received "
+                "%s[call] PollRecvMessage: outstanding_recv "
+                "finishes: received "
                 "end-of-stream",
                 DebugTag().c_str());
       }
@@ -2660,8 +2711,10 @@ void PromiseBasedCall::PollRecvMessage(
   } else if (completed_) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "%s[call] UpdateOnce: outstanding_recv finishes: promise has "
-              "completed without queuing a message, forcing end-of-stream",
+              "%s[call] UpdateOnce: outstanding_recv finishes: "
+              "promise has "
+              "completed without queuing a message, forcing "
+              "end-of-stream",
               DebugTag().c_str());
     }
     outstanding_recv_.reset();
@@ -2670,10 +2723,18 @@ void PromiseBasedCall::PollRecvMessage(
   }
 }
 
-void PromiseBasedCall::CancelRecvMessage() {
+void PromiseBasedCall::CancelRecvMessage(SourceLocation location) {
   if (!outstanding_recv_.has_value()) return;
+  if (grpc_call_trace.enabled()) {
+    gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_DEBUG,
+            "%s[call] CancelRecvMessage: op:%s outstanding_recv:%s",
+            DebugTag().c_str(),
+            CompletionString(recv_message_completion_).c_str(),
+            outstanding_recv_.has_value() ? "present" : "absent");
+  }
   *recv_message_ = nullptr;
   outstanding_recv_.reset();
+  FailCompletion(recv_message_completion_);
   FinishOpOnCompletion(&recv_message_completion_, PendingOp::kReceiveMessage);
 }
 
@@ -2749,9 +2810,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     send_initial_metadata_.reset();
     recv_status_on_client_ = absl::monostate();
     promise_ = ArenaPromise<ServerMetadataHandle>();
-    // Need to destroy the pipes under the ScopedContext above, so we move them
-    // out here and then allow the destructors to run at end of scope, but
-    // before context.
+    // Need to destroy the pipes under the ScopedContext above, so we
+    // move them out here and then allow the destructors to run at
+    // end of scope, but before context.
     auto c2s = std::move(client_to_server_messages_);
     auto s2c = std::move(server_to_client_messages_);
     auto sim = std::move(server_initial_metadata_);
@@ -2803,7 +2864,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       arena()};
   Pipe<MessageHandle> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
   Pipe<MessageHandle> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
-
   ClientMetadataHandle send_initial_metadata_;
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
   absl::variant<absl::monostate,
@@ -2812,7 +2872,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       recv_status_on_client_ ABSL_GUARDED_BY(mu());
   absl::optional<PipeReceiverNextType<ServerMetadataHandle>>
       server_initial_metadata_ready_;
-  absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
+  absl::optional<ClientInitialMetadataOutstandingTokenWaitType>
+      client_initial_metadata_sent_;
+  Completion send_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
   Completion close_send_completion_ ABSL_GUARDED_BY(mu());
@@ -2822,12 +2884,12 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 void ClientPromiseBasedCall::StartPromise(
     ClientMetadataHandle client_initial_metadata) {
   GPR_ASSERT(!promise_.has_value());
+  auto token = ClientInitialMetadataOutstandingToken::New();
+  client_initial_metadata_sent_.emplace(token.Wait());
   promise_ = channel()->channel_stack()->MakeClientCallPromise(CallArgs{
-      std::move(client_initial_metadata),
-      &server_initial_metadata_.sender,
-      &client_to_server_messages_.receiver,
-      &server_to_client_messages_.sender,
-  });
+      std::move(client_initial_metadata), std::move(token),
+      &server_initial_metadata_.sender, &client_to_server_messages_.receiver,
+      &server_to_client_messages_.sender});
 }
 
 void ClientPromiseBasedCall::CancelWithErrorLocked(grpc_error_handle error) {
@@ -2877,13 +2939,22 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        // compression not implemented
-        GPR_ASSERT(
-            !op.data.send_initial_metadata.maybe_compression_level.is_set);
         if (!completed()) {
           CToMetadata(op.data.send_initial_metadata.metadata,
                       op.data.send_initial_metadata.count,
                       send_initial_metadata_.get());
+          PrepareOutgoingInitialMetadata(op, *send_initial_metadata_);
+          if (send_deadline() != Timestamp::InfFuture()) {
+            send_initial_metadata_->Set(GrpcTimeoutMetadata(), send_deadline());
+          }
+          send_initial_metadata_->Set(
+              WaitForReady(),
+              WaitForReady::ValueType{
+                  (op.flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) != 0,
+                  (op.flags &
+                   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) != 0});
+          send_initial_metadata_completion_ =
+              AddOpToCompletion(completion, PendingOp::kSendInitialMetadata);
           StartPromise(std::move(send_initial_metadata_));
         }
       } break;
@@ -2898,6 +2969,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
         recv_status_on_client_completion_ =
             AddOpToCompletion(completion, PendingOp::kReceiveStatusOnClient);
+        ForceCompletionSuccess(completion);
         if (auto* finished_metadata =
                 absl::get_if<ServerMetadataHandle>(&recv_status_on_client_)) {
           PublishStatus(op.data.recv_status_on_client,
@@ -2947,8 +3019,10 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 }
 
 void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
-  incoming_compression_algorithm_ =
-      metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  ProcessIncomingInitialMetadata(*metadata, [this](absl::Status status) {
+    mu()->AssertHeld();
+    CancelWithErrorLocked(std::move(status));
+  });
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
   PublishMetadataArray(metadata,
@@ -2968,21 +3042,33 @@ void ClientPromiseBasedCall::UpdateOnce() {
             PollStateDebugString().c_str(),
             promise_.has_value() ? "true" : "false");
   }
+  if (client_initial_metadata_sent_.has_value()) {
+    Poll<bool> p = (*client_initial_metadata_sent_)();
+    bool* r = absl::get_if<bool>(&p);
+    if (r != nullptr) {
+      client_initial_metadata_sent_.reset();
+      if (!*r) FailCompletion(send_initial_metadata_completion_);
+      FinishOpOnCompletion(&send_initial_metadata_completion_,
+                           PendingOp::kSendInitialMetadata);
+    }
+  }
   if (server_initial_metadata_ready_.has_value()) {
     Poll<NextResult<ServerMetadataHandle>> r =
         (*server_initial_metadata_ready_)();
     if (auto* server_initial_metadata =
             absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
-      PublishInitialMetadata(server_initial_metadata->value().get());
+      if (server_initial_metadata->has_value()) {
+        PublishInitialMetadata(server_initial_metadata->value().get());
+      } else {
+        ServerMetadata no_metadata{GetContext<Arena>()};
+        PublishInitialMetadata(&no_metadata);
+      }
     } else if (completed()) {
       ServerMetadata no_metadata{GetContext<Arena>()};
       PublishInitialMetadata(&no_metadata);
     }
   }
-  if (!PollSendMessage()) {
-    Finish(ServerMetadataFromStatus(absl::Status(
-        absl::StatusCode::kInternal, "Failed to send message to server")));
-  }
+  PollSendMessage();
   if (!is_sending() && close_send_completion_.has_value()) {
     client_to_server_messages_.sender.Close();
     FinishOpOnCompletion(&close_send_completion_,
@@ -2998,12 +3084,15 @@ void ClientPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+      if (!server_initial_metadata_ready_.has_value()) {
+        PollRecvMessage();
+      }
       AcceptTransportStatsFromContext();
       Finish(std::move(*result));
     }
   }
-  if (incoming_compression_algorithm_.has_value()) {
-    PollRecvMessage(*incoming_compression_algorithm_);
+  if (!server_initial_metadata_ready_.has_value()) {
+    PollRecvMessage();
   }
 }
 
@@ -3013,6 +3102,8 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
             trailing_metadata->DebugString().c_str());
   }
   promise_ = ArenaPromise<ServerMetadataHandle>();
+  CancelSendMessage();
+  CancelRecvMessage();
   ResetDeadline();
   set_completed();
   if (recv_initial_metadata_ != nullptr) {
@@ -3028,8 +3119,18 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
       (*server_initial_metadata_ready_)();
   server_initial_metadata_ready_.reset();
   if (auto* result = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
-    if (pending_initial_metadata) PublishInitialMetadata(result->value().get());
-    is_trailers_only_ = false;
+    if (pending_initial_metadata) {
+      if (result->has_value()) {
+        PublishInitialMetadata(result->value().get());
+        is_trailers_only_ = false;
+      } else {
+        ServerMetadata no_metadata{GetContext<Arena>()};
+        PublishInitialMetadata(&no_metadata);
+        is_trailers_only_ = true;
+      }
+    } else {
+      is_trailers_only_ = false;
+    }
   } else {
     if (pending_initial_metadata) {
       ServerMetadata no_metadata{GetContext<Arena>()};
@@ -3160,9 +3261,10 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  private:
   class RecvCloseOpCancelState {
    public:
-    // Request that receiver be filled in per grpc_op_recv_close_on_server.
-    // Returns true if the request can be fulfilled immediately.
-    // Returns false if the request will be fulfilled later.
+    // Request that receiver be filled in per
+    // grpc_op_recv_close_on_server. Returns true if the request can
+    // be fulfilled immediately. Returns false if the request will be
+    // fulfilled later.
     bool ReceiveCloseOnServerOpStarted(int* receiver) {
       switch (state_) {
         case kUnset:
@@ -3180,18 +3282,20 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     }
 
     // Mark the call as having completed.
-    // Returns true if this finishes a previous RequestReceiveCloseOnServer.
-    bool CompleteCall(bool success) {
+    // Returns true if this finishes a previous
+    // RequestReceiveCloseOnServer.
+    bool CompleteCallWithCancelledSetTo(bool cancelled) {
       switch (state_) {
         case kUnset:
-          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
+          state_ = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
           return false;
         case kFinishedWithFailure:
+          return false;
         case kFinishedWithSuccess:
           abort();  // unreachable
         default:
-          *reinterpret_cast<int*>(state_) = success ? 0 : 1;
-          state_ = success ? kFinishedWithSuccess : kFinishedWithFailure;
+          *reinterpret_cast<int*>(state_) = cancelled ? 1 : 0;
+          state_ = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
           return true;
       }
     }
@@ -3214,8 +3318,9 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     static constexpr uintptr_t kUnset = 0;
     static constexpr uintptr_t kFinishedWithFailure = 1;
     static constexpr uintptr_t kFinishedWithSuccess = 2;
-    // Holds one of kUnset, kFinishedWithFailure, or kFinishedWithSuccess
-    // OR an int* that wants to receive the final status.
+    // Holds one of kUnset, kFinishedWithFailure, or
+    // kFinishedWithSuccess OR an int* that wants to receive the
+    // final status.
     uintptr_t state_ = kUnset;
   };
 
@@ -3223,6 +3328,10 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   void CommitBatch(const grpc_op* ops, size_t nops,
                    const Completion& completion)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  void CommitBatchAfterCompletion(const grpc_op* ops, size_t nops,
+                                  const Completion& completion)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  void Finish(ServerMetadataHandle result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
   friend class ServerCallContext;
   ServerCallContext call_context_;
@@ -3238,8 +3347,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   SendInitialMetadataState send_initial_metadata_state_ ABSL_GUARDED_BY(mu()) =
       absl::monostate{};
   ServerMetadataHandle send_trailing_metadata_ ABSL_GUARDED_BY(mu());
-  grpc_compression_algorithm incoming_compression_algorithm_
-      ABSL_GUARDED_BY(mu());
+  bool force_metadata_send_ ABSL_GUARDED_BY(mu()) = false;
   RecvCloseOpCancelState recv_close_op_cancel_state_ ABSL_GUARDED_BY(mu());
   Completion recv_close_completion_ ABSL_GUARDED_BY(mu());
   bool cancel_send_and_receive_ ABSL_GUARDED_BY(mu()) = false;
@@ -3260,7 +3368,8 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   MutexLock lock(mu());
   ScopedContext activity_context(this);
   promise_ = channel()->channel_stack()->MakeServerCallPromise(
-      CallArgs{nullptr, nullptr, nullptr, nullptr});
+      CallArgs{nullptr, ClientInitialMetadataOutstandingToken::Empty(), nullptr,
+               nullptr, nullptr});
 }
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
@@ -3281,7 +3390,14 @@ Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   }
 
   PollSendMessage();
-  PollRecvMessage(incoming_compression_algorithm_);
+  PollRecvMessage();
+
+  if (force_metadata_send_) GPR_ASSERT(!is_sending());
+
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[call] PollTopOfCall: is_sending=%s",
+            DebugTag().c_str(), is_sending() ? "yes" : "no");
+  }
 
   if (!is_sending() && send_trailing_metadata_ != nullptr) {
     server_to_client_messages_->Close();
@@ -3326,37 +3442,51 @@ void ServerPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
-                DebugTag().c_str(),
-                recv_close_op_cancel_state_.ToString().c_str(),
-                (*result)->DebugString().c_str());
+      if (!(*result)->get(GrpcCallWasCancelled()).value_or(false)) {
+        PollRecvMessage();
       }
-      if (recv_close_op_cancel_state_.CompleteCall(
-              (*result)->get(GrpcStatusFromWire()).value_or(false))) {
-        FinishOpOnCompletion(&recv_close_completion_,
-                             PendingOp::kReceiveCloseOnServer);
-      }
-      channelz::ServerNode* channelz_node = server_->channelz_node();
-      if (channelz_node != nullptr) {
-        if ((*result)
-                ->get(GrpcStatusMetadata())
-                .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
-          channelz_node->RecordCallSucceeded();
-        } else {
-          channelz_node->RecordCallFailed();
-        }
-      }
-      if (send_status_from_server_completion_.has_value()) {
-        FinishOpOnCompletion(&send_status_from_server_completion_,
-                             PendingOp::kSendStatusFromServer);
-      }
-      CancelSendMessage();
-      CancelRecvMessage();
-      set_completed();
+      Finish(std::move(*result));
       promise_ = ArenaPromise<ServerMetadataHandle>();
     }
   }
+}
+
+void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
+            DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
+            result->DebugString().c_str());
+  }
+  if (recv_close_op_cancel_state_.CompleteCallWithCancelledSetTo(
+          result->get(GrpcCallWasCancelled()).value_or(true))) {
+    FinishOpOnCompletion(&recv_close_completion_,
+                         PendingOp::kReceiveCloseOnServer);
+  }
+  channelz::ServerNode* channelz_node = server_->channelz_node();
+  if (channelz_node != nullptr) {
+    if (result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+        GRPC_STATUS_OK) {
+      channelz_node->RecordCallSucceeded();
+    } else {
+      channelz_node->RecordCallFailed();
+    }
+  }
+  if (send_status_from_server_completion_.has_value()) {
+    FinishOpOnCompletion(&send_status_from_server_completion_,
+                         PendingOp::kSendStatusFromServer);
+  }
+  CancelSendMessage();
+  CancelRecvMessage();
+  set_completed();
+  // TODO(ctiller): this will probably need to be inlined somehow for
+  // performance
+  InternalRef("propagate_cancel");
+  channel()->event_engine()->Run([this]() {
+    ApplicationCallbackExecCtx callback_exec_ctx;
+    ExecCtx exec_ctx;
+    PropagateCancellationToChildren();
+    InternalUnref("propagate_cancel");
+  });
 }
 
 grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
@@ -3401,21 +3531,17 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        // compression not implemented
-        GPR_ASSERT(
-            !op.data.send_initial_metadata.maybe_compression_level.is_set);
-        if (!completed()) {
-          auto metadata = arena()->MakePooled<ServerMetadata>(arena());
-          CToMetadata(op.data.send_initial_metadata.metadata,
-                      op.data.send_initial_metadata.count, metadata.get());
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%s[call] Send initial metadata",
-                    DebugTag().c_str());
-          }
-          auto* pipe = absl::get<PipeSender<ServerMetadataHandle>*>(
-              send_initial_metadata_state_);
-          send_initial_metadata_state_ = pipe->Push(std::move(metadata));
+        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        PrepareOutgoingInitialMetadata(op, *metadata);
+        CToMetadata(op.data.send_initial_metadata.metadata,
+                    op.data.send_initial_metadata.count, metadata.get());
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[call] Send initial metadata",
+                  DebugTag().c_str());
         }
+        auto* pipe = absl::get<PipeSender<ServerMetadataHandle>*>(
+            send_initial_metadata_state_);
+        send_initial_metadata_state_ = pipe->Push(std::move(metadata));
       } break;
       case GRPC_OP_SEND_MESSAGE:
         StartSendMessage(op, completion, server_to_client_messages_);
@@ -3443,11 +3569,41 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   DebugTag().c_str(),
                   recv_close_op_cancel_state_.ToString().c_str());
         }
+        ForceCompletionSuccess(completion);
         if (!recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
                 op.data.recv_close_on_server.cancelled)) {
           recv_close_completion_ =
               AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
         }
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        abort();  // unreachable
+    }
+  }
+}
+
+void ServerPromiseBasedCall::CommitBatchAfterCompletion(
+    const grpc_op* ops, size_t nops, const Completion& completion) {
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+      case GRPC_OP_SEND_MESSAGE:
+      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        FailCompletion(completion);
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[call] StartBatch: RecvClose %s",
+                  DebugTag().c_str(),
+                  recv_close_op_cancel_state_.ToString().c_str());
+        }
+        ForceCompletionSuccess(completion);
+        GPR_ASSERT(recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
+            op.data.recv_close_on_server.cancelled));
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -3473,8 +3629,12 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
   }
   Completion completion =
       StartCompletion(notify_tag, is_notify_tag_closure, ops);
-  CommitBatch(ops, nops, completion);
-  Update();
+  if (!completed()) {
+    CommitBatch(ops, nops, completion);
+    Update();
+  } else {
+    CommitBatchAfterCompletion(ops, nops, completion);
+  }
   FinishOpOnCompletion(&completion, PendingOp::kStartingBatch);
   return GRPC_CALL_OK;
 }
@@ -3483,6 +3643,7 @@ void ServerPromiseBasedCall::CancelWithErrorLocked(absl::Status error) {
   if (!promise_.has_value()) return;
   cancel_send_and_receive_ = true;
   send_trailing_metadata_ = ServerMetadataFromStatus(error, arena());
+  send_trailing_metadata_->Set(GrpcCallWasCancelled(), true);
   ForceWakeup();
 }
 
@@ -3499,11 +3660,13 @@ ServerCallContext::MakeTopOfServerCallPromise(
   call_->server_to_client_messages_ = call_args.server_to_client_messages;
   call_->client_to_server_messages_ = call_args.client_to_server_messages;
   call_->send_initial_metadata_state_ = call_args.server_initial_metadata;
-  call_->incoming_compression_algorithm_ =
-      call_args.client_initial_metadata->get(GrpcEncodingMetadata())
-          .value_or(GRPC_COMPRESS_NONE);
   call_->client_initial_metadata_ =
       std::move(call_args.client_initial_metadata);
+  call_->ProcessIncomingInitialMetadata(
+      *call_->client_initial_metadata_, [this](absl::Status status) {
+        call_->mu()->AssertHeld();
+        call_->CancelWithErrorLocked(std::move(status));
+      });
   PublishMetadataArray(call_->client_initial_metadata_.get(),
                        publish_initial_metadata);
   call_->ExternalRef();
@@ -3614,7 +3777,9 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call* call) {
 }
 
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call) {
-  return grpc_core::Call::FromC(call)->test_only_encodings_accepted_by_peer();
+  return grpc_core::Call::FromC(call)
+      ->encodings_accepted_by_peer()
+      .ToLegacyBitmask();
 }
 
 grpc_core::Arena* grpc_call_get_arena(grpc_call* call) {
@@ -3663,7 +3828,9 @@ uint8_t grpc_call_is_client(grpc_call* call) {
 
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level) {
-  return grpc_core::Call::FromC(call)->compression_for_level(level);
+  return grpc_core::Call::FromC(call)
+      ->encodings_accepted_by_peer()
+      .CompressionAlgorithmForLevel(level);
 }
 
 bool grpc_call_is_trailers_only(const grpc_call* call) {

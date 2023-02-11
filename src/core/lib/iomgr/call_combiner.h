@@ -171,8 +171,8 @@ class CallCombinerClosureList {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO,
               "CallCombinerClosureList executing closure while already "
-              "holding call_combiner %p: closure=%p error=%s reason=%s",
-              call_combiner, closures_[0].closure,
+              "holding call_combiner %p: closure=%s error=%s reason=%s",
+              call_combiner, closures_[0].closure->DebugString().c_str(),
               StatusToString(closures_[0].error).c_str(), closures_[0].reason);
     }
     // This will release the call combiner.

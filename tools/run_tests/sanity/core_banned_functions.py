@@ -34,13 +34,25 @@ BANNED_EXCEPT = {
     ],
     'grpc_error_ref(': ['src/core/lib/iomgr/error.cc'],
     'grpc_error_unref(': ['src/core/lib/iomgr/error.cc'],
-    'grpc_os_error(': ['src/core/lib/iomgr/error.cc'],
-    'grpc_wsa_error(': ['src/core/lib/iomgr/error.cc'],
-    'grpc_log_if_error(': ['src/core/lib/iomgr/error.cc'],
-    'grpc_slice_malloc(': ['src/core/lib/slice/slice.cc'],
+    'grpc_os_error(': [
+        'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error.h'
+    ],
+    'grpc_wsa_error(': [
+        'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error.h'
+    ],
+    'grpc_log_if_error(': [
+        'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error.h'
+    ],
+    'grpc_slice_malloc(': [
+        'src/core/lib/slice/slice.cc', 'src/core/lib/slice/slice.h'
+    ],
     'grpc_call_cancel(': ['src/core/lib/surface/call.cc'],
-    'grpc_closure_create(': ['src/core/lib/iomgr/closure.cc'],
-    'grpc_closure_init(': ['src/core/lib/iomgr/closure.cc'],
+    'grpc_closure_create(': [
+        'src/core/lib/iomgr/closure.cc', 'src/core/lib/iomgr/closure.h'
+    ],
+    'grpc_closure_init(': [
+        'src/core/lib/iomgr/closure.cc', 'src/core/lib/iomgr/closure.h'
+    ],
     'grpc_closure_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_run(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
@@ -73,7 +85,7 @@ for root, dirs, files in os.walk('src/core'):
     for filename in files:
         num_files += 1
         path = os.path.join(root, filename)
-        if os.path.splitext(path)[1] != '.cc':
+        if os.path.splitext(path)[1] not in ('.h', '.cc'):
             continue
         with open(path) as f:
             text = f.read()
