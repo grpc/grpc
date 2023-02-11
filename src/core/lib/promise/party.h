@@ -38,6 +38,9 @@ class Party : public Activity, private Wakeable {
  public:
   explicit Party(Arena* arena) : arena_(arena) {}
 
+  Party(const Party&) = delete;
+  Party& operator=(const Party&) = delete;
+
   // Spawn one promise onto the arena.
   // The promise will be polled until it is resolved, or until the party is shut
   // down.
@@ -56,12 +59,16 @@ class Party : public Activity, private Wakeable {
   std::string ActivityDebugTag(void* arg) const final;
 
  protected:
+  ~Party() override;
+
   // Main run loop. Must be locked.
   // Polls participants and drains the add queue until there is no work left to
   // be done.
   // Derived types will likely want to override this to set up their
   // contexts before polling.
   virtual void Run();
+
+  Arena* arena() const { return arena_; }
 
  private:
   // Non-owning wakeup handle.

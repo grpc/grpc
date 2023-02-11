@@ -116,6 +116,11 @@ Party::Participant::~Participant() {
   }
 }
 
+Party::~Party() {
+  participants_.clear();
+  arena_->Destroy();
+}
+
 void Party::Orphan() { Unref(); }
 
 void Party::Ref() { state_.fetch_add(kOneRef, std::memory_order_relaxed); }

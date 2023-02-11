@@ -348,7 +348,8 @@ void Call::DeleteThis() {
   RefCountedPtr<Channel> channel = std::move(channel_);
   Arena* arena = arena_;
   this->~Call();
-  channel->UpdateCallSizeEstimate(arena->Destroy());
+  channel->UpdateCallSizeEstimate(arena->TotalUsedBytes());
+  arena->Destroy();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -43,7 +43,8 @@ namespace grpc_core {
 
 class TestParty final : public Party {
  public:
-  using Party::Party;
+  explicit TestParty(MemoryAllocator& allocator)
+      : Party(Arena::Create(1024, &allocator)) {}
   std::string DebugTag() const override { return "TestParty"; }
 
   void Run() override {
@@ -64,13 +65,11 @@ class PartyTest : public ::testing::Test {
 };
 
 TEST_F(PartyTest, Noop) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
 }
 
 TEST_F(PartyTest, CanSpawnAndRun) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   bool done = false;
   party->Spawn(
       [i = 10]() mutable -> Poll<int> {
@@ -88,8 +87,7 @@ TEST_F(PartyTest, CanSpawnAndRun) {
 }
 
 TEST_F(PartyTest, CanSpawnFromSpawn) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   bool done1 = false;
   bool done2 = false;
   party->Spawn(
@@ -118,8 +116,7 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
 }
 
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   bool done = false;
   Waker waker;
   party->Spawn(
@@ -142,8 +139,7 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   bool done = false;
   Waker waker;
   party->Spawn(
@@ -166,8 +162,7 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   bool done = false;
   Waker waker;
   party->Spawn(
@@ -191,8 +186,7 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
 }
 
 TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   bool done = false;
   std::unique_ptr<Waker> waker;
   party->Spawn(
@@ -215,8 +209,7 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
 }
 
 TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   bool done = false;
   Waker waker;
   party->Spawn(
@@ -240,8 +233,7 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
 }
 
 TEST_F(PartyTest, ThreadStressTest) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   std::vector<std::thread> threads;
   threads.reserve(16);
   for (int i = 0; i < 16; i++) {
@@ -304,8 +296,7 @@ class PromiseNotification {
 };
 
 TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   std::vector<std::thread> threads;
   threads.reserve(16);
   for (int i = 0; i < 16; i++) {
@@ -332,8 +323,7 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   std::vector<std::thread> threads;
   threads.reserve(16);
   for (int i = 0; i < 16; i++) {
@@ -360,8 +350,7 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   std::vector<std::thread> threads;
   threads.reserve(16);
   for (int i = 0; i < 16; i++) {
@@ -386,8 +375,7 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   std::vector<std::thread> threads;
   threads.reserve(16);
   for (int i = 0; i < 16; i++) {
@@ -412,8 +400,7 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  auto party = MakeOrphanable<TestParty>(arena.get());
+  auto party = MakeOrphanable<TestParty>(memory_allocator_);
   std::vector<std::thread> threads;
   threads.reserve(8);
   for (int i = 0; i < 8; i++) {
