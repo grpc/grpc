@@ -35,8 +35,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/cpp/common/channel_filter.h"
-#include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/server_filter.h"
@@ -53,11 +51,14 @@ void RegisterOpenCensusPlugin() {
                   &grpc::internal::OpenCensusClientFilter::kFilter);
               return true;
             });
+        builder->channel_init()->RegisterStage(
+            GRPC_SERVER_CHANNEL, /*priority=*/INT_MAX,
+            [](grpc_core::ChannelStackBuilder* builder) {
+              builder->PrependFilter(
+                  &grpc::internal::OpenCensusServerFilter::kFilter);
+              return true;
+            });
       });
-  RegisterChannelFilter<internal::OpenCensusChannelData,
-                        internal::OpenCensusServerCallData>(
-      "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
-      nullptr /* condition function */);
 
   // Access measures to ensure they are initialized. Otherwise, creating a view
   // before the first RPC would cause an error.
