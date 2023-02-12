@@ -35,7 +35,7 @@ env:
       INTEROP_SERVER="false"
     - SCHEME="Sample"
       WORKSPACE="Sample.xcworkspace" TEST_PATH="src/objective-c/examples/Sample" BUILD_ONLY="true"
-      INTEROP_SERVER="false" FRAMEWORKS="YES"
+      INTEROP_SERVER="false"
     - SCHEME="SwiftSample"
       WORKSPACE="SwiftSample.xcworkspace" TEST_PATH="src/objective-c/examples/SwiftSample"
       BUILD_ONLY="true" INTEROP_SERVER="false"
