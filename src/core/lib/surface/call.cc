@@ -381,7 +381,8 @@ void Call::DeleteThis() {
   RefCountedPtr<Channel> channel = std::move(channel_);
   Arena* arena = arena_;
   this->~Call();
-  channel->UpdateCallSizeEstimate(arena->Destroy());
+  channel->UpdateCallSizeEstimate(arena->TotalUsedBytes());
+  arena->Destroy();
 }
 
 void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
@@ -1977,34 +1978,34 @@ class PromiseBasedCall : public Call,
      public:
       explicit AsanWaker(PromiseBasedCall* call) : call_(call) {}
 
-      void Wakeup() override {
-        call_->Wakeup();
+      void Wakeup(void*) override {
+        call_->Wakeup(nullptr);
         delete this;
       }
 
-      void Drop() override {
-        call_->Drop();
+      void Drop(void*) override {
+        call_->Drop(nullptr);
         delete this;
       }
 
-      std::string ActivityDebugTag() const override {
+      std::string ActivityDebugTag(void*) const override {
         return call_->DebugTag();
       }
 
      private:
       PromiseBasedCall* call_;
     };
-    return Waker(new AsanWaker(this));
+    return Waker(new AsanWaker(this), nullptr);
 #endif
 #endif
 #ifndef GRPC_CALL_USES_ASAN_WAKER
-    return Waker(this);
+    return Waker(this, nullptr);
 #endif
   }
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
 
   // Wakeable methods
-  void Wakeup() override {
+  void Wakeup(void*) override {
     channel()->event_engine()->Run([this] {
       ApplicationCallbackExecCtx app_exec_ctx;
       ExecCtx exec_ctx;
@@ -2016,7 +2017,7 @@ class PromiseBasedCall : public Call,
       InternalUnref("wakeup");
     });
   }
-  void Drop() override { InternalUnref("wakeup"); }
+  void Drop(void*) override { InternalUnref("wakeup"); }
 
   void RunInContext(absl::AnyInvocable<void()> fn) {
     if (Activity::current() == this) {
@@ -2200,7 +2201,7 @@ class PromiseBasedCall : public Call,
   void CToMetadata(grpc_metadata* metadata, size_t count,
                    grpc_metadata_batch* batch);
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
   // At the end of the call run any finalization actions.
   void RunFinalization(grpc_status_code status, const char* status_details) {
@@ -2293,11 +2294,11 @@ class PromiseBasedCall : public Call,
       call_ = nullptr;
     }
 
-    // Activity needs to wake up (if it still exists!) - wake it up,
-    // and drop the ref that was kept for this handle.
-    void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
-      // Drop the ref to the handle at end of scope (we have one ref
-      // = one wakeup semantics).
+    // Activity needs to wake up (if it still exists!) - wake it up, and drop
+    // the ref that was kept for this handle.
+    void Wakeup(void*) override ABSL_LOCKS_EXCLUDED(mu_) {
+      // Drop the ref to the handle at end of scope (we have one ref = one
+      // wakeup semantics).
       auto unref = absl::MakeCleanup([this]() { Unref(); });
       ReleasableMutexLock lock(&mu_);
       // Note that activity refcount can drop to zero, but we could win the lock
@@ -2306,18 +2307,18 @@ class PromiseBasedCall : public Call,
       PromiseBasedCall* call = call_;
       if (call != nullptr && call->RefIfNonZero()) {
         lock.Release();
-        // Activity still exists and we have a reference: wake it up,
-        // which will drop the ref.
-        call->Wakeup();
+        // Activity still exists and we have a reference: wake it up, which will
+        // drop the ref.
+        call->Wakeup(nullptr);
       }
     }
 
-    std::string ActivityDebugTag() const override {
+    std::string ActivityDebugTag(void*) const override {
       MutexLock lock(&mu_);
       return call_ == nullptr ? "<unknown>" : call_->DebugTag();
     }
 
-    void Drop() override { Unref(); }
+    void Drop(void*) override { Unref(); }
 
    private:
     // Unref the Handle (not the activity).
@@ -2427,7 +2428,7 @@ Waker PromiseBasedCall::MakeNonOwningWaker() {
   } else {
     non_owning_wakeable_->Ref();
   }
-  return Waker(non_owning_wakeable_);
+  return Waker(non_owning_wakeable_, nullptr);
 }
 
 void PromiseBasedCall::CToMetadata(grpc_metadata* metadata, size_t count,
