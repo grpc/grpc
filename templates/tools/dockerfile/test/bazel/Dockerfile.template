@@ -16,6 +16,8 @@
   
   <%include file="../../oss_fuzz_base.include"/>
   <%include file="../../bazel.include"/>
+
+  <%include file="../../nonroot_entrypoint.include"/>
   
   RUN mkdir -p /var/local/jenkins
 
