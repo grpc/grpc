@@ -978,7 +978,6 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'YES'
                 }))
         # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
