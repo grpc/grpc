@@ -401,6 +401,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "1999",
+    srcs = [
+        "lib/promise/party.cc",
+    ],
+    hdrs = [
+        "lib/promise/party.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena",
+        "poll",
+        "promise_trace",
+        "//:gpr",
+        "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "context",
     language = "c++",
     public_hdrs = [

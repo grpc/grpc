@@ -9794,6 +9794,18 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: party_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/party.h
+  src:
+  - src/core/lib/promise/party.cc
+  - test/core/promise/party_test.cc
+  deps:
+  - grpc_unsecure
+  uses_polling: false
 - name: percent_encoding_test
   gtest: true
   build: test
