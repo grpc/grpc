@@ -30,6 +30,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -43,8 +44,9 @@ using ::testing::UnorderedElementsAre;
 class EnvironmentAutoDetectTest : public ::testing::Test {
  protected:
   void GetNotifiedOnEnvironmentDetection(
-      grpc::internal::EnvironmentAutoDetect* env, absl::Notification* notify) {
-    env->NotifyOnDone([&]() { notify->Notify(); });
+      grpc::internal::EnvironmentAutoDetect* env,
+      grpc_core::Notification* notify) {
+    env->NotifyOnDone([notify]() { notify->Notify(); });
   }
 };
 
@@ -55,7 +57,7 @@ class EnvironmentAutoDetectTest : public ::testing::Test {
 TEST_F(EnvironmentAutoDetectTest, Basic) {
   grpc::internal::EnvironmentAutoDetect env("project");
 
-  absl::Notification notify;
+  grpc_core::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
   notify.WaitForNotification();
 
@@ -69,7 +71,7 @@ TEST_F(EnvironmentAutoDetectTest, GkeEnvironment) {
   grpc_core::SetEnv("KUBERNETES_SERVICE_HOST", "k8s_service_host");
   grpc::internal::EnvironmentAutoDetect env("project");
 
-  absl::Notification notify;
+  grpc_core::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
   notify.WaitForNotification();
 
@@ -83,7 +85,7 @@ TEST_F(EnvironmentAutoDetectTest, CloudFunctions) {
   grpc_core::SetEnv("FUNCTION_NAME", "function_name");
   grpc::internal::EnvironmentAutoDetect env("project");
 
-  absl::Notification notify;
+  grpc_core::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
   notify.WaitForNotification();
 
@@ -97,7 +99,7 @@ TEST_F(EnvironmentAutoDetectTest, CloudRun) {
   grpc_core::SetEnv("K_CONFIGURATION", "config");
   grpc::internal::EnvironmentAutoDetect env("project");
 
-  absl::Notification notify;
+  grpc_core::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
   notify.WaitForNotification();
 
@@ -111,7 +113,7 @@ TEST_F(EnvironmentAutoDetectTest, AppEngine) {
   grpc_core::SetEnv("K_CONFIGURATION", "config");
   grpc::internal::EnvironmentAutoDetect env("project");
 
-  absl::Notification notify;
+  grpc_core::Notification notify;
   GetNotifiedOnEnvironmentDetection(&env, &notify);
   notify.WaitForNotification();
 
@@ -124,7 +126,7 @@ TEST_F(EnvironmentAutoDetectTest, AppEngine) {
 TEST_F(EnvironmentAutoDetectTest, MultipleNotifyWaiters) {
   grpc::internal::EnvironmentAutoDetect env("project");
 
-  absl::Notification notify[10];
+  grpc_core::Notification notify[10];
   for (int i = 0; i < 10; ++i) {
     GetNotifiedOnEnvironmentDetection(&env, &notify[i]);
   }

@@ -33,7 +33,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -214,10 +213,13 @@ class EnvironmentAutoDetectHelper
  public:
   explicit EnvironmentAutoDetectHelper(
       std::string project_id,
-      absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done)
+      absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine)
       : InternallyRefCounted(/*trace=*/nullptr, /*initial_refcount=*/2),
         project_id_(std::move(project_id)),
-        on_done_(std::move(on_done)) {
+        on_done_(std::move(on_done)),
+        event_engine_(std::move(event_engine)) {
     grpc_core::ExecCtx exec_ctx;
     // TODO(yashykt): The pollset stuff should go away once the HTTP library is
     // ported over to use EventEngine.
@@ -226,8 +228,7 @@ class EnvironmentAutoDetectHelper
     pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
     // TODO(yashykt): Note that using EventEngine::Run is not fork-safe. If we
     // want to make this fork-safe, we might need some re-work here.
-    grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-        grpc_core::Duration::Milliseconds(100), [this] { PollLoop(); });
+    event_engine_->Run([this] { PollLoop(); });
     AutoDetect();
   }
 
@@ -267,8 +268,8 @@ class EnvironmentAutoDetectHelper
     done = notify_poller_;
     gpr_mu_unlock(mu_poll_);
     if (!done) {
-      grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-          grpc_core::Duration::Milliseconds(100), [this] { PollLoop(); });
+      event_engine_->RunAfter(grpc_core::Duration::Milliseconds(100),
+                              [this] { PollLoop(); });
     } else {
       Unref();
     }
@@ -369,6 +370,7 @@ class EnvironmentAutoDetectHelper
   grpc_polling_entity pollent_;
   gpr_mu* mu_poll_ = nullptr;
   absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_core::Mutex mu_;
   bool notify_poller_ = false;
   absl::flat_hash_map<std::string /* metadata_server_attribute */,
@@ -385,16 +387,19 @@ class EnvironmentAutoDetectHelper
 
 EnvironmentAutoDetect& EnvironmentAutoDetect::Create(std::string project_id) {
   static EnvironmentAutoDetect auto_detector(std::move(project_id));
+  GPR_ASSERT(project_id.empty() || auto_detector.project_id_ == project_id);
   return auto_detector;
 }
 
 EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return Create(""); }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
-    : project_id_(std::move(project_id)) {
+    : project_id_(std::move(project_id)),
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   GPR_ASSERT(!project_id_.empty());
   new EnvironmentAutoDetectHelper(
-      project_id_, [this](EnvironmentAutoDetect::ResourceType resource) {
+      project_id_,
+      [this](EnvironmentAutoDetect::ResourceType resource) {
         std::vector<absl::AnyInvocable<void()>> callbacks;
         {
           grpc_core::MutexLock lock(&mu_);
@@ -405,18 +410,17 @@ EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
         for (auto& callback : callbacks) {
           callback();
         }
-      });
+      },
+      event_engine_);
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {
   {
-    grpc_core::ReleasableMutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     // Environment has already been detected
     if (resource_ != nullptr) {
-      lock.Release();
       // Execute on the event engine to avoid deadlocks.
-      return grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-          std::move(callback));
+      return event_engine_->Run(std::move(callback));
     }
     callbacks_.push_back(std::move(callback));
   }

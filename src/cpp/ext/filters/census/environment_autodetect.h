@@ -27,6 +27,8 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc {
@@ -60,6 +62,7 @@ class EnvironmentAutoDetect {
 
  private:
   const std::string project_id_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_core::Mutex mu_;
   std::unique_ptr<ResourceType> resource_ ABSL_GUARDED_BY(mu_);
   std::vector<absl::AnyInvocable<void()>> callbacks_ ABSL_GUARDED_BY(mu_);
