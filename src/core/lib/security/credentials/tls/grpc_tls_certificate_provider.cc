@@ -125,6 +125,15 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       root_cert_path_(std::move(root_cert_path)),
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+  if (refresh_interval_sec_ < 1) {
+    gpr_log(GPR_INFO,
+            "FileWatcherCertificateProvider refresh_interval_sec_ set to %ld "
+            "seconds which is less "
+            "than 1 second. 1 second is the minimum allowed value. Overriding "
+            "configured value to 1 second.",
+            refresh_interval_sec_);
+    refresh_interval_sec_ = 1;
+  }
   // Private key and identity cert files must be both set or both unset.
   GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
