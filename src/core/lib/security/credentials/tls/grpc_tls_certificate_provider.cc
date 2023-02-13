@@ -117,6 +117,8 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 }  // namespace
 
+static const int64_t MINIMUM_FILE_WATCHER_REFRESH_INTERVAL_SECONDS = 1;
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
     std::string root_cert_path, int64_t refresh_interval_sec)
@@ -125,14 +127,15 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       identity_certificate_path_(std::move(identity_certificate_path)),
       root_cert_path_(std::move(root_cert_path)),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
-  if (refresh_interval_sec_ < 1) {
+  if (refresh_interval_sec_ < MINIMUM_FILE_WATCHER_REFRESH_INTERVAL_SECONDS) {
     gpr_log(GPR_INFO,
             "FileWatcherCertificateProvider refresh_interval_sec_ set to %ld "
             "seconds which is less "
-            "than 1 second. 1 second is the minimum allowed value. Overriding "
-            "configured value to 1 second.",
-            refresh_interval_sec_);
-    refresh_interval_sec_ = 1;
+            "than %ld second, the minimum allowed value. Overriding "
+            "configured value.",
+            refresh_interval_sec_,
+            MINIMUM_FILE_WATCHER_REFRESH_INTERVAL_SECONDS);
+    refresh_interval_sec_ = MINIMUM_FILE_WATCHER_REFRESH_INTERVAL_SECONDS;
   }
   // Private key and identity cert files must be both set or both unset.
   GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
