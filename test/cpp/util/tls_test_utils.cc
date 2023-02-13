@@ -101,7 +101,6 @@ bool VerifiedRootCertSubjectVerifier::Verify(
     *sync_status = grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
                                 "VerifiedRootCertSubjectVerifier failed");
   } else {
-    // *sync_status = grpc::Status(grpc::StatusCode::OK, "");
     *sync_status = grpc::Status::OK;
   }
   return true;
