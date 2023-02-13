@@ -226,8 +226,8 @@ class EnvironmentAutoDetectHelper
     pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
     // TODO(yashykt): Note that using EventEngine::Run is not fork-safe. If we
     // want to make this fork-safe, we might need some re-work here.
-    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-        [this] { PollLoop(); });
+    grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+        grpc_core::Duration::Milliseconds(100), [this] { PollLoop(); });
     AutoDetect();
   }
 
@@ -253,6 +253,7 @@ class EnvironmentAutoDetectHelper
   };
 
   void PollLoop() {
+    gpr_log(GPR_ERROR, "polling");
     grpc_core::ExecCtx exec_ctx;
     bool done = false;
     gpr_mu_lock(mu_poll_);
@@ -266,8 +267,8 @@ class EnvironmentAutoDetectHelper
     done = notify_poller_;
     gpr_mu_unlock(mu_poll_);
     if (!done) {
-      grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-          [this] { PollLoop(); });
+      grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+          grpc_core::Duration::Milliseconds(100), [this] { PollLoop(); });
     } else {
       Unref();
     }
