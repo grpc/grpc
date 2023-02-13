@@ -488,6 +488,35 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderTooShortRefreshIntervalIsOverwritten) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 0);
+  ASSERT_THAT(provider.refresh_interval_sec_, 1);
+  // Watcher watching both root and identity certs.
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  CancelWatch(watcher_state_1);
+  // Watcher watching only root certs.
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_2);
+  // Watcher watching only identity certs.
+  WatcherState* watcher_state_3 =
+      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+  EXPECT_THAT(
+      watcher_state_3->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  CancelWatch(watcher_state_3);
+}
+
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(/*private_key=*/"", cert_chain_);

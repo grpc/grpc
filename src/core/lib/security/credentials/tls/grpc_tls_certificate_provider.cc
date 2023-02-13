@@ -120,10 +120,10 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
     std::string root_cert_path, int64_t refresh_interval_sec)
-    : private_key_path_(std::move(private_key_path)),
+    : refresh_interval_sec_(refresh_interval_sec),
+      private_key_path_(std::move(private_key_path)),
       identity_certificate_path_(std::move(identity_certificate_path)),
       root_cert_path_(std::move(root_cert_path)),
-      refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < 1) {
     gpr_log(GPR_INFO,

@@ -150,6 +150,7 @@ class FileWatcherCertificateProvider final
   }
 
   UniqueTypeName type() const override;
+  int64_t refresh_interval_sec_ = 0;
 
  private:
   struct WatcherInfo {
@@ -178,7 +179,6 @@ class FileWatcherCertificateProvider final
   std::string private_key_path_;
   std::string identity_certificate_path_;
   std::string root_cert_path_;
-  int64_t refresh_interval_sec_ = 0;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   Thread refresh_thread_;
