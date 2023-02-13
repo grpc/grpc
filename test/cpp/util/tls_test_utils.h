@@ -92,7 +92,7 @@ class VerifiedRootCertSubjectVerifier
   }
 
  private:
-  std::string expected_subject_ = nullptr;
+  std::string expected_subject_;
 };
 
 }  // namespace testing
