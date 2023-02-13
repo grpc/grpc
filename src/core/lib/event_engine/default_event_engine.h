@@ -55,10 +55,10 @@ namespace experimental {
 /// needed is a fine solution.
 ///
 /// If you're writing code that needs an EventEngine, prefer 1) getting the
-/// EventEngine from somewhere it is already cached (channel stack, for
-/// example), or 2) if not otherwise available, call \a GetDefaultEventEngine
-/// and save that shared_ptr to ensure the Engine's lifetime is at least as long
-/// as you need it to be.
+/// EventEngine from somewhere it is already cached - preconditioned
+/// ChannelArgs, or the channel stack for example - or 2) if not otherwise
+/// available, call \a GetDefaultEventEngine and save that shared_ptr to ensure
+/// the Engine's lifetime is at least as long as you need it to be.
 std::shared_ptr<EventEngine> GetDefaultEventEngine(
     grpc_core::SourceLocation location = grpc_core::SourceLocation());
 
