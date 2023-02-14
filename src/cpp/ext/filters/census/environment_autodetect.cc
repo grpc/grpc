@@ -16,12 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/filters/census/environment_autodetect.h"
 
-#include <string.h>
-
+#include <grpc/support/port_platform.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -30,116 +31,27 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/impl/grpc_library.h>
-
+#include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc {
 namespace internal {
 
 namespace {
-
-constexpr const char kZoneAttribute[] = "/computeMetadata/v1/instance/zone";
-constexpr const char kClusterNameAttribute[] =
-    "/computeMetadata/v1/instance/attributes/cluster-name";
-constexpr const char kRegionAttribute[] = "/computeMetadata/v1/instance/region";
-constexpr const char kInstanceIdAttribute[] = "/computeMetadata/v1/instance/id";
-
-// Fire and Forget class (Cleans up after itself.)
-// Fetches the value of an attribute from the MetadataServer on a GCP
-// environment.
-class MetadataQuery {
- public:
-  MetadataQuery(std::string attribute, grpc_polling_entity* pollent,
-                absl::AnyInvocable<void(std::string /* attribute */,
-                                        std::string /* result */)>
-                    callback)
-      : attribute_(std::move(attribute)), callback_(std::move(callback)) {
-    GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
-    auto uri =
-        grpc_core::URI::Create("http", "metadata.google.internal.", attribute_,
-                               {} /* query params */, "" /* fragment */);
-    GPR_ASSERT(uri.ok());  // params are hardcoded
-    grpc_http_request request;
-    memset(&request, 0, sizeof(grpc_http_request));
-    grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
-                               const_cast<char*>("Google")};
-    request.hdr_count = 1;
-    request.hdrs = &header;
-    // The http call is local. If it takes more than one sec, it is probably not
-    // on GCP.
-    auto http_request = grpc_core::HttpRequest::Get(
-        std::move(*uri), nullptr /* channel args */, pollent, &request,
-        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(1),
-        &on_done_, &response_,
-        grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            grpc_insecure_credentials_create()));
-    http_request->Start();
-  }
-
- private:
-  static void OnDone(void* arg, absl::Status error) {
-    auto* self = static_cast<MetadataQuery*>(arg);
-    std::string result;
-    if (!error.ok()) {
-      gpr_log(GPR_ERROR, "MetadataServer Query failed for %s: %s",
-              self->attribute_.c_str(),
-              grpc_core::StatusToString(error).c_str());
-    } else if (self->response_.status != 200) {
-      gpr_log(
-          GPR_ERROR, "MetadataServer Query received non-200 status for %s: %s",
-          self->attribute_.c_str(), grpc_core::StatusToString(error).c_str());
-    } else if (self->attribute_ == kZoneAttribute) {
-      absl::string_view body(self->response_.body, self->response_.body_length);
-      size_t pos = result.find_last_of('/');
-      if (pos == body.npos) {
-        gpr_log(GPR_ERROR, "MetadataServer Could not parse zone: %s",
-                std::string(body).c_str());
-      } else {
-        result = std::string(body.substr(pos + 1));
-      }
-    } else {
-      result = self->response_.body;
-    }
-    auto callback = std::move(self->callback_);
-    auto attribute = std::move(self->attribute_);
-    delete self;
-    return callback(std::move(attribute), std::move(result));
-  }
-
-  grpc_closure on_done_;
-  std::string attribute_;
-  absl::AnyInvocable<void(std::string /* attribute */,
-                          std::string /* result */)>
-      callback_;
-  grpc_http_response response_;
-};
 
 // This is not a definite method to get the namespace name for GKE, but it is
 // the best we have.
@@ -284,15 +196,18 @@ class EnvironmentAutoDetectHelper
       resource_.labels.emplace("namespace_name", GetNamespaceName());
       resource_.labels.emplace("pod_name", GetPodName());
       resource_.labels.emplace("container_name", GetContainerName());
-      attributes_to_fetch_.emplace(kZoneAttribute, "location");
-      attributes_to_fetch_.emplace(kClusterNameAttribute, "cluster_name");
+      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kZoneAttribute,
+                                   "location");
+      attributes_to_fetch_.emplace(
+          grpc_core::MetadataQuery::kClusterNameAttribute, "cluster_name");
     }
     // Cloud Functions
     else if (grpc_core::GetEnv("FUNCTION_NAME").has_value() ||
              grpc_core::GetEnv("FUNCTION_TARGET").has_value()) {
       resource_.resource_type = "cloud_function";
       resource_.labels.emplace("function_name", GetFunctionName());
-      attributes_to_fetch_.emplace(kRegionAttribute, "region");
+      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kRegionAttribute,
+                                   "region");
     }
     // Cloud Run
     else if (grpc_core::GetEnv("K_CONFIGURATION").has_value()) {
@@ -300,21 +215,25 @@ class EnvironmentAutoDetectHelper
       resource_.labels.emplace("revision_name", GetRevisionName());
       resource_.labels.emplace("service_name", GetServiceName());
       resource_.labels.emplace("configuration_name", GetConfiguratioName());
-      attributes_to_fetch_.emplace(kRegionAttribute, "location");
+      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kRegionAttribute,
+                                   "location");
     }
     // App Engine
     else if (grpc_core::GetEnv("GAE_SERVICE").has_value()) {
       resource_.resource_type = "gae_app";
       resource_.labels.emplace("module_id", GetModuleId());
       resource_.labels.emplace("version_id", GetVersionId());
-      attributes_to_fetch_.emplace(kZoneAttribute, "zone");
+      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kZoneAttribute,
+                                   "zone");
     }
     // Assume GCE
     else {
       assuming_gce_ = true;
       resource_.resource_type = "gce_instance";
-      attributes_to_fetch_.emplace(kInstanceIdAttribute, "instance_id");
-      attributes_to_fetch_.emplace(kZoneAttribute, "zone");
+      attributes_to_fetch_.emplace(
+          grpc_core::MetadataQuery::kInstanceIdAttribute, "instance_id");
+      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kZoneAttribute,
+                                   "zone");
     }
     FetchMetadataServerAttributesAsynchronouslyLocked();
   }
@@ -323,7 +242,7 @@ class EnvironmentAutoDetectHelper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     GPR_ASSERT(!attributes_to_fetch_.empty());
     for (const auto& element : attributes_to_fetch_) {
-      new MetadataQuery(
+      new grpc_core::MetadataQuery(
           element.first, &pollent_,
           [this](std::string attribute, std::string result) {
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
