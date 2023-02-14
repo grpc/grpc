@@ -1,6 +1,4 @@
-load("//bazel:cython_library.bzl", "pyx_library")
-
-# Copyright 2021 The gRPC Authors
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,27 +11,21 @@ load("//bazel:cython_library.bzl", "pyx_library")
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
 package(default_visibility = ["//visibility:public"])
 
-genrule(
-    name = "copy_roots_pem",
-    srcs = ["//:etc/roots.pem"],
-    outs = ["_credentials/roots.pem"],
-    cmd = "cp $(SRCS) $(@)",
-)
-
-pyx_library(
-    name = "cygrpc",
-    srcs = glob([
-        "**/*.pxi",
-        "**/__init__.py",
-    ]) + [
-        "cygrpc.pxd",
-        "cygrpc.pyx",
-    ],
-    data = [":copy_roots_pem"],
+py_test(
+    name = "_observability_test",
+    size = "small",
+    srcs = glob(["*.py"]),
+    imports = ["../../"],
+    main = "_observability_test.py",
     deps = [
-        "//:grpc",
-        "//:grpc_opencensus_plugin", # For RegisterOpenCensusPlugin
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/testing",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        requirement("opencensus"),
+        requirement("opencensus-ext-stackdriver"),
     ],
 )

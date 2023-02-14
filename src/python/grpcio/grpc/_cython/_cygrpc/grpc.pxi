@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libcpp.string cimport string
+
 cimport libc.time
 
 ctypedef          ssize_t   intptr_t
@@ -57,6 +59,29 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
 
 # gRPC Core Declarations
 
+cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
+    cdef cppclass ClientCallTracer:
+        pass
+
+    cdef cppclass ServerCallTracer:
+        string TraceId() nogil
+        string SpanId() nogil
+        bint IsSampled() nogil
+        census_context *CensusContext() nogil
+
+    cdef cppclass ServerCallTracerFactory:
+        @staticmethod
+        void RegisterGlobal(ServerCallTracerFactory* factory) nogil
+
+cdef extern from "src/core/lib/channel/context.h":
+  ctypedef enum grpc_context_index:
+    GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE
+
+cdef extern from "src/core/lib/surface/call.h":
+  void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
+                             void* value, void (*destroy)(void* value)) nogil
+  void *grpc_call_context_get(grpc_call* call, grpc_context_index elem) nogil
+
 cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil
@@ -76,6 +101,8 @@ cdef extern from "grpc/impl/codegen/grpc_types.h":
     ctypedef struct grpc_completion_queue_functor:
         void (*functor_run)(grpc_completion_queue_functor*, int);
 
+cdef extern from "<grpcpp/opencensus.h>" namespace "grpc":
+  void RegisterOpenCensusPlugin() except *
 
 cdef extern from "grpc/grpc.h":
 
@@ -94,6 +121,12 @@ cdef extern from "grpc/grpc.h":
   grpc_slice grpc_slice_from_copied_string(const char *source) nogil
   grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
   grpc_slice grpc_slice_copy(grpc_slice s) nogil
+
+  ctypedef struct census_context:
+    pass
+
+  census_context* grpc_census_call_get_context(grpc_call* call) nogil
+  void grpc_census_call_set_context(grpc_call* call, census_context* context) except *
 
   # Declare functions for function-like macros (because Cython)...
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil

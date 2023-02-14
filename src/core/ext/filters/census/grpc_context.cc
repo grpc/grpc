@@ -17,9 +17,9 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/census.h>
 #include <grpc/grpc.h>
+#include <iostream>
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
