@@ -128,6 +128,9 @@ WindowsEventEngine::~WindowsEventEngine() {
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&task_mu_);
   if (!known_handles_.contains(handle)) return false;
+  GRPC_EVENT_ENGINE_TRACE(
+      "WindowsEventEngine::%p cancelling %s", this,
+      HandleToString<EventEngine::TaskHandle>(handle).c_str());
   auto* cd = reinterpret_cast<TimerClosure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
   known_handles_.erase(handle);
