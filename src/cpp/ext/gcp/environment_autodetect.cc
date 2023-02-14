@@ -16,13 +16,10 @@
 //
 //
 
-#include "src/cpp/ext/filters/census/environment_autodetect.h"
-
 #include <grpc/support/port_platform.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/impl/grpc_library.h>
+
+#include "src/cpp/ext/gcp/environment_autodetect.h"
+
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -32,6 +29,12 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -123,7 +126,7 @@ class EnvironmentAutoDetectHelper
     : public grpc_core::InternallyRefCounted<EnvironmentAutoDetectHelper>,
       private internal::GrpcLibrary {
  public:
-  explicit EnvironmentAutoDetectHelper(
+  EnvironmentAutoDetectHelper(
       std::string project_id,
       absl::AnyInvocable<void(EnvironmentAutoDetect::ResourceType)> on_done,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -305,7 +308,7 @@ class EnvironmentAutoDetectHelper
 }  // namespace
 
 EnvironmentAutoDetect& EnvironmentAutoDetect::Create(std::string project_id) {
-  static EnvironmentAutoDetect auto_detector(std::move(project_id));
+  static EnvironmentAutoDetect auto_detector(project_id);
   GPR_ASSERT(project_id.empty() || auto_detector.project_id_ == project_id);
   return auto_detector;
 }

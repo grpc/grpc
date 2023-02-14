@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/cpp/ext/filters/census/environment_autodetect.h"
+#include "src/cpp/ext/gcp/environment_autodetect.h"
 
 #include <string>
 #include <thread>  // NOLINT

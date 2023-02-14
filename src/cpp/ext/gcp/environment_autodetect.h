@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_ENVIRONMENT_AUTODETECT_H
-#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_ENVIRONMENT_AUTODETECT_H
+#ifndef GRPC_SRC_CPP_EXT_GCP_ENVIRONMENT_AUTODETECT_H
+#define GRPC_SRC_CPP_EXT_GCP_ENVIRONMENT_AUTODETECT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,6 +28,7 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpcpp/ext/gcp_observability.h>
 
 #include "src/core/lib/gprpp/sync.h"
 
@@ -43,10 +44,6 @@ class EnvironmentAutoDetect {
     std::map<std::string, std::string> labels;
   };
 
-  // A Create() call properly sets up the environment detector with the
-  // project_id. All subsequent calls can use a Get() without needing to mention
-  // the project_id.
-  static EnvironmentAutoDetect& Create(std::string project_id);
   static EnvironmentAutoDetect& Get();
 
   // Exposed for testing purposes only
@@ -61,6 +58,12 @@ class EnvironmentAutoDetect {
   }
 
  private:
+  friend absl::Status grpc::experimental::GcpObservabilityInit();
+
+  // GcpObservabilityInit() is responsible for setting up the singleton with the
+  // project_id.
+  static EnvironmentAutoDetect& Create(std::string project_id);
+
   const std::string project_id_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_core::Mutex mu_;
@@ -71,4 +74,4 @@ class EnvironmentAutoDetect {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_ENVIRONMENT_AUTODETECT_H
+#endif  // GRPC_SRC_CPP_EXT_GCP_ENVIRONMENT_AUTODETECT_H

@@ -15,17 +15,21 @@
 //
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
+
 #include <cstdint>
 #include <memory>
 #include <random>
 #include <string>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -43,7 +47,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 
