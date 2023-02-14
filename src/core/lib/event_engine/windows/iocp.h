@@ -25,7 +25,6 @@
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -47,7 +46,7 @@ class IOCP final : public Poller {
                   absl::FunctionRef<void()> schedule_poll_again) override;
   void Kick() override;
 
-  grpc_core::OrphanablePtr<WinSocket> Watch(SOCKET socket);
+  std::unique_ptr<WinSocket> Watch(SOCKET socket);
   // Return the set of default flags
   static DWORD GetDefaultSocketFlags();
 

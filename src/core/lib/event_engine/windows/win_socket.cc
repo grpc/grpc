@@ -22,7 +22,6 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -37,20 +36,22 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+// ---- WinSocket ----
+
 WinSocket::WinSocket(SOCKET socket, Executor* executor) noexcept
     : socket_(socket),
       executor_(executor),
-      read_info_(OpState(this)),
-      write_info_(OpState(this)) {}
+      read_info_(this),
+      write_info_(this) {}
 
 WinSocket::~WinSocket() {
   GPR_ASSERT(is_shutdown_.load());
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p destroyed", this);
 }
 
-SOCKET WinSocket::socket() { return socket_; }
+SOCKET WinSocket::raw_socket() { return socket_; }
 
-void WinSocket::Orphan() {
+void WinSocket::Shutdown() {
   // if already shutdown, return early. Otherwise, set the shutdown flag.
   if (is_shutdown_.exchange(true)) {
     GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p already shutting down",
@@ -79,12 +80,12 @@ void WinSocket::Orphan() {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);
 }
 
-void WinSocket::Orphan(const grpc_core::DebugLocation& location,
-                       absl::string_view reason) {
+void WinSocket::Shutdown(const grpc_core::DebugLocation& location,
+                         absl::string_view reason) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-      "WinSocket::%p Orphaned from %s:%d. Reason: %s", this, location.file(),
-      location.line(), reason);
-  Orphan();
+      "WinSocket::%p Shut down from %s:%d. Reason: %s", this, location.file(),
+      location.line(), reason.data());
+  Shutdown();
 }
 
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
@@ -96,7 +97,8 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
   if (std::exchange(info.has_pending_iocp_, false)) {
     executor_->Run(closure);
   } else {
-    info.closure_ = closure;
+    EventEngine::Closure* prev = nullptr;
+    GPR_ASSERT(info.closure_.compare_exchange_strong(prev, closure));
   }
 }
 
@@ -108,41 +110,48 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
   NotifyOnReady(write_info_, on_write);
 }
 
+// ---- WinSocket::OpState ----
+
 WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
-    : win_socket_(win_socket), closure_(nullptr) {
+    : win_socket_(win_socket) {
   memset(&overlapped_, 0, sizeof(OVERLAPPED));
 }
 
 void WinSocket::OpState::SetReady() {
   GPR_ASSERT(!has_pending_iocp_);
-  if (closure_) {
-    win_socket_->executor_->Run(closure_);
+  auto* closure = closure_.exchange(nullptr);
+  if (closure) {
+    win_socket_->executor_->Run(closure);
   } else {
     has_pending_iocp_ = true;
   }
 }
 
 void WinSocket::OpState::SetError(int wsa_error) {
-  bytes_transferred_ = 0;
-  wsa_error_ = wsa_error;
+  result_ = OverlappedResult{/*wsa_error=*/wsa_error, /*bytes_transferred=*/0};
+}
+
+void WinSocket::OpState::SetResult(OverlappedResult result) {
+  result_ = result;
 }
 
 void WinSocket::OpState::GetOverlappedResult() {
-  GetOverlappedResult(win_socket_->socket());
+  GetOverlappedResult(win_socket_->raw_socket());
 }
 
 void WinSocket::OpState::GetOverlappedResult(SOCKET sock) {
+  if (win_socket_->IsShutdown()) {
+    result_ = OverlappedResult{/*wsa_error=*/WSA_OPERATION_ABORTED,
+                               /*bytes_transferred=*/0};
+    return;
+  }
   DWORD flags = 0;
   DWORD bytes;
   BOOL success =
       WSAGetOverlappedResult(sock, &overlapped_, &bytes, FALSE, &flags);
-  bytes_transferred_ = bytes;
-  wsa_error_ = success ? 0 : WSAGetLastError();
+  result_ = OverlappedResult{/*wsa_error=*/success ? 0 : WSAGetLastError(),
+                             /*bytes_transferred=*/bytes};
 }
-
-void WinSocket::SetReadable() { read_info_.SetReady(); }
-
-void WinSocket::SetWritable() { write_info_.SetReady(); }
 
 bool WinSocket::IsShutdown() { return is_shutdown_.load(); }
 

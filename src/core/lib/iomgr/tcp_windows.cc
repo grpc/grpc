@@ -280,7 +280,6 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   }
 
   TCP_REF(tcp, "read");
-
   // First let's try a synchronous, non-blocking read.
   status = WSARecv(tcp->socket->socket, buffers, (DWORD)tcp->read_slices->count,
                    &bytes_read, &flags, NULL, NULL);

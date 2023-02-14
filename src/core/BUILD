@@ -2002,7 +2002,6 @@ grpc_cc_library(
         "windows_iocp",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:orphanable",
     ],
 )
 
@@ -2033,7 +2032,6 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
-        "//:orphanable",
     ],
 )
 
@@ -2061,7 +2059,6 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
-        "//:orphanable",
     ],
 )
 
@@ -2077,6 +2074,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
+        "absl/base:core_headers",
     ],
     deps = [
         "common_event_engine_closures",
@@ -2088,7 +2086,6 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
-        "//:orphanable",
     ],
 )
 

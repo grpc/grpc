@@ -33,7 +33,6 @@
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -89,6 +88,12 @@ class WindowsEventEngine : public EventEngine,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
+  // Retrieve the base executor.
+  // This is public because most classes that know the concrete
+  // WindowsEventEngine type are effectively friends.
+  // Not intended for external use.
+  Executor* executor() { return executor_.get(); }
+
  private:
   // State of an active connection.
   // Managed by a shared_ptr, owned exclusively by the timeout callback and the
@@ -102,7 +107,7 @@ class WindowsEventEngine : public EventEngine,
     EventEngine::OnConnectCallback on_connected_user_callback
         ABSL_GUARDED_BY(mu);
     EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);
-    grpc_core::OrphanablePtr<WinSocket> socket ABSL_GUARDED_BY(mu);
+    std::unique_ptr<WinSocket> socket ABSL_GUARDED_BY(mu);
     EventEngine::ResolvedAddress address ABSL_GUARDED_BY(mu);
     MemoryAllocator allocator ABSL_GUARDED_BY(mu);
   };

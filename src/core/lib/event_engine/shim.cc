@@ -23,9 +23,11 @@ namespace grpc_event_engine {
 namespace experimental {
 
 bool UseEventEngineClient() {
-// TODO(hork, eryu): Adjust the ifdefs accordingly when event engines become
+// TODO(eryu): Adjust the ifdefs accordingly when event engines become
 // available for other platforms.
 #ifdef GRPC_POSIX_SOCKET_TCP
+  return grpc_core::IsEventEngineClientEnabled();
+#elif defined(GPR_WINDOWS)
   return grpc_core::IsEventEngineClientEnabled();
 #else
   return false;

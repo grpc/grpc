@@ -25,7 +25,6 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -36,6 +35,7 @@ namespace experimental {
 
 WindowsEventEngineListener::SinglePortSocketListener::
     ~SinglePortSocketListener() {
+  listener_socket_->Shutdown(DEBUG_LOCATION, "~SinglePortSocketListener");
   GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
 }
 
@@ -87,8 +87,8 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
   // Start the "accept" asynchronously.
   DWORD addrlen = sizeof(sockaddr_in6) + 16;
   DWORD bytes_received = 0;
-  int success = AcceptEx(listener_socket_->socket(), accept_socket, addresses_,
-                         0, addrlen, addrlen, &bytes_received,
+  int success = AcceptEx(listener_socket_->raw_socket(), accept_socket,
+                         addresses_, 0, addrlen, addrlen, &bytes_received,
                          listener_socket_->read_info()->overlapped());
   // It is possible to get an accept immediately without delay. However, we
   // will still get an IOCP notification for it. So let's just ignore it.
@@ -117,25 +117,16 @@ void WindowsEventEngineListener::SinglePortSocketListener::
         GPR_ASSERT(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
                                      StartLocked()));
       };
-  auto read_info = listener_socket_->read_info();
-  if (read_info->wsa_error() != 0) {
-    gpr_log(GPR_INFO, "%s",
-            GRPC_WSA_ERROR(read_info->wsa_error(),
+  const auto& overlapped_result = listener_socket_->read_info()->result();
+  if (overlapped_result.wsa_error != 0) {
+    gpr_log(GPR_ERROR, "%s",
+            GRPC_WSA_ERROR(overlapped_result.wsa_error,
                            "Skipping on_accept due to error")
                 .ToString()
                 .c_str());
     return close_socket_and_restart();
   }
-  // The IOCP notified us of a completed operation. Let's grab the results,
-  // and act on them accordingly.
-  read_info->GetOverlappedResult(accept_socket_);
-  if (read_info->wsa_error() != 0) {
-    auto error =
-        GRPC_WSA_ERROR(WSAGetLastError(), "OnAccept - GetOverlappedResult");
-    gpr_log(GPR_ERROR, "%s", error.ToString().c_str());
-    return close_socket_and_restart();
-  }
-  SOCKET tmp_listener_socket = listener_socket_->socket();
+  SOCKET tmp_listener_socket = listener_socket_->raw_socket();
   int err = setsockopt(accept_socket_, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
                        reinterpret_cast<char*>(&tmp_listener_socket),
                        sizeof(tmp_listener_socket));
@@ -180,11 +171,11 @@ void WindowsEventEngineListener::SinglePortSocketListener::
 
 WindowsEventEngineListener::SinglePortSocketListener::SinglePortSocketListener(
     WindowsEventEngineListener* listener, LPFN_ACCEPTEX AcceptEx,
-    grpc_core::OrphanablePtr<WinSocket> win_socket, int port,
+    std::unique_ptr<WinSocket> win_socket, int port,
     EventEngine::ResolvedAddress hostbyname)
     : AcceptEx(AcceptEx),
       listener_(listener),
-      on_accept_([this]() { OnAcceptCallbackImpl(); }),
+      on_accept_(this),
       port_(port),
       listener_socket_(std::move(win_socket)),
       listener_sockname_(hostbyname) {}
@@ -232,12 +223,14 @@ WindowsEventEngineListener::WindowsEventEngineListener(
     IOCP* iocp, AcceptCallback accept_cb,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory,
-    Executor* executor, const EndpointConfig& config)
+    std::shared_ptr<EventEngine> engine, Executor* executor,
+    const EndpointConfig& config)
     : iocp_(iocp),
       accept_cb_(std::move(accept_cb)),
       on_shutdown_(std::move(on_shutdown)),
       memory_allocator_factory_(std::move(memory_allocator_factory)),
       config_(config),
+      engine_(std::move(engine)),
       executor_(executor) {}
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {

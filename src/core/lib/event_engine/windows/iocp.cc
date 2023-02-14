@@ -27,7 +27,6 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
@@ -44,8 +43,8 @@ IOCP::IOCP(Executor* executor) noexcept
 // Shutdown must be called prior to deletion
 IOCP::~IOCP() {}
 
-grpc_core::OrphanablePtr<WinSocket> IOCP::Watch(SOCKET socket) {
-  auto wrapped_socket = grpc_core::MakeOrphanable<WinSocket>(socket, executor_);
+std::unique_ptr<WinSocket> IOCP::Watch(SOCKET socket) {
+  auto wrapped_socket = std::make_unique<WinSocket>(socket, executor_);
   HANDLE ret = CreateIoCompletionPort(
       reinterpret_cast<HANDLE>(socket), iocp_handle_,
       reinterpret_cast<uintptr_t>(wrapped_socket.get()), 0);
@@ -93,22 +92,15 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   }
   GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p got event on OVERLAPPED::%p", this,
                                  overlapped);
+  // Safety note: socket is guaranteed to exist when managed by a
+  // WindowsEndpoint. If an overlapped event came in, then either a read event
+  // handler is registered, which keeps the socket alive, or the WindowsEndpoint
+  // (which keeps the socket alive) has done an asynchronous WSARecv and is
+  // about to register for notification of an overlapped event.
   auto* socket = reinterpret_cast<WinSocket*>(completion_key);
-  if (socket->IsShutdown()) {
-    GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p deleting abandoned WinSocket::%p",
-                                   this, socket);
-    delete socket;
-    return Poller::WorkResult::kOk;
-  }
   WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);
   GPR_ASSERT(info != nullptr);
   info->GetOverlappedResult();
-  if (info->closure() != nullptr) {
-    schedule_poll_again();
-    executor_->Run(info->closure());
-    return Poller::WorkResult::kOk;
-  }
-  // No callback registered. Set ready and return an empty set
   info->SetReady();
   schedule_poll_again();
   return Poller::WorkResult::kOk;
