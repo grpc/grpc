@@ -17,25 +17,33 @@
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 
 find_latest() {
-  gcloud container images list-tags --filter='tags~v1\.\d+\.x' --flatten='tags[]' --format='value(tags)' | sort --version-sort | tail -n 1
+  gcloud container images list-tags --filter='tags~v1\.\d+\.x' "${IMAGE_REPO}/${1}-${2}" --flatten='tags[]' --format='value(tags)' | sort --version-sort | tail -n 1
 }
 
-if [ "${LATEST_BRANCH}" == "" ]; then
-  cpp_server=$(find_latest cpp server)
-  cpp_client=$(find_latest cpp client)
-  go_server=$(find_latest go server)
-  go_client=$(find_latest go client)
-  java_server=$(find_latest java server)
-  java_client=$(find_latest java client)
-  LATEST_BRANCH=$( (printf "%s\n" "${cpp_server}" "${cpp_client}" "${go_server}" "${go_client}" "${java_server}" "${java_client}") | sort --version-sort | head -1)
-fi
+find_latest_branch() {
+  local latest_branch=$1
+  if [ "${latest_branch}" == "" ]; then
+    cpp_server=$(find_latest cpp server)
+    cpp_client=$(find_latest cpp client)
+    go_server=$(find_latest go server)
+    go_client=$(find_latest go client)
+    java_server=$(find_latest java server)
+    java_client=$(find_latest java client)
+    latest_branch=$( (printf "%s\n" "${cpp_server}" "${cpp_client}" "${go_server}" "${go_client}" "${java_server}" "${java_client}") | sort --version-sort | head -1)
+  fi
+  echo ${latest_branch}
+}
 
-if [ "${OLDEST_BRANCH}" == "" ]; then
-  MAJOR_BRANCH=$( echo "${LATEST_BRANCH}" | cut -f 2 -d.)
-  OLDEST_BRANCH="v1.$(( MAJOR_BRANCH - 9)).x"
-fi
+find_oldest_branch() {
+  local oldest_branch=$1
+  local latest_branch=$2
+  if [ "${oldest_branch}" == "" ]; then
+    major_branch=$( echo "${latest_branch}" | cut -f 2 -d.)
+    oldest_branch="v1.$(( major_branch - 9)).x"
+  fi
+  echo ${oldest_branch}
+}
 
-export LATEST_BRANCH OLDEST_BRANCH
 
 
 #######################################

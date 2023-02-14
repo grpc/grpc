@@ -71,6 +71,8 @@ main() {
   local failed_tests=0
   local successful_string
   local failed_string
+  LATEST_BRANCH=$(find_latest_branch "${LATEST_BRANCH}")
+  OLDEST_BRANCH=$(find_oldest_branch "${OLDEST_BRANCH}" "${LATEST_BRANCH}")
   # Run cross branch tests per language: master x latest and master x oldest
   for LANG in ${LANGS}
   do
