@@ -3730,7 +3730,6 @@ libs:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/pipe.h
@@ -7544,7 +7543,6 @@ targets:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/pipe.h
