@@ -31,9 +31,9 @@ class WindowsEndpoint : public EventEngine::Endpoint {
                   MemoryAllocator&& allocator, const EndpointConfig& config,
                   Executor* Executor);
   ~WindowsEndpoint() override;
-  void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
-  void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
              SliceBuffer* data, const WriteArgs* args) override;
   const EventEngine::ResolvedAddress& GetPeerAddress() const override;
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;

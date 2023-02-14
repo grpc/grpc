@@ -78,7 +78,7 @@ WindowsEndpoint::~WindowsEndpoint() {
   socket_->MaybeShutdown(absl::OkStatus());
 }
 
-void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* args) {
   // TODO(hork): last_read_buffer from iomgr: Is it only garbage, or optimized?
   GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p reading", this);
@@ -112,7 +112,7 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     executor_->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::OkStatus());
     });
-    return;
+    return false;
   }
   // Otherwise, let's retry, by queuing a read.
   memset(socket_->read_info()->overlapped(), 0, sizeof(OVERLAPPED));
@@ -127,14 +127,15 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
           wsa_error,
           absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str()));
     });
-    return;
+    return false;
   }
 
   handle_read_event_.Prime(buffer, std::move(on_read));
   socket_->NotifyOnRead(&handle_read_event_);
+  return false;
 }
 
-void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
   if (grpc_event_engine_trace.enabled()) {
     for (int i = 0; i < data->Count(); i++) {
@@ -161,7 +162,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       // Write completed, exiting early
       executor_->Run(
           [cb = std::move(on_writable)]() mutable { cb(absl::OkStatus()); });
-      return;
+      return false;
     }
     // The data was not completely delivered, we should send the rest of it by
     // doing an async write operation.
@@ -183,7 +184,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
         cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
-      return;
+      return false;
     }
   }
   auto write_info = socket_->write_info();
@@ -198,13 +199,14 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
         cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
-      return;
+      return false;
     }
   }
   // As all is now setup, we can now ask for the IOCP notification. It may
   // trigger the callback immediately however, but no matter.
   handle_write_event_.Prime(data, std::move(on_writable));
   socket_->NotifyOnWrite(&handle_write_event_);
+  return false;
 }
 const EventEngine::ResolvedAddress& WindowsEndpoint::GetPeerAddress() const {
   return peer_address_;

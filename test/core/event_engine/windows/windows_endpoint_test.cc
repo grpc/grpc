@@ -61,19 +61,20 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
   std::string message = "0xDEADBEEF";
   grpc_core::Notification read_done;
   SliceBuffer read_buffer;
-  server.Read(
+  EXPECT_FALSE(server.Read(
       [&read_done, &message, &read_buffer](absl::Status status) {
         ASSERT_EQ(read_buffer.Count(), 1);
         auto slice = read_buffer.TakeFirst();
         EXPECT_EQ(slice.as_string_view(), message);
         read_done.Notify();
       },
-      &read_buffer, nullptr);
+      &read_buffer, nullptr));
   grpc_core::Notification write_done;
   SliceBuffer write_buffer;
   write_buffer.Append(Slice::FromCopiedString(message));
-  client.Write([&write_done](absl::Status status) { write_done.Notify(); },
-               &write_buffer, nullptr);
+  EXPECT_FALSE(
+      client.Write([&write_done](absl::Status status) { write_done.Notify(); },
+                   &write_buffer, nullptr));
   iocp.Work(5s, []() {});
   // Cleanup
   write_done.WaitForNotification();
@@ -121,10 +122,11 @@ TEST_F(WindowsEndpointTest, Conversation) {
     void WriteAndQueueReader(WindowsEndpoint* writer, WindowsEndpoint* reader) {
       write_buffer.Clear();
       write_buffer.Append(Slice::FromCopiedString(messages[exchange]));
-      writer->Write([](absl::Status) {}, &write_buffer, /*args=*/nullptr);
+      EXPECT_FALSE(
+          writer->Write([](absl::Status) {}, &write_buffer, /*args=*/nullptr));
       auto cb = [this](absl::Status status) { ReadCB(status); };
       read_buffer.Clear();
-      reader->Read(cb, &read_buffer, /*args=*/nullptr);
+      EXPECT_FALSE(reader->Read(cb, &read_buffer, /*args=*/nullptr));
     }
 
     // Asserts that the received string matches, then queues the next Write/Read
