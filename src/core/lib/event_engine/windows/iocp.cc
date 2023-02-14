@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -48,21 +49,18 @@ std::unique_ptr<WinSocket> IOCP::Watch(SOCKET socket) {
       reinterpret_cast<HANDLE>(socket), iocp_handle_,
       reinterpret_cast<uintptr_t>(wrapped_socket.get()), 0);
   if (!ret) {
-    char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);
-    gpr_free(utf8_message);
-    __debugbreak();
-    abort();
+    grpc_core::Crash(
+        GRPC_WSA_ERROR(WSAGetLastError(), "Unable to add socket to iocp")
+            .ToString());
   }
   GPR_ASSERT(ret == iocp_handle_);
   return wrapped_socket;
 }
 
 void IOCP::Shutdown() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG, "IOCP::%p shutting down. Outstanding kicks: %d", this,
-            outstanding_kicks_.load());
-  }
+  GRPC_EVENT_ENGINE_POLLER_TRACE(
+      "IOCP::%p shutting down. Outstanding kicks: %d", this,
+      outstanding_kicks_.load());
   while (outstanding_kicks_.load() > 0) {
     Work(std::chrono::hours(42), []() {});
   }
@@ -74,23 +72,17 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   DWORD bytes = 0;
   ULONG_PTR completion_key;
   LPOVERLAPPED overlapped;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG, "IOCP::%p doing work", this);
-  }
+  GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p doing work", this);
   BOOL success = GetQueuedCompletionStatus(
       iocp_handle_, &bytes, &completion_key, &overlapped,
       static_cast<DWORD>(Milliseconds(timeout)));
   if (success == 0 && overlapped == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      gpr_log(GPR_DEBUG, "IOCP::%p deadline exceeded", this);
-    }
+    GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p deadline exceeded", this);
     return Poller::WorkResult::kDeadlineExceeded;
   }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &kick_overlap_) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      gpr_log(GPR_DEBUG, "IOCP::%p kicked", this);
-    }
+    GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p kicked", this);
     outstanding_kicks_.fetch_sub(1);
     if (completion_key == (ULONG_PTR)&kick_token_) {
       return Poller::WorkResult::kKicked;
@@ -98,10 +90,8 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
     grpc_core::Crash(
         absl::StrFormat("Unknown custom completion key: %lu", completion_key));
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG, "IOCP::%p got event on OVERLAPPED::%p", this,
-            overlapped);
-  }
+  GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p got event on OVERLAPPED::%p", this,
+                                 overlapped);
   WinSocket* socket = reinterpret_cast<WinSocket*>(completion_key);
   // TODO(hork): move the following logic into the WinSocket impl.
   WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);

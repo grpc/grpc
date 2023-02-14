@@ -81,7 +81,7 @@ WindowsEndpoint::~WindowsEndpoint() {
 void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* args) {
   // TODO(hork): last_read_buffer from iomgr: Is it only garbage, or optimized?
-  GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p reading", this);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
   // Prepare the WSABUF struct
   WSABUF wsa_buffers[kMaxWSABUFCount];
   int min_read_size = kDefaultTargetReadSize;
@@ -136,7 +136,8 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 
 void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
-  if (grpc_event_engine_trace.enabled()) {
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
+  if (grpc_event_engine_endpoint_data_trace.enabled()) {
     for (int i = 0; i < data->Count(); i++) {
       auto str = data->RefSlice(i).as_string_view();
       gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %.*s", this,
@@ -219,7 +220,8 @@ WindowsEndpoint::BaseEventClosure::BaseEventClosure(WindowsEndpoint* endpoint)
     : cb_(&AbortOnEvent), endpoint_(endpoint) {}
 
 void WindowsEndpoint::HandleReadClosure::Run() {
-  GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p Handling Read Event", endpoint_);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Read Event",
+                                   endpoint_);
   absl::Status status;
   auto* read_info = endpoint_->socket_->read_info();
   auto cb_cleanup = absl::MakeCleanup([this, &status]() {
@@ -239,7 +241,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
                                 read_info->bytes_transferred());
     }
     GPR_ASSERT(read_info->bytes_transferred() == buffer_->Length());
-    if (grpc_event_engine_trace.enabled()) {
+    if (grpc_event_engine_endpoint_data_trace.enabled()) {
       for (int i = 0; i < buffer_->Count(); i++) {
         auto str = buffer_->RefSlice(i).as_string_view();
         gpr_log(GPR_INFO, "WindowsEndpoint::%p READ (peer=%s): %.*s", this,
@@ -256,8 +258,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
 }
 
 void WindowsEndpoint::HandleWriteClosure::Run() {
-  GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p Handling Write Event",
-                          endpoint_);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Write Event",
+                                   endpoint_);
   auto* write_info = endpoint_->socket_->write_info();
   auto cb = std::move(cb_);
   cb_ = &AbortOnEvent;

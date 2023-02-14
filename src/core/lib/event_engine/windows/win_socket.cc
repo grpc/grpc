@@ -40,22 +40,23 @@ WinSocket::WinSocket(SOCKET socket, Executor* executor) noexcept
       read_info_(OpState(this)),
       write_info_(OpState(this)) {}
 
-WinSocket::~WinSocket() { GPR_ASSERT(is_shutdown_.load()); }
+WinSocket::~WinSocket() {
+  GPR_ASSERT(is_shutdown_.load());
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p destroyed", this);
+}
 
 SOCKET WinSocket::socket() { return socket_; }
 
 void WinSocket::MaybeShutdown(absl::Status why) {
   // if already shutdown, return early. Otherwise, set the shutdown flag.
   if (is_shutdown_.exchange(true)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      gpr_log(GPR_DEBUG, "WinSocket::%p already shutting down", this);
-    }
+    GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p already shutting down",
+                                     this);
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG, "WinSocket::%p shutting down now. Reason: %s", this,
-            why.ToString().c_str());
-  }
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
+      "WinSocket::%p shutting down now. Reason: %s", this,
+      why.ToString().c_str());
   // Grab the function pointer for DisconnectEx for that specific socket.
   // It may change depending on the interface.
   GUID guid = WSAID_DISCONNECTEX;
@@ -74,6 +75,7 @@ void WinSocket::MaybeShutdown(absl::Status why) {
     gpr_free(utf8_message);
   }
   closesocket(socket_);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);
 }
 
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
@@ -96,6 +98,8 @@ void WinSocket::NotifyOnRead(EventEngine::Closure* on_read) {
 void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
   NotifyOnReady(write_info_, on_write);
 }
+
+// ---- WinSocket::OpState ----
 
 WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
     : win_socket_(win_socket), closure_(nullptr) {
@@ -132,13 +136,10 @@ void WinSocket::SetWritable() { write_info_.SetReady(); }
 bool WinSocket::IsShutdown() { return is_shutdown_.load(); }
 
 WinSocket::OpState* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG,
-            "WinSocket::%p looking for matching OVERLAPPED::%p. "
-            "read(%p) write(%p)",
-            this, overlapped, &read_info_.overlapped_,
-            &write_info_.overlapped_);
-  }
+  GRPC_EVENT_ENGINE_POLLER_TRACE(
+      "WinSocket::%p looking for matching OVERLAPPED::%p. "
+      "read(%p) write(%p)",
+      this, overlapped, &read_info_.overlapped_, &write_info_.overlapped_);
   if (overlapped == &read_info_.overlapped_) return &read_info_;
   if (overlapped == &write_info_.overlapped_) return &write_info_;
   return nullptr;
