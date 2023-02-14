@@ -106,7 +106,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
 
 TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
@@ -168,7 +168,11 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   }
   client_endpoint.reset();
   server_endpoint.reset();
+  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: endpoints destroyed");
+  listener.reset();
+  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: listener destroyed");
   WaitForSingleOwner(std::move(test_ee));
+  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: exiting");
 }
 
 // Create 1 listener bound to N IPv6 addresses and M connections where M > N and
