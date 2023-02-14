@@ -26,9 +26,9 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpcpp/ext/gcp_observability.h>
 
 #include "src/core/lib/gprpp/sync.h"
 

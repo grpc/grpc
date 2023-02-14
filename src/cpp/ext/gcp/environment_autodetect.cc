@@ -169,7 +169,6 @@ class EnvironmentAutoDetectHelper
   };
 
   void PollLoop() {
-    gpr_log(GPR_ERROR, "polling");
     grpc_core::ExecCtx exec_ctx;
     bool done = false;
     gpr_mu_lock(mu_poll_);
@@ -244,8 +243,8 @@ class EnvironmentAutoDetectHelper
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     GPR_ASSERT(!attributes_to_fetch_.empty());
-    for (const auto& element : attributes_to_fetch_) {
-      new grpc_core::MetadataQuery(
+    for (auto& element : attributes_to_fetch_) {
+      queries_.push_back(grpc_core::MakeOrphanable<grpc_core::MetadataQuery>(
           element.first, &pollent_,
           [this](std::string attribute, std::string result) {
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
@@ -275,15 +274,16 @@ class EnvironmentAutoDetectHelper
                 resource = std::move(resource_);
               }
             }
-            gpr_mu_lock(mu_poll_);
-            notify_poller_ = true;
-            gpr_mu_unlock(mu_poll_);
             if (resource.has_value()) {
+              gpr_mu_lock(mu_poll_);
+              notify_poller_ = true;
+              gpr_mu_unlock(mu_poll_);
               auto on_done = std::move(on_done_);
               Unref();
               on_done(std::move(resource).value());
             }
-          });
+          },
+          grpc_core::Duration::Seconds(1)));
     }
   }
 
@@ -298,6 +298,8 @@ class EnvironmentAutoDetectHelper
   absl::flat_hash_map<std::string /* metadata_server_attribute */,
                       std::string /* resource_attribute */>
       attributes_to_fetch_ ABSL_GUARDED_BY(mu_);
+  std::vector<grpc_core::OrphanablePtr<grpc_core::MetadataQuery>> queries_
+      ABSL_GUARDED_BY(mu_);
   EnvironmentAutoDetect::ResourceType resource_ ABSL_GUARDED_BY(mu_);
   // This would be true if we are assuming the resource to be GCE. In this case,
   // there is a chance that it will fail and we should instead just use

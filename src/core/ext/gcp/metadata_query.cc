@@ -32,14 +32,16 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
+
+TraceFlag grpc_metadata_query_trace(false, "metadata_query");
 
 constexpr const char MetadataQuery::kZoneAttribute[] =
     "/computeMetadata/v1/instance/zone";
@@ -56,8 +58,11 @@ MetadataQuery::MetadataQuery(
     std::string attribute, grpc_polling_entity* pollent,
     absl::AnyInvocable<void(std::string /* attribute */,
                             std::string /* result */)>
-        callback)
-    : attribute_(std::move(attribute)), callback_(std::move(callback)) {
+        callback,
+    grpc_core::Duration timeout)
+    : grpc_core::InternallyRefCounted<MetadataQuery>(nullptr, 2),
+      attribute_(std::move(attribute)),
+      callback_(std::move(callback)) {
   GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
   auto uri =
       grpc_core::URI::Create("http", "metadata.google.internal.", attribute_,
@@ -71,33 +76,44 @@ MetadataQuery::MetadataQuery(
   request.hdrs = &header;
   // The http call is local. If it takes more than one sec, it is probably not
   // on GCP.
-  auto http_request = grpc_core::HttpRequest::Get(
+  http_request_ = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, pollent, &request,
-      grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(1), &on_done_,
-      &response_,
+      grpc_core::Timestamp::Now() + timeout, &on_done_, &response_,
       grpc_core::RefCountedPtr<grpc_channel_credentials>(
           grpc_insecure_credentials_create()));
-  http_request->Start();
+  http_request_->Start();
 }
 
 MetadataQuery::~MetadataQuery() { grpc_http_response_destroy(&response_); }
+
+void MetadataQuery::Orphan() {
+  http_request_.reset();
+  Unref();
+}
 
 void MetadataQuery::OnDone(void* arg, absl::Status error) {
   auto* self = static_cast<MetadataQuery*>(arg);
   std::string result;
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "MetadataServer Query failed for %s: %s",
-            self->attribute_.c_str(), grpc_core::StatusToString(error).c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
+      gpr_log(GPR_INFO, "MetadataServer Query failed for %s: %s",
+              self->attribute_.c_str(),
+              grpc_core::StatusToString(error).c_str());
+    }
   } else if (self->response_.status != 200) {
-    gpr_log(GPR_ERROR,
-            "MetadataServer Query received non-200 status for %s: %s",
-            self->attribute_.c_str(), grpc_core::StatusToString(error).c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
+      gpr_log(
+          GPR_INFO, "MetadataServer Query received non-200 status for %s: %s",
+          self->attribute_.c_str(), grpc_core::StatusToString(error).c_str());
+    }
   } else if (self->attribute_ == kZoneAttribute) {
     absl::string_view body(self->response_.body, self->response_.body_length);
-    size_t pos = result.find_last_of('/');
+    size_t pos = body.find_last_of('/');
     if (pos == body.npos) {
-      gpr_log(GPR_ERROR, "MetadataServer Could not parse zone: %s",
-              std::string(body).c_str());
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
+        gpr_log(GPR_INFO, "MetadataServer Could not parse zone: %s",
+                std::string(body).c_str());
+      }
     } else {
       result = std::string(body.substr(pos + 1));
     }
@@ -106,7 +122,7 @@ void MetadataQuery::OnDone(void* arg, absl::Status error) {
   }
   auto callback = std::move(self->callback_);
   auto attribute = std::move(self->attribute_);
-  delete self;
+  self->Unref();
   return callback(std::move(attribute), std::move(result));
 }
 

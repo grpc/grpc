@@ -24,16 +24,18 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 
 namespace grpc_core {
 
-// Fire and Forget class (Cleans up after itself.)
 // Fetches the value of an attribute from the MetadataServer on a GCP
 // environment.
-class MetadataQuery {
+class MetadataQuery : public grpc_core::InternallyRefCounted<MetadataQuery> {
  public:
   static const char kZoneAttribute[];
   static const char kClusterNameAttribute[];
@@ -44,9 +46,12 @@ class MetadataQuery {
   MetadataQuery(std::string attribute, grpc_polling_entity* pollent,
                 absl::AnyInvocable<void(std::string /* attribute */,
                                         std::string /* result */)>
-                    callback);
+                    callback,
+                grpc_core::Duration timeout);
 
-  ~MetadataQuery();
+  ~MetadataQuery() override;
+
+  void Orphan() override;
 
  private:
   static void OnDone(void* arg, absl::Status error);
@@ -56,6 +61,7 @@ class MetadataQuery {
   absl::AnyInvocable<void(std::string /* attribute */,
                           std::string /* result */)>
       callback_;
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
   grpc_http_response response_;
 };
 

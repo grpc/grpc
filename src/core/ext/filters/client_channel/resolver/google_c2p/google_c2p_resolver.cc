@@ -20,9 +20,9 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <type_traits>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
@@ -35,9 +35,11 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
@@ -76,8 +78,10 @@ class GoogleCloud2ProdResolver : public Resolver {
   std::string metadata_server_name_ = "metadata.google.internal.";
   bool shutdown_ = false;
 
+  OrphanablePtr<MetadataQuery> zone_query_;
   absl::optional<std::string> zone_;
 
+  OrphanablePtr<MetadataQuery> ipv6_query_;
   absl::optional<bool> supports_ipv6_;
 };
 
@@ -144,18 +148,28 @@ void GoogleCloud2ProdResolver::StartLocked() {
     return;
   }
   // Using xDS.  Start metadata server queries.
-  new MetadataQuery(
+  zone_query_ = grpc_core::MakeOrphanable<MetadataQuery>(
       std::string(MetadataQuery::kZoneAttribute), &pollent_,
       [resolver = static_cast<RefCountedPtr<GoogleCloud2ProdResolver>>(Ref())](
           std::string /* attribute */, std::string result) mutable {
-        resolver->ZoneQueryDone(result);
-      });
-  new MetadataQuery(
+        resolver->work_serializer_->Run(
+            [resolver = std::move(resolver), result = std::move(result)]() {
+              resolver->ZoneQueryDone(result);
+            },
+            DEBUG_LOCATION);
+      },
+      grpc_core::Duration::Seconds(10));
+  ipv6_query_ = grpc_core::MakeOrphanable<MetadataQuery>(
       std::string(MetadataQuery::kIPv6Attribute), &pollent_,
       [resolver = static_cast<RefCountedPtr<GoogleCloud2ProdResolver>>(Ref())](
           std::string /* attribute */, std::string result) mutable {
-        resolver->IPv6QueryDone(!result.empty());
-      });
+        resolver->work_serializer_->Run(
+            [resolver = std::move(resolver), result = std::move(result)]() {
+              resolver->IPv6QueryDone(!result.empty());
+            },
+            DEBUG_LOCATION);
+      },
+      grpc_core::Duration::Seconds(10));
 }
 
 void GoogleCloud2ProdResolver::RequestReresolutionLocked() {
@@ -172,15 +186,19 @@ void GoogleCloud2ProdResolver::ResetBackoffLocked() {
 
 void GoogleCloud2ProdResolver::ShutdownLocked() {
   shutdown_ = true;
+  zone_query_.reset();
+  ipv6_query_.reset();
   child_resolver_.reset();
 }
 
 void GoogleCloud2ProdResolver::ZoneQueryDone(std::string zone) {
+  zone_query_.reset();
   zone_ = std::move(zone);
   if (supports_ipv6_.has_value()) StartXdsResolver();
 }
 
 void GoogleCloud2ProdResolver::IPv6QueryDone(bool ipv6_supported) {
+  ipv6_query_.reset();
   supports_ipv6_ = ipv6_supported;
   if (zone_.has_value()) StartXdsResolver();
 }
