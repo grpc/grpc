@@ -756,16 +756,18 @@ TEST_F(TlsSecurityConnectorTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a basic TSI Peer.
-  std::string expected_subject = const_cast<char*>(
-      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  std::string expected_subject =
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
-                                                "grpc", strlen("grpc"),
-                                                &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
-                 expected_subject.c_str(), &peer.properties[1]) == TSI_OK);
+  EXPECT_EQ(tsi_construct_peer(2, &peer), TSI_OK);
+  EXPECT_EQ(
+      tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "grpc",
+                                         strlen("grpc"), &peer.properties[0]),
+      TSI_OK);
+  EXPECT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
+                expected_subject.c_str(), &peer.properties[1]),
+            TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
@@ -1133,7 +1135,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
   RefCountedPtr<grpc_tls_credentials_options> options =
       MakeRefCounted<grpc_tls_credentials_options>();
-  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options->set_certificate_verifier(core_external_verifier.Ref());
   auto provider =
       MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
@@ -1142,16 +1145,18 @@ TEST_F(TlsSecurityConnectorTest,
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
-  char* expected_subject = const_cast<char*>(
-      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  std::string expected_subject =
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
-                                                "grpc", strlen("grpc"),
-                                                &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
-                 expected_subject, &peer.properties[1]) == TSI_OK);
+  EXPECT_EQ(tsi_construct_peer(2, &peer), TSI_OK);
+  EXPECT_EQ(
+      tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "grpc",
+                                         strlen("grpc"), &peer.properties[0]),
+      TSI_OK);
+  EXPECT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
+                expected_subject.c_str(), &peer.properties[1]),
+            TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
