@@ -67,14 +67,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
-    {"event_engine_client", description_event_engine_client, true},
+    {"event_engine_client", description_event_engine_client, false},
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
     {"free_large_allocator", description_free_large_allocator, false},
     {"promise_based_server_call", description_promise_based_server_call, false},
     {"transport_supplies_client_latency",
      description_transport_supplies_client_latency, false},
-    {"event_engine_listener", description_event_engine_listener, true},
+    {"event_engine_listener", description_event_engine_listener, false},
 };
 
 }  // namespace grpc_core
