@@ -168,11 +168,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   }
   client_endpoint.reset();
   server_endpoint.reset();
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: endpoints destroyed");
   listener.reset();
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: listener destroyed");
   WaitForSingleOwner(std::move(test_ee));
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: exiting");
 }
 
 // Create 1 listener bound to N IPv6 addresses and M connections where M > N and

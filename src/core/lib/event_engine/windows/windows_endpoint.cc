@@ -33,7 +33,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
+namespace { 
 constexpr int64_t kDefaultTargetReadSize = 8192;
 constexpr int kMaxWSABUFCount = 16;
 
@@ -237,17 +237,17 @@ void WindowsEndpoint::HandleReadClosure::Reset() {
   buffer_ = nullptr;
 }
 
+void WindowsEndpoint::HandleWriteClosure::Reset() {
+  cb_ = &AbortOnEvent;
+  buffer_ = nullptr;
+}
+
 void WindowsEndpoint::HandleReadClosure::Prime(
     std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
     absl::AnyInvocable<void(absl::Status)> cb) {
   io_state_ = std::move(io_state);
   cb_ = std::move(cb);
   buffer_ = buffer;
-}
-
-void WindowsEndpoint::HandleWriteClosure::Reset() {
-  cb_ = &AbortOnEvent;
-  buffer_ = nullptr;
 }
 
 void WindowsEndpoint::HandleWriteClosure::Prime(
