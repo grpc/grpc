@@ -25,10 +25,10 @@ namespace experimental {
 bool UseEventEngineClient() {
 // TODO(hork, eryu): Adjust the ifdefs accordingly when event engines become
 // available for other platforms.
-#if defined(GRPC_POSIX_SOCKET_TCP) and !defined(GRPC_CFSTREAM)
+#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM)
   return grpc_core::IsEventEngineClientEnabled();
-+#elif defined(GPR_WINDOWS)
-+  return grpc_core::IsEventEngineClientEnabled();
+#elif defined(GPR_WINDOWS)
+  return grpc_core::IsEventEngineClientEnabled();
 #else
   return false;
 #endif
@@ -37,7 +37,7 @@ bool UseEventEngineClient() {
 bool UseEventEngineListener() {
 // TODO(hork, eryu): Adjust the ifdefs accordingly when event engines become
 // available for other platforms.
-#if defined(GRPC_POSIX_SOCKET_TCP) and !defined(GRPC_CFSTREAM)
+#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM)
   return grpc_core::IsEventEngineListenerEnabled();
 #else
   return false;
@@ -45,7 +45,7 @@ bool UseEventEngineListener() {
 }
 
 bool EventEngineSupportsFd() {
-#if defined(GRPC_POSIX_SOCKET_TCP) and !defined(GRPC_CFSTREAM)
+#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM)
   return true;
 #else
   return false;
