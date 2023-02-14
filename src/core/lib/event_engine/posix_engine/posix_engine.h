@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+#include <ares.h>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
@@ -153,7 +155,90 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                Duration timeout) override;
     bool CancelLookup(LookupTaskHandle handle) override;
 
+    class GrpcAresRequest;
+    class GrpcAresHostnameRequest;
+
    private:
+    // TODO(yijiem): see if we can use std::list
+    // per ares-channel linked-list of FdNodes
+    class FdNodeList {
+     public:
+      class FdNode {
+       public:
+        FdNode() = default;
+        explicit FdNode(ares_socket_t as, EventHandle* ev_handle)
+            : as_(as), ev_handle_(ev_handle) {}
+
+        bool readable_registered() const { return readable_registered_; }
+        bool writable_registered() const { return writable_registered_; }
+        void set_readable_registered(bool rr) { readable_registered_ = rr; }
+        void set_writable_registered(bool wr) { writable_registered_ = wr; }
+
+        int WrappedFd() const { return static_cast<int>(as_); }
+        EventHandle* event_handle() const { return ev_handle_; }
+
+       private:
+        friend class FdNodeList;
+
+        // ares socket
+        ares_socket_t as_;
+        // Poller event handle
+        EventHandle* ev_handle_;
+        // next fd node
+        FdNode* next_ = nullptr;
+        /// if the readable closure has been registered
+        bool readable_registered_ = false;
+        /// if the writable closure has been registered
+        bool writable_registered_ = false;
+      };
+
+      FdNodeList() = default;
+
+      bool IsEmpty() const { return head_ == nullptr; }
+
+      void PushFdNode(FdNode* fd_node) {
+        fd_node->next_ = head_;
+        head_ = fd_node;
+      }
+
+      FdNode* PopFdNode() {
+        GPR_ASSERT(!IsEmpty());
+        FdNode* ret = head_;
+        head_ = head_->next_;
+        return ret;
+      }
+
+      // Search for as in the FdNode list. This is an O(n) search, the max
+      // possible value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2
+      // in our tests.
+      FdNode* PopFdNode(ares_socket_t as) {
+        FdNode phony_head;
+        phony_head.next_ = head_;
+        FdNode* node = &phony_head;
+        while (node->next_ != nullptr) {
+          if (node->next_->as_ == as) {
+            FdNode* ret = node->next_;
+            node->next_ = node->next_->next_;
+            head_ = phony_head.next_;
+            return ret;
+          }
+          node = node->next_;
+        }
+        return nullptr;
+      }
+
+     private:
+      FdNode* head_ = nullptr;
+    };
+
+    void OnEvent(GrpcAresRequest* request);
+    void OnReadable(FdNodeList::FdNode* fd_node, GrpcAresRequest* request,
+                    absl::Status status);
+    void OnWritable(FdNodeList::FdNode* fd_node, GrpcAresRequest* request,
+                    absl::Status status);
+    void OnDone(FdNodeList::FdNode* fd_node, GrpcAresRequest* request,
+                absl::Status status);
+
     const ResolverOptions options_;
     std::shared_ptr<PosixEnginePollerManager> poller_manager_;
   };

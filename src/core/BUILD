@@ -1958,8 +1958,11 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
+        "cares",
     ],
     deps = [
+        "error",
         "event_engine_common",
         "event_engine_poller",
         "event_engine_shim",

@@ -15,9 +15,12 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
+#include <sys/ioctl.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -31,7 +34,9 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "posix_engine.h"
+#include "posix_engine_closure.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -50,6 +55,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/error.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -479,92 +485,155 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
-// per ares-channel linked-list of FdNodes
-class FdNodeList {
- public:
-  class FdNode {
-   public:
-    explicit FdNode(ares_socket_t as) : as_(as) {}
-
-    bool readable_registered() const { return readable_registered_; }
-    bool writable_registered() const { return writable_registered_; }
-    void set_readable_registered(bool rr) { readable_registered_ = rr; }
-    void set_writable_registered(bool wr) { writable_registered_ = wr; }
-
-    int WrappedFd() const { return static_cast<int>(as_); }
-
-   private:
-    friend class FdNodeList;
-
-    // ares socket
-    ares_socket_t as_;
-    // next fd node
-    FdNode* next_ = nullptr;
-    /// if the readable closure has been registered
-    bool readable_registered_ = false;
-    /// if the writable closure has been registered
-    bool writable_registered_ = false;
-  };
-
-  FdNodeList() = default;
-
-  bool IsEmpty() const { return head_ == nullptr; }
-
-  void PushFdNode(FdNode* fd_node) {
-    fd_node->next_ = head_;
-    head_ = fd_node;
-  }
-
-  FdNode* PopFdNode() {
-    GPR_ASSERT(!IsEmpty());
-    FdNode* ret = head_;
-    head_ = head_->next_;
-    return ret;
-  }
-
-  // Search for as in the FdNode list. This is an O(n) search, the max possible
-  // value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2 in our tests.
-  FdNode* PopFdNode(ares_socket_t as) {
-    FdNode phony_head;
-    phony_head.next_ = head_;
-    FdNode* node = &phony_head;
-    while (node->next_ != nullptr) {
-      if (node->next_->as_ == as) {
-        FdNode* ret = node->next_;
-        node->next_ = node->next_->next_;
-        head_ = phony_head.next_;
-        return ret;
-      }
-      node = node->next_;
-    }
-    return nullptr;
-  }
-
- private:
-  FdNode* head_ = nullptr;
-};
-
 // An inflight name service lookup request
-class GrpcAresRequest {
+class PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
  public:
+  explicit GrpcAresRequest(ares_channel channel, absl::string_view name,
+                           EventEngine::Duration timeout)
+      : channel_(channel), name_(name), timeout_(timeout) {}
+  virtual ~GrpcAresRequest() = default;
+
+  ares_channel channel() const { return channel_; }
+  const char* name() const { return name_.c_str(); }
+  bool shutting_down() const { return shutting_down_; }
+  void set_shutting_down(bool shutting_down) { shutting_down_ = shutting_down; }
+
   std::unique_ptr<FdNodeList>& fd_node_list() { return fd_node_list_; }
 
- private:
+ protected:
   // ares channel
   ares_channel channel_;
+  // hostname
+  std::string name_;
+  EventEngine::Duration timeout_;
+  bool shutting_down_ = false;
   std::unique_ptr<FdNodeList> fd_node_list_;
 };
 
-using FdNode = FdNodeList::FdNode;
+class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
+    : public PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
+ public:
+  explicit GrpcAresHostnameRequest(
+      ares_channel channel, absl::string_view name,
+      EventEngine::Duration timeout,
+      EventEngine::DNSResolver::LookupHostnameCallback on_resolve)
+      : GrpcAresRequest(channel, name, timeout),
+        on_resolve_(std::move(on_resolve)) {}
+
+  ~GrpcAresHostnameRequest() override {}
+
+  const char* host() const { return host_.c_str(); }
+  uint16_t port() const { return port_; }
+  bool is_balancer() const { return is_balancer_; }
+  const char* qtype() const { return qtype_.c_str(); }
+
+  void OnResolve(
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+    on_resolve_(std::move(result));
+  }
+
+ private:
+  /// host to resolve, parsed from the name to resolve
+  const std::string host_;
+  /// port to fill in sockaddr_in, parsed from the name to resolve
+  uint16_t port_;
+  /// is it a grpclb address
+  bool is_balancer_;
+  /// for logging and errors: the query type ("A" or "AAAA")
+  const std::string qtype_;
+  EventEngine::DNSResolver::LookupHostnameCallback on_resolve_;
+};
+
+namespace {
+bool is_fd_still_readable(int fd) {
+  size_t bytes_available = 0;
+  return ioctl(fd, FIONREAD, &bytes_available) == 0 && bytes_available > 0;
+}
+
+void on_hostbyname_done(void* arg, int status, int /*timeouts*/,
+                        struct hostent* hostent) {
+  PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest* request =
+      static_cast<PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest*>(
+          arg);
+  if (status != ARES_SUCCESS) {
+    std::string error_msg = absl::StrFormat(
+        "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
+        request->qtype(), request->host(), request->is_balancer(),
+        ares_strerror(status));
+    gpr_log(GPR_INFO, "request:%p on_hostbyname_done_locked: %s", request,
+            error_msg.c_str());
+    absl::Status error = GRPC_ERROR_CREATE(error_msg);
+    // r->error = grpc_error_add_child(error, r->error);
+    request->OnResolve(error);
+    return;
+  }
+  gpr_log(GPR_INFO,
+          "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS",
+          request, request->qtype(), request->host());
+
+  std::vector<EventEngine::ResolvedAddress> resolved_addresses;
+  // TODO(yijiem): the old on_hostbyname_done_locked seems to allow collecting
+  // both addresses and balancer_addresses before calling on_done in the same
+  // request. But looks like in reality no one is doing so.
+
+  for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
+    // TODO(yijiem): how to return back this channel args?
+    // grpc_core::ChannelArgs args;
+    // if (hr->is_balancer) {
+    //   args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, hr->host);
+    // }
+    switch (hostent->h_addrtype) {
+      case AF_INET6: {
+        size_t addr_len = sizeof(struct sockaddr_in6);
+        struct sockaddr_in6 addr;
+        memset(&addr, 0, addr_len);
+        memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
+               sizeof(struct in6_addr));
+        addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
+        addr.sin6_port = request->port();
+        resolved_addresses.emplace_back(
+            reinterpret_cast<const sockaddr*>(&addr), addr_len);
+        char output[INET6_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+        gpr_log(GPR_INFO,
+                "request:%p c-ares resolver gets a AF_INET6 result: \n"
+                "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
+                request, output, ntohs(request->port()), addr.sin6_scope_id);
+        break;
+      }
+      case AF_INET: {
+        size_t addr_len = sizeof(struct sockaddr_in);
+        struct sockaddr_in addr;
+        memset(&addr, 0, addr_len);
+        memcpy(&addr.sin_addr, hostent->h_addr_list[i], sizeof(struct in_addr));
+        addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
+        addr.sin_port = request->port();
+        resolved_addresses.emplace_back(
+            reinterpret_cast<const sockaddr*>(&addr), addr_len);
+        char output[INET_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+        gpr_log(GPR_INFO,
+                "request:%p c-ares resolver gets a AF_INET result: \n"
+                "  addr: %s\n  port: %d\n",
+                request, output, ntohs(request->port()));
+        break;
+      }
+    }
+  }
+  // TODO(yijiem): sort the addresses
+  request->OnResolve(std::move(resolved_addresses));
+}
+}  // namespace
+
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     ResolverOptions const& options,
     std::shared_ptr<PosixEnginePollerManager> poller_manager)
     : options_(options), poller_manager_(poller_manager) {}
 
-EventEngine::LookupTaskHandle
+PosixEventEngine::PosixDNSResolver::LookupTaskHandle
 PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
-    absl::string_view default_port, Duration timeout) {
+    absl::string_view default_port, EventEngine::Duration timeout) {
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
   ares_channel channel;
@@ -573,31 +642,40 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
     gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     abort();
   }
+  GrpcAresRequest* request = new GrpcAresHostnameRequest(channel, name, timeout,
+                                                         std::move(on_resolve));
   // TODO(yijiem): set_request_dns_server if specified
   // TODO(yijiem): handle ipv6
-  ares_gethostbyname(channel, const char* name, AF_INET,
-                     ares_host_callback callback, void* arg);
+  ares_gethostbyname(channel, request->name(), AF_INET, &on_hostbyname_done,
+                     static_cast<void*>(request));
+  OnEvent(request);
+  // TODO(yijiem): return a LookupTaskHandle to the caller
+  LookupTaskHandle handle;
+  handle.keys[0] = reinterpret_cast<intptr_t>(request);
+  // TODO(yijiem): aba_token at keys[1]?
+  return handle;
+}
 
-  PosixEventPoller* poller = poller_manager_->Poller();
-  GPR_DEBUG_ASSERT(poller != nullptr);
-  // TODO(yijiem): magically appeared
-  EvDriver ev_driver;
+void PosixEventEngine::PosixDNSResolver::OnEvent(GrpcAresRequest* request) {
   std::unique_ptr<FdNodeList> new_list;
   ares_socket_t socks[ARES_GETSOCK_MAXNUM];
-  int socks_bitmask = ares_getsock(channel, socks, ARES_GETSOCK_MAXNUM);
+  int socks_bitmask =
+      ares_getsock(request->channel(), socks, ARES_GETSOCK_MAXNUM);
   for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
     if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
         ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
-      FdNode* fd_node = ev_driver.fd_node_list()->PopFdNode(socks[i]);
+      FdNodeList::FdNode* fd_node =
+          request->fd_node_list()->PopFdNode(socks[i]);
       if (fd_node == nullptr) {
-        fd_node = new FdNode(socks[i]);
+        PosixEventPoller* poller = poller_manager_->Poller();
+        GPR_DEBUG_ASSERT(poller != nullptr);
+        EventHandle* handle =
+            poller->CreateHandle(socks[i], "c-ares", poller->CanTrackErrors());
+        fd_node = new FdNodeList::FdNode(socks[i], handle);
         // TODO(yijiem): trace
         // GRPC_CARES_TRACE_LOG("request:%p new fd: %s", ev_driver->request,
         //                       fdn->grpc_polled_fd->GetName());
       }
-      // TODO(yijiem): what to do with this handle?
-      EventHandle* handle = poller->CreateHandle(fd_node->WrappedFd(), "c-ares",
-                                                 poller->CanTrackErrors());
       new_list->PushFdNode(fd_node);
       // Register read_closure if the socket is readable and read_closure has
       // not been registered with this socket.
@@ -607,9 +685,12 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
         // GRPC_CARES_TRACE_LOG("request:%p notify read on: %s",
         //                       ev_driver->request,
         //                       fdn->grpc_polled_fd->GetName());
-        // TODO(yijiem): register read closure
-        PosixEngineClosure on_read;
-        handle->NotifyOnRead(&on_read);
+        PosixEngineClosure* on_read = new PosixEngineClosure(
+            [this, fd_node, request](absl::Status status) {
+              OnReadable(fd_node, request, status);
+            },
+            /*is_permanent=*/false);
+        fd_node->event_handle()->NotifyOnRead(on_read);
         fd_node->set_readable_registered(true);
       }
       // Register write_closure if the socket is writable and write_closure
@@ -620,9 +701,12 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
         // GRPC_CARES_TRACE_LOG("request:%p notify write on: %s",
         //                       ev_driver->request,
         //                       fdn->grpc_polled_fd->GetName());
-        // TODO(yijiem): register write closure
-        PosixEngineClosure on_write;
-        handle->NotifyOnWrite(&on_write);
+        PosixEngineClosure* on_write = new PosixEngineClosure(
+            [this, fd_node, request](absl::Status status) {
+              OnWritable(fd_node, request, status);
+            },
+            /*is_permanent=*/false);
+        fd_node->event_handle()->NotifyOnWrite(on_write);
         fd_node->set_writable_registered(true);
       }
     }
@@ -630,25 +714,81 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
   // Any remaining fds in ev_driver->fds were not returned by ares_getsock() and
   // are therefore no longer in use, so they can be shut down and removed from
   // the list.
-  while (!ev_driver.fd_node_list()->IsEmpty()) {
-    FdNode* fd_node = ev_driver.fd_node_list()->PopFdNode();
+  while (!request->fd_node_list()->IsEmpty()) {
+    FdNodeList::FdNode* fd_node = request->fd_node_list()->PopFdNode();
     // TODO(yijiem): shutdown the fd_node/handle from the poller
     if (!fd_node->readable_registered() && !fd_node->writable_registered()) {
       // TODO(yijiem): other destroy steps
-      delete fd_node;
+      fd_node->event_handle()->ShutdownHandle(absl::OkStatus());
+      PosixEngineClosure* on_done = new PosixEngineClosure(
+          [this, fd_node, request](absl::Status status) {
+            OnDone(fd_node, request, status);
+          },
+          /*is_permanent=*/false);
+      int release_fd = -1;
+      fd_node->event_handle()->OrphanHandle(on_done, &release_fd,
+                                            "no longer used by ares");
+      GPR_ASSERT(release_fd == fd_node->WrappedFd());
     } else {
       new_list->PushFdNode(fd_node);
     }
   }
-  ev_driver.fd_node_list().swap(new_list);
+  request->fd_node_list().swap(new_list);
 }
 
-static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
-                                      struct hostent* hostent) {
-  if (status != ARES_SUCCESS) {
-    gpr_log(GPR_ERROR, "on_hostbyname_done_locked failed, status: %d", status);
-    abort();
+void PosixEventEngine::PosixDNSResolver::OnReadable(FdNodeList::FdNode* fd_node,
+                                                    GrpcAresRequest* request,
+                                                    absl::Status status) {
+  GPR_ASSERT(fd_node->readable_registered());
+  fd_node->set_readable_registered(false);
+  gpr_log(GPR_INFO, "request:%p readable on %d", request, fd_node->WrappedFd());
+  if (status.ok() && !request->shutting_down()) {
+    do {
+      ares_process_fd(request->channel(),
+                      static_cast<ares_socket_t>(fd_node->WrappedFd()),
+                      ARES_SOCKET_BAD);
+    } while (is_fd_still_readable(fd_node->WrappedFd()));
+  } else {
+    // If error is not absl::OkStatus() or the resolution was cancelled, it
+    // means the fd has been shutdown or timed out. The pending lookups made on
+    // this ev_driver will be cancelled by the following ares_cancel() and the
+    // on_done callbacks will be invoked with a status of ARES_ECANCELLED. The
+    // remaining file descriptors in this ev_driver will be cleaned up in the
+    // follwing grpc_ares_notify_on_event_locked().
+    ares_cancel(request->channel());
   }
+  OnEvent(request);
+}
+
+void PosixEventEngine::PosixDNSResolver::OnWritable(FdNodeList::FdNode* fd_node,
+                                                    GrpcAresRequest* request,
+                                                    absl::Status status) {
+  GPR_ASSERT(fd_node->writable_registered());
+  fd_node->set_writable_registered(false);
+  gpr_log(GPR_INFO, "request:%p writable on %d", request, fd_node->WrappedFd());
+  if (status.ok() && !request->shutting_down()) {
+    ares_process_fd(request->channel(), ARES_SOCKET_BAD,
+                    static_cast<ares_socket_t>(fd_node->WrappedFd()));
+  } else {
+    // If error is not absl::OkStatus() or the resolution was cancelled, it
+    // means the fd has been shutdown or timed out. The pending lookups made on
+    // this ev_driver will be cancelled by the following ares_cancel() and the
+    // on_done callbacks will be invoked with a status of ARES_ECANCELLED. The
+    // remaining file descriptors in this ev_driver will be cleaned up in the
+    // follwing grpc_ares_notify_on_event_locked().
+    ares_cancel(request->channel());
+  }
+  OnEvent(request);
+}
+
+void PosixEventEngine::PosixDNSResolver::OnDone(FdNodeList::FdNode* fd_node,
+                                                GrpcAresRequest* request,
+                                                absl::Status status) {
+  GPR_ASSERT(status.ok());
+  // TODO(yijiem): destroy request
+  delete fd_node;
+  // TODO(yijiem): if request does not have fd_nodes, can we say it is
+  // completed?
 }
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
