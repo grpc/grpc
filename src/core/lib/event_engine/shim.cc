@@ -27,6 +27,8 @@ bool UseEventEngineClient() {
 // available for other platforms.
 #if defined(GRPC_POSIX_SOCKET_TCP) and !defined(GRPC_CFSTREAM)
   return grpc_core::IsEventEngineClientEnabled();
++#elif defined(GPR_WINDOWS)
++  return grpc_core::IsEventEngineClientEnabled();
 #else
   return false;
 #endif
