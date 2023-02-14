@@ -193,7 +193,8 @@ TEST_F(HttpRequestTest, Get) {
   RequestState request_state(this);
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
-  std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  // std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  std::string host = "www.google.com";
   gpr_log(GPR_INFO, "requesting from %s", host.c_str());
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,

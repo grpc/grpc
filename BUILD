@@ -2859,6 +2859,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
+        "absl/functional:bind_front",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2888,6 +2889,7 @@ grpc_cc_library(
         "uri_parser",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:event_engine_common",
         "//src/core:grpc_resolver_dns_selection",

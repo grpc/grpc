@@ -635,6 +635,8 @@ PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     std::shared_ptr<PosixEnginePollerManager> poller_manager)
     : options_(options), poller_manager_(poller_manager) {}
 
+PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {}
+
 PosixEventEngine::PosixDNSResolver::LookupTaskHandle
 PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
@@ -659,6 +661,24 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
   handle.keys[0] = reinterpret_cast<intptr_t>(request);
   // TODO(yijiem): aba_token at keys[1]?
   return handle;
+}
+
+PosixEventEngine::PosixDNSResolver::LookupTaskHandle
+PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
+                                              absl::string_view name,
+                                              Duration timeout) {
+  grpc_core::Crash("unimplemented");
+}
+
+PosixEventEngine::PosixDNSResolver::LookupTaskHandle
+PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
+                                              absl::string_view name,
+                                              Duration timeout) {
+  grpc_core::Crash("unimplemented");
+}
+
+bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
+  grpc_core::Crash("unimplemented");
 }
 
 void PosixEventEngine::PosixDNSResolver::OnEvent(GrpcAresRequest* request) {

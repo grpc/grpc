@@ -1,4 +1,9 @@
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
 
 struct Completion {
   bool completed = false;
