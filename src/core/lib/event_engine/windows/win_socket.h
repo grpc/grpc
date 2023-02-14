@@ -67,7 +67,7 @@ class WinSocket {
 
     OVERLAPPED overlapped_;
     WinSocket* win_socket_ = nullptr;
-    std::atomic<EventEngine::Closure*> closure_ = nullptr;
+    std::atomic<EventEngine::Closure*> closure_{nullptr};
     bool has_pending_iocp_ = false;
     OverlappedResult result_;
   };
