@@ -376,6 +376,10 @@ Metadata AppendStatus(const Metadata& md, int status) {
 
 }  // namespace
 
+TEST_F(BinderTransportTest, IntendedWrongTest) {
+  EXPECT_EQ(true, false);
+}
+
 TEST_F(BinderTransportTest, CreateBinderTransport) {
   EXPECT_NE(transport_, nullptr);
 }
