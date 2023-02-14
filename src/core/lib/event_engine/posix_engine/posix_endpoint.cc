@@ -614,7 +614,8 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
       lock.Release();
       handle_->NotifyOnRead(on_read_);
       return false;
-    } else if (!status.ok()) {
+    }
+    if (!status.ok()) {
       // Read failed immediately. Schedule the on_read callback to run
       // asynchronously.
       lock.Release();
@@ -1170,20 +1171,18 @@ bool PosixEndpointImpl::Write(
     current_zerocopy_send_ = zerocopy_send_record;
     handle_->NotifyOnWrite(on_write_);
     return false;
-  } else {
-    if (!status.ok()) {
-      // Write failed immediately. Schedule the on_writable callback to run
-      // asynchronously.
-      engine_->Run([on_writable = std::move(on_writable), status]() mutable {
-        on_writable(status);
-      });
-      return false;
-    } else {
-      // Write succeeded immediately. Return true and don't run the on_writable
-      // callback.
-      return true;
-    }
   }
+  if (!status.ok()) {
+    // Write failed immediately. Schedule the on_writable callback to run
+    // asynchronously.
+    engine_->Run([on_writable = std::move(on_writable), status]() mutable {
+      on_writable(status);
+    });
+    return false;
+  }
+  // Write succeeded immediately. Return true and don't run the on_writable
+  // callback.
+  return true;
 }
 
 void PosixEndpointImpl::MaybeShutdown(
