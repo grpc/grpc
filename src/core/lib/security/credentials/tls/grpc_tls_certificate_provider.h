@@ -151,7 +151,7 @@ class FileWatcherCertificateProvider final
 
   UniqueTypeName type() const override;
 
-  const int64_t TestOnlyGetRefreshIntervalSecond() const;
+  int64_t TestOnlyGetRefreshIntervalSecond() const;
 
  private:
   struct WatcherInfo {

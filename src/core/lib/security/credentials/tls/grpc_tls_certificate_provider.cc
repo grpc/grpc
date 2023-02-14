@@ -392,7 +392,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-const int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
+int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
     const {
   return refresh_interval_sec_;
 }
