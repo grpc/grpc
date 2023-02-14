@@ -122,10 +122,10 @@ static constexpr int64_t kMinimumFileWatcherRefreshIntervalSeconds = 1;
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
     std::string root_cert_path, int64_t refresh_interval_sec)
-    : refresh_interval_sec_(refresh_interval_sec),
-      private_key_path_(std::move(private_key_path)),
+    : private_key_path_(std::move(private_key_path)),
       identity_certificate_path_(std::move(identity_certificate_path)),
       root_cert_path_(std::move(root_cert_path)),
+      refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
     gpr_log(GPR_INFO,
@@ -390,6 +390,11 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   gpr_log(GPR_ERROR,
           "All retry attempts failed. Will try again after the next interval.");
   return absl::nullopt;
+}
+
+const int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
+    const {
+  return refresh_interval_sec_;
 }
 
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(

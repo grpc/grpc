@@ -492,7 +492,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderTooShortRefreshIntervalIsOverwritten) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           CA_CERT_PATH, 0);
-  ASSERT_THAT(provider.refresh_interval_sec_, 1);
+  ASSERT_THAT(provider.TestOnlyGetRefreshIntervalSecond(), 1);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
