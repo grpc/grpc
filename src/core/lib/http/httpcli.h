@@ -232,7 +232,10 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnResolved(
+      grpc_closure* hack,
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
+
+  void ContinueAfterResolved();
 
   const URI uri_;
   const grpc_slice request_text_;

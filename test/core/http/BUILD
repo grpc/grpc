@@ -86,6 +86,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
+    linkstatic = 1,
     deps = [
         ":httpcli_test_util",
         "//:gpr",

@@ -118,10 +118,10 @@ class HttpRequestTest : public ::testing::Test {
 
  protected:
   static void SetUpTestSuite() {
-    auto test_server = grpc_core::testing::StartHttpRequestTestServer(
-        g_argc, g_argv, false /* use_ssl */);
-    g_server = test_server.server;
-    g_server_port = test_server.port;
+    // auto test_server = grpc_core::testing::StartHttpRequestTestServer(
+    //     g_argc, g_argv, false /* use_ssl */);
+    // g_server = test_server.server;
+    // g_server_port = test_server.port;
   }
 
   static void TearDownTestSuite() { gpr_subprocess_destroy(g_server); }
@@ -209,6 +209,7 @@ TEST_F(HttpRequestTest, Get) {
           &request_state.response,
           grpc_core::RefCountedPtr<grpc_channel_credentials>(
               grpc_insecure_credentials_create()));
+
   http_request->Start();
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));

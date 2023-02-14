@@ -28,6 +28,7 @@
 #include <cstring>
 #include <initializer_list>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -81,7 +82,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 bool NeedPosixEngine() {
-  return UseEventEngineClient() || UseEventEngineListener();
+  return true || UseEventEngineClient() || UseEventEngineListener();
 }
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -494,7 +495,7 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 class PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
  public:
   explicit GrpcAresRequest(ares_channel channel, absl::string_view name,
-                           EventEngine::Duration timeout)
+                           Duration timeout)
       : channel_(channel), name_(name), timeout_(timeout) {}
   virtual ~GrpcAresRequest() = default;
 
@@ -502,26 +503,31 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
   const char* name() const { return name_.c_str(); }
   bool shutting_down() const { return shutting_down_; }
   void set_shutting_down(bool shutting_down) { shutting_down_ = shutting_down; }
-
   std::unique_ptr<FdNodeList>& fd_node_list() { return fd_node_list_; }
+
+  std::string ToString() const {
+    std::ostringstream s;
+    s << "[channel: " << channel_ << "; name: " << name_
+      << "; timeout: " << timeout_.count() << "ns]";
+    return s.str();
+  }
 
  protected:
   // ares channel
   ares_channel channel_;
   // hostname
   std::string name_;
-  EventEngine::Duration timeout_;
+  Duration timeout_;
   bool shutting_down_ = false;
-  std::unique_ptr<FdNodeList> fd_node_list_;
+  std::unique_ptr<FdNodeList> fd_node_list_ = std::make_unique<FdNodeList>();
 };
 
 class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
     : public PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
  public:
-  explicit GrpcAresHostnameRequest(
-      ares_channel channel, absl::string_view name,
-      EventEngine::Duration timeout,
-      EventEngine::DNSResolver::LookupHostnameCallback on_resolve)
+  explicit GrpcAresHostnameRequest(ares_channel channel, absl::string_view name,
+                                   Duration timeout,
+                                   LookupHostnameCallback on_resolve)
       : GrpcAresRequest(channel, name, timeout),
         on_resolve_(std::move(on_resolve)) {}
 
@@ -532,8 +538,7 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
   bool is_balancer() const { return is_balancer_; }
   const char* qtype() const { return qtype_.c_str(); }
 
-  void OnResolve(
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+  void OnResolve(absl::StatusOr<std::vector<ResolvedAddress>> result) {
     on_resolve_(std::move(result));
   }
 
@@ -546,7 +551,7 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
   bool is_balancer_;
   /// for logging and errors: the query type ("A" or "AAAA")
   const std::string qtype_;
-  EventEngine::DNSResolver::LookupHostnameCallback on_resolve_;
+  LookupHostnameCallback on_resolve_;
 };
 
 namespace {
@@ -640,7 +645,7 @@ PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {}
 PosixEventEngine::PosixDNSResolver::LookupTaskHandle
 PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
-    absl::string_view default_port, EventEngine::Duration timeout) {
+    absl::string_view default_port, Duration timeout) {
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
   ares_channel channel;
@@ -682,7 +687,7 @@ bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
 }
 
 void PosixEventEngine::PosixDNSResolver::OnEvent(GrpcAresRequest* request) {
-  std::unique_ptr<FdNodeList> new_list;
+  std::unique_ptr<FdNodeList> new_list = std::make_unique<FdNodeList>();
   ares_socket_t socks[ARES_GETSOCK_MAXNUM];
   int socks_bitmask =
       ares_getsock(request->channel(), socks, ARES_GETSOCK_MAXNUM);
@@ -766,7 +771,8 @@ void PosixEventEngine::PosixDNSResolver::OnReadable(FdNodeList::FdNode* fd_node,
                                                     absl::Status status) {
   GPR_ASSERT(fd_node->readable_registered());
   fd_node->set_readable_registered(false);
-  gpr_log(GPR_INFO, "request:%p readable on %d", request, fd_node->WrappedFd());
+  gpr_log(GPR_INFO, "request:%p %s readable on %d", request,
+          request->ToString().c_str(), fd_node->WrappedFd());
   if (status.ok() && !request->shutting_down()) {
     do {
       ares_process_fd(request->channel(),
