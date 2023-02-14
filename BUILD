@@ -16,6 +16,7 @@
 
 load(
     "//bazel:grpc_build_system.bzl",
+    "grpc_cc_binary",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
@@ -2901,6 +2902,17 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:time",
+    ],
+)
+
+grpc_cc_binary(
+    name = "httpcli_main",
+    srcs = [
+        "//src/core:lib/http/httpcli_main.cc",
+    ],
+    language = "c++",
+    deps = [
+        "httpcli",
     ],
 )
 

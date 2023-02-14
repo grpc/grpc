@@ -15,6 +15,10 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
 
 #include <algorithm>
@@ -22,6 +26,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <type_traits>
