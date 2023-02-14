@@ -153,6 +153,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc++",
         "//:grpc_base",
+        "//:grpc_trace",
         "//:orphanable",
         "//src/core:closure",
         "//src/core:default_event_engine",

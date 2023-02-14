@@ -29,10 +29,17 @@
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpcpp/ext/gcp_observability.h>  // IWYU pragma: keep
 
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc {
+
+namespace experimental {
+// Forward declaration for GcpObservabilityInit
+absl::Status GcpObservabilityInit();
+}  // namespace experimental
+
 namespace internal {
 
 class EnvironmentAutoDetect {

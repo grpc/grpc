@@ -36,6 +36,7 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/ext/gcp/metadata_query.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
@@ -56,6 +57,9 @@ namespace internal {
 
 namespace {
 
+grpc_core::TraceFlag grpc_environment_autodetect_trace(
+    false, "environment_autodetect");
+
 // This is not a definite method to get the namespace name for GKE, but it is
 // the best we have.
 std::string GetNamespaceName() {
@@ -64,8 +68,10 @@ std::string GetNamespaceName() {
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
   auto namespace_name = grpc_core::LoadFile(filename, false);
   if (!namespace_name.ok()) {
-    gpr_log(GPR_DEBUG, "Reading file %s failed: %s", filename,
-            grpc_core::StatusToString(namespace_name.status()).c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_environment_autodetect_trace)) {
+      gpr_log(GPR_DEBUG, "Reading file %s failed: %s", filename,
+              grpc_core::StatusToString(namespace_name.status()).c_str());
+    }
     // Fallback on an environment variable
     return grpc_core::GetEnv("NAMESPACE_NAME").value_or("");
   }
@@ -247,6 +253,12 @@ class EnvironmentAutoDetectHelper
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::MetadataQuery>(
           element.first, &pollent_,
           [this](std::string attribute, std::string result) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_environment_autodetect_trace)) {
+              gpr_log(
+                  GPR_INFO,
+                  "Environment AutoDetect: Attribute: \"%s\" Result: \"%s\"",
+                  attribute.c_str(), result.c_str());
+            }
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
