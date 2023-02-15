@@ -14,10 +14,29 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
+#include <grpc/support/port_platform.h>
+
+#include <functional>
+#include <vector>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_buffer.h>
+
+// TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
+namespace grpc_event_engine {
+namespace experimental {
+
 ////////////////////////////////////////////////////////////////////////////////
+/// The EventEngine Interface
 ///
-/// The EventEngine
-/// ===============
+/// Overview
+/// --------
 ///
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
@@ -72,28 +91,6 @@
 /// recommend running a mostly blocking workload in EventEngine threads.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-
-#include <grpc/support/port_platform.h>
-
-#include <functional>
-#include <vector>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/event_engine/slice_buffer.h>
-
-// TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
-namespace grpc_event_engine {
-namespace experimental {
-
-/// The EventEngine interface
-///
-/// Note that EventEngines are expected to be managed by a \a std::shared_ptr.
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
   /// A duration between two events.
