@@ -149,7 +149,7 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
 
 static int64_t CFStreamClientConnect(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
+    grpc_pollset_set* /*interested_parties*/,
     const grpc_event_engine::experimental::EndpointConfig& /*config*/,
     const grpc_resolved_address* resolved_addr, grpc_core::Timestamp deadline) {
   auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
