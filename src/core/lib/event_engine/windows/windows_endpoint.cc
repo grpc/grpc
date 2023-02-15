@@ -33,7 +33,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace { 
+namespace {
 constexpr int64_t kDefaultTargetReadSize = 8192;
 constexpr int kMaxWSABUFCount = 16;
 
@@ -67,7 +67,6 @@ WindowsEndpoint::~WindowsEndpoint() {
 
 void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* args) {
-  // TODO(hork): last_read_buffer from iomgr: Is it only garbage, or optimized?
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
   if (io_state_->socket->IsShutdown()) {
     executor_->Run([on_read = std::move(on_read)]() mutable {
@@ -77,6 +76,8 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   }
   // Prepare the WSABUF struct
   WSABUF wsa_buffers[kMaxWSABUFCount];
+  // TODO(hork): introduce a last_read_buffer to save unused sliced.
+  buffer->Clear();
   // TODO(hork): sometimes args->read_hint_bytes is 1, which is not useful.
   // Choose an appropriate size.
   int min_read_size = kDefaultTargetReadSize;
