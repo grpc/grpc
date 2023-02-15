@@ -252,21 +252,24 @@ class EnvironmentAutoDetectHelper
     for (auto& element : attributes_to_fetch_) {
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::MetadataQuery>(
           element.first, &pollent_,
-          [this](std::string attribute, std::string result) {
+          [this](std::string attribute, absl::StatusOr<std::string> result) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_environment_autodetect_trace)) {
               gpr_log(
                   GPR_INFO,
                   "Environment AutoDetect: Attribute: \"%s\" Result: \"%s\"",
-                  attribute.c_str(), result.c_str());
+                  attribute.c_str(),
+                  result.ok()
+                      ? result.value().c_str()
+                      : grpc_core::StatusToString(result.status()).c_str());
             }
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
               auto it = attributes_to_fetch_.find(attribute);
               if (it != attributes_to_fetch_.end()) {
-                if (!result.empty()) {
+                if (result.ok()) {
                   resource_.labels.emplace(std::move(it->second),
-                                           std::move(result));
+                                           std::move(result).value());
                 }
                 // If fetching from the MetadataServer failed and we were
                 // assuming a GCE environment, fallback to "global".
@@ -351,15 +354,13 @@ EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {
-  {
-    grpc_core::MutexLock lock(&mu_);
-    // Environment has already been detected
-    if (resource_ != nullptr) {
-      // Execute on the event engine to avoid deadlocks.
-      return event_engine_->Run(std::move(callback));
-    }
-    callbacks_.push_back(std::move(callback));
+  grpc_core::MutexLock lock(&mu_);
+  // Environment has already been detected
+  if (resource_ != nullptr) {
+    // Execute on the event engine to avoid deadlocks.
+    return event_engine_->Run(std::move(callback));
   }
+  callbacks_.push_back(std::move(callback));
 }
 
 }  // namespace internal

@@ -4984,6 +4984,7 @@ grpc_cc_library(
         "ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     external_deps = [
+        "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
     ],
@@ -5316,6 +5317,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "closure",

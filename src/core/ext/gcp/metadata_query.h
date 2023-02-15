@@ -23,6 +23,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
@@ -43,11 +44,12 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
   static const char kInstanceIdAttribute[];
   static const char kIPv6Attribute[];
 
-  MetadataQuery(std::string attribute, grpc_polling_entity* pollent,
-                absl::AnyInvocable<void(std::string /* attribute */,
-                                        std::string /* result */)>
-                    callback,
-                Duration timeout);
+  MetadataQuery(
+      std::string attribute, grpc_polling_entity* pollent,
+      absl::AnyInvocable<void(std::string /* attribute */,
+                              absl::StatusOr<std::string> /* result */)>
+          callback,
+      Duration timeout);
 
   ~MetadataQuery() override;
 
@@ -59,7 +61,7 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
   grpc_closure on_done_;
   std::string attribute_;
   absl::AnyInvocable<void(std::string /* attribute */,
-                          std::string /* result */)>
+                          absl::StatusOr<std::string> /* result */)>
       callback_;
   OrphanablePtr<HttpRequest> http_request_;
   grpc_http_response response_;

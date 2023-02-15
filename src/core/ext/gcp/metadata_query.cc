@@ -22,10 +22,12 @@
 
 #include <string.h>
 
+#include <initializer_list>
 #include <memory>
 #include <utility>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -57,7 +59,7 @@ constexpr const char MetadataQuery::kIPv6Attribute[] =
 MetadataQuery::MetadataQuery(
     std::string attribute, grpc_polling_entity* pollent,
     absl::AnyInvocable<void(std::string /* attribute */,
-                            std::string /* result */)>
+                            absl::StatusOr<std::string> /* result */)>
         callback,
     Duration timeout)
     : InternallyRefCounted<MetadataQuery>(nullptr, 2),
@@ -73,8 +75,6 @@ MetadataQuery::MetadataQuery(
                              const_cast<char*>("Google")};
   request.hdr_count = 1;
   request.hdrs = &header;
-  // The http call is local. If it takes more than one sec, it is probably not
-  // on GCP.
   http_request_ = HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, pollent, &request,
       Timestamp::Now() + timeout, &on_done_, &response_,
@@ -92,25 +92,29 @@ void MetadataQuery::Orphan() {
 
 void MetadataQuery::OnDone(void* arg, absl::Status error) {
   auto* self = static_cast<MetadataQuery*>(arg);
-  std::string result;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
+    gpr_log(GPR_INFO, "MetadataServer Query for %s: HTTP status: %d, error: %s",
+            self->attribute_.c_str(), self->response_.status,
+            StatusToString(error).c_str());
+  }
+  absl::StatusOr<std::string> result;
   if (!error.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
-      gpr_log(GPR_INFO, "MetadataServer Query failed for %s: %s",
-              self->attribute_.c_str(), StatusToString(error).c_str());
-    }
+    result = absl::UnavailableError(absl::StrFormat(
+        "MetadataServer Query failed for %s: %s", self->attribute_.c_str(),
+        StatusToString(error).c_str()));
   } else if (self->response_.status != 200) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
-      gpr_log(GPR_INFO,
-              "MetadataServer Query received non-200 status for %s: %s",
-              self->attribute_.c_str(), StatusToString(error).c_str());
-    }
+    result = absl::UnavailableError(absl::StrFormat(
+        "MetadataServer Query received non-200 status for %s: %s",
+        self->attribute_.c_str(), StatusToString(error).c_str()));
   } else if (self->attribute_ == kZoneAttribute) {
     absl::string_view body(self->response_.body, self->response_.body_length);
     size_t pos = body.find_last_of('/');
     if (pos == body.npos) {
+      result = absl::UnavailableError(
+          absl::StrFormat("MetadataServer Could not parse zone: %s",
+                          std::string(body).c_str()));
       if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
-        gpr_log(GPR_INFO, "MetadataServer Could not parse zone: %s",
-                std::string(body).c_str());
+        gpr_log(GPR_INFO, "%s", result.status().ToString().c_str());
       }
     } else {
       result = std::string(body.substr(pos + 1));

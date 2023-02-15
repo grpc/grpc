@@ -23,6 +23,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
@@ -151,10 +152,12 @@ void GoogleCloud2ProdResolver::StartLocked() {
   zone_query_ = MakeOrphanable<MetadataQuery>(
       std::string(MetadataQuery::kZoneAttribute), &pollent_,
       [resolver = static_cast<RefCountedPtr<GoogleCloud2ProdResolver>>(Ref())](
-          std::string /* attribute */, std::string result) mutable {
+          std::string /* attribute */,
+          absl::StatusOr<std::string> result) mutable {
         resolver->work_serializer_->Run(
-            [resolver, result = std::move(result)]() {
-              resolver->ZoneQueryDone(result);
+            [resolver, result = std::move(result)]() mutable {
+              resolver->ZoneQueryDone(result.ok() ? std::move(result).value()
+                                                  : "");
             },
             DEBUG_LOCATION);
       },
@@ -162,10 +165,11 @@ void GoogleCloud2ProdResolver::StartLocked() {
   ipv6_query_ = MakeOrphanable<MetadataQuery>(
       std::string(MetadataQuery::kIPv6Attribute), &pollent_,
       [resolver = static_cast<RefCountedPtr<GoogleCloud2ProdResolver>>(Ref())](
-          std::string /* attribute */, std::string result) mutable {
+          std::string /* attribute */,
+          absl::StatusOr<std::string> result) mutable {
         resolver->work_serializer_->Run(
             [resolver, result = std::move(result)]() {
-              resolver->IPv6QueryDone(!result.empty());
+              resolver->IPv6QueryDone(result.ok());
             },
             DEBUG_LOCATION);
       },
