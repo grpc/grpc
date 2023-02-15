@@ -861,6 +861,22 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpc++_cronet_credentials",
+    srcs = [
+        "src/cpp/client/cronet_credentials.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/security/cronet_credentials.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++_base",
+        "grpc_cronet_hdrs",
+        "grpc_public_hdrs",
+    ],
+)
+
 # This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
     name = "grpc_authorization_provider",
@@ -1471,7 +1487,6 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
-        "//src/core:latch",
         "//src/core:map",
         "//src/core:match",
         "//src/core:memory_quota",
@@ -2165,7 +2180,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
-        "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
@@ -2176,7 +2190,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
-        "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
         "src/cpp/ext/filters/census/grpc_plugin.h",
@@ -2215,11 +2228,14 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "//src/core:arena",
+        "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_stack_type",
-        "//src/core:closure",
         "//src/core:context",
         "//src/core:experiments",
+        "//src/core:map",
+        "//src/core:pipe",
+        "//src/core:poll",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",

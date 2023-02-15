@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2021 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,9 +18,7 @@ set -eo pipefail
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
-## xDS test server/client Docker images
-readonly SERVER_LANGS="cpp go java"
-readonly CLIENT_LANGS="cpp go java"
+readonly LANGS="cpp go java"
 readonly MAIN_BRANCH="${MAIN_BRANCH:-master}"
 
 #######################################
@@ -51,6 +49,7 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
+
   if [ "${TESTING_VERSION}" != "master" ]; then
     echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
     exit 0
@@ -67,32 +66,40 @@ main() {
     cd "${SRC_DIR}/${TEST_DRIVER_PATH}"
   fi
 
-  source "${script_dir}/grpc_xds_k8s_run_xtest.sh"
+  source ${script_dir}/grpc_xds_k8s_run_xtest.sh
 
   local failed_tests=0
   local successful_string
   local failed_string
   LATEST_BRANCH=$(find_latest_branch "${LATEST_BRANCH}")
   OLDEST_BRANCH=$(find_oldest_branch "${OLDEST_BRANCH}" "${LATEST_BRANCH}")
-  # Run cross lang tests: for given cross lang versions
-  XLANG_VERSIONS="${MAIN_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
-  for VERSION in ${XLANG_VERSIONS}
+  # Run cross branch tests per language: master x latest and master x oldest
+  for LANG in ${LANGS}
   do
-    for CLIENT_LANG in ${CLIENT_LANGS}
-    do
-    for SERVER_LANG in ${SERVER_LANGS}
-    do
-      if [ "${CLIENT_LANG}" != "${SERVER_LANG}" ]; then
-        if run_test "${CLIENT_LANG}" "${VERSION}" "${SERVER_LANG}" "${VERSION}"; then
-          successful_string="${successful_string} ${VERSION}/${CLIENT_LANG}-${SERVER_LANG}"
-        else
-          failed_tests=$((failed_tests+1))
-          failed_string="${failed_string} ${VERSION}/${CLIENT_LANG}-${SERVER_LANG}"
-        fi
-      fi
-    done
-    echo "Failed test suites: ${failed_tests}"
-    done
+    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${LATEST_BRANCH}"; then
+      successful_string="${successful_string} ${MAIN_BRANCH}-${LATEST_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests + 1))
+      failed_string="${failed_string} ${MAIN_BRANCH}-${LATEST_BRANCH}/${LANG}"
+    fi
+    if run_test "${LANG}" "${LATEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}"; then
+      successful_string="${successful_string} ${LATEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests + 1))
+      failed_string="${failed_string} ${LATEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
+    fi
+    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${OLDEST_BRANCH}"; then
+      successful_string="${successful_string} ${MAIN_BRANCH}-${OLDEST_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests + 1))
+      failed_string="${failed_string} ${MAIN_BRANCH}-${OLDEST_BRANCH}/${LANG}"
+    fi
+    if run_test "${LANG}" "${OLDEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}"; then
+      successful_string="${successful_string} ${OLDEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests + 1))
+      failed_string="${failed_string} ${OLDEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
+    fi
   done
   set +x
   echo "Failed test suites list: ${failed_string}"

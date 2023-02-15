@@ -29,6 +29,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gpr/string.h"
@@ -128,12 +129,10 @@ class EventEngineEndpointWrapper {
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
-#ifdef GRPC_POSIX_SOCKET_TCP
-      if (fd_ > 0 && on_release_fd_) {
+      if (EventEngineSupportsFd() && fd_ > 0 && on_release_fd_) {
         reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
             ->Shutdown(std::move(on_release_fd_));
       }
-#endif  // GRPC_POSIX_SOCKET_TCP
       OnShutdownInternal();
     }
   }
@@ -144,11 +143,9 @@ class EventEngineEndpointWrapper {
   // invocation would simply return.
   void TriggerShutdown(
       absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
-#ifdef GRPC_POSIX_SOCKET_TCP
-    on_release_fd_ = std::move(on_release_fd);
-#else
-    (void)on_release_fd;
-#endif  // GRPC_POSIX_SOCKET_TCP
+    if (EventEngineSupportsFd()) {
+      on_release_fd_ = std::move(on_release_fd);
+    }
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {
       if (curr & kShutdownBit) {
@@ -160,12 +157,10 @@ class EventEngineEndpointWrapper {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
-#ifdef GRPC_POSIX_SOCKET_TCP
-          if (fd_ > 0 && on_release_fd_) {
+          if (EventEngineSupportsFd() && fd_ > 0 && on_release_fd_) {
             reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
                 ->Shutdown(std::move(on_release_fd_));
           }
-#endif  // GRPC_POSIX_SOCKET_TCP
           OnShutdownInternal();
         }
         return;
@@ -189,9 +184,7 @@ class EventEngineEndpointWrapper {
   std::unique_ptr<grpc_event_engine_endpoint> eeep_;
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
-#ifdef GRPC_POSIX_SOCKET_TCP
   absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_;
-#endif  // GRPC_POSIX_SOCKET_TCP
   grpc_core::Mutex mu_;
   std::string peer_address_;
   std::string local_address_;
@@ -387,12 +380,12 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   if (peer_addr.ok()) {
     peer_address_ = *peer_addr;
   }
-#ifdef GRPC_POSIX_SOCKET_TCP
-  fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-            ->GetWrappedFd();
-#else   // GRPC_POSIX_SOCKET_TCP
-  fd_ = -1;
-#endif  // GRPC_POSIX_SOCKET_TCP
+  if (EventEngineSupportsFd()) {
+    fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+              ->GetWrappedFd();
+  } else {
+    fd_ = -1;
+  }
   GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
 }
 

@@ -401,6 +401,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "1999",
+    srcs = [
+        "lib/promise/party.cc",
+    ],
+    hdrs = [
+        "lib/promise/party.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena",
+        "poll",
+        "promise_trace",
+        "//:gpr",
+        "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "context",
     language = "c++",
     public_hdrs = [
@@ -3434,38 +3460,33 @@ grpc_cc_library(
         "ext/filters/message_size/message_size_filter.h",
     ],
     external_deps = [
-        "absl/status:statusor",
+        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
     deps = [
-        "activity",
-        "arena",
-        "arena_promise",
         "channel_args",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
-        "context",
+        "closure",
+        "error",
         "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
-        "latch",
-        "poll",
-        "race",
         "service_config_parser",
-        "slice",
         "slice_buffer",
+        "status_helper",
         "validation_errors",
         "//:channel_stack_builder",
         "//:config",
+        "//:debug_location",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
-        "//:grpc_trace",
     ],
 )
 
