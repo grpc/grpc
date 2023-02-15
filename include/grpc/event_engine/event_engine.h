@@ -14,25 +14,11 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
-#include <grpc/support/port_platform.h>
-
-#include <functional>
-#include <vector>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/event_engine/slice_buffer.h>
-
-// TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
-namespace grpc_event_engine {
-namespace experimental {
-
 ////////////////////////////////////////////////////////////////////////////////
+///
+/// The EventEngine
+/// ===============
+///
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
 ///
@@ -44,7 +30,8 @@ namespace experimental {
 ///
 /// A default cross-platform EventEngine instance is provided by gRPC.
 ///
-/// LIFESPAN AND OWNERSHIP
+/// Lifespan and Ownership
+/// ----------------------
 ///
 /// gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure
 /// that the engines remain available until they are no longer needed. Depending
@@ -71,7 +58,42 @@ namespace experimental {
 ///    std::unique_ptr<Server> server(builder.BuildAndStart());
 ///    server->Wait();
 ///
+///
+/// Blocking EventEngine Callbacks
+/// -----------------------------
+///
+/// Doing blocking work in EventEngine callbacks is generally not advisable.
+/// While gRPC's default EventEngine implementations have some capacity to scale
+/// their thread pools to avoid starvation, this is not an instantaneous
+/// process. Further, user-provided EventEngines may not be optimized to handle
+/// excessive blocking work at all.
+///
+/// *Best Practice* : Occasional blocking work may be fine, but we do not
+/// recommend running a mostly blocking workload in EventEngine threads.
+///
 ////////////////////////////////////////////////////////////////////////////////
+
+#include <grpc/support/port_platform.h>
+
+#include <functional>
+#include <vector>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_buffer.h>
+
+// TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
+namespace grpc_event_engine {
+namespace experimental {
+
+/// The EventEngine interface
+///
+/// Note that EventEngines are expected to be managed by a \a std::shared_ptr.
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
   /// A duration between two events.
