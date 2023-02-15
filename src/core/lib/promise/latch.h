@@ -29,7 +29,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
 

@@ -1379,12 +1379,14 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/for_each.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/interceptor_list.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/intra_activity_waiter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/party.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/party.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/poll.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/promise.h" role="src" />

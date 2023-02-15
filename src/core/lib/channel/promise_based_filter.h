@@ -182,7 +182,7 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
-  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
+  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
 
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
@@ -546,8 +546,8 @@ class BaseCallData : public Activity, private Wakeable {
 
  private:
   // Wakeable implementation.
-  void Wakeup(void*) final;
-  void Drop(void*) final;
+  void Wakeup(WakeupMask) final;
+  void Drop(WakeupMask) final;
 
   virtual void OnWakeup() = 0;
 
@@ -572,7 +572,7 @@ class ClientCallData : public BaseCallData {
   ~ClientCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll() final;
+  void ForceImmediateRepoll(WakeupMask) final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
 
@@ -683,7 +683,7 @@ class ServerCallData : public BaseCallData {
   ~ServerCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll() final;
+  void ForceImmediateRepoll(WakeupMask) final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
 

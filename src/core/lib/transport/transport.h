@@ -123,7 +123,8 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
 }
 
 ServerMetadataHandle ServerMetadataFromStatus(
-    const absl::Status& status, Arena* arena = GetContext<Arena>());
+    const absl::Status& status, Arena* arena = GetContext<Arena>(),
+    DebugLocation loc = {});
 
 template <>
 struct StatusCastImpl<ServerMetadataHandle, absl::Status> {

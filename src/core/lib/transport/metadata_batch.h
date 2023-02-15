@@ -32,6 +32,7 @@
 #include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -1056,7 +1057,7 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 template <class Derived, typename... Traits>
 class MetadataMap {
  public:
-  explicit MetadataMap(Arena* arena);
+  explicit MetadataMap(Arena* arena, DebugLocation created = {});
   ~MetadataMap();
 
   MetadataMap(const MetadataMap&) = delete;
@@ -1107,6 +1108,10 @@ class MetadataMap {
 
   std::string DebugString() const {
     metadata_detail::DebugStringBuilder builder;
+#ifndef NDEBUG
+    builder.Add("debug-metadata-created",
+                absl::StrCat(created_.file(), ":", created_.line()));
+#endif
     Log([&builder](absl::string_view key, absl::string_view value) {
       builder.Add(key, value);
     });
@@ -1260,6 +1265,7 @@ class MetadataMap {
   // Table of known metadata types.
   PackedTable<Value<Traits>...> table_;
   metadata_detail::UnknownMap unknown_;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation created_;
 };
 
 // Ok/not-ok check for metadata maps that contain GrpcStatusMetadata, so that
@@ -1271,7 +1277,9 @@ inline bool IsStatusOk(const MetadataMap<Derived, Args...>& m) {
 }
 
 template <typename Derived, typename... Traits>
-MetadataMap<Derived, Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
+MetadataMap<Derived, Traits...>::MetadataMap(Arena* arena,
+                                             DebugLocation created)
+    : unknown_(arena), created_(created) {}
 
 template <typename Derived, typename... Traits>
 MetadataMap<Derived, Traits...>::MetadataMap(MetadataMap&& other) noexcept

@@ -55,7 +55,7 @@ class FakeActivity final : public Activity {
   explicit FakeActivity(Activity* wake_activity)
       : wake_activity_(wake_activity) {}
   void Orphan() override {}
-  void ForceImmediateRepoll() override {}
+  void ForceImmediateRepoll(WakeupMask) override {}
   Waker MakeOwningWaker() override { return wake_activity_->MakeOwningWaker(); }
   Waker MakeNonOwningWaker() override {
     return wake_activity_->MakeNonOwningWaker();
@@ -136,20 +136,22 @@ Waker BaseCallData::MakeNonOwningWaker() { return MakeOwningWaker(); }
 
 Waker BaseCallData::MakeOwningWaker() {
   GRPC_CALL_STACK_REF(call_stack_, "waker");
-  return Waker(this, nullptr);
+  return Waker(this, 0);
 }
 
-void BaseCallData::Wakeup(void*) {
+void BaseCallData::Wakeup(WakeupMask) {
   auto wakeup = [](void* p, grpc_error_handle) {
     auto* self = static_cast<BaseCallData*>(p);
     self->OnWakeup();
-    self->Drop(nullptr);
+    self->Drop(0);
   };
   auto* closure = GRPC_CLOSURE_CREATE(wakeup, this, nullptr);
   GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
 }
 
-void BaseCallData::Drop(void*) { GRPC_CALL_STACK_UNREF(call_stack_, "waker"); }
+void BaseCallData::Drop(WakeupMask) {
+  GRPC_CALL_STACK_UNREF(call_stack_, "waker");
+}
 
 std::string BaseCallData::LogTag() const {
   return absl::StrCat(
@@ -1321,7 +1323,7 @@ ClientCallData::~ClientCallData() {
 }
 
 // Activity implementation.
-void ClientCallData::ForceImmediateRepoll() {
+void ClientCallData::ForceImmediateRepoll(WakeupMask) {
   GPR_ASSERT(poll_ctx_ != nullptr);
   poll_ctx_->Repoll();
 }
@@ -2012,7 +2014,7 @@ ServerCallData::~ServerCallData() {
 }
 
 // Activity implementation.
-void ServerCallData::ForceImmediateRepoll() {
+void ServerCallData::ForceImmediateRepoll(WakeupMask) {
   GPR_ASSERT(poll_ctx_ != nullptr);
   poll_ctx_->Repoll();
 }

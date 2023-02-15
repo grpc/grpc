@@ -25,7 +25,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -39,7 +38,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/interceptor_list.h"
-#include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
@@ -208,9 +206,6 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
         return on_full_.pending();
       case ValueState::kReadyClosed:
-        this->ResetInterceptorList();
-        value_state_ = ValueState::kClosed;
-        ABSL_FALLTHROUGH_INTENDED;
       case ValueState::kReady:
         return std::move(value_);
       case ValueState::kClosed:
@@ -218,6 +213,25 @@ class Center : public InterceptorList<T> {
         return absl::nullopt;
     }
     GPR_UNREACHABLE_CODE(return absl::nullopt);
+  }
+
+  Poll<bool> PollClosed() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosed").c_str());
+    }
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+      case ValueState::kReady:
+      case ValueState::kReadyClosed:
+        return on_full_.pending();
+      case ValueState::kClosed:
+        return false;
+      case ValueState::kCancelled:
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return true);
   }
 
   void AckNext() {
@@ -232,6 +246,7 @@ class Center : public InterceptorList<T> {
       case ValueState::kReadyClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
+        on_full_.Wake();
         break;
       case ValueState::kClosed:
       case ValueState::kCancelled:
@@ -387,6 +402,10 @@ class PipeSender {
   // sent, false if it could never be sent. Blocks the promise until the
   // receiver is either closed or able to receive another message.
   PushType Push(T value);
+
+  auto AwaitClosed() {
+    return [center = center_]() { return center->PollClosed(); };
+  }
 
   template <typename Fn>
   void InterceptAndMap(Fn f, DebugLocation from = {}) {

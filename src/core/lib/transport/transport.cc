@@ -269,8 +269,8 @@ grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
 namespace grpc_core {
 
 ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status,
-                                              Arena* arena) {
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+                                              Arena* arena, DebugLocation loc) {
+  auto hdl = arena->MakePooled<ServerMetadata>(arena, loc);
   hdl->Set(GrpcStatusMetadata(), static_cast<grpc_status_code>(status.code()));
   if (!status.ok()) {
     hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(status.message()));
