@@ -144,6 +144,7 @@ struct tsi_ssl_frame_protector {
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
+static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
@@ -193,6 +194,10 @@ static void init_openssl(void) {
   g_ssl_ctx_ex_factory_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(g_ssl_ctx_ex_factory_index != -1);
+
+  g_ssl_ex_verified_root_cert_index =
+      SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  GPR_ASSERT(g_ssl_ex_verified_root_cert_index != -1);
 }
 
 // --- Ssl utils. ---
@@ -306,7 +311,8 @@ static tsi_result peer_property_from_x509_common_name(
 
 // Gets the subject of an X509 cert as a tsi_peer_property.
 static tsi_result peer_property_from_x509_subject(X509* cert,
-                                                  tsi_peer_property* property) {
+                                                  tsi_peer_property* property,
+                                                  bool is_verified_root_cert) {
   X509_NAME* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
     gpr_log(GPR_INFO, "Could not get subject name from certificate.");
@@ -321,9 +327,16 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
     BIO_free(bio);
     return TSI_INTERNAL_ERROR;
   }
-  tsi_result result = tsi_construct_string_peer_property(
-      TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
-      property);
+  tsi_result result;
+  if (!is_verified_root_cert) {
+    result = tsi_construct_string_peer_property(
+        TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
+        property);
+  } else {
+    result = tsi_construct_string_peer_property(
+        TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY, contents,
+        static_cast<size_t>(len), property);
+  }
   BIO_free(bio);
   return result;
 }
@@ -472,7 +485,8 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
     }
 
     result = peer_property_from_x509_subject(
-        cert, &peer->properties[current_insert_index++]);
+        cert, &peer->properties[current_insert_index++],
+        /*is_verified_root_cert=*/false);
     if (result != TSI_OK) break;
 
     result = peer_property_from_x509_common_name(
@@ -845,12 +859,86 @@ static tsi_result build_alpn_protocol_name_list(
   return TSI_OK;
 }
 
+// This callback is invoked when the CRL has been verified and will soft-fail
+// errors in verification depending on certain error types.
+static int verify_cb(int ok, X509_STORE_CTX* ctx) {
+  int cert_error = X509_STORE_CTX_get_error(ctx);
+  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
+    gpr_log(
+        GPR_INFO,
+        "Certificate verification failed to get CRL files. Ignoring error.");
+    return 1;
+  }
+  if (cert_error != 0) {
+    gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
+  }
+  return ok;
+}
+
 // The verification callback is used for clients that don't really care about
 // the server's certificate, but we need to pull it anyway, in case a higher
 // layer wants to look at it. In this case the verification may fail, but
 // we don't really care.
 static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
   return 1;
+}
+
+static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
+  if (ctx == nullptr) {
+    return preverify_ok;
+  }
+
+  // There's a case where this function is set in SSL_CTX_set_verify and a CRL
+  // related callback is set with X509_STORE_set_verify_cb. They overlap and
+  // this will take precedence, thus we need to ensure the CRL related callback
+  // is still called
+  X509_VERIFY_PARAM* param = X509_STORE_CTX_get0_param(ctx);
+  auto flags = X509_VERIFY_PARAM_get_flags(param);
+  if (flags & X509_V_FLAG_CRL_CHECK) {
+    preverify_ok = verify_cb(preverify_ok, ctx);
+  }
+
+  // If preverify_ok == 0, verification failed. We shouldn't expect to have a
+  // verified chain, so there is no need to attempt to extract the root cert
+  // from it
+  if (preverify_ok == 0) {
+    return preverify_ok;
+  }
+
+  // If we're here, verification was successful
+  // Get the verified chain from the X509_STORE_CTX and put it on the SSL object
+  // so that we have access to it when populating the tsi_peer
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
+#else
+  STACK_OF(X509)* chain = X509_STORE_CTX_get_chain(ctx);
+#endif
+
+  if (chain == nullptr) {
+    return preverify_ok;
+  }
+
+  // The root cert is the last in the chain
+  size_t chain_length = sk_X509_num(chain);
+  if (chain_length == 0) {
+    return preverify_ok;
+  }
+  X509* root_cert = sk_X509_value(chain, chain_length - 1);
+  if (root_cert == nullptr) {
+    return preverify_ok;
+  }
+
+  SSL* ssl = static_cast<SSL*>(
+      X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  if (ssl == nullptr) {
+    return preverify_ok;
+  }
+  int success =
+      SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, root_cert);
+  if (success == 0) {
+    gpr_log(GPR_INFO, "Could not set verified root cert in SSL's ex_data");
+  }
+  return preverify_ok;
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
@@ -1107,10 +1195,14 @@ static tsi_result ssl_handshaker_result_extract_peer(
   // peer's certificate; When called on the server side,
   // the peer's certificate is not present in the stack
   STACK_OF(X509)* peer_chain = SSL_get_peer_cert_chain(impl->ssl);
+
+  X509* verified_root_cert = static_cast<X509*>(
+      SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
+  if (verified_root_cert != nullptr) new_property_count++;
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer->property_count; i++) {
@@ -1146,6 +1238,18 @@ static tsi_result ssl_handshaker_result_extract_peer(
       &peer->properties[peer->property_count]);
   if (result != TSI_OK) return result;
   peer->property_count++;
+
+  if (verified_root_cert != nullptr) {
+    result = peer_property_from_x509_subject(
+        verified_root_cert, &peer->properties[peer->property_count], true);
+    if (result != TSI_OK) {
+      gpr_log(GPR_DEBUG,
+              "Problem extracting subject from verified_root_cert. result: %d",
+              static_cast<int>(result));
+    }
+    peer->property_count++;
+  }
+
   return result;
 }
 
@@ -1808,22 +1912,6 @@ static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
   factory->key_logger->LogSessionKeys(ssl_context, info);
 }
 
-// This callback is invoked when the CRL has been verified and will soft-fail
-// errors in verification depending on certain error types.
-static int verify_cb(int ok, X509_STORE_CTX* ctx) {
-  int cert_error = X509_STORE_CTX_get_error(ctx);
-  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
-    gpr_log(
-        GPR_INFO,
-        "Certificate verification failed to get CRL files. Ignoring error.");
-    return 1;
-  }
-  if (cert_error != 0) {
-    gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
-  }
-  return ok;
-}
-
 // --- tsi_ssl_handshaker_factory constructors. ---
 
 static tsi_ssl_handshaker_factory_vtable client_handshaker_factory_vtable = {
@@ -1957,7 +2045,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->skip_server_certificate_verification) {
     SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
   } else {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, RootCertExtractCallback);
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2129,7 +2217,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                              NullVerifyCallback);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
+                             RootCertExtractCallback);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
@@ -2139,7 +2228,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             nullptr);
+                             RootCertExtractCallback);
           break;
       }
 

@@ -179,7 +179,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.24'
+    ss.dependency 'BoringSSL-GRPC', '0.0.25'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -206,7 +206,10 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
+    ss.source_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.cc',
+                      'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                      'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                      'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/channel_idle/channel_idle_filter.cc',
                       'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                       'src/core/ext/filters/channel_idle/idle_filter_state.cc',
@@ -1891,7 +1894,9 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
                       'third_party/xxhash/xxhash.h'
-    ss.private_header_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+    ss.private_header_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
+                              'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
+                              'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                               'src/core/ext/filters/channel_idle/idle_filter_state.h',
                               'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',

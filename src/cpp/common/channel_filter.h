@@ -32,6 +32,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -300,7 +301,7 @@ class ChannelFilter final {
 
 void RegisterChannelFilter(
     grpc_channel_stack_type stack_type, int priority,
-    std::function<bool(const grpc_channel_args&)> include_filter,
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter,
     const grpc_channel_filter* filter);
 
 }  // namespace internal
@@ -318,7 +319,7 @@ void RegisterChannelFilter(
 template <typename ChannelDataType, typename CallDataType>
 void RegisterChannelFilter(
     const char* name, grpc_channel_stack_type stack_type, int priority,
-    std::function<bool(const grpc_channel_args&)> include_filter) {
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter) {
   using FilterType = internal::ChannelFilter<ChannelDataType, CallDataType>;
   static const grpc_channel_filter filter = {
       FilterType::StartTransportStreamOpBatch,

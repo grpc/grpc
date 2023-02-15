@@ -514,16 +514,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "try_concurrently_test",
-    srcs = ["try_concurrently_test.cc"],
+    name = "party_test",
+    srcs = ["party_test.cc"],
     external_deps = [
-        "absl/status",
-        "absl/strings",
+        "absl/base:core_headers",
         "gtest",
     ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_concurrently"],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//src/core:1999",
+        "//src/core:context",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:memory_quota",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:sleep",
+        "//src/core:time",
+    ],
 )

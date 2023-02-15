@@ -23,23 +23,31 @@ area/infra:
 
 lang/node:
 - examples/node/**
+- src/compiler/node*
 
 lang/ObjC:
 - examples/objective-c/**
+- src/compiler/objective_c*
 - src/objective-c/**
 
 lang/php:
 - examples/php/**
+- src/compiler/php*
 - src/php/**
 
 lang/python:
+- bazel/python_rules.bzl
 - examples/python/**
+- requirements.bazel.txt
+- src/compiler/python*
 - src/python/**
 
 lang/ruby:
 - examples/ruby/**
+- src/compiler/ruby*
 - src/ruby/**
 
 "lang/C#":
+- src/compiler/csharp*
 - src/csharp/**
 

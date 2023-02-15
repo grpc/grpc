@@ -18,11 +18,10 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <limits.h>
-
 #include <string>
 
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
@@ -36,12 +35,10 @@
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
                                            grpc_channel_element_args* args) {
-  int test_value = grpc_channel_args_find_integer(args->channel_args,
-                                                  "test_key", {-1, 0, INT_MAX});
+  int test_value = args->channel_args.GetInt("test_key").value_or(-1);
   EXPECT_EQ(test_value, 42);
-  auto* ee = grpc_channel_args_find_pointer<
-      grpc_event_engine::experimental::EventEngine>(
-      args->channel_args, GRPC_INTERNAL_ARG_EVENT_ENGINE);
+  auto* ee = args->channel_args
+                 .GetObject<grpc_event_engine::experimental::EventEngine>();
   EXPECT_NE(ee, nullptr);
   EXPECT_TRUE(args->is_first);
   EXPECT_TRUE(args->is_last);

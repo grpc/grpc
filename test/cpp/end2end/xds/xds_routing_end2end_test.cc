@@ -1473,14 +1473,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
                RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
   // Send a non-wait_for_ready RPC, which should fail.  This tells us
   // that the client has received the update and attempted to connect.
-  constexpr char kErrorMessageRegex[] =
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      kErrorMessageRegex);
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
   // Now create a new cluster, pointing to backend 1.
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -1506,8 +1501,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
       [&](const RpcResult& result) {
         if (!result.status.ok()) {
           EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_THAT(result.status.error_message(),
-                      ::testing::MatchesRegex(kErrorMessageRegex));
+          EXPECT_THAT(
+              result.status.error_message(),
+              ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                  "connections to all backends failing; last error: ")));
         }
       },
       WaitForBackendOptions().set_reset_counters(false));

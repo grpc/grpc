@@ -34,6 +34,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/time_util.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   static_assert(sizeof(gpr_mu) == sizeof(absl::Mutex),
@@ -70,17 +71,24 @@ void gpr_cv_destroy(gpr_cv* cv) {
 }
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
+  absl::CondVar* const c = reinterpret_cast<absl::CondVar*>(cv);
+  absl::Mutex* const m = reinterpret_cast<absl::Mutex*>(mu);
   if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
       0) {
-    reinterpret_cast<absl::CondVar*>(cv)->Wait(
-        reinterpret_cast<absl::Mutex*>(mu));
+    c->Wait(m);
     return 0;
   }
-  abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
-  timespec ts = {static_cast<decltype(ts.tv_sec)>(abs_deadline.tv_sec),
-                 static_cast<decltype(ts.tv_nsec)>(abs_deadline.tv_nsec)};
-  return reinterpret_cast<absl::CondVar*>(cv)->WaitWithDeadline(
-      reinterpret_cast<absl::Mutex*>(mu), absl::TimeFromTimespec(ts));
+  // Use WaitWithTimeout if possible instead of WaitWithDeadline hoping that
+  // it's going to use a monotonic clock.
+  if (abs_deadline.clock_type == GPR_TIMESPAN) {
+    return c->WaitWithTimeout(m, grpc_core::ToAbslDuration(abs_deadline));
+  } else if (abs_deadline.clock_type == GPR_CLOCK_MONOTONIC) {
+    absl::Duration duration = grpc_core::ToAbslDuration(
+        gpr_time_sub(abs_deadline, gpr_now(GPR_CLOCK_MONOTONIC)));
+    return c->WaitWithTimeout(m, duration);
+  } else {
+    return c->WaitWithDeadline(m, grpc_core::ToAbslTime(abs_deadline));
+  }
 }
 
 void gpr_cv_signal(gpr_cv* cv) {

@@ -23,8 +23,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
@@ -157,7 +155,7 @@ class SliceBuffer {
 
 // Make failure to destruct show up in ASAN builds.
 #ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
 #endif
 };
 

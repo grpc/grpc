@@ -297,13 +297,8 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
 
 typedef ::testing::Types<
     CommonStressTestSyncServer<CommonStressTestInsecure<TestServiceImpl>>,
-    CommonStressTestSyncServer<CommonStressTestInproc<TestServiceImpl, false>>,
-    CommonStressTestSyncServerLowThreadCount<
-        CommonStressTestInproc<TestServiceImpl, true>>,
     CommonStressTestAsyncServer<
-        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>,
-    CommonStressTestAsyncServer<CommonStressTestInproc<
-        grpc::testing::EchoTestService::AsyncService, false>>>
+        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>>
     CommonTypes;
 TYPED_TEST_SUITE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {

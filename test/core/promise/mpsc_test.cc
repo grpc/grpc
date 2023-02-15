@@ -38,12 +38,12 @@ class MockActivity : public Activity, public Wakeable {
 
   void ForceImmediateRepoll() override { WakeupRequested(); }
   void Orphan() override {}
-  Waker MakeOwningWaker() override { return Waker(this); }
-  Waker MakeNonOwningWaker() override { return Waker(this); }
-  void Wakeup() override { WakeupRequested(); }
-  void Drop() override {}
+  Waker MakeOwningWaker() override { return Waker(this, nullptr); }
+  Waker MakeNonOwningWaker() override { return Waker(this, nullptr); }
+  void Wakeup(void*) override { WakeupRequested(); }
+  void Drop(void*) override {}
   std::string DebugTag() const override { return "MockActivity"; }
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
   void Activate() {
     if (scoped_activity_ != nullptr) return;

@@ -44,7 +44,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -183,7 +182,7 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
@@ -479,11 +478,15 @@ class BaseCallData : public Activity, private Wakeable {
       // stack: we need to keep track of that until we get the completion so
       // that we do the right thing in OnComplete.
       kCancelledWhilstForwarding,
+      // The same, but before we got the pipe
+      kCancelledWhilstForwardingNoPipe,
       // Call got terminated whilst we had a recv_message batch completed, and
       // we've now received the completion.
       // On the next poll we'll close things out and forward on completions,
       // then transition to cancelled.
       kBatchCompletedButCancelled,
+      // The same, but before we got the pipe
+      kBatchCompletedButCancelledNoPipe,
       // Completed successfully while we're processing a recv message - see
       // kPushedToPipe.
       kCompletedWhilePushedToPipe,
@@ -535,8 +538,8 @@ class BaseCallData : public Activity, private Wakeable {
 
  private:
   // Wakeable implementation.
-  void Wakeup() final;
-  void Drop() final;
+  void Wakeup(void*) final;
+  void Drop(void*) final;
 
   virtual void OnWakeup() = 0;
 
@@ -869,7 +872,7 @@ struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
     GPR_ASSERT(args->is_last == ((kFlags & kFilterIsLast) != 0));
-    auto status = F::Create(ChannelArgs::FromC(args->channel_args),
+    auto status = F::Create(args->channel_args,
                             ChannelFilter::Args(args->channel_stack, elem));
     if (!status.ok()) {
       static_assert(

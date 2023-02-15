@@ -216,7 +216,7 @@ test_driver_get_source() {
 }
 
 #######################################
-# Install Python modules from required in $TEST_DRIVER_FULL_DIR/requirements.txt
+# Install Python modules from required in $TEST_DRIVER_FULL_DIR/requirements.lock
 # to Python virtual environment. Creates and activates Python venv if necessary.
 # Globals:
 #   TEST_DRIVER_FULL_DIR
@@ -245,7 +245,7 @@ test_driver_pip_install() {
     source "${venv_dir}/bin/activate"
   fi
 
-  python3 -m pip install -r requirements.txt
+  python3 -m pip install -r requirements.lock
   echo "Installed Python packages:"
   python3 -m pip list
 }
