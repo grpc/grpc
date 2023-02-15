@@ -37,6 +37,7 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
+#include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -379,9 +380,11 @@ WindowsEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
-  grpc_core::Crash("unimplemented");
+  return std::make_unique<WindowsEventEngineListener>(
+      &iocp_, std::move(on_accept), std::move(on_shutdown),
+      std::move(memory_allocator_factory), shared_from_this(), executor_.get(),
+      config);
 }
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
