@@ -2579,11 +2579,12 @@ void ClientPromiseBasedCall::StartPromise(
       "client_promise",
       [this, client_initial_metadata = std::move(client_initial_metadata),
        token = std::move(token)]() mutable {
-        return channel()->channel_stack()->MakeClientCallPromise(
-            CallArgs{std::move(client_initial_metadata), std::move(token),
-                     &server_initial_metadata_.sender,
-                     &client_to_server_messages_.receiver,
-                     &server_to_client_messages_.sender});
+        return Race(cancel_error_.Wait(),
+                    channel()->channel_stack()->MakeClientCallPromise(CallArgs{
+                        std::move(client_initial_metadata), std::move(token),
+                        &server_initial_metadata_.sender,
+                        &client_to_server_messages_.receiver,
+                        &server_to_client_messages_.sender}));
       },
       [this](ServerMetadataHandle trailing_metadata) {
         Finish(std::move(trailing_metadata));

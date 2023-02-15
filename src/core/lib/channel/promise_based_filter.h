@@ -576,6 +576,8 @@ class ClientCallData : public BaseCallData {
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
 
+  std::string DebugTag() const override;
+
  private:
   // At what stage is our handling of send initial metadata?
   enum class SendInitialState {
@@ -686,6 +688,8 @@ class ServerCallData : public BaseCallData {
   void ForceImmediateRepoll(WakeupMask) final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
+
+  std::string DebugTag() const override;
 
  protected:
   absl::string_view ClientOrServerString() const override { return "SVR"; }

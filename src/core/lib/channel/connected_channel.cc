@@ -299,6 +299,10 @@ class ConnectedChannelStream : public Orphanable {
 
   void Orphan() final {
     bool finished = finished_.load(std::memory_order_acquire);
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s[connected] Orphan stream, finished: %d",
+              party_->DebugTag().c_str(), finished);
+    }
     // If we hadn't already observed the stream to be finished, we need to
     // cancel it at the transport.
     if (!finished) {
@@ -405,8 +409,8 @@ class ConnectedChannelStream : public Orphanable {
           auto* party = stream->party_;
           if (grpc_call_trace.enabled()) {
             gpr_log(
-                GPR_DEBUG, "%s[connected_channel] Finish batch %s: status=%s",
-                party->DebugTag().c_str(),
+                GPR_DEBUG, "%s[connected] Finish batch '%s' %s: status=%s",
+                party->DebugTag().c_str(), std::string(batch->name).c_str(),
                 grpc_transport_stream_op_batch_string(&batch->batch).c_str(),
                 status.ToString().c_str());
           }
@@ -427,8 +431,9 @@ class ConnectedChannelStream : public Orphanable {
 
   auto PushBatch(Batch* b) {
     if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "%s[connected_channel] Start batch %s",
+      gpr_log(GPR_DEBUG, "%s[connected] Start batch '%s' %s",
               b->stream->party_->DebugTag().c_str(),
+              std::string(b->name).c_str(),
               grpc_transport_stream_op_batch_string(&b->batch).c_str());
     }
     GPR_ASSERT(b->batch.HasOp());
@@ -464,7 +469,8 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
 
 auto ConnectedChannelStream::RecvMessages(
     PipeSender<MessageHandle>* incoming_messages) {
-  return Loop([this, incoming_messages]() {
+  return Loop([this,
+               incoming_messages = std::move(*incoming_messages)]() mutable {
     auto pending_message =
         GetContext<Arena>()->MakePooled<PendingReceiveMessage>();
     auto* pm = pending_message.get();
@@ -474,33 +480,37 @@ auto ConnectedChannelStream::RecvMessages(
             [pm](grpc_transport_stream_op_batch* batch, grpc_closure* on_done) {
               pm->ConfigureBatch(batch, on_done);
             }),
-        [incoming_messages, pending_message = std::move(pending_message)](
+        [&incoming_messages, pending_message = std::move(pending_message)](
             absl::Status status) mutable {
           bool has_message =
               status.ok() && pending_message->payload.has_value();
-          return If(
-              has_message,
-              [incoming_messages,
-               pending_message = std::move(pending_message)]() {
-                if (grpc_call_trace.enabled()) {
-                  gpr_log(GPR_INFO,
-                          "%s[connected] RecvMessage: received "
-                          "payload of %" PRIdPTR " bytes",
-                          Activity::current()->DebugTag().c_str(),
-                          pending_message->payload->Length());
-                }
-                return Seq(incoming_messages->Push(
-                               pending_message->IntoMessageHandle()),
-                           [](bool ok) -> LoopCtl<absl::Status> {
-                             if (!ok) return absl::CancelledError();
-                             return Continue{};
-                           });
-              },
-              [incoming_messages,
-               status = std::move(status)]() -> LoopCtl<absl::Status> {
-                incoming_messages->Close();
-                return status;
-              });
+          auto publish_message = [&incoming_messages,
+                                  pending_message =
+                                      std::move(pending_message)]() {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO,
+                      "%s[connected] RecvMessage: received payload of %" PRIdPTR
+                      " bytes",
+                      Activity::current()->DebugTag().c_str(),
+                      pending_message->payload->Length());
+            }
+            return Map(
+                incoming_messages.Push(pending_message->IntoMessageHandle()),
+                [](bool ok) -> LoopCtl<absl::Status> {
+                  if (!ok) {
+                    if (grpc_call_trace.enabled()) {
+                      gpr_log(GPR_INFO,
+                              "%s[connected] RecvMessage: failed to "
+                              "push message towards the application",
+                              Activity::current()->DebugTag().c_str());
+                    }
+                    return absl::CancelledError();
+                  }
+                  return Continue{};
+                });
+          };
+          return If(has_message, std::move(publish_message),
+                    Immediate(LoopCtl<absl::Status>(std::move(status))));
         });
   });
 }

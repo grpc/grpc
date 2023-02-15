@@ -206,21 +206,32 @@ void Party::RunParty(ParticipantFactory* new_participant) {
       // If the participant is null, skip.
       // This allows participants to complete whilst wakers still exist
       // somewhere.
-      if (participants_[i] == nullptr) continue;
+      if (participants_[i] == nullptr) {
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_DEBUG, "%swakeup %" PRIdPTR " already complete",
+                  DebugTag().c_str(), i);
+        }
+        continue;
+      }
       absl::string_view name;
       if (grpc_trace_promise_primitives.enabled()) {
         name = participants_[i]->name();
-        gpr_log(GPR_DEBUG, "%s[%s] begin", DebugTag().c_str(),
-                std::string(name).c_str());
+        gpr_log(GPR_DEBUG, "%s[%s] begin job %" PRIdPTR, DebugTag().c_str(),
+                std::string(name).c_str(), i);
       }
       // Poll the participant.
       currently_polling_ = i;
-      if (participants_[i]->Poll()) participants_[i].reset();
-      currently_polling_ = kNotPolling;
-      if (!name.empty()) {
-        gpr_log(GPR_DEBUG, "%s[%s] end", DebugTag().c_str(),
+      if (participants_[i]->Poll()) {
+        if (!name.empty()) {
+          gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %" PRIdPTR,
+                  DebugTag().c_str(), std::string(name).c_str(), i);
+        }
+        participants_[i].reset();
+      } else if (!name.empty()) {
+        gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
                 std::string(name).c_str());
       }
+      currently_polling_ = kNotPolling;
     }
     // Try to CAS the state we expected to have (with no wakeups or adds)
     // back to unlocked (by masking in only the ref mask - sans locked bit).

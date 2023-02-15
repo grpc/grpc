@@ -32,6 +32,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/variant.h"
+#include "promise_based_filter.h"
 
 #include <grpc/status.h>
 
@@ -1322,6 +1323,10 @@ ClientCallData::~ClientCallData() {
   }
 }
 
+std::string ClientCallData::DebugTag() const {
+  return absl::StrFormat("PBF_CLIENT[%p]: [%s] ", this, elem()->filter->name);
+}
+
 // Activity implementation.
 void ClientCallData::ForceImmediateRepoll(WakeupMask) {
   GPR_ASSERT(poll_ctx_ != nullptr);
@@ -2011,6 +2016,10 @@ ServerCallData::~ServerCallData() {
             DebugString().c_str());
   }
   GPR_ASSERT(poll_ctx_ == nullptr);
+}
+
+std::string ServerCallData::DebugTag() const {
+  return absl::StrFormat("PBF_SERVER[%p]: [%s] ", this, elem()->filter->name);
 }
 
 // Activity implementation.
