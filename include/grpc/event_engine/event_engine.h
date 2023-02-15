@@ -33,6 +33,11 @@ namespace grpc_event_engine {
 namespace experimental {
 
 ////////////////////////////////////////////////////////////////////////////////
+/// The EventEngine Interface
+///
+/// Overview
+/// --------
+///
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
 ///
@@ -44,7 +49,8 @@ namespace experimental {
 ///
 /// A default cross-platform EventEngine instance is provided by gRPC.
 ///
-/// LIFESPAN AND OWNERSHIP
+/// Lifespan and Ownership
+/// ----------------------
 ///
 /// gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure
 /// that the engines remain available until they are no longer needed. Depending
@@ -70,6 +76,19 @@ namespace experimental {
 ///    builder.SetEventEngine(engine);
 ///    std::unique_ptr<Server> server(builder.BuildAndStart());
 ///    server->Wait();
+///
+///
+/// Blocking EventEngine Callbacks
+/// -----------------------------
+///
+/// Doing blocking work in EventEngine callbacks is generally not advisable.
+/// While gRPC's default EventEngine implementations have some capacity to scale
+/// their thread pools to avoid starvation, this is not an instantaneous
+/// process. Further, user-provided EventEngines may not be optimized to handle
+/// excessive blocking work at all.
+///
+/// *Best Practice* : Occasional blocking work may be fine, but we do not
+/// recommend running a mostly blocking workload in EventEngine threads.
 ///
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
