@@ -343,8 +343,9 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
   // copying 'description' is needed to ensure the grpc_call_cancel_with_status
   // guarantee that can be short-lived.
   CancelWithError(grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE(description),
-                         StatusStrProperty::kGrpcMessage, description),
+      grpc_error_set_str(
+          absl::Status(static_cast<absl::StatusCode>(status), description),
+          StatusStrProperty::kGrpcMessage, description),
       StatusIntProperty::kRpcStatus, status));
 }
 
@@ -2510,15 +2511,29 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
   void CancelWithError(absl::Status error) override {
-    Spawn(
-        "cancel_with_error",
-        [error, this]() {
-          if (!cancel_error_.is_set()) {
-            cancel_error_.Set(ServerMetadataFromStatus(error));
-          }
-          return Empty{};
-        },
-        [](Empty) {});
+    if (!started_.exchange(true)) {
+      // Initial metadata not sent yet, so we can just fail the call.
+      gpr_log(GPR_DEBUG, "CANCEL_BEFORE_SEND_INITIAL_METADATA: %s",
+              error.ToString().c_str());
+      Spawn(
+          "cancel_before_initial_metadata",
+          [error = std::move(error), this]() {
+            server_to_client_messages_.sender.Close();
+            Finish(ServerMetadataFromStatus(error));
+            return Empty{};
+          },
+          [](Empty) {});
+    } else {
+      Spawn(
+          "cancel_with_error",
+          [error = std::move(error), this]() {
+            if (!cancel_error_.is_set()) {
+              cancel_error_.Set(ServerMetadataFromStatus(error));
+            }
+            return Empty{};
+          },
+          [](Empty) {});
+    }
   }
   absl::string_view GetServerAuthority() const override { abort(); }
   bool is_trailers_only() const override { return is_trailers_only_; }
@@ -2562,6 +2577,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
   bool is_trailers_only_;
+  std::atomic<bool> started_{false};
 };
 
 void ClientPromiseBasedCall::StartPromise(
@@ -2634,6 +2650,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
+        if (started_.exchange(true, std::memory_order_relaxed)) break;
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count,
                     send_initial_metadata_.get());
