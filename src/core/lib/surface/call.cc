@@ -2735,7 +2735,8 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
             metadata = std::move(next_metadata.value());
           } else {
             is_trailers_only_ = true;
-            metadata = arena()->MakePooled<ServerMetadata>(arena());
+            metadata =
+                arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
           }
           ProcessIncomingInitialMetadata(*metadata);
           PublishMetadataArray(metadata.get(), array);
@@ -3034,7 +3035,8 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata =
+            arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
@@ -3059,7 +3061,8 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         StartRecvMessage(op, completion, client_to_server_messages_);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata =
+            arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
         CToMetadata(op.data.send_status_from_server.trailing_metadata,
                     op.data.send_status_from_server.trailing_metadata_count,
                     metadata.get());

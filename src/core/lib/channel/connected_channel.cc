@@ -504,7 +504,7 @@ auto ConnectedChannelStream::RecvMessages(
                               "push message towards the application",
                               Activity::current()->DebugTag().c_str());
                     }
-                    return absl::CancelledError();
+                    return absl::OkStatus();
                   }
                   return Continue{};
                 });
@@ -576,7 +576,8 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
              }),
       [](absl::Status) {});
   auto server_initial_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>(),
+                                                      DEBUG_LOCATION);
   party->Spawn(
       "recv_initial_metadata",
       TrySeq(stream->PushBatchToTransport(
@@ -624,7 +625,8 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
         return status;
       });
   auto server_trailing_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>(),
+                                                      DEBUG_LOCATION);
   auto recv_trailing_metadata = Map(
       stream->PushBatchToTransport(
           "recv_trailing_metadata",
