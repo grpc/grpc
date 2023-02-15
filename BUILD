@@ -3683,6 +3683,7 @@ grpc_cc_library(
         "//src/core:http2_settings",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
+        "//src/core:iomgr_port",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",
