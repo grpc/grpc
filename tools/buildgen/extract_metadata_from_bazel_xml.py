@@ -958,7 +958,8 @@ _BUILD_EXTRA_METADATA = {
 # We need a complete picture of all the targets and dependencies we're interested in
 # so we run multiple bazel queries and merge the results.
 _BAZEL_DEPS_QUERIES = [
-    'deps("//test/...")',
+    'deps("//test/core/...")',
+    'deps("//test/cpp/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
     'deps("//src/proto/...")',
