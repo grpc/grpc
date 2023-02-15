@@ -194,6 +194,15 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       };
 
       FdNodeList() = default;
+      ~FdNodeList() {
+        for (FdNode *node = head_, *next = nullptr; node != nullptr;
+             node = next) {
+          next = node->next_;
+          GPR_ASSERT(!node->readable_registered());
+          GPR_ASSERT(!node->writable_registered());
+          delete node;
+        }
+      }
 
       bool IsEmpty() const { return head_ == nullptr; }
 
