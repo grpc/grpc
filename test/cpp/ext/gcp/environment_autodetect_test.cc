@@ -38,9 +38,6 @@ namespace testing {
 
 namespace {
 
-using ::testing::Pair;
-using ::testing::UnorderedElementsAre;
-
 class EnvironmentAutoDetectTest : public ::testing::Test {
  protected:
   void GetNotifiedOnEnvironmentDetection(
