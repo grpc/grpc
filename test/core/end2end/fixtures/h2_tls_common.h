@@ -51,7 +51,8 @@ struct SecurityPrimitives {
   enum VerifierType {
     EXTERNAL_SYNC_VERIFIER = 0,
     EXTERNAL_ASYNC_VERIFIER = 1,
-    HOSTNAME_VERIFIER = 2
+    HOSTNAME_VERIFIER = 2,
+    TEST_VERIFIER = 3,
   } verifier_type;
   enum TlsVersion { V_12 = 0, V_13 = 1 } tls_version;
 };
@@ -165,6 +166,19 @@ inline void SetCertificateVerifier(
           new grpc_core::testing::AsyncExternalVerifier(true);
       ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
           server_async_verifier->base());
+      break;
+    }
+    case SecurityPrimitives::VerifierType::TEST_VERIFIER: {
+      std::string expeected_root_cert_subject =
+          "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
+      auto* client_test_verifier = new grpc_core::testing::TestExternalVerifier(
+          expeected_root_cert_subject);
+      ffd->client_verifier = grpc_tls_certificate_verifier_external_create(
+          client_test_verifier->base());
+      auto* server_test_verifier = new grpc_core::testing::TestExternalVerifier(
+          expeected_root_cert_subject);
+      ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
+          server_test_verifier->base());
       break;
     }
   }
