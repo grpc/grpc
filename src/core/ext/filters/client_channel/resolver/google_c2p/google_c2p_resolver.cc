@@ -148,28 +148,28 @@ void GoogleCloud2ProdResolver::StartLocked() {
     return;
   }
   // Using xDS.  Start metadata server queries.
-  zone_query_ = grpc_core::MakeOrphanable<MetadataQuery>(
+  zone_query_ = MakeOrphanable<MetadataQuery>(
       std::string(MetadataQuery::kZoneAttribute), &pollent_,
       [resolver = static_cast<RefCountedPtr<GoogleCloud2ProdResolver>>(Ref())](
           std::string /* attribute */, std::string result) mutable {
         resolver->work_serializer_->Run(
-            [resolver = std::move(resolver), result = std::move(result)]() {
+            [resolver, result = std::move(result)]() {
               resolver->ZoneQueryDone(result);
             },
             DEBUG_LOCATION);
       },
-      grpc_core::Duration::Seconds(10));
-  ipv6_query_ = grpc_core::MakeOrphanable<MetadataQuery>(
+      Duration::Seconds(10));
+  ipv6_query_ = MakeOrphanable<MetadataQuery>(
       std::string(MetadataQuery::kIPv6Attribute), &pollent_,
       [resolver = static_cast<RefCountedPtr<GoogleCloud2ProdResolver>>(Ref())](
           std::string /* attribute */, std::string result) mutable {
         resolver->work_serializer_->Run(
-            [resolver = std::move(resolver), result = std::move(result)]() {
+            [resolver, result = std::move(result)]() {
               resolver->IPv6QueryDone(!result.empty());
             },
             DEBUG_LOCATION);
       },
-      grpc_core::Duration::Seconds(10));
+      Duration::Seconds(10));
 }
 
 void GoogleCloud2ProdResolver::RequestReresolutionLocked() {

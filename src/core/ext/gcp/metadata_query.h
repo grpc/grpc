@@ -35,7 +35,7 @@ namespace grpc_core {
 
 // Fetches the value of an attribute from the MetadataServer on a GCP
 // environment.
-class MetadataQuery : public grpc_core::InternallyRefCounted<MetadataQuery> {
+class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
  public:
   static const char kZoneAttribute[];
   static const char kClusterNameAttribute[];
@@ -47,7 +47,7 @@ class MetadataQuery : public grpc_core::InternallyRefCounted<MetadataQuery> {
                 absl::AnyInvocable<void(std::string /* attribute */,
                                         std::string /* result */)>
                     callback,
-                grpc_core::Duration timeout);
+                Duration timeout);
 
   ~MetadataQuery() override;
 
@@ -61,7 +61,7 @@ class MetadataQuery : public grpc_core::InternallyRefCounted<MetadataQuery> {
   absl::AnyInvocable<void(std::string /* attribute */,
                           std::string /* result */)>
       callback_;
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
+  OrphanablePtr<HttpRequest> http_request_;
   grpc_http_response response_;
 };
 
