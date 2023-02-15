@@ -208,7 +208,7 @@ void Party::RunParty(ParticipantFactory* new_participant) {
       // somewhere.
       if (participants_[i] == nullptr) {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "%swakeup %" PRIdPTR " already complete",
+          gpr_log(GPR_DEBUG, "%s[party] wakeup %" PRIdPTR " already complete",
                   DebugTag().c_str(), i);
         }
         continue;

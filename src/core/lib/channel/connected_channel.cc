@@ -509,8 +509,19 @@ auto ConnectedChannelStream::RecvMessages(
                   return Continue{};
                 });
           };
+          auto publish_close =
+              [status = std::move(status)]() mutable -> LoopCtl<absl::Status> {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO,
+                      "%s[connected] RecvMessage: reached end of stream with "
+                      "status:%s",
+                      Activity::current()->DebugTag().c_str(),
+                      status.ToString().c_str());
+            }
+            return std::move(status);
+          };
           return If(has_message, std::move(publish_message),
-                    Immediate(LoopCtl<absl::Status>(std::move(status))));
+                    std::move(publish_close));
         });
   });
 }
@@ -787,6 +798,13 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       [failure_latch = &call_data->failure_latch,
        trailing_metadata =
            std::move(trailing_metadata)](absl::Status status) mutable {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "%s[connected] Got trailing metadata; status=%s metadata=%s",
+                  Activity::current()->DebugTag().c_str(),
+                  status.ToString().c_str(),
+                  trailing_metadata->DebugString().c_str());
+        }
         if (!status.ok()) {
           trailing_metadata->Clear();
           grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
@@ -796,6 +814,9 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
           trailing_metadata->Set(GrpcStatusMetadata(), status_code);
           trailing_metadata->Set(GrpcMessageMetadata(),
                                  Slice::FromCopiedString(message));
+        }
+        if (trailing_metadata->get(GrpcStatusMetadata())
+                .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
           if (!failure_latch->is_set()) {
             failure_latch->Set(std::move(trailing_metadata));
           }
@@ -835,6 +856,8 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   party->Spawn("send_initial_metadata_then_messages",
                std::move(send_initial_metadata_then_messages),
                [](absl::Status) {});
+  party->Spawn("recv_trailing_metadata", std::move(recv_trailing_metadata),
+               [](Empty) {});
 
   return Map(
       std::move(run_request_then_send_trailing_metadata),

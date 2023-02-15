@@ -246,6 +246,7 @@ class Center : public InterceptorList<T> {
       case ValueState::kReadyClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
+        on_empty_.Wake();
         on_full_.Wake();
         break;
       case ValueState::kClosed:
@@ -266,6 +267,7 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
+        on_empty_.Wake();
         on_full_.Wake();
         break;
       case ValueState::kReady:
@@ -289,6 +291,7 @@ class Center : public InterceptorList<T> {
       case ValueState::kReadyClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kCancelled;
+        on_empty_.Wake();
         on_full_.Wake();
         break;
       case ValueState::kClosed:
