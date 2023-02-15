@@ -376,6 +376,7 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   grpc_endpoint* ep = ep_;
   ep_ = nullptr;
   own_endpoint_ = false;
+  gpr_log(GPR_INFO, "DoHandshake: address: %s", address->c_str());
   handshake_mgr_->DoHandshake(ep, args, deadline_,
                               /*acceptor=*/nullptr, OnHandshakeDone,
                               /*user_data=*/this);

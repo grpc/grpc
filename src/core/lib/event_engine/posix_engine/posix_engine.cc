@@ -50,6 +50,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -60,6 +61,7 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -494,29 +496,33 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 // An inflight name service lookup request
 class PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
  public:
-  explicit GrpcAresRequest(ares_channel channel, absl::string_view name,
-                           Duration timeout)
-      : channel_(channel), name_(name), timeout_(timeout) {}
+  explicit GrpcAresRequest(ares_channel channel, absl::string_view host,
+                           uint16_t port, Duration timeout)
+      : channel_(channel), host_(host), port_(port), timeout_(timeout) {}
   virtual ~GrpcAresRequest() = default;
 
   ares_channel channel() const { return channel_; }
-  const char* name() const { return name_.c_str(); }
+  const char* host() const { return host_.c_str(); }
+  uint16_t port() const { return port_; }
   bool shutting_down() const { return shutting_down_; }
   void set_shutting_down(bool shutting_down) { shutting_down_ = shutting_down; }
   std::unique_ptr<FdNodeList>& fd_node_list() { return fd_node_list_; }
 
   std::string ToString() const {
     std::ostringstream s;
-    s << "[channel: " << channel_ << "; name: " << name_
-      << "; timeout: " << timeout_.count() << "ns]";
+    s << "[channel: " << channel_ << "; host: " << host_
+      << "; port: " << ntohs(port_) << "; timeout: " << timeout_.count()
+      << "ns]";
     return s.str();
   }
 
  protected:
   // ares channel
   ares_channel channel_;
-  // hostname
-  std::string name_;
+  /// host to resolve, parsed from the name to resolve
+  std::string host_;
+  /// port to fill in sockaddr_in, parsed from the name to resolve
+  uint16_t port_;
   Duration timeout_;
   bool shutting_down_ = false;
   std::unique_ptr<FdNodeList> fd_node_list_ = std::make_unique<FdNodeList>();
@@ -525,16 +531,14 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
 class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
     : public PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
  public:
-  explicit GrpcAresHostnameRequest(ares_channel channel, absl::string_view name,
-                                   Duration timeout,
+  explicit GrpcAresHostnameRequest(ares_channel channel, absl::string_view host,
+                                   uint16_t port, Duration timeout,
                                    LookupHostnameCallback on_resolve)
-      : GrpcAresRequest(channel, name, timeout),
+      : GrpcAresRequest(channel, host, port, timeout),
         on_resolve_(std::move(on_resolve)) {}
 
   ~GrpcAresHostnameRequest() override {}
 
-  const char* host() const { return host_.c_str(); }
-  uint16_t port() const { return port_; }
   bool is_balancer() const { return is_balancer_; }
   const char* qtype() const { return qtype_.c_str(); }
 
@@ -543,10 +547,6 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
   }
 
  private:
-  /// host to resolve, parsed from the name to resolve
-  const std::string host_;
-  /// port to fill in sockaddr_in, parsed from the name to resolve
-  uint16_t port_;
   /// is it a grpclb address
   bool is_balancer_;
   /// for logging and errors: the query type ("A" or "AAAA")
@@ -646,6 +646,12 @@ PosixEventEngine::PosixDNSResolver::LookupTaskHandle
 PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port, Duration timeout) {
+  absl::string_view host;
+  absl::string_view port;
+  GPR_ASSERT(grpc_core::SplitHostPort(name, &host, &port));
+  if (port.empty()) {
+    port = default_port;
+  }
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
   ares_channel channel;
@@ -654,11 +660,12 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
     gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     abort();
   }
-  GrpcAresRequest* request = new GrpcAresHostnameRequest(channel, name, timeout,
-                                                         std::move(on_resolve));
+  GrpcAresRequest* request = new GrpcAresHostnameRequest(
+      channel, host, grpc_strhtons(std::string(port).c_str()), timeout,
+      std::move(on_resolve));
   // TODO(yijiem): set_request_dns_server if specified
   // TODO(yijiem): handle ipv6
-  ares_gethostbyname(channel, request->name(), AF_INET, &on_hostbyname_done,
+  ares_gethostbyname(channel, request->host(), AF_INET, &on_hostbyname_done,
                      static_cast<void*>(request));
   OnEvent(request);
   // TODO(yijiem): return a LookupTaskHandle to the caller
