@@ -77,6 +77,8 @@ class CFStreamEndpoint : public EventEngine::Endpoint {
 
   EventEngine::ResolvedAddress peer_address_;
   EventEngine::ResolvedAddress local_address_;
+  std::string peer_address_string_;
+  std::string local_address_string_;
   MemoryAllocator memory_allocator_;
 
   LockfreeEvent open_event_;

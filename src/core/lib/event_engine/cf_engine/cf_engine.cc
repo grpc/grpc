@@ -80,7 +80,9 @@ CFEventEngine::ConnectionHandle CFEventEngine::Connect(
     const EndpointConfig& /* args */, MemoryAllocator memory_allocator,
     Duration timeout) {
   auto addr_uri = ResolvedAddressToURI(addr);
-  gpr_log(GPR_INFO, "CFEventEngine::connect: %s", addr_uri.value().c_str());
+  GRPC_EVENT_ENGINE_TRACE("CFEventEngine::connect: %s",
+                          addr_uri.value().c_str());
+
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
