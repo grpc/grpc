@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
