@@ -829,26 +829,33 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   auto send_initial_metadata = Seq(
       call_data->server_initial_metadata.receiver.Next(),
       [call_data, stream = stream->InternalRef()](
-          NextResult<ServerMetadataHandle> next_result) {
+          NextResult<ServerMetadataHandle> next_result) mutable {
         auto* md = !call_data->sent_initial_metadata && next_result.has_value()
                        ? next_result.value().get()
                        : nullptr;
         if (md != nullptr) call_data->sent_initial_metadata = true;
-        return If(md != nullptr,
-                  Map(stream->PushBatchToTransport(
-                          "send_initial_metadata",
-                          [md](grpc_transport_stream_op_batch* batch,
-                               grpc_closure* on_done) {
-                            batch->send_initial_metadata = true;
-                            batch->payload->send_initial_metadata
-                                .send_initial_metadata = md;
-                            batch->payload->send_initial_metadata.peer_string =
-                                nullptr;
-                            batch->on_complete = on_done;
-                          }),
-                      [next_result = std::move(next_result)](
-                          absl::Status status) { return status; }),
-                  Immediate(absl::CancelledError()));
+        return If(
+            md != nullptr,
+            [md, stream = std::move(stream),
+             next_result = std::move(next_result)]() mutable {
+              return Map(
+                  stream->PushBatchToTransport(
+                      "send_initial_metadata",
+                      [md](grpc_transport_stream_op_batch* batch,
+                           grpc_closure* on_done) {
+                        GPR_ASSERT(md != nullptr);
+                        batch->send_initial_metadata = true;
+                        batch->payload->send_initial_metadata
+                            .send_initial_metadata = md;
+                        batch->payload->send_initial_metadata.peer_string =
+                            nullptr;
+                        batch->on_complete = on_done;
+                      }),
+                  [next_result = std::move(next_result)](absl::Status status) {
+                    return status;
+                  });
+            },
+            Immediate(absl::CancelledError()));
       });
   auto send_initial_metadata_then_messages =
       TrySeq(std::move(send_initial_metadata),
