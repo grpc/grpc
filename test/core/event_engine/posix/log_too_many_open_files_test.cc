@@ -1,11 +1,10 @@
 #include <errno.h>
 #include <sys/socket.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
