@@ -10200,6 +10200,18 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
+- name: random_early_detection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/backoff/random_early_detection.h
+  src:
+  - src/core/lib/backoff/random_early_detection.cc
+  - test/core/backoff/random_early_detection_test.cc
+  deps:
+  - absl/random:random
+  uses_polling: false
 - name: raw_end2end_test
   gtest: true
   build: test
