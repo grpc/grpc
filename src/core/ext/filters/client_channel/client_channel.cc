@@ -341,7 +341,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     const Timestamp per_method_deadline =
         Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
         timeout;
-    return call_context->UpdateDeadline(per_method_deadline);
+    call_context->UpdateDeadline(per_method_deadline);
   }
 
   ClientChannel* chand_;
@@ -3369,6 +3369,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
                 std::move(call_args));
           }),
       // Record call completion.
+      // TODO(roth): Does this need to use OnCancel()?
       [this](ServerMetadataHandle metadata) {
         absl::Status status;
         grpc_status_code code =
