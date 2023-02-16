@@ -259,7 +259,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:debug_location",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
