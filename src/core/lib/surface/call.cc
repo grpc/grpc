@@ -2095,6 +2095,17 @@ class PromiseBasedCall : public Call,
 
   auto finished() { return finished_.Wait(); }
 
+  // Returns a promise that resolves to Empty whenever there is no outstanding
+  // send operation
+  auto WaitForSendingDone() {
+    return [this]() -> Poll<Empty> {
+      if (sending_.load(std::memory_order_relaxed)) {
+        return waiting_for_sending_done_.pending();
+      }
+      return Empty{};
+    };
+  }
+
  private:
   union CompletionInfo {
     static constexpr uint32_t kOpFailed = 0x8000'0000u;
@@ -2187,6 +2198,8 @@ class PromiseBasedCall : public Call,
   grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
   Latch<void> finished_;
   std::atomic<bool> completed_{false};
+  std::atomic<bool> sending_{false};
+  IntraActivityWaiter waiting_for_sending_done_;
 };
 
 template <typename T>
@@ -2362,6 +2375,7 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
                                         const Completion& completion,
                                         PipeSender<MessageHandle>* sender,
                                         BatchSpawn& spawner) {
+  sending_.store(true, std::memory_order_relaxed);
   SliceBuffer send;
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
@@ -2376,6 +2390,8 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
       },
       [this, completion = AddOpToCompletion(
                  completion, PendingOp::kSendMessage)](bool result) mutable {
+        sending_.store(false);
+        waiting_for_sending_done_.Wake();
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_DEBUG, "%sSendMessage completes %s", DebugTag().c_str(),
                   result ? "successfully" : "with failure");
@@ -3102,9 +3118,11 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         spawner.Spawn(
             "send_status_from_server",
             [this, metadata = std::move(metadata)]() mutable {
-              server_to_client_messages_->Close();
               send_trailing_metadata_.Set(std::move(metadata));
-              return Empty{};
+              return Map(WaitForSendingDone(), [this](Empty) {
+                server_to_client_messages_->Close();
+                return Empty{};
+              });
             },
             [this,
              completion = AddOpToCompletion(
