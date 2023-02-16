@@ -14,8 +14,11 @@
 
 #include "src/core/lib/promise/loop.h"
 
+#include <utility>
+
 #include "gtest/gtest.h"
 
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/seq.h"
 
