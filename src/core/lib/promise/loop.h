@@ -86,9 +86,7 @@ class Loop {
     if (started_) Destruct(&promise_);
   }
 
-  Loop(Loop&& loop) noexcept : factory_(std::move(loop.factory_)) {
-    GPR_DEBUG_ASSERT(!loop.started_);
-  }
+  Loop(Loop&& loop) noexcept : factory_(std::move(loop.factory_)) {}
 
   Loop(const Loop& loop) = delete;
   Loop& operator=(const Loop& loop) = delete;

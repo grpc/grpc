@@ -3062,15 +3062,18 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           gpr_log(GPR_INFO, "%s[call] Send initial metadata",
                   DebugTag().c_str());
         }
-        spawner.Spawn("sent_initial_metadata",
-                      server_initial_metadata_->Push(std::move(metadata)),
-                      [this, completion = AddOpToCompletion(
-                                 completion, PendingOp::kSendInitialMetadata)](
-                          bool r) mutable {
-                        if (!r) FailCompletion(completion);
-                        FinishOpOnCompletion(&completion,
-                                             PendingOp::kSendInitialMetadata);
-                      });
+        spawner.Spawn(
+            "sent_initial_metadata",
+            [this, metadata = std::move(metadata)]() mutable {
+              return server_initial_metadata_->Push(std::move(metadata));
+            },
+            [this,
+             completion = AddOpToCompletion(
+                 completion, PendingOp::kSendInitialMetadata)](bool r) mutable {
+              if (!r) FailCompletion(completion);
+              FinishOpOnCompletion(&completion,
+                                   PendingOp::kSendInitialMetadata);
+            });
       } break;
       case GRPC_OP_SEND_MESSAGE:
         StartSendMessage(op, completion, server_to_client_messages_, spawner);

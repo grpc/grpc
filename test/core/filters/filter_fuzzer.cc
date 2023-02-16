@@ -403,16 +403,16 @@ class MainLoop {
    public:
     WakeCall(MainLoop* main_loop, uint32_t id)
         : main_loop_(main_loop), id_(id) {}
-    void Wakeup(void*) override {
+    void Wakeup(WakeupMask) override {
       for (const uint32_t already : main_loop_->wakeups_) {
         if (already == id_) return;
       }
       main_loop_->wakeups_.push_back(id_);
       delete this;
     }
-    void Drop(void*) override { delete this; }
+    void Drop(WakeupMask) override { delete this; }
 
-    std::string ActivityDebugTag(void*) const override {
+    std::string ActivityDebugTag(WakeupMask) const override {
       return "WakeCall(" + std::to_string(id_) + ")";
     }
 
@@ -526,9 +526,9 @@ class MainLoop {
     }
 
     void Orphan() override { abort(); }
-    void ForceImmediateRepoll() override { context_->set_continue(); }
+    void ForceImmediateRepoll(WakeupMask) override { context_->set_continue(); }
     Waker MakeOwningWaker() override {
-      return Waker(new WakeCall(main_loop_, id_), nullptr);
+      return Waker(new WakeCall(main_loop_, id_), 0);
     }
     Waker MakeNonOwningWaker() override { return MakeOwningWaker(); }
 
