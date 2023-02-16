@@ -5321,6 +5321,7 @@ grpc_cc_library(
     ],
     deps = [
         "closure",
+        "error",
         "status_helper",
         "time",
         "//:gpr",

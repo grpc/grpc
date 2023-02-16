@@ -22,7 +22,6 @@
 #include <string>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
@@ -30,6 +29,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 
 namespace grpc_core {
