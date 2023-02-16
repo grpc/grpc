@@ -178,10 +178,11 @@ class Center : public InterceptorList<T> {
     GPR_DEBUG_ASSERT(refs_ != 0);
     switch (value_state_) {
       case ValueState::kClosed:
-      case ValueState::kReadyClosed:
+        return true;
       case ValueState::kCancelled:
         return false;
       case ValueState::kReady:
+      case ValueState::kReadyClosed:
       case ValueState::kEmpty:
         return on_empty_.pending();
       case ValueState::kAcked:
