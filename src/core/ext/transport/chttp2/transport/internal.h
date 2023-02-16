@@ -25,7 +25,6 @@
 #include <stdint.h>
 
 #include <memory>
-#include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -61,6 +60,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -261,7 +261,7 @@ struct grpc_chttp2_transport
   grpc_transport base;  // must be first
   grpc_core::RefCount refs;
   grpc_endpoint* ep;
-  std::string peer_string;
+  grpc_core::Slice peer_string;
 
   grpc_core::MemoryOwner memory_owner;
   const grpc_core::MemoryAllocator::Reservation self_reservation;

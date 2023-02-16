@@ -35,7 +35,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
@@ -529,11 +528,6 @@ class ClientChannel::LoadBalancedCall
       lb_subchannel_call_tracker_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
-
-  // For intercepting send_initial_metadata on_complete.
-  gpr_atm* peer_string_ = nullptr;
-  grpc_closure send_initial_metadata_on_complete_;
-  grpc_closure* original_send_initial_metadata_on_complete_ = nullptr;
 
   // For intercepting recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
