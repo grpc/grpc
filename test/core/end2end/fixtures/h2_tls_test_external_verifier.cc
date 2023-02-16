@@ -49,7 +49,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_simple_fullstack(
 static grpc_end2end_test_config config = {
     // client: static data provider + sync external verifier
     // server: static data provider + sync external verifier
-    // extra: TLS 1.2
+    // extra: TLS 1.3
     "chttp2/tls_test_external_verifier",
     kH2TLSFeatureMask,
     "foo.test.google.fr",
