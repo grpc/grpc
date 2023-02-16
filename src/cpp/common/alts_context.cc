@@ -87,7 +87,7 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
     security_level_ = static_cast<grpc_security_level>(
         grpc_gcp_AltsContext_security_level(ctx));
   }
-  if (grpc_gcp_AltsContext_has_peer_attributes(ctx)) {
+  if (grpc_gcp_AltsContext_peer_attributes_size(ctx) != 0) {
     size_t iter = kUpb_Map_Begin;
     const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
