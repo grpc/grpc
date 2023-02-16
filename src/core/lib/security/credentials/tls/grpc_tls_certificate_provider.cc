@@ -32,6 +32,7 @@
 #include <openssl/x509.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -129,11 +130,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
     gpr_log(GPR_INFO,
-            "FileWatcherCertificateProvider refresh_interval_sec_ set to %ld "
-            "seconds which is less "
-            "than %ld second, the minimum allowed value. Overriding "
-            "configured value.",
-            refresh_interval_sec_, kMinimumFileWatcherRefreshIntervalSeconds);
+            "FileWatcherCertificateProvider refresh_interval_sec_ set to value "
+            "less than minimum. Overriding configured value to minimum.");
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
   // Private key and identity cert files must be both set or both unset.
