@@ -456,7 +456,6 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   grpc_resolved_address addr6_v4mapped;
   grpc_resolved_address wildcard;
   grpc_resolved_address* allocated_addr = NULL;
-  grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
   grpc_error_handle error;
 
@@ -468,6 +467,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   // as some previously created listener.
   if (grpc_sockaddr_get_port(addr) == 0) {
     for (sp = s->head; sp; sp = sp->next) {
+      grpc_resolved_address sockname_temp;
       int sockname_temp_len = sizeof(struct sockaddr_storage);
       if (0 == getsockname(sp->socket->socket,
                            (grpc_sockaddr*)sockname_temp.addr,

@@ -45,12 +45,6 @@ namespace experimental {
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
  public:
-  class WindowsListener : public EventEngine::Listener {
-   public:
-    ~WindowsListener() override;
-    absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
-    absl::Status Start() override;
-  };
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
     ~WindowsDNSResolver() override;
@@ -93,6 +87,12 @@ class WindowsEventEngine : public EventEngine,
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+
+  // Retrieve the base executor.
+  // This is public because most classes that know the concrete
+  // WindowsEventEngine type are effectively friends.
+  // Not intended for external use.
+  Executor* executor() { return executor_.get(); }
 
  private:
   // State of an active connection.

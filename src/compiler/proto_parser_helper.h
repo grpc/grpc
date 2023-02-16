@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2018 gRPC authors.
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include <grpc/support/port_platform.h>
+#include <string>
 
-#include "src/cpp/ext/filters/census/channel_filter.h"
+namespace grpc_generator {
 
-#include "absl/status/status.h"
+// Replaces '$' with "$$", useful in proto comments.
+std::string EscapeVariableDelimiters(const std::string& original);
 
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
-
-namespace grpc {
-namespace internal {
-
-grpc_error_handle OpenCensusChannelData::Init(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  OpenCensusRegistry::Get().RunFunctionsPostInit();
-  return absl::OkStatus();
-}
-
-}  // namespace internal
-}  // namespace grpc
+}  // namespace grpc_generator

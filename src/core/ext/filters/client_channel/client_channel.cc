@@ -1291,7 +1291,6 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   // result, then we continue to let it set the connectivity state.
   // Otherwise, we go into TRANSIENT_FAILURE.
   if (lb_policy_ == nullptr) {
-    grpc_error_handle error = absl_status_to_grpc_error(status);
     // Update connectivity state.
     // TODO(roth): We should be updating the connectivity state here but
     // not the picker.

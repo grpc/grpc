@@ -130,8 +130,14 @@ class Arena {
       size_t initial_size, size_t alloc_size,
       MemoryAllocator* memory_allocator);
 
-  // Destroy an arena, returning the total number of bytes allocated.
-  size_t Destroy();
+  // Destroy an arena.
+  void Destroy();
+
+  // Return the total amount of memory allocated by this arena.
+  size_t TotalUsedBytes() const {
+    return total_used_.load(std::memory_order_relaxed);
+  }
+
   // Allocate \a size bytes from the arena.
   void* Alloc(size_t size) {
     static constexpr size_t base_size =

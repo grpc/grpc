@@ -1,4 +1,4 @@
-// Copyright 2022 gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,23 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H
 
-// Platform-specific configuration for use of the EventEngine shims.
+#include <string>
 
-#include <grpc/support/port_platform.h>
+namespace grpc_generator {
 
-namespace grpc_event_engine {
-namespace experimental {
+std::string EscapeVariableDelimiters(const std::string& original) {
+  std::string mut_str = original;
+  size_t index = 0;
+  while ((index = mut_str.find('$', index)) != std::string::npos) {
+    mut_str.replace(index, 1, "$$");
+    index += 2;
+  }
+  return mut_str;
+}
 
-bool UseEventEngineClient();
-
-bool UseEventEngineListener();
-
-bool EventEngineSupportsFd();
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H
+}  // namespace grpc_generator

@@ -568,14 +568,12 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   static std::string MakeConnectionFailureRegex(absl::string_view prefix) {
-    return absl::StrCat(
-        prefix,
-        "; last error: (UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-        "Failed to connect to remote host: Connection refused|"
-        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-        "Failed to connect to remote host: FD shutdown|"
-        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-        "(Socket closed|Connection reset by peer))");
+    return absl::StrCat(prefix,
+                        "; last error: (UNKNOWN|UNAVAILABLE): "
+                        "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                        "(Failed to connect to remote host: )?"
+                        "(Connection refused|Connection reset by peer|"
+                        "Socket closed|FD shutdown)");
   }
 
   const std::string server_host_;
