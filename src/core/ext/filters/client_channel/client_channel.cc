@@ -1363,7 +1363,12 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   // result, then we continue to let it set the connectivity state.
   // Otherwise, we go into TRANSIENT_FAILURE.
   if (lb_policy_ == nullptr) {
-    grpc_error_handle error = absl_status_to_grpc_error(status);
+    // Update connectivity state.
+    // TODO(roth): We should be updating the connectivity state here but
+    // not the picker.
+    UpdateStateAndPickerLocked(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
+        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
@@ -1371,10 +1376,6 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
           MaybeRewriteIllegalStatusCode(status, "resolver");
       ReprocessQueuedResolverCalls();
     }
-    // Update connectivity state.
-    UpdateStateAndPickerLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
-        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
   }
 }
 
@@ -1511,6 +1512,10 @@ void ClientChannel::CreateResolverLocked() {
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
+  // TODO(roth): We should be updating the connectivity state here but
+  // not the picker.  But we need to make sure that we are initializing
+  // the picker to a queueing picker somewhere, in case the LB policy
+  // does not immediately return a new picker.
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
       MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
@@ -1710,6 +1715,9 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(
               grpc_error_to_absl_status(op->disconnect_with_error)));
+      // TODO(roth): If this happens when we're still waiting for a
+      // resolver result, we need to trigger failures for all calls in
+      // the resolver queue here.
     }
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "start_transport_op");
@@ -2583,12 +2591,20 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
         DEBUG_LOCATION);
   });
   // Grab mutex and take a ref to the picker.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO, "chand=%p lb_call=%p: grabbing LB mutex to get picker",
+            chand_, this);
+  }
   {
     MutexLock lock(&chand_->lb_mu_);
     pickers.emplace_back(chand_->picker_);
   }
   while (true) {
     // Do pick.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+      gpr_log(GPR_INFO, "chand=%p lb_call=%p: performing pick with picker=%p",
+              chand_, this, pickers.back().get());
+    }
     grpc_error_handle error;
     bool pick_complete = PickSubchannelImpl(pickers.back().get(), &error);
     if (!pick_complete) {
@@ -2986,13 +3002,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
   // Add the batch to the pending list.
   PendingBatchesAdd(batch);
   // For batches containing a send_initial_metadata op, acquire the
-  // channel's data plane mutex to pick a subchannel.
+  // channel's LB mutex to pick a subchannel.
   if (GPR_LIKELY(batch->send_initial_metadata)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p lb_call=%p: grabbing LB mutex to perform pick", chand(),
-              this);
-    }
     TryPick(/*was_queued=*/false);
   } else {
     // For all other batches, release the call combiner.

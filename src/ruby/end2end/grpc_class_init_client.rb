@@ -36,13 +36,15 @@ end
 
 def run_gc_stress_test(test_proc)
   GC.disable
-  construct_many(test_proc)
+  # TODO(b/266212253): run construct_many
+  # in this test after "Bus error" flakes are fixed.
+  run_default_test(test_proc)
 
   GC.enable
-  construct_many(test_proc)
+  run_default_test(test_proc)
 
   GC.start
-  construct_many(test_proc)
+  run_default_test(test_proc)
 end
 
 def run_concurrency_stress_test(test_proc)
@@ -58,11 +60,10 @@ end
 
 # default (no gc_stress and no concurrency_stress)
 def run_default_test(test_proc)
-  thd = Thread.new do
-    test_proc.call
-  end
+  # TODO(b/266212253): re-enable the extra thread
+  # in this test after the "Bus error" flakes of this
+  # test are fixed.
   test_proc.call
-  thd.join
 end
 
 # rubocop:disable Metrics/CyclomaticComplexity

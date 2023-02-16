@@ -28,7 +28,7 @@
 #import <grpcpp/server_context.h>
 #import <grpcpp/support/client_interceptor.h>
 #import <grpcpp/support/config.h>
-#import <src/proto/grpc/testing/echo.grpc.pb.h>
+#import "src/proto/grpc/testing/echo.grpc.pb.h"
 
 #import "TestHelper.h"
 #import "test/core/end2end/data/ssl_test_data.h"

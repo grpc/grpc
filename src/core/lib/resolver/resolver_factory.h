@@ -55,7 +55,7 @@ class ResolverFactory {
   virtual ~ResolverFactory() {}
 
   /// Returns the URI scheme that this factory implements.
-  /// Caller does NOT take ownership of result.
+  /// Must not include any upper-case characters.
   virtual absl::string_view scheme() const = 0;
 
   /// Returns a bool indicating whether the input uri is valid to create a

@@ -194,6 +194,23 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "CppCronetTests-lib",
+    srcs = glob([
+        "CppCronetTests/*.m",
+        "CppCronetTests/*.mm",
+    ]),
+    hdrs = glob([
+        "CppCronetTests/*.h",
+    ]),
+    deps = [
+        "//:grpc++_cronet_credentials",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/end2end:end2end_tests",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "PerfTests-lib-Posix",
     srcs = [
         "ConfigureCronet.m",
@@ -260,6 +277,13 @@ grpc_objc_ios_unit_test(
     name = "CronetTests",
     deps = [
         "CronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CppCronetTests",
+    deps = [
+        "CppCronetTests-lib",
     ],
 )
 
