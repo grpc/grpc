@@ -4093,7 +4093,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "error",
         "grpc_matchers",
         "grpc_outlier_detection_header",
         "grpc_tls_credentials",
@@ -4948,7 +4947,6 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "dual_ref_counted",
-        "error",
         "grpc_lb_policy_ring_hash",
         "grpc_service_config",
         "grpc_xds_client",
