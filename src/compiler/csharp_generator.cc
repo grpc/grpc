@@ -103,8 +103,7 @@ void GenerateGeneratedCodeAttribute(grpc::protobuf::io::Printer* printer) {
 void GenerateObsoleteAttribute(grpc::protobuf::io::Printer* printer,
                                bool is_deprecated) {
   // Mark the code deprecated using the [ObsoleteAttribute] attribute.
-  if (is_deprecated)
-  {
+  if (is_deprecated) {
     printer->Print("[global::System.ObsoleteAttribute]\n");
   }
 }
