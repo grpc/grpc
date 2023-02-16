@@ -113,11 +113,12 @@ class FilterTestBase : public ::testing::Test {
   // Provides mocks to trap events that happen on the call.
   class Call {
    public:
-    ~Call();
     explicit Call(const Channel& channel);
 
     Call(const Call&) = delete;
     Call& operator=(const Call&) = delete;
+
+    ~Call();
 
     // Construct client metadata in the arena of this call.
     // Optional argument is a list of key/value pairs to add to the metadata.
