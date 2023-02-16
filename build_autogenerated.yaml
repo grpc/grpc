@@ -4098,6 +4098,7 @@ libs:
   - src/compiler/objective_c_generator_helpers.h
   - src/compiler/php_generator.h
   - src/compiler/php_generator_helpers.h
+  - src/compiler/proto_parser_helper.h
   - src/compiler/protobuf_plugin.h
   - src/compiler/python_generator.h
   - src/compiler/python_generator_helpers.h
@@ -4113,6 +4114,7 @@ libs:
   - src/compiler/node_generator.cc
   - src/compiler/objective_c_generator.cc
   - src/compiler/php_generator.cc
+  - src/compiler/proto_parser_helper.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps: []
