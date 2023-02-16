@@ -2366,11 +2366,14 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
       send.c_slice_buffer());
+  auto msg =
+      GetContext<Arena>()->MakePooled<Message>(std::move(send), op.flags);
   spawner.Spawn(
       "send_message",
-      Race(Map(finished(), [](Empty) { return false; }),
-           sender->Push(GetContext<Arena>()->MakePooled<Message>(
-               std::move(send), op.flags))),
+      [this, sender, msg = std::move(msg)]() mutable {
+        return Race(Map(finished(), [](Empty) { return false; }),
+                    sender->Push(std::move(msg)));
+      },
       [this, completion = AddOpToCompletion(
                  completion, PendingOp::kSendMessage)](bool result) mutable {
         if (grpc_call_trace.enabled()) {
