@@ -209,7 +209,6 @@ TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierSucceeds) {
 
 TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsNull) {
   grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
   char* expected_subject = const_cast<char*>(
       "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
   request.peer_info.verified_root_cert_subject = nullptr;
@@ -226,7 +225,6 @@ TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsNull) {
 
 TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsMismatch) {
   grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
   char* expected_subject = const_cast<char*>(
       "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
   request.peer_info.verified_root_cert_subject = "BAD_SUBJECT";
