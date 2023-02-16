@@ -42,6 +42,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
