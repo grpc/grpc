@@ -120,7 +120,6 @@ TEST_F(ClientAuthFilterTest, CreateSucceeds) {
 }
 
 TEST_F(ClientAuthFilterTest, CallCredsFails) {
-  //  initial_metadata_batch_.Set(HttpAuthorityMetadata(), target_.Ref());
   StrictMock<Call> call(MakeChannelWithCallCredsResult(
       absl::UnauthenticatedError("access denied")));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
