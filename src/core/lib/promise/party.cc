@@ -178,7 +178,18 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
   GPR_DEBUG_ASSERT(is_current());
   // Or in the bit for the currently polling participant.
   // Will be grabbed next round to force a repoll of this promise.
-  state_.fetch_or(mask & kWakeupMask, std::memory_order_relaxed);
+  auto prev_state =
+      state_.fetch_or(mask & kWakeupMask, std::memory_order_relaxed);
+
+  if (grpc_trace_promise_primitives.enabled()) {
+    std::vector<int> wakeups;
+    for (int i = 0; i < 8 * sizeof(WakeupMask); i++) {
+      if (mask & (1 << i)) wakeups.push_back(i);
+    }
+    gpr_log(GPR_DEBUG, "%s[party] ForceImmediateRepoll({%s}): prev_state=%s",
+            DebugTag().c_str(), absl::StrJoin(wakeups, ",").c_str(),
+            StateToString(prev_state).c_str());
+  }
 }
 
 void Party::RunParty() {

@@ -2965,6 +2965,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   RecvCloseOpCancelState recv_close_op_cancel_state_;
   ClientMetadataHandle client_initial_metadata_;
   Completion recv_close_completion_;
+  std::atomic<bool> cancelled_{false};
 };
 
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
@@ -3076,6 +3077,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         StartSendMessage(op, completion, server_to_client_messages_, spawner);
         break;
       case GRPC_OP_RECV_MESSAGE:
+        if (cancelled_.load(std::memory_order_relaxed)) {
+          FailCompletion(completion);
+          break;
+        }
         StartRecvMessage(op, completion, client_to_server_messages_, spawner);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
@@ -3144,11 +3149,15 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
 }
 
 void ServerPromiseBasedCall::CancelWithError(absl::Status error) {
+  cancelled_.store(true, std::memory_order_relaxed);
   Spawn(
       "cancel_with_error",
       [this, error = std::move(error)]() {
         if (!send_trailing_metadata_.is_set()) {
           send_trailing_metadata_.Set(ServerMetadataFromStatus(error));
+        }
+        if (server_to_client_messages_ != nullptr) {
+          server_to_client_messages_->Close();
         }
         return Empty{};
       },

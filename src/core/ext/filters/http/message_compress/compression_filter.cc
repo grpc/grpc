@@ -296,11 +296,7 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
        this](MessageHandle message) -> absl::optional<MessageHandle> {
         return CompressMessage(std::move(message), *compression_algorithm);
       });
-  // Concurrently:
-  // - call the next filter
-  // - decompress incoming messages
-  // - wait for initial metadata to be sent, and then commence compression of
-  //   outgoing messages
+  // Run the next filter, and race it with getting an error from decompression.
   return Race(decompress_err->Wait(),
               next_promise_factory(std::move(call_args)));
 }
