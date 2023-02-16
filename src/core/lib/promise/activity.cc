@@ -148,7 +148,7 @@ Pending IntraActivityWaiter::pending() {
 
 void IntraActivityWaiter::Wake() {
   if (wakeups_ == 0) return;
-  Activity::current()->ForceImmediateRepoll(wakeups_);
+  Activity::current()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
 }
 
 std::string IntraActivityWaiter::DebugString() const {
