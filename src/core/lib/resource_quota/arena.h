@@ -235,6 +235,23 @@ class Arena {
     }
   }
 
+  template <typename T, typename... Args>
+  T* NewPooled(Args&&... args) {
+    auto* free_list =
+        &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
+    return new (AllocPooled(
+        arena_detail::AllocationSizeFromObjectSize<sizeof(T)>(PoolSizes()),
+        free_list)) T(std::forward<Args>(args)...);
+  }
+
+  template <typename T>
+  void DeletePooled(T* p) {
+    auto* free_list =
+        &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
+    p->~T();
+    FreePooled(p, free_list);
+  }
+
  private:
   struct Zone {
     Zone* prev;

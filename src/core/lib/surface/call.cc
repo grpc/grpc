@@ -1989,9 +1989,9 @@ class PromiseBasedCall : public Call,
     kSendCloseFromClient = kSendStatusFromServer,
   };
 
-  void RunParty(ParticipantFactory* factory) override {
+  void RunParty() override {
     ScopedContext ctx(this);
-    Party::RunParty(factory);
+    Party::RunParty();
   }
 
   const char* PendingOpString(PendingOp reason) const {
@@ -2084,9 +2084,10 @@ class PromiseBasedCall : public Call,
   }
 
   void StartRecvMessage(const grpc_op& op, const Completion& completion,
-                        PipeReceiver<MessageHandle>* receiver);
+                        PipeReceiver<MessageHandle>* receiver,
+                        BatchSpawn& spawner);
   void StartSendMessage(const grpc_op& op, const Completion& completion,
-                        PipeSender<MessageHandle>* sender);
+                        PipeSender<MessageHandle>* sender, BatchSpawn& spawner);
 
   void set_completed() {
     completed_.store(true, std::memory_order_relaxed);
@@ -2206,6 +2207,7 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
+      Party(arena),
       external_refs_(initial_external_refs),
       cq_(args.cq) {
   if (args.cq != nullptr) {
@@ -2359,34 +2361,37 @@ void PromiseBasedCall::Run() {
 
 void PromiseBasedCall::StartSendMessage(const grpc_op& op,
                                         const Completion& completion,
-                                        PipeSender<MessageHandle>* sender) {
+                                        PipeSender<MessageHandle>* sender,
+                                        BatchSpawn& spawner) {
   SliceBuffer send;
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
       send.c_slice_buffer());
-  Spawn("send_message",
-        Race(Map(finished(), [](Empty) { return false; }),
-             sender->Push(GetContext<Arena>()->MakePooled<Message>(
-                 std::move(send), op.flags))),
-        [this, completion = AddOpToCompletion(
-                   completion, PendingOp::kSendMessage)](bool result) mutable {
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_DEBUG, "%sSendMessage completes %s", DebugTag().c_str(),
-                    result ? "successfully" : "with failure");
-          }
-          if (!result) FailCompletion(completion);
-          FinishOpOnCompletion(&completion, PendingOp::kSendMessage);
-        });
+  spawner.Spawn(
+      "send_message",
+      Race(Map(finished(), [](Empty) { return false; }),
+           sender->Push(GetContext<Arena>()->MakePooled<Message>(
+               std::move(send), op.flags))),
+      [this, completion = AddOpToCompletion(
+                 completion, PendingOp::kSendMessage)](bool result) mutable {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_DEBUG, "%sSendMessage completes %s", DebugTag().c_str(),
+                  result ? "successfully" : "with failure");
+        }
+        if (!result) FailCompletion(completion);
+        FinishOpOnCompletion(&completion, PendingOp::kSendMessage);
+      });
 }
 
 void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
                                         const Completion& completion,
-                                        PipeReceiver<MessageHandle>* receiver) {
+                                        PipeReceiver<MessageHandle>* receiver,
+                                        BatchSpawn& spawner) {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] Start RecvMessage: %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
   }
-  Spawn(
+  spawner.Spawn(
       "recv_message", receiver->Next(),
       [this, recv_message = op.data.recv_message.recv_message,
        completion = AddOpToCompletion(completion, PendingOp::kReceiveMessage)](
@@ -2556,13 +2561,15 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                    const Completion& completion);
   // Start the underlying promise.
   void StartPromise(ClientMetadataHandle client_initial_metadata,
-                    const Completion& completion);
+                    const Completion& completion, BatchSpawn& spawn);
   // Start receiving initial metadata
   void StartRecvInitialMetadata(grpc_metadata_array* array,
-                                const Completion& completion);
+                                const Completion& completion,
+                                BatchSpawn& spawner);
   void StartRecvStatusOnClient(
       const Completion& completion,
-      grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args);
+      grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
+      BatchSpawn& spawner);
   // Publish status out to the application.
   void PublishStatus(
       grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
@@ -2581,17 +2588,18 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 };
 
 void ClientPromiseBasedCall::StartPromise(
-    ClientMetadataHandle client_initial_metadata,
-    const Completion& completion) {
+    ClientMetadataHandle client_initial_metadata, const Completion& completion,
+    BatchSpawn& spawner) {
   auto token = ClientInitialMetadataOutstandingToken::New();
-  Spawn("send_initial_metadata", token.Wait(),
-        [this, completion = AddOpToCompletion(completion,
-                                              PendingOp::kSendInitialMetadata)](
-            bool result) mutable {
-          if (!result) FailCompletion(completion);
-          FinishOpOnCompletion(&completion, PendingOp::kSendInitialMetadata);
-        });
-  Spawn(
+  spawner.Spawn(
+      "send_initial_metadata", token.Wait(),
+      [this,
+       completion = AddOpToCompletion(
+           completion, PendingOp::kSendInitialMetadata)](bool result) mutable {
+        if (!result) FailCompletion(completion);
+        FinishOpOnCompletion(&completion, PendingOp::kSendInitialMetadata);
+      });
+  spawner.Spawn(
       "client_promise",
       [this, client_initial_metadata = std::move(client_initial_metadata),
        token = std::move(token)]() mutable {
@@ -2646,6 +2654,7 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
   ScopedContext ctx(this);
+  BatchSpawn spawner(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
@@ -2664,23 +2673,27 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                 (op.flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) != 0,
                 (op.flags &
                  GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) != 0});
-        StartPromise(std::move(send_initial_metadata_), completion);
+        StartPromise(std::move(send_initial_metadata_), completion, spawner);
       } break;
       case GRPC_OP_RECV_INITIAL_METADATA: {
         StartRecvInitialMetadata(
-            op.data.recv_initial_metadata.recv_initial_metadata, completion);
+            op.data.recv_initial_metadata.recv_initial_metadata, completion,
+            spawner);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
-        StartRecvStatusOnClient(completion, op.data.recv_status_on_client);
+        StartRecvStatusOnClient(completion, op.data.recv_status_on_client,
+                                spawner);
       } break;
       case GRPC_OP_SEND_MESSAGE:
-        StartSendMessage(op, completion, &client_to_server_messages_.sender);
+        StartSendMessage(op, completion, &client_to_server_messages_.sender,
+                         spawner);
         break;
       case GRPC_OP_RECV_MESSAGE:
-        StartRecvMessage(op, completion, &server_to_client_messages_.receiver);
+        StartRecvMessage(op, completion, &server_to_client_messages_.receiver,
+                         spawner);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        Spawn(
+        spawner.Spawn(
             "send_close_from_client",
             [this]() {
               client_to_server_messages_.sender.Close();
@@ -2720,28 +2733,30 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 }
 
 void ClientPromiseBasedCall::StartRecvInitialMetadata(
-    grpc_metadata_array* array, const Completion& completion) {
-  Spawn("recv_initial_metadata",
-        Race(Map(finished(),
-                 [](Empty) { return NextResult<ServerMetadataHandle>(true); }),
-             server_initial_metadata_.receiver.Next()),
-        [this, array,
-         completion =
-             AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
-            NextResult<ServerMetadataHandle> next_metadata) mutable {
-          ServerMetadataHandle metadata;
-          if (next_metadata.has_value()) {
-            is_trailers_only_ = false;
-            metadata = std::move(next_metadata.value());
-          } else {
-            is_trailers_only_ = true;
-            metadata =
-                arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
-          }
-          ProcessIncomingInitialMetadata(*metadata);
-          PublishMetadataArray(metadata.get(), array);
-          FinishOpOnCompletion(&completion, PendingOp::kReceiveInitialMetadata);
-        });
+    grpc_metadata_array* array, const Completion& completion,
+    BatchSpawn& spawner) {
+  spawner.Spawn(
+      "recv_initial_metadata",
+      Race(Map(finished(),
+               [](Empty) { return NextResult<ServerMetadataHandle>(true); }),
+           server_initial_metadata_.receiver.Next()),
+      [this, array,
+       completion =
+           AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
+          NextResult<ServerMetadataHandle> next_metadata) mutable {
+        ServerMetadataHandle metadata;
+        if (next_metadata.has_value()) {
+          is_trailers_only_ = false;
+          metadata = std::move(next_metadata.value());
+        } else {
+          is_trailers_only_ = true;
+          metadata =
+              arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
+        }
+        ProcessIncomingInitialMetadata(*metadata);
+        PublishMetadataArray(metadata.get(), array);
+        FinishOpOnCompletion(&completion, PendingOp::kReceiveInitialMetadata);
+      });
 }
 
 void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
@@ -2788,39 +2803,41 @@ std::string MakeErrorString(const ServerMetadata* trailing_metadata) {
 
 void ClientPromiseBasedCall::StartRecvStatusOnClient(
     const Completion& completion,
-    grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args) {
+    grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
+    BatchSpawn& spawner) {
   ForceCompletionSuccess(completion);
-  Spawn("recv_status_on_client", server_trailing_metadata_.Wait(),
-        [this, op_args,
-         completion =
-             AddOpToCompletion(completion, PendingOp::kReceiveStatusOnClient)](
-            ServerMetadataHandle trailing_metadata) mutable {
-          const grpc_status_code status =
-              trailing_metadata->get(GrpcStatusMetadata())
-                  .value_or(GRPC_STATUS_UNKNOWN);
-          *op_args.status = status;
-          absl::string_view message_string;
-          if (Slice* message =
-                  trailing_metadata->get_pointer(GrpcMessageMetadata())) {
-            message_string = message->as_string_view();
-            *op_args.status_details = message->Ref().TakeCSlice();
-          } else {
-            *op_args.status_details = grpc_empty_slice();
-          }
-          if (message_string.empty()) {
-            RunFinalization(status, nullptr);
-          } else {
-            std::string error_string(message_string);
-            RunFinalization(status, error_string.c_str());
-          }
-          if (op_args.error_string != nullptr && status != GRPC_STATUS_OK) {
-            *op_args.error_string =
-                gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
-          }
-          PublishMetadataArray(trailing_metadata.get(),
-                               op_args.trailing_metadata);
-          FinishOpOnCompletion(&completion, PendingOp::kReceiveStatusOnClient);
-        });
+  spawner.Spawn(
+      "recv_status_on_client", server_trailing_metadata_.Wait(),
+      [this, op_args,
+       completion =
+           AddOpToCompletion(completion, PendingOp::kReceiveStatusOnClient)](
+          ServerMetadataHandle trailing_metadata) mutable {
+        const grpc_status_code status =
+            trailing_metadata->get(GrpcStatusMetadata())
+                .value_or(GRPC_STATUS_UNKNOWN);
+        *op_args.status = status;
+        absl::string_view message_string;
+        if (Slice* message =
+                trailing_metadata->get_pointer(GrpcMessageMetadata())) {
+          message_string = message->as_string_view();
+          *op_args.status_details = message->Ref().TakeCSlice();
+        } else {
+          *op_args.status_details = grpc_empty_slice();
+        }
+        if (message_string.empty()) {
+          RunFinalization(status, nullptr);
+        } else {
+          std::string error_string(message_string);
+          RunFinalization(status, error_string.c_str());
+        }
+        if (op_args.error_string != nullptr && status != GRPC_STATUS_OK) {
+          *op_args.error_string =
+              gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
+        }
+        PublishMetadataArray(trailing_metadata.get(),
+                             op_args.trailing_metadata);
+        FinishOpOnCompletion(&completion, PendingOp::kReceiveStatusOnClient);
+      });
 }
 #endif
 
@@ -3031,6 +3048,7 @@ grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
   ScopedContext ctx(this);
+  BatchSpawn spawner(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
@@ -3044,21 +3062,21 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           gpr_log(GPR_INFO, "%s[call] Send initial metadata",
                   DebugTag().c_str());
         }
-        Spawn("sent_initial_metadata",
-              server_initial_metadata_->Push(std::move(metadata)),
-              [this, completion = AddOpToCompletion(
-                         completion, PendingOp::kSendInitialMetadata)](
-                  bool r) mutable {
-                if (!r) FailCompletion(completion);
-                FinishOpOnCompletion(&completion,
-                                     PendingOp::kSendInitialMetadata);
-              });
+        spawner.Spawn("sent_initial_metadata",
+                      server_initial_metadata_->Push(std::move(metadata)),
+                      [this, completion = AddOpToCompletion(
+                                 completion, PendingOp::kSendInitialMetadata)](
+                          bool r) mutable {
+                        if (!r) FailCompletion(completion);
+                        FinishOpOnCompletion(&completion,
+                                             PendingOp::kSendInitialMetadata);
+                      });
       } break;
       case GRPC_OP_SEND_MESSAGE:
-        StartSendMessage(op, completion, server_to_client_messages_);
+        StartSendMessage(op, completion, server_to_client_messages_, spawner);
         break;
       case GRPC_OP_RECV_MESSAGE:
-        StartRecvMessage(op, completion, client_to_server_messages_);
+        StartRecvMessage(op, completion, client_to_server_messages_, spawner);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
         auto metadata =
@@ -3071,7 +3089,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         if (auto* details = op.data.send_status_from_server.status_details) {
           metadata->Set(GrpcMessageMetadata(), Slice(CSliceRef(*details)));
         }
-        Spawn(
+        spawner.Spawn(
             "send_status_from_server",
             [this, metadata = std::move(metadata)]() mutable {
               server_to_client_messages_->Close();

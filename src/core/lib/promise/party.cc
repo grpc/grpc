@@ -116,13 +116,19 @@ Party::Participant::~Participant() {
   }
 }
 
-Party::~Party() { participants_.clear(); }
+Party::~Party() {
+  for (size_t i = 0; i < kMaxParticipants; i++) {
+    if (participants_[i] != nullptr) {
+      participants_[i]->Destroy();
+    }
+  }
+}
 
 void Party::Orphan() {
   auto prev_state =
       state_.fetch_or(kLocked | kOrphaned, std::memory_order_relaxed);
   if ((prev_state & kLocked) == 0) {
-    RunParty(nullptr);
+    RunParty();
   }
   Unref();
 }
@@ -175,30 +181,23 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
   state_.fetch_or(mask & kWakeupMask, std::memory_order_relaxed);
 }
 
-void Party::RunParty(ParticipantFactory* new_participant) {
+void Party::RunParty() {
   ScopedActivity activity(this);
-  if (new_participant != nullptr) {
-    state_.fetch_or(
-        1 << SituateNewParticipant(new_participant->Make(GetContext<Arena>())),
-        std::memory_order_relaxed);
-  }
+  promise_detail::Context<Arena> arena_ctx(arena_);
   uint64_t prev_state;
   do {
     // Grab the current state, and clear the wakeup bits & add flag.
-    prev_state = state_.fetch_and(kRefMask | kLocked | kOrphaned,
-                                  std::memory_order_acquire);
+    prev_state =
+        state_.fetch_and(kRefMask | kLocked | kOrphaned | kAllocatedMask,
+                         std::memory_order_acquire);
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_DEBUG, "%s[party] Run prev_state=%s", DebugTag().c_str(),
               StateToString(prev_state).c_str());
     }
     // From the previous state, extract which participants we're to wakeup.
     uint64_t wakeups = prev_state & kWakeupMask;
-    // If there were adds pending, drain them.
-    // We pass in wakeups here so that the new participants are polled
-    // immediately (draining will situate them).
-    if (prev_state & kAddsPending) DrainAdds(wakeups);
     // Now update prev_state to be what we want the CAS to see below.
-    prev_state &= kRefMask | kLocked | kOrphaned;
+    prev_state &= kRefMask | kLocked | kOrphaned | kAllocatedMask;
     // For each wakeup bit...
     for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
       // If the bit is not set, skip.
@@ -206,7 +205,8 @@ void Party::RunParty(ParticipantFactory* new_participant) {
       // If the participant is null, skip.
       // This allows participants to complete whilst wakers still exist
       // somewhere.
-      if (participants_[i] == nullptr) {
+      auto* participant = participants_[i];
+      if (participant == nullptr) {
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(GPR_DEBUG, "%s[party] wakeup %" PRIdPTR " already complete",
                   DebugTag().c_str(), i);
@@ -215,18 +215,21 @@ void Party::RunParty(ParticipantFactory* new_participant) {
       }
       absl::string_view name;
       if (grpc_trace_promise_primitives.enabled()) {
-        name = participants_[i]->name();
+        name = participant->name();
         gpr_log(GPR_DEBUG, "%s[%s] begin job %" PRIdPTR, DebugTag().c_str(),
                 std::string(name).c_str(), i);
       }
       // Poll the participant.
       currently_polling_ = i;
-      if (participants_[i]->Poll()) {
+      if (participant->Poll()) {
         if (!name.empty()) {
           gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %" PRIdPTR,
                   DebugTag().c_str(), std::string(name).c_str(), i);
         }
-        participants_[i].reset();
+        participants_[i] = nullptr;
+        const uint64_t allocated_bit = (1u << i << kAllocatedShift);
+        prev_state &= ~allocated_bit;
+        state_.fetch_and(~allocated_bit, std::memory_order_release);
       } else if (!name.empty()) {
         gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
                 std::string(name).c_str());
@@ -245,77 +248,56 @@ void Party::RunParty(ParticipantFactory* new_participant) {
     // waker creation case -- I currently expect this will be more expensive
     // than this quick loop.
   } while (!state_.compare_exchange_weak(
-      prev_state, (prev_state & (kRefMask | kOrphaned)),
+      prev_state, (prev_state & (kRefMask | kOrphaned | kAllocatedMask)),
       std::memory_order_acq_rel, std::memory_order_acquire));
 }
 
-void Party::DrainAdds(uint64_t& wakeups) {
-  // Grab the list of adds.
-  AddingParticipant* adding =
-      adding_.exchange(nullptr, std::memory_order_acquire);
-  // For each add, situate it and add it to the wakeup mask.
-  while (adding != nullptr) {
-    wakeups |=
-        1 << SituateNewParticipant(adding->factory->Make(GetContext<Arena>()));
-    // Don't leak the add request.
-    delete adding->factory;
-    delete std::exchange(adding, adding->next);
-  }
-}
+void Party::AddParticipants(absl::Span<Participant*> participants) {
+  uint64_t state = state_.load(std::memory_order_acquire);
+  uint64_t allocated;
 
-void Party::AddParticipant(ParticipantFactory* participant) {
-  // Lock
-  auto prev_state = state_.fetch_or(kLocked, std::memory_order_acquire);
-  if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[party] AddParticipant %s: prev_state=%s",
-            DebugTag().c_str(), std::string(participant->name()).c_str(),
-            StateToString(prev_state).c_str());
-  }
-  if ((prev_state & kLocked) == 0) {
-    // Lock acquired
-    RunParty(participant);
-    return;
-  }
-  // Already locked: add to the list of things to add
-  auto* add = new AddingParticipant{participant->TakeNew(), nullptr};
-  while (!adding_.compare_exchange_weak(
-      add->next, add, std::memory_order_acq_rel, std::memory_order_acquire)) {
-  }
-  // And signal that there are adds waiting.
-  // This needs to happen after the add above: Run() will examine this bit
-  // first, and then decide to drain the queue - so if the ordering was reversed
-  // it might examine the adds pending bit, and then observe no add to drain.
-  prev_state =
-      state_.fetch_or(kLocked | kAddsPending, std::memory_order_release);
-  if ((prev_state & kLocked) == 0) {
-    // We queued the add but the lock was released before we signalled that.
-    // We acquired the lock though, so now we can run.
-    RunParty(nullptr);
-  }
-}
+  uint8_t slots[kMaxParticipants];
 
-size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
-  // First search for a free index in the participants array.
-  // If we find one, use it.
-  for (size_t i = 0; i < participants_.size(); i++) {
-    if (participants_[i] != nullptr) continue;
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s[party] SituateNewParticipant %s in %" PRIdPTR,
-              DebugTag().c_str(), std::string(participant->name()).c_str(), i);
+  // Find slots for each new participant, ordering them from lowest available
+  // slot upwards to ensure the same poll ordering as presentation ordering to
+  // this function.
+  do {
+    allocated = (state & kAllocatedMask) >> kAllocatedShift;
+    size_t i = 0;
+    for (int bit = 0; bit < kMaxParticipants; bit++) {
+      if (allocated & (1 << bit)) continue;
+      slots[i] = bit;
+      allocated |= 1 << bit;
+      ++i;
+      if (i == participants.size()) break;
     }
-    participants_[i] = std::move(participant);
-    return i;
+  } while (!state_.compare_exchange_weak(
+      state, state | (allocated << kAllocatedShift), std::memory_order_acq_rel,
+      std::memory_order_acquire));
+
+  if (grpc_trace_promise_primitives.enabled()) {
+    std::vector<std::string> adding;
+    for (size_t i = 0; i < participants.size(); i++) {
+      adding.emplace_back(absl::StrCat(participants[i]->name(), "@",
+                                       static_cast<int>(slots[i])));
+    }
+    gpr_log(GPR_DEBUG, "%s[party] Welcome {%s}", DebugTag().c_str(),
+            absl::StrJoin(adding, ", ").c_str());
   }
 
-  // Otherwise, add it to the end.
-  GPR_ASSERT(participants_.size() < kMaxParticipants);
-  if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[party] SituateNewParticipant %s in %" PRIdPTR,
-            DebugTag().c_str(), std::string(participant->name()).c_str(),
-            participants_.size());
+  // We've allocated this slots, next we need to populate them.
+  for (size_t i = 0; i < participants.size(); i++) {
+    participants_[slots[i]] = participants[i];
   }
-  participants_.emplace_back(std::move(participant));
-  return participants_.size() - 1;
+
+  // Now we need to wake up the party.
+  state = state_.fetch_or(allocated | kLocked, std::memory_order_release);
+
+  // If the party was already locked, we're done.
+  if ((state & kLocked) != 0) return;
+
+  // Otherwise, we need to run the party.
+  RunParty();
 }
 
 void Party::ScheduleWakeup(WakeupMask mask) {
@@ -332,7 +314,7 @@ void Party::ScheduleWakeup(WakeupMask mask) {
             StateToString(prev_state).c_str());
   }
   // If the lock was not held now we hold it, so we need to run.
-  if ((prev_state & kLocked) == 0) RunParty(nullptr);
+  if ((prev_state & kLocked) == 0) RunParty();
 }
 
 void Party::Wakeup(WakeupMask arg) {
@@ -345,19 +327,29 @@ void Party::Drop(WakeupMask) { Unref(); }
 std::string Party::StateToString(uint64_t state) {
   std::vector<std::string> parts;
   if (state & kLocked) parts.push_back("locked");
-  if (state & kAddsPending) parts.push_back("adds_pending");
   if (state & kOrphaned) parts.push_back("orphaned");
   parts.push_back(
       absl::StrFormat("refs=%" PRIuPTR, (state & kRefMask) >> kRefShift));
+  std::vector<int> allocated;
   std::vector<int> participants;
   for (size_t i = 0; i < kMaxParticipants; i++) {
-    if ((state & (1 << i)) != 0) participants.push_back(i);
+    if ((state & (1ull << i)) != 0) participants.push_back(i);
+    if ((state & (1ull << (i + kAllocatedShift))) != 0) allocated.push_back(i);
+  }
+  if (!allocated.empty()) {
+    parts.push_back(
+        absl::StrFormat("allocated={%s}", absl::StrJoin(allocated, ",")));
   }
   if (!participants.empty()) {
     parts.push_back(
         absl::StrFormat("wakeup={%s}", absl::StrJoin(participants, ",")));
   }
   return absl::StrCat("{", absl::StrJoin(parts, " "), "}");
+}
+
+Party::BatchSpawn::~BatchSpawn() {
+  if (count_ == 0) return;
+  party_->AddParticipants(absl::MakeSpan(participants_, count_));
 }
 
 }  // namespace grpc_core
