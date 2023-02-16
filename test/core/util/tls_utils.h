@@ -147,13 +147,14 @@ class AsyncExternalVerifier {
 // properties exist with the correct values. Note that it will delete itself in
 // Destruct(), so create it like
 // ```
-// auto* verifier_ = new TestExternalVerifier(...);
+// auto* verifier_ = new PeerPropertyExternalVerifier(...);
 // ```
 // and no need to delete it later. This is basically to keep consistent with the
 // semantics in AsyncExternalVerifier.
-class TestExternalVerifier {
+class PeerPropertyExternalVerifier {
  public:
-  explicit TestExternalVerifier(std::string expected_verified_root_cert_subject)
+  explicit PeerPropertyExternalVerifier(
+      std::string expected_verified_root_cert_subject)
       : expected_verified_root_cert_subject_(
             std::move(expected_verified_root_cert_subject)),
         base_{this, Verify, Cancel, Destruct} {}
