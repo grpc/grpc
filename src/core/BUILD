@@ -4992,9 +4992,9 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "env",
+        "gcp_metadata_query",
         "grpc_xds_client",
         "json",
-        "metadata_query",
         "resource_quota",
         "time",
         "//:alts_util",
@@ -5305,7 +5305,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "metadata_query",
+    name = "gcp_metadata_query",
     srcs = [
         "ext/gcp/metadata_query.cc",
     ],

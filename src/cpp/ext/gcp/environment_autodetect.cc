@@ -322,15 +322,16 @@ class EnvironmentAutoDetectHelper
   bool assuming_gce_ ABSL_GUARDED_BY(mu_) = false;
 };
 
+EnvironmentAutoDetect* g_autodetect = nullptr;
+
 }  // namespace
 
-EnvironmentAutoDetect& EnvironmentAutoDetect::Create(std::string project_id) {
-  static EnvironmentAutoDetect auto_detector(project_id);
-  GPR_ASSERT(project_id.empty() || auto_detector.project_id_ == project_id);
-  return auto_detector;
+void EnvironmentAutoDetect::Create(std::string project_id) {
+  GPR_ASSERT(g_autodetect == nullptr && !project_id.empty());
+  g_autodetect = new EnvironmentAutoDetect(project_id);
 }
 
-EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return Create(""); }
+EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return *g_autodetect; }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
     : project_id_(std::move(project_id)),

@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpcpp/ext/gcp_observability.h>  // IWYU pragma: keep
 
 #include "src/core/lib/gprpp/sync.h"
 
@@ -51,7 +50,7 @@ class EnvironmentAutoDetect {
     std::map<std::string, std::string> labels;
   };
 
-  static EnvironmentAutoDetect& Get();
+  EnvironmentAutoDetect& Get();
 
   // Exposed for testing purposes only
   explicit EnvironmentAutoDetect(std::string project_id);
@@ -69,7 +68,7 @@ class EnvironmentAutoDetect {
 
   // GcpObservabilityInit() is responsible for setting up the singleton with the
   // project_id.
-  static EnvironmentAutoDetect& Create(std::string project_id);
+  void Create(std::string project_id);
 
   const std::string project_id_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;

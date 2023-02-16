@@ -56,7 +56,7 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
   void Orphan() override;
 
  private:
-  static void OnDone(void* arg, absl::Status error);
+  static void OnDone(void* arg, grpc_error_handle error);
 
   grpc_closure on_done_;
   std::string attribute_;

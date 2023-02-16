@@ -90,7 +90,7 @@ void MetadataQuery::Orphan() {
   Unref();
 }
 
-void MetadataQuery::OnDone(void* arg, absl::Status error) {
+void MetadataQuery::OnDone(void* arg, grpc_error_handle error) {
   auto* self = static_cast<MetadataQuery*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
     gpr_log(GPR_INFO, "MetadataServer Query for %s: HTTP status: %d, error: %s",
@@ -120,7 +120,7 @@ void MetadataQuery::OnDone(void* arg, absl::Status error) {
       result = std::string(body.substr(pos + 1));
     }
   } else {
-    result = self->response_.body;
+    result = std::string(self->response_.body, self->response_.body_length);
   }
   auto callback = std::move(self->callback_);
   auto attribute = std::move(self->attribute_);

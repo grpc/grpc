@@ -131,7 +131,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "environment_autodetect.h",
-        "//:include/grpcpp/ext/gcp_observability.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -159,9 +158,9 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:gcp_metadata_query",
         "//src/core:iomgr_fwd",
         "//src/core:load_file",
-        "//src/core:metadata_query",
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:time",
