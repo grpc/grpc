@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <initializer_list>
 #include <memory>
 #include <new>
@@ -2897,42 +2898,57 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     // be fulfilled immediately. Returns false if the request will be
     // fulfilled later.
     bool ReceiveCloseOnServerOpStarted(int* receiver) {
-      switch (state_) {
-        case kUnset:
-          state_ = reinterpret_cast<uintptr_t>(receiver);
-          return false;
-        case kFinishedWithFailure:
-          *receiver = 1;
-          return true;
-        case kFinishedWithSuccess:
-          *receiver = 0;
-          return true;
-        default:
-          abort();  // unreachable
-      }
+      uintptr_t state = state_.load(std::memory_order_acquire);
+      uintptr_t new_state;
+      do {
+        switch (state) {
+          case kUnset:
+            new_state = reinterpret_cast<uintptr_t>(receiver);
+            break;
+          case kFinishedWithFailure:
+            *receiver = 1;
+            return true;
+          case kFinishedWithSuccess:
+            *receiver = 0;
+            return true;
+        }
+      } while (!state_.compare_exchange_weak(state, new_state,
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_acquire));
+      return false;
     }
 
     // Mark the call as having completed.
     // Returns true if this finishes a previous
     // RequestReceiveCloseOnServer.
     bool CompleteCallWithCancelledSetTo(bool cancelled) {
-      switch (state_) {
-        case kUnset:
-          state_ = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
-          return false;
-        case kFinishedWithFailure:
-          return false;
-        case kFinishedWithSuccess:
-          abort();  // unreachable
-        default:
-          *reinterpret_cast<int*>(state_) = cancelled ? 1 : 0;
-          state_ = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
-          return true;
-      }
+      uintptr_t state = state_.load(std::memory_order_acquire);
+      uintptr_t new_state;
+      bool r;
+      do {
+        switch (state) {
+          case kUnset:
+            new_state = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
+            r = false;
+            break;
+          case kFinishedWithFailure:
+            return false;
+          case kFinishedWithSuccess:
+            abort();  // unreachable
+          default:
+            new_state = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
+            r = true;
+        }
+      } while (!state_.compare_exchange_weak(state, new_state,
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_acquire));
+      if (r) *reinterpret_cast<int*>(state) = cancelled ? 1 : 0;
+      return r;
     }
 
     std::string ToString() const {
-      switch (state_) {
+      auto state = state_.load(std::memory_order_relaxed);
+      switch (state) {
         case kUnset:
           return "Unset";
         case kFinishedWithFailure:
@@ -2941,7 +2957,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
           return "FinishedWithSuccess";
         default:
           return absl::StrFormat("WaitingForReceiver(%p)",
-                                 reinterpret_cast<void*>(state_));
+                                 reinterpret_cast<void*>(state));
       }
     }
 
@@ -2952,7 +2968,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
     // Holds one of kUnset, kFinishedWithFailure, or
     // kFinishedWithSuccess OR an int* that wants to receive the
     // final status.
-    uintptr_t state_ = kUnset;
+    std::atomic<uintptr_t> state_{kUnset};
   };
 
   grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops) const;
