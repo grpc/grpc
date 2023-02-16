@@ -99,25 +99,6 @@ class Party : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   std::string ActivityDebugTag(WakeupMask arg) const final;
 
-  // Spawn a set of promises into the party.
-  // Per Spawn() function, but guarantees that the poll ordering between the set
-  // will be the same as which they were added.
-  // The batch is not spawned until this type is destructed.
-  class BatchSpawn {
-   public:
-    explicit BatchSpawn(Party* party) : party_(party) {}
-    ~BatchSpawn();
-
-    template <typename Factory, typename OnComplete>
-    void Spawn(absl::string_view name, Factory promise_factory,
-               OnComplete on_complete);
-
-   private:
-    Party* const party_;
-    Participant* participants_[kMaxParticipants];
-    size_t count_ = 0;
-  };
-
  protected:
   explicit Party(Arena* arena) : arena_(arena) {}
   ~Party() override;
@@ -190,7 +171,7 @@ class Party : public Activity, private Wakeable {
   // Organize to wake up some participants.
   void ScheduleWakeup(WakeupMask mask);
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
-  void AddParticipants(absl::Span<Participant*> participants);
+  void AddParticipant(Participant* participant);
 
   // Convert a state into a string.
   static std::string StateToString(uint64_t state);
@@ -251,18 +232,10 @@ class Party : public Activity, private Wakeable {
 };
 
 template <typename Factory, typename OnComplete>
-void Party::BatchSpawn::Spawn(absl::string_view name, Factory promise_factory,
-                              OnComplete on_complete) {
-  participants_[count_++] =
-      party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
-          name, std::move(promise_factory), std::move(on_complete));
-}
-
-template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
-  BatchSpawn(this).Spawn(name, std::move(promise_factory),
-                         std::move(on_complete));
+  AddParticipant(arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
+      name, std::move(promise_factory), std::move(on_complete)));
 }
 
 }  // namespace grpc_core

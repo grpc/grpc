@@ -261,43 +261,36 @@ void Party::RunParty() {
       std::memory_order_acq_rel, std::memory_order_acquire));
 }
 
-void Party::AddParticipants(absl::Span<Participant*> participants) {
+void Party::AddParticipant(Participant* participant) {
   uint64_t state = state_.load(std::memory_order_acquire);
   uint64_t allocated;
 
-  uint8_t slots[kMaxParticipants];
+  int slot;
 
   // Find slots for each new participant, ordering them from lowest available
   // slot upwards to ensure the same poll ordering as presentation ordering to
   // this function.
   do {
+    slot = -1;
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
-    size_t i = 0;
     for (int bit = 0; bit < kMaxParticipants; bit++) {
       if (allocated & (1 << bit)) continue;
-      slots[i] = bit;
+      slot = bit;
       allocated |= 1 << bit;
-      ++i;
-      if (i == participants.size()) break;
+      break;
     }
+    GPR_ASSERT(slot != -1);
   } while (!state_.compare_exchange_weak(
       state, state | (allocated << kAllocatedShift), std::memory_order_acq_rel,
       std::memory_order_acquire));
 
   if (grpc_trace_promise_primitives.enabled()) {
-    std::vector<std::string> adding;
-    for (size_t i = 0; i < participants.size(); i++) {
-      adding.emplace_back(absl::StrCat(participants[i]->name(), "@",
-                                       static_cast<int>(slots[i])));
-    }
-    gpr_log(GPR_DEBUG, "%s[party] Welcome {%s}", DebugTag().c_str(),
-            absl::StrJoin(adding, ", ").c_str());
+    gpr_log(GPR_DEBUG, "%s[party] Welcome %s@%d", DebugTag().c_str(),
+            std::string(participant->name()).c_str(), slot);
   }
 
-  // We've allocated this slots, next we need to populate them.
-  for (size_t i = 0; i < participants.size(); i++) {
-    participants_[slots[i]] = participants[i];
-  }
+  // We've allocated the slot, next we need to populate it.
+  participants_[slot] = participant;
 
   // Now we need to wake up the party.
   state = state_.fetch_or(allocated | kLocked, std::memory_order_release);
@@ -354,11 +347,6 @@ std::string Party::StateToString(uint64_t state) {
         absl::StrFormat("wakeup={%s}", absl::StrJoin(participants, ",")));
   }
   return absl::StrCat("{", absl::StrJoin(parts, " "), "}");
-}
-
-Party::BatchSpawn::~BatchSpawn() {
-  if (count_ == 0) return;
-  party_->AddParticipants(absl::MakeSpan(participants_, count_));
 }
 
 }  // namespace grpc_core
