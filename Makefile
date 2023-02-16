@@ -410,7 +410,7 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 30.0.0
+CORE_VERSION = 30.1.0
 CPP_VERSION = 1.53.0-dev
 CSHARP_VERSION = 2.53.0-dev
 
