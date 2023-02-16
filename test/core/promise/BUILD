@@ -188,6 +188,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:basic_seq",
+        "//src/core:construct_destruct",
         "//src/core:loop",
         "//src/core:seq",
     ],

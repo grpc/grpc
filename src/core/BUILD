@@ -412,7 +412,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:span",
         "absl/types:variant",
     ],
     language = "c++",
