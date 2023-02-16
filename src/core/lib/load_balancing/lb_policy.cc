@@ -69,19 +69,15 @@ LoadBalancingPolicy::SubchannelPicker::SubchannelPicker()
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
     PickArgs /*args*/) {
   // We invoke the parent's ExitIdleLocked() via a closure instead
-  // of doing it directly here, for two reasons:
-  // 1. ExitIdleLocked() may cause the policy's state to change and
-  //    a new picker to be delivered to the channel.  If that new
-  //    picker is delivered before ExitIdleLocked() returns, then by
-  //    the time this function returns, the pick will already have
-  //    been processed, and we'll be trying to re-process the same
-  //    pick again, leading to a crash.
-  // 2. We are currently running in the data plane mutex, but we
-  //    need to bounce into the control plane work_serializer to call
-  //    ExitIdleLocked().
-  if (!exit_idle_called_ && parent_ != nullptr) {
-    exit_idle_called_ = true;
-    auto* parent = parent_->Ref().release();  // ref held by lambda.
+  // of doing it directly here because ExitIdleLocked() may cause the
+  // policy's state to change and a new picker to be delivered to the
+  // channel.  If that new picker is delivered before ExitIdleLocked()
+  // returns, then by the time this function returns, the pick will already
+  // have been processed, and we'll be trying to re-process the same pick
+  // again, leading to a crash.
+  MutexLock lock(&mu_);
+  if (parent_ != nullptr) {
+    auto* parent = parent_.release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
                      [](void* arg, grpc_error_handle /*error*/) {
