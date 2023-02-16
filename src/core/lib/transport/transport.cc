@@ -26,6 +26,7 @@
 #include <new>
 
 #include "absl/status/status.h"
+#include "error_utils.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -271,9 +272,13 @@ namespace grpc_core {
 ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status,
                                               Arena* arena, DebugLocation loc) {
   auto hdl = arena->MakePooled<ServerMetadata>(arena, loc);
-  hdl->Set(GrpcStatusMetadata(), static_cast<grpc_status_code>(status.code()));
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,
+                        nullptr, nullptr);
+  hdl->Set(GrpcStatusMetadata(), code);
   if (!status.ok()) {
-    hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(status.message()));
+    hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
   }
   return hdl;
 }
