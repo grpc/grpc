@@ -169,16 +169,16 @@ inline void SetCertificateVerifier(
       break;
     }
     case SecurityPrimitives::VerifierType::PEER_PROPERTY_VERIFIER: {
-      std::string expeected_root_cert_subject =
+      std::string expected_root_cert_subject =
           "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
       auto* client_test_verifier =
           new grpc_core::testing::PeerPropertyExternalVerifier(
-              expeected_root_cert_subject);
+              expected_root_cert_subject);
       ffd->client_verifier = grpc_tls_certificate_verifier_external_create(
           client_test_verifier->base());
       auto* server_test_verifier =
           new grpc_core::testing::PeerPropertyExternalVerifier(
-              expeected_root_cert_subject);
+              expected_root_cert_subject);
       ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
           server_test_verifier->base());
       break;
