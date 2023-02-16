@@ -661,6 +661,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
                      stream->RecvMessages(call_args.server_to_client_messages)),
              std::move(recv_trailing_metadata)),
       [stream = std::move(stream)](ServerMetadataHandle result) {
+        stream->set_finished();
         return result;
       });
 }
@@ -868,9 +869,11 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   party->Spawn("recv_trailing_metadata", std::move(recv_trailing_metadata),
                [](Empty) {});
 
-  return Map(
-      std::move(run_request_then_send_trailing_metadata),
-      [stream = std::move(stream)](ServerMetadataHandle md) { return md; });
+  return Map(std::move(run_request_then_send_trailing_metadata),
+             [stream = std::move(stream)](ServerMetadataHandle md) {
+               stream->set_finished();
+               return md;
+             });
 }
 #endif
 
