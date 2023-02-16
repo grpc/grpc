@@ -30,6 +30,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/atm.h>
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -168,6 +169,18 @@ class TransportStreamOpBatch {
   census_context* get_census_context() const {
     return static_cast<census_context*>(
         op_->payload->context[GRPC_CONTEXT_TRACING].value);
+  }
+
+  const gpr_atm* get_peer_string() const {
+    if (op_->send_initial_metadata &&
+        op_->payload->send_initial_metadata.peer_string != nullptr) {
+      return op_->payload->send_initial_metadata.peer_string;
+    } else if (op_->recv_initial_metadata &&
+               op_->payload->recv_initial_metadata.peer_string != nullptr) {
+      return op_->payload->recv_initial_metadata.peer_string;
+    } else {
+      return nullptr;
+    }
   }
 
  private:
