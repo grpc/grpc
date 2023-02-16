@@ -21,8 +21,6 @@
 #include <algorithm>
 #include <atomic>
 #include <initializer_list>
-#include <memory>
-#include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"

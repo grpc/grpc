@@ -32,7 +32,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/variant.h"
-#include "promise_based_filter.h"
 
 #include <grpc/status.h>
 

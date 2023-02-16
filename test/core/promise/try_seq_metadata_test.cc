@@ -20,6 +20,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/status.h>
 
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
