@@ -2018,10 +2018,8 @@ grpc_cc_library(
         "error",
         "event_engine_executor",
         "event_engine_poller",
-        "event_engine_tcp_socket_utils",
         "event_engine_time_util",
         "event_engine_trace",
-        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
@@ -2496,6 +2494,7 @@ grpc_cc_library(
     srcs = ["lib/load_balancing/lb_policy.cc"],
     hdrs = ["lib/load_balancing/lb_policy.h"],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2515,6 +2514,7 @@ grpc_cc_library(
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc_trace",
         "//:orphanable",
@@ -3702,6 +3702,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "random_early_detection",
+    srcs = [
+        "lib/backoff/random_early_detection.cc",
+    ],
+    hdrs = [
+        "lib/backoff/random_early_detection.h",
+    ],
+    external_deps = ["absl/random"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_backend_metric_data",
     hdrs = [
         "ext/filters/client_channel/lb_policy/backend_metric_data.h",
@@ -3838,6 +3850,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:bind_front",
         "absl/memory",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4410,6 +4423,7 @@ grpc_cc_library(
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "ref_counted",
         "subchannel_interface",
         "unique_type_name",
         "validation_errors",
@@ -4434,6 +4448,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4620,6 +4635,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/random",
         "absl/status",
         "absl/status:statusor",

@@ -181,7 +181,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "glockenspiel"  # @unused
 
-core_version = "30.0.0"  # @unused
+core_version = "30.1.0"  # @unused
 
 version = "1.53.0-dev"  # @unused
 
@@ -2785,6 +2785,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
+        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
