@@ -114,24 +114,26 @@ Party::Participant::~Participant() {
   }
 }
 
-Party::~Party() {
-  for (size_t i = 0; i < kMaxParticipants; i++) {
-    if (participants_[i] != nullptr) {
-      participants_[i]->Destroy();
-    }
-  }
-}
+Party::~Party() {}
 
 void Party::Orphan() {
   auto prev_state =
-      state_.fetch_or(kLocked | kOrphaned, std::memory_order_relaxed);
+      state_.fetch_or(kLocked | kOrphaning, std::memory_order_relaxed);
+  GPR_ASSERT((prev_state & kOrphaning) == 0);
+  GPR_ASSERT((prev_state & kRefMask) >= kOneRef);
   if ((prev_state & kLocked) == 0) {
     RunParty();
   }
-  Unref();
 }
 
-void Party::Ref() { state_.fetch_add(kOneRef, std::memory_order_relaxed); }
+void Party::Ref(DebugLocation whence) {
+  auto prev_state = state_.fetch_add(kOneRef, std::memory_order_relaxed);
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[party] Ref: prev_state=%s from %s:%d",
+            DebugTag().c_str(), StateToString(prev_state).c_str(),
+            whence.file(), whence.line());
+  }
+}
 
 bool Party::RefIfNonZero() {
   auto count = state_.load(std::memory_order_relaxed);
@@ -148,12 +150,18 @@ bool Party::RefIfNonZero() {
   return true;
 }
 
-void Party::Unref() {
-  auto prev = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
-  if (prev == kOneRef) {
-    delete this;
+void Party::Unref(DebugLocation whence) {
+  auto prev_state = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[party] Unref: prev_state=%s from %s:%d",
+            DebugTag().c_str(), StateToString(prev_state).c_str(),
+            whence.file(), whence.line());
   }
-  GPR_DEBUG_ASSERT((prev & kRefMask) != 0);
+  if (prev_state == kOneRef) {
+    PartyOver();
+    return;
+  }
+  GPR_DEBUG_ASSERT(((prev_state - kOneRef) & kRefMask) != 0);
 }
 
 std::string Party::ActivityDebugTag(WakeupMask arg) const {
@@ -190,23 +198,39 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
   }
 }
 
+void Party::CompleteOrphaning() {
+  auto prev_state = state_.fetch_and(kRefMask);
+  GPR_ASSERT(prev_state & kLocked);
+  GPR_ASSERT((prev_state & kOrphaning) == 0);
+  for (size_t i = 0; i < kMaxParticipants; i++) {
+    if (auto* p = std::exchange(participants_[i], nullptr)) {
+      p->Destroy();
+    }
+  }
+  Unref();
+}
+
 void Party::RunParty() {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_);
   uint64_t prev_state;
   do {
     // Grab the current state, and clear the wakeup bits & add flag.
-    prev_state =
-        state_.fetch_and(kRefMask | kLocked | kOrphaned | kAllocatedMask,
-                         std::memory_order_acquire);
+    prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
+                                  std::memory_order_acquire);
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_DEBUG, "%s[party] Run prev_state=%s", DebugTag().c_str(),
               StateToString(prev_state).c_str());
     }
+    GPR_ASSERT(prev_state & kLocked);
+    if (state_ & kOrphaning) {
+      CompleteOrphaning();
+      return;
+    }
     // From the previous state, extract which participants we're to wakeup.
     uint64_t wakeups = prev_state & kWakeupMask;
     // Now update prev_state to be what we want the CAS to see below.
-    prev_state &= kRefMask | kLocked | kOrphaned | kAllocatedMask;
+    prev_state &= kRefMask | kLocked | kAllocatedMask;
     // For each wakeup bit...
     for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
       // If the bit is not set, skip.
@@ -257,7 +281,7 @@ void Party::RunParty() {
     // waker creation case -- I currently expect this will be more expensive
     // than this quick loop.
   } while (!state_.compare_exchange_weak(
-      prev_state, (prev_state & (kRefMask | kOrphaned | kAllocatedMask)),
+      prev_state, (prev_state & (kRefMask | kAllocatedMask)),
       std::memory_order_acq_rel, std::memory_order_acquire));
 }
 
@@ -329,7 +353,7 @@ void Party::Drop(WakeupMask) { Unref(); }
 std::string Party::StateToString(uint64_t state) {
   std::vector<std::string> parts;
   if (state & kLocked) parts.push_back("locked");
-  if (state & kOrphaned) parts.push_back("orphaned");
+  if (state & kOrphaning) parts.push_back("orphaning");
   parts.push_back(
       absl::StrFormat("refs=%" PRIuPTR, (state & kRefMask) >> kRefShift));
   std::vector<int> allocated;

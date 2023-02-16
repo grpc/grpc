@@ -271,8 +271,8 @@ grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
 namespace grpc_core {
 
 ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status,
-                                              Arena* arena, DebugLocation loc) {
-  auto hdl = arena->MakePooled<ServerMetadata>(arena, loc);
+                                              Arena* arena) {
+  auto hdl = arena->MakePooled<ServerMetadata>(arena);
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,

@@ -2177,11 +2177,7 @@ class PromiseBasedCall : public Call,
     grpc_cq_completion completion;
   };
 
-  static void OnDestroy(void* arg, grpc_error_handle) {
-    auto* call = static_cast<PromiseBasedCall*>(arg);
-    ScopedContext context(call);
-    call->DeleteThis();
-  }
+  void PartyOver() override { DeleteThis(); }
 
   CallContext call_context_{this};
   RefCount external_refs_;
@@ -2345,6 +2341,11 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
 }
 
 void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[call] UpdateDeadline from=%s to=%s",
+            DebugTag().c_str(), deadline_.ToString().c_str(),
+            deadline.ToString().c_str());
+  }
   if (deadline >= deadline_) return;
   auto* const event_engine = channel()->event_engine();
   if (deadline_ != Timestamp::InfFuture()) {
@@ -2352,7 +2353,8 @@ void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
   } else {
     InternalRef("deadline");
   }
-  event_engine->RunAfter(deadline - Timestamp::Now(), this);
+  deadline_ = deadline;
+  deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
 }
 
 void PromiseBasedCall::ResetDeadline() {
@@ -2755,8 +2757,7 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
             metadata = std::move(next_metadata.value());
           } else {
             is_trailers_only_ = true;
-            metadata =
-                arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
+            metadata = arena()->MakePooled<ServerMetadata>(arena());
           }
           ProcessIncomingInitialMetadata(*metadata);
           PublishMetadataArray(metadata.get(), array);
@@ -3010,6 +3011,7 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
     }
   }
   set_completed();
+  ResetDeadline();
   PropagateCancellationToChildren();
 }
 
@@ -3056,8 +3058,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        auto metadata =
-            arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
+        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
@@ -3089,8 +3090,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         StartRecvMessage(op, completion, client_to_server_messages_);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
-        auto metadata =
-            arena()->MakePooled<ServerMetadata>(arena(), DEBUG_LOCATION);
+        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
         CToMetadata(op.data.send_status_from_server.trailing_metadata,
                     op.data.send_status_from_server.trailing_metadata_count,
                     metadata.get());

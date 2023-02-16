@@ -576,8 +576,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
              }),
       [](absl::Status) {});
   auto server_initial_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>(),
-                                                      DEBUG_LOCATION);
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
   party->Spawn(
       "recv_initial_metadata",
       TrySeq(stream->PushBatchToTransport(
@@ -625,8 +624,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
         return status;
       });
   auto server_trailing_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>(),
-                                                      DEBUG_LOCATION);
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
   auto recv_trailing_metadata = Map(
       stream->PushBatchToTransport(
           "recv_trailing_metadata",
