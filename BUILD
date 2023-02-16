@@ -181,7 +181,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "glockenspiel"  # @unused
 
-core_version = "30.0.0"  # @unused
+core_version = "30.1.0"  # @unused
 
 version = "1.53.0-dev"  # @unused
 
@@ -858,6 +858,22 @@ grpc_cc_library(
     deps = [
         "gpr_public_hdrs",
         "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_cronet_credentials",
+    srcs = [
+        "src/cpp/client/cronet_credentials.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/security/cronet_credentials.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++_base",
+        "grpc_cronet_hdrs",
+        "grpc_public_hdrs",
     ],
 )
 
@@ -2164,7 +2180,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
-        "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
@@ -2175,7 +2190,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
-        "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
         "src/cpp/ext/filters/census/grpc_plugin.h",
@@ -2214,11 +2228,14 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "//src/core:arena",
+        "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_stack_type",
-        "//src/core:closure",
         "//src/core:context",
         "//src/core:experiments",
+        "//src/core:map",
+        "//src/core:pipe",
+        "//src/core:poll",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -3141,6 +3158,7 @@ grpc_cc_library(
         "alts_util",
         "gpr",
         "grpc_base",
+        "grpc_security_base",
         "tsi_alts_frame_protector",
         "tsi_base",
         "//src/core:channel_args",
@@ -3544,7 +3562,6 @@ grpc_cc_library(
         "stats",
         "//src/core:decode_huff",
         "//src/core:error",
-        "//src/core:experiments",
         "//src/core:hpack_constants",
         "//src/core:slice",
         "//src/core:slice_refcount",

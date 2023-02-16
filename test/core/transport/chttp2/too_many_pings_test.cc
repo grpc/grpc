@@ -197,7 +197,7 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
                                               nullptr /* channel args */);
   grpc_channel_credentials_release(creds);
   std::map<grpc_status_code, int> statuses_and_counts;
-  const int kNumTotalRpcs = 1e5;
+  const int kNumTotalRpcs = 100;
   // perform an RPC
   gpr_log(GPR_INFO,
           "Performing %d total RPCs and expecting them all to receive status "

@@ -26,7 +26,6 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -353,7 +352,7 @@ class Center : public InterceptorList<T> {
 
   // Make failure to destruct show up in ASAN builds.
 #ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
 #endif
 };
 
@@ -406,7 +405,7 @@ class PipeSender {
 
   // Make failure to destruct show up in ASAN builds.
 #ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
 #endif
 };
 
@@ -449,7 +448,7 @@ class PipeReceiver {
 
   // Make failure to destruct show up in ASAN builds.
 #ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = absl::make_unique<int>(0);
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
 #endif
 };
 

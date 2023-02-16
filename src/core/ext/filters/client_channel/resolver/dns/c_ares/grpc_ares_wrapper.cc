@@ -456,8 +456,6 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
           grpc_ares_ev_driver_ref(ev_driver);
           GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable, fdn,
                             grpc_schedule_on_exec_ctx);
-          GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable, fdn,
-                            grpc_schedule_on_exec_ctx);
           fdn->grpc_polled_fd->RegisterForOnWriteableLocked(
               &fdn->write_closure);
           fdn->writable_registered = true;

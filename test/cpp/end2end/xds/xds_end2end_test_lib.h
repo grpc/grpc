@@ -1046,6 +1046,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     return num_rpcs;
   }
 
+  // Returns a regex that can be matched against an RPC failure status
+  // message for a connection failure.
+  static std::string MakeConnectionFailureRegex(absl::string_view prefix);
+
   // Returns the contents of the specified file.
   static std::string ReadFile(const char* file_path);
 

@@ -252,7 +252,8 @@ def extension_modules():
 
     plugin_sources += [
         os.path.join('grpc_tools', 'main.cc'),
-        os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')
+        os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc'),
+        os.path.join('grpc_root', 'src', 'compiler', 'proto_parser_helper.cc')
     ] + [os.path.join(CC_INCLUDE, cc_file) for cc_file in CC_FILES]
 
     plugin_ext = extension.Extension(

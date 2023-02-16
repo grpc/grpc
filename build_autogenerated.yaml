@@ -4100,6 +4100,7 @@ libs:
   - src/compiler/objective_c_generator_helpers.h
   - src/compiler/php_generator.h
   - src/compiler/php_generator_helpers.h
+  - src/compiler/proto_parser_helper.h
   - src/compiler/protobuf_plugin.h
   - src/compiler/python_generator.h
   - src/compiler/python_generator_helpers.h
@@ -4115,6 +4116,7 @@ libs:
   - src/compiler/node_generator.cc
   - src/compiler/objective_c_generator.cc
   - src/compiler/php_generator.cc
+  - src/compiler/proto_parser_helper.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps: []
@@ -6841,7 +6843,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -9540,7 +9541,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: mpscq_test
@@ -9795,6 +9795,18 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: party_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/party.h
+  src:
+  - src/core/lib/promise/party.cc
+  - test/core/promise/party_test.cc
+  deps:
+  - grpc_unsecure
   uses_polling: false
 - name: percent_encoding_test
   gtest: true
@@ -10189,6 +10201,18 @@ targets:
   - test/core/promise/race_test.cc
   deps:
   - absl/types:variant
+  uses_polling: false
+- name: random_early_detection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/backoff/random_early_detection.h
+  src:
+  - src/core/lib/backoff/random_early_detection.cc
+  - test/core/backoff/random_early_detection_test.cc
+  deps:
+  - absl/random:random
   uses_polling: false
 - name: raw_end2end_test
   gtest: true
