@@ -267,7 +267,7 @@ class ConnectedChannelStream : public Orphanable {
         [](void* p, grpc_error_handle) {
           static_cast<ConnectedChannelStream*>(p)->BeginDestroy();
         },
-        this, "client_stream");
+        this, "ConnectedChannelStream");
   }
 
   grpc_transport* transport() { return transport_; }
@@ -292,7 +292,7 @@ class ConnectedChannelStream : public Orphanable {
   }
 
   RefCountedPtr<ConnectedChannelStream> InternalRef() {
-    IncrementRefCount("internal_ref");
+    IncrementRefCount("smartptr");
     return RefCountedPtr<ConnectedChannelStream>(this);
   }
 
@@ -328,7 +328,17 @@ class ConnectedChannelStream : public Orphanable {
   grpc_stream* stream() { return stream_.get(); }
   grpc_stream_refcount* stream_refcount() { return &stream_refcount_; }
 
-  void set_finished() { finished_.store(true, std::memory_order_relaxed); }
+  void set_finished() {
+    finished_.store(true, std::memory_order_relaxed);
+    wait_finished_.Wake();
+  }
+
+  auto WaitFinished() {
+    return [this]() -> Poll<Empty> {
+      if (finished_.load(std::memory_order_relaxed)) return Empty{};
+      return wait_finished_.pending();
+    };
+  }
 
  private:
   template <typename R>
@@ -405,6 +415,7 @@ class ConnectedChannelStream : public Orphanable {
   Arena* arena_ = GetContext<Arena>();
   Party* const party_ = static_cast<Party*>(Activity::current());
   std::atomic<bool> finished_{false};
+  IntraActivityWaiter wait_finished_;
 
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
@@ -844,7 +855,9 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       });
 
   auto send_initial_metadata = Seq(
-      call_data->server_initial_metadata.receiver.Next(),
+      Race(Map(stream->WaitFinished(),
+               [](Empty) { return NextResult<ServerMetadataHandle>(true); }),
+           call_data->server_initial_metadata.receiver.Next()),
       [call_data, stream = stream->InternalRef()](
           NextResult<ServerMetadataHandle> next_result) mutable {
         auto* md = !call_data->sent_initial_metadata && next_result.has_value()

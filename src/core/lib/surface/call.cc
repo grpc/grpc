@@ -2232,7 +2232,8 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
       Party(arena),
-      external_refs_(initial_external_refs),
+      external_refs_(initial_external_refs,
+                     grpc_call_refcount_trace.enabled() ? "call" : nullptr),
       cq_(args.cq) {
   if (args.cq != nullptr) {
     GPR_ASSERT(args.pollset_set_alternative == nullptr &&
@@ -3033,6 +3034,9 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
     FinishOpOnCompletion(&recv_close_completion_,
                          PendingOp::kReceiveCloseOnServer);
   }
+  if (server_initial_metadata_ != nullptr) {
+    server_initial_metadata_->Close();
+  }
   channelz::ServerNode* channelz_node = server_->channelz_node();
   if (channelz_node != nullptr) {
     if (result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
@@ -3136,6 +3140,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             [this, metadata = std::move(metadata)]() mutable {
               send_trailing_metadata_.Set(std::move(metadata));
               return Map(WaitForSendingDone(), [this](Empty) {
+                server_initial_metadata_->Close();
                 server_to_client_messages_->Close();
                 return Empty{};
               });
@@ -3197,6 +3202,9 @@ void ServerPromiseBasedCall::CancelWithError(absl::Status error) {
         }
         if (server_to_client_messages_ != nullptr) {
           server_to_client_messages_->Close();
+        }
+        if (server_initial_metadata_ != nullptr) {
+          server_initial_metadata_->Close();
         }
         return Empty{};
       },

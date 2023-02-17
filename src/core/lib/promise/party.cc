@@ -117,7 +117,12 @@ Party::Participant::~Participant() {
 
 Party::~Party() {}
 
-void Party::Orphan() { Unref(); }
+void Party::Orphan() {
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[party] Orphan", DebugTag().c_str());
+  }
+  Unref();
+}
 
 void Party::Ref(DebugLocation whence) {
   auto prev_state = state_.fetch_add(kOneRef, std::memory_order_relaxed);
