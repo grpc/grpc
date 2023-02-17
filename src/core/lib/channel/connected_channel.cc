@@ -333,22 +333,19 @@ class ConnectedChannelStream : public Orphanable {
  private:
   template <typename R>
   struct Batch;
-  struct BatchDeleter {
-    template <typename R>
-    void operator()(Batch<R>* batch);
-  };
   template <typename R>
   struct Batch final {
-    struct Done {
-      std::unique_ptr<Batch, BatchDeleter> batch;
-      absl::Status status;
-    };
     grpc_transport_stream_op_batch batch;
     grpc_closure on_done_closure;
     ConnectedChannelStream* stream;
-    Latch<Done> done;
+    Latch<absl::Status> done;
     absl::string_view name;
     R result_if_ok;
+    uint8_t refs = 2;
+    void IncrementRefCount() { ++refs; }
+    void Unref() {
+      if (--refs == 0) stream->arena_->DeletePooled(this);
+    }
   };
 
   struct PendingReceiveMessage final {
@@ -413,11 +410,6 @@ class ConnectedChannelStream : public Orphanable {
       GetContext<grpc_call_context_element>()};
 };
 
-template <typename R>
-void ConnectedChannelStream::BatchDeleter::operator()(Batch<R>* batch) {
-  batch->stream->arena_->DeletePooled(batch);
-}
-
 template <typename F>
 auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
                                                   F configurator) {
@@ -428,10 +420,12 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
   batch->stream = this;
   batch->name = name;
   batch->batch.payload = &batch_payload_;
+  batch->refs = 2;
+  RefCountedPtr<Batch<R>> batch_reffed_by_promise(batch);
   GRPC_CLOSURE_INIT(
       &batch->on_done_closure,
       [](void* arg, grpc_error_handle status) {
-        auto* batch = static_cast<Batch<R>*>(arg);
+        RefCountedPtr<Batch<R>> batch(static_cast<Batch<R>*>(arg));
         auto name = batch->name;
         auto* stream = batch->stream;
         auto* party = stream->party_;
@@ -443,10 +437,8 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
         }
         party->Spawn(
             name,
-            [batch, status = std::move(status)]() mutable {
-              batch->done.Set(typename Batch<R>::Done{
-                  std::unique_ptr<Batch<R>, BatchDeleter>(batch),
-                  std::move(status)});
+            [batch = std::move(batch), status = std::move(status)]() mutable {
+              batch->done.Set(std::move(status));
               return Empty{};
             },
             [stream](Empty) { stream->Unref("push batch"); });
@@ -463,11 +455,12 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
   IncrementRefCount("push batch");
   grpc_transport_perform_stream_op(transport_, stream_.get(), &batch->batch);
   return Map(batch->done.Wait(),
-             [](typename Batch<R>::Done d) -> absl::StatusOr<R> {
-               if (d.status.ok()) {
-                 return absl::StatusOr<R>(std::move(d.batch->result_if_ok));
+             [batch = std::move(batch_reffed_by_promise)](
+                 absl::Status status) -> absl::StatusOr<R> {
+               if (status.ok()) {
+                 return absl::StatusOr<R>(std::move(batch->result_if_ok));
                }
-               return std::move(d.status);
+               return std::move(status);
              });
 }
 
