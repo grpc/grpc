@@ -333,13 +333,13 @@ class ConnectedChannelStream : public Orphanable {
  private:
   struct Batch {
     struct Done {
-      Arena::PoolPtr<Batch> batch;
+      std::unique_ptr<Batch> batch;
       absl::Status status;
     };
     grpc_transport_stream_op_batch batch;
     grpc_closure on_done_closure;
     ConnectedChannelStream* stream;
-    Arena::PoolPtr<Batch> self;
+    std::unique_ptr<Batch> self;
     Latch<Done> done;
     absl::string_view name;
   };
@@ -390,7 +390,8 @@ class ConnectedChannelStream : public Orphanable {
   }
 
   Batch* MakeBatch(absl::string_view name) {
-    auto batch = GetContext<Arena>()->MakePooled<Batch>();
+    auto batch =
+        std::make_unique<Batch>();  // GetContext<Arena>()->MakePooled<Batch>();
     memset(&batch->batch, 0, sizeof(batch->batch));
     batch->stream = this;
     batch->name = name;
