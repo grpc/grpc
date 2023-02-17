@@ -25,7 +25,6 @@
 
 #include <grpc/event_engine/memory_allocator.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/arena.h"

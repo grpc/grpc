@@ -32,7 +32,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
