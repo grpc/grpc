@@ -4995,22 +4995,18 @@ grpc_cc_library(
         "ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     external_deps = [
-        "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
     deps = [
         "channel_args",
-        "closure",
         "env",
-        "error",
+        "gcp_metadata_query",
         "grpc_xds_client",
         "json",
         "resource_quota",
-        "status_helper",
         "time",
         "//:alts_util",
         "//:config",
@@ -5018,8 +5014,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_resolver",
-        "//:grpc_security_base",
-        "//:httpcli",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri_parser",
@@ -5318,6 +5312,38 @@ grpc_cc_library(
     deps = [
         "bitset",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "gcp_metadata_query",
+    srcs = [
+        "ext/gcp/metadata_query.cc",
+    ],
+    hdrs = [
+        "ext/gcp/metadata_query.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "closure",
+        "error",
+        "status_helper",
+        "time",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:httpcli",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:uri_parser",
     ],
 )
 
