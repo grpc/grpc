@@ -235,6 +235,10 @@ class Arena {
     }
   }
 
+  // Like MakePooled, but with manual memory management.
+  // The caller is responsible for calling DeletePooled() on the returned
+  // pointer, and expected to call it with the same type T as was passed to this
+  // function (else the free list returned to the arena will be corrupted).
   template <typename T, typename... Args>
   T* NewPooled(Args&&... args) {
     auto* free_list =

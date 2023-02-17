@@ -389,7 +389,7 @@ class ClientChannel {
 // TODO(roth): As part of simplifying cancellation in the filter stack,
 // this should no longer need to be ref-counted.
 class ClientChannel::LoadBalancedCall
-    : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
+    : public InternallyRefCounted<LoadBalancedCall, UnrefCallDtor> {
  public:
   class LbCallState : public LbCallStateInternal {
    public:
