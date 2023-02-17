@@ -608,23 +608,24 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
                           });
              }),
       [](absl::Status) {});
-  auto* client_initial_metadata = call_args.client_initial_metadata.get();
+  auto client_initial_metadata = std::move(call_args.client_initial_metadata);
   auto send_initial_metadata =
       Seq(stream->PushBatchToTransport(
               "send_initial_metadata_batch",
-              [client_initial_metadata](grpc_transport_stream_op_batch* batch,
-                                        grpc_closure* on_done) {
+              [client_initial_metadata = std::move(client_initial_metadata)](
+                  grpc_transport_stream_op_batch* batch,
+                  grpc_closure* on_done) mutable {
                 batch->send_initial_metadata = true;
                 batch->payload->send_initial_metadata.send_initial_metadata =
-                    client_initial_metadata;
+                    client_initial_metadata.get();
                 batch->payload->send_initial_metadata.peer_string =
                     GetContext<CallContext>()->peer_string_atm_ptr();
                 batch->on_complete = on_done;
-                return client_initial_metadata;
+                return std::move(client_initial_metadata);
               }),
           [sent_initial_metadata_token =
                std::move(call_args.client_initial_metadata_outstanding)](
-              absl::StatusOr<ClientMetadata*> status) mutable {
+              absl::StatusOr<ClientMetadataHandle> status) mutable {
             sent_initial_metadata_token.Complete(status.ok());
             return status;
           });
