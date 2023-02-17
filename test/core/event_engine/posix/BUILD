@@ -249,11 +249,11 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     tags = [
         "no_windows",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//src/core:posix_event_engine",
