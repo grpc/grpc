@@ -315,6 +315,7 @@ grpc_cc_test(
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
+        "notsan",
     ],
     deps = [":fullstack_unary_ping_pong_h"],
 )
