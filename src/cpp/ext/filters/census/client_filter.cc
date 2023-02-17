@@ -27,9 +27,11 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -53,7 +55,10 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -63,6 +68,7 @@
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "src/cpp/ext/filters/census/promise_notification.h"
 
 namespace grpc {
 namespace internal {
@@ -97,18 +103,33 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 OpenCensusClientFilter::MakeCallPromise(
     grpc_core::CallArgs call_args,
     grpc_core::NextPromiseFactory next_promise_factory) {
-  auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-  auto* path = call_args.client_initial_metadata->get_pointer(
-      grpc_core::HttpPathMetadata());
-  auto* tracer =
-      grpc_core::GetContext<grpc_core::Arena>()
-          ->ManagedNew<OpenCensusCallTracer>(
-              call_context, path != nullptr ? path->Ref() : grpc_core::Slice(),
-              grpc_core::GetContext<grpc_core::Arena>(), tracing_enabled_);
-  GPR_DEBUG_ASSERT(call_context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
-  call_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
-  call_context[GRPC_CONTEXT_CALL_TRACER].destroy = nullptr;
-  return next_promise_factory(std::move(call_args));
+  auto continue_making_call_promise = [this,
+                                       next_promise_factory =
+                                           std::move(next_promise_factory),
+                                       call_args =
+                                           std::move(call_args)]() mutable {
+    auto* path = call_args.client_initial_metadata->get_pointer(
+        grpc_core::HttpPathMetadata());
+    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
+    auto* tracer =
+        grpc_core::GetContext<grpc_core::Arena>()
+            ->ManagedNew<OpenCensusCallTracer>(
+                call_context,
+                path != nullptr ? path->Ref() : grpc_core::Slice(),
+                grpc_core::GetContext<grpc_core::Arena>(), tracing_enabled_);
+    GPR_DEBUG_ASSERT(call_context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
+    call_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
+    call_context[GRPC_CONTEXT_CALL_TRACER].destroy = nullptr;
+    return next_promise_factory(std::move(call_args));
+  };
+  if (!grpc::internal::OpenCensusRegistry::Get().Ready()) {
+    auto notification = std::make_shared<PromiseNotification>();
+    grpc::internal::OpenCensusRegistry::Get().NotifyOnReady(
+        [notification]() { notification->Notify(); });
+    return grpc_core::Seq([notification]() { return notification->Wait(); },
+                          std::move(continue_making_call_promise));
+  }
+  return continue_making_call_promise();
 }
 
 //
@@ -275,10 +296,13 @@ OpenCensusCallTracer::OpenCensusCallTracer(
       method_(GetMethod(path_)),
       arena_(arena),
       tracing_enabled_(tracing_enabled) {
-  auto* parent_context = reinterpret_cast<CensusContext*>(
-      call_context_[GRPC_CONTEXT_TRACING].value);
-  GenerateClientContext(absl::StrCat("Sent.", method_), &context_,
-                        (parent_context == nullptr) ? nullptr : parent_context);
+  if (OpenCensusTracingEnabled() && tracing_enabled_) {
+    auto* parent_context = reinterpret_cast<CensusContext*>(
+        call_context_[GRPC_CONTEXT_TRACING].value);
+    GenerateClientContext(
+        absl::StrCat("Sent.", method_), &context_,
+        (parent_context == nullptr) ? nullptr : parent_context);
+  }
 }
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
