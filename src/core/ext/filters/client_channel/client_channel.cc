@@ -25,6 +25,7 @@
 #include <functional>
 #include <new>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -69,6 +70,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
