@@ -1899,8 +1899,18 @@ class PromiseBasedCall : public Call,
       Orphan();
     }
   }
-  void InternalRef(const char* reason) final { Party::Ref(); }
-  void InternalUnref(const char* reason) final { Party::Unref(); }
+  void InternalRef(const char* reason) final {
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "INTERNAL_REF:%p:%s", this, reason);
+    }
+    Party::Ref();
+  }
+  void InternalUnref(const char* reason) final {
+    if (grpc_call_refcount_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "INTERNAL_UNREF:%p:%s", this, reason);
+    }
+    Party::Unref();
+  }
 
   void RunInContext(absl::AnyInvocable<void()> fn) {
     Spawn(
@@ -1990,9 +2000,9 @@ class PromiseBasedCall : public Call,
     kSendCloseFromClient = kSendStatusFromServer,
   };
 
-  void RunParty() override {
+  bool RunParty() override {
     ScopedContext ctx(this);
-    Party::RunParty();
+    return Party::RunParty();
   }
 
   const char* PendingOpString(PendingOp reason) const {
@@ -2179,7 +2189,13 @@ class PromiseBasedCall : public Call,
     grpc_cq_completion completion;
   };
 
-  void PartyOver() override { DeleteThis(); }
+  void PartyOver() override {
+    {
+      ScopedContext ctx(this);
+      CancelRemainingParticipants();
+    }
+    DeleteThis();
+  }
 
   CallContext call_context_{this};
   RefCount external_refs_;

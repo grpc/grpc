@@ -262,7 +262,6 @@ class ConnectedChannelStream : public Orphanable {
  public:
   explicit ConnectedChannelStream(grpc_transport* transport)
       : transport_(transport), stream_(nullptr, StreamDeleter(this)) {
-    call_context_->IncrementRefCount("connected_channel_stream");
     GRPC_STREAM_REF_INIT(
         &stream_refcount_, 1,
         [](void* p, grpc_error_handle) {
@@ -379,11 +378,7 @@ class ConnectedChannelStream : public Orphanable {
   using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
 
   void StreamDestroyed() {
-    call_context_->RunInContext([this] {
-      auto* cc = call_context_;
-      this->~ConnectedChannelStream();
-      cc->Unref("child_stream");
-    });
+    call_context_->RunInContext([this] { this->~ConnectedChannelStream(); });
   }
 
   void BeginDestroy() {
@@ -444,7 +439,8 @@ class ConnectedChannelStream : public Orphanable {
   }
 
   grpc_transport* const transport_;
-  CallContext* const call_context_{GetContext<CallContext>()};
+  RefCountedPtr<CallContext> const call_context_{
+      GetContext<CallContext>()->Ref()};
   grpc_closure stream_destroyed_ =
       MakeMemberClosure<ConnectedChannelStream,
                         &ConnectedChannelStream::StreamDestroyed>(

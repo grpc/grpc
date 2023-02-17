@@ -107,12 +107,16 @@ class Party : public Activity, private Wakeable {
   // be done.
   // Derived types will likely want to override this to set up their
   // contexts before polling.
-  virtual void RunParty();
+  // Should not be called by derived types except as a tail call to RunParty.
+  // Returns true if the party is over.
+  virtual bool RunParty() GRPC_MUST_USE_RESULT;
 
   // Internal ref counting
   void Ref(DebugLocation whence = {});
   void Unref(DebugLocation whence = {});
   bool RefIfNonZero();
+
+  void CancelRemainingParticipants();
 
  private:
   // Concrete implementation of a participant for some promise & oncomplete
@@ -165,7 +169,8 @@ class Party : public Activity, private Wakeable {
 
   // Notification that the party has finished and this instance can be deleted.
   virtual void PartyOver() = 0;
-  void CompleteOrphaning();
+
+  void HandleLocked();
 
   // Wakeable implementation
   void Wakeup(WakeupMask arg) final;
@@ -211,7 +216,7 @@ class Party : public Activity, private Wakeable {
   // Bits used to store 16 bits of allocated participant slots.
   static constexpr uint64_t kAllocatedMask = 0x0000'0000'ffff'0000;
   // Bit indicating orphaned or not
-  static constexpr uint64_t kOrphaning     = 0x0000'0001'0000'0000;
+  static constexpr uint64_t kOver          = 0x0000'0001'0000'0000;
   // Bit indicating locked or not
   static constexpr uint64_t kLocked        = 0x0000'0008'0000'0000;
   // Bits used to store 24 bits of ref counts
