@@ -573,17 +573,18 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
                return stream->PushBatchToTransport(
                    "close_sends", [](grpc_transport_stream_op_batch* batch,
                                      grpc_closure* on_done) {
+                     auto client_metadata =
+                         GetContext<Arena>()->MakePooled<ClientMetadata>(
+                             GetContext<Arena>());
                      batch->send_trailing_metadata = true;
                      batch->on_complete = on_done;
                      batch->payload->send_trailing_metadata
-                         .send_trailing_metadata =
-                         GetContext<Arena>()->ManagedNew<ClientMetadata>(
-                             GetContext<Arena>());
+                         .send_trailing_metadata = client_metadata.get();
                      batch->payload->send_trailing_metadata.sent = nullptr;
-                     return Empty{};
+                     return client_metadata;
                    });
              }),
-      [](absl::StatusOr<Empty>) {});
+      [](absl::StatusOr<ClientMetadataHandle>) {});
   auto server_initial_metadata =
       GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
   party->Spawn(

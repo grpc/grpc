@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -86,7 +87,7 @@ class Party : public Activity, private Wakeable {
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
 
-  void Orphan() final;
+  void Orphan() final { Crash("unused"); }
 
   // Activity implementation: not allowed to be overridden by derived types.
   void ForceImmediateRepoll(WakeupMask mask) final;
@@ -99,7 +100,8 @@ class Party : public Activity, private Wakeable {
   std::string ActivityDebugTag(WakeupMask arg) const final;
 
  protected:
-  explicit Party(Arena* arena) : arena_(arena) {}
+  explicit Party(Arena* arena, size_t initial_refs)
+      : state_(kOneRef * initial_refs), arena_(arena) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
@@ -230,7 +232,7 @@ class Party : public Activity, private Wakeable {
   // One ref count
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
-  std::atomic<uint64_t> state_{kOneRef};
+  std::atomic<uint64_t> state_;
   Arena* const arena_;
   uint8_t currently_polling_ = kNotPolling;
   // All current participants, using a tagged format.

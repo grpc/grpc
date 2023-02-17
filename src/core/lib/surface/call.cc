@@ -1892,12 +1892,8 @@ class PromiseBasedCall : public Call,
 
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
-  void ExternalRef() final { external_refs_.Ref(); }
-  void ExternalUnref() final {
-    if (external_refs_.Unref()) {
-      Orphan();
-    }
-  }
+  void ExternalRef() final { InternalRef("external"); }
+  void ExternalUnref() final { InternalUnref("external"); }
   void InternalRef(const char* reason) final {
     if (grpc_call_refcount_trace.enabled()) {
       gpr_log(GPR_DEBUG, "INTERNAL_REF:%p:%s", this, reason);
@@ -2197,7 +2193,6 @@ class PromiseBasedCall : public Call,
   }
 
   CallContext call_context_{this};
-  RefCount external_refs_;
 
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
@@ -2231,9 +2226,7 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
-      Party(arena),
-      external_refs_(initial_external_refs,
-                     grpc_call_refcount_trace.enabled() ? "call" : nullptr),
+      Party(arena, initial_external_refs),
       cq_(args.cq) {
   if (args.cq != nullptr) {
     GPR_ASSERT(args.pollset_set_alternative == nullptr &&

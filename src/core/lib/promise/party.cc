@@ -117,13 +117,6 @@ Party::Participant::~Participant() {
 
 Party::~Party() {}
 
-void Party::Orphan() {
-  if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[party] Orphan", DebugTag().c_str());
-  }
-  Unref();
-}
-
 void Party::Ref(DebugLocation whence) {
   auto prev_state = state_.fetch_add(kOneRef, std::memory_order_relaxed);
   if (grpc_trace_promise_primitives.enabled()) {
@@ -160,6 +153,7 @@ void Party::Unref(DebugLocation whence) {
     if (prev_state & kLocked) {
       // Already locked: RunParty will call PartyOver.
     } else {
+      ScopedActivity activity(this);
       PartyOver();
     }
     return;
@@ -209,7 +203,10 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 }
 
 void Party::HandleLocked() {
-  if (RunParty()) PartyOver();
+  if (RunParty()) {
+    ScopedActivity activity(this);
+    PartyOver();
+  }
 }
 
 bool Party::RunParty() {
