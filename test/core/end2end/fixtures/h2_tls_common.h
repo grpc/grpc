@@ -169,6 +169,8 @@ inline void SetCertificateVerifier(
       break;
     }
     case SecurityPrimitives::VerifierType::PEER_PROPERTY_VERIFIER: {
+      // This is the subject of the `ca.pem` cert in the #define CA_CERT_PATH in
+      // this file
       std::string expected_root_cert_subject =
           "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
       auto* client_test_verifier =
