@@ -796,14 +796,15 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
             });
       });
 
-  auto recv_messages =
+  auto recv_messages = Race(
+      Map(stream->WaitFinished(), [](Empty) { return absl::OkStatus(); }),
       Map(stream->RecvMessages(&call_data->client_to_server.sender),
           [failure_latch = &call_data->failure_latch](absl::Status status) {
             if (!status.ok() && !failure_latch->is_set()) {
               failure_latch->Set(ServerMetadataFromStatus(status));
             }
             return status;
-          });
+          }));
 
   auto recv_trailing_metadata = Seq(
       stream->PushBatchToTransport(
