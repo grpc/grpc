@@ -2784,6 +2784,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   AcceptTransportStatsFromContext();
   ResetDeadline();
   set_completed();
+  client_to_server_messages_.sender.Close();
   if (auto* channelz_channel = channel()->channelz_node()) {
     if (trailing_metadata->get(GrpcStatusMetadata())
             .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {

@@ -477,7 +477,7 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
 
 auto ConnectedChannelStream::RecvMessages(
     PipeSender<MessageHandle>* incoming_messages) {
-  return Loop([this,
+  return Loop([this, self = this->InternalRef(),
                incoming_messages = std::move(*incoming_messages)]() mutable {
     auto pending_message =
         GetContext<Arena>()->MakePooled<PendingReceiveMessage>();
