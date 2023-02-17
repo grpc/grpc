@@ -32,7 +32,6 @@
 #include <openssl/x509.h>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
