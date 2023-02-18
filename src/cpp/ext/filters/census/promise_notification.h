@@ -21,6 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"

@@ -133,6 +133,8 @@ absl::Status GcpObservabilityInit() {
     // Disable OpenCensus stats
     grpc::internal::EnableOpenCensusStats(false);
   }
+  // If tracing or monitoring is enabled, we need to get the OpenCensus plugin
+  // to wait for the environment to be autodetected.
   if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
     grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
         [config_labels = config->labels]() mutable {

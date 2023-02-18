@@ -31,7 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -47,8 +46,6 @@
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
@@ -249,6 +246,7 @@ OpenCensusServerFilter::MakeCallPromise(
                                    }),
                                [calld]() { calld->OnCancel(); });
   };
+  // If the OpenCensus plugin is not yet ready, then wait for it to be ready.
   if (!grpc::internal::OpenCensusRegistry::Get().Ready()) {
     auto notification = std::make_shared<PromiseNotification>();
     grpc::internal::OpenCensusRegistry::Get().NotifyOnReady(
