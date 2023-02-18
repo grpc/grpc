@@ -2126,16 +2126,19 @@ class PromiseBasedCall : public Call,
       // the top.
       std::atomic<uint32_t> state;
       bool is_closure;
+      bool is_recv_message;
       void* tag;
 
       void Start(bool is_closure, void* tag) {
         this->is_closure = is_closure;
+        this->is_recv_message = false;
         this->tag = tag;
         state.store(PendingOpBit(PendingOp::kStartingBatch),
                     std::memory_order_release);
       }
 
       void AddPendingBit(PendingOp reason) {
+        if (reason == PendingOp::kReceiveMessage) is_recv_message = true;
         auto prev =
             state.fetch_or(PendingOpBit(reason), std::memory_order_relaxed);
         GPR_ASSERT((prev & PendingOpBit(reason)) == 0);
@@ -2206,6 +2209,7 @@ class PromiseBasedCall : public Call,
   Latch<void> finished_;
   std::atomic<bool> completed_{false};
   std::atomic<bool> sending_{false};
+  grpc_byte_buffer** recv_message_ = nullptr;
   IntraActivityWaiter waiting_for_sending_done_;
 };
 
@@ -2333,6 +2337,10 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
       success = false;
       break;
   }
+  if (pending.is_recv_message && !success && *recv_message_ != nullptr) {
+    grpc_byte_buffer_destroy(*recv_message_);
+    *recv_message_ = nullptr;
+  }
   auto error = success ? absl::OkStatus() : absl::CancelledError();
   if (pending.is_closure) {
     ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
@@ -2419,9 +2427,10 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
     gpr_log(GPR_INFO, "%s[call] Start RecvMessage: %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
   }
+  recv_message_ = op.data.recv_message.recv_message;
   Spawn(
       "recv_message", receiver->Next(),
-      [this, recv_message = op.data.recv_message.recv_message,
+      [this,
        completion = AddOpToCompletion(completion, PendingOp::kReceiveMessage)](
           NextResult<MessageHandle> result) mutable {
         if (result.has_value()) {
@@ -2429,19 +2438,19 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
           NoteLastMessageFlags(message->flags());
           if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
               (incoming_compression_algorithm() != GRPC_COMPRESS_NONE)) {
-            *recv_message = grpc_raw_compressed_byte_buffer_create(
+            *recv_message_ = grpc_raw_compressed_byte_buffer_create(
                 nullptr, 0, incoming_compression_algorithm());
           } else {
-            *recv_message = grpc_raw_byte_buffer_create(nullptr, 0);
+            *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
           }
           grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
-                                      &(*recv_message)->data.raw.slice_buffer);
+                                      &(*recv_message_)->data.raw.slice_buffer);
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO,
                     "%s[call] RecvMessage: outstanding_recv "
                     "finishes: received %" PRIdPTR " byte message",
                     DebugTag().c_str(),
-                    (*recv_message)->data.raw.slice_buffer.length);
+                    (*recv_message_)->data.raw.slice_buffer.length);
           }
         } else if (result.cancelled()) {
           if (grpc_call_trace.enabled()) {
@@ -2451,7 +2460,7 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
                     DebugTag().c_str());
           }
           FailCompletion(completion);
-          *recv_message = nullptr;
+          *recv_message_ = nullptr;
         } else {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO,
@@ -2459,7 +2468,7 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
                     "finishes: received end-of-stream",
                     DebugTag().c_str());
           }
-          *recv_message = nullptr;
+          *recv_message_ = nullptr;
         }
         FinishOpOnCompletion(&completion, PendingOp::kReceiveMessage);
       });
