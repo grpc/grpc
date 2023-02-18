@@ -105,6 +105,7 @@ build:tsan_macos --dynamic_mode=off
 build:ubsan --strip=never
 build:ubsan --copt=-fsanitize=undefined
 build:ubsan --copt=-fsanitize-link-c++-runtime
+build:ubsan --copt=-fno-sanitize-recover=all
 build:ubsan --copt=-fno-omit-frame-pointer
 build:ubsan --copt=-DGRPC_UBSAN
 build:ubsan --copt=-DNDEBUG
