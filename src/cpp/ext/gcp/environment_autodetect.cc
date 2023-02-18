@@ -354,6 +354,8 @@ void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {
       return event_engine_->Run(std::move(callback));
     }
     callbacks_.push_back(std::move(callback));
+    // Use the event_engine_ pointer as a signal to judge whether we've started
+    // detecting the environment.
     if (event_engine_ == nullptr) {
       event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
       event_engine = event_engine_;
