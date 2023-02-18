@@ -55,7 +55,7 @@ class TestParty final : public AllocatorOwner, public Party {
   void RunParty() override {
     promise_detail::Context<grpc_event_engine::experimental::EventEngine>
         ee_ctx(ee_.get());
-    Party::RunParty();
+    return Party::RunParty();
   }
 
  private:

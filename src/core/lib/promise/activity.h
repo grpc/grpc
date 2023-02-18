@@ -617,6 +617,16 @@ ActivityPtr MakeActivity(Factory promise_factory,
           std::move(on_done), std::forward<Contexts>(contexts)...));
 }
 
+inline Pending IntraActivityWaiter::pending() {
+  wakeups_ |= Activity::current()->CurrentParticipant();
+  return Pending();
+}
+
+inline void IntraActivityWaiter::Wake() {
+  if (wakeups_ == 0) return;
+  Activity::current()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H

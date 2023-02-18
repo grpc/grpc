@@ -141,16 +141,6 @@ std::string Activity::DebugTag() const {
 ///////////////////////////////////////////////////////////////////////////////
 // INTRA ACTIVITY WAKER IMPLEMENTATION
 
-Pending IntraActivityWaiter::pending() {
-  wakeups_ |= Activity::current()->CurrentParticipant();
-  return Pending();
-}
-
-void IntraActivityWaiter::Wake() {
-  if (wakeups_ == 0) return;
-  Activity::current()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
-}
-
 std::string IntraActivityWaiter::DebugString() const {
   std::vector<int> bits;
   for (int i = 0; i < 8 * sizeof(WakeupMask); i++) {

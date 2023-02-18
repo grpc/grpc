@@ -314,7 +314,7 @@ void Party::AddParticipant(Participant* participant) {
   participants_[slot] = participant;
 
   // Now we need to wake up the party.
-  state = state_.fetch_or(allocated | kLocked, std::memory_order_release);
+  state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_release);
 
   // If the party was already locked, we're done.
   if ((state & kLocked) != 0) return;
