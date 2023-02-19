@@ -16,7 +16,7 @@ grpcio-status==1.48.2
 grpcio-tools==1.48.2
 httplib2==0.21.0
 idna==3.4
-kubernetes==12.0.1
+kubernetes==25.3.0
 Mako==1.2.4
 MarkupSafe==2.1.2
 oauthlib==3.2.2

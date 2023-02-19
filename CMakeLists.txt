@@ -26,7 +26,7 @@ cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.53.0-dev")
-set(gRPC_CORE_VERSION     "30.0.0")
+set(gRPC_CORE_VERSION     "30.1.0")
 set(gRPC_CORE_SOVERSION   "30")
 set(gRPC_CPP_VERSION      "1.53.0-dev")
 set(gRPC_CPP_SOVERSION    "1.53")
@@ -1109,6 +1109,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx qps_json_driver)
   add_dependencies(buildtests_cxx qps_worker)
   add_dependencies(buildtests_cxx race_test)
+  add_dependencies(buildtests_cxx random_early_detection_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
   add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
@@ -1781,6 +1782,7 @@ add_library(grpc
   src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
+  src/core/ext/gcp/metadata_query.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
@@ -4734,6 +4736,7 @@ add_library(grpc_plugin_support
   src/compiler/node_generator.cc
   src/compiler/objective_c_generator.cc
   src/compiler/php_generator.cc
+  src/compiler/proto_parser_helper.cc
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
 )
@@ -16958,6 +16961,44 @@ target_link_libraries(race_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(random_early_detection_test
+  src/core/lib/backoff/random_early_detection.cc
+  test/core/backoff/random_early_detection_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(random_early_detection_test PUBLIC cxx_std_14)
+target_include_directories(random_early_detection_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(random_early_detection_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::random_random
 )
 
 

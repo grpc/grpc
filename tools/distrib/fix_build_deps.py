@@ -287,7 +287,10 @@ def _get_filename(name, parsing_path):
         (parsing_path + '/' if
          (parsing_path and not name.startswith('//')) else ''), name)
     filename = filename.replace('//:', '')
-    return filename.replace('//src/core:', 'src/core/')
+    filename = filename.replace('//src/core:', 'src/core/')
+    filename = filename.replace('//src/cpp/ext/filters/census:',
+                                'src/cpp/ext/filters/census/')
+    return filename
 
 
 def grpc_cc_library(name,
@@ -421,6 +424,7 @@ for dirname in [
         "src/core",
         "src/cpp/ext/gcp",
         "src/cpp/ext/filters/logging",
+        "test/core/backoff",
         "test/core/uri",
         "test/core/util",
         "test/core/end2end",
