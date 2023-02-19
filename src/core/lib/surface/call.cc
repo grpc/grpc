@@ -2103,10 +2103,10 @@ class PromiseBasedCall : public Call,
 
   // Returns a promise that resolves to Empty whenever there is no outstanding
   // send operation
-  auto WaitForSendingDone() {
+  auto WaitForSendingStarted() {
     return [this]() -> Poll<Empty> {
-      if (sending_.load(std::memory_order_relaxed)) {
-        return waiting_for_sending_done_.pending();
+      if (sending_queued_.load(std::memory_order_relaxed)) {
+        return waiting_for_sending_started_.pending();
       }
       return Empty{};
     };
@@ -2208,9 +2208,9 @@ class PromiseBasedCall : public Call,
   grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
   Latch<void> finished_;
   std::atomic<bool> completed_{false};
-  std::atomic<bool> sending_{false};
+  std::atomic<bool> sending_queued_{false};
   grpc_byte_buffer** recv_message_ = nullptr;
-  IntraActivityWaiter waiting_for_sending_done_;
+  IntraActivityWaiter waiting_for_sending_started_;
 };
 
 template <typename T>
@@ -2394,7 +2394,7 @@ void PromiseBasedCall::Run() {
 void PromiseBasedCall::StartSendMessage(const grpc_op& op,
                                         const Completion& completion,
                                         PipeSender<MessageHandle>* sender) {
-  sending_.store(true, std::memory_order_relaxed);
+  sending_queued_.store(true, std::memory_order_relaxed);
   SliceBuffer send;
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
@@ -2402,15 +2402,15 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
   auto msg =
       GetContext<Arena>()->MakePooled<Message>(std::move(send), op.flags);
   Spawn(
-      "send_message",
+      "call_send_message",
       [this, sender, msg = std::move(msg)]() mutable {
+        sending_queued_.store(false);
+        waiting_for_sending_started_.Wake();
         return Race(Map(finished(), [](Empty) { return false; }),
                     sender->Push(std::move(msg)));
       },
       [this, completion = AddOpToCompletion(
                  completion, PendingOp::kSendMessage)](bool result) mutable {
-        sending_.store(false);
-        waiting_for_sending_done_.Wake();
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_DEBUG, "%sSendMessage completes %s", DebugTag().c_str(),
                   result ? "successfully" : "with failure");
@@ -2429,7 +2429,7 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
   }
   recv_message_ = op.data.recv_message.recv_message;
   Spawn(
-      "recv_message", receiver->Next(),
+      "call_recv_message", receiver->Next(),
       [this,
        completion = AddOpToCompletion(completion, PendingOp::kReceiveMessage)](
           NextResult<MessageHandle> result) mutable {
@@ -2626,7 +2626,7 @@ void ClientPromiseBasedCall::StartPromise(
     ClientMetadataHandle client_initial_metadata,
     const Completion& completion) {
   auto token = ClientInitialMetadataOutstandingToken::New();
-  Spawn("send_initial_metadata", token.Wait(),
+  Spawn("call_send_initial_metadata", token.Wait(),
         [this, completion = AddOpToCompletion(completion,
                                               PendingOp::kSendInitialMetadata)](
             bool result) mutable {
@@ -3106,7 +3106,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   DebugTag().c_str());
         }
         Spawn(
-            "sent_initial_metadata",
+            "call_send_initial_metadata",
             [this, metadata = std::move(metadata)]() mutable {
               return server_initial_metadata_->Push(std::move(metadata));
             },
@@ -3139,10 +3139,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           metadata->Set(GrpcMessageMetadata(), Slice(CSliceRef(*details)));
         }
         Spawn(
-            "send_status_from_server",
+            "call_send_status_from_server",
             [this, metadata = std::move(metadata)]() mutable {
               send_trailing_metadata_.Set(std::move(metadata));
-              return Map(WaitForSendingDone(), [this](Empty) {
+              return Map(WaitForSendingStarted(), [this](Empty) {
                 server_initial_metadata_->Close();
                 server_to_client_messages_->Close();
                 return Empty{};

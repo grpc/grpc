@@ -28,6 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "activity.h"
 
 #include <grpc/support/log.h>
 
@@ -225,8 +226,8 @@ class Center : public InterceptorList<T> {
       case ValueState::kEmpty:
       case ValueState::kAcked:
       case ValueState::kReady:
+        return on_closed_.pending();
       case ValueState::kReadyClosed:
-        return on_full_.pending();
       case ValueState::kClosed:
         return false;
       case ValueState::kCancelled:
@@ -247,6 +248,7 @@ class Center : public InterceptorList<T> {
       case ValueState::kReadyClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
+        on_closed_.Wake();
         on_empty_.Wake();
         on_full_.Wake();
         break;
@@ -270,9 +272,11 @@ class Center : public InterceptorList<T> {
         value_state_ = ValueState::kClosed;
         on_empty_.Wake();
         on_full_.Wake();
+        on_closed_.Wake();
         break;
       case ValueState::kReady:
         value_state_ = ValueState::kReadyClosed;
+        on_closed_.Wake();
         break;
       case ValueState::kReadyClosed:
       case ValueState::kClosed:
@@ -294,9 +298,11 @@ class Center : public InterceptorList<T> {
         value_state_ = ValueState::kCancelled;
         on_empty_.Wake();
         on_full_.Wake();
+        on_closed_.Wake();
         break;
       case ValueState::kClosed:
         value_state_ = ValueState::kCancelled;
+        on_closed_.Wake();
         break;
       case ValueState::kCancelled:
         break;
@@ -368,6 +374,7 @@ class Center : public InterceptorList<T> {
   ValueState value_state_;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
+  IntraActivityWaiter on_closed_;
 
   // Make failure to destruct show up in ASAN builds.
 #ifndef NDEBUG
