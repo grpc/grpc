@@ -162,6 +162,8 @@ EXTERNAL_DEPS = {
         'opencensus-trace-propagation',
     'opencensus/tags/context_util.h':
         'opencensus-tags-context_util',
+    'opencensus/trace/span_context.h':
+        'opencensus-trace-span_context',
     'openssl/base.h':
         'libssl',
     'openssl/bio.h':
