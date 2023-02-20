@@ -274,6 +274,12 @@ class EnvironmentAutoDetectHelper
                 // If fetching from the MetadataServer failed and we were
                 // assuming a GCE environment, fallback to "global".
                 else if (assuming_gce_) {
+                  if (GRPC_TRACE_FLAG_ENABLED(
+                          grpc_environment_autodetect_trace)) {
+                    gpr_log(GPR_INFO,
+                            "Environment Autodetect: Falling back to global "
+                            "resource type");
+                  }
                   assuming_gce_ = false;
                   resource_.resource_type = "global";
                 }
@@ -334,34 +340,44 @@ void EnvironmentAutoDetect::Create(std::string project_id) {
 EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return *g_autodetect; }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
-    : project_id_(std::move(project_id)),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+    : project_id_(std::move(project_id)) {
   GPR_ASSERT(!project_id_.empty());
-  new EnvironmentAutoDetectHelper(
-      project_id_,
-      [this](EnvironmentAutoDetect::ResourceType resource) {
-        std::vector<absl::AnyInvocable<void()>> callbacks;
-        {
-          grpc_core::MutexLock lock(&mu_);
-          resource_ = std::make_unique<EnvironmentAutoDetect::ResourceType>(
-              std::move(resource));
-          callbacks = std::move(callbacks_);
-        }
-        for (auto& callback : callbacks) {
-          callback();
-        }
-      },
-      event_engine_);
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {
-  grpc_core::MutexLock lock(&mu_);
-  // Environment has already been detected
-  if (resource_ != nullptr) {
-    // Execute on the event engine to avoid deadlocks.
-    return event_engine_->Run(std::move(callback));
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
+  {
+    grpc_core::MutexLock lock(&mu_);
+    // Environment has already been detected
+    if (resource_ != nullptr) {
+      // Execute on the event engine to avoid deadlocks.
+      return event_engine_->Run(std::move(callback));
+    }
+    callbacks_.push_back(std::move(callback));
+    // Use the event_engine_ pointer as a signal to judge whether we've started
+    // detecting the environment.
+    if (event_engine_ == nullptr) {
+      event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+      event_engine = event_engine_;
+    }
   }
-  callbacks_.push_back(std::move(callback));
+  if (event_engine) {
+    new EnvironmentAutoDetectHelper(
+        project_id_,
+        [this](EnvironmentAutoDetect::ResourceType resource) {
+          std::vector<absl::AnyInvocable<void()>> callbacks;
+          {
+            grpc_core::MutexLock lock(&mu_);
+            resource_ = std::make_unique<EnvironmentAutoDetect::ResourceType>(
+                std::move(resource));
+            callbacks = std::move(callbacks_);
+          }
+          for (auto& callback : callbacks) {
+            callback();
+          }
+        },
+        std::move(event_engine));
+  }
 }
 
 }  // namespace internal
