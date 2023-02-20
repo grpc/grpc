@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_CENSUS_PROMISE_NOTIFICATION_H
-#define GRPC_SRC_CPP_EXT_CENSUS_PROMISE_NOTIFICATION_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_PROMISE_NOTIFICATION_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_PROMISE_NOTIFICATION_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,16 +33,16 @@
 // Helper class for creating a promise that waits until it is notified.
 class PromiseNotification {
  public:
-  auto Wait() {
-    return [this]() -> grpc_core::Poll<int> {
-      grpc_core::MutexLock lock(&mu_);
-      if (done_) return 42;
-      if (!polled_) {
-        waker_ = grpc_core::Activity::current()->MakeOwningWaker();
-        polled_ = true;
-      }
-      return grpc_core::Pending{};
-    };
+  grpc_core::Poll<int> Wait() {
+    grpc_core::MutexLock lock(&mu_);
+    if (done_) {
+      return 42;
+    }
+    if (!polled_) {
+      waker_ = grpc_core::Activity::current()->MakeOwningWaker();
+      polled_ = true;
+    }
+    return grpc_core::Pending{};
   }
 
   void Notify() {
@@ -62,4 +62,4 @@ class PromiseNotification {
   grpc_core::Waker waker_ ABSL_GUARDED_BY(mu_);
 };
 
-#endif  // GRPC_SRC_CPP_EXT_CENSUS_PROMISE_NOTIFICATION_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_PROMISE_NOTIFICATION_H
