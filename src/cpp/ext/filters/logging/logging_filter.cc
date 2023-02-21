@@ -309,6 +309,7 @@ class CallData {
     entry->peer = peer_;
     entry->service_name = service_name_;
     entry->method_name = method_name_;
+    entry->timestamp = grpc_core::Timestamp::Now();
   }
   uint64_t call_id_;
   uint32_t sequence_id_ = 0;

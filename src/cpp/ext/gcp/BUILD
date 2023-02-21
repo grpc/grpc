@@ -113,11 +113,13 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
+        "environment_autodetect",
         "observability_config",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
+        "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:json",
         "//src/core:time",
