@@ -154,15 +154,19 @@ absl::Status GcpObservabilityInit() {
               });
         });
   }
-  g_logging_sink = new grpc::internal::ObservabilityLoggingSink(
-      config->cloud_logging.value(), config->project_id, config->labels);
   if (config->cloud_logging.has_value()) {
+    g_logging_sink = new grpc::internal::ObservabilityLoggingSink(
+        config->cloud_logging.value(), config->project_id, config->labels);
     grpc::internal::RegisterLoggingFilter(g_logging_sink);
   }
   return absl::OkStatus();
 }
 
-void GcpObservabilityClose() { g_logging_sink->FlushAndClose(); }
+void GcpObservabilityClose() {
+  if (g_logging_sink != nullptr) {
+    g_logging_sink->FlushAndClose();
+  }
+}
 
 }  // namespace experimental
 }  // namespace grpc

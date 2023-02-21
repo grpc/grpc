@@ -41,7 +41,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
