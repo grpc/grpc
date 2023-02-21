@@ -114,7 +114,7 @@ class Party : public Activity, private Wakeable {
   virtual bool RunParty() GRPC_MUST_USE_RESULT;
 
   // Internal ref counting
-  void Ref(DebugLocation whence = {});
+  void IncrementRefCount(DebugLocation whence = {});
   void Unref(DebugLocation whence = {});
   bool RefIfNonZero();
 

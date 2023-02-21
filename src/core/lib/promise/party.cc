@@ -117,7 +117,7 @@ Party::Participant::~Participant() {
 
 Party::~Party() {}
 
-void Party::Ref(DebugLocation whence) {
+void Party::IncrementRefCount(DebugLocation whence) {
   auto prev_state = state_.fetch_add(kOneRef, std::memory_order_relaxed);
   if (grpc_trace_promise_primitives.enabled()) {
     gpr_log(GPR_DEBUG, "%s[party] Ref: prev_state=%s from %s:%d",
@@ -174,7 +174,7 @@ std::string Party::ActivityDebugTag(WakeupMask arg) const {
 
 Waker Party::MakeOwningWaker() {
   GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
-  Ref();
+  IncrementRefCount();
   return Waker(this, 1u << currently_polling_);
 }
 
