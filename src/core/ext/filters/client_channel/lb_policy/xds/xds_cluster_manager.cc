@@ -367,6 +367,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   } else if (num_idle > 0) {
     connectivity_state = GRPC_CHANNEL_IDLE;
   } else {
+    GPR_ASSERT(num_transient_failures > 0);
     connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
