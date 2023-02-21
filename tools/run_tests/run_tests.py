@@ -1014,14 +1014,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
-        # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
-        out.append(
-            self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-cpp-test-cronet',
-                                 cpu_cost=1e6,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return sorted(out)
 
     def pre_build_steps(self):

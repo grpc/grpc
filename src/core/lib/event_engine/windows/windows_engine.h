@@ -45,12 +45,6 @@ namespace experimental {
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
  public:
-  class WindowsListener : public EventEngine::Listener {
-   public:
-    ~WindowsListener() override;
-    absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
-    absl::Status Start() override;
-  };
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
     ~WindowsDNSResolver() override;

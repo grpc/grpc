@@ -388,6 +388,7 @@ libs:
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.h
   - src/core/ext/filters/stateful_session/stateful_session_filter.h
   - src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h
+  - src/core/ext/gcp/metadata_query.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
@@ -1175,6 +1176,7 @@ libs:
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   - src/core/ext/filters/stateful_session/stateful_session_filter.cc
   - src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
+  - src/core/ext/gcp/metadata_query.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
@@ -3730,7 +3732,6 @@ libs:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/pipe.h
@@ -4099,6 +4100,7 @@ libs:
   - src/compiler/objective_c_generator_helpers.h
   - src/compiler/php_generator.h
   - src/compiler/php_generator_helpers.h
+  - src/compiler/proto_parser_helper.h
   - src/compiler/protobuf_plugin.h
   - src/compiler/python_generator.h
   - src/compiler/python_generator_helpers.h
@@ -4114,6 +4116,7 @@ libs:
   - src/compiler/node_generator.cc
   - src/compiler/objective_c_generator.cc
   - src/compiler/php_generator.cc
+  - src/compiler/proto_parser_helper.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps: []
@@ -7544,7 +7547,6 @@ targets:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/intra_activity_waiter.h
-  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/pipe.h
@@ -10199,6 +10201,18 @@ targets:
   - test/core/promise/race_test.cc
   deps:
   - absl/types:variant
+  uses_polling: false
+- name: random_early_detection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/backoff/random_early_detection.h
+  src:
+  - src/core/lib/backoff/random_early_detection.cc
+  - test/core/backoff/random_early_detection_test.cc
+  deps:
+  - absl/random:random
   uses_polling: false
 - name: raw_end2end_test
   gtest: true

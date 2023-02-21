@@ -297,7 +297,7 @@ namespace {
 // it logs the error and returns 0.
 time_t GetModificationTime(const char* filename) {
   time_t ts = 0;
-  absl::Status status = GetFileModificationTime(filename, &ts);
+  (void)GetFileModificationTime(filename, &ts);
   return ts;
 }
 

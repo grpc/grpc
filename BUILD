@@ -181,7 +181,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "glockenspiel"  # @unused
 
-core_version = "30.0.0"  # @unused
+core_version = "30.1.0"  # @unused
 
 version = "1.53.0-dev"  # @unused
 
@@ -861,6 +861,22 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpc++_cronet_credentials",
+    srcs = [
+        "src/cpp/client/cronet_credentials.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/security/cronet_credentials.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++_base",
+        "grpc_cronet_hdrs",
+        "grpc_public_hdrs",
+    ],
+)
+
 # This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
     name = "grpc_authorization_provider",
@@ -1472,7 +1488,6 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
-        "//src/core:latch",
         "//src/core:map",
         "//src/core:match",
         "//src/core:memory_quota",
@@ -2181,47 +2196,53 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/grpc_plugin.h",
         "src/cpp/ext/filters/census/measures.h",
         "src/cpp/ext/filters/census/open_census_call_tracer.h",
+        "src/cpp/ext/filters/census/promise_notification.h",
         "src/cpp/ext/filters/census/rpc_encoding.h",
         "src/cpp/ext/filters/census/server_filter.h",
     ],
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/meta:type_traits",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/time",
         "absl/types:optional",
+        "opencensus-stats",
+        "opencensus-tags",
+        "opencensus-tags-context_util",
         "opencensus-trace",
         "opencensus-trace-context_util",
         "opencensus-trace-propagation",
         "opencensus-trace-span_context",
-        "opencensus-tags",
-        "opencensus-tags-context_util",
-        "opencensus-stats",
-        "opencensus-context",
     ],
     language = "c++",
-    tags = ["nofixdeps"],
     visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
-        "census",
         "channel_stack_builder",
         "config",
-        "debug_location",
         "gpr",
-        "grpc++",
         "grpc++_base",
         "grpc_base",
+        "grpc_public_hdrs",
+        "//src/core:activity",
         "//src/core:arena",
+        "//src/core:arena_promise",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
+        "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
         "//src/core:context",
+        "//src/core:default_event_engine",
+        "//src/core:error",
         "//src/core:experiments",
+        "//src/core:gpr_atm",
         "//src/core:map",
         "//src/core:pipe",
         "//src/core:poll",
+        "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -2771,6 +2792,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
+        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
@@ -3133,6 +3156,7 @@ grpc_cc_library(
         "alts_util",
         "gpr",
         "grpc_base",
+        "grpc_security_base",
         "tsi_alts_frame_protector",
         "tsi_base",
         "//src/core:channel_args",

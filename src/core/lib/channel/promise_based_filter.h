@@ -218,11 +218,7 @@ class BaseCallData : public Activity, private Wakeable {
 
     void Resume(grpc_transport_stream_op_batch* batch) {
       GPR_ASSERT(!call_->is_last());
-      if (batch->HasOp()) {
-        release_.push_back(batch);
-      } else if (batch->on_complete != nullptr) {
-        Complete(batch);
-      }
+      release_.push_back(batch);
     }
 
     void Cancel(grpc_transport_stream_op_batch* batch,
@@ -240,8 +236,6 @@ class BaseCallData : public Activity, private Wakeable {
                     const char* reason) {
       call_closures_.Add(closure, error, reason);
     }
-
-    BaseCallData* call() const { return call_; }
 
    private:
     absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
@@ -404,8 +398,6 @@ class BaseCallData : public Activity, private Wakeable {
       kCancelledButNotYetPolled,
       // We're done.
       kCancelled,
-      // We're done, but we haven't gotten a status yet
-      kCancelledButNoStatus,
     };
     static const char* StateString(State);
 
@@ -672,8 +664,6 @@ class ClientCallData : public BaseCallData {
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
   // Polling related data. Non-null if we're actively polling
   PollContext* poll_ctx_ = nullptr;
-  // Initial metadata outstanding token
-  ClientInitialMetadataOutstandingToken initial_metadata_outstanding_token_;
 };
 
 class ServerCallData : public BaseCallData {

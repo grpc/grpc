@@ -72,8 +72,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   auto promise = filter.MakeCallPromise(
       CallArgs{ClientMetadataHandle(&initial_metadata_batch,
                                     Arena::PooledDeleter(nullptr)),
-               ClientInitialMetadataOutstandingToken::Empty(), nullptr, nullptr,
-               nullptr},
+               nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
                       ->get_pointer(HttpAuthorityMetadata())
@@ -108,8 +107,7 @@ TEST(ClientAuthorityFilterTest,
   auto promise = filter.MakeCallPromise(
       CallArgs{ClientMetadataHandle(&initial_metadata_batch,
                                     Arena::PooledDeleter(nullptr)),
-               ClientInitialMetadataOutstandingToken::Empty(), nullptr, nullptr,
-               nullptr},
+               nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
                       ->get_pointer(HttpAuthorityMetadata())
