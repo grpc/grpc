@@ -2406,8 +2406,7 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
       [this, sender, msg = std::move(msg)]() mutable {
         sending_queued_.store(false);
         waiting_for_sending_started_.Wake();
-        return Race(Map(finished(), [](Empty) { return false; }),
-                    sender->Push(std::move(msg)));
+        return sender->Push(std::move(msg));
       },
       [this, completion = AddOpToCompletion(
                  completion, PendingOp::kSendMessage)](bool result) mutable {

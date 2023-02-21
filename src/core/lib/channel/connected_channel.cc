@@ -740,7 +740,6 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
     Pipe<MessageHandle> client_to_server;
     Pipe<ServerMetadataHandle> server_initial_metadata;
     Latch<ServerMetadataHandle> failure_latch;
-    Latch<ServerMetadataHandle> sent_messages;
     bool sent_initial_metadata = false;
     bool sent_trailing_metadata = false;
   };
