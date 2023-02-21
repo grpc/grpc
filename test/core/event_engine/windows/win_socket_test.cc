@@ -52,7 +52,7 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
   AnyInvocableClosure on_write([] { FAIL() << "No Write expected"; });
   wrapped_client_socket.NotifyOnWrite(&on_write);
   ASSERT_FALSE(read_called);
-  wrapped_client_socket.SetReadable();
+  wrapped_client_socket.read_info()->SetReady();
   absl::Time deadline = absl::Now() + absl::Seconds(10);
   while (!read_called) {
     absl::SleepFor(absl::Milliseconds(42));
@@ -61,8 +61,8 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
     }
   }
   ASSERT_TRUE(read_called);
-  wrapped_client_socket.MaybeShutdown(absl::CancelledError("done"));
-  wrapped_server_socket.MaybeShutdown(absl::CancelledError("done"));
+  wrapped_client_socket.Shutdown();
+  wrapped_server_socket.Shutdown();
   executor.Quiesce();
 }
 
@@ -71,11 +71,12 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   WinSocket wrapped_client_socket(sockpair[0], &executor);
-  wrapped_client_socket.MaybeShutdown(absl::CancelledError("testing"));
+  wrapped_client_socket.Shutdown();
   bool read_called = false;
   AnyInvocableClosure closure([&wrapped_client_socket, &read_called] {
-    ASSERT_EQ(wrapped_client_socket.read_info()->bytes_transferred(), 0);
-    ASSERT_EQ(wrapped_client_socket.read_info()->wsa_error(), WSAESHUTDOWN);
+    ASSERT_EQ(wrapped_client_socket.read_info()->result().bytes_transferred, 0);
+    ASSERT_EQ(wrapped_client_socket.read_info()->result().wsa_error,
+              WSAESHUTDOWN);
     read_called = true;
   });
   wrapped_client_socket.NotifyOnRead(&closure);
