@@ -371,7 +371,7 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
           }
         }
         delete call;
-        MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(&mu_);
         flush_in_progress_ = false;
         if (sink_closed_ && entries_.empty()) {
           sink_flushed_after_close_.SignalAll();
