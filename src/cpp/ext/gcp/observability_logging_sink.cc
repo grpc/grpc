@@ -262,7 +262,6 @@ void ObservabilityLoggingSink::RegisterEnvironmentResource(
     const EnvironmentAutoDetect::ResourceType* resource) {
   grpc_core::MutexLock lock(&mu_);
   resource_ = resource;
-  event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
   MaybeTriggerFlushLocked();
 }
 
@@ -376,8 +375,9 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
         flush_in_progress_ = false;
         if (sink_closed_ && entries_.empty()) {
           sink_flushed_after_close_.SignalAll();
+        } else {
+          MaybeTriggerFlushLocked();
         }
-        MaybeTriggerFlushLocked();
       });
 }
 
@@ -395,12 +395,13 @@ void ObservabilityLoggingSink::MaybeTriggerFlushLocked() {
   if (resource_ == nullptr && !registered_env_fetch_notification_) {
     auto& env_autodetect = EnvironmentAutoDetect::Get();
     resource_ = env_autodetect.resource();
+    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
     if (resource_ == nullptr) {
+      registered_env_fetch_notification_ = true;
       env_autodetect.NotifyOnDone([this]() {
         RegisterEnvironmentResource(EnvironmentAutoDetect::Get().resource());
       });
     }
-    registered_env_fetch_notification_ = true;
   }
   if (entries_.empty()) return;
   if (entries_.size() > kMaxEntriesBeforeDump ||
