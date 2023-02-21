@@ -529,7 +529,6 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
-        "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:1999",
         "//src/core:context",
