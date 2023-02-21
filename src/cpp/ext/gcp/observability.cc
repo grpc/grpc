@@ -92,7 +92,6 @@ absl::Status GcpObservabilityInit() {
       !config->cloud_logging.has_value()) {
     return absl::OkStatus();
   }
-  grpc::internal::OpenCensusRegistry::Get().RegisterWaitOnReady();
   grpc::internal::EnvironmentAutoDetect::Create(config->project_id);
   grpc::RegisterOpenCensusPlugin();
   if (config->cloud_trace.has_value()) {
@@ -139,6 +138,7 @@ absl::Status GcpObservabilityInit() {
   // If tracing or monitoring is enabled, we need to get the OpenCensus plugin
   // to wait for the environment to be autodetected.
   if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
+    grpc::internal::OpenCensusRegistry::Get().RegisterWaitOnReady();
     grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
         [config_labels = config->labels]() mutable {
           grpc::internal::EnvironmentAutoDetect::Get().NotifyOnDone(
