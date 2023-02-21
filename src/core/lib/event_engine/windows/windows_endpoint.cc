@@ -34,7 +34,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-constexpr int64_t kDefaultTargetReadSize = 8192;
+constexpr size_t kDefaultTargetReadSize = 8192;
 constexpr int kMaxWSABUFCount = 16;
 
 }  // namespace
@@ -66,7 +66,7 @@ WindowsEndpoint::~WindowsEndpoint() {
 }
 
 void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                           SliceBuffer* buffer, const ReadArgs* args) {
+                           SliceBuffer* buffer, const ReadArgs* /* args */) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
   if (io_state_->socket->IsShutdown()) {
     executor_->Run([on_read = std::move(on_read)]() mutable {
@@ -80,12 +80,12 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   buffer->Clear();
   // TODO(hork): sometimes args->read_hint_bytes is 1, which is not useful.
   // Choose an appropriate size.
-  int min_read_size = kDefaultTargetReadSize;
+  size_t min_read_size = kDefaultTargetReadSize;
   if (buffer->Length() < min_read_size && buffer->Count() < kMaxWSABUFCount) {
     buffer->AppendIndexed(Slice(allocator_.MakeSlice(min_read_size)));
   }
   GPR_ASSERT(buffer->Count() <= kMaxWSABUFCount);
-  for (int i = 0; i < buffer->Count(); i++) {
+  for (size_t i = 0; i < buffer->Count(); i++) {
     auto& slice = buffer->MutableSliceAt(i);
     wsa_buffers[i].buf = (char*)slice.begin();
     wsa_buffers[i].len = slice.size();
@@ -147,7 +147,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     return;
   }
   if (grpc_event_engine_endpoint_data_trace.enabled()) {
-    for (int i = 0; i < data->Count(); i++) {
+    for (size_t i = 0; i < data->Count(); i++) {
       auto str = data->RefSlice(i).as_string_view();
       gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %.*s", this,
               peer_address_string_.c_str(), str.length(), str.data());
@@ -155,7 +155,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   }
   GPR_ASSERT(data->Count() <= UINT_MAX);
   absl::InlinedVector<WSABUF, kMaxWSABUFCount> buffers(data->Count());
-  for (int i = 0; i < data->Count(); i++) {
+  for (size_t i = 0; i < data->Count(); i++) {
     auto& slice = data->MutableSliceAt(i);
     GPR_ASSERT(slice.size() <= ULONG_MAX);
     buffers[i].len = slice.size();
@@ -175,7 +175,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     }
     // The data was not completely delivered, we should send the rest of it by
     // doing an async write operation.
-    for (int i = 0; i < data->Count(); i++) {
+    for (size_t i = 0; i < data->Count(); i++) {
       if (buffers[i].len > bytes_sent) {
         buffers[i].buf += bytes_sent;
         buffers[i].len -= bytes_sent;
@@ -283,7 +283,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     }
     GPR_ASSERT(result.bytes_transferred == buffer_->Length());
     if (grpc_event_engine_endpoint_data_trace.enabled()) {
-      for (int i = 0; i < buffer_->Count(); i++) {
+      for (size_t i = 0; i < buffer_->Count(); i++) {
         auto str = buffer_->RefSlice(i).as_string_view();
         gpr_log(GPR_INFO, "WindowsEndpoint::%p READ (peer=%s): %.*s",
                 io_state->endpoint,

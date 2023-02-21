@@ -39,7 +39,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
 
  private:
-  class AsyncIOState;
+  struct AsyncIOState;
 
   // Permanent closure type for Read callbacks
   class HandleReadClosure : public EventEngine::Closure {
