@@ -258,6 +258,30 @@ grpc_cc_test(
 grpc_end2end_tests()
 
 grpc_cc_test(
+    name = "h2_ssl_cert_test",
+    srcs = [
+        "end2end_tests.h",
+        "h2_ssl_cert_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "libcrypto",
+    ],
+    language = "C++",
+    deps = [
+        "cq_verifier",
+        "local_util",
+        "ssl_test_data",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "h2_ssl_session_reuse_test",
     srcs = ["h2_ssl_session_reuse_test.cc"],
     data = [

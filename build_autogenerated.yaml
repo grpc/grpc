@@ -8435,6 +8435,25 @@ targets:
   - linux
   - posix
   - mac
+- name: h2_ssl_cert_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/data/ssl_test_data.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/local_util.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/h2_ssl_cert_test.cc
+  deps:
+  - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
   build: test
