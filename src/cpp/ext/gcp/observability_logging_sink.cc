@@ -348,7 +348,7 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
     EntryToJsonStructProto(std::move(entry),
                            proto_entry->mutable_json_payload());
   }
-  stub_->async()->WriteLogEntries(
+  stub->async()->WriteLogEntries(
       &(call->context), &(call->request), &(call->response),
       [this, call](Status status) {
         if (!status.ok()) {

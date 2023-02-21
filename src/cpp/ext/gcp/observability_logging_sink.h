@@ -96,11 +96,13 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::vector<Configuration> server_configs_;
   const std::string project_id_;
   std::string authority_;
-  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
   const std::vector<std::pair<std::string, std::string>> labels_;
   grpc_core::Mutex mu_;
   bool registered_env_fetch_notification_ = false;
-  grpc_core::CondVar sink_flushed_after_close_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ABSL_GUARDED_BY(
+      mu_) event_engine_;
+  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_
+      ABSL_GUARDED_BY(mu_);
   std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
   uint64_t entries_memory_footprint_ ABSL_GUARDED_BY(mu_) = 0;
   const EnvironmentAutoDetect::ResourceType* resource_ ABSL_GUARDED_BY(mu_) =
@@ -109,8 +111,7 @@ class ObservabilityLoggingSink : public LoggingSink {
   bool flush_in_progress_ ABSL_GUARDED_BY(mu_) = false;
   bool flush_timer_in_progress_ ABSL_GUARDED_BY(mu_) = false;
   bool sink_closed_ ABSL_GUARDED_BY(mu_) = false;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ABSL_GUARDED_BY(
-      mu_) event_engine_;
+  grpc_core::CondVar sink_flushed_after_close_;
 };
 
 // Exposed for just for testing purposes
