@@ -162,13 +162,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Reads data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
-    /// \a buffer, and the \a on_read callback is called. If the read succeeds
-    /// immediately, it returns true and the \a on_read callback is not
-    /// executed. Otherwise it returns false and the \a on_read callback
-    /// executes asynchronously when the read completes. The caller must ensure
-    /// that the callback has access to the buffer when it executes.
-    /// Ownership of the buffer is not transferred. Valid slices *may* be placed
-    /// into the buffer even if the callback is invoked with a non-OK Status.
+    /// \a buffer. If the read succeeds immediately, it returns true and the \a
+    /// on_read callback is not executed. Otherwise it returns false and the \a
+    /// on_read callback executes asynchronously when the read completes. The
+    /// caller must ensure that the callback has access to the buffer when it
+    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
+    /// be placed into the buffer even if the callback is invoked with a non-OK
+    /// Status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has

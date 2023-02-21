@@ -32,6 +32,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -100,8 +101,10 @@ class EventEngineEndpointWrapper {
     pending_read_cb_ = read_cb;
     pending_read_buffer_ = pending_read_buffer;
     // TODO(vigneshbabu): Use SliceBufferCast<> here.
-    SliceBuffer* read_buffer = new (&eeep_->read_buffer)
-        SliceBuffer(SliceBuffer::TakeCSliceBuffer(*pending_read_buffer_));
+    grpc_core::Construct(reinterpret_cast<SliceBuffer*>(&eeep_->read_buffer),
+                         SliceBuffer::TakeCSliceBuffer(*pending_read_buffer_));
+    SliceBuffer* read_buffer =
+        reinterpret_cast<SliceBuffer*>(&eeep_->read_buffer);
     read_buffer->Clear();
     return endpoint_->Read(
         [this](absl::Status status) { FinishPendingRead(status); }, read_buffer,
@@ -159,10 +162,11 @@ class EventEngineEndpointWrapper {
       }
     }
     // TODO(vigneshbabu): Use SliceBufferCast<> here.
-    SliceBuffer* write_buffer = new (&eeep_->write_buffer)
-        SliceBuffer(SliceBuffer::TakeCSliceBuffer(*slices));
+    grpc_core::Construct(reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer),
+                         SliceBuffer::TakeCSliceBuffer(*slices));
+    SliceBuffer* write_buffer =
+        reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     pending_write_cb_ = write_cb;
-
     return endpoint_->Write(
         [this](absl::Status status) { FinishPendingWrite(status); },
         write_buffer, args);
