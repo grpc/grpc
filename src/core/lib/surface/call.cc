@@ -1898,7 +1898,7 @@ class PromiseBasedCall : public Call,
     if (grpc_call_refcount_trace.enabled()) {
       gpr_log(GPR_DEBUG, "INTERNAL_REF:%p:%s", this, reason);
     }
-    Party::Ref();
+    Party::IncrementRefCount();
   }
   void InternalUnref(const char* reason) final {
     if (grpc_call_refcount_trace.enabled()) {
