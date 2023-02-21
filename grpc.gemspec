@@ -254,6 +254,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/stateful_session/stateful_session_filter.h )
   s.files += %w( src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc )
   s.files += %w( src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h )
+  s.files += %w( src/core/ext/gcp/metadata_query.cc )
+  s.files += %w( src/core/ext/gcp/metadata_query.h )
   s.files += %w( src/core/ext/transport/chttp2/alpn/alpn.cc )
   s.files += %w( src/core/ext/transport/chttp2/alpn/alpn.h )
   s.files += %w( src/core/ext/transport/chttp2/client/chttp2_connector.cc )

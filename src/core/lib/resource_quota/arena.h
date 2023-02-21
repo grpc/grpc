@@ -30,7 +30,6 @@
 #include <stddef.h>
 
 #include <atomic>
-#include <cstddef>
 #include <limits>
 #include <memory>
 #include <new>

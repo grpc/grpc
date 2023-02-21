@@ -2481,6 +2481,7 @@ grpc_cc_library(
     srcs = ["lib/load_balancing/lb_policy.cc"],
     hdrs = ["lib/load_balancing/lb_policy.h"],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2500,6 +2501,7 @@ grpc_cc_library(
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc_trace",
         "//:orphanable",
@@ -3692,6 +3694,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "random_early_detection",
+    srcs = [
+        "lib/backoff/random_early_detection.cc",
+    ],
+    hdrs = [
+        "lib/backoff/random_early_detection.h",
+    ],
+    external_deps = ["absl/random"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_backend_metric_data",
     hdrs = [
         "ext/filters/client_channel/lb_policy/backend_metric_data.h",
@@ -3828,6 +3842,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:bind_front",
         "absl/memory",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4083,7 +4098,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "error",
         "grpc_matchers",
         "grpc_outlier_detection_header",
         "grpc_tls_credentials",
@@ -4401,6 +4415,7 @@ grpc_cc_library(
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "ref_counted",
         "subchannel_interface",
         "unique_type_name",
         "validation_errors",
@@ -4425,6 +4440,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4611,6 +4627,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -4938,7 +4955,6 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "dual_ref_counted",
-        "error",
         "grpc_lb_policy_ring_hash",
         "grpc_service_config",
         "grpc_xds_client",
@@ -4972,22 +4988,18 @@ grpc_cc_library(
         "ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     external_deps = [
-        "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
     deps = [
         "channel_args",
-        "closure",
         "env",
-        "error",
+        "gcp_metadata_query",
         "grpc_xds_client",
         "json",
         "resource_quota",
-        "status_helper",
         "time",
         "//:alts_util",
         "//:config",
@@ -4995,8 +5007,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_resolver",
-        "//:grpc_security_base",
-        "//:httpcli",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri_parser",
@@ -5295,6 +5305,38 @@ grpc_cc_library(
     deps = [
         "bitset",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "gcp_metadata_query",
+    srcs = [
+        "ext/gcp/metadata_query.cc",
+    ],
+    hdrs = [
+        "ext/gcp/metadata_query.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "closure",
+        "error",
+        "status_helper",
+        "time",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:httpcli",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:uri_parser",
     ],
 )
 
