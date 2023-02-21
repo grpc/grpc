@@ -327,7 +327,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   size_t num_ready = 0;
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  size_t num_transient_failures = 0;
   for (const auto& p : children_) {
     const auto& child_name = p.first;
     const ClusterChild* child = p.second.get();
@@ -350,7 +349,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        ++num_transient_failures;
         break;
       }
       default:
