@@ -44,7 +44,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -340,8 +340,7 @@ class RingHash : public LoadBalancingPolicy {
 //
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
-  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
-      args.call_state);
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto hash = call_state->GetCallAttribute(RequestHashAttributeName());
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {

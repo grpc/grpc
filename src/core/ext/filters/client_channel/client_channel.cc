@@ -25,6 +25,7 @@
 #include <functional>
 #include <new>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -48,6 +49,7 @@
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
@@ -68,6 +70,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -2340,6 +2343,25 @@ void ClientChannel::FilterBasedCallData::
   Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
                error);
 }
+
+//
+// ClientChannel::LoadBalancedCall::LbCallState
+//
+
+class ClientChannel::LoadBalancedCall::LbCallState
+    : public ClientChannelLbCallState {
+ public:
+  explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
+
+  void* Alloc(size_t size) override { return lb_call_->arena()->Alloc(size); }
+
+  // Internal API to allow first-party LB policies to access per-call
+  // attributes set by the ConfigSelector.
+  absl::string_view GetCallAttribute(UniqueTypeName type) override;
+
+ private:
+  LoadBalancedCall* lb_call_;
+};
 
 //
 // ClientChannel::LoadBalancedCall::Metadata
