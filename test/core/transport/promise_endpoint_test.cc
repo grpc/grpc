@@ -84,8 +84,8 @@ class MockEndpoint
     local_address_ = local_address;
   }
 
-  void ScheduleWriteTask(bool ready, const absl::Status& status) {
-    write_task_queue_.push({ready, status, {}});
+  void ScheduleWriteTask(const absl::Status& status) {
+    write_task_queue_.push({false, status, {}});
   }
 
   void MarkNextWriteReady() {
@@ -112,7 +112,6 @@ class MockEndpoint
       grpc_event_engine::experimental::SliceBuffer* /* data */,
       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
       /* args */) {
-    gpr_log(GPR_ERROR, "h\n");
     ASSERT_FALSE(write_task_queue_.empty());
 
     if (write_task_queue_.front().ready) {
@@ -137,6 +136,35 @@ class MockEndpoint
   }
 };
 
+class MockActivity : public grpc_core::Activity, public grpc_core::Wakeable {
+ public:
+  MOCK_METHOD(void, WakeupRequested, ());
+
+  void ForceImmediateRepoll() override { WakeupRequested(); }
+  void Orphan() override {}
+  grpc_core::Waker MakeOwningWaker() override {
+    return grpc_core::Waker(this, nullptr);
+  }
+  grpc_core::Waker MakeNonOwningWaker() override {
+    return grpc_core::Waker(this, nullptr);
+  }
+  void Wakeup(void*) override { WakeupRequested(); }
+  void Drop(void*) override {}
+  std::string DebugTag() const override { return "MockActivity"; }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
+
+  void Activate() {
+    if (scoped_activity_ == nullptr) {
+      scoped_activity_ = std::make_unique<ScopedActivity>(this);
+    }
+  }
+
+  void Deactivate() { scoped_activity_.reset(); }
+
+ private:
+  std::unique_ptr<ScopedActivity> scoped_activity_;
+};
+
 class PromiseEndpointTest : public ::testing::Test {
  public:
   PromiseEndpointTest()
@@ -157,30 +185,65 @@ class PromiseEndpointTest : public ::testing::Test {
 };
 
 TEST_F(PromiseEndpointTest, WriteOneSuccessful) {
+  MockActivity activity;
   const absl::Status kStatus = absl::OkStatus();
-  mock_endpoint_.ScheduleWriteTask(true, kStatus);
+  mock_endpoint_.ScheduleWriteTask(kStatus);
+  mock_endpoint_.MarkNextWriteReady();
 
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Write).Times(1);
   auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
   EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  activity.Deactivate();
 }
 
 TEST_F(PromiseEndpointTest, WriteOneFailed) {
+  MockActivity activity;
   const absl::Status kStatus = absl::ErrnoToStatus(5566, "just an error");
-  mock_endpoint_.ScheduleWriteTask(true, kStatus);
+  mock_endpoint_.ScheduleWriteTask(kStatus);
+  mock_endpoint_.MarkNextWriteReady();
 
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Write).Times(1);
   auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
   EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  activity.Deactivate();
 }
 
 TEST_F(PromiseEndpointTest, WriteAndWaitSuccessful) {
+  MockActivity activity;
   const absl::Status kStatus = absl::OkStatus();
-  mock_endpoint_.ScheduleWriteTask(false, kStatus);
+  mock_endpoint_.ScheduleWriteTask(kStatus);
 
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Write).Times(1);
   auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
   EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(ret()));
 
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextWriteReady();
   EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, WriteAndWaitFailed) {
+  MockActivity activity;
+  const absl::Status kStatus = absl::ErrnoToStatus(5566, "just an error");
+  mock_endpoint_.ScheduleWriteTask(kStatus);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Write).Times(1);
+  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(ret()));
+
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  mock_endpoint_.MarkNextWriteReady();
+  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  activity.Deactivate();
 }
 
 TEST_F(PromiseEndpointTest, GetPeerAddress) {
@@ -191,11 +254,12 @@ TEST_F(PromiseEndpointTest, GetPeerAddress) {
       sizeof(raw_peer_address));
   mock_endpoint_.set_peer_address(peer_address);
 
-  EXPECT_CALL(mock_endpoint_, GetPeerAddress).Times(2);
+  EXPECT_CALL(mock_endpoint_, GetPeerAddress).Times(1);
   EXPECT_EQ(0, std::memcmp(promise_endpoint_.GetPeerAddress().address(),
                            peer_address.address(),
                            grpc_event_engine::experimental::EventEngine::
                                ResolvedAddress::MAX_SIZE_BYTES));
+  EXPECT_CALL(mock_endpoint_, GetPeerAddress).Times(1);
   EXPECT_EQ(peer_address.size(), promise_endpoint_.GetPeerAddress().size());
 }
 
@@ -207,11 +271,12 @@ TEST_F(PromiseEndpointTest, GetLocalAddress) {
       sizeof(raw_local_address));
   mock_endpoint_.set_local_address(local_address);
 
-  EXPECT_CALL(mock_endpoint_, GetLocalAddress).Times(2);
+  EXPECT_CALL(mock_endpoint_, GetLocalAddress).Times(1);
   EXPECT_EQ(0, std::memcmp(promise_endpoint_.GetLocalAddress().address(),
                            local_address.address(),
                            grpc_event_engine::experimental::EventEngine::
                                ResolvedAddress::MAX_SIZE_BYTES));
+  EXPECT_CALL(mock_endpoint_, GetLocalAddress).Times(1);
   EXPECT_EQ(local_address.size(), promise_endpoint_.GetLocalAddress().size());
 }
 
