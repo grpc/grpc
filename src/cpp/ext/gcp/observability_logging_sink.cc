@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
@@ -399,6 +400,7 @@ void ObservabilityLoggingSink::MaybeTriggerFlushLocked() {
         RegisterEnvironmentResource(EnvironmentAutoDetect::Get().resource());
       });
     }
+    registered_env_fetch_notification_ = true;
   }
   if (entries_.empty()) return;
   if (entries_.size() > kMaxEntriesBeforeDump ||
@@ -407,15 +409,16 @@ void ObservabilityLoggingSink::MaybeTriggerFlushLocked() {
     gpr_log(GPR_INFO, "Buffer limit reached. Dumping log entries.");
     for (auto& entry : entries_) {
       google::protobuf::Struct proto;
+      std::string timestamp = entry.timestamp.ToString();
       EntryToJsonStructProto(std::move(entry), &proto);
       std::string output;
       ::google::protobuf::TextFormat::PrintToString(proto, &output);
       gpr_log(GPR_INFO, "Log Entry recorded at time: %s : %s",
-              entry.timestamp.ToString().c_str(), output.c_str());
+              timestamp.c_str(), output.c_str());
     }
     entries_.clear();
     entries_memory_footprint_ = 0;
-  } else if (resource_ != nullptr && !flush_in_progress_ && !entries_.empty()) {
+  } else if (resource_ != nullptr && !flush_in_progress_) {
     // Environment resource has been detected. Trigger flush if conditions
     // suffice.
     if ((entries_.size() >= kMinEntriesBeforeFlush ||

@@ -31,9 +31,11 @@
 
 #include <google/protobuf/struct.pb.h>
 
-#include "absl/base/call_once.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/ext/filters/logging/logging_sink.h"
@@ -96,7 +98,6 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::string authority_;
   std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
   const std::vector<std::pair<std::string, std::string>> labels_;
-  const EnvironmentAutoDetect* env_autodetect_;
   grpc_core::Mutex mu_;
   bool registered_env_fetch_notification_ = false;
   grpc_core::CondVar sink_flushed_after_close_;
