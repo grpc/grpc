@@ -888,6 +888,8 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
             },
             Immediate(absl::CancelledError()));
       });
+  auto server_to_client_empty =
+      call_data->server_to_client.receiver.AwaitEmpty();
   party->Spawn(
       "send_initial_metadata_then_messages",
       TrySeq(std::move(send_initial_metadata),
@@ -959,7 +961,16 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   // (allowing the call code to decide on what signalling to give the
   // application).
 
-  return Map(Seq(std::move(recv_initial_metadata_then_run_promise),
+  return Map(Seq(
+                 std::move(recv_initial_metadata_then_run_promise),
+                 [server_to_client_closed = std::move(server_to_client_empty)](
+                     ServerMetadataHandle trailing_metadata) mutable {
+                   return Map(std::move(server_to_client_closed),
+                              [trailing_metadata = std::move(
+                                   trailing_metadata)](Empty) mutable {
+                                return std::move(trailing_metadata);
+                              });
+                 },
                  std::move(send_trailing_metadata)),
              [stream = std::move(stream)](ServerMetadataHandle md) {
                stream->set_finished();

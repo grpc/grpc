@@ -216,9 +216,9 @@ class Center : public InterceptorList<T> {
     GPR_UNREACHABLE_CODE(return absl::nullopt);
   }
 
-  Poll<bool> PollClosed() {
+  Poll<bool> PollClosedForSender() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosed").c_str());
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForSender").c_str());
     }
     GPR_DEBUG_ASSERT(refs_ != 0);
     switch (value_state_) {
@@ -233,6 +233,43 @@ class Center : public InterceptorList<T> {
         return true;
     }
     GPR_UNREACHABLE_CODE(return true);
+  }
+
+  Poll<bool> PollClosedForReceiver() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForReceiver").c_str());
+    }
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+      case ValueState::kReady:
+      case ValueState::kReadyClosed:
+        return on_closed_.pending();
+      case ValueState::kClosed:
+        return false;
+      case ValueState::kCancelled:
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return true);
+  }
+
+  Poll<Empty> PollEmpty() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollEmpty").c_str());
+    }
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kReady:
+      case ValueState::kReadyClosed:
+        return on_empty_.pending();
+      case ValueState::kAcked:
+      case ValueState::kEmpty:
+      case ValueState::kClosed:
+      case ValueState::kCancelled:
+        return Empty{};
+    }
+    GPR_UNREACHABLE_CODE(return Empty{});
   }
 
   void AckNext() {
@@ -345,7 +382,8 @@ class Center : public InterceptorList<T> {
     return absl::StrCat(DebugTag(), op, " refs=", refs_,
                         " value_state=", ValueStateName(value_state_),
                         " on_empty=", on_empty_.DebugString().c_str(),
-                        " on_full=", on_full_.DebugString().c_str());
+                        " on_full=", on_full_.DebugString().c_str(),
+                        " on_closed=", on_closed_.DebugString().c_str());
   }
 
   static const char* ValueStateName(ValueState state) {
@@ -414,7 +452,7 @@ class PipeSender {
   PushType Push(T value);
 
   auto AwaitClosed() {
-    return [center = center_]() { return center->PollClosed(); };
+    return [center = center_]() { return center->PollClosedForSender(); };
   }
 
   template <typename Fn>
@@ -458,6 +496,14 @@ class PipeReceiver {
   // Blocks the promise until the receiver is either closed or a message is
   // available.
   auto Next();
+
+  auto AwaitClosed() {
+    return [center = center_]() { return center->PollClosedForReceiver(); };
+  }
+
+  auto AwaitEmpty() {
+    return [center = center_]() { return center->PollEmpty(); };
+  }
 
   template <typename Fn>
   void InterceptAndMap(Fn f, DebugLocation from = {}) {
