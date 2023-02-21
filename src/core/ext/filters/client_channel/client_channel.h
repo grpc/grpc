@@ -25,7 +25,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
@@ -40,7 +39,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
-#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -56,7 +54,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -67,8 +64,6 @@
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -372,21 +367,6 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
-  // TODO(roth): Make this private.
-  class LbCallState : public LbCallStateInternal {
-   public:
-    explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
-
-    void* Alloc(size_t size) override { return lb_call_->arena()->Alloc(size); }
-
-    // Internal API to allow first-party LB policies to access per-call
-    // attributes set by the ConfigSelector.
-    absl::string_view GetCallAttribute(UniqueTypeName type) override;
-
-   private:
-    LoadBalancedCall* lb_call_;
-  };
-
   LoadBalancedCall(
       ClientChannel* chand, grpc_call_context_element* call_context,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
@@ -439,6 +419,7 @@ class ClientChannel::LoadBalancedCall
                             absl::string_view peer_address);
 
  private:
+  class LbCallState;
   class Metadata;
   class BackendMetricAccessor;
 
@@ -610,70 +591,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // passed the batch down to the subchannel call and are not
   // intercepting any of its callbacks).
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
-};
-
-// A sub-class of ServiceConfigCallData used to access the
-// CallDispatchController.  Allocated on the arena, stored in the call
-// context, and destroyed when the call is destroyed.
-// TODO(roth): Combine this with lb_call_state_internal.h.
-class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
- public:
-  ClientChannelServiceConfigCallData(
-      RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      ServiceConfigCallData::CallAttributes call_attributes,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      grpc_call_context_element* call_context)
-      : ServiceConfigCallData(std::move(service_config), method_configs,
-                              std::move(call_attributes)),
-        call_dispatch_controller_(call_dispatch_controller) {
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
-  }
-
-  ConfigSelector::CallDispatchController* call_dispatch_controller() {
-    return &call_dispatch_controller_;
-  }
-
- private:
-  // A wrapper for the CallDispatchController returned by the ConfigSelector.
-  // Handles the case where the ConfigSelector doees not return any
-  // CallDispatchController.
-  // Also ensures that we call Commit() at most once, which allows the
-  // client channel code to call Commit() when the call is complete in case
-  // it wasn't called earlier, without needing to know whether or not it was.
-  class CallDispatchControllerWrapper
-      : public ConfigSelector::CallDispatchController {
-   public:
-    explicit CallDispatchControllerWrapper(
-        ConfigSelector::CallDispatchController* call_dispatch_controller)
-        : call_dispatch_controller_(call_dispatch_controller) {}
-
-    bool ShouldRetry() override {
-      if (call_dispatch_controller_ != nullptr) {
-        return call_dispatch_controller_->ShouldRetry();
-      }
-      return true;
-    }
-
-    void Commit() override {
-      if (call_dispatch_controller_ != nullptr && !commit_called_) {
-        call_dispatch_controller_->Commit();
-        commit_called_ = true;
-      }
-    }
-
-   private:
-    ConfigSelector::CallDispatchController* call_dispatch_controller_;
-    bool commit_called_ = false;
-  };
-
-  static void Destroy(void* ptr) {
-    auto* self = static_cast<ClientChannelServiceConfigCallData*>(ptr);
-    self->~ClientChannelServiceConfigCallData();
-  }
-
-  CallDispatchControllerWrapper call_dispatch_controller_;
 };
 
 }  // namespace grpc_core
