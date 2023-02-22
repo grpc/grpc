@@ -117,7 +117,6 @@ END2END_FIXTURES = {
     "h2_tls_static_async_tls1_3": _fixture_options(secure = True),
     "h2_tls_certwatch_sync_tls1_2": _fixture_options(secure = True),
     "h2_tls_certwatch_async_tls1_3": _fixture_options(secure = True),
-    "h2_tls_peer_property_external_verifier": _fixture_options(secure = True),
     "h2_local_abstract_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
