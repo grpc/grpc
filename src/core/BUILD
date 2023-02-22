@@ -212,7 +212,7 @@ grpc_cc_library(
     srcs = [
         "lib/gprpp/env_linux.cc",
         "lib/gprpp/env_posix.cc",
-        "lib/gprpp/env_windows.cc",
+        "lib/gprpp/windows/env.cc",
     ],
     hdrs = [
         "lib/gprpp/env.h",
