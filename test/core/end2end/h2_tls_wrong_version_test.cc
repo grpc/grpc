@@ -16,6 +16,7 @@
  *
  */
 
+#include <stdint.h>
 #include <string.h>
 
 #include <string>
@@ -24,8 +25,11 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -33,6 +37,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -160,8 +165,7 @@ static void shutdown_server(grpc_completion_queue* cq, grpc_server* server) {
   grpc_server_destroy(server);
 }
 
-static void make_request(grpc_completion_queue* cq, grpc_channel* client,
-                         grpc_server* server) {
+static void make_request(grpc_completion_queue* cq, grpc_channel* client) {
   grpc_call* c;
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
@@ -229,7 +233,7 @@ TEST(H2TlsWrongVersionTest, ServerHasHigherTlsVersionThanClientCanSupport) {
   grpc_channel* client =
       client_create(server_addr.c_str(), grpc_tls_version::TLS1_2);
 
-  make_request(cq, client, server);
+  make_request(cq, client);
 
   shutdown_server(cq, server);
   grpc_channel_destroy(client);
@@ -248,7 +252,7 @@ TEST(H2TlsWrongVersionTest, ClientHasHigherTlsVersionThanServerCanSupport) {
   grpc_channel* client =
       client_create(server_addr.c_str(), grpc_tls_version::TLS1_3);
 
-  make_request(cq, client, server);
+  make_request(cq, client);
 
   shutdown_server(cq, server);
   grpc_channel_destroy(client);
