@@ -131,7 +131,6 @@ libs:
   - test/core/end2end/tests/simple_delayed_request.cc
   - test/core/end2end/tests/simple_metadata.cc
   - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/status_unavailable.cc
   - test/core/end2end/tests/streaming_error_response.cc
   - test/core/end2end/tests/trailing_metadata.cc
   - test/core/end2end/tests/write_buffering.cc
@@ -7588,6 +7587,17 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
+  deps:
+  - grpc_test_util
+- name: h2_tls_wrong_version_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/h2_tls_wrong_version_test.cc
   deps:
   - grpc_test_util
 - name: handshake_server_with_readahead_handshaker_test

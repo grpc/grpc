@@ -271,3 +271,25 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "h2_tls_wrong_version_test",
+    srcs = ["h2_tls_wrong_version_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "cq_verifier",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//src/core:error",
+        "//src/core:useful",
+        "//test/core/util:grpc_test_util",
+    ],
+)
