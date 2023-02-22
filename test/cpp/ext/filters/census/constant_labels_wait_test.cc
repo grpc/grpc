@@ -49,6 +49,7 @@ class ConstantLabelsWaitTest : public StatsPluginEnd2EndTest {
  protected:
   static void SetUpTestSuite() {
     grpc::internal::OpenCensusRegistry::Get().RegisterWaitOnReady();
+    grpc::internal::EnableOpenCensusTracing(false);
     StatsPluginEnd2EndTest::SetUpTestSuite();
   }
 };
