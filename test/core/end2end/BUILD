@@ -288,6 +288,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
+        "//src/core:channel_args",
         "//src/core:error",
         "//src/core:useful",
         "//test/core/util:grpc_test_util",
