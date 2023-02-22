@@ -495,18 +495,19 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
 
 auto ConnectedChannelStream::RecvMessages(
     PipeSender<MessageHandle>* incoming_messages) {
-  return Loop([this, self = this->InternalRef(),
+  return Loop([self = InternalRef(),
                incoming_messages = std::move(*incoming_messages)]() mutable {
     auto pending_message =
         GetContext<Arena>()->MakePooled<PendingReceiveMessage>();
     return Seq(
-        PushBatchToTransport("recv_message",
-                             [pending_message = std::move(pending_message)](
-                                 grpc_transport_stream_op_batch* batch,
-                                 grpc_closure* on_done) mutable {
-                               pending_message->ConfigureBatch(batch, on_done);
-                               return std::move(pending_message);
-                             }),
+        self->PushBatchToTransport(
+            "recv_message",
+            [pending_message = std::move(pending_message)](
+                grpc_transport_stream_op_batch* batch,
+                grpc_closure* on_done) mutable {
+              pending_message->ConfigureBatch(batch, on_done);
+              return std::move(pending_message);
+            }),
         [&incoming_messages](
             absl::StatusOr<Arena::PoolPtr<PendingReceiveMessage>>
                 status) mutable {
@@ -553,8 +554,9 @@ auto ConnectedChannelStream::RecvMessages(
 
 auto ConnectedChannelStream::SendMessages(
     PipeReceiver<MessageHandle>* outgoing_messages) {
-  return ForEach(std::move(*outgoing_messages), [this](MessageHandle message) {
-    auto done = PushBatchToTransport(
+  return ForEach(std::move(*outgoing_messages), [self = InternalRef()](
+                                                    MessageHandle message) {
+    auto done = self->PushBatchToTransport(
         "send_message",
         [message = std::move(message)](grpc_transport_stream_op_batch* batch,
                                        grpc_closure* on_done) mutable {
@@ -745,6 +747,9 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   };
   auto* call_data = GetContext<Arena>()->ManagedNew<CallData>();
 
+  auto server_to_client_empty =
+      call_data->server_to_client.receiver.AwaitEmpty();
+
   // Create a promise that will receive client initial metadata, and then run
   // the main stem of the call (calling next_promise_factory up through the
   // filters).
@@ -765,15 +770,26 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
             return client_initial_metadata;
           }),
       [next_promise_factory = std::move(next_promise_factory),
+       server_to_client_empty = std::move(server_to_client_empty),
        call_data](ClientMetadataHandle client_initial_metadata) {
-        return Race(call_data->failure_latch.Wait(),
-                    next_promise_factory(CallArgs{
-                        std::move(client_initial_metadata),
-                        ClientInitialMetadataOutstandingToken::Empty(),
-                        &call_data->server_initial_metadata.sender,
-                        &call_data->client_to_server.receiver,
-                        &call_data->server_to_client.sender,
-                    }));
+        auto call_promise = next_promise_factory(CallArgs{
+            std::move(client_initial_metadata),
+            ClientInitialMetadataOutstandingToken::Empty(),
+            &call_data->server_initial_metadata.sender,
+            &call_data->client_to_server.receiver,
+            &call_data->server_to_client.sender,
+        });
+        return Race(
+            call_data->failure_latch.Wait(),
+            [call_promise = std::move(call_promise),
+             server_to_client_empty =
+                 std::move(server_to_client_empty)]() mutable
+            -> Poll<ServerMetadataHandle> {
+              if (absl::holds_alternative<Pending>(server_to_client_empty())) {
+                return Pending{};
+              }
+              return call_promise();
+            });
       });
 
   // Promise factory that accepts a ServerMetadataHandle, and sends it as the
@@ -888,8 +904,6 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
             },
             Immediate(absl::CancelledError()));
       });
-  auto server_to_client_empty =
-      call_data->server_to_client.receiver.AwaitEmpty();
   party->Spawn(
       "send_initial_metadata_then_messages",
       TrySeq(std::move(send_initial_metadata),
@@ -961,16 +975,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   // (allowing the call code to decide on what signalling to give the
   // application).
 
-  return Map(Seq(
-                 std::move(recv_initial_metadata_then_run_promise),
-                 [server_to_client_closed = std::move(server_to_client_empty)](
-                     ServerMetadataHandle trailing_metadata) mutable {
-                   return Map(std::move(server_to_client_closed),
-                              [trailing_metadata = std::move(
-                                   trailing_metadata)](Empty) mutable {
-                                return std::move(trailing_metadata);
-                              });
-                 },
+  return Map(Seq(std::move(recv_initial_metadata_then_run_promise),
                  std::move(send_trailing_metadata)),
              [stream = std::move(stream)](ServerMetadataHandle md) {
                stream->set_finished();
