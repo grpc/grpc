@@ -92,21 +92,15 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   }
   GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p got event on OVERLAPPED::%p", this,
                                  overlapped);
-  WinSocket* socket = reinterpret_cast<WinSocket*>(completion_key);
-  // TODO(hork): move the following logic into the WinSocket impl.
+  // Safety note: socket is guaranteed to exist when managed by a
+  // WindowsEndpoint. If an overlapped event came in, then either a read event
+  // handler is registered, which keeps the socket alive, or the WindowsEndpoint
+  // (which keeps the socket alive) has done an asynchronous WSARecv and is
+  // about to register for notification of an overlapped event.
+  auto* socket = reinterpret_cast<WinSocket*>(completion_key);
   WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);
   GPR_ASSERT(info != nullptr);
-  if (socket->IsShutdown()) {
-    info->SetError(WSAESHUTDOWN);
-  } else {
-    info->GetOverlappedResult();
-  }
-  if (info->closure() != nullptr) {
-    schedule_poll_again();
-    executor_->Run(info->closure());
-    return Poller::WorkResult::kOk;
-  }
-  // No callback registered. Set ready and return an empty set
+  info->GetOverlappedResult();
   info->SetReady();
   schedule_poll_again();
   return Poller::WorkResult::kOk;

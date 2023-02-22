@@ -626,7 +626,6 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
                        .recv_initial_metadata_ready = on_done;
                    batch->payload->recv_initial_metadata
                        .trailing_metadata_available = nullptr;
-                   batch->payload->recv_initial_metadata.peer_string = nullptr;
                    return std::move(server_initial_metadata);
                  }),
              [pipe = call_args.server_initial_metadata](
@@ -653,8 +652,6 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
                 batch->send_initial_metadata = true;
                 batch->payload->send_initial_metadata.send_initial_metadata =
                     client_initial_metadata.get();
-                batch->payload->send_initial_metadata.peer_string =
-                    GetContext<CallContext>()->peer_string_atm_ptr();
                 batch->on_complete = on_done;
                 return std::move(client_initial_metadata);
               }),
@@ -893,8 +890,6 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
                         batch->send_initial_metadata = true;
                         batch->payload->send_initial_metadata
                             .send_initial_metadata = md;
-                        batch->payload->send_initial_metadata.peer_string =
-                            nullptr;
                         batch->on_complete = on_done;
                         return std::move(next_result);
                       }),

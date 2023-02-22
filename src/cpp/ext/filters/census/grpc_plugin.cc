@@ -202,7 +202,7 @@ OpenCensusRegistry& OpenCensusRegistry::Get() {
     const ::opencensus::tags::TagMap& tag_map) {
   std::vector<std::pair<::opencensus::tags::TagKey, std::string>> tags =
       tag_map.tags();
-  for (const auto& label : constant_labels_) {
+  for (const auto& label : ConstantLabels()) {
     tags.emplace_back(label.tag_key, label.value);
   }
   return ::opencensus::tags::TagMap(std::move(tags));
@@ -211,7 +211,7 @@ OpenCensusRegistry& OpenCensusRegistry::Get() {
 void OpenCensusRegistry::PopulateCensusContextWithConstantAttributes(
     grpc::experimental::CensusContext* context) {
   // We reuse the constant labels for the attributes
-  for (const auto& label : constant_labels_) {
+  for (const auto& label : ConstantLabels()) {
     context->AddSpanAttribute(label.key, label.value);
   }
 }

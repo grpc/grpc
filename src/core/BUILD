@@ -2006,8 +2006,10 @@ grpc_cc_library(
         "error",
         "event_engine_executor",
         "event_engine_poller",
+        "event_engine_tcp_socket_utils",
         "event_engine_time_util",
         "event_engine_trace",
+        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
@@ -2211,6 +2213,7 @@ grpc_cc_library(
         "lib/transport/bdp_estimator.cc",
     ],
     hdrs = ["lib/transport/bdp_estimator.h"],
+    external_deps = ["absl/strings"],
     deps = [
         "time",
         "//:gpr",

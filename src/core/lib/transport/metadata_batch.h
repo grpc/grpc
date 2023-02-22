@@ -376,8 +376,8 @@ struct GrpcStreamNetworkState {
 struct PeerString {
   static absl::string_view DebugKey() { return "PeerString"; }
   static constexpr bool kRepeatable = false;
-  using ValueType = absl::string_view;
-  static std::string DisplayValue(ValueType x);
+  using ValueType = Slice;
+  static std::string DisplayValue(const ValueType& x);
 };
 
 // Annotation added by various systems to describe the reason for a failure.
