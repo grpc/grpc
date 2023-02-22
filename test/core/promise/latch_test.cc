@@ -69,6 +69,23 @@ TEST(LatchTest, Void) {
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
+TEST(LatchTest, ExternallyObservableVoid) {
+  ExternallyObservableLatch<void> latch;
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [&latch] {
+        return Seq(Join(latch.Wait(),
+                        [&latch]() {
+                          latch.Set();
+                          return true;
+                        }),
+                   [](std::tuple<Empty, bool>) { return absl::OkStatus(); });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

@@ -52,6 +52,20 @@ TEST(LoopTest, LoopOfSeq) {
   EXPECT_EQ(x, Poll<int>(42));
 }
 
+TEST(LoopTest, CanAccessFactoryLambdaVariables) {
+  int i = 0;
+  auto x = Loop([p = &i]() {
+    return [q = &p]() -> Poll<LoopCtl<int>> {
+      ++**q;
+      return Pending{};
+    };
+  });
+  auto y = std::move(x);
+  auto z = std::move(y);
+  z();
+  EXPECT_EQ(i, 1);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

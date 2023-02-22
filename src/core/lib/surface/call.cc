@@ -354,6 +354,9 @@ void Call::MaybeUnpublishFromParent() {
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
   // copying 'description' is needed to ensure the grpc_call_cancel_with_status
   // guarantee that can be short-lived.
+  // TODO(ctiller): change to
+  // absl::Status(static_cast<absl::StatusCode>(status), description)
+  // (ie remove the set_int, set_str).
   CancelWithError(grpc_error_set_int(
       grpc_error_set_str(
           absl::Status(static_cast<absl::StatusCode>(status), description),
@@ -2114,14 +2117,15 @@ class PromiseBasedCall : public Call,
     finished_.Set();
   }
 
+  // Returns a promise that resolves to Empty whenever the call is completed.
   auto finished() { return finished_.Wait(); }
 
   // Returns a promise that resolves to Empty whenever there is no outstanding
   // send operation
   auto WaitForSendingStarted() {
     return [this]() -> Poll<Empty> {
-      if (sending_queued_.load(std::memory_order_relaxed)) {
-        return waiting_for_sending_started_.pending();
+      if (send_message_queued_.load(std::memory_order_relaxed)) {
+        return waiting_for_queued_send_message_.pending();
       }
       return Empty{};
     };
@@ -2141,6 +2145,9 @@ class PromiseBasedCall : public Call,
       // the top.
       std::atomic<uint32_t> state;
       bool is_closure;
+      // True if this completion was for a recv_message op.
+      // In that case if the completion as a whole fails we need to cleanup the
+      // returned message.
       bool is_recv_message;
       void* tag;
 
@@ -2221,11 +2228,19 @@ class PromiseBasedCall : public Call,
   // Current deadline.
   Timestamp deadline_ = Timestamp::InfFuture();
   grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
+  // finished_ & completed_ represent the same state: is the call all done.
+  // finished_ is used for the promise returned by finished(), and can be
+  // awaited in a promise.
+  // completed_ is used for observing this state from outside of the activity
+  // (and hence outside the activity provided mutual exclusion).
   Latch<void> finished_;
   std::atomic<bool> completed_{false};
-  std::atomic<bool> sending_queued_{false};
+  // Becomes true on GRPC_OP_SEND_MESSAGE, and false once that message has been
+  // pushed onto the outgoing pipe.
+  std::atomic<bool> send_message_queued_{false};
+  // Waiter for when send_message_queued_ becomes false.
+  IntraActivityWaiter waiting_for_queued_send_message_;
   grpc_byte_buffer** recv_message_ = nullptr;
-  IntraActivityWaiter waiting_for_sending_started_;
 };
 
 template <typename T>
@@ -2409,7 +2424,7 @@ void PromiseBasedCall::Run() {
 void PromiseBasedCall::StartSendMessage(const grpc_op& op,
                                         const Completion& completion,
                                         PipeSender<MessageHandle>* sender) {
-  sending_queued_.store(true, std::memory_order_relaxed);
+  send_message_queued_.store(true, std::memory_order_relaxed);
   SliceBuffer send;
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
@@ -2419,8 +2434,8 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
   Spawn(
       "call_send_message",
       [this, sender, msg = std::move(msg)]() mutable {
-        sending_queued_.store(false);
-        waiting_for_sending_started_.Wake();
+        send_message_queued_.store(false);
+        waiting_for_queued_send_message_.Wake();
         return sender->Push(std::move(msg));
       },
       [this, completion = AddOpToCompletion(
@@ -2563,10 +2578,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
   void CancelWithError(absl::Status error) override {
-    if (!started_.exchange(true)) {
+    if (!started_.exchange(true, std::memory_order_relaxed)) {
       // Initial metadata not sent yet, so we can just fail the call.
-      gpr_log(GPR_DEBUG, "CANCEL_BEFORE_SEND_INITIAL_METADATA: %s",
-              error.ToString().c_str());
       Spawn(
           "cancel_before_initial_metadata",
           [error = std::move(error), this]() {
@@ -2629,6 +2642,11 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
   bool is_trailers_only_;
+  // True once the promise for the call is started.
+  // This corresponds to sending initial metadata, or cancelling before doing
+  // so.
+  // In the latter case real world code sometimes does not sent the initial
+  // metadata, and so gating based upon that does not work out.
   std::atomic<bool> started_{false};
 };
 
@@ -2697,7 +2715,6 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 
 void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
-  ScopedContext ctx(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
@@ -3102,7 +3119,6 @@ grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 
 void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
-  ScopedContext ctx(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {

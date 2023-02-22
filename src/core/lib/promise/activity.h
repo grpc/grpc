@@ -45,6 +45,8 @@ namespace grpc_core {
 
 class Activity;
 
+// WakeupMask is a bitfield representing which parts of an activity should be
+// woken up.
 using WakeupMask = uint16_t;
 
 // A Wakeable object is used by queues to wake activities.
@@ -52,14 +54,14 @@ class Wakeable {
  public:
   // Wake up the underlying activity.
   // After calling, this Wakeable cannot be used again.
-  // arg comes from the Waker object and allows one Wakeable instance to be used
-  // for multiple disjoint subparts of an Activity.
-  virtual void Wakeup(WakeupMask arg) = 0;
+  // WakeupMask comes from the activity that created this Wakeable and specifies
+  // the set of promises that should be awoken.
+  virtual void Wakeup(WakeupMask wakeup_mask) = 0;
   // Drop this wakeable without waking up the underlying activity.
-  virtual void Drop(WakeupMask arg) = 0;
+  virtual void Drop(WakeupMask wakeup_mask) = 0;
 
   // Return the underlying activity debug tag, or "<unknown>" if not available.
-  virtual std::string ActivityDebugTag(WakeupMask arg) const = 0;
+  virtual std::string ActivityDebugTag(WakeupMask wakeup_mask) const = 0;
 
  protected:
   inline ~Wakeable() {}
@@ -80,8 +82,8 @@ static Unwakeable* unwakeable() {
 // This type is non-copyable but movable.
 class Waker {
  public:
-  Waker(Wakeable* wakeable, WakeupMask arg)
-      : wakeable_and_arg_{wakeable, arg} {}
+  Waker(Wakeable* wakeable, WakeupMask wakeup_mask)
+      : wakeable_and_arg_{wakeable, wakeup_mask} {}
   Waker() : Waker(promise_detail::unwakeable(), 0) {}
   ~Waker() { wakeable_and_arg_.Drop(); }
   Waker(const Waker&) = delete;
@@ -98,7 +100,7 @@ class Waker {
   template <typename H>
   friend H AbslHashValue(H h, const Waker& w) {
     return H::combine(H::combine(std::move(h), w.wakeable_and_arg_.wakeable),
-                      w.wakeable_and_arg_.arg);
+                      w.wakeable_and_arg_.wakeup_mask);
   }
 
   bool operator==(const Waker& other) const noexcept {
@@ -121,16 +123,16 @@ class Waker {
  private:
   struct WakeableAndArg {
     Wakeable* wakeable;
-    WakeupMask arg;
+    WakeupMask wakeup_mask;
 
-    void Wakeup() { wakeable->Wakeup(arg); }
-    void Drop() { wakeable->Drop(arg); }
+    void Wakeup() { wakeable->Wakeup(wakeup_mask); }
+    void Drop() { wakeable->Drop(wakeup_mask); }
     std::string ActivityDebugTag() const {
       return wakeable == nullptr ? "<unknown>"
-                                 : wakeable->ActivityDebugTag(arg);
+                                 : wakeable->ActivityDebugTag(wakeup_mask);
     }
     bool operator==(const WakeableAndArg& other) const noexcept {
-      return wakeable == other.wakeable && arg == other.arg;
+      return wakeable == other.wakeable && wakeup_mask == other.wakeup_mask;
     }
   };
 
@@ -177,6 +179,8 @@ class Activity : public Orphanable {
 
   // Force the current activity to immediately repoll if it doesn't complete.
   virtual void ForceImmediateRepoll(WakeupMask mask) = 0;
+  // Legacy version of ForceImmediateRepoll() that uses the current participant.
+  // Will go away once Party gets merged with Activity. New usage is banned.
   void ForceImmediateRepoll() { ForceImmediateRepoll(CurrentParticipant()); }
 
   // Return the current part of the activity as a bitmask

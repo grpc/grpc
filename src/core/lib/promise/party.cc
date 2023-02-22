@@ -58,7 +58,7 @@ class Party::Handle final : public Wakeable {
 
   // Activity needs to wake up (if it still exists!) - wake it up, and drop the
   // ref that was kept for this handle.
-  void Wakeup(WakeupMask arg) override ABSL_LOCKS_EXCLUDED(mu_) {
+  void Wakeup(WakeupMask wakeup_mask) override ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
@@ -68,7 +68,7 @@ class Party::Handle final : public Wakeable {
       mu_.Unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
-      party->Wakeup(arg);
+      party->Wakeup(wakeup_mask);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
@@ -78,7 +78,7 @@ class Party::Handle final : public Wakeable {
     Unref();
   }
 
-  void Drop(WakeupMask arg) override { Unref(); }
+  void Drop(WakeupMask wakeup_mask) override { Unref(); }
 
   std::string ActivityDebugTag(WakeupMask) const override {
     MutexLock lock(&mu_);
@@ -149,7 +149,8 @@ void Party::Unref(DebugLocation whence) {
             whence.file(), whence.line());
   }
   if ((prev_state & kRefMask) == kOneRef) {
-    prev_state = state_.fetch_or(kOver | kLocked, std::memory_order_acq_rel);
+    prev_state =
+        state_.fetch_or(kOrphaning | kLocked, std::memory_order_acq_rel);
     if (prev_state & kLocked) {
       // Already locked: RunParty will call PartyOver.
     } else {
@@ -168,8 +169,8 @@ void Party::CancelRemainingParticipants() {
   }
 }
 
-std::string Party::ActivityDebugTag(WakeupMask arg) const {
-  return absl::StrFormat("%s [parts:%x]", DebugTag(), arg);
+std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
+  return absl::StrFormat("%s [parts:%x]", DebugTag(), wakeup_mask);
 }
 
 Waker Party::MakeOwningWaker() {
@@ -202,7 +203,7 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
   }
 }
 
-void Party::HandleLocked() {
+void Party::RunLocked() {
   if (RunParty()) {
     ScopedActivity activity(this);
     PartyOver();
@@ -222,7 +223,7 @@ bool Party::RunParty() {
               StateToString(prev_state).c_str());
     }
     GPR_ASSERT(prev_state & kLocked);
-    if (prev_state & kOver) return true;
+    if (prev_state & kOrphaning) return true;
     // From the previous state, extract which participants we're to wakeup.
     uint64_t wakeups = prev_state & kWakeupMask;
     // Now update prev_state to be what we want the CAS to see below.
@@ -320,7 +321,7 @@ void Party::AddParticipant(Participant* participant) {
   if ((state & kLocked) != 0) return;
 
   // Otherwise, we need to run the party.
-  HandleLocked();
+  RunLocked();
 }
 
 void Party::ScheduleWakeup(WakeupMask mask) {
@@ -337,11 +338,11 @@ void Party::ScheduleWakeup(WakeupMask mask) {
             StateToString(prev_state).c_str());
   }
   // If the lock was not held now we hold it, so we need to run.
-  if ((prev_state & kLocked) == 0) HandleLocked();
+  if ((prev_state & kLocked) == 0) RunLocked();
 }
 
-void Party::Wakeup(WakeupMask arg) {
-  ScheduleWakeup(arg);
+void Party::Wakeup(WakeupMask wakeup_mask) {
+  ScheduleWakeup(wakeup_mask);
   Unref();
 }
 
@@ -350,7 +351,7 @@ void Party::Drop(WakeupMask) { Unref(); }
 std::string Party::StateToString(uint64_t state) {
   std::vector<std::string> parts;
   if (state & kLocked) parts.push_back("locked");
-  if (state & kOver) parts.push_back("over");
+  if (state & kOrphaning) parts.push_back("over");
   parts.push_back(
       absl::StrFormat("refs=%" PRIuPTR, (state & kRefMask) >> kRefShift));
   std::vector<int> allocated;

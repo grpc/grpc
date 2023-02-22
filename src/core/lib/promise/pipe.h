@@ -216,6 +216,8 @@ class Center : public InterceptorList<T> {
     GPR_UNREACHABLE_CODE(return absl::nullopt);
   }
 
+  // Check if the pipe is closed for sending (if there is a value still queued
+  // but the pipe is closed, reports closed).
   Poll<bool> PollClosedForSender() {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForSender").c_str());
@@ -235,6 +237,8 @@ class Center : public InterceptorList<T> {
     GPR_UNREACHABLE_CODE(return true);
   }
 
+  // Check if the pipe is closed for receiving (if there is a value still queued
+  // but the pipe is closed, reports open).
   Poll<bool> PollClosedForReceiver() {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForReceiver").c_str());
@@ -451,15 +455,25 @@ class PipeSender {
   // receiver is either closed or able to receive another message.
   PushType Push(T value);
 
+  // Return a promise that resolves when the receiver is closed.
+  // The resolved value is a bool - true if the pipe was cancelled, false if it
+  // was closed successfully.
+  // Checks closed from the senders perspective: that is, if there is a value in
+  // the pipe but the pipe is closed, reports closed.
   auto AwaitClosed() {
     return [center = center_]() { return center->PollClosedForSender(); };
   }
 
+  // Interject PromiseFactory f into the pipeline.
+  // f will be called with the current value traversing the pipe, and should
+  // return a value to replace it with.
+  // Interjects at the Push end of the pipe.
   template <typename Fn>
   void InterceptAndMap(Fn f, DebugLocation from = {}) {
     center_->PrependMap(std::move(f), from);
   }
 
+  // Per above, but calls cleanup_fn when the pipe is closed.
   template <typename Fn, typename OnHalfClose>
   void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, DebugLocation from = {}) {
     center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
@@ -497,6 +511,11 @@ class PipeReceiver {
   // available.
   auto Next();
 
+  // Return a promise that resolves when the receiver is closed.
+  // The resolved value is a bool - true if the pipe was cancelled, false if it
+  // was closed successfully.
+  // Checks closed from the receivers perspective: that is, if there is a value
+  // in the pipe but the pipe is closed, reports open until that value is read.
   auto AwaitClosed() {
     return [center = center_]() { return center->PollClosedForReceiver(); };
   }
@@ -505,11 +524,16 @@ class PipeReceiver {
     return [center = center_]() { return center->PollEmpty(); };
   }
 
+  // Interject PromiseFactory f into the pipeline.
+  // f will be called with the current value traversing the pipe, and should
+  // return a value to replace it with.
+  // Interjects at the Next end of the pipe.
   template <typename Fn>
   void InterceptAndMap(Fn f, DebugLocation from = {}) {
     center_->AppendMap(std::move(f), from);
   }
 
+  // Per above, but calls cleanup_fn when the pipe is closed.
   template <typename Fn, typename OnHalfClose>
   void InterceptAndMapWithHalfClose(Fn f, OnHalfClose cleanup_fn,
                                     DebugLocation from = {}) {

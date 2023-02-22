@@ -26,6 +26,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/basic_join.h"
@@ -379,6 +380,28 @@ TEST_F(PipeTest, CanFlowControlThroughManyStages) {
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       MakeScopedArena(1024, &memory_allocator_));
   ASSERT_TRUE(*done);
+}
+
+class FakeActivity final : public Activity {
+ public:
+  void Orphan() override {}
+  void ForceImmediateRepoll(WakeupMask) override {}
+  Waker MakeOwningWaker() override { Crash("Not implemented"); }
+  Waker MakeNonOwningWaker() override { Crash("Not implemented"); }
+  void Run(absl::FunctionRef<void()> f) {
+    ScopedActivity activity(this);
+    f();
+  }
+};
+
+TEST_F(PipeTest, PollAckWaitsForReadyClosed) {
+  FakeActivity().Run([]() {
+    pipe_detail::Center<int> c;
+    int i = 1;
+    EXPECT_EQ(c.Push(&i), Poll<bool>(true));
+    c.MarkClosed();
+    EXPECT_EQ(c.PollAck(), Poll<bool>(Pending{}));
+  });
 }
 
 }  // namespace grpc_core

@@ -42,6 +42,57 @@ namespace grpc_core {
 
 // A Party is an Activity with multiple participant promises.
 class Party : public Activity, private Wakeable {
+ public:
+  Party(const Party&) = delete;
+  Party& operator=(const Party&) = delete;
+
+  // Spawn one promise into the party.
+  // The promise will be polled until it is resolved, or until the party is shut
+  // down.
+  // The on_complete callback will be called with the result of the promise if
+  // it completes.
+  // A maximum of sixteen promises can be spawned onto a party.
+  template <typename Factory, typename OnComplete>
+  void Spawn(absl::string_view name, Factory promise_factory,
+             OnComplete on_complete);
+
+  void Orphan() final { Crash("unused"); }
+
+  // Activity implementation: not allowed to be overridden by derived types.
+  void ForceImmediateRepoll(WakeupMask mask) final;
+  WakeupMask CurrentParticipant() const final {
+    GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+    return 1u << currently_polling_;
+  }
+  Waker MakeOwningWaker() final;
+  Waker MakeNonOwningWaker() final;
+  std::string ActivityDebugTag(WakeupMask wakeup_mask) const final;
+
+ protected:
+  explicit Party(Arena* arena, size_t initial_refs)
+      : state_(kOneRef * initial_refs), arena_(arena) {}
+  ~Party() override;
+
+  // Main run loop. Must be locked.
+  // Polls participants and drains the add queue until there is no work left to
+  // be done.
+  // Derived types will likely want to override this to set up their
+  // contexts before polling.
+  // Should not be called by derived types except as a tail call to the base
+  // class RunParty when overriding this method to add custom context.
+  // Returns true if the party is over.
+  virtual bool RunParty() GRPC_MUST_USE_RESULT;
+
+  // Internal ref counting
+  void IncrementRefCount(DebugLocation whence = {});
+  void Unref(DebugLocation whence = {});
+  bool RefIfNonZero();
+
+  // Destroy any remaining participants.
+  // Should be called by derived types in response to PartyOver.
+  // Needs to have normal context setup before calling.
+  void CancelRemainingParticipants();
+
  private:
   // Non-owning wakeup handle.
   class Handle;
@@ -70,58 +121,6 @@ class Party : public Activity, private Wakeable {
     absl::string_view name_;
   };
 
-  // Number of bits reserved for wakeups gives us the maximum number of
-  // participants.
-  static constexpr size_t kMaxParticipants = 16;
-
- public:
-  Party(const Party&) = delete;
-  Party& operator=(const Party&) = delete;
-
-  // Spawn one promise into the party.
-  // The promise will be polled until it is resolved, or until the party is shut
-  // down.
-  // The on_complete callback will be called with the result of the promise if
-  // it completes.
-  // A maximum of sixteen promises can be spawned onto a party.
-  template <typename Factory, typename OnComplete>
-  void Spawn(absl::string_view name, Factory promise_factory,
-             OnComplete on_complete);
-
-  void Orphan() final { Crash("unused"); }
-
-  // Activity implementation: not allowed to be overridden by derived types.
-  void ForceImmediateRepoll(WakeupMask mask) final;
-  WakeupMask CurrentParticipant() const final {
-    GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
-    return 1u << currently_polling_;
-  }
-  Waker MakeOwningWaker() final;
-  Waker MakeNonOwningWaker() final;
-  std::string ActivityDebugTag(WakeupMask arg) const final;
-
- protected:
-  explicit Party(Arena* arena, size_t initial_refs)
-      : state_(kOneRef * initial_refs), arena_(arena) {}
-  ~Party() override;
-
-  // Main run loop. Must be locked.
-  // Polls participants and drains the add queue until there is no work left to
-  // be done.
-  // Derived types will likely want to override this to set up their
-  // contexts before polling.
-  // Should not be called by derived types except as a tail call to RunParty.
-  // Returns true if the party is over.
-  virtual bool RunParty() GRPC_MUST_USE_RESULT;
-
-  // Internal ref counting
-  void IncrementRefCount(DebugLocation whence = {});
-  void Unref(DebugLocation whence = {});
-  bool RefIfNonZero();
-
-  void CancelRemainingParticipants();
-
- private:
   // Concrete implementation of a participant for some promise & oncomplete
   // type.
   template <typename SuppliedFactory, typename OnComplete>
@@ -171,13 +170,16 @@ class Party : public Activity, private Wakeable {
   };
 
   // Notification that the party has finished and this instance can be deleted.
+  // Derived types should arrange to call CancelRemainingParticipants during
+  // this sequence.
   virtual void PartyOver() = 0;
 
-  void HandleLocked();
+  // Run the locked part of the party until it is unlocked.
+  void RunLocked();
 
   // Wakeable implementation
-  void Wakeup(WakeupMask arg) final;
-  void Drop(WakeupMask arg) final;
+  void Wakeup(WakeupMask wakeup_mask) final;
+  void Drop(WakeupMask wakeup_mask) final;
 
   // Organize to wake up some participants.
   void ScheduleWakeup(WakeupMask mask);
@@ -186,16 +188,6 @@ class Party : public Activity, private Wakeable {
 
   // Convert a state into a string.
   static std::string StateToString(uint64_t state);
-
-  static Participant* MaybeTaggedPointerToParticipant(uintptr_t ptr) {
-    if (ptr & 1) return nullptr;
-    return reinterpret_cast<Participant*>(ptr);
-  }
-
-  static Participant* TaggedPointerToParticipantFactory(uintptr_t ptr) {
-    GPR_DEBUG_ASSERT(ptr & 1);
-    return reinterpret_cast<Participant*>(ptr & ~static_cast<uintptr_t>(1));
-  }
 
   // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
@@ -218,8 +210,8 @@ class Party : public Activity, private Wakeable {
   static constexpr uint64_t kWakeupMask    = 0x0000'0000'0000'ffff;
   // Bits used to store 16 bits of allocated participant slots.
   static constexpr uint64_t kAllocatedMask = 0x0000'0000'ffff'0000;
-  // Bit indicating orphaned or not
-  static constexpr uint64_t kOver          = 0x0000'0001'0000'0000;
+  // Bit indicating destruction has begun (refs went to zero)
+  static constexpr uint64_t kDestroying    = 0x0000'0001'0000'0000;
   // Bit indicating locked or not
   static constexpr uint64_t kLocked        = 0x0000'0008'0000'0000;
   // Bits used to store 24 bits of ref counts
@@ -232,6 +224,9 @@ class Party : public Activity, private Wakeable {
   static constexpr size_t kRefShift = 40;
   // One ref count
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
+  // Number of bits reserved for wakeups gives us the maximum number of
+  // participants.
+  static constexpr size_t kMaxParticipants = 16;
 
   std::atomic<uint64_t> state_;
   Arena* const arena_;

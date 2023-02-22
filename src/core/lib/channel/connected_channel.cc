@@ -299,7 +299,7 @@ class ConnectedChannelStream : public Orphanable {
   }
 
   void Orphan() final {
-    bool finished = finished_.load(std::memory_order_acquire);
+    bool finished = finished_.IsSet();
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%s[connected] Orphan stream, finished: %d",
               party_->DebugTag().c_str(), finished);
@@ -321,8 +321,8 @@ class ConnectedChannelStream : public Orphanable {
   }
 
   // Push one batch to the transport.
-  // Takes care of allocating space for the transport, and of creating a
-  // completion closure.
+  // Takes care of allocating space for the transport stream op batch, and of
+  // creating a completion closure.
   // Calls configurator with two arguments:
   // - a `grpc_transport_stream_op_batch*` to be filled in by the caller with
   //   the desired batch (payload is already set, but the batch is otherwise
@@ -346,21 +346,10 @@ class ConnectedChannelStream : public Orphanable {
   grpc_stream* stream() { return stream_.get(); }
   grpc_stream_refcount* stream_refcount() { return &stream_refcount_; }
 
-  void set_finished() {
-    finished_.store(true, std::memory_order_relaxed);
-    wait_finished_.Wake();
-  }
-
-  auto WaitFinished() {
-    return [this]() -> Poll<Empty> {
-      if (finished_.load(std::memory_order_relaxed)) return Empty{};
-      return wait_finished_.pending();
-    };
-  }
+  void set_finished() { finished_.Set(); }
+  auto WaitFinished() { return finished_.Wait(); }
 
  private:
-  template <typename R>
-  struct Batch;
   template <typename R>
   struct Batch final {
     grpc_transport_stream_op_batch batch;
@@ -369,6 +358,8 @@ class ConnectedChannelStream : public Orphanable {
     Latch<absl::Status> done;
     absl::string_view name;
     R result_if_ok;
+    // Start with two refs - one for the batch completion, the other for the
+    // promise observing it.
     uint8_t refs = 2;
     void IncrementRefCount() { ++refs; }
     void Unref() {
@@ -432,8 +423,7 @@ class ConnectedChannelStream : public Orphanable {
   StreamPtr stream_;
   Arena* arena_ = GetContext<Arena>();
   Party* const party_ = static_cast<Party*>(Activity::current());
-  std::atomic<bool> finished_{false};
-  IntraActivityWaiter wait_finished_;
+  ExternallyObservableLatch<void> finished_;
 
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
@@ -571,7 +561,8 @@ auto ConnectedChannelStream::SendMessages(
     });
   });
 }
-#endif
+#endif  // defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) ||
+        // defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
 
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
