@@ -67,8 +67,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
-                           grpc_tls_version tls_version) {
+grpc_tls_certificate_provider* server_provider_create() {
   grpc_slice cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
@@ -84,12 +83,33 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
   grpc_tls_certificate_provider* server_provider =
       grpc_tls_certificate_provider_static_data_create(nullptr, server_pairs);
 
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  return server_provider;
+}
+
+grpc_tls_certificate_provider* client_provider_create() {
+  grpc_slice root_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
+  std::string root_cert =
+      std::string(grpc_core::StringViewFromSlice(root_slice));
+  grpc_tls_certificate_provider* client_provider =
+      grpc_tls_certificate_provider_static_data_create(root_cert.c_str(),
+                                                       nullptr);
+
+  grpc_slice_unref(root_slice);
+  return client_provider;
+}
+
+grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
+                           grpc_tls_version tls_version,
+                           grpc_tls_certificate_provider* provider) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_min_tls_version(options, tls_version);
   grpc_tls_credentials_options_set_max_tls_version(options, tls_version);
   // Set credential provider.
-  grpc_tls_credentials_options_set_certificate_provider(options,
-                                                        server_provider);
+  grpc_tls_credentials_options_set_certificate_provider(options, provider);
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   // Set client certificate request type.
@@ -103,30 +123,18 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
   GPR_ASSERT(grpc_server_add_http2_port(server, server_addr, creds));
   grpc_server_credentials_release(creds);
   grpc_server_start(server);
-
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
   return server;
 }
 
 grpc_channel* client_create(const char* server_addr,
-                            grpc_tls_version tls_version) {
+                            grpc_tls_version tls_version,
+                            grpc_tls_certificate_provider* provider) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_verify_server_cert(
       options, 1 /* = verify server certs */);
   grpc_tls_credentials_options_set_min_tls_version(options, tls_version);
   grpc_tls_credentials_options_set_max_tls_version(options, tls_version);
-  // Set credential provider.
-  grpc_slice root_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
-  std::string root_cert =
-      std::string(grpc_core::StringViewFromSlice(root_slice));
-  grpc_tls_certificate_provider* client_provider =
-      grpc_tls_certificate_provider_static_data_create(root_cert.c_str(),
-                                                       nullptr);
-  grpc_tls_credentials_options_set_certificate_provider(options,
-                                                        client_provider);
+  grpc_tls_credentials_options_set_certificate_provider(options, provider);
   grpc_tls_credentials_options_watch_root_certs(options);
 
   // Create TLS channel credentials.
@@ -149,8 +157,6 @@ grpc_channel* client_create(const char* server_addr,
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(client_args);
   }
-
-  grpc_slice_unref(root_slice);
   return client;
 }
 
@@ -228,12 +234,17 @@ TEST(H2TlsWrongVersionTest, ServerHasHigherTlsVersionThanClientCanSupport) {
 
   std::string server_addr = grpc_core::JoinHostPort("localhost", port);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_server* server =
-      server_create(cq, server_addr.c_str(), grpc_tls_version::TLS1_3);
-  grpc_channel* client =
-      client_create(server_addr.c_str(), grpc_tls_version::TLS1_2);
+  grpc_tls_certificate_provider* server_provider = server_provider_create();
+  grpc_tls_certificate_provider* client_provider = client_provider_create();
+  grpc_server* server = server_create(
+      cq, server_addr.c_str(), grpc_tls_version::TLS1_3, server_provider);
+  grpc_channel* client = client_create(
+      server_addr.c_str(), grpc_tls_version::TLS1_2, client_provider);
 
   make_request(cq, client);
+
+  grpc_tls_certificate_provider_release(server_provider);
+  grpc_tls_certificate_provider_release(client_provider);
 
   shutdown_server(cq, server);
   grpc_channel_destroy(client);
@@ -247,12 +258,17 @@ TEST(H2TlsWrongVersionTest, ClientHasHigherTlsVersionThanServerCanSupport) {
 
   std::string server_addr = grpc_core::JoinHostPort("localhost", port);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_server* server =
-      server_create(cq, server_addr.c_str(), grpc_tls_version::TLS1_2);
-  grpc_channel* client =
-      client_create(server_addr.c_str(), grpc_tls_version::TLS1_3);
+  grpc_tls_certificate_provider* server_provider = server_provider_create();
+  grpc_tls_certificate_provider* client_provider = client_provider_create();
+  grpc_server* server = server_create(
+      cq, server_addr.c_str(), grpc_tls_version::TLS1_2, server_provider);
+  grpc_channel* client = client_create(
+      server_addr.c_str(), grpc_tls_version::TLS1_3, client_provider);
 
   make_request(cq, client);
+
+  grpc_tls_certificate_provider_release(server_provider);
+  grpc_tls_certificate_provider_release(client_provider);
 
   shutdown_server(cq, server);
   grpc_channel_destroy(client);
