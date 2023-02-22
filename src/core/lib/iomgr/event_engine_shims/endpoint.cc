@@ -297,7 +297,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
   if (eeep->wrapper->Read(cb, slices, &read_args)) {
-    // Read succeded immediately. Run the callback inline.
+    // Read succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingRead(absl::OkStatus());
   }
 
@@ -319,7 +319,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
   if (eeep->wrapper->Write(cb, slices, &write_args)) {
-    // Write succeded immediately. Run the callback inline.
+    // Write succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingWrite(absl::OkStatus());
   }
   eeep->wrapper->ShutdownUnref();
