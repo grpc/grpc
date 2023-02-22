@@ -25,6 +25,7 @@
 #include <functional>
 #include <new>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -48,6 +49,7 @@
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
@@ -68,6 +70,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -2342,6 +2345,25 @@ void ClientChannel::FilterBasedCallData::
 }
 
 //
+// ClientChannel::LoadBalancedCall::LbCallState
+//
+
+class ClientChannel::LoadBalancedCall::LbCallState
+    : public ClientChannelLbCallState {
+ public:
+  explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
+
+  void* Alloc(size_t size) override { return lb_call_->arena()->Alloc(size); }
+
+  // Internal API to allow first-party LB policies to access per-call
+  // attributes set by the ConfigSelector.
+  absl::string_view GetCallAttribute(UniqueTypeName type) override;
+
+ private:
+  LoadBalancedCall* lb_call_;
+};
+
+//
 // ClientChannel::LoadBalancedCall::Metadata
 //
 
@@ -2907,11 +2929,6 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
     if (batch->send_initial_metadata) {
       call_attempt_tracer()->RecordSendInitialMetadata(
           batch->payload->send_initial_metadata.send_initial_metadata);
-      peer_string_ = batch->payload->send_initial_metadata.peer_string;
-      original_send_initial_metadata_on_complete_ = batch->on_complete;
-      GRPC_CLOSURE_INIT(&send_initial_metadata_on_complete_,
-                        SendInitialMetadataOnComplete, this, nullptr);
-      batch->on_complete = &send_initial_metadata_on_complete_;
     }
     if (batch->send_message) {
       call_attempt_tracer()->RecordSendMessage(
@@ -3017,21 +3034,6 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
   }
 }
 
-void ClientChannel::FilterBasedLoadBalancedCall::SendInitialMetadataOnComplete(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: got on_complete for send_initial_metadata: "
-            "error=%s",
-            self->chand(), self, StatusToString(error).c_str());
-  }
-  self->call_attempt_tracer()->RecordOnDoneSendInitialMetadata(
-      self->peer_string_);
-  Closure::Run(DEBUG_LOCATION,
-               self->original_send_initial_metadata_on_complete_, error);
-}
-
 void ClientChannel::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
@@ -3099,10 +3101,14 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
         status = absl::Status(static_cast<absl::StatusCode>(code), message);
       }
     }
-    const char* peer_string =
-        self->peer_string_ != nullptr
-            ? reinterpret_cast<char*>(gpr_atm_acq_load(self->peer_string_))
-            : "";
+    absl::string_view peer_string;
+    if (self->recv_initial_metadata_ != nullptr) {
+      Slice* peer_string_slice =
+          self->recv_initial_metadata_->get_pointer(PeerString());
+      if (peer_string_slice != nullptr) {
+        peer_string = peer_string_slice->as_string_view();
+      }
+    }
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);
   }

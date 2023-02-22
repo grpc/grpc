@@ -62,8 +62,8 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
   grpc_core::Notification read_done;
   SliceBuffer read_buffer;
   EXPECT_FALSE(server.Read(
-      [&read_done, &message, &read_buffer](absl::Status status) {
-        ASSERT_EQ(read_buffer.Count(), 1);
+      [&read_done, &message, &read_buffer](absl::Status) {
+        ASSERT_EQ(read_buffer.Count(), 1u);
         auto slice = read_buffer.TakeFirst();
         EXPECT_EQ(slice.as_string_view(), message);
         read_done.Notify();
@@ -73,7 +73,7 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
   SliceBuffer write_buffer;
   write_buffer.Append(Slice::FromCopiedString(message));
   EXPECT_FALSE(
-      client.Write([&write_done](absl::Status status) { write_done.Notify(); },
+      client.Write([&write_done](absl::Status) { write_done.Notify(); },
                    &write_buffer, nullptr));
   iocp.Work(5s, []() {});
   // Cleanup
@@ -116,7 +116,7 @@ TEST_F(WindowsEndpointTest, Conversation) {
     // if exchange%2 == 0, client -> server
     // if exchange%2 == 1, server -> client
     // if exchange == messages.length, done
-    std::atomic<int> exchange{0};
+    std::atomic<size_t> exchange{0};
 
     // Initiates a Write and corresponding Read on two endpoints.
     void WriteAndQueueReader(WindowsEndpoint* writer, WindowsEndpoint* reader) {
@@ -131,8 +131,8 @@ TEST_F(WindowsEndpointTest, Conversation) {
 
     // Asserts that the received string matches, then queues the next Write/Read
     // pair
-    void ReadCB(absl::Status status) {
-      ASSERT_EQ(read_buffer.Count(), 1);
+    void ReadCB(absl::Status) {
+      ASSERT_EQ(read_buffer.Count(), 1u);
       ASSERT_EQ(read_buffer.TakeFirst().as_string_view(), messages[exchange]);
       if (++exchange == messages.size()) {
         done.Notify();

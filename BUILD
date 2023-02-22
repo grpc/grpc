@@ -179,11 +179,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "glockenspiel"  # @unused
+g_stands_for = "gracious"  # @unused
 
 core_version = "30.1.0"  # @unused
 
-version = "1.53.0-dev"  # @unused
+version = "1.54.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2238,7 +2238,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:experiments",
-        "//src/core:gpr_atm",
         "//src/core:map",
         "//src/core:pipe",
         "//src/core:poll",
@@ -2770,6 +2769,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/client_channel.h",
         "//src/core:ext/filters/client_channel/client_channel_channelz.h",
         "//src/core:ext/filters/client_channel/client_channel_factory.h",
+        "//src/core:ext/filters/client_channel/client_channel_internal.h",
         "//src/core:ext/filters/client_channel/client_channel_service_config.h",
         "//src/core:ext/filters/client_channel/config_selector.h",
         "//src/core:ext/filters/client_channel/connector.h",
@@ -2777,7 +2777,6 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/global_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/health/health_check_client.h",
         "//src/core:ext/filters/client_channel/http_proxy.h",
-        "//src/core:ext/filters/client_channel/lb_call_state_internal.h",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",
@@ -3688,11 +3687,12 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:error",
-        "//src/core:gpr_atm",
+        "//src/core:experiments",
         "//src/core:http2_errors",
         "//src/core:http2_settings",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
+        "//src/core:iomgr_port",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",
