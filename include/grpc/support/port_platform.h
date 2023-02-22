@@ -58,7 +58,7 @@
 #define NOMINMAX
 #endif /* NOMINMAX */
 
-#include <Windows.h>
+#include <windows.h>
 
 #ifndef _WIN32_WINNT
 #error \
