@@ -141,9 +141,11 @@ OpenCensusServerCallData::OpenCensusServerCallData(
   FilterInitialMetadata(client_initial_metadata, &sml);
   path_ = std::move(sml.path);
   method_ = GetMethod(path_);
-  if (OpenCensusTracingEnabled()) {
-    GenerateServerContext(sml.tracing_slice.as_string_view(),
-                          absl::StrCat("Recv.", method_), &context_);
+  auto tracing_enabled = OpenCensusTracingEnabled();
+  GenerateServerContext(
+      tracing_enabled ? sml.tracing_slice.as_string_view() : "",
+      absl::StrCat("Recv.", method_), &context_);
+  if (tracing_enabled) {
     auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
     call_context[GRPC_CONTEXT_TRACING].value = &context_;
   }
