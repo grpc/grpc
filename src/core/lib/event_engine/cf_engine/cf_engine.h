@@ -64,9 +64,16 @@ class CFEventEngine : public EventEngine,
   struct Closure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
+
+  bool CancelConnectInternal(ConnectionHandle handle, absl::Status status);
+
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
+
+  grpc_core::Mutex conn_mu_;
+  ConnectionHandleSet conn_handles_ ABSL_GUARDED_BY(conn_mu_);
+
   std::shared_ptr<ThreadPool> executor_;
   TimerManager timer_manager_;
 };

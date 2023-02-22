@@ -79,29 +79,73 @@ CFEventEngine::ConnectionHandle CFEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& /* args */, MemoryAllocator memory_allocator,
     Duration timeout) {
-  auto addr_uri = ResolvedAddressToURI(addr);
-  GRPC_EVENT_ENGINE_TRACE("CFEventEngine::connect: %s",
-                          addr_uri.value().c_str());
-
-  if (!addr_uri.ok()) {
-    Run([on_connect = std::move(on_connect),
-         ep = absl::FailedPreconditionError(absl::StrCat(
-             "connect failed: ", "invalid addr: ",
-             addr_uri.value()))]() mutable { on_connect(std::move(ep)); });
-    return {0, 0};
-  }
-
   auto endpoint_ptr = new CFStreamEndpoint(
       std::static_pointer_cast<CFEventEngine>(shared_from_this()),
       std::move(memory_allocator));
 
-  endpoint_ptr->Connect(std::move(on_connect), addr, std::move(timeout));
+  ConnectionHandle handle{reinterpret_cast<intptr_t>(endpoint_ptr), 0};
+  {
+    grpc_core::MutexLock lock(&conn_mu_);
+    conn_handles_.insert(handle);
+  }
 
-  return {reinterpret_cast<intptr_t>(endpoint_ptr), 0};
+  auto deadline_timer =
+      RunAfter(timeout, [handle, that = std::static_pointer_cast<CFEventEngine>(
+                                     shared_from_this())]() {
+        that->CancelConnectInternal(
+            handle, absl::DeadlineExceededError("Connect timed out"));
+      });
+
+  auto on_connect2 =
+      [that = std::static_pointer_cast<CFEventEngine>(shared_from_this()),
+       deadline_timer = std::move(deadline_timer), handle,
+       on_connect = std::move(on_connect)](absl::Status status) mutable {
+        // best effort canceling deadline timer
+        that->Cancel(deadline_timer);
+
+        {
+          grpc_core::MutexLock lock(&that->conn_mu_);
+          that->conn_handles_.erase(handle);
+        }
+
+        auto endpoint_ptr = reinterpret_cast<CFStreamEndpoint*>(handle.keys[0]);
+
+        if (!status.ok()) {
+          on_connect(std::move(status));
+          delete endpoint_ptr;
+          return;
+        }
+
+        on_connect(std::unique_ptr<EventEngine::Endpoint>(endpoint_ptr));
+      };
+
+  endpoint_ptr->Connect(std::move(on_connect2), addr);
+
+  return handle;
 }
 
-bool CFEventEngine::CancelConnect(ConnectionHandle /* handle */) {
+bool CFEventEngine::CancelConnect(ConnectionHandle handle) {
+  CancelConnectInternal(handle, absl::CancelledError("CancelConnect"));
+  // on_connect will always be called, even if cancellation is successful
   return false;
+}
+
+bool CFEventEngine::CancelConnectInternal(ConnectionHandle handle,
+                                          absl::Status status) {
+  grpc_core::MutexLock lock(&conn_mu_);
+
+  if (!conn_handles_.contains(handle)) {
+    GRPC_EVENT_ENGINE_TRACE(
+        "Unknown connection handle: %s",
+        HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
+    return false;
+  }
+  conn_handles_.erase(handle);
+
+  // keep the `conn_mu_` lock to prevent endpoint_ptr from being deleted
+
+  auto endpoint_ptr = reinterpret_cast<CFStreamEndpoint*>(handle.keys[0]);
+  return endpoint_ptr->CancelConnect(status);
 }
 
 bool CFEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

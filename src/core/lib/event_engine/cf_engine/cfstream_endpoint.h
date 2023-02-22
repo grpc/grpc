@@ -52,10 +52,9 @@ class CFStreamEndpoint : public EventEngine::Endpoint {
   }
 
  public:
-  void Connect(EventEngine::OnConnectCallback on_connect,
-               EventEngine::ResolvedAddress addr,
-               EventEngine::Duration timeout);
-  bool CancelConnect() { return false; }
+  void Connect(absl::AnyInvocable<void(absl::Status)> on_connect,
+               EventEngine::ResolvedAddress addr);
+  bool CancelConnect(absl::Status status);
 
  private:
   void DoWrite(absl::AnyInvocable<void(absl::Status)> on_writable,

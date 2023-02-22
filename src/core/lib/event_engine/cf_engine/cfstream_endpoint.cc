@@ -56,14 +56,27 @@ absl::StatusOr<EventEngine::ResolvedAddress> CFReadStreamLocallAddress(
 
 }  // namespace
 
-void CFStreamEndpoint::Connect(EventEngine::OnConnectCallback on_connect,
-                               EventEngine::ResolvedAddress addr,
-                               EventEngine::Duration timeout) {
+bool CFStreamEndpoint::CancelConnect(absl::Status status) {
+  return open_event_.SetShutdown(std::move(status));
+}
+
+void CFStreamEndpoint::Connect(
+    absl::AnyInvocable<void(absl::Status)> on_connect,
+    EventEngine::ResolvedAddress addr) {
+  auto addr_uri = ResolvedAddressToURI(addr);
+
+  if (!addr_uri.ok()) {
+    on_connect(std::move(addr_uri).status());
+    return;
+  }
+
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpoint::Connect: %s",
+                                   addr_uri.value().c_str());
+
   peer_address_ = std::move(addr);
   auto host_port = ResolvedAddressToNormalizedString(peer_address_);
   if (!host_port.ok()) {
     on_connect(std::move(host_port).status());
-    delete this;
     return;
   }
 
@@ -100,48 +113,31 @@ void CFStreamEndpoint::Connect(EventEngine::OnConnectCallback on_connect,
   if (!CFReadStreamOpen(cf_read_stream_)) {
     auto status = CFErrorToStatus(CFReadStreamCopyError(cf_read_stream_));
     on_connect(std::move(status));
-    delete this;
     return;
   }
 
   if (!CFWriteStreamOpen(cf_write_stream_)) {
     auto status = CFErrorToStatus(CFWriteStreamCopyError(cf_write_stream_));
     on_connect(std::move(status));
-    delete this;
     return;
   }
 
-  auto connect_timeout_timer = engine_->RunAfter(timeout, [this]() {
-    open_event_.SetShutdown(absl::DeadlineExceededError("Connect timed out"));
-  });
-
   open_event_.NotifyOn(new PosixEngineClosure(
-      [this, on_connect = std::move(on_connect),
-       connect_timeout_timer](absl::Status status) mutable {
-        auto canceled = engine_->Cancel(connect_timeout_timer);
-
-        if (!canceled) {
-          // timer cancelation failed:
-          // 1. will fire or is firing, cannot delete this
-          // 2. has fired and this may be it (open_event_ shutdown)
-        }
-
+      [this, on_connect = std::move(on_connect)](absl::Status status) mutable {
         if (!status.ok()) {
           on_connect(std::move(status));
-          delete this;
           return;
         }
 
         auto local_addr = CFReadStreamLocallAddress(cf_read_stream_);
         if (!local_addr.ok()) {
           on_connect(std::move(local_addr).status());
-          delete this;
           return;
         }
 
         local_address_ = local_addr.value();
         local_address_string_ = *ResolvedAddressToURI(local_address_);
-        on_connect(std::unique_ptr<EventEngine::Endpoint>(this));
+        on_connect(absl::OkStatus());
       },
       false /* is_permanent */));
 }
@@ -223,9 +219,12 @@ CFStreamEndpoint::~CFStreamEndpoint() {
   CFReadStreamClose(cf_read_stream_);
   CFWriteStreamClose(cf_write_stream_);
 
-  open_event_.SetShutdown(absl::OkStatus());
-  read_event_.SetShutdown(absl::OkStatus());
-  write_event_.SetShutdown(absl::OkStatus());
+  auto shutdownStatus =
+      absl::Status(absl::StatusCode::kUnknown,
+                   absl::StrFormat("Shutting down CFStreamEndpoint"));
+  open_event_.SetShutdown(shutdownStatus);
+  read_event_.SetShutdown(shutdownStatus);
+  write_event_.SetShutdown(shutdownStatus);
   open_event_.DestroyEvent();
   read_event_.DestroyEvent();
   write_event_.DestroyEvent();
