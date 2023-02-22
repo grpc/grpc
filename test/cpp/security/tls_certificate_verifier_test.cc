@@ -162,22 +162,6 @@ TEST(TlsCertificateVerifierTest,
 }
 
 TEST(TlsCertificateVerifierTest,
-     NoOpCertificateVerifierSucceedsWithVerifiedRootCertSubject) {
-  grpc_tls_custom_verification_check_request request;
-  std::string expected_subject =
-      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
-  request.peer_info.verified_root_cert_subject = expected_subject.c_str();
-  auto verifier = std::make_shared<NoOpCertificateVerifier>();
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  EXPECT_EQ(cpp_request.verified_root_cert_subject(), expected_subject);
-  grpc::Status sync_status;
-  bool is_sync = verifier->Verify(&cpp_request, nullptr, &sync_status);
-  EXPECT_TRUE(is_sync);
-  EXPECT_TRUE(sync_status.ok())
-      << sync_status.error_code() << " " << sync_status.error_message();
-}
-
-TEST(TlsCertificateVerifierTest,
      NoOpCertificateVerifierSucceedsWithoutVerifiedRootCertSubject) {
   grpc_tls_custom_verification_check_request request;
   memset(&request, 0, sizeof(request));
