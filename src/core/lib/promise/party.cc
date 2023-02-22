@@ -150,7 +150,7 @@ void Party::Unref(DebugLocation whence) {
   }
   if ((prev_state & kRefMask) == kOneRef) {
     prev_state =
-        state_.fetch_or(kOrphaning | kLocked, std::memory_order_acq_rel);
+        state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
     if (prev_state & kLocked) {
       // Already locked: RunParty will call PartyOver.
     } else {
@@ -162,6 +162,8 @@ void Party::Unref(DebugLocation whence) {
 }
 
 void Party::CancelRemainingParticipants() {
+  ScopedActivity activity(this);
+  promise_detail::Context<Arena> arena_ctx(arena_);
   for (size_t i = 0; i < kMaxParticipants; i++) {
     if (auto* p = std::exchange(participants_[i], nullptr)) {
       p->Destroy();
@@ -223,7 +225,7 @@ bool Party::RunParty() {
               StateToString(prev_state).c_str());
     }
     GPR_ASSERT(prev_state & kLocked);
-    if (prev_state & kOrphaning) return true;
+    if (prev_state & kDestroying) return true;
     // From the previous state, extract which participants we're to wakeup.
     uint64_t wakeups = prev_state & kWakeupMask;
     // Now update prev_state to be what we want the CAS to see below.
@@ -351,7 +353,7 @@ void Party::Drop(WakeupMask) { Unref(); }
 std::string Party::StateToString(uint64_t state) {
   std::vector<std::string> parts;
   if (state & kLocked) parts.push_back("locked");
-  if (state & kOrphaning) parts.push_back("over");
+  if (state & kDestroying) parts.push_back("over");
   parts.push_back(
       absl::StrFormat("refs=%" PRIuPTR, (state & kRefMask) >> kRefShift));
   std::vector<int> allocated;

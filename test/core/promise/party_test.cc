@@ -63,7 +63,14 @@ class TestParty final : public AllocatorOwner, public Party {
     return Party::RunParty();
   }
 
-  void PartyOver() override {}
+  void PartyOver() override {
+    {
+      promise_detail::Context<grpc_event_engine::experimental::EventEngine>
+          ee_ctx(ee_.get());
+      CancelRemainingParticipants();
+    }
+    delete this;
+  }
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_ =
