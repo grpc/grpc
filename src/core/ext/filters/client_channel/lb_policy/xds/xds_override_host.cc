@@ -43,7 +43,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
@@ -369,7 +369,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
-  auto* call_state = static_cast<LbCallStateInternal*>(args.call_state);
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto override_host = call_state->GetCallAttribute(XdsOverrideHostTypeName());
   auto overridden_host_pick = PickOverridenHost(override_host);
   if (overridden_host_pick.has_value()) {

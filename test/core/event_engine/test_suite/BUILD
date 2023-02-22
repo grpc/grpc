@@ -64,11 +64,12 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        # TODO(hork): enable when the listener (or an oracle) is available
-        # "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:timer",
         "//src/core:windows_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
+        # TODO(hork): enable when the listener (or an oracle) is available
+        # "//test/core/event_engine/test_suite/tests:client",
+        # "//test/core/event_engine/test_suite/tests:server",
     ],
 )
 

@@ -50,6 +50,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
+        "environment_autodetect",
         "observability_config",
         "observability_logging_sink",
         "//:gpr",
