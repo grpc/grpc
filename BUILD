@@ -2237,7 +2237,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:experiments",
-        "//src/core:gpr_atm",
         "//src/core:map",
         "//src/core:pipe",
         "//src/core:poll",
