@@ -3686,6 +3686,7 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:http2_errors",
         "//src/core:http2_settings",
         "//src/core:init_internally",
