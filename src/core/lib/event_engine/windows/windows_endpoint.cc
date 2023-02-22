@@ -72,7 +72,7 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     executor_->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::UnavailableError("Socket is shutting down."));
     });
-    return;
+    return false;
   }
   // Prepare the WSABUF struct
   WSABUF wsa_buffers[kMaxWSABUFCount];
@@ -145,7 +145,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     executor_->Run([on_writable = std::move(on_writable)]() mutable {
       on_writable(absl::UnavailableError("Socket is shutting down."));
     });
-    return;
+    return false;
   }
   if (grpc_event_engine_endpoint_data_trace.enabled()) {
     for (size_t i = 0; i < data->Count(); i++) {
