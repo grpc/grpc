@@ -295,7 +295,7 @@ void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-TEST(H2SessionReuseTest, SingleReuse) {
+TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
   int port = grpc_pick_unused_port_or_die();
 
   std::string server_addr = grpc_core::JoinHostPort("localhost", port);
