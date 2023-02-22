@@ -545,6 +545,7 @@ setuptools.setup(
     },
     license=LICENSE,
     classifiers=CLASSIFIERS,
+    long_description_content_type='text/x-rst',
     long_description=open(README).read(),
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),

@@ -281,6 +281,7 @@ def extension_modules():
 setuptools.setup(name='grpcio-tools',
                  version=grpc_version.VERSION,
                  description='Protobuf code generator for gRPC',
+                 long_description_content_type='text/x-rst',
                  long_description=open(_README_PATH, 'r').read(),
                  author='The gRPC Authors',
                  author_email='grpc-io@googlegroups.com',
