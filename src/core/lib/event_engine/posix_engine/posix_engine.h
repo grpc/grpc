@@ -246,8 +246,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                     absl::Status status);
     void OnWritable(FdNodeList::FdNode* fd_node, GrpcAresRequest* request,
                     absl::Status status);
-    void OnDone(FdNodeList::FdNode* fd_node, GrpcAresRequest* request,
-                absl::Status status);
+    void OnHandleDestroyed(FdNodeList::FdNode* fd_node,
+                           GrpcAresRequest* request, absl::Status status);
 
     const ResolverOptions options_;
     std::shared_ptr<PosixEnginePollerManager> poller_manager_;

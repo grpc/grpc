@@ -65,6 +65,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
+// #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -519,8 +520,10 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
+// TODO(yijiem): maybe make this class RefCounted.
 // An inflight name service lookup request
-class PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
+class PosixEventEngine::PosixDNSResolver::GrpcAresRequest
+/* : public RefCounted<GrpcAresRequest, grpc_core::PolymorphicRefCount> */ {
  public:
   explicit GrpcAresRequest(ares_channel channel, absl::string_view host,
                            uint16_t port, Duration timeout)
@@ -565,33 +568,57 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
   std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_) =
       std::make_unique<FdNodeList>();
 };
+namespace {
+void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
+                               struct hostent* hostent);
+}
 
+// A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
+// lookup
 class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
     : public PosixEventEngine::PosixDNSResolver::GrpcAresRequest {
  public:
   explicit GrpcAresHostnameRequest(ares_channel channel, absl::string_view host,
                                    uint16_t port, Duration timeout,
-                                   std::string qtype,
                                    LookupHostnameCallback on_resolve)
       : GrpcAresRequest(channel, host, port, timeout),
-        qtype_(std::move(qtype)),
-        on_resolve_(std::move(on_resolve)) {}
+        on_resolve_(std::move(on_resolve)) {
+    // TODO(yijiem): there is a cycle dependency between //:grpc_base and
+    // :posix_event_engine
+    if (/*grpc_ares_query_ipv6()*/ true) {
+      // TODO(yijiem): set_request_dns_server if specified
+      pending_queries_++;
+      ares_gethostbyname(channel, this->host(), AF_INET6,
+                         &on_hostbyname_done_locked, static_cast<void*>(this));
+    }
+    // TODO(yijiem): set_request_dns_server if specified
+    pending_queries_++;
+    ares_gethostbyname(channel, this->host(), AF_INET,
+                       &on_hostbyname_done_locked, static_cast<void*>(this));
+  }
 
   ~GrpcAresHostnameRequest() override {}
 
   bool is_balancer() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return is_balancer_;
   }
-  const char* qtype() const { return qtype_.c_str(); }
+  const char* qtype() const { return "Unimplemented"; }
 
   void OnResolve(absl::StatusOr<std::vector<ResolvedAddress>> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    on_resolve_(std::move(result));
+    // TODO(yijiem): handle failure case
+    GPR_ASSERT(result.ok());
+    pending_queries_--;
+    result_.insert(result_.end(), result->begin(), result->end());
+    if (pending_queries_ == 0) {
+      // TODO(yijiem): sort the addresses
+      on_resolve_(std::move(result_));
+    }
   }
 
  private:
-  /// for logging and errors: the query type ("A" or "AAAA")
-  const std::string qtype_;
+  size_t pending_queries_ = 0;
+  std::vector<ResolvedAddress> result_;
   /// is it a grpclb address
   bool is_balancer_ ABSL_GUARDED_BY(mu_) = false;
   LookupHostnameCallback on_resolve_ ABSL_GUARDED_BY(mu_);
@@ -602,6 +629,8 @@ bool is_fd_still_readable(int fd) {
   size_t bytes_available = 0;
   return ioctl(fd, FIONREAD, &bytes_available) == 0 && bytes_available > 0;
 }
+
+// bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 
 void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
                                struct hostent* hostent)
@@ -677,7 +706,6 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
       }
     }
   }
-  // TODO(yijiem): sort the addresses
   request->OnResolve(std::move(resolved_addresses));
 }
 }  // namespace
@@ -708,12 +736,8 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
     abort();
   }
   GrpcAresRequest* request = new GrpcAresHostnameRequest(
-      channel, host, grpc_strhtons(std::string(port).c_str()), timeout, "A",
+      channel, host, grpc_strhtons(std::string(port).c_str()), timeout,
       std::move(on_resolve));
-  // TODO(yijiem): set_request_dns_server if specified
-  // TODO(yijiem): handle ipv6
-  ares_gethostbyname(channel, request->host(), AF_INET,
-                     &on_hostbyname_done_locked, static_cast<void*>(request));
   OnEvent(request);
   // TODO(yijiem): return a LookupTaskHandle to the caller
   LookupTaskHandle handle;
@@ -799,13 +823,13 @@ void PosixEventEngine::PosixDNSResolver::OnEvent(GrpcAresRequest* request) {
     if (!fd_node->readable_registered() && !fd_node->writable_registered()) {
       // TODO(yijiem): other destroy steps
       fd_node->event_handle()->ShutdownHandle(absl::OkStatus());
-      PosixEngineClosure* on_done = new PosixEngineClosure(
+      PosixEngineClosure* on_handle_destroyed = new PosixEngineClosure(
           [this, fd_node, request](absl::Status status) {
-            OnDone(fd_node, request, status);
+            OnHandleDestroyed(fd_node, request, status);
           },
           /*is_permanent=*/false);
       int release_fd = -1;
-      fd_node->event_handle()->OrphanHandle(on_done, &release_fd,
+      fd_node->event_handle()->OrphanHandle(on_handle_destroyed, &release_fd,
                                             "no longer used by ares");
       GPR_ASSERT(release_fd == fd_node->WrappedFd());
     } else {
@@ -839,6 +863,7 @@ void PosixEventEngine::PosixDNSResolver::OnReadable(FdNodeList::FdNode* fd_node,
     ares_cancel(request->channel());
   }
   OnEvent(request);
+  // request->Unref();
 }
 
 void PosixEventEngine::PosixDNSResolver::OnWritable(FdNodeList::FdNode* fd_node,
@@ -861,17 +886,19 @@ void PosixEventEngine::PosixDNSResolver::OnWritable(FdNodeList::FdNode* fd_node,
     ares_cancel(request->channel());
   }
   OnEvent(request);
+  // request->Unref();
 }
 
-void PosixEventEngine::PosixDNSResolver::OnDone(FdNodeList::FdNode* fd_node,
-                                                GrpcAresRequest* request,
-                                                absl::Status status) {
+void PosixEventEngine::PosixDNSResolver::OnHandleDestroyed(
+    FdNodeList::FdNode* fd_node, GrpcAresRequest* request,
+    absl::Status status) {
   GPR_ASSERT(status.ok());
   // TODO(yijiem): destroy request
   GRPC_CARES_TRACE_LOG("request: %p OnDone for fd_node: %d", request,
                        fd_node->WrappedFd());
   GRPC_CARES_STACKTRACE();
   delete fd_node;
+  // TODO(yijiem): revisit this
   // If request does not have active fd_nodes, considers it as complete and
   // frees its memory.
   if (request->fd_node_list()->IsEmpty()) {
