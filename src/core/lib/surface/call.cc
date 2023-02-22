@@ -3645,13 +3645,9 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
       "reserved=%p)",
       5, (call, ops, (unsigned long)nops, tag, reserved));
 
-  if (reserved != nullptr) {
-    return GRPC_CALL_ERROR;
-  } else {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    return grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
-  }
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  return grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
 }
 
 grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
