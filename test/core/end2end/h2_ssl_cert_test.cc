@@ -22,7 +22,6 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
 #include <openssl/crypto.h>
 
 #include "gtest/gtest.h"
