@@ -672,10 +672,10 @@ grpc_cc_library(
         "//src/core:lib/gprpp/host_port.cc",
         "//src/core:lib/gprpp/mpscq.cc",
         "//src/core:lib/gprpp/stat_posix.cc",
-        "//src/core:lib/gprpp/windows/stat.cc",
         "//src/core:lib/gprpp/thd_posix.cc",
-        "//src/core:lib/gprpp/windows/thd.cc",
         "//src/core:lib/gprpp/time_util.cc",
+        "//src/core:lib/gprpp/windows/stat.cc",
+        "//src/core:lib/gprpp/windows/thd.cc",
     ],
     hdrs = [
         "//src/core:lib/gpr/alloc.h",
