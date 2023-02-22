@@ -55,7 +55,7 @@ Aggregation MillisDistributionAggregation() {
 
 void SetConstantLabels(ViewDescriptor* descriptor) {
   for (const auto& label :
-       grpc::internal::OpenCensusRegistry::Get().constant_labels()) {
+       grpc::internal::OpenCensusRegistry::Get().ConstantLabels()) {
     descriptor->add_column(label.tag_key);
   }
 }

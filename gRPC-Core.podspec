@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.53.0-dev'
+  version = '1.54.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -225,6 +225,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.cc',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
+                      'src/core/ext/filters/client_channel/client_channel_internal.h',
                       'src/core/ext/filters/client_channel/client_channel_plugin.cc',
                       'src/core/ext/filters/client_channel/client_channel_service_config.cc',
                       'src/core/ext/filters/client_channel/client_channel_service_config.h',
@@ -239,7 +240,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_proxy.cc',
                       'src/core/ext/filters/client_channel/http_proxy.h',
-                      'src/core/ext/filters/client_channel/lb_call_state_internal.h',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.cc',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                       'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
@@ -345,6 +345,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                       'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc',
                       'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h',
+                      'src/core/ext/gcp/metadata_query.cc',
+                      'src/core/ext/gcp/metadata_query.h',
                       'src/core/ext/transport/chttp2/alpn/alpn.cc',
                       'src/core/ext/transport/chttp2/alpn/alpn.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
@@ -1904,6 +1906,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
                               'src/core/ext/filters/client_channel/client_channel_factory.h',
+                              'src/core/ext/filters/client_channel/client_channel_internal.h',
                               'src/core/ext/filters/client_channel/client_channel_service_config.h',
                               'src/core/ext/filters/client_channel/config_selector.h',
                               'src/core/ext/filters/client_channel/connector.h',
@@ -1911,7 +1914,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/health/health_check_client.h',
                               'src/core/ext/filters/client_channel/http_proxy.h',
-                              'src/core/ext/filters/client_channel/lb_call_state_internal.h',
                               'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                               'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                               'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
@@ -1957,6 +1959,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                               'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                               'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h',
+                              'src/core/ext/gcp/metadata_query.h',
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.53.0-dev
+PROJECT_NUMBER         = 1.54.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1091,6 +1091,7 @@ src/core/ext/filters/client_channel/client_channel_channelz.cc \
 src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
+src/core/ext/filters/client_channel/client_channel_internal.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
 src/core/ext/filters/client_channel/client_channel_service_config.cc \
 src/core/ext/filters/client_channel/client_channel_service_config.h \
@@ -1105,7 +1106,6 @@ src/core/ext/filters/client_channel/health/health_check_client.cc \
 src/core/ext/filters/client_channel/health/health_check_client.h \
 src/core/ext/filters/client_channel/http_proxy.cc \
 src/core/ext/filters/client_channel/http_proxy.h \
-src/core/ext/filters/client_channel/lb_call_state_internal.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
 src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
@@ -1211,6 +1211,8 @@ src/core/ext/filters/stateful_session/stateful_session_filter.cc \
 src/core/ext/filters/stateful_session/stateful_session_filter.h \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
+src/core/ext/gcp/metadata_query.cc \
+src/core/ext/gcp/metadata_query.h \
 src/core/ext/transport/binder/client/binder_connector.cc \
 src/core/ext/transport/binder/client/binder_connector.h \
 src/core/ext/transport/binder/client/channel_create.cc \

@@ -28,7 +28,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
-#include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
@@ -66,7 +65,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
                                 bool arena_allocated);
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
-    void RecordOnDoneSendInitialMetadata(gpr_atm* /*peer_string*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(
@@ -121,7 +119,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   absl::string_view method_;
   experimental::CensusContext context_;
   grpc_core::Arena* arena_;
-  bool tracing_enabled_;
+  const bool tracing_enabled_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

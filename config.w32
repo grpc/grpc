@@ -83,6 +83,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\server_config_selector\\server_config_selector_filter.cc " +
     "src\\core\\ext\\filters\\stateful_session\\stateful_session_filter.cc " +
     "src\\core\\ext\\filters\\stateful_session\\stateful_session_service_config_parser.cc " +
+    "src\\core\\ext\\gcp\\metadata_query.cc " +
     "src\\core\\ext\\transport\\chttp2\\alpn\\alpn.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
     "src\\core\\ext\\transport\\chttp2\\server\\chttp2_server.cc " +
@@ -1303,6 +1304,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\rbac");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\server_config_selector");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\stateful_session");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\gcp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\alpn");

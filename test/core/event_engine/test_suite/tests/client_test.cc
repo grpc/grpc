@@ -106,7 +106,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
 
 TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
@@ -168,6 +168,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   }
   client_endpoint.reset();
   server_endpoint.reset();
+  listener.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
