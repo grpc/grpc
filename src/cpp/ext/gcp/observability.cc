@@ -18,15 +18,18 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
+#include "google/api/monitored_resource.pb.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
 #include "google/monitoring/v3/metric_service.grpc.pb.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
@@ -93,17 +96,48 @@ absl::Status GcpObservabilityInit() {
     return absl::OkStatus();
   }
   grpc::internal::EnvironmentAutoDetect::Create(config->project_id);
-  grpc::RegisterOpenCensusPlugin();
-  if (config->cloud_trace.has_value()) {
-    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
-        [cloud_trace = config->cloud_trace.value(),
-         project_id = config->project_id]() mutable {
+  if (!config->cloud_trace.has_value()) {
+    // Disable OpenCensus tracing
+    grpc::internal::EnableOpenCensusTracing(false);
+  }
+  if (!config->cloud_monitoring.has_value()) {
+    // Disable OpenCensus stats
+    grpc::internal::EnableOpenCensusStats(false);
+  }
+  // If tracing or monitoring is enabled, we need to get the OpenCensus plugin
+  // to wait for the environment to be autodetected.
+  if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
+    grpc::RegisterOpenCensusPlugin();
+    grpc::internal::OpenCensusRegistry::Get().RegisterWaitOnReady();
+    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions([config]() {
+      grpc::internal::EnvironmentAutoDetect::Get().NotifyOnDone([config]() {
+        auto* resource =
+            grpc::internal::EnvironmentAutoDetect::Get().resource();
+        if (config->cloud_trace.has_value()) {
+          // Set up attributes for constant tracing
+          std::vector<internal::OpenCensusRegistry::Attribute> attributes;
+          attributes.reserve(resource->labels.size() + config->labels.size());
+          // First insert in environment labels
+          for (const auto& resource_label : resource->labels) {
+            attributes.push_back(internal::OpenCensusRegistry::Attribute{
+                absl::StrCat(resource->resource_type, ".",
+                             resource_label.first),
+                resource_label.second});
+          }
+          // Then insert in labels from the GCP Observability config.
+          for (const auto& constant_label : config->labels) {
+            attributes.push_back(internal::OpenCensusRegistry::Attribute{
+                constant_label.first, constant_label.second});
+          }
+          grpc::internal::OpenCensusRegistry::Get().RegisterConstantAttributes(
+              std::move(attributes));
+          // Set up the StackDriver Exporter
           opencensus::trace::TraceConfig::SetCurrentTraceParams(
               {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
                opencensus::trace::ProbabilitySampler(
-                   cloud_trace.sampling_rate)});
+                   config->cloud_trace->sampling_rate)});
           opencensus::exporters::trace::StackdriverOptions trace_opts;
-          trace_opts.project_id = std::move(project_id);
+          trace_opts.project_id = config->project_id;
           ChannelArguments args;
           args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
           trace_opts.trace_service_stub =
@@ -112,16 +146,15 @@ absl::Status GcpObservabilityInit() {
                                       GoogleDefaultCredentials(), args));
           opencensus::exporters::trace::StackdriverExporter::Register(
               std::move(trace_opts));
-        });
-  } else {
-    // Disable OpenCensus tracing
-    grpc::internal::EnableOpenCensusTracing(false);
-  }
-  if (config->cloud_monitoring.has_value()) {
-    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
-        [project_id = config->project_id]() mutable {
+        }
+        if (config->cloud_monitoring.has_value()) {
+          grpc::internal::OpenCensusRegistry::Get().RegisterConstantLabels(
+              config->labels);
           opencensus::exporters::stats::StackdriverOptions stats_opts;
-          stats_opts.project_id = std::move(project_id);
+          stats_opts.project_id = config->project_id;
+          stats_opts.monitored_resource.set_type(resource->resource_type);
+          stats_opts.monitored_resource.mutable_labels()->insert(
+              resource->labels.begin(), resource->labels.end());
           ChannelArguments args;
           args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
           stats_opts.metric_service_stub =
@@ -130,29 +163,11 @@ absl::Status GcpObservabilityInit() {
                                       GoogleDefaultCredentials(), args));
           opencensus::exporters::stats::StackdriverExporter::Register(
               std::move(stats_opts));
-        });
-  } else {
-    // Disable OpenCensus stats
-    grpc::internal::EnableOpenCensusStats(false);
-  }
-  // If tracing or monitoring is enabled, we need to get the OpenCensus plugin
-  // to wait for the environment to be autodetected.
-  if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
-    grpc::internal::OpenCensusRegistry::Get().RegisterWaitOnReady();
-    grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
-        [config_labels = config->labels]() mutable {
-          grpc::internal::EnvironmentAutoDetect::Get().NotifyOnDone(
-              [config_labels = std::move(config_labels)]() mutable {
-                auto& labels = grpc::internal::EnvironmentAutoDetect::Get()
-                                   .resource()
-                                   ->labels;
-                config_labels.insert(labels.begin(), labels.end());
-                grpc::internal::OpenCensusRegistry::Get()
-                    .RegisterConstantLabels(config_labels);
-                RegisterOpenCensusViewsForGcpObservability();
-                grpc::internal::OpenCensusRegistry::Get().SetReady();
-              });
-        });
+        }
+        RegisterOpenCensusViewsForGcpObservability();
+        grpc::internal::OpenCensusRegistry::Get().SetReady();
+      });
+    });
   }
   if (config->cloud_logging.has_value()) {
     g_logging_sink = new grpc::internal::ObservabilityLoggingSink(

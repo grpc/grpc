@@ -210,9 +210,8 @@ OpenCensusRegistry& OpenCensusRegistry::Get() {
 
 void OpenCensusRegistry::PopulateCensusContextWithConstantAttributes(
     grpc::experimental::CensusContext* context) {
-  // We reuse the constant labels for the attributes
-  for (const auto& label : ConstantLabels()) {
-    context->AddSpanAttribute(label.key, label.value);
+  for (const auto& attribute : ConstantAttributes()) {
+    context->AddSpanAttribute(attribute.key, attribute.value);
   }
 }
 
