@@ -152,11 +152,6 @@ grpc_channel* client_create(const char* server_addr,
   grpc_tls_credentials_options_set_certificate_verifier(options, *verifier);
   grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
 
-  //   grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {client_key,
-  //                                                             client_cert};
-  //   grpc_channel_credentials* client_creds = grpc_ssl_credentials_create(
-  //       ca_cert, &signed_client_key_cert_pair, nullptr, nullptr);
-
   grpc_arg args[] = {
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
