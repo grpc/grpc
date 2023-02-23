@@ -1,3 +1,15 @@
 # bazelrc file
+common --enable_platform_specific_config
 
-build --host_cxxopt='-std=c++14'
+build:windows --cxxopt='/std:c++14'
+build:windows --host_cxxopt='/std:c++14'
+build:linux   --cxxopt='-std=c++14'
+build:linux   --host_cxxopt='-std=c++14'
+build:macos   --cxxopt='-std=c++14'
+build:macos   --host_cxxopt='-std=c++14'
+build:freebsd   --cxxopt='-std=c++14'
+build:freebsd   --host_cxxopt='-std=c++14'
+
+# Don't trigger --config=<host platform> when cross-compiling.
+build:android --noenable_platform_specific_config
+build:ios --noenable_platform_specific_config
