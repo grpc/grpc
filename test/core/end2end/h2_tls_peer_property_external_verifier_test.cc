@@ -113,7 +113,6 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
 }
 
 grpc_channel* client_create(const char* server_addr,
-                            grpc_ssl_session_cache* cache,
                             grpc_tls_certificate_provider** client_provider,
                             grpc_tls_certificate_verifier** verifier) {
   grpc_slice ca_slice, cert_slice, key_slice;
@@ -156,7 +155,6 @@ grpc_channel* client_create(const char* server_addr,
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
           const_cast<char*>("waterzooi.test.google.be")),
-      grpc_ssl_session_cache_create_channel_arg(cache),
   };
 
   grpc_channel_args* client_args =
@@ -178,12 +176,10 @@ grpc_channel* client_create(const char* server_addr,
 }
 
 void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
-                   const char* server_addr, grpc_ssl_session_cache* cache,
-                   bool expect_session_reuse) {
+                   const char* server_addr, bool expect_session_reuse) {
   grpc_tls_certificate_provider* provider = nullptr;
   grpc_tls_certificate_verifier* verifier = nullptr;
-  grpc_channel* client =
-      client_create(server_addr, cache, &provider, &verifier);
+  grpc_channel* client = client_create(server_addr, &provider, &verifier);
 
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
@@ -306,16 +302,13 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
   std::string server_addr = grpc_core::JoinHostPort("localhost", port);
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
   grpc_tls_certificate_provider* provider = nullptr;
   grpc_tls_certificate_verifier* verifier = nullptr;
   grpc_server* server =
       server_create(cq, server_addr.c_str(), &provider, &verifier);
 
-  do_round_trip(cq, server, server_addr.c_str(), cache, false);
-
-  grpc_ssl_session_cache_destroy(cache);
+  do_round_trip(cq, server, server_addr.c_str(), false);
 
   GPR_ASSERT(grpc_completion_queue_next(
                  cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
