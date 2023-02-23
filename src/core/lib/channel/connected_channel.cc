@@ -23,7 +23,6 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <atomic>
 #include <functional>
 #include <initializer_list>
 #include <memory>
