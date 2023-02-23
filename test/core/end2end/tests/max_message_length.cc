@@ -309,7 +309,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_byte_buffer* recv_payload = nullptr;
-  grpc_byte_buffer* server_recv_payload = nullptr;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
