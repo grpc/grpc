@@ -539,7 +539,7 @@ setuptools.setup(
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     url='https://grpc.io',
-    project_urls = {
+    project_urls={
         "Source Code": "https://github.com/grpc/grpc",
         "Bug Tracker": "https://github.com/grpc/grpc/issues",
     },
