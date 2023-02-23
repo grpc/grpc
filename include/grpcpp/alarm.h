@@ -24,7 +24,6 @@
 #include <functional>
 
 #include <grpc/event_engine/event_engine.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
