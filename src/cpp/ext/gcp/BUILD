@@ -39,7 +39,9 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/types:optional",
+        "google/api:monitored_resource_cc_proto",
         "googleapis_monitoring_grpc_service",
         "googleapis_trace_grpc_service",
         "opencensus-stats",
@@ -101,7 +103,7 @@ grpc_cc_library(
         "observability_logging_sink.h",
     ],
     external_deps = [
-        "absl/base",
+        "absl/base:core_headers",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -113,11 +115,14 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
+        "environment_autodetect",
         "observability_config",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
+        "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:json",
         "//src/core:time",
