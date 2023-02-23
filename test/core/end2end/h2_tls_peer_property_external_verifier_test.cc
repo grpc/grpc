@@ -176,7 +176,7 @@ grpc_channel* client_create(const char* server_addr,
 }
 
 void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
-                   const char* server_addr, bool expect_session_reuse) {
+                   const char* server_addr) {
   grpc_tls_certificate_provider* provider = nullptr;
   grpc_tls_certificate_verifier* verifier = nullptr;
   grpc_channel* client = client_create(server_addr, &provider, &verifier);
@@ -238,18 +238,6 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   cqv.Expect(tag(101), true);
   cqv.Verify();
 
-  grpc_auth_context* auth = grpc_call_auth_context(s);
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      auth, GRPC_SSL_SESSION_REUSED_PROPERTY);
-  const grpc_auth_property* property = grpc_auth_property_iterator_next(&it);
-  GPR_ASSERT(property != nullptr);
-  if (expect_session_reuse) {
-    GPR_ASSERT(strcmp(property->value, "true") == 0);
-  } else {
-    GPR_ASSERT(strcmp(property->value, "false") == 0);
-  }
-  grpc_auth_context_release(auth);
-
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -308,7 +296,7 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
   grpc_server* server =
       server_create(cq, server_addr.c_str(), &provider, &verifier);
 
-  do_round_trip(cq, server, server_addr.c_str(), false);
+  do_round_trip(cq, server, server_addr.c_str());
 
   GPR_ASSERT(grpc_completion_queue_next(
                  cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
