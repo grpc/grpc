@@ -542,6 +542,7 @@ setuptools.setup(
     project_urls={
         "Source Code": "https://github.com/grpc/grpc",
         "Bug Tracker": "https://github.com/grpc/grpc/issues",
+        'Documentation': 'https://grpc.github.io/grpc/python',
     },
     license=LICENSE,
     classifiers=CLASSIFIERS,
