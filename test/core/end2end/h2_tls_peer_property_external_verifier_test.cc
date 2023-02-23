@@ -61,7 +61,9 @@ void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
-grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
+grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
+                           grpc_tls_certificate_provider** server_provider,
+                           grpc_tls_certificate_verifier** verifier) {
   grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
@@ -80,10 +82,10 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
   // Set credential provider.
   grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
   grpc_tls_identity_pairs_add_pair(server_pairs, server_key, server_cert);
-  auto* server_provider =
+  *server_provider =
       grpc_tls_certificate_provider_static_data_create(ca_cert, server_pairs);
   grpc_tls_credentials_options_set_certificate_provider(options,
-                                                        server_provider);
+                                                        *server_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   // Set client certificate request type.
@@ -92,9 +94,9 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
   // Set credential verifier.
   auto* server_test_verifier =
       new grpc_core::testing::PeerPropertyExternalVerifier(kCaCertSubject);
-  auto* verifier = grpc_tls_certificate_verifier_external_create(
+  *verifier = grpc_tls_certificate_verifier_external_create(
       server_test_verifier->base());
-  grpc_tls_credentials_options_set_certificate_verifier(options, verifier);
+  grpc_tls_credentials_options_set_certificate_verifier(options, *verifier);
   grpc_server_credentials* creds = grpc_tls_server_credentials_create(options);
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
@@ -111,7 +113,9 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
 }
 
 grpc_channel* client_create(const char* server_addr,
-                            grpc_ssl_session_cache* cache) {
+                            grpc_ssl_session_cache* cache,
+                            grpc_tls_certificate_provider** client_provider,
+                            grpc_tls_certificate_verifier** verifier) {
   grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
@@ -130,10 +134,11 @@ grpc_channel* client_create(const char* server_addr,
   // Set credential provider.
   grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
   grpc_tls_identity_pairs_add_pair(client_pairs, client_key, client_cert);
-  auto* client_provider =
+  *client_provider =
       grpc_tls_certificate_provider_static_data_create(ca_cert, client_pairs);
+
   grpc_tls_credentials_options_set_certificate_provider(options,
-                                                        client_provider);
+                                                        *client_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   // Set client certificate request type.
@@ -142,9 +147,9 @@ grpc_channel* client_create(const char* server_addr,
   // Set credential verifier.
   auto* client_test_verifier =
       new grpc_core::testing::PeerPropertyExternalVerifier(kCaCertSubject);
-  auto* verifier = grpc_tls_certificate_verifier_external_create(
+  *verifier = grpc_tls_certificate_verifier_external_create(
       client_test_verifier->base());
-  grpc_tls_credentials_options_set_certificate_verifier(options, verifier);
+  grpc_tls_credentials_options_set_certificate_verifier(options, *verifier);
   grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
 
   //   grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {client_key,
@@ -180,7 +185,10 @@ grpc_channel* client_create(const char* server_addr,
 void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
                    const char* server_addr, grpc_ssl_session_cache* cache,
                    bool expect_session_reuse) {
-  grpc_channel* client = client_create(server_addr, cache);
+  grpc_tls_certificate_provider* provider = nullptr;
+  grpc_tls_certificate_verifier* verifier = nullptr;
+  grpc_channel* client =
+      client_create(server_addr, cache, &provider, &verifier);
 
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
@@ -286,6 +294,8 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   grpc_call_unref(s);
 
   grpc_channel_destroy(client);
+  grpc_tls_certificate_provider_release(provider);
+  grpc_tls_certificate_verifier_release(verifier);
 }
 
 void drain_cq(grpc_completion_queue* cq) {
@@ -303,7 +313,10 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
-  grpc_server* server = server_create(cq, server_addr.c_str());
+  grpc_tls_certificate_provider* provider = nullptr;
+  grpc_tls_certificate_verifier* verifier = nullptr;
+  grpc_server* server =
+      server_create(cq, server_addr.c_str(), &provider, &verifier);
 
   do_round_trip(cq, server, server_addr.c_str(), cache, false);
 
@@ -320,6 +333,8 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
                                     nullptr);
   } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(server);
+  grpc_tls_certificate_provider_release(provider);
+  grpc_tls_certificate_verifier_release(verifier);
 
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
