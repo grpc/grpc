@@ -58,9 +58,10 @@ target_link_libraries(hw_grpc_proto
 
 # Targets greeter_[async_](client|server)
 foreach(_target
-  greeter_client greeter_server 
-  greeter_callback_client greeter_callback_server 
-  greeter_async_client greeter_async_client2 greeter_async_server)
+  greeter_client greeter_server
+  greeter_callback_client greeter_callback_server
+  greeter_async_client greeter_async_client2 greeter_async_server
+  xds_greeter_client.cc xds_greeter_server.cc)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
