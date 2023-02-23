@@ -306,8 +306,6 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
   grpc_server* server = server_create(cq, server_addr.c_str());
 
   do_round_trip(cq, server, server_addr.c_str(), cache, false);
-  //   do_round_trip(cq, server, server_addr.c_str(), cache, true);
-  //   do_round_trip(cq, server, server_addr.c_str(), cache, true);
 
   grpc_ssl_session_cache_destroy(cache);
 
