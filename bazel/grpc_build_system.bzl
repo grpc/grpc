@@ -58,6 +58,8 @@ GRPC_DEFAULT_STDLIB = if_windows(["/std:c++14"], otherwise = ["-std=c++14"])
 
 def convert_to_windows_flags(flags):
     """Replaces "-" with "/" in flags such as "-std=c++14"."""
+    if type(flags) != "list":
+        return flags
     return [
         flag if (type(flag) != "string" or flag[0] != "-") else "/" + flag[1:]
         for flag in flags
