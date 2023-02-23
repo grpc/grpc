@@ -65,7 +65,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
-// #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -583,9 +582,7 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
                                    LookupHostnameCallback on_resolve)
       : GrpcAresRequest(channel, host, port, timeout),
         on_resolve_(std::move(on_resolve)) {
-    // TODO(yijiem): there is a cycle dependency between //:grpc_base and
-    // :posix_event_engine
-    if (/*grpc_ares_query_ipv6()*/ true) {
+    if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
       // TODO(yijiem): set_request_dns_server if specified
       pending_queries_++;
       ares_gethostbyname(channel, this->host(), AF_INET6,
@@ -608,6 +605,7 @@ class PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     // TODO(yijiem): handle failure case
     GPR_ASSERT(result.ok());
+    GPR_ASSERT(pending_queries_ > 0);
     pending_queries_--;
     result_.insert(result_.end(), result->begin(), result->end());
     if (pending_queries_ == 0) {
@@ -629,8 +627,6 @@ bool is_fd_still_readable(int fd) {
   size_t bytes_available = 0;
   return ioctl(fd, FIONREAD, &bytes_available) == 0 && bytes_available > 0;
 }
-
-// bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 
 void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
                                struct hostent* hostent)
