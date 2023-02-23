@@ -1468,6 +1468,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:chunked_vector",
         "//src/core:closure",
+        "//src/core:construct_destruct",
         "//src/core:context",
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
