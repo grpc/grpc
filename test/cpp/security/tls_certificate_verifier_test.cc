@@ -163,12 +163,13 @@ TEST(TlsCertificateVerifierTest,
 
 TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierSucceeds) {
   grpc_tls_custom_verification_check_request request;
-  std::string expected_subject =
+  constexpr char kExpectedSubject[] =
       "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
-  request.peer_info.verified_root_cert_subject = expected_subject.c_str();
+  request.peer_info.verified_root_cert_subject =
+      const_cast<char*>(kExpectedSubject);
   auto verifier =
       ExternalCertificateVerifier::Create<VerifiedRootCertSubjectVerifier>(
-          expected_subject);
+          const_cast<char*>(kExpectedSubject));
   TlsCustomVerificationCheckRequest cpp_request(&request);
   grpc::Status sync_status;
   bool is_sync = verifier->Verify(&cpp_request, nullptr, &sync_status);
@@ -179,12 +180,12 @@ TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierSucceeds) {
 
 TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsNull) {
   grpc_tls_custom_verification_check_request request;
-  char* expected_subject = const_cast<char*>(
-      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  constexpr char kExpectedSubject[] =
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
   request.peer_info.verified_root_cert_subject = nullptr;
   auto verifier =
       ExternalCertificateVerifier::Create<VerifiedRootCertSubjectVerifier>(
-          expected_subject);
+          const_cast<char*>(kExpectedSubject));
   TlsCustomVerificationCheckRequest cpp_request(&request);
   EXPECT_EQ(cpp_request.verified_root_cert_subject(), "");
   grpc::Status sync_status;
@@ -196,12 +197,12 @@ TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsNull) {
 
 TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsMismatch) {
   grpc_tls_custom_verification_check_request request;
-  char* expected_subject = const_cast<char*>(
-      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  constexpr char kExpectedSubject[] =
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
   request.peer_info.verified_root_cert_subject = "BAD_SUBJECT";
   auto verifier =
       ExternalCertificateVerifier::Create<VerifiedRootCertSubjectVerifier>(
-          expected_subject);
+          const_cast<char*>(kExpectedSubject));
   TlsCustomVerificationCheckRequest cpp_request(&request);
   grpc::Status sync_status;
   verifier->Verify(&cpp_request, nullptr, &sync_status);
