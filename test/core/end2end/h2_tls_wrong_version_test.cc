@@ -53,17 +53,15 @@ namespace grpc {
 namespace testing {
 namespace {
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static gpr_timespec n_seconds_from_now(int n) {
+gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
-static void drain_cq(grpc_completion_queue* cq) {
+void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
@@ -163,7 +161,7 @@ grpc_channel* client_create(const char* server_addr,
   return client;
 }
 
-static void shutdown_server(grpc_completion_queue* cq, grpc_server* server) {
+void shutdown_server(grpc_completion_queue* cq, grpc_server* server) {
   if (!server) return;
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
 
@@ -174,7 +172,7 @@ static void shutdown_server(grpc_completion_queue* cq, grpc_server* server) {
   grpc_server_destroy(server);
 }
 
-static void make_request(grpc_completion_queue* cq, grpc_channel* client) {
+void make_request(grpc_completion_queue* cq, grpc_channel* client) {
   grpc_call* c;
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
