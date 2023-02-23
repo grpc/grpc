@@ -162,6 +162,9 @@ class If<bool, T, F> {
   }
 
   Poll<Result> operator()() {
+#ifndef NDEBUG
+    asan_canary_ = std::make_unique<int>(1 + *asan_canary_);
+#endif
     if (condition_) {
       return if_true_();
     } else {

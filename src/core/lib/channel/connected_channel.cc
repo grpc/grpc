@@ -556,7 +556,7 @@ auto ConnectedChannelStream::SendMessages(
           batch->on_complete = on_done;
           return std::move(message);
         });
-    return Map(done, [](absl::StatusOr<MessageHandle> status) {
+    return Map(std::move(done), [](absl::StatusOr<MessageHandle> status) {
       return status.status();
     });
   });

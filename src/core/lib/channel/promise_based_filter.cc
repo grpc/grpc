@@ -1687,8 +1687,7 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
   GPR_ASSERT(poll_ctx_ != nullptr);
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
   send_initial_metadata_batch_->payload->send_initial_metadata
-      .send_initial_metadata =
-      UnwrapMetadata(std::move(call_args.client_initial_metadata));
+      .send_initial_metadata = call_args.client_initial_metadata.get();
   if (recv_initial_metadata_ != nullptr) {
     // Call args should contain a latch for receiving initial metadata.
     // It might be the one we passed in - in which case we know this filter
@@ -2014,6 +2013,9 @@ ServerCallData::~ServerCallData() {
     gpr_log(GPR_INFO, "%s ~ServerCallData %s", LogTag().c_str(),
             DebugString().c_str());
   }
+  if (send_initial_metadata_ != nullptr) {
+    send_initial_metadata_->~SendInitialMetadata();
+  }
   GPR_ASSERT(poll_ctx_ == nullptr);
 }
 
@@ -2245,7 +2247,7 @@ void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
 ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
     CallArgs call_args) {
   GPR_ASSERT(recv_initial_state_ == RecvInitialState::kComplete);
-  GPR_ASSERT(UnwrapMetadata(std::move(call_args.client_initial_metadata)) ==
+  GPR_ASSERT(std::move(call_args.client_initial_metadata).get() ==
              recv_initial_metadata_);
   forward_recv_initial_metadata_callback_ = true;
   if (send_initial_metadata_ != nullptr) {
@@ -2527,8 +2529,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     }
     if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
       promise_ = ArenaPromise<ServerMetadataHandle>();
-      auto* md = UnwrapMetadata(std::move(*r));
-      bool destroy_md = true;
+      auto md = std::move(*r);
       if (send_message() != nullptr) {
         send_message()->Done(*md, flusher);
       }
@@ -2540,11 +2541,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         case SendTrailingState::kQueuedButHaventClosedSends:
         case SendTrailingState::kQueued: {
           if (send_trailing_metadata_batch_->payload->send_trailing_metadata
-                  .send_trailing_metadata != md) {
+                  .send_trailing_metadata != md.get()) {
             *send_trailing_metadata_batch_->payload->send_trailing_metadata
                  .send_trailing_metadata = std::move(*md);
-          } else {
-            destroy_md = false;
           }
           send_trailing_metadata_batch_.ResumeWith(flusher);
           send_trailing_state_ = SendTrailingState::kForwarded;
@@ -2561,9 +2560,6 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         case SendTrailingState::kCancelled:
           // Nothing to do.
           break;
-      }
-      if (destroy_md) {
-        md->~grpc_metadata_batch();
       }
     }
   }

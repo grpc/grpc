@@ -2652,7 +2652,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 void ClientPromiseBasedCall::StartPromise(
     ClientMetadataHandle client_initial_metadata,
     const Completion& completion) {
-  auto token = ClientInitialMetadataOutstandingToken::New();
+  auto token = ClientInitialMetadataOutstandingToken::New(arena());
   Spawn("call_send_initial_metadata", token.Wait(),
         [this, completion = AddOpToCompletion(completion,
                                               PendingOp::kSendInitialMetadata)](

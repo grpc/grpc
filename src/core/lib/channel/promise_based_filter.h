@@ -286,11 +286,6 @@ class BaseCallData : public Activity, private Wakeable {
                                                Arena::PooledDeleter(nullptr));
   }
 
-  static grpc_metadata_batch* UnwrapMetadata(
-      Arena::PoolPtr<grpc_metadata_batch> p) {
-    return p.release();
-  }
-
   class ReceiveInterceptor final : public Interceptor {
    public:
     explicit ReceiveInterceptor(Arena* arena) : pipe_{arena} {}

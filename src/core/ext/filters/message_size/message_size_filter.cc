@@ -191,7 +191,7 @@ class MessageSizeFilter::CallBuilder {
 
  private:
   Latch<ServerMetadataHandle>* const err_ =
-      GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
+      GetContext<Arena>()->ManagedNew<Latch<ServerMetadataHandle>>();
   MessageSizeParsedConfig limits_;
 };
 
