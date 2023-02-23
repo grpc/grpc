@@ -901,8 +901,9 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       });
   party->Spawn(
       "send_initial_metadata_then_messages",
-      TrySeq(std::move(send_initial_metadata),
-             stream->SendMessages(&call_data->server_to_client.receiver)),
+      Race(Map(stream->WaitFinished(), [](Empty) { return absl::OkStatus(); }),
+           TrySeq(std::move(send_initial_metadata),
+                  stream->SendMessages(&call_data->server_to_client.receiver))),
       [](absl::Status) {});
 
   // Spawn a job to fetch the "client trailing metadata" - if this is OK then
