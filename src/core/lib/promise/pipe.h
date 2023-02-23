@@ -624,8 +624,7 @@ auto PipeReceiver<T>::Next() {
         return If(
             open,
             [center = std::move(center), value = std::move(value)]() mutable {
-              auto run_interceptors = center->Run(std::move(value));
-              return Map(std::move(run_interceptors),
+              return Map(center->Run(std::move(value)),
                          [center = std::move(center)](
                              absl::optional<T> value) mutable {
                            if (value.has_value()) {

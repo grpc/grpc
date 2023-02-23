@@ -175,6 +175,10 @@ class If<bool, T, F> {
     TruePromise if_true_;
     FalsePromise if_false_;
   };
+  // Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
+#endif
 };
 
 }  // namespace promise_detail

@@ -2429,8 +2429,7 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
       send.c_slice_buffer());
-  auto msg =
-      GetContext<Arena>()->MakePooled<Message>(std::move(send), op.flags);
+  auto msg = arena()->MakePooled<Message>(std::move(send), op.flags);
   Spawn(
       "call_send_message",
       [this, sender, msg = std::move(msg)]() mutable {
