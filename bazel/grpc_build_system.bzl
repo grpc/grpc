@@ -173,7 +173,7 @@ def grpc_cc_library(
     visibility = _update_visibility(visibility)
     copts = []
     if language.upper() == "C":
-        copts = copts + if_not_windows(["-std=c11"])
+        copts = if_not_windows(["-std=c11"])
     linkopts = linkopts + if_windows(["-defaultlib:ws2_32.lib"], otherwise = ["-pthread"])
     if select_deps:
         for select_deps_entry in select_deps:
@@ -197,7 +197,7 @@ def grpc_cc_library(
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
-        copts = GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + if_windows(convert_to_windows_flags(copts), otherwise = copts),
+        copts = GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + copts,
         visibility = visibility,
         testonly = testonly,
         linkopts = linkopts,
@@ -452,15 +452,16 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
     """
+    non_win_copts = []
     if language.upper() == "C":
-        copts = copts + if_not_windows(["-std=c11"])
+        non_win_copts = ["-std=c11"]
 
     core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {
         "data": data,
-        "copts": GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + if_windows(convert_to_windows_flags(copts), otherwise = copts),
+        "copts": GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + if_windows(convert_to_windows_flags(copts), otherwise = copts + non_win_copts),
         "linkopts": if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
         "size": size,
         "timeout": timeout,
