@@ -13117,7 +13117,7 @@ add_executable(h2_tls_wrong_version_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(h2_tls_wrong_version_test PUBLIC cxx_std_14)
 target_include_directories(h2_tls_wrong_version_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21331,7 +21331,7 @@ add_executable(tls_creds_options_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(tls_creds_options_test PUBLIC cxx_std_14)
 target_include_directories(tls_creds_options_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
