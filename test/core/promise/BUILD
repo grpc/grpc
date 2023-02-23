@@ -388,6 +388,7 @@ grpc_cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "gtest",
     ],
@@ -397,6 +398,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
+        "//:gpr",
         "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
