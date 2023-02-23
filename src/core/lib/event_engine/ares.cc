@@ -16,6 +16,9 @@
 
 #include "ares.h"
 
+// TODO(yijiem): factor out
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -56,9 +59,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
   // This callback is invoked from the c-ares library, so disable thread safety
   // analysis. Note that we are guaranteed to be holding r->mu, though.
-  PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest* request =
-      static_cast<PosixEventEngine::PosixDNSResolver::GrpcAresHostnameRequest*>(
-          arg);
+  GrpcAresHostnameRequest* request = static_cast<GrpcAresHostnameRequest*>(arg);
   if (status != ARES_SUCCESS) {
     std::string error_msg = absl::StrFormat(
         "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
@@ -130,10 +131,8 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
 
 }  // namespace
 
-GrpcAresHostnameRequest::GrpcAresHostnameRequest(
-    absl::string_view host, uint16_t port, Duration timeout,
-    LookupHostnameCallback on_resolve)
-    : GrpcAresRequest(host, port, timeout), on_resolve_(std::move(on_resolve)) {
+void GrpcAresHostnameRequest::Start() {
+  // TODO(yijiem): factor out
   if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
     // TODO(yijiem): set_request_dns_server if specified
     pending_queries_++;
@@ -160,7 +159,7 @@ void GrpcAresHostnameRequest::OnResolve(
   }
 }
 
-~GrpcAresRequest::GrpcAresRequest() {
+GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
     ares_destroy(channel_);
   }

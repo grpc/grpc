@@ -172,7 +172,9 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
  public:
   explicit GrpcAresHostnameRequest(absl::string_view host, uint16_t port,
                                    Duration timeout,
-                                   LookupHostnameCallback on_resolve);
+                                   LookupHostnameCallback on_resolve)
+      : GrpcAresRequest(host, port, timeout),
+        on_resolve_(std::move(on_resolve)) {}
 
   bool is_balancer() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return is_balancer_;
