@@ -47,12 +47,18 @@ def if_not_windows(a):
         "//conditions:default": a,
     })
 
-def if_windows(a):
+def if_windows(a, otherwise=[]):
     return select({
         "//:windows": a,
         "//:windows_msvc": a,
-        "//conditions:default": [],
+        "//conditions:default": otherwise,
     })
+
+GRPC_DEFAULT_STDLIB = if_windows(["/std:c++14"], otherwise = ["-std=c++14"])
+
+def convert_to_windows_flags(flags):
+    """Replaces "-" with "/" in flags such as "-std=c++14"."""
+    return [flag if flag[0] != "-" else "/" + flag[1:] for flag in flags]
 
 def _get_external_deps(external_deps):
     ret = []
@@ -163,7 +169,7 @@ def grpc_cc_library(
     copts = []
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
-    linkopts = linkopts + if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
+    linkopts = linkopts + if_windows(["-defaultlib:ws2_32.lib"], otherwise = ["-pthread"])
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
@@ -186,7 +192,7 @@ def grpc_cc_library(
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
-        copts = GRPC_DEFAULT_COPTS + copts,
+        copts = GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + if_windows(convert_to_windows_flags(copts), otherwise = copts),
         visibility = visibility,
         testonly = testonly,
         linkopts = linkopts,
@@ -206,6 +212,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         name = name,
         srcs = srcs,
         deps = deps,
+        copts = GRPC_DEFAULT_STDLIB,
     )
 
 def grpc_proto_library(
@@ -448,7 +455,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     # Test args for all tests
     test_args = {
         "data": data,
-        "copts": GRPC_DEFAULT_COPTS + copts,
+        "copts": GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + if_windows(convert_to_windows_flags(copts), otherwise = copts),
         "linkopts": if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
         "size": size,
         "timeout": timeout,
@@ -510,7 +517,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         testonly = testonly,
         linkshared = linkshared,
         deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
-        copts = GRPC_DEFAULT_COPTS + copts,
+        copts = GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + if_windows(convert_to_windows_flags(copts), otherwise = copts),
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
         features = features,
@@ -660,7 +667,7 @@ def grpc_objc_library(
         srcs = srcs,
         non_arc_srcs = non_arc_srcs,
         textual_hdrs = textual_hdrs,
-        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++14"],
+        copts = GRPC_DEFAULT_COPTS + GRPC_DEFAULT_STDLIB + ["-ObjC++", "-std=gnu++14"],
         testonly = testonly,
         data = data,
         deps = deps,
