@@ -79,7 +79,7 @@ class AsyncCertificateVerifier
 class VerifiedRootCertSubjectVerifier
     : public grpc::experimental::ExternalCertificateVerifier {
  public:
-  explicit VerifiedRootCertSubjectVerifier(const std::string& expected_subject)
+  explicit VerifiedRootCertSubjectVerifier(absl::string_view expected_subject)
       : expected_subject_(expected_subject) {}
 
   ~VerifiedRootCertSubjectVerifier() override {}
