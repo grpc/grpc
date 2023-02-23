@@ -2929,11 +2929,6 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
     if (batch->send_initial_metadata) {
       call_attempt_tracer()->RecordSendInitialMetadata(
           batch->payload->send_initial_metadata.send_initial_metadata);
-      peer_string_ = batch->payload->send_initial_metadata.peer_string;
-      original_send_initial_metadata_on_complete_ = batch->on_complete;
-      GRPC_CLOSURE_INIT(&send_initial_metadata_on_complete_,
-                        SendInitialMetadataOnComplete, this, nullptr);
-      batch->on_complete = &send_initial_metadata_on_complete_;
     }
     if (batch->send_message) {
       call_attempt_tracer()->RecordSendMessage(
@@ -3039,21 +3034,6 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
   }
 }
 
-void ClientChannel::FilterBasedLoadBalancedCall::SendInitialMetadataOnComplete(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: got on_complete for send_initial_metadata: "
-            "error=%s",
-            self->chand(), self, StatusToString(error).c_str());
-  }
-  self->call_attempt_tracer()->RecordOnDoneSendInitialMetadata(
-      self->peer_string_);
-  Closure::Run(DEBUG_LOCATION,
-               self->original_send_initial_metadata_on_complete_, error);
-}
-
 void ClientChannel::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
@@ -3121,10 +3101,14 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
         status = absl::Status(static_cast<absl::StatusCode>(code), message);
       }
     }
-    const char* peer_string =
-        self->peer_string_ != nullptr
-            ? reinterpret_cast<char*>(gpr_atm_acq_load(self->peer_string_))
-            : "";
+    absl::string_view peer_string;
+    if (self->recv_initial_metadata_ != nullptr) {
+      Slice* peer_string_slice =
+          self->recv_initial_metadata_->get_pointer(PeerString());
+      if (peer_string_slice != nullptr) {
+        peer_string = peer_string_slice->as_string_view();
+      }
+    }
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);
   }

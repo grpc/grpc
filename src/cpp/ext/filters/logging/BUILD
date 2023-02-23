@@ -86,5 +86,6 @@ grpc_cc_library(
         "//src/core:poll",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:time",
     ],
 )

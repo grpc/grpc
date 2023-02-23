@@ -294,13 +294,11 @@ OpenCensusCallTracer::OpenCensusCallTracer(
       method_(GetMethod(path_)),
       arena_(arena),
       tracing_enabled_(tracing_enabled) {
-  if (tracing_enabled_) {
-    auto* parent_context = reinterpret_cast<CensusContext*>(
-        call_context_[GRPC_CONTEXT_TRACING].value);
-    GenerateClientContext(
-        absl::StrCat("Sent.", method_), &context_,
-        (parent_context == nullptr) ? nullptr : parent_context);
-  }
+  auto* parent_context = reinterpret_cast<CensusContext*>(
+      call_context_[GRPC_CONTEXT_TRACING].value);
+  GenerateClientContext(tracing_enabled_ ? absl::StrCat("Sent.", method_) : "",
+                        &context_,
+                        (parent_context == nullptr) ? nullptr : parent_context);
 }
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
@@ -317,13 +315,6 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
   if (tracing_enabled_) {
     context_.EndSpan();
   }
-}
-
-void OpenCensusCallTracer::GenerateContext() {
-  auto* parent_context = reinterpret_cast<CensusContext*>(
-      call_context_[GRPC_CONTEXT_TRACING].value);
-  GenerateClientContext(absl::StrCat("Sent.", method_), &context_,
-                        (parent_context == nullptr) ? nullptr : parent_context);
 }
 
 OpenCensusCallTracer::OpenCensusCallAttemptTracer*
@@ -363,7 +354,7 @@ void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
 }
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
-  if (!tracing_enabled_) return CensusContext();
+  if (!tracing_enabled_) return CensusContext(context_.tags());
   GPR_DEBUG_ASSERT(context_.Context().IsValid());
   auto context = CensusContext(absl::StrCat("Attempt.", method_),
                                &(context_.Span()), context_.tags());
