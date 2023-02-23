@@ -51,6 +51,9 @@ namespace grpc {
 namespace experimental {
 
 namespace {
+
+grpc::internal::ObservabilityLoggingSink* g_logging_sink = nullptr;
+
 // TODO(yashykt): These constants are currently derived from the example at
 // https://cloud.google.com/traffic-director/docs/observability-proxyless#c++.
 // We might want these to be configurable.
@@ -89,7 +92,6 @@ absl::Status GcpObservabilityInit() {
       !config->cloud_logging.has_value()) {
     return absl::OkStatus();
   }
-  grpc::internal::OpenCensusRegistry::Get().RegisterWaitOnReady();
   grpc::internal::EnvironmentAutoDetect::Create(config->project_id);
   grpc::RegisterOpenCensusPlugin();
   if (config->cloud_trace.has_value()) {
@@ -136,6 +138,7 @@ absl::Status GcpObservabilityInit() {
   // If tracing or monitoring is enabled, we need to get the OpenCensus plugin
   // to wait for the environment to be autodetected.
   if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
+    grpc::internal::OpenCensusRegistry::Get().RegisterWaitOnReady();
     grpc::internal::OpenCensusRegistry::Get().RegisterFunctions(
         [config_labels = config->labels]() mutable {
           grpc::internal::EnvironmentAutoDetect::Get().NotifyOnDone(
@@ -152,11 +155,17 @@ absl::Status GcpObservabilityInit() {
         });
   }
   if (config->cloud_logging.has_value()) {
-    grpc::internal::RegisterLoggingFilter(
-        new grpc::internal::ObservabilityLoggingSink(
-            config->cloud_logging.value(), config->project_id, config->labels));
+    g_logging_sink = new grpc::internal::ObservabilityLoggingSink(
+        config->cloud_logging.value(), config->project_id, config->labels);
+    grpc::internal::RegisterLoggingFilter(g_logging_sink);
   }
   return absl::OkStatus();
+}
+
+void GcpObservabilityClose() {
+  if (g_logging_sink != nullptr) {
+    g_logging_sink->FlushAndClose();
+  }
 }
 
 }  // namespace experimental

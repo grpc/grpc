@@ -54,6 +54,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
@@ -311,6 +312,7 @@ class CallData {
     entry->peer = peer_;
     entry->service_name = service_name_;
     entry->method_name = method_name_;
+    entry->timestamp = grpc_core::Timestamp::Now();
   }
   uint64_t call_id_;
   uint32_t sequence_id_ = 0;
