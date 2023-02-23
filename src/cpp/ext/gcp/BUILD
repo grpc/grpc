@@ -39,7 +39,9 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/types:optional",
+        "google/api:monitored_resource_cc_proto",
         "googleapis_monitoring_grpc_service",
         "googleapis_trace_grpc_service",
         "opencensus-stats",

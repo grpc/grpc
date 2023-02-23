@@ -18,15 +18,18 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
+#include "google/api/monitored_resource.pb.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
 #include "google/monitoring/v3/metric_service.grpc.pb.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
