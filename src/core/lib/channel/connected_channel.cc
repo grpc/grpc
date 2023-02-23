@@ -307,6 +307,15 @@ class ConnectedChannelStream : public Orphanable {
     // If we hadn't already observed the stream to be finished, we need to
     // cancel it at the transport.
     if (!finished) {
+      party_->Spawn(
+          "finish",
+          [self = InternalRef()]() {
+            if (!self->finished_.IsSet()) {
+              self->finished_.Set();
+            }
+            return Empty{};
+          },
+          [](Empty) {});
       IncrementRefCount("shutdown client stream");
       auto* cancel_op =
           GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
@@ -317,7 +326,7 @@ class ConnectedChannelStream : public Orphanable {
       batch_payload_.cancel_stream.cancel_error = absl::CancelledError();
       grpc_transport_perform_stream_op(transport_, stream_.get(), cancel_op);
     }
-    Unref("orphan client stream");
+    Unref("orphan connected stream");
   }
 
   // Push one batch to the transport.

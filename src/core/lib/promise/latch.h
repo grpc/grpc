@@ -218,7 +218,7 @@ class ExternallyObservableLatch<void> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
-    is_set_.store(std::memory_order_relaxed);
+    is_set_.store(true, std::memory_order_relaxed);
     waiter_.Wake();
   }
 
