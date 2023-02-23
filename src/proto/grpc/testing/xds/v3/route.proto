@@ -188,6 +188,8 @@ message RouteMatch {
     // on :path, etc. The issue with that is it is unclear how to generically deal with query string
     // stripping. This needs more thought.]
     type.matcher.v3.RegexMatcher safe_regex = 10;
+
+    string path_separated_prefix = 14;
   }
 
   // Indicates that prefix/path matching should be case insensitive. The default

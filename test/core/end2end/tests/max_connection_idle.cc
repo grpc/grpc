@@ -1,26 +1,26 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -188,11 +188,11 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   config.init_client(&f, client_args.get());
   config.init_server(&f, &server_args);
 
-  /* check that we're still in idle, and start connecting */
+  // check that we're still in idle, and start connecting
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
              GRPC_CHANNEL_IDLE);
-  /* we'll go through some set of transitions (some might be missed), until
-     READY is reached */
+  // we'll go through some set of transitions (some might be missed), until
+  // READY is reached
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state, grpc_timeout_seconds_to_deadline(10), f.cq, tag(99));
@@ -204,10 +204,10 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
                state == GRPC_CHANNEL_TRANSIENT_FAILURE);
   }
 
-  /* Use a simple request to cancel and reset the max idle timer */
+  // Use a simple request to cancel and reset the max idle timer
   simple_request_body(config, &f);
 
-  /* wait for the channel to reach its maximum idle time */
+  // wait for the channel to reach its maximum idle time
   grpc_channel_watch_connectivity_state(
       f.client, GRPC_CHANNEL_READY,
       gpr_time_add(grpc_timeout_milliseconds_to_deadline(3000),

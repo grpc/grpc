@@ -107,14 +107,14 @@ def fully_qualified_method(group: str, method: str) -> str:
     return '/{}/{}'.format(group, method)
 
 
-def _wait_once(wait_fn: Callable[..., None], timeout: float,
+def _wait_once(wait_fn: Callable[..., bool], timeout: float,
                spin_cb: Optional[Callable[[], None]]):
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()
 
 
-def wait(wait_fn: Callable[..., None],
+def wait(wait_fn: Callable[..., bool],
          wait_complete_fn: Callable[[], bool],
          timeout: Optional[float] = None,
          spin_cb: Optional[Callable[[], None]] = None) -> bool:

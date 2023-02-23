@@ -66,7 +66,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -403,16 +403,16 @@ class MainLoop {
    public:
     WakeCall(MainLoop* main_loop, uint32_t id)
         : main_loop_(main_loop), id_(id) {}
-    void Wakeup() override {
+    void Wakeup(void*) override {
       for (const uint32_t already : main_loop_->wakeups_) {
         if (already == id_) return;
       }
       main_loop_->wakeups_.push_back(id_);
       delete this;
     }
-    void Drop() override { delete this; }
+    void Drop(void*) override { delete this; }
 
-    std::string ActivityDebugTag() const override {
+    std::string ActivityDebugTag(void*) const override {
       return "WakeCall(" + std::to_string(id_) + ")";
     }
 
@@ -436,10 +436,12 @@ class MainLoop {
           CallArgs call_args, NextPromiseFactory) override {
         Call* call = static_cast<Call*>(Activity::current());
         if (call->server_initial_metadata_) {
-          call_args.server_initial_metadata->Set(
-              call->server_initial_metadata_.get());
+          call->server_initial_metadata_push_promise_.emplace(
+              call_args.server_initial_metadata->Push(
+                  ServerMetadataHandle(call->server_initial_metadata_.get(),
+                                       Arena::PooledDeleter(nullptr))));
         } else {
-          call->unset_incoming_server_initial_metadata_latch_ =
+          call->unpushed_incoming_server_initial_metadata_pipe_ =
               call_args.server_initial_metadata;
         }
         return [call]() -> Poll<ServerMetadataHandle> {
@@ -472,10 +474,10 @@ class MainLoop {
          const filter_fuzzer::Metadata& client_initial_metadata, bool is_client)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
-      auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
+      auto* server_initial_metadata = arena_->New<Pipe<ServerMetadataHandle>>();
       CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
                                                  &client_initial_metadata_)),
-                         server_initial_metadata, nullptr, nullptr};
+                         &server_initial_metadata->sender, nullptr, nullptr};
       if (is_client) {
         promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
             std::move(call_args));
@@ -525,17 +527,19 @@ class MainLoop {
     void Orphan() override { abort(); }
     void ForceImmediateRepoll() override { context_->set_continue(); }
     Waker MakeOwningWaker() override {
-      return Waker(new WakeCall(main_loop_, id_));
+      return Waker(new WakeCall(main_loop_, id_), nullptr);
     }
     Waker MakeNonOwningWaker() override { return MakeOwningWaker(); }
 
     void RecvInitialMetadata(const filter_fuzzer::Metadata& metadata) {
       if (server_initial_metadata_ == nullptr) {
         LoadMetadata(metadata, &server_initial_metadata_);
-        if (auto* latch = std::exchange(
-                unset_incoming_server_initial_metadata_latch_, nullptr)) {
+        if (auto* pipe = std::exchange(
+                unpushed_incoming_server_initial_metadata_pipe_, nullptr)) {
           ScopedContext context(this);
-          latch->Set(server_initial_metadata_.get());
+          server_initial_metadata_push_promise_.emplace(
+              pipe->Push(ServerMetadataHandle(server_initial_metadata_.get(),
+                                              Arena::PooledDeleter(nullptr))));
         }
       }
     }
@@ -553,7 +557,8 @@ class MainLoop {
     }
 
     void SetFinalInfo(filter_fuzzer::FinalInfo final_info) {
-      final_info_ = std::make_unique<filter_fuzzer::FinalInfo>(final_info);
+      final_info_ =
+          std::make_unique<filter_fuzzer::FinalInfo>(std::move(final_info));
     }
 
    private:
@@ -625,8 +630,10 @@ class MainLoop {
     std::unique_ptr<filter_fuzzer::FinalInfo> final_info_;
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
     std::unique_ptr<ServerMetadata> server_initial_metadata_;
-    Latch<ServerMetadata*>* unset_incoming_server_initial_metadata_latch_ =
-        nullptr;
+    PipeSender<ServerMetadataHandle>*
+        unpushed_incoming_server_initial_metadata_pipe_ = nullptr;
+    absl::optional<PipeSender<ServerMetadataHandle>::PushType>
+        server_initial_metadata_push_promise_;
     std::unique_ptr<ServerMetadata> server_trailing_metadata_;
     Waker server_trailing_metadata_waker_;
     CallFinalization finalization_;

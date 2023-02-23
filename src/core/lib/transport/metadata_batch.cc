@@ -204,7 +204,10 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
     case kGet:
       return StaticSlice::FromStaticString("GET");
     default:
-      abort();
+      // TODO(ctiller): this should be an abort, we should split up the debug
+      // string generation from the encode string generation so that debug
+      // strings can always succeed and encode strings can crash.
+      return StaticSlice::FromStaticString("<<INVALID METHOD>>");
   }
 }
 
@@ -278,7 +281,10 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
   GPR_UNREACHABLE_CODE(return "unknown value");
 }
 
-std::string PeerString::DisplayValue(ValueType x) { return std::string(x); }
+std::string PeerString::DisplayValue(const ValueType& x) {
+  return std::string(x.as_string_view());
+}
+
 const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
   return x;
 }

@@ -26,6 +26,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteConfiguration_getmsg
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteConfiguration");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteConfiguration.TypedPerFilterConfigEntry");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_Vhds_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.Vhds");

@@ -49,7 +49,7 @@ with open('src/core/lib/promise/detail/switch.h', 'w') as H:
     print("#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_SWITCH_H", file=H)
     print("#define GRPC_CORE_LIB_PROMISE_DETAIL_SWITCH_H", file=H)
     print('', file=H)
-    print('#include <grpc/impl/codegen/port_platform.h>', file=H)
+    print('#include <grpc/support/port_platform.h>', file=H)
     print('', file=H)
     print("#include <stdlib.h>", file=H)
     print('', file=H)

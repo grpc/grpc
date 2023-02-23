@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -25,8 +25,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <initializer_list>
 #include <ostream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -99,7 +101,7 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
   return out << action.DebugString();
 }
 
-TransportFlowControl::TransportFlowControl(const char* name,
+TransportFlowControl::TransportFlowControl(absl::string_view name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
@@ -278,16 +280,21 @@ void TransportFlowControl::UpdateSetting(
         Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
-      *desired_value = new_desired_value;
+      if (grpc_flowctl_trace.enabled()) {
+        gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
+                grpc_chttp2_settings_parameters[id].name, *desired_value,
+                new_desired_value);
+      }
       // Reaching zero can only happen for initial window size, and if it occurs
       // we really want to wake up writes and ensure all the queued stream
       // window updates are flushed, since stream flow control operates
       // differently at zero window size.
       FlowControlAction::Urgency urgency =
           FlowControlAction::Urgency::QUEUE_UPDATE;
-      if (new_desired_value == 0) {
+      if (*desired_value == 0 || new_desired_value == 0) {
         urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
       }
+      *desired_value = new_desired_value;
       (action->*set)(urgency, *desired_value);
     }
   } else {
@@ -300,6 +307,21 @@ void TransportFlowControl::UpdateSetting(
                      static_cast<uint32_t>(*desired_value));
     }
   }
+}
+
+FlowControlAction TransportFlowControl::SetAckedInitialWindow(uint32_t value) {
+  acked_init_window_ = value;
+  FlowControlAction action;
+  if (IsFlowControlFixesEnabled() &&
+      acked_init_window_ != target_initial_window_size_) {
+    FlowControlAction::Urgency urgency =
+        FlowControlAction::Urgency::QUEUE_UPDATE;
+    if (acked_init_window_ == 0 || target_initial_window_size_ == 0) {
+      urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+    }
+    action.set_send_initial_window_update(urgency, target_initial_window_size_);
+  }
+  return action;
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
@@ -393,7 +415,7 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
-  tfc_upd.MakeAction();
+  std::ignore = tfc_upd.MakeAction();
   return static_cast<uint32_t>(announce);
 }
 

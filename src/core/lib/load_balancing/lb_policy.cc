@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -54,25 +54,30 @@ void LoadBalancingPolicy::Orphan() {
 }
 
 //
+// LoadBalancingPolicy::SubchannelPicker
+//
+
+LoadBalancingPolicy::SubchannelPicker::SubchannelPicker()
+    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
+                         ? "SubchannelPicker"
+                         : nullptr) {}
+
+//
 // LoadBalancingPolicy::QueuePicker
 //
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
     PickArgs /*args*/) {
   // We invoke the parent's ExitIdleLocked() via a closure instead
-  // of doing it directly here, for two reasons:
-  // 1. ExitIdleLocked() may cause the policy's state to change and
-  //    a new picker to be delivered to the channel.  If that new
-  //    picker is delivered before ExitIdleLocked() returns, then by
-  //    the time this function returns, the pick will already have
-  //    been processed, and we'll be trying to re-process the same
-  //    pick again, leading to a crash.
-  // 2. We are currently running in the data plane mutex, but we
-  //    need to bounce into the control plane work_serializer to call
-  //    ExitIdleLocked().
-  if (!exit_idle_called_ && parent_ != nullptr) {
-    exit_idle_called_ = true;
-    auto* parent = parent_->Ref().release();  // ref held by lambda.
+  // of doing it directly here because ExitIdleLocked() may cause the
+  // policy's state to change and a new picker to be delivered to the
+  // channel.  If that new picker is delivered before ExitIdleLocked()
+  // returns, then by the time this function returns, the pick will already
+  // have been processed, and we'll be trying to re-process the same pick
+  // again, leading to a crash.
+  MutexLock lock(&mu_);
+  if (parent_ != nullptr) {
+    auto* parent = parent_.release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
                      [](void* arg, grpc_error_handle /*error*/) {

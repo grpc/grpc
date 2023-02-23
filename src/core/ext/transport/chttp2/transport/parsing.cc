@@ -1,32 +1,35 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
+#include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -53,6 +56,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -125,6 +129,65 @@ uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t) {
   }
   GPR_UNREACHABLE_CODE(return 1);
 }
+
+namespace {
+struct KnownFlag {
+  uint8_t flag;
+  absl::string_view name;
+};
+
+std::string MakeFrameTypeString(absl::string_view frame_type, uint8_t flags,
+                                std::initializer_list<KnownFlag> known_flags) {
+  std::string result(frame_type);
+  for (const KnownFlag& known_flag : known_flags) {
+    if (flags & known_flag.flag) {
+      absl::StrAppend(&result, ":", known_flag.name);
+      flags &= ~known_flag.flag;
+    }
+  }
+  if (flags != 0) {
+    absl::StrAppend(&result, ":UNKNOWN_FLAGS=0x",
+                    absl::Hex(flags, absl::kZeroPad2));
+  }
+  return result;
+}
+
+std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
+  switch (frame_type) {
+    case GRPC_CHTTP2_FRAME_DATA:
+      return MakeFrameTypeString(
+          "DATA", flags, {{GRPC_CHTTP2_DATA_FLAG_END_STREAM, "END_STREAM"}});
+    case GRPC_CHTTP2_FRAME_HEADER:
+      return MakeFrameTypeString(
+          "HEADERS", flags,
+          {{GRPC_CHTTP2_DATA_FLAG_END_STREAM, "END_STREAM"},
+           {GRPC_CHTTP2_DATA_FLAG_END_HEADERS, "END_HEADERS"},
+           {GRPC_CHTTP2_FLAG_HAS_PRIORITY, "PRIORITY"}});
+    case GRPC_CHTTP2_FRAME_CONTINUATION:
+      return MakeFrameTypeString(
+          "HEADERS", flags,
+          {{GRPC_CHTTP2_DATA_FLAG_END_STREAM, "END_STREAM"},
+           {GRPC_CHTTP2_DATA_FLAG_END_HEADERS, "END_HEADERS"},
+           {GRPC_CHTTP2_FLAG_HAS_PRIORITY, "PRIORITY"}});
+    case GRPC_CHTTP2_FRAME_RST_STREAM:
+      return MakeFrameTypeString("RST_STREAM", flags, {});
+    case GRPC_CHTTP2_FRAME_SETTINGS:
+      return MakeFrameTypeString("SETTINGS", flags,
+                                 {{GRPC_CHTTP2_FLAG_ACK, "ACK"}});
+    case GRPC_CHTTP2_FRAME_PING:
+      return MakeFrameTypeString("PING", flags,
+                                 {{GRPC_CHTTP2_FLAG_ACK, "ACK"}});
+    case GRPC_CHTTP2_FRAME_GOAWAY:
+      return MakeFrameTypeString("GOAWAY", flags, {});
+    case GRPC_CHTTP2_FRAME_WINDOW_UPDATE:
+      return MakeFrameTypeString("WINDOW_UPDATE", flags, {});
+    default:
+      return MakeFrameTypeString(
+          absl::StrCat("UNKNOWN_FRAME_TYPE_", static_cast<int>(frame_type)),
+          flags, {});
+  }
+}
+}  // namespace
 
 grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                                            const grpc_slice& slice) {
@@ -249,6 +312,12 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     case GRPC_DTS_FH_8:
       GPR_DEBUG_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
+      if (grpc_http_trace.enabled()) {
+        gpr_log(GPR_INFO, "INCOMING[%p]: %s len:%d id:0x%08x", t,
+                FrameTypeString(t->incoming_frame_type, t->incoming_frame_flags)
+                    .c_str(),
+                t->incoming_frame_size, t->incoming_stream_id);
+      }
       t->deframe_state = GRPC_DTS_FRAME;
       err = init_frame_parser(t);
       if (!err.ok()) {
@@ -264,7 +333,7 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
           t->deframe_state = GRPC_DTS_FH_0;
           return absl::OkStatus();
         }
-        goto dts_fh_0; /* loop */
+        goto dts_fh_0;  // loop
       } else if (t->incoming_frame_size >
                  t->settings[GRPC_ACKED_SETTINGS]
                             [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
@@ -304,7 +373,7 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         }
         cur += t->incoming_frame_size;
         t->incoming_stream = nullptr;
-        goto dts_fh_0; /* loop */
+        goto dts_fh_0;  // loop
       } else {
         err = parse_frame_slice(
             t,
@@ -403,8 +472,8 @@ static HPackParser::LogInfo hpack_parser_log_info(
 static grpc_error_handle init_header_skip_frame_parser(
     grpc_chttp2_transport* t, HPackParser::Priority priority_type) {
   bool is_eoh = t->expect_continuation_stream_id != 0;
-  t->parser = grpc_chttp2_header_parser_parse;
-  t->parser_data = &t->hpack_parser;
+  t->parser = grpc_chttp2_transport::Parser{
+      "header", grpc_chttp2_header_parser_parse, &t->hpack_parser};
   t->hpack_parser.BeginFrame(
       nullptr,
       t->settings[GRPC_ACKED_SETTINGS]
@@ -416,15 +485,17 @@ static grpc_error_handle init_header_skip_frame_parser(
 
 static grpc_error_handle init_non_header_skip_frame_parser(
     grpc_chttp2_transport* t) {
-  t->parser = skip_parser;
+  t->parser =
+      grpc_chttp2_transport::Parser{"skip_parser", skip_parser, nullptr};
   return absl::OkStatus();
 }
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
-  if (t->parser == grpc_chttp2_header_parser_parse) {
+  if (t->parser.parser == grpc_chttp2_header_parser_parse) {
     t->hpack_parser.StopBufferingFrame();
   } else {
-    t->parser = skip_parser;
+    t->parser =
+        grpc_chttp2_transport::Parser{"skip_parser", skip_parser, nullptr};
   }
 }
 
@@ -471,13 +542,12 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
 error_handler:
   if (status.ok()) {
     t->incoming_stream = s;
-    /* t->parser = grpc_chttp2_data_parser_parse;*/
-    t->parser = grpc_chttp2_data_parser_parse;
-    t->parser_data = nullptr;
+    t->parser = grpc_chttp2_transport::Parser{
+        "data", grpc_chttp2_data_parser_parse, nullptr};
     t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
     return absl::OkStatus();
   } else if (s != nullptr) {
-    /* handle stream errors by closing the stream */
+    // handle stream errors by closing the stream
     grpc_chttp2_mark_stream_closed(t, s, true, false,
                                    absl_status_to_grpc_error(status));
     grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
@@ -495,7 +565,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0;
   grpc_chttp2_stream* s;
 
-  /* TODO(ctiller): when to increment header_frames_received? */
+  // TODO(ctiller): when to increment header_frames_received?
 
   if (is_eoh) {
     t->expect_continuation_stream_id = 0;
@@ -515,7 +585,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
 
   t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
 
-  /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
+  // could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   if (s == nullptr) {
     if (GPR_UNLIKELY(is_continuation)) {
@@ -527,7 +597,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     if (t->is_client) {
       if (GPR_LIKELY((t->incoming_stream_id & 1) &&
                      t->incoming_stream_id < t->next_stream_id)) {
-        /* this is an old (probably cancelled) grpc_chttp2_stream */
+        // this is an old (probably cancelled) grpc_chttp2_stream
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(
             GPR_ERROR, "ignoring new grpc_chttp2_stream creation on client"));
@@ -557,8 +627,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           GPR_INFO,
           "transport:%p SERVER peer:%s Final GOAWAY sent. Ignoring new "
           "grpc_chttp2_stream request id=%d, last grpc_chttp2_stream id=%d",
-          t, t->peer_string.c_str(), t->incoming_stream_id,
-          t->last_new_stream_id));
+          t, std::string(t->peer_string.as_string_view()).c_str(),
+          t->incoming_stream_id, t->last_new_stream_id));
       return init_header_skip_frame_parser(t, priority_type);
     }
     t->last_new_stream_id = t->incoming_stream_id;
@@ -583,8 +653,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     t->incoming_stream = nullptr;
     return init_header_skip_frame_parser(t, priority_type);
   }
-  t->parser = grpc_chttp2_header_parser_parse;
-  t->parser_data = &t->hpack_parser;
+  t->parser = grpc_chttp2_transport::Parser{
+      "header", grpc_chttp2_header_parser_parse, &t->hpack_parser};
   if (t->header_eof) {
     s->eos_received = true;
   }
@@ -598,6 +668,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           *s->trailing_metadata_available = true;
         }
         s->parsed_trailers_only = true;
+        s->trailing_metadata_buffer.Set(grpc_core::GrpcTrailersOnly(), true);
         incoming_metadata_buffer = &s->trailing_metadata_buffer;
         frame_type = HPackParser::LogInfo::kTrailers;
       } else {
@@ -638,12 +709,17 @@ static grpc_error_handle init_window_update_frame_parser(
     grpc_chttp2_stream* s = t->incoming_stream =
         grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
     if (s == nullptr) {
+      if (grpc_http_trace.enabled()) {
+        gpr_log(GPR_ERROR, "Stream %d not found, ignoring WINDOW_UPDATE",
+                t->incoming_stream_id);
+      }
       return init_non_header_skip_frame_parser(t);
     }
     s->stats.incoming.framing_bytes += 9;
   }
-  t->parser = grpc_chttp2_window_update_parser_parse;
-  t->parser_data = &t->simple.window_update;
+  t->parser = grpc_chttp2_transport::Parser{
+      "window_update", grpc_chttp2_window_update_parser_parse,
+      &t->simple.window_update};
   return absl::OkStatus();
 }
 
@@ -651,8 +727,8 @@ static grpc_error_handle init_ping_parser(grpc_chttp2_transport* t) {
   grpc_error_handle err = grpc_chttp2_ping_parser_begin_frame(
       &t->simple.ping, t->incoming_frame_size, t->incoming_frame_flags);
   if (!err.ok()) return err;
-  t->parser = grpc_chttp2_ping_parser_parse;
-  t->parser_data = &t->simple.ping;
+  t->parser = grpc_chttp2_transport::Parser{
+      "ping", grpc_chttp2_ping_parser_parse, &t->simple.ping};
   return absl::OkStatus();
 }
 
@@ -666,8 +742,8 @@ static grpc_error_handle init_rst_stream_parser(grpc_chttp2_transport* t) {
     return init_non_header_skip_frame_parser(t);
   }
   s->stats.incoming.framing_bytes += 9;
-  t->parser = grpc_chttp2_rst_stream_parser_parse;
-  t->parser_data = &t->simple.rst_stream;
+  t->parser = grpc_chttp2_transport::Parser{
+      "rst_stream", grpc_chttp2_rst_stream_parser_parse, &t->simple.rst_stream};
   return absl::OkStatus();
 }
 
@@ -675,8 +751,8 @@ static grpc_error_handle init_goaway_parser(grpc_chttp2_transport* t) {
   grpc_error_handle err = grpc_chttp2_goaway_parser_begin_frame(
       &t->goaway_parser, t->incoming_frame_size, t->incoming_frame_flags);
   if (!err.ok()) return err;
-  t->parser = grpc_chttp2_goaway_parser_parse;
-  t->parser_data = &t->goaway_parser;
+  t->parser = grpc_chttp2_transport::Parser{
+      "goaway", grpc_chttp2_goaway_parser_parse, &t->goaway_parser};
   return absl::OkStatus();
 }
 
@@ -697,13 +773,15 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
     t->hpack_parser.hpack_table()->SetMaxBytes(
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
-    t->flow_control.SetAckedInitialWindow(
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+    grpc_chttp2_act_on_flowctl_action(
+        t->flow_control.SetAckedInitialWindow(
+            t->settings[GRPC_ACKED_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+        t, nullptr);
     t->sent_local_settings = false;
   }
-  t->parser = grpc_chttp2_settings_parser_parse;
-  t->parser_data = &t->simple.settings;
+  t->parser = grpc_chttp2_transport::Parser{
+      "settings", grpc_chttp2_settings_parser_parse, &t->simple.settings};
   return absl::OkStatus();
 }
 
@@ -711,21 +789,27 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                                            const grpc_slice& slice,
                                            int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
-  grpc_error_handle err = t->parser(t->parser_data, t, s, slice, is_last);
+  if (grpc_http_trace.enabled()) {
+    gpr_log(GPR_DEBUG,
+            "INCOMING[%p;%p]: Parse %" PRIdPTR "b %sframe fragment with %s", t,
+            s, GRPC_SLICE_LENGTH(slice), is_last ? "last " : "",
+            t->parser.name);
+  }
+  grpc_error_handle err =
+      t->parser.parser(t->parser.user_data, t, s, slice, is_last);
   intptr_t unused;
   if (GPR_LIKELY(err.ok())) {
     return err;
-  } else if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
-                                &unused)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-      gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(err).c_str());
-    }
+  }
+  if (grpc_http_trace.enabled()) {
+    gpr_log(GPR_ERROR, "INCOMING[%p;%p]: Parse failed with %s", t, s,
+            err.ToString().c_str());
+  }
+  if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
+                         &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
-      s->forced_close_error = err;
-      grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
-                                               GRPC_HTTP2_PROTOCOL_ERROR,
-                                               &s->stats.outgoing);
+      grpc_chttp2_cancel_stream(t, s, std::exchange(err, absl::OkStatus()));
     }
   }
   return err;
@@ -763,8 +847,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     return error;
   }
   if (is_last) {
-    /* need to check for null stream: this can occur if we receive an invalid
-       stream id on a header */
+    // need to check for null stream: this can occur if we receive an invalid
+    // stream id on a header
     if (s != nullptr) {
       if (parser->is_boundary()) {
         if (s->header_frames_received == 2) {
@@ -777,10 +861,10 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
       }
       if (parser->is_eof()) {
         if (t->is_client && !s->write_closed) {
-          /* server eof ==> complete closure; we may need to forcefully close
-             the stream. Wait until the combiner lock is ready to be released
-             however -- it might be that we receive a RST_STREAM following this
-             and can avoid the extra write */
+          // server eof ==> complete closure; we may need to forcefully close
+          // the stream. Wait until the combiner lock is ready to be released
+          // however -- it might be that we receive a RST_STREAM following this
+          // and can avoid the extra write
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
           t->combiner->FinallyRun(
               GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),

@@ -33,6 +33,11 @@ namespace grpc_event_engine {
 namespace experimental {
 
 ////////////////////////////////////////////////////////////////////////////////
+/// The EventEngine Interface
+///
+/// Overview
+/// --------
+///
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
 ///
@@ -44,7 +49,8 @@ namespace experimental {
 ///
 /// A default cross-platform EventEngine instance is provided by gRPC.
 ///
-/// LIFESPAN AND OWNERSHIP
+/// Lifespan and Ownership
+/// ----------------------
 ///
 /// gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure
 /// that the engines remain available until they are no longer needed. Depending
@@ -71,6 +77,19 @@ namespace experimental {
 ///    std::unique_ptr<Server> server(builder.BuildAndStart());
 ///    server->Wait();
 ///
+///
+/// Blocking EventEngine Callbacks
+/// -----------------------------
+///
+/// Doing blocking work in EventEngine callbacks is generally not advisable.
+/// While gRPC's default EventEngine implementations have some capacity to scale
+/// their thread pools to avoid starvation, this is not an instantaneous
+/// process. Further, user-provided EventEngines may not be optimized to handle
+/// excessive blocking work at all.
+///
+/// *Best Practice* : Occasional blocking work may be fine, but we do not
+/// recommend running a mostly blocking workload in EventEngine threads.
+///
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
@@ -85,6 +104,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// caller - the EventEngine will never delete a Closure, and upon
   /// cancellation, the EventEngine will simply forget the Closure exists. The
   /// caller is responsible for all necessary cleanup.
+
   class Closure {
    public:
     Closure() = default;
@@ -103,12 +123,14 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   struct TaskHandle {
     intptr_t keys[2];
   };
+  static constexpr TaskHandle kInvalidTaskHandle{-1, -1};
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
   };
+  static constexpr ConnectionHandle kInvalidConnectionHandle{-1, -1};
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///
@@ -127,7 +149,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     socklen_t size() const;
 
    private:
-    char address_[MAX_SIZE_BYTES];
+    char address_[MAX_SIZE_BYTES] = {};
     socklen_t size_ = 0;
   };
 
@@ -379,6 +401,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// \a Closures scheduled with \a Run cannot be cancelled. The \a closure will
   /// not be deleted after it has been run, ownership remains with the caller.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a Run returns. For example, if the caller must release a lock before the
+  /// closure can proceed, running the closure immediately would cause a
+  /// deadlock.
   virtual void Run(Closure* closure) = 0;
   /// Asynchronously executes a task as soon as possible.
   ///
@@ -389,12 +416,18 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a Run returns.
   virtual void Run(absl::AnyInvocable<void()> closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
   /// run, nor will it be deleted. Ownership remains with the caller.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a RunAfter returns.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
@@ -407,6 +440,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// This version of \a RunAfter may be less performant than the \a Closure
   /// version in some scenarios. This overload is useful in situations where
   /// performance is not a critical concern.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a RunAfter returns.
   virtual TaskHandle RunAfter(Duration when,
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.

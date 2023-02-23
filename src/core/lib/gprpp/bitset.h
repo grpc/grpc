@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_BITSET_H
-#define GRPC_CORE_LIB_GPRPP_BITSET_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_BITSET_H
+#define GRPC_SRC_CORE_LIB_GPRPP_BITSET_H
 
 #include <grpc/support/port_platform.h>
 
@@ -171,6 +171,18 @@ class BitSet {
     return result;
   }
 
+  BitSet& Set(int i, bool value) {
+    set(i, value);
+    return *this;
+  }
+
+  BitSet& SetAll(bool value) {
+    for (size_t i = 0; i < kTotalBits; i++) {
+      set(i, value);
+    }
+    return *this;
+  }
+
  private:
   // Given a bit index, return which unit it's stored in.
   static constexpr size_t unit_for(size_t bit) { return bit / kUnitBits; }
@@ -210,4 +222,4 @@ class BitSet<0> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_BITSET_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_BITSET_H

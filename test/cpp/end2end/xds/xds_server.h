@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -132,6 +133,8 @@ class AdsServiceImpl
   }
 
   // Get the list of response state for each resource type.
+  // TODO(roth): Consider adding an absl::Notification-based mechanism
+  // here to avoid the need for tests to poll the response state.
   absl::optional<ResponseState> GetResponseState(const std::string& type_url) {
     grpc_core::MutexLock lock(&ads_mu_);
     if (resource_type_response_state_[type_url].empty()) {

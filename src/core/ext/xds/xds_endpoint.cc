@@ -44,6 +44,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_cluster.h"
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -91,11 +93,14 @@ std::string XdsEndpointResource::Priority::ToString() const {
 }
 
 bool XdsEndpointResource::DropConfig::ShouldDrop(
-    const std::string** category_name) const {
+    const std::string** category_name) {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
-    const uint32_t random = static_cast<uint32_t>(rand()) % 1000000;
+    const uint32_t random = [&]() {
+      MutexLock lock(&mu_);
+      return absl::Uniform<uint32_t>(bit_gen_, 0, 1000000);
+    }();
     if (random < drop_category.parts_per_million) {
       *category_name = &drop_category.name;
       return true;
@@ -150,13 +155,15 @@ absl::optional<ServerAddress> ServerAddressParse(
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
     ValidationErrors* errors) {
   // health_status
-  // If not HEALTHY or UNKNOWN, skip this endpoint.
   const int32_t health_status =
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
-  if (health_status != envoy_config_core_v3_UNKNOWN &&
+  if (!XdsOverrideHostEnabled() &&
+      health_status != envoy_config_core_v3_UNKNOWN &&
       health_status != envoy_config_core_v3_HEALTHY) {
     return absl::nullopt;
   }
+  auto status = XdsHealthStatus::FromUpb(health_status);
+  if (!status.has_value()) return absl::nullopt;
   // load_balancing_weight
   uint32_t weight = 1;
   {
@@ -217,6 +224,8 @@ absl::optional<ServerAddress> ServerAddressParse(
       attributes;
   attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
       std::make_unique<ServerAddressWeightAttribute>(weight);
+  attributes[XdsEndpointHealthStatusAttribute::kKey] =
+      std::make_unique<XdsEndpointHealthStatusAttribute>(*status);
   return ServerAddress(grpc_address, ChannelArgs(), std::move(attributes));
 }
 

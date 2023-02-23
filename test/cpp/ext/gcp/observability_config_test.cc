@@ -55,7 +55,12 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
       "cloud_trace": {
         "sampling_rate": 0.05
       },
-      "project_id": "project"
+      "project_id": "project",
+      "labels": {
+        "SOURCE_VERSION": "v1",
+        "SERVICE_NAME": "payment-service",
+        "DATA_CENTER": "us-west1-a"
+      }
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
@@ -88,6 +93,11 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   EXPECT_TRUE(config.cloud_trace.has_value());
   EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
   EXPECT_EQ(config.project_id, "project");
+  EXPECT_THAT(config.labels,
+              ::testing::UnorderedElementsAre(
+                  ::testing::Pair("SOURCE_VERSION", "v1"),
+                  ::testing::Pair("SERVICE_NAME", "payment-service"),
+                  ::testing::Pair("DATA_CENTER", "us-west1-a")));
 }
 
 TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
@@ -103,6 +113,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
   EXPECT_FALSE(config.cloud_monitoring.has_value());
   EXPECT_FALSE(config.cloud_trace.has_value());
   EXPECT_TRUE(config.project_id.empty());
+  EXPECT_TRUE(config.labels.empty());
 }
 
 TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigMethodIllegalSlashes) {
@@ -236,13 +247,13 @@ TEST(GcpEnvParsingTest, NoEnvironmentVariableSet) {
   auto config = GcpObservabilityConfig::ReadFromEnv();
   EXPECT_EQ(config.status(),
             absl::FailedPreconditionError(
-                "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
-                "GRPC_OBSERVABILITY_CONFIG "
+                "Environment variables GRPC_GCP_OBSERVABILITY_CONFIG_FILE or "
+                "GRPC_GCP_OBSERVABILITY_CONFIG "
                 "not defined"));
 }
 
 TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
-  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG_FILE",
+  grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE",
                     "/tmp/gcp_observability_config_does_not_exist");
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
@@ -250,22 +261,22 @@ TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
   EXPECT_EQ(config.status(),
             absl::FailedPreconditionError("Failed to load file"));
 
-  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
+  grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
 }
 
 TEST(GcpEnvParsingTest, ProjectIdNotSet) {
-  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG", "{}");
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
   EXPECT_EQ(config.status(),
             absl::FailedPreconditionError("GCP Project ID not found."));
 
-  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
   grpc_core::CoreConfiguration::Reset();
 }
 
 TEST(GcpEnvParsingTest, ProjectIdFromGcpProjectEnvVar) {
-  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG", "{}");
   grpc_core::SetEnv("GCP_PROJECT", "gcp_project");
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
@@ -273,12 +284,12 @@ TEST(GcpEnvParsingTest, ProjectIdFromGcpProjectEnvVar) {
   EXPECT_EQ(config->project_id, "gcp_project");
 
   grpc_core::UnsetEnv("GCP_PROJECT");
-  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
   grpc_core::CoreConfiguration::Reset();
 }
 
 TEST(GcpEnvParsingTest, ProjectIdFromGcloudProjectEnvVar) {
-  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG", "{}");
   grpc_core::SetEnv("GCLOUD_PROJECT", "gcloud_project");
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
@@ -286,12 +297,12 @@ TEST(GcpEnvParsingTest, ProjectIdFromGcloudProjectEnvVar) {
   EXPECT_EQ(config->project_id, "gcloud_project");
 
   grpc_core::UnsetEnv("GCLOUD_PROJECT");
-  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
   grpc_core::CoreConfiguration::Reset();
 }
 
 TEST(GcpEnvParsingTest, ProjectIdFromGoogleCloudProjectEnvVar) {
-  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG", "{}");
   grpc_core::SetEnv("GOOGLE_CLOUD_PROJECT", "google_cloud_project");
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
@@ -299,7 +310,7 @@ TEST(GcpEnvParsingTest, ProjectIdFromGoogleCloudProjectEnvVar) {
   EXPECT_EQ(config->project_id, "google_cloud_project");
 
   grpc_core::UnsetEnv("GOOGLE_CLOUD_PROJECT");
-  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
   grpc_core::CoreConfiguration::Reset();
 }
 
@@ -341,13 +352,13 @@ class EnvParsingTest : public ::testing::TestWithParam<EnvParsingTestType> {
   ~EnvParsingTest() override {
     if (GetParam().config_source() == EnvParsingTestType::ConfigSource::kFile) {
       if (tmp_file_name != nullptr) {
-        grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
+        grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
         remove(tmp_file_name);
         gpr_free(tmp_file_name);
       }
     } else if (GetParam().config_source() ==
                EnvParsingTestType::ConfigSource::kEnvVar) {
-      grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+      grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
     }
   }
 
@@ -358,10 +369,10 @@ class EnvParsingTest : public ::testing::TestWithParam<EnvParsingTestType> {
           gpr_tmpfile("gcp_observability_config", &tmp_file_name);
       fputs(json, tmp_config_file);
       fclose(tmp_config_file);
-      grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG_FILE", tmp_file_name);
+      grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE", tmp_file_name);
     } else if (GetParam().config_source() ==
                EnvParsingTestType::ConfigSource::kEnvVar) {
-      grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", json);
+      grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG", json);
     }
   }
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:7.2-alpine3.9
+FROM php:7.4-alpine3.15
 
 RUN apk add autoconf g++ make zlib-dev git bash wget linux-headers
 
@@ -34,4 +34,6 @@ RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests"]
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
+     "--ignore-valgrind-undef-errors"]
+

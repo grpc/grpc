@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -29,11 +30,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
@@ -42,16 +44,17 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -122,31 +125,28 @@ class CdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
     void OnResourceChanged(XdsClusterResource cluster_data) override {
-      Ref().release();  // Ref held by lambda
+      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          // TODO(roth): When we move to C++14, capture cluster_data with
-          // std::move().
-          [this, cluster_data]() mutable {
-            parent_->OnClusterChanged(name_, std::move(cluster_data));
-            Unref();
+          [self = std::move(self),
+           cluster_data = std::move(cluster_data)]() mutable {
+            self->parent_->OnClusterChanged(self->name_,
+                                            std::move(cluster_data));
           },
           DEBUG_LOCATION);
     }
     void OnError(absl::Status status) override {
-      Ref().release();  // Ref held by lambda
+      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [this, status]() {
-            parent_->OnError(name_, status);
-            Unref();
+          [self = std::move(self), status = std::move(status)]() mutable {
+            self->parent_->OnError(self->name_, std::move(status));
           },
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      Ref().release();  // Ref held by lambda
+      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [this]() {
-            parent_->OnResourceDoesNotExist(name_);
-            Unref();
+          [self = std::move(self)]() {
+            self->parent_->OnResourceDoesNotExist(self->name_);
           },
           DEBUG_LOCATION);
     }
@@ -360,7 +360,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
 
 // Generates the discovery mechanism config for the specified cluster name.
 //
-// If no CdsUpdate has been received for the cluster, starts the watcher
+// If no CDS update has been received for the cluster, starts the watcher
 // if needed, and returns false.  Otherwise, generates the discovery
 // mechanism config, adds it to *discovery_mechanisms, and returns true.
 //
@@ -392,11 +392,11 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
   // Don't have the update we need yet.
   if (!state.update.has_value()) return false;
   // For AGGREGATE clusters, recursively expand to child clusters.
-  if (state.update->cluster_type ==
-      XdsClusterResource::ClusterType::AGGREGATE) {
+  auto* aggregate =
+      absl::get_if<XdsClusterResource::Aggregate>(&state.update->type);
+  if (aggregate != nullptr) {
     bool missing_cluster = false;
-    for (const std::string& child_name :
-         state.update->prioritized_cluster_names) {
+    for (const std::string& child_name : aggregate->prioritized_cluster_names) {
       auto result = GenerateDiscoveryMechanismForCluster(
           child_name, depth + 1, discovery_mechanisms, clusters_added);
       if (!result.ok()) return result;
@@ -447,24 +447,29 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     }
     mechanism["outlierDetection"] = std::move(outlier_detection);
   }
-  switch (state.update->cluster_type) {
-    case XdsClusterResource::ClusterType::EDS:
-      mechanism["type"] = "EDS";
-      if (!state.update->eds_service_name.empty()) {
-        mechanism["edsServiceName"] = state.update->eds_service_name;
-      }
-      break;
-    case XdsClusterResource::ClusterType::LOGICAL_DNS:
-      mechanism["type"] = "LOGICAL_DNS";
-      mechanism["dnsHostname"] = state.update->dns_hostname;
-      break;
-    default:
-      GPR_ASSERT(0);
-      break;
-  }
+  Match(
+      state.update->type,
+      [&](const XdsClusterResource::Eds& eds) {
+        mechanism["type"] = "EDS";
+        if (!eds.eds_service_name.empty()) {
+          mechanism["edsServiceName"] = eds.eds_service_name;
+        }
+      },
+      [&](const XdsClusterResource::LogicalDns& logical_dns) {
+        mechanism["type"] = "LOGICAL_DNS";
+        mechanism["dnsHostname"] = logical_dns.hostname;
+      },
+      [&](const XdsClusterResource::Aggregate&) { GPR_ASSERT(0); });
   if (state.update->lrs_load_reporting_server.has_value()) {
     mechanism["lrsLoadReportingServer"] =
         state.update->lrs_load_reporting_server->ToJson();
+  }
+  if (!state.update->override_host_statuses.empty()) {
+    Json::Array status_list;
+    for (const auto& status : state.update->override_host_statuses) {
+      status_list.emplace_back(status.ToString());
+    }
+    mechanism["overrideHostStatus"] = std::move(status_list);
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;
@@ -512,8 +517,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
         Json::Object{
             {"xds_cluster_resolver_experimental",
              Json::Object{
-                 {"xdsLbPolicy",
-                  std::move(it->second.update->lb_policy_config)},
+                 {"xdsLbPolicy", it->second.update->lb_policy_config},
                  {"discoveryMechanisms", std::move(discovery_mechanisms)},
              }},
         },
@@ -523,7 +527,6 @@ void CdsLb::OnClusterChanged(const std::string& name,
       gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
               this, json_str.c_str());
     }
-    grpc_error_handle error;
     auto config =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             json);

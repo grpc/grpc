@@ -108,6 +108,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
+        "//src/core:channel_args",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -280,6 +281,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_wrr_end2end_test",
+    size = "large",
+    srcs = ["xds_wrr_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:client_side_weighted_round_robin_proto",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_ring_hash_end2end_test",
     size = "large",
     srcs = ["xds_ring_hash_end2end_test.cc"],
@@ -353,6 +379,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/util:grpc_test_util",
     ],
@@ -374,5 +401,30 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_override_host_end2end_test",
+    size = "large",
+    srcs = ["xds_override_host_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
+        "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )

@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 namespace grpc_binder {
@@ -81,12 +82,13 @@ WireReaderImpl::~WireReaderImpl() {
 std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
     std::unique_ptr<Binder> binder) {
   if (!is_client_) {
+    connected_ = true;
     SendSetupTransport(binder.get());
     {
       grpc_core::MutexLock lock(&mu_);
-      connected_ = true;
       wire_writer_ = std::make_shared<WireWriterImpl>(std::move(binder));
     }
+    wire_writer_ready_notification_.Notify();
     return wire_writer_;
   } else {
     SendSetupTransport(binder.get());
@@ -97,6 +99,7 @@ std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
       wire_writer_ =
           std::make_shared<WireWriterImpl>(std::move(other_end_binder));
     }
+    wire_writer_ready_notification_.Notify();
     return wire_writer_;
   }
 }
@@ -213,6 +216,11 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
       int64_t num_bytes = -1;
       GRPC_RETURN_IF_ERROR(parcel->ReadInt64(&num_bytes));
       gpr_log(GPR_DEBUG, "received acknowledge bytes = %" PRId64, num_bytes);
+      if (!wire_writer_ready_notification_.WaitForNotificationWithTimeout(
+              absl::Seconds(5))) {
+        return absl::DeadlineExceededError(
+            "wire_writer_ is not ready in time!");
+      }
       wire_writer_->OnAckReceived(num_bytes);
       break;
     }
@@ -282,6 +290,10 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
     }
   }
   if (need_to_send_ack) {
+    if (!wire_writer_ready_notification_.WaitForNotificationWithTimeout(
+            absl::Seconds(5))) {
+      return absl::DeadlineExceededError("wire_writer_ is not ready in time!");
+    }
     GPR_ASSERT(wire_writer_);
     // wire_writer_ should not be accessed while holding mu_!
     // Otherwise, it is possible that

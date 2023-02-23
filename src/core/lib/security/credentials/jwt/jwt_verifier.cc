@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -70,7 +70,7 @@
 
 using grpc_core::Json;
 
-/* --- Utils. --- */
+// --- Utils. ---
 
 const char* grpc_jwt_verifier_status_to_string(
     grpc_jwt_verifier_status status) {
@@ -141,13 +141,13 @@ static gpr_timespec validate_time_field(const Json& json, const char* key) {
   return result;
 }
 
-/* --- JOSE header. see http://tools.ietf.org/html/rfc7515#section-4 --- */
+// --- JOSE header. see http://tools.ietf.org/html/rfc7515#section-4 ---
 
 struct jose_header {
   const char* alg;
   const char* kid;
   const char* typ;
-  /* TODO(jboeuf): Add others as needed (jku, jwk, x5u, x5c and so on...). */
+  // TODO(jboeuf): Add others as needed (jku, jwk, x5u, x5c and so on...).
   grpc_core::ManualConstructor<Json> json;
 };
 static void jose_header_destroy(jose_header* h) {
@@ -169,10 +169,10 @@ static jose_header* jose_header_from_json(Json json) {
     gpr_log(GPR_ERROR, "Missing alg field.");
     goto error;
   }
-  /* We only support RSA-1.5 signatures for now.
-     Beware of this if we add HMAC support:
-     https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
-   */
+  // We only support RSA-1.5 signatures for now.
+  // Beware of this if we add HMAC support:
+  // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
+  //
   alg_value = it->second.string_value().c_str();
   if (it->second.type() != Json::Type::STRING ||
       strncmp(alg_value, "RS", 2) != 0 ||
@@ -201,10 +201,10 @@ error:
   return nullptr;
 }
 
-/* --- JWT claims. see http://tools.ietf.org/html/rfc7519#section-4.1 */
+// --- JWT claims. see http://tools.ietf.org/html/rfc7519#section-4.1
 
 struct grpc_jwt_claims {
-  /* Well known properties already parsed. */
+  // Well known properties already parsed.
   const char* sub;
   const char* iss;
   const char* aud;
@@ -268,7 +268,7 @@ grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
   claims->nbf = gpr_inf_past(GPR_CLOCK_REALTIME);
   claims->exp = gpr_inf_future(GPR_CLOCK_REALTIME);
 
-  /* Per the spec, all fields are optional. */
+  // Per the spec, all fields are optional.
   for (const auto& p : claims->json->object_value()) {
     if (p.first == "sub") {
       claims->sub = validate_string_field(p.second, "sub");
@@ -326,9 +326,9 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
 
-  /* This should be probably up to the upper layer to decide but let's harcode
-     the 99% use case here for email issuers, where the JWT must be self
-     issued. */
+  // This should be probably up to the upper layer to decide but let's harcode
+  // the 99% use case here for email issuers, where the JWT must be self
+  // issued.
   if (grpc_jwt_issuer_email_domain(claims->iss) != nullptr &&
       claims->sub != nullptr && strcmp(claims->iss, claims->sub) != 0) {
     gpr_log(GPR_ERROR,
@@ -351,12 +351,12 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
   return GRPC_JWT_VERIFIER_OK;
 }
 
-/* --- verifier_cb_ctx object. --- */
+// --- verifier_cb_ctx object. ---
 
 typedef enum {
   HTTP_RESPONSE_OPENID = 0,
   HTTP_RESPONSE_KEYS,
-  HTTP_RESPONSE_COUNT /* must be last */
+  HTTP_RESPONSE_COUNT  // must be last
 } http_response_index;
 
 struct verifier_cb_ctx {
@@ -372,7 +372,7 @@ struct verifier_cb_ctx {
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request;
 };
-/* Takes ownership of the header, claims and signature. */
+// Takes ownership of the header, claims and signature.
 static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_verifier* verifier, grpc_pollset* pollset, jose_header* header,
     grpc_jwt_claims* claims, const char* audience, const grpc_slice& signature,
@@ -402,16 +402,16 @@ void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
   }
-  /* TODO: see what to do with claims... */
+  // TODO(unknown): see what to do with claims...
   delete ctx;
 }
 
-/* --- grpc_jwt_verifier object. --- */
+// --- grpc_jwt_verifier object. ---
 
-/* Clock skew defaults to one minute. */
+// Clock skew defaults to one minute.
 gpr_timespec grpc_jwt_verifier_clock_skew = {60, 0, GPR_TIMESPAN};
 
-/* Max delay defaults to one minute. */
+// Max delay defaults to one minute.
 grpc_core::Duration grpc_jwt_verifier_max_delay =
     grpc_core::Duration::Minutes(1);
 
@@ -421,7 +421,7 @@ struct email_key_mapping {
 };
 struct grpc_jwt_verifier {
   email_key_mapping* mappings;
-  size_t num_mappings; /* Should be very few, linear search ok. */
+  size_t num_mappings;  // Should be very few, linear search ok.
   size_t allocated_mappings;
 };
 
@@ -495,10 +495,10 @@ static BIGNUM* bignum_from_base64(const char* b64) {
 
 // Provide compatibility across OpenSSL 1.02 and 1.1.
 static int RSA_set0_key(RSA* r, BIGNUM* n, BIGNUM* e, BIGNUM* d) {
-  /* If the fields n and e in r are NULL, the corresponding input
-   * parameters MUST be non-NULL for n and e.  d may be
-   * left NULL (in case only the public key is used).
-   */
+  // If the fields n and e in r are NULL, the corresponding input
+  // parameters MUST be non-NULL for n and e.  d may be
+  // left NULL (in case only the public key is used).
+  //
   if ((r->n == nullptr && n == nullptr) || (r->e == nullptr && e == nullptr)) {
     return 0;
   }
@@ -556,11 +556,11 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
     gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
     goto end;
   }
-  /* RSA_set0_key takes ownership on success. */
+  // RSA_set0_key takes ownership on success.
   tmp_n = nullptr;
   tmp_e = nullptr;
   result = EVP_PKEY_new();
-  EVP_PKEY_set1_RSA(result, rsa); /* uprefs rsa. */
+  EVP_PKEY_set1_RSA(result, rsa);  // uprefs rsa.
 
 end:
   RSA_free(rsa);
@@ -571,12 +571,12 @@ end:
 
 static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
                                        const char* header_kid) {
-  /* Try to parse the json as a JWK set:
-     https://tools.ietf.org/html/rfc7517#section-5. */
+  // Try to parse the json as a JWK set:
+  // https://tools.ietf.org/html/rfc7517#section-5.
   const Json* jwt_keys = find_property_by_name(json, "keys");
   if (jwt_keys == nullptr) {
-    /* Use the google proprietary format which is:
-       { <kid1>: <x5091>, <kid2>: <x5092>, ... } */
+    // Use the google proprietary format which is:
+    // { <kid1>: <x5091>, <kid2>: <x5092>, ... }
     const Json* cur = find_property_by_name(json, header_kid);
     if (cur == nullptr) return nullptr;
     return extract_pkey_from_x509(cur->string_value().c_str());
@@ -586,8 +586,8 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
             "Unexpected value type of keys property in jwks key set.");
     return nullptr;
   }
-  /* Key format is specified in:
-     https://tools.ietf.org/html/rfc7518#section-6. */
+  // Key format is specified in:
+  // https://tools.ietf.org/html/rfc7518#section-6.
   for (const Json& jkey : jwt_keys->array_value()) {
     if (jkey.type() != Json::Type::OBJECT) continue;
     const char* alg = nullptr;
@@ -623,7 +623,7 @@ static int verify_jwt_signature(EVP_PKEY* key, const char* alg,
   const EVP_MD* md = evp_md_from_alg(alg);
   int result = 0;
 
-  GPR_ASSERT(md != nullptr); /* Checked before. */
+  GPR_ASSERT(md != nullptr);  // Checked before.
   if (md_ctx == nullptr) {
     gpr_log(GPR_ERROR, "Could not create EVP_MD_CTX.");
     goto end;
@@ -677,7 +677,7 @@ static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
 
   status = grpc_jwt_claims_check(ctx->claims, ctx->audience);
   if (status == GRPC_JWT_VERIFIER_OK) {
-    /* Pass ownership. */
+    // Pass ownership.
     claims = ctx->claims;
     ctx->claims = nullptr;
   }
@@ -701,7 +701,7 @@ static void on_openid_config_retrieved(void* user_data,
   char* host;
   char* path;
 
-  /* TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time. */
+  // TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time.
   if (json.type() == Json::Type::JSON_NULL) goto error;
   cur = find_property_by_name(json, "jwks_uri");
   if (cur == nullptr) {
@@ -723,9 +723,9 @@ static void on_openid_config_retrieved(void* user_data,
     *(host + (path - jwks_uri)) = '\0';
   }
 
-  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
-     channel. This would allow us to cancel an authentication query when under
-     extreme memory pressure. */
+  // TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+  // channel. This would allow us to cancel an authentication query when under
+  // extreme memory pressure.
   uri = grpc_core::URI::Create("https", host, path, {} /* query params /*/,
                                "" /* fragment */);
   if (!uri.ok()) {
@@ -773,8 +773,8 @@ static void verifier_put_mapping(grpc_jwt_verifier* v, const char* email_domain,
   GPR_ASSERT(v->num_mappings <= v->allocated_mappings);
 }
 
-/* Very non-sophisticated way to detect an email address. Should be good
-   enough for now... */
+// Very non-sophisticated way to detect an email address. Should be good
+// enough for now...
 const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   const char* at_sign = strchr(issuer, '@');
   if (at_sign == nullptr) return nullptr;
@@ -783,14 +783,14 @@ const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   const char* dot = strrchr(email_domain, '.');
   if (dot == nullptr || dot == email_domain) return email_domain;
   GPR_ASSERT(dot > email_domain);
-  /* There may be a subdomain, we just want the domain. */
+  // There may be a subdomain, we just want the domain.
   dot = static_cast<const char*>(
       gpr_memrchr(email_domain, '.', static_cast<size_t>(dot - email_domain)));
   if (dot == nullptr) return email_domain;
   return dot + 1;
 }
 
-/* Takes ownership of ctx. */
+// Takes ownership of ctx.
 static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   const char* email_domain;
   grpc_closure* http_cb;
@@ -815,11 +815,11 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
     goto error;
   }
 
-  /* This code relies on:
-     https://openid.net/specs/openid-connect-discovery-1_0.html
-     Nobody seems to implement the account/email/webfinger part 2. of the spec
-     so we will rely instead on email/url mappings if we detect such an issuer.
-     Part 4, on the other hand is implemented by both google and salesforce. */
+  // This code relies on:
+  // https://openid.net/specs/openid-connect-discovery-1_0.html
+  // Nobody seems to implement the account/email/webfinger part 2. of the spec
+  // so we will rely instead on email/url mappings if we detect such an issuer.
+  // Part 4, on the other hand is implemented by both google and salesforce.
   email_domain = grpc_jwt_issuer_email_domain(iss);
   if (email_domain != nullptr) {
     email_key_mapping* mapping;
@@ -854,9 +854,9 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
     rsp_idx = HTTP_RESPONSE_OPENID;
   }
 
-  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
-     channel. This would allow us to cancel an authentication query when under
-     extreme memory pressure. */
+  // TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+  // channel. This would allow us to cancel an authentication query when under
+  // extreme memory pressure.
   uri = grpc_core::URI::Create("https", host, path, {} /* query params */,
                                "" /* fragment */);
   if (!uri.ok()) {
@@ -926,13 +926,13 @@ grpc_jwt_verifier* grpc_jwt_verifier_create(
     size_t num_mappings) {
   grpc_jwt_verifier* v = grpc_core::Zalloc<grpc_jwt_verifier>();
 
-  /* We know at least of one mapping. */
+  // We know at least of one mapping.
   v->allocated_mappings = 1 + num_mappings;
   v->mappings = static_cast<email_key_mapping*>(
       gpr_malloc(v->allocated_mappings * sizeof(email_key_mapping)));
   verifier_put_mapping(v, GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN,
                        GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX);
-  /* User-Provided mappings. */
+  // User-Provided mappings.
   if (mappings != nullptr) {
     size_t i;
     for (i = 0; i < num_mappings; i++) {

@@ -1,27 +1,29 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -195,6 +197,12 @@ int GetSocketTcpInfo(struct tcp_info* info, int fd) {
 
 }  // namespace.
 
+bool TracedBufferList::TracedBuffer::Finished(gpr_timespec ts) {
+  constexpr int kGrpcMaxPendingAckTimeMillis = 10000;
+  return gpr_time_to_millis(gpr_time_sub(ts, last_timestamp_)) >
+         kGrpcMaxPendingAckTimeMillis;
+}
+
 void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   // Store the current time as the sendmsg time.
@@ -206,6 +214,7 @@ void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
     ExtractOptStatsFromTcpInfo(&(new_elem->ts_.sendmsg_time.metrics),
                                &(new_elem->ts_.info));
   }
+  new_elem->last_timestamp_ = new_elem->ts_.sendmsg_time.time;
   MutexLock lock(&mu_);
   if (!head_) {
     head_ = tail_ = new_elem;
@@ -220,6 +229,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
                                         struct scm_timestamping* tss) {
   MutexLock lock(&mu_);
   TracedBuffer* elem = head_;
+  TracedBuffer* prev = nullptr;
   while (elem != nullptr) {
     // The byte number refers to the sequence number of the last byte which this
     // timestamp relates to.
@@ -229,11 +239,13 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
           FillGprFromTimestamp(&(elem->ts_.scheduled_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.scheduled_time.metrics),
                                   opt_stats);
+          elem->last_timestamp_ = elem->ts_.scheduled_time.time;
           elem = elem->next_;
           break;
         case SCM_TSTAMP_SND:
           FillGprFromTimestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.sent_time.metrics), opt_stats);
+          elem->last_timestamp_ = elem->ts_.sent_time.time;
           elem = elem->next_;
           break;
         case SCM_TSTAMP_ACK:
@@ -257,7 +269,26 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
       break;
     }
   }
-  tail_ = !head_ ? head_ : tail_;
+
+  elem = head_;
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  while (elem != nullptr) {
+    if (!elem->Finished(now)) {
+      prev = elem;
+      elem = elem->next_;
+      continue;
+    }
+    if (prev != nullptr) {
+      prev->next_ = elem->next_;
+      delete elem;
+      elem = prev->next_;
+    } else {
+      head_ = elem->next_;
+      delete elem;
+      elem = head_;
+    }
+  }
+  tail_ = (head_ == nullptr) ? head_ : prev;
 }
 
 void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
@@ -278,9 +309,9 @@ void grpc_tcp_set_write_timestamps_callback(
     void (*fn)(void*, Timestamps*, grpc_error_handle error)) {
   g_timestamps_callback = fn;
 }
-} /* namespace grpc_core */
+}  // namespace grpc_core
 
-#else /* GRPC_LINUX_ERRQUEUE */
+#else  // GRPC_LINUX_ERRQUEUE
 
 namespace grpc_core {
 void grpc_tcp_set_write_timestamps_callback(
@@ -293,4 +324,4 @@ void grpc_tcp_set_write_timestamps_callback(
 }
 }  // namespace grpc_core
 
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE

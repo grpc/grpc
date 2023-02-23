@@ -41,6 +41,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_TcpKeepalive_getmsgdef(upb
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.TcpKeepalive");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ExtraSourceAddress_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ExtraSourceAddress");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_BindConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.BindConfig");

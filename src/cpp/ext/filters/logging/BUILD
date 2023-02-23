@@ -33,9 +33,7 @@ grpc_cc_library(
     hdrs = [
         "logging_sink.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     visibility = [
         "//src/cpp/ext/gcp:__subpackages__",
@@ -43,5 +41,50 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr_platform",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
+    name = "logging_filter",
+    srcs = [
+        "logging_filter.cc",
+    ],
+    hdrs = [
+        "logging_filter.h",
+    ],
+    external_deps = [
+        "absl/random",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    visibility = [
+        "//src/cpp/ext/gcp:__subpackages__",
+        "//test:__subpackages__",
+    ],
+    deps = [
+        "logging_sink",
+        "//:channel_stack_builder",
+        "//:config",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_resolver",
+        "//:uri_parser",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//src/core:cancel_callback",
+        "//src/core:channel_args",
+        "//src/core:channel_fwd",
+        "//src/core:channel_stack_type",
+        "//src/core:context",
+        "//src/core:map",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
     ],
 )

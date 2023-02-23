@@ -194,6 +194,23 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "CppCronetTests-lib",
+    srcs = glob([
+        "CppCronetTests/*.m",
+        "CppCronetTests/*.mm",
+    ]),
+    hdrs = glob([
+        "CppCronetTests/*.h",
+    ]),
+    deps = [
+        "//:grpc++_cronet_credentials",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/end2end:end2end_tests",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "PerfTests-lib-Posix",
     srcs = [
         "ConfigureCronet.m",
@@ -264,6 +281,13 @@ grpc_objc_ios_unit_test(
 )
 
 grpc_objc_ios_unit_test(
+    name = "CppCronetTests",
+    deps = [
+        "CppCronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
     name = "PerfTestsPosix",
     deps = [
         "PerfTests-lib-Posix",
@@ -292,6 +316,21 @@ macos_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+)
+
+grpc_objc_testing_library(
+    name = "CFStreamTests-lib",
+    srcs = glob(["CFStreamTests/*.mm"]),
+    deps = [
+        "//:gpr_platform",
+        "//src/core:iomgr_port",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CFStreamTests",
+    deps = [":CFStreamTests-lib"],
 )
 
 # Note that bazel currently doesn't support running tvos_unit_test

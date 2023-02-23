@@ -1,26 +1,28 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 
 #include <string.h>
+
+#include <initializer_list>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
@@ -161,25 +163,25 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
   GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
   frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
 
-  /* frame header: length */
+  // frame header: length
   *p++ = static_cast<uint8_t>(frame_length >> 16);
   *p++ = static_cast<uint8_t>(frame_length >> 8);
   *p++ = static_cast<uint8_t>(frame_length);
-  /* frame header: type */
+  // frame header: type
   *p++ = GRPC_CHTTP2_FRAME_GOAWAY;
-  /* frame header: flags */
+  // frame header: flags
   *p++ = 0;
-  /* frame header: stream id */
-  *p++ = 0;
-  *p++ = 0;
+  // frame header: stream id
   *p++ = 0;
   *p++ = 0;
-  /* payload: last stream id */
+  *p++ = 0;
+  *p++ = 0;
+  // payload: last stream id
   *p++ = static_cast<uint8_t>(last_stream_id >> 24);
   *p++ = static_cast<uint8_t>(last_stream_id >> 16);
   *p++ = static_cast<uint8_t>(last_stream_id >> 8);
   *p++ = static_cast<uint8_t>(last_stream_id);
-  /* payload: error code */
+  // payload: error code
   *p++ = static_cast<uint8_t>(error_code >> 24);
   *p++ = static_cast<uint8_t>(error_code >> 16);
   *p++ = static_cast<uint8_t>(error_code >> 8);

@@ -86,6 +86,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base",
         "//:grpc_opencensus_plugin",
+        "//src/core:channel_args",
         "//src/core:grpc_xds_channel_stack_modifier",
         "//test/core/util:grpc_test_util",
     ],
@@ -113,6 +114,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/proto/grpc/testing/xds/v3:client_side_weighted_round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:ring_hash_proto",
         "//src/proto/grpc/testing/xds/v3:round_robin_proto",
@@ -120,6 +122,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -147,6 +150,7 @@ grpc_cc_test(
     srcs = ["xds_client_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    shard_count = 10,
     uses_event_engine = True,
     uses_polling = False,
     deps = [
@@ -217,6 +221,9 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
+        "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
     ],
@@ -241,6 +248,28 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:grpc_cli_utils",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_route_config_resource_type_test",
+    srcs = ["xds_route_config_resource_type_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_xds_client",
+        "//src/proto/grpc/lookup/v1:rls_config_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_proto",
+        "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
+        "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -277,8 +306,10 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )

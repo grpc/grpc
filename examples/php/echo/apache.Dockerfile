@@ -18,7 +18,7 @@ FROM composer:1.8.6 as composer
 FROM grpc-php/base as grpc-base
 
 
-FROM php:7.2-apache-stretch
+FROM php:7.4-apache-buster
 
 RUN apt-get -qq update && apt-get -qq install -y git
 
@@ -32,8 +32,8 @@ COPY --from=grpc-base /github/grpc/cmake/build/grpc_php_plugin \
   /usr/local/bin/protoc-gen-grpc
 
 COPY --from=grpc-base \
-  /usr/local/lib/php/extensions/no-debug-non-zts-20170718/grpc.so \
-  /usr/local/lib/php/extensions/no-debug-non-zts-20170718/grpc.so
+  /usr/local/lib/php/extensions/no-debug-non-zts-20190902/grpc.so \
+  /usr/local/lib/php/extensions/no-debug-non-zts-20190902/grpc.so
 
 
 RUN docker-php-ext-enable grpc

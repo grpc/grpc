@@ -34,7 +34,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
@@ -135,15 +134,15 @@ ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
   if (!sel.ok()) return Immediate(ServerMetadataFromStatus(sel.status()));
   auto call_config =
       sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
-  if (!call_config.error.ok()) {
+  if (!call_config.ok()) {
     auto r = Immediate(ServerMetadataFromStatus(
-        absl::UnavailableError(StatusToString(call_config.error))));
+        absl::UnavailableError(StatusToString(call_config.status()))));
     return std::move(r);
   }
   auto& ctx = GetContext<
       grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA];
   ctx.value = GetContext<Arena>()->New<ServiceConfigCallData>(
-      std::move(call_config.service_config), call_config.method_configs,
+      std::move(call_config->service_config), call_config->method_configs,
       ServiceConfigCallData::CallAttributes{});
   ctx.destroy = [](void* p) {
     static_cast<ServiceConfigCallData*>(p)->~ServiceConfigCallData();

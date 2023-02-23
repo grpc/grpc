@@ -1,30 +1,32 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 
 #include <type_traits>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/status.h>
@@ -33,8 +35,6 @@
 /// grpc::ByteBuffer, via the ZeroCopyOutputStream interface
 
 namespace grpc {
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 // Forward declaration for testing use only
 namespace internal {
@@ -62,17 +62,16 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
         total_size_(total_size),
         byte_count_(0),
         have_backup_(false) {
-    GPR_CODEGEN_ASSERT(!byte_buffer->Valid());
+    GPR_ASSERT(!byte_buffer->Valid());
     /// Create an empty raw byte buffer and look at its underlying slice buffer
-    grpc_byte_buffer* bp =
-        g_core_codegen_interface->grpc_raw_byte_buffer_create(nullptr, 0);
+    grpc_byte_buffer* bp = grpc_raw_byte_buffer_create(nullptr, 0);
     byte_buffer->set_buffer(bp);
     slice_buffer_ = &bp->data.raw.slice_buffer;
   }
 
   ~ProtoBufferWriter() override {
     if (have_backup_) {
-      g_core_codegen_interface->grpc_slice_unref(backup_slice_);
+      grpc_slice_unref(backup_slice_);
     }
   }
 
@@ -80,7 +79,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   /// safe for the caller to write from data[0, size - 1].
   bool Next(void** data, int* size) override {
     // Protobuf should not ask for more memory than total_size_.
-    GPR_CODEGEN_ASSERT(byte_count_ < total_size_);
+    GPR_ASSERT(byte_count_ < total_size_);
     // 1. Use the remaining backup slice if we have one
     // 2. Otherwise allocate a slice, up to the remaining length needed
     //    or our maximum allocation size
@@ -99,21 +98,19 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
       // But make sure the allocated slice is not inlined.
       size_t allocate_length =
           remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
-      slice_ = g_core_codegen_interface->grpc_slice_malloc(
-          allocate_length > GRPC_SLICE_INLINED_SIZE
-              ? allocate_length
-              : GRPC_SLICE_INLINED_SIZE + 1);
+      slice_ = grpc_slice_malloc(allocate_length > GRPC_SLICE_INLINED_SIZE
+                                     ? allocate_length
+                                     : GRPC_SLICE_INLINED_SIZE + 1);
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
-    GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
+    GPR_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
     byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(slice_));
     // Using grpc_slice_buffer_add could modify slice_ and merge it with the
     // previous slice. Therefore, use grpc_slice_buffer_add_indexed method to
     // ensure the slice gets added at a separate index. It can then be kept
     // around and popped later in the BackUp function.
-    g_core_codegen_interface->grpc_slice_buffer_add_indexed(slice_buffer_,
-                                                            slice_);
+    grpc_slice_buffer_add_indexed(slice_buffer_, slice_);
     return true;
   }
 
@@ -132,14 +129,14 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     /// 2. Split it into the needed (if any) and unneeded part
     /// 3. Add the needed part back to the slice buffer
     /// 4. Mark that we still have the remaining part (for later use/unref)
-    GPR_CODEGEN_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(slice_)));
-    g_core_codegen_interface->grpc_slice_buffer_pop(slice_buffer_);
+    GPR_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(slice_)));
+    grpc_slice_buffer_pop(slice_buffer_);
     if (static_cast<size_t>(count) == GRPC_SLICE_LENGTH(slice_)) {
       backup_slice_ = slice_;
     } else {
-      backup_slice_ = g_core_codegen_interface->grpc_slice_split_tail(
-          &slice_, GRPC_SLICE_LENGTH(slice_) - count);
-      g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
+      backup_slice_ =
+          grpc_slice_split_tail(&slice_, GRPC_SLICE_LENGTH(slice_) - count);
+      grpc_slice_buffer_add(slice_buffer_, slice_);
     }
     // It's dangerous to keep an inlined grpc_slice as the backup slice, since
     // on a following Next() call, a reference will be returned to this slice

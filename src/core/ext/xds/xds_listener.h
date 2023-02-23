@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_LISTENER_H
-#define GRPC_CORE_EXT_XDS_XDS_LISTENER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -79,6 +79,8 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
   };
 
   struct DownstreamTlsContext {
+    DownstreamTlsContext() {}
+
     CommonTlsContext common_tls_context;
     bool require_client_certificate = false;
 
@@ -221,4 +223,4 @@ class XdsListenerResourceType
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_LISTENER_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H

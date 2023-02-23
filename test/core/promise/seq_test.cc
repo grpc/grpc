@@ -42,15 +42,15 @@ TEST(SeqTest, TwoTypedThens) {
   EXPECT_FALSE(absl::holds_alternative<Pending>(Seq(initial, next1, next2)()));
 }
 
-/* This does not compile, but is useful for testing error messages generated
-TEST(SeqTest, MisTypedThen) {
-  struct A {};
-  struct B {};
-  auto initial = [] { return A{}; };
-  auto next = [](B) { return []() { return B{}; }; };
-  Seq(initial, next)().take();
-}
-*/
+// This does not compile, but is useful for testing error messages generated
+// TEST(SeqTest, MisTypedThen) {
+// struct A {};
+// struct B {};
+// auto initial = [] { return A{}; };
+// auto next = [](B) { return []() { return B{}; }; };
+// Seq(initial, next)().take();
+//}
+//
 
 TEST(SeqTest, TwoThens) {
   auto initial = [] { return std::string("a"); };

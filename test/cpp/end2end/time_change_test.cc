@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <sys/time.h>
 
@@ -34,6 +34,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -131,7 +132,7 @@ class TimeChangeTest : public ::testing::Test {
  protected:
   TimeChangeTest() {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
@@ -149,7 +150,7 @@ class TimeChangeTest : public ::testing::Test {
         grpc_timeout_milliseconds_to_deadline(30000)));
   }
 
-  static void TearDownTestCase() { server_.reset(); }
+  static void TearDownTestSuite() { server_.reset(); }
 
   void SetUp() override {
     channel_ =

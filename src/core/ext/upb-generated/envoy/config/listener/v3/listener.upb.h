@@ -45,6 +45,7 @@ struct envoy_config_accesslog_v3_AccessLog;
 struct envoy_config_core_v3_Address;
 struct envoy_config_core_v3_Metadata;
 struct envoy_config_core_v3_SocketOption;
+struct envoy_config_core_v3_SocketOptionsOverride;
 struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_listener_v3_ApiListener;
 struct envoy_config_listener_v3_FilterChain;
@@ -59,6 +60,7 @@ extern const upb_MiniTable envoy_config_accesslog_v3_AccessLog_msginit;
 extern const upb_MiniTable envoy_config_core_v3_Address_msginit;
 extern const upb_MiniTable envoy_config_core_v3_Metadata_msginit;
 extern const upb_MiniTable envoy_config_core_v3_SocketOption_msginit;
+extern const upb_MiniTable envoy_config_core_v3_SocketOptionsOverride_msginit;
 extern const upb_MiniTable envoy_config_core_v3_TypedExtensionConfig_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_ApiListener_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_FilterChain_msginit;
@@ -121,6 +123,15 @@ UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_clear_address(const e
 UPB_INLINE const struct envoy_config_core_v3_Address* envoy_config_listener_v3_AdditionalAddress_address(const envoy_config_listener_v3_AdditionalAddress* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_Address*);
 }
+UPB_INLINE bool envoy_config_listener_v3_AdditionalAddress_has_socket_options(const envoy_config_listener_v3_AdditionalAddress* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_clear_socket_options(const envoy_config_listener_v3_AdditionalAddress* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_SocketOptionsOverride* envoy_config_listener_v3_AdditionalAddress_socket_options(const envoy_config_listener_v3_AdditionalAddress* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_config_core_v3_SocketOptionsOverride*);
+}
 
 UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_set_address(envoy_config_listener_v3_AdditionalAddress *msg, struct envoy_config_core_v3_Address* value) {
   _upb_sethas(msg, 1);
@@ -132,6 +143,19 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_listener_v3_Additio
     sub = (struct envoy_config_core_v3_Address*)_upb_Message_New(&envoy_config_core_v3_Address_msginit, arena);
     if (!sub) return NULL;
     envoy_config_listener_v3_AdditionalAddress_set_address(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_set_socket_options(envoy_config_listener_v3_AdditionalAddress *msg, struct envoy_config_core_v3_SocketOptionsOverride* value) {
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_config_core_v3_SocketOptionsOverride*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_SocketOptionsOverride* envoy_config_listener_v3_AdditionalAddress_mutable_socket_options(envoy_config_listener_v3_AdditionalAddress* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_SocketOptionsOverride* sub = (struct envoy_config_core_v3_SocketOptionsOverride*)envoy_config_listener_v3_AdditionalAddress_socket_options(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_SocketOptionsOverride*)_upb_Message_New(&envoy_config_core_v3_SocketOptionsOverride_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_listener_v3_AdditionalAddress_set_socket_options(msg, sub);
   }
   return sub;
 }

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SUPPORT_BYTE_BUFFER_H
 #define GRPCPP_SUPPORT_BYTE_BUFFER_H
@@ -24,7 +24,6 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
@@ -85,11 +84,11 @@ class ByteBuffer final {
     // than its advertised side effect of increasing the reference count of the
     // slices it processes, and such an increase does not affect the semantics
     // seen by the caller of this constructor.
-    buffer_ = g_core_codegen_interface->grpc_raw_byte_buffer_create(
+    buffer_ = grpc_raw_byte_buffer_create(
         reinterpret_cast<grpc_slice*>(const_cast<Slice*>(slices)), nslices);
   }
 
-  /// Constuct a byte buffer by referencing elements of existing buffer
+  /// Construct a byte buffer by referencing elements of existing buffer
   /// \a buf. Wrapper of core function grpc_byte_buffer_copy . This is not
   /// a deep copy; it is just a referencing. As a result, its performance is
   /// size-independent.
@@ -97,7 +96,7 @@ class ByteBuffer final {
 
   ~ByteBuffer() {
     if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+      grpc_byte_buffer_destroy(buffer_);
     }
   }
 
@@ -110,7 +109,7 @@ class ByteBuffer final {
     }
     if (buf.buffer_) {
       // then copy
-      buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buf.buffer_);
+      buffer_ = grpc_byte_buffer_copy(buf.buffer_);
     }
     return *this;
   }
@@ -128,7 +127,7 @@ class ByteBuffer final {
   /// Remove all data.
   void Clear() {
     if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+      grpc_byte_buffer_destroy(buffer_);
       buffer_ = nullptr;
     }
   }
@@ -138,9 +137,7 @@ class ByteBuffer final {
   /// bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable.
   /// This is not a deep copy; it is a referencing and its performance
   /// is size-independent.
-  void Duplicate() {
-    buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buffer_);
-  }
+  void Duplicate() { buffer_ = grpc_byte_buffer_copy(buffer_); }
 
   /// Forget underlying byte buffer without destroying
   /// Use this only for un-owned byte buffers
@@ -148,9 +145,7 @@ class ByteBuffer final {
 
   /// Buffer size in bytes.
   size_t Length() const {
-    return buffer_ == nullptr
-               ? 0
-               : g_core_codegen_interface->grpc_byte_buffer_length(buffer_);
+    return buffer_ == nullptr ? 0 : grpc_byte_buffer_length(buffer_);
   }
 
   /// Swap the state of *this and *other.
@@ -203,14 +198,14 @@ class ByteBuffer final {
 
   class ByteBufferPointer {
    public:
-    /* NOLINTNEXTLINE(google-explicit-constructor) */
+    // NOLINTNEXTLINE(google-explicit-constructor)
     ByteBufferPointer(const ByteBuffer* b)
         : bbuf_(const_cast<ByteBuffer*>(b)) {}
-    /* NOLINTNEXTLINE(google-explicit-constructor) */
+    // NOLINTNEXTLINE(google-explicit-constructor)
     operator ByteBuffer*() { return bbuf_; }
-    /* NOLINTNEXTLINE(google-explicit-constructor) */
+    // NOLINTNEXTLINE(google-explicit-constructor)
     operator grpc_byte_buffer*() { return bbuf_->buffer_; }
-    /* NOLINTNEXTLINE(google-explicit-constructor) */
+    // NOLINTNEXTLINE(google-explicit-constructor)
     operator grpc_byte_buffer**() { return &bbuf_->buffer_; }
 
    private:
@@ -230,7 +225,7 @@ class SerializationTraits<ByteBuffer, void> {
                           bool* own_buffer) {
     *buffer = source;
     *own_buffer = true;
-    return g_core_codegen_interface->ok();
+    return grpc::Status::OK;
   }
 };
 

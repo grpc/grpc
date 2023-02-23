@@ -14,7 +14,7 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, Iterable, Mapping, Optional, Sequence
+from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
@@ -178,7 +178,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         self,
         code: grpc.StatusCode,
         details: str = '',
-        trailing_metadata: MetadataType = tuple()) -> None:
+        trailing_metadata: MetadataType = tuple()) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
@@ -243,8 +243,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     def set_compression(self, compression: grpc.Compression) -> None:
         """Set the compression algorithm to be used for the entire call.
 
-        This is an EXPERIMENTAL method.
-
         Args:
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip.
@@ -253,8 +251,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     @abc.abstractmethod
     def disable_next_message_compression(self) -> None:
         """Disables compression for the next response message.
-
-        This is an EXPERIMENTAL method.
 
         This method will override any compression configuration set during
         server creation or set on the call.

@@ -415,10 +415,9 @@ class ClientCallDetails(abc.ABC):
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+      wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
       compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This is an EXPERIMENTAL option.
+        grpc.compression.Gzip.
     """
 
 
@@ -680,10 +679,9 @@ class UnaryUnaryMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -713,10 +711,9 @@ class UnaryUnaryMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -746,10 +743,9 @@ class UnaryUnaryMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -782,10 +778,9 @@ class UnaryStreamMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -818,10 +813,9 @@ class StreamUnaryMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -852,10 +846,9 @@ class StreamUnaryMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -885,10 +878,9 @@ class StreamUnaryMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -921,10 +913,9 @@ class StreamStreamMultiCallable(abc.ABC):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -1084,7 +1075,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def invocation_metadata(self):
-        """Accesses the metadata from the sent by the client.
+        """Accesses the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.
@@ -1138,8 +1129,6 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
     def set_compression(self, compression):
         """Set the compression algorithm to be used for the entire call.
-
-        This is an EXPERIMENTAL method.
 
         Args:
           compression: An element of grpc.compression, e.g.
@@ -1272,8 +1261,6 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
     def disable_next_message_compression(self):
         """Disables compression for the next response message.
-
-        This is an EXPERIMENTAL method.
 
         This method will override any compression configuration set during
         server creation or set on the call.
@@ -1968,7 +1955,7 @@ def insecure_channel(target, options=None, compression=None):
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
 
     Returns:
       A Channel.
@@ -1989,7 +1976,7 @@ def secure_channel(target, credentials, options=None, compression=None):
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
 
     Returns:
       A Channel.
@@ -2056,7 +2043,7 @@ def server(thread_pool,
         indicate no limit.
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
-        lifetime of the server unless overridden. This is an EXPERIMENTAL option.
+        lifetime of the server unless overridden.
       xds: If set to true, retrieves server configuration via xDS. This is an
         EXPERIMENTAL option.
 
@@ -2082,8 +2069,6 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
 @enum.unique
 class Compression(enum.IntEnum):
     """Indicates the compression method to be used for an RPC.
-
-       This enumeration is part of an EXPERIMENTAL API.
 
        Attributes:
         NoCompression: Do not use compression algorithm.

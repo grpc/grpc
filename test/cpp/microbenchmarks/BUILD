@@ -137,7 +137,10 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:closure",
+    ],
 )
 
 grpc_cc_test(
@@ -213,7 +216,10 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:channel_args",
+    ],
 )
 
 grpc_cc_test(
@@ -323,7 +329,10 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:slice",
+    ],
 )
 
 grpc_cc_test(
@@ -335,7 +344,11 @@ grpc_cc_test(
         "no_windows",
         "nomsan",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:closure",
+        "//src/core:slice",
+    ],
 )
 
 grpc_cc_test(

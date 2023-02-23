@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -34,17 +33,17 @@
 #include "upb/upb.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
@@ -54,7 +53,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -64,80 +62,7 @@
 
 namespace grpc_core {
 
-namespace {
-
 TraceFlag grpc_orca_client_trace(false, "orca_client");
-
-class OrcaWatcher;
-
-// This producer is registered with a subchannel.  It creates a
-// streaming ORCA call and reports the resulting backend metrics to all
-// registered watchers.
-class OrcaProducer : public Subchannel::DataProducerInterface {
- public:
-  void Start(RefCountedPtr<Subchannel> subchannel);
-
-  void Orphan() override;
-
-  static UniqueTypeName Type() {
-    static UniqueTypeName::Factory kFactory("orca");
-    return kFactory.Create();
-  }
-
-  UniqueTypeName type() const override { return Type(); }
-
-  // Adds and removes watchers.
-  void AddWatcher(OrcaWatcher* watcher);
-  void RemoveWatcher(OrcaWatcher* watcher);
-
- private:
-  class ConnectivityWatcher;
-  class OrcaStreamEventHandler;
-
-  // Returns the minimum requested reporting interval across all watchers.
-  Duration GetMinIntervalLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-
-  // Starts a new stream if we have a connected subchannel.
-  // Called whenever the reporting interval changes or the subchannel
-  // transitions to state READY.
-  void MaybeStartStreamLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-
-  // Handles a connectivity state change on the subchannel.
-  void OnConnectivityStateChange(grpc_connectivity_state state);
-
-  // Called to notify watchers of a new backend metric report.
-  void NotifyWatchers(const BackendMetricData& backend_metric_data);
-
-  RefCountedPtr<Subchannel> subchannel_;
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  ConnectivityWatcher* connectivity_watcher_;
-  Mutex mu_;
-  std::set<OrcaWatcher*> watchers_ ABSL_GUARDED_BY(mu_);
-  Duration report_interval_ ABSL_GUARDED_BY(mu_) = Duration::Infinity();
-  OrphanablePtr<SubchannelStreamClient> stream_client_ ABSL_GUARDED_BY(mu_);
-};
-
-// This watcher is returned to the LB policy and added to the
-// client channel SubchannelWrapper.
-class OrcaWatcher : public InternalSubchannelDataWatcherInterface {
- public:
-  OrcaWatcher(Duration report_interval,
-              std::unique_ptr<OobBackendMetricWatcher> watcher)
-      : report_interval_(report_interval), watcher_(std::move(watcher)) {}
-  ~OrcaWatcher() override;
-
-  Duration report_interval() const { return report_interval_; }
-  OobBackendMetricWatcher* watcher() const { return watcher_.get(); }
-
-  // When the client channel sees this wrapper, it will pass it the real
-  // subchannel to use.
-  void SetSubchannel(Subchannel* subchannel) override;
-
- private:
-  const Duration report_interval_;
-  std::unique_ptr<OobBackendMetricWatcher> watcher_;
-  RefCountedPtr<OrcaProducer> producer_;
-};
 
 //
 // OrcaProducer::ConnectivityWatcher
@@ -154,9 +79,9 @@ class OrcaProducer::ConnectivityWatcher
     grpc_pollset_set_destroy(interested_parties_);
   }
 
-  void OnConnectivityStateChange() override {
-    auto change = PopConnectivityStateChange();
-    producer_->OnConnectivityStateChange(change.state);
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status&) override {
+    producer_->OnConnectivityStateChange(state);
   }
 
   grpc_pollset_set* interested_parties() override {
@@ -403,8 +328,6 @@ void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
   // Register ourself with the producer.
   producer_->AddWatcher(this);
 }
-
-}  // namespace
 
 std::unique_ptr<SubchannelInterface::DataWatcherInterface>
 MakeOobBackendMetricWatcher(Duration report_interval,

@@ -21,18 +21,9 @@
 
 // IWYU pragma: private, include <grpc/support/sync.h>
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/sync_generic.h>
-
-#ifdef GPR_ABSEIL_SYNC
-
-typedef intptr_t gpr_mu;
-typedef intptr_t gpr_cv;
-typedef int32_t gpr_once;
-
-#define GPR_ONCE_INIT 0
-
-#endif
+/// TODO(chengyuc): Remove this file after solving compatibility.
+#include <grpc/support/sync_abseil.h>
 
 #endif /* GRPC_IMPL_CODEGEN_SYNC_ABSEIL_H */
