@@ -745,6 +745,8 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   auto server_to_client_empty =
       call_data->server_to_client.receiver.AwaitEmpty();
+  auto server_initial_metadata_empty =
+      call_data->server_initial_metadata.receiver.AwaitEmpty();
 
   // Create a promise that will receive client initial metadata, and then run
   // the main stem of the call (calling next_promise_factory up through the
@@ -790,14 +792,18 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   // Promise factory that accepts a ServerMetadataHandle, and sends it as the
   // trailing metadata for this call.
-  auto send_trailing_metadata = [call_data, stream = stream->InternalRef()](
+  auto send_trailing_metadata = [call_data, stream = stream->InternalRef(),
+                                 server_initial_metadata_empty =
+                                     std::move(server_initial_metadata_empty)](
                                     ServerMetadataHandle
                                         server_trailing_metadata) {
     return Map(
         stream->PushBatchToTransport(
             "send_trailing_metadata",
             [call_data,
-             server_trailing_metadata = std::move(server_trailing_metadata)](
+             server_trailing_metadata = std::move(server_trailing_metadata),
+             server_initial_metadata_empty =
+                 std::move(server_initial_metadata_empty)](
                 grpc_transport_stream_op_batch* batch,
                 grpc_closure* on_done) mutable {
               if (call_data->sent_initial_metadata) {
@@ -808,6 +814,16 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
                     server_trailing_metadata.get();
               } else {
                 call_data->sent_initial_metadata = true;
+                gpr_log(
+                    GPR_DEBUG,
+                    "%s[connected] Cancelling call because initial metadata "
+                    "not sent: %s; empty=%s",
+                    Activity::current()->DebugTag().c_str(),
+                    server_trailing_metadata->DebugString().c_str(),
+                    absl::holds_alternative<Pending>(
+                        server_initial_metadata_empty())
+                        ? "no"
+                        : "yes");
                 batch->cancel_stream = true;
                 const auto status_code =
                     server_trailing_metadata->get(GrpcStatusMetadata())
@@ -825,6 +841,13 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
         [call_data](absl::StatusOr<ServerMetadataHandle> status) mutable {
           ServerMetadataHandle server_trailing_metadata;
           if (!status.ok()) {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_DEBUG,
+                      "%s[connected] Send metadata failed with error: %s, "
+                      "fabricating trailing metadata",
+                      Activity::current()->DebugTag().c_str(),
+                      status.status().ToString().c_str());
+            }
             server_trailing_metadata =
                 GetContext<Arena>()->MakePooled<ServerMetadata>(
                     GetContext<Arena>());
@@ -840,6 +863,15 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
           }
           if (!server_trailing_metadata->get(GrpcCallWasCancelled())
                    .has_value()) {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_DEBUG,
+                      "%s[connected] Tagging trailing metadata with "
+                      "cancellation status from transport: %s",
+                      Activity::current()->DebugTag().c_str(),
+                      call_data->sent_trailing_metadata
+                          ? "sent => not-cancelled"
+                          : "not-sent => cancelled");
+            }
             server_trailing_metadata->Set(GrpcCallWasCancelled(),
                                           !call_data->sent_trailing_metadata);
           }

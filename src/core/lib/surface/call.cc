@@ -2124,11 +2124,31 @@ class PromiseBasedCall : public Call,
   // send operation
   auto WaitForSendingStarted() {
     return [this]() -> Poll<Empty> {
-      if (send_message_queued_.load(std::memory_order_relaxed)) {
-        return waiting_for_queued_send_message_.pending();
+      int n = sends_queued_.load(std::memory_order_relaxed);
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_DEBUG, "%s[call] WaitForSends n=%d", DebugTag().c_str(), n);
       }
+      if (n != 0) return waiting_for_queued_sends_.pending();
       return Empty{};
     };
+  }
+
+  // Mark that a send has been queued - blocks sending trailing metadata.
+  void QueueSend() {
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s[call] QueueSend", DebugTag().c_str());
+    }
+    sends_queued_.fetch_add(1, std::memory_order_relaxed);
+  }
+  // Mark that a send has been dequeued - allows sending trailing metadata once
+  // zero sends are queued.
+  void EnactSend() {
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s[call] EnactSend", DebugTag().c_str());
+    }
+    if (1 == sends_queued_.fetch_sub(1, std::memory_order_relaxed)) {
+      waiting_for_queued_sends_.Wake();
+    }
   }
 
  private:
@@ -2237,9 +2257,9 @@ class PromiseBasedCall : public Call,
   std::atomic<bool> completed_{false};
   // Becomes true on GRPC_OP_SEND_MESSAGE, and false once that message has been
   // pushed onto the outgoing pipe.
-  std::atomic<bool> send_message_queued_{false};
-  // Waiter for when send_message_queued_ becomes false.
-  IntraActivityWaiter waiting_for_queued_send_message_;
+  std::atomic<uint8_t> sends_queued_{0};
+  // Waiter for when sends_queued_ becomes 0.
+  IntraActivityWaiter waiting_for_queued_sends_;
   grpc_byte_buffer** recv_message_ = nullptr;
 };
 
@@ -2424,7 +2444,7 @@ void PromiseBasedCall::Run() {
 void PromiseBasedCall::StartSendMessage(const grpc_op& op,
                                         const Completion& completion,
                                         PipeSender<MessageHandle>* sender) {
-  send_message_queued_.store(true, std::memory_order_relaxed);
+  QueueSend();
   SliceBuffer send;
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
@@ -2433,8 +2453,7 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
   Spawn(
       "call_send_message",
       [this, sender, msg = std::move(msg)]() mutable {
-        send_message_queued_.store(false);
-        waiting_for_queued_send_message_.Wake();
+        EnactSend();
         return sender->Push(std::move(msg));
       },
       [this, completion = AddOpToCompletion(
@@ -3130,9 +3149,11 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           gpr_log(GPR_INFO, "%s[call] Send initial metadata",
                   DebugTag().c_str());
         }
+        QueueSend();
         Spawn(
             "call_send_initial_metadata",
             [this, metadata = std::move(metadata)]() mutable {
+              EnactSend();
               return server_initial_metadata_->Push(std::move(metadata));
             },
             [this,

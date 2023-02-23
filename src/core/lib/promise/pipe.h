@@ -558,12 +558,19 @@ template <typename T>
 class Push {
  public:
   Push(const Push&) = delete;
+
   Push& operator=(const Push&) = delete;
   Push(Push&& other) noexcept = default;
   Push& operator=(Push&& other) noexcept = default;
 
   Poll<bool> operator()() {
-    if (center_ == nullptr) return false;
+    if (center_ == nullptr) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "%s Pipe push has a null center",
+                Activity::current()->DebugTag().c_str());
+      }
+      return false;
+    }
     if (auto* p = absl::get_if<T>(&state_)) {
       auto r = center_->Push(p);
       if (auto* ok = absl::get_if<bool>(&r)) {

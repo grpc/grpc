@@ -1191,7 +1191,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* /*s*/,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
-                                       const char* desc) {
+                                       const char* desc,
+                                       grpc_core::DebugLocation whence) {
   grpc_closure* closure = *pclosure;
   *pclosure = nullptr;
   if (closure == nullptr) {
@@ -1202,14 +1203,14 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     gpr_log(
         GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
-        "write_state=%s",
+        "write_state=%s whence=%s:%d",
         t, closure,
         static_cast<int>(closure->next_data.scratch /
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         static_cast<int>(closure->next_data.scratch %
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         desc, grpc_core::StatusToString(error).c_str(),
-        write_state_name(t->write_state));
+        write_state_name(t->write_state), whence.file(), whence.line());
   }
   if (!error.ok()) {
     grpc_error_handle cl_err =
