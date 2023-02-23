@@ -203,7 +203,8 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         }
         GPR_ASSERT((size_t)info->bytes_transferred == tcp->read_slices->length);
 
-        if (grpc_tcp_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
+            gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
           size_t i;
           for (i = 0; i < tcp->read_slices->count; i++) {
             char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
@@ -353,7 +354,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   WSABUF* buffers = local_buffers;
   size_t len, async_buffers_offset = 0;
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
+      gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
     size_t i;
     for (i = 0; i < slices->count; i++) {
       char* data =
