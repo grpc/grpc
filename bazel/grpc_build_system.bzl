@@ -47,7 +47,7 @@ def if_not_windows(a):
         "//conditions:default": a,
     })
 
-def if_windows(a, otherwise=[]):
+def if_windows(a, otherwise = []):
     return select({
         "//:windows": a,
         "//:windows_msvc": a,
@@ -58,7 +58,10 @@ GRPC_DEFAULT_STDLIB = if_windows(["/std:c++14"], otherwise = ["-std=c++14"])
 
 def convert_to_windows_flags(flags):
     """Replaces "-" with "/" in flags such as "-std=c++14"."""
-    return [flag if flag[0] != "-" else "/" + flag[1:] for flag in flags]
+    return [
+        flag if (type(flag) != "string" or flag[0] != "-") else "/" + flag[1:]
+        for flag in flags
+    ]
 
 def _get_external_deps(external_deps):
     ret = []
