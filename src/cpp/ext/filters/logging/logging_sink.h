@@ -102,6 +102,7 @@ class LoggingSink {
     std::string authority;
     std::string service_name;
     std::string method_name;
+    grpc_core::Timestamp timestamp;
   };
 
   virtual ~LoggingSink() = default;
