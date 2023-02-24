@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"

@@ -4483,6 +4483,7 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9545,6 +9546,7 @@ targets:
   - test/core/promise/mpsc_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9608,39 +9610,6 @@ targets:
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
-- name: observable_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/wait_set.h
-  - test/core/promise/test_wakeup_schedulers.h
-  src:
-  - src/core/lib/promise/activity.cc
-  - test/core/promise/observable_test.cc
-  deps:
-  - absl/container:flat_hash_set
-  - absl/hash:hash
-  - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/utility:utility
-  - gpr
-  uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
   build: test
@@ -10047,14 +10016,11 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
   src:
   - test/core/promise/promise_factory_test.cc
   deps:
   - absl/functional:bind_front
   - absl/meta:type_traits
-  - absl/status:status
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: promise_map_test
@@ -10069,6 +10035,7 @@ targets:
   src:
   - test/core/promise/map_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:status
   - absl/types:optional
@@ -10085,6 +10052,7 @@ targets:
   src:
   - test/core/promise/promise_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:status
   - absl/types:optional

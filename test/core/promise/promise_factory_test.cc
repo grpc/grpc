@@ -14,13 +14,10 @@
 
 #include "src/core/lib/promise/detail/promise_factory.h"
 
-#include <functional>
-
 #include "absl/functional/bind_front.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
 namespace promise_detail {
