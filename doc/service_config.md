@@ -102,7 +102,7 @@ Here is the same example service config in JSON form:
 }
 ```
 
-Here is the an example with a "default config" in JSON form:
+Here is an example with a "default config" in JSON form:
 
 ```
 {
