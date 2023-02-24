@@ -69,7 +69,7 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
-static void on_alarm(void* acp, grpc_error_handle error) {
+static void on_alarm(void* acp, grpc_error_handle /* error */) {
   async_connect* ac = (async_connect*)acp;
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
@@ -124,7 +124,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
 // Tries to issue one async connection, then schedules both an IOCP
 // notification request for the connection, and one timeout alert.
 static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
-                           grpc_pollset_set* interested_parties,
+                           grpc_pollset_set* /* interested_parties */,
                            const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
