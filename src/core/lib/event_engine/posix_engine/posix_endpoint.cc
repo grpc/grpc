@@ -360,9 +360,9 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
       if (read_bytes == 0) {
-        status = TcpAnnotateError(absl::InternalError("Socket closed"));
+        status = TcpAnnotateError(absl::AbortedError("Socket closed"));
       } else {
-        status = TcpAnnotateError(absl::InternalError(
+        status = TcpAnnotateError(absl::UnknownError(
             absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
       }
       return true;
@@ -889,8 +889,7 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 // release operations needed can be performed on the arg.
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_arg_ != nullptr) {
-    traced_buffers_.Shutdown(outgoing_buffer_arg_,
-                             absl::InternalError("TracedBuffer list shutdown"));
+    traced_buffers_.Shutdown(outgoing_buffer_arg_, absl::OkStatus());
     outgoing_buffer_arg_ = nullptr;
   }
 }
@@ -1140,7 +1139,7 @@ bool PosixEndpointImpl::Write(
   if (data->Length() == 0) {
     TcpShutdownTracedBufferList();
     if (handle_->IsHandleShutdown()) {
-      status = TcpAnnotateError(absl::InternalError("EOF"));
+      status = TcpAnnotateError(absl::AbortedError("EOF"));
       engine_->Run([on_writable = std::move(on_writable), status]() mutable {
         on_writable(status);
       });

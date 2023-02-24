@@ -105,7 +105,8 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
   auto listener = *test_ee->CreateListener(
-      std::move(accept_cb), [](absl::Status /*status*/) {}, config,
+      std::move(accept_cb),
+      [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
@@ -174,7 +175,8 @@ TEST_F(EventEngineServerTest,
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
   auto listener = *test_ee->CreateListener(
-      std::move(accept_cb), [](absl::Status /*status*/) {}, config,
+      std::move(accept_cb),
+      [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   target_addrs.reserve(kNumListenerAddresses);
