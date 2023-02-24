@@ -252,7 +252,7 @@ class GrpcPolledFdWindows {
 
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
-  void ShutdownLocked(grpc_error_handle error) {
+  void ShutdownLocked(grpc_error_handle /* error */) {
     grpc_winsocket_shutdown(winsocket_);
   }
 
@@ -263,7 +263,7 @@ class GrpcPolledFdWindows {
   const char* GetName() const { return name_.c_str(); }
 
   ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
-                        ares_socket_t data_len, int flags,
+                        ares_socket_t data_len, int /* flags */,
                         struct sockaddr* from, ares_socklen_t* from_len) {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| RecvFrom called read_buf_has_data:%d Current read buf "
@@ -301,7 +301,7 @@ class GrpcPolledFdWindows {
     grpc_slice out = GRPC_SLICE_MALLOC(total);
     size_t cur = 0;
     for (int i = 0; i < iov_count; i++) {
-      for (int k = 0; k < iov[i].iov_len; k++) {
+      for (size_t k = 0; k < iov[i].iov_len; k++) {
         GRPC_SLICE_START_PTR(out)[cur++] = ((char*)iov[i].iov_base)[k];
       }
     }
@@ -862,7 +862,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   explicit GrpcPolledFdFactoryWindows(Mutex* mu) : sock_to_polled_fd_map_(mu) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
+      ares_socket_t as, grpc_pollset_set* /* driver_pollset_set */) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
