@@ -16,14 +16,37 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <sstream>
+#include <vector>
+
 #include <ares.h>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/synchronization/mutex.h"
 
 #include "include/grpc/event_engine/event_engine.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
 
+#ifdef _WIN32
+#include "src/core/lib/event_engine/windows/iocp.h"
+#else
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#endif
+
 namespace grpc_event_engine {
 namespace experimental {
+
+#ifdef _WIN32
+using PollerHandle = std::unique_ptr<WinSocket>;
+#else
+using PollerHandle = EventHandle*;
+#endif
+
+using AresSocket = ares_socket_t;
+
+using RegisterSocketWithPollerCallback =
+    absl::AnyInvocable<PollerHandle(AresSocket)>;
 
 // TODO(yijiem): see if we can use std::list
 // per ares-channel linked-list of FdNodes
@@ -32,8 +55,8 @@ class FdNodeList {
   class FdNode {
    public:
     FdNode() = default;
-    explicit FdNode(ares_socket_t as, EventHandle* ev_handle)
-        : as_(as), ev_handle_(ev_handle) {}
+    explicit FdNode(ares_socket_t as, PollerHandle handle)
+        : as_(as), handle_(std::move(handle)) {}
 
     bool readable_registered() const { return readable_registered_; }
     bool writable_registered() const { return writable_registered_; }
@@ -41,7 +64,7 @@ class FdNodeList {
     void set_writable_registered(bool wr) { writable_registered_ = wr; }
 
     int WrappedFd() const { return static_cast<int>(as_); }
-    EventHandle* event_handle() const { return ev_handle_; }
+    PollerHandle& handle() { return handle_; }
 
    private:
     friend class FdNodeList;
@@ -49,7 +72,7 @@ class FdNodeList {
     // ares socket
     ares_socket_t as_;
     // Poller event handle
-    EventHandle* ev_handle_;
+    PollerHandle handle_;
     // next fd node
     FdNode* next_ = nullptr;
     /// if the readable closure has been registered
@@ -109,9 +132,14 @@ class FdNodeList {
 class GrpcAresRequest
     : public grpc_core::InternallyRefCounted<GrpcAresRequest> {
  public:
-  explicit GrpcAresRequest(absl::string_view host, uint16_t port,
-                           Duration timeout)
-      : channel_(channel), host_(host), port_(port), timeout_(timeout) {}
+  explicit GrpcAresRequest(
+      absl::string_view host, uint16_t port, EventEngine::Duration timeout,
+      RegisterSocketWithPollerCallback register_socket_with_poller_cb)
+      : host_(host),
+        port_(port),
+        timeout_(timeout),
+        register_socket_with_poller_cb_(
+            std::move(register_socket_with_poller_cb)) {}
 
   bool Initialize();
   virtual void Start() = 0;
@@ -142,26 +170,27 @@ class GrpcAresRequest
   }
 
  private:
-  ~GrpcAresRequest() override;
-
   void Work();
   void OnReadable(FdNodeList::FdNode* fd_node, absl::Status status);
   void OnWritable(FdNodeList::FdNode* fd_node, absl::Status status);
   void OnHandleDestroyed(FdNodeList::FdNode* fd_node, absl::Status status);
 
  protected:
+  ~GrpcAresRequest() override;
+
   bool initialized_ = false;
   /// synchronizes access to this request, and also to associated
   /// ev_driver and fd_node objects
-  grpc_core::Mutex mu_;
+  absl::Mutex mu_;
   // ares channel
-  ares_channel channel_;
+  ares_channel channel_ = nullptr;
   /// host to resolve, parsed from the name to resolve
   const std::string host_;
   /// port to fill in sockaddr_in, parsed from the name to resolve
   const uint16_t port_;
-  const Duration timeout_;
+  const EventEngine::Duration timeout_;
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
+  RegisterSocketWithPollerCallback register_socket_with_poller_cb_;
   std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_) =
       std::make_unique<FdNodeList>();
 };
@@ -170,10 +199,12 @@ class GrpcAresRequest
 // lookup
 class GrpcAresHostnameRequest : public GrpcAresRequest {
  public:
-  explicit GrpcAresHostnameRequest(absl::string_view host, uint16_t port,
-                                   Duration timeout,
-                                   LookupHostnameCallback on_resolve)
-      : GrpcAresRequest(host, port, timeout),
+  explicit GrpcAresHostnameRequest(
+      absl::string_view host, uint16_t port, EventEngine::Duration timeout,
+      RegisterSocketWithPollerCallback register_socket_with_poller_cb,
+      EventEngine::DNSResolver::LookupHostnameCallback on_resolve)
+      : GrpcAresRequest(host, port, timeout,
+                        std::move(register_socket_with_poller_cb)),
         on_resolve_(std::move(on_resolve)) {}
 
   bool is_balancer() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -182,16 +213,18 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
   const char* qtype() const { return "Unimplemented"; }
 
   void Start() override;
-  void OnResolve(absl::StatusOr<std::vector<ResolvedAddress>> result);
+  void OnResolve(
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result);
 
  private:
-  ~GrpcAresHostnameRequest() override = default;
+  ~GrpcAresHostnameRequest() override {}
 
   size_t pending_queries_ = 0;
-  std::vector<ResolvedAddress> result_;
+  std::vector<EventEngine::ResolvedAddress> result_;
   /// is it a grpclb address
   bool is_balancer_ ABSL_GUARDED_BY(mu_) = false;
-  LookupHostnameCallback on_resolve_ ABSL_GUARDED_BY(mu_);
+  EventEngine::DNSResolver::LookupHostnameCallback on_resolve_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental

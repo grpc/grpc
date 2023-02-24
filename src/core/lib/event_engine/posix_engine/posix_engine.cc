@@ -50,6 +50,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/ares.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -59,7 +60,6 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
@@ -511,6 +511,12 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
   }
   GrpcAresHostnameRequest* request = new GrpcAresHostnameRequest(
       host, grpc_strhtons(std::string(port).c_str()), timeout,
+      [this](AresSocket socket) {
+        // TODO(yijiem): proper locking
+        PosixEventPoller* poller = poller_manager_->Poller();
+        GPR_DEBUG_ASSERT(poller != nullptr);
+        return poller->CreateHandle(socket, "c-ares", poller->CanTrackErrors());
+      },
       std::move(on_resolve));
   if (!request->Initialize()) {
     abort();
@@ -539,7 +545,7 @@ PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
 
 bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
   grpc_core::Crash("unimplemented");
-  request->Orphan();
+  // request->Orphan();
 }
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(

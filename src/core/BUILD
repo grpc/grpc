@@ -1959,9 +1959,9 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "cares",
     ],
     deps = [
+        "ares",
         "error",
         "event_engine_common",
         "event_engine_poller",
@@ -2205,6 +2205,38 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "ares",
+    srcs = [
+        "lib/event_engine/ares.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/ares.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/strings:str_format",
+        "absl/synchronization",
+        "cares",
+    ],
+    select_deps = [{
+        "//:windows": ["windows_iocp"],
+        "//:windows_msvc": ["windows_iocp"],
+        "//:windows_other": ["windows_iocp"],
+        "//conditions:default": [
+            "posix_event_engine_event_poller",
+            "posix_event_engine_tcp_socket_utils",
+        ],
+    }],
+    deps = [
+        "error",
+        "examine_stack",
+        "//:event_engine_base_hdrs",
+        "//:orphanable",
     ],
 )
 
