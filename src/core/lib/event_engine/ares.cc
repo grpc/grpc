@@ -225,6 +225,25 @@ bool GrpcAresRequest::Initialize() {
 
 void GrpcAresRequest::Orphan() {
   // TODO(yijiem): implement
+  // TODO(yijiem): really need to add locking now
+  if (!shutting_down_) {
+    shutting_down_ = true;
+    while (!fd_node_list_->IsEmpty()) {
+      FdNodeList::FdNode* fd_node = fd_node_list_->PopFdNode();
+      fd_node->handle()->ShutdownHandle(absl::OkStatus());
+      PosixEngineClosure* on_handle_destroyed = new PosixEngineClosure(
+          [self = Ref(DEBUG_LOCATION, "ares OnHandleDestroyed"),
+           fd_node](absl::Status status) {
+            self->OnHandleDestroyed(fd_node, status);
+          },
+          /*is_permanent=*/false);
+      int release_fd = -1;
+      fd_node->handle()->OrphanHandle(on_handle_destroyed, &release_fd,
+                                      "no longer used by ares");
+      GPR_ASSERT(release_fd == fd_node->WrappedFd());
+    }
+    Unref(DEBUG_LOCATION, "cancel lookup");
+  }
 }
 
 void GrpcAresRequest::Work() {
