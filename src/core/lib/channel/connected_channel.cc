@@ -87,8 +87,6 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#define MAX_BUFFER_LENGTH 8192
-
 typedef struct connected_channel_channel_data {
   grpc_transport* transport;
 } channel_data;
@@ -365,6 +363,7 @@ class ConnectedChannelStream : public Orphanable {
     ConnectedChannelStream* stream;
     Latch<absl::Status> done;
     absl::string_view name;
+    RefCountedPtr<Party> party;
     R result_if_ok;
     // Start with two refs - one for the batch completion, the other for the
     // promise observing it.
@@ -447,6 +446,7 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
   batch->stream = this;
   batch->name = name;
   batch->batch.payload = &batch_payload_;
+  batch->party = static_cast<Party*>(Activity::current())->Ref();
   batch->refs = 2;
   RefCountedPtr<Batch<R>> batch_reffed_by_promise(batch);
   GRPC_CLOSURE_INIT(
@@ -455,7 +455,7 @@ auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
         RefCountedPtr<Batch<R>> batch(static_cast<Batch<R>*>(arg));
         auto name = batch->name;
         auto* stream = batch->stream;
-        auto* party = stream->party_;
+        auto party = std::exchange(batch->party, nullptr);
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_DEBUG, "%s[connected] Finish batch '%s' %s: status=%s",
                   party->DebugTag().c_str(), std::string(batch->name).c_str(),

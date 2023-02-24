@@ -68,6 +68,13 @@ class Party : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   std::string ActivityDebugTag(WakeupMask wakeup_mask) const final;
 
+  void IncrementRefCount(DebugLocation whence = {});
+  void Unref(DebugLocation whence = {});
+  RefCountedPtr<Party> Ref() {
+    IncrementRefCount();
+    return RefCountedPtr<Party>(this);
+  }
+
  protected:
   explicit Party(Arena* arena, size_t initial_refs)
       : state_(kOneRef * initial_refs), arena_(arena) {}
@@ -83,9 +90,6 @@ class Party : public Activity, private Wakeable {
   // Returns true if the party is over.
   virtual bool RunParty() GRPC_MUST_USE_RESULT;
 
-  // Internal ref counting
-  void IncrementRefCount(DebugLocation whence = {});
-  void Unref(DebugLocation whence = {});
   bool RefIfNonZero();
 
   // Destroy any remaining participants.
@@ -234,7 +238,7 @@ class Party : public Activity, private Wakeable {
   // All current participants, using a tagged format.
   // If the lower bit is unset, then this is a Participant*.
   // If the lower bit is set, then this is a ParticipantFactory*.
-  Participant* participants_[kMaxParticipants] = {};
+  std::atomic<Participant*> participants_[kMaxParticipants] = {};
 };
 
 template <typename Factory, typename OnComplete>

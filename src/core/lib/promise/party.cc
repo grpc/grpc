@@ -150,11 +150,18 @@ bool Party::RefIfNonZero() {
 }
 
 void Party::Unref(DebugLocation whence) {
-  auto prev_state = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+  uint64_t prev_state;
+  auto do_unref = [&prev_state, this]() {
+    prev_state = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+  };
   if (grpc_trace_promise_primitives.enabled()) {
+    auto debug_tag = DebugTag();
+    do_unref();
     gpr_log(GPR_DEBUG, "%s[party] Unref: prev_state=%s from %s:%d",
-            DebugTag().c_str(), StateToString(prev_state).c_str(),
-            whence.file(), whence.line());
+            debug_tag.c_str(), StateToString(prev_state).c_str(), whence.file(),
+            whence.line());
+  } else {
+    do_unref();
   }
   if ((prev_state & kRefMask) == kOneRef) {
     prev_state =
@@ -173,7 +180,8 @@ void Party::CancelRemainingParticipants() {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_);
   for (size_t i = 0; i < kMaxParticipants; i++) {
-    if (auto* p = std::exchange(participants_[i], nullptr)) {
+    if (auto* p =
+            participants_[i].exchange(nullptr, std::memory_order_acquire)) {
       p->Destroy();
     }
   }
@@ -191,7 +199,9 @@ Waker Party::MakeOwningWaker() {
 
 Waker Party::MakeNonOwningWaker() {
   GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
-  return Waker(participants_[currently_polling_]->MakeNonOwningWakeable(this),
+  return Waker(participants_[currently_polling_]
+                   .load(std::memory_order_relaxed)
+                   ->MakeNonOwningWakeable(this),
                1u << currently_polling_);
 }
 
@@ -256,7 +266,7 @@ bool Party::RunParty() {
       // If the participant is null, skip.
       // This allows participants to complete whilst wakers still exist
       // somewhere.
-      auto* participant = participants_[i];
+      auto* participant = participants_[i].load(std::memory_order_acquire);
       if (participant == nullptr) {
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(GPR_DEBUG, "%s[party] wakeup %" PRIdPTR " already complete",
@@ -333,10 +343,10 @@ void Party::AddParticipant(Participant* participant) {
   }
 
   // We've allocated the slot, next we need to populate it.
-  participants_[slot] = participant;
+  participants_[slot].store(participant, std::memory_order_release);
 
   // Now we need to wake up the party.
-  state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_release);
+  state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_relaxed);
 
   // If the party was already locked, we're done.
   if ((state & kLocked) != 0) return;

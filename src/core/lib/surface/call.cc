@@ -3247,7 +3247,9 @@ void ServerPromiseBasedCall::CancelWithError(absl::Status error) {
       "cancel_with_error",
       [this, error = std::move(error)]() {
         if (!send_trailing_metadata_.is_set()) {
-          send_trailing_metadata_.Set(ServerMetadataFromStatus(error));
+          auto md = ServerMetadataFromStatus(error);
+          md->Set(GrpcCallWasCancelled(), true);
+          send_trailing_metadata_.Set(std::move(md));
         }
         if (server_to_client_messages_ != nullptr) {
           server_to_client_messages_->Close();
