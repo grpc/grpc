@@ -132,8 +132,10 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   ChannelArgsEndpointConfig config(args);
   auto listener = *oracle_ee->CreateListener(
       std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      [](absl::Status status) {
+        ASSERT_TRUE(status.ok()) << status.ToString();
+      },
+      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
@@ -201,8 +203,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   ChannelArgsEndpointConfig config(args);
   auto listener = *oracle_ee->CreateListener(
       std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      [](absl::Status status) {
+        ASSERT_TRUE(status.ok()) << status.ToString();
+      },
+      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
