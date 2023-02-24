@@ -34,7 +34,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-constexpr int64_t kDefaultTargetReadSize = 8192;
+constexpr size_t kDefaultTargetReadSize = 8192;
 constexpr int kMaxWSABUFCount = 16;
 
 }  // namespace
@@ -65,14 +65,14 @@ WindowsEndpoint::~WindowsEndpoint() {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p destoyed", this);
 }
 
-void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                           SliceBuffer* buffer, const ReadArgs* args) {
+bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                           SliceBuffer* buffer, const ReadArgs* /* args */) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
   if (io_state_->socket->IsShutdown()) {
     executor_->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::UnavailableError("Socket is shutting down."));
     });
-    return;
+    return false;
   }
   // Prepare the WSABUF struct
   WSABUF wsa_buffers[kMaxWSABUFCount];
@@ -80,12 +80,12 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   buffer->Clear();
   // TODO(hork): sometimes args->read_hint_bytes is 1, which is not useful.
   // Choose an appropriate size.
-  int min_read_size = kDefaultTargetReadSize;
+  size_t min_read_size = kDefaultTargetReadSize;
   if (buffer->Length() < min_read_size && buffer->Count() < kMaxWSABUFCount) {
     buffer->AppendIndexed(Slice(allocator_.MakeSlice(min_read_size)));
   }
   GPR_ASSERT(buffer->Count() <= kMaxWSABUFCount);
-  for (int i = 0; i < buffer->Count(); i++) {
+  for (size_t i = 0; i < buffer->Count(); i++) {
     auto& slice = buffer->MutableSliceAt(i);
     wsa_buffers[i].buf = (char*)slice.begin();
     wsa_buffers[i].len = slice.size();
@@ -116,7 +116,7 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     }
     executor_->Run(
         [result, on_read = std::move(on_read)]() mutable { on_read(result); });
-    return;
+    return false;
   }
   // Otherwise, let's retry, by queuing a read.
   memset(io_state_->socket->read_info()->overlapped(), 0, sizeof(OVERLAPPED));
@@ -131,23 +131,24 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
           wsa_error,
           absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str()));
     });
-    return;
+    return false;
   }
   io_state_->handle_read_event.Prime(io_state_, buffer, std::move(on_read));
   io_state_->socket->NotifyOnRead(&io_state_->handle_read_event);
+  return false;
 }
 
-void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
   if (io_state_->socket->IsShutdown()) {
     executor_->Run([on_writable = std::move(on_writable)]() mutable {
       on_writable(absl::UnavailableError("Socket is shutting down."));
     });
-    return;
+    return false;
   }
   if (grpc_event_engine_endpoint_data_trace.enabled()) {
-    for (int i = 0; i < data->Count(); i++) {
+    for (size_t i = 0; i < data->Count(); i++) {
       auto str = data->RefSlice(i).as_string_view();
       gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %.*s", this,
               peer_address_string_.c_str(), str.length(), str.data());
@@ -155,7 +156,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   }
   GPR_ASSERT(data->Count() <= UINT_MAX);
   absl::InlinedVector<WSABUF, kMaxWSABUFCount> buffers(data->Count());
-  for (int i = 0; i < data->Count(); i++) {
+  for (size_t i = 0; i < data->Count(); i++) {
     auto& slice = data->MutableSliceAt(i);
     GPR_ASSERT(slice.size() <= ULONG_MAX);
     buffers[i].len = slice.size();
@@ -171,11 +172,11 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       // Write completed, exiting early
       executor_->Run(
           [cb = std::move(on_writable)]() mutable { cb(absl::OkStatus()); });
-      return;
+      return false;
     }
     // The data was not completely delivered, we should send the rest of it by
     // doing an async write operation.
-    for (int i = 0; i < data->Count(); i++) {
+    for (size_t i = 0; i < data->Count(); i++) {
       if (buffers[i].len > bytes_sent) {
         buffers[i].buf += bytes_sent;
         buffers[i].len -= bytes_sent;
@@ -193,7 +194,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
         cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
-      return;
+      return false;
     }
   }
   auto write_info = io_state_->socket->write_info();
@@ -209,13 +210,14 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
         cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
-      return;
+      return false;
     }
   }
   // As all is now setup, we can now ask for the IOCP notification. It may
   // trigger the callback immediately however, but no matter.
   io_state_->handle_write_event.Prime(io_state_, data, std::move(on_writable));
   io_state_->socket->NotifyOnWrite(&io_state_->handle_write_event);
+  return false;
 }
 const EventEngine::ResolvedAddress& WindowsEndpoint::GetPeerAddress() const {
   return peer_address_;
@@ -283,7 +285,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     }
     GPR_ASSERT(result.bytes_transferred == buffer_->Length());
     if (grpc_event_engine_endpoint_data_trace.enabled()) {
-      for (int i = 0; i < buffer_->Count(); i++) {
+      for (size_t i = 0; i < buffer_->Count(); i++) {
         auto str = buffer_->RefSlice(i).as_string_view();
         gpr_log(GPR_INFO, "WindowsEndpoint::%p READ (peer=%s): %.*s",
                 io_state->endpoint,

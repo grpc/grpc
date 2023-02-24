@@ -185,9 +185,11 @@ bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 void WindowsEventEngine::OnConnectCompleted(
     std::shared_ptr<ConnectionState> state) {
   absl::StatusOr<std::unique_ptr<WindowsEndpoint>> endpoint;
+  EventEngine::OnConnectCallback cb;
   {
     // Connection attempt complete!
     grpc_core::MutexLock lock(&state->mu);
+    cb = std::move(state->on_connected_user_callback);
     state->on_connected = nullptr;
     {
       grpc_core::MutexLock handle_lock(&connection_mu_);
@@ -208,7 +210,7 @@ void WindowsEventEngine::OnConnectCompleted(
           cfg, executor_.get());
     }
   }
-  state->on_connected_user_callback(std::move(endpoint));
+  cb(std::move(endpoint));
 }
 
 EventEngine::ConnectionHandle WindowsEventEngine::Connect(

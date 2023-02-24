@@ -72,6 +72,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_client_channel",
+        "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:uri_parser",
         "//src/core:arena",
@@ -86,5 +87,6 @@ grpc_cc_library(
         "//src/core:poll",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:time",
     ],
 )

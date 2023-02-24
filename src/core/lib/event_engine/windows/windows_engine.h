@@ -139,7 +139,7 @@ class WindowsEventEngine : public EventEngine,
   bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
-  class TimerClosure;
+  struct TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
