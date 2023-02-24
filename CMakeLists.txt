@@ -1065,7 +1065,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx nonblocking_test)
   add_dependencies(buildtests_cxx notification_test)
   add_dependencies(buildtests_cxx num_external_connectivity_watchers_test)
-  add_dependencies(buildtests_cxx observable_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx oracle_event_engine_posix_test)
   endif()
@@ -5543,6 +5542,7 @@ target_link_libraries(activity_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::hash
   absl::type_traits
   absl::statusor
@@ -15345,6 +15345,7 @@ target_link_libraries(mpsc_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::hash
   absl::type_traits
   absl::statusor
@@ -15551,49 +15552,6 @@ target_link_libraries(num_external_connectivity_watchers_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(observable_test
-  src/core/lib/promise/activity.cc
-  test/core/promise/observable_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-target_compile_features(observable_test PUBLIC cxx_std_14)
-target_include_directories(observable_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(observable_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
 )
 
 
@@ -16593,8 +16551,6 @@ target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::bind_front
   absl::type_traits
-  absl::status
-  absl::optional
   absl::variant
 )
 
@@ -16632,6 +16588,7 @@ target_link_libraries(promise_map_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::type_traits
   absl::status
   absl::optional
@@ -16672,6 +16629,7 @@ target_link_libraries(promise_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::type_traits
   absl::status
   absl::optional

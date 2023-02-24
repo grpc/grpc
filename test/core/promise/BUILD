@@ -127,7 +127,10 @@ grpc_cc_test(
     # is.
     name = "promise_map_test",
     srcs = ["map_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -161,7 +164,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:promise",
         "//src/core:poll",
         "//src/core:promise_factory",
     ],
@@ -418,6 +420,7 @@ grpc_proto_fuzzer(
     srcs = ["promise_fuzzer.cc"],
     corpus = "promise_fuzzer_corpus",
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/types:optional",
     ],
