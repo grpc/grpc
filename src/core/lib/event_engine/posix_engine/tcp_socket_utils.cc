@@ -640,7 +640,7 @@ PosixSocketWrapper::LocalAddress() {
   EventEngine::ResolvedAddress addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   if (getsockname(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::UnknownError(
+    return absl::InternalError(
         absl::StrCat("getsockname:", grpc_core::StrError(errno)));
   }
   return EventEngine::ResolvedAddress(addr.address(), len);
@@ -650,7 +650,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
   EventEngine::ResolvedAddress addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   if (getpeername(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::UnknownError(
+    return absl::InternalError(
         absl::StrCat("getpeername:", grpc_core::StrError(errno)));
   }
   return EventEngine::ResolvedAddress(addr.address(), len);
