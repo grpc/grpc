@@ -246,6 +246,9 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
   // The ShutdownHandle whould trigger any waiting notify_on_accept_ to get
   // scheduled with the not-OK status.
+  // TODO(vigneshbabu): this should fundamentally be an OkStatus since this is
+  // normal operation. Let's set a shutdown bit for the notification callbacks
+  // in some other way.
   handle_->ShutdownHandle(absl::AbortedError("Shutting down acceptor"));
   Unref();
 }
