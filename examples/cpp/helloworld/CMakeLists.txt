@@ -52,6 +52,8 @@ add_library(hw_grpc_proto
   ${hw_proto_srcs}
   ${hw_proto_hdrs})
 target_link_libraries(hw_grpc_proto
+  absl::flags
+  absl::flags_parse
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -60,8 +62,7 @@ target_link_libraries(hw_grpc_proto
 foreach(_target
   greeter_client greeter_server
   greeter_callback_client greeter_callback_server
-  greeter_async_client greeter_async_client2 greeter_async_server
-  xds_greeter_client xds_greeter_server)
+  greeter_async_client greeter_async_client2 greeter_async_server)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
