@@ -5350,6 +5350,69 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "logging_sink",
+    hdrs = [
+        "ext/filters/logging/logging_sink.h",
+    ],
+    external_deps = ["absl/strings"],
+    language = "c++",
+    visibility = [
+        "//src/cpp/ext/gcp:__subpackages__",
+        "//test:__subpackages__",
+    ],
+    deps = [
+        "time",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "logging_filter",
+    srcs = [
+        "ext/filters/logging/logging_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/logging/logging_filter.h",
+    ],
+    external_deps = [
+        "absl/random",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    visibility = [
+        "//src/cpp/ext/gcp:__subpackages__",
+        "//test:__subpackages__",
+    ],
+    deps = [
+        "arena",
+        "arena_promise",
+        "cancel_callback",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "context",
+        "logging_sink",
+        "map",
+        "pipe",
+        "poll",
+        "slice",
+        "slice_buffer",
+        "time",
+        "//:channel_stack_builder",
+        "//:config",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_public_hdrs",
+        "//:grpc_resolver",
+        "//:uri_parser",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(

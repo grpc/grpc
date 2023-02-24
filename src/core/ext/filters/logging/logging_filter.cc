@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/logging/logging_filter.h"
+#include "src/core/ext/filters/logging/logging_filter.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -70,10 +70,9 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "src/cpp/ext/filters/logging/logging_sink.h"
+#include "src/core/ext/filters/logging/logging_sink.h"
 
-namespace grpc {
-namespace internal {
+namespace grpc_core {
 
 namespace {
 
@@ -492,5 +491,4 @@ void RegisterLoggingFilter(LoggingSink* sink) {
       });
 }
 
-}  // namespace internal
-}  // namespace grpc
+}  // namespace grpc_core

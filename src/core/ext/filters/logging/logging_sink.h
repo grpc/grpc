@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
-#define GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_SINK_H
+#define GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_SINK_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,8 +30,7 @@
 
 #include "src/core/lib/gprpp/time.h"
 
-namespace grpc {
-namespace internal {
+namespace grpc_core {
 
 // Interface for a logging sink that will be used by the logging filter.
 class LoggingSink {
@@ -113,7 +112,6 @@ class LoggingSink {
   virtual void LogEntry(Entry entry) = 0;
 };
 
-}  // namespace internal
-}  // namespace grpc
+}  // namespace grpc_core
 
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_SINK_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_SINK_H

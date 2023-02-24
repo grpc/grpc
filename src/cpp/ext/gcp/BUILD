@@ -58,7 +58,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/cpp/ext/filters/logging:logging_filter",
+        "//src/core:logging_filter",
     ],
 )
 
@@ -125,8 +125,8 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:json",
+        "//src/core:logging_sink",
         "//src/core:time",
-        "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )
 

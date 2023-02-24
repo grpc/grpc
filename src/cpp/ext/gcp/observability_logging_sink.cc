@@ -74,11 +74,11 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
   }
 }
 
-LoggingSink::Config ObservabilityLoggingSink::FindMatch(
+grpc_core::LoggingSink::Config ObservabilityLoggingSink::FindMatch(
     bool is_client, absl::string_view service, absl::string_view method) {
   const auto& configs = is_client ? client_configs_ : server_configs_;
   if (service.empty() || method.empty()) {
-    return LoggingSink::Config();
+    return grpc_core::LoggingSink::Config();
   }
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
@@ -87,53 +87,53 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
            ((config_method.method == "*") ||
             (method == config_method.method)))) {
         if (config.exclude) {
-          return LoggingSink::Config();
+          return grpc_core::LoggingSink::Config();
         }
-        return LoggingSink::Config(config.max_metadata_bytes,
-                                   config.max_message_bytes);
+        return grpc_core::LoggingSink::Config(config.max_metadata_bytes,
+                                              config.max_message_bytes);
       }
     }
   }
-  return LoggingSink::Config();
+  return grpc_core::LoggingSink::Config();
 }
 
 namespace {
 
-std::string EventTypeToString(LoggingSink::Entry::EventType type) {
+std::string EventTypeToString(grpc_core::LoggingSink::Entry::EventType type) {
   switch (type) {
-    case LoggingSink::Entry::EventType::kClientHeader:
+    case grpc_core::LoggingSink::Entry::EventType::kClientHeader:
       return "CLIENT_HEADER";
-    case LoggingSink::Entry::EventType::kServerHeader:
+    case grpc_core::LoggingSink::Entry::EventType::kServerHeader:
       return "SERVER_HEADER";
-    case LoggingSink::Entry::EventType::kClientMessage:
+    case grpc_core::LoggingSink::Entry::EventType::kClientMessage:
       return "CLIENT_MESSAGE";
-    case LoggingSink::Entry::EventType::kServerMessage:
+    case grpc_core::LoggingSink::Entry::EventType::kServerMessage:
       return "SERVER_MESSAGE";
-    case LoggingSink::Entry::EventType::kClientHalfClose:
+    case grpc_core::LoggingSink::Entry::EventType::kClientHalfClose:
       return "CLIENT_HALF_CLOSE";
-    case LoggingSink::Entry::EventType::kServerTrailer:
+    case grpc_core::LoggingSink::Entry::EventType::kServerTrailer:
       return "SERVER_TRAILER";
-    case LoggingSink::Entry::EventType::kCancel:
+    case grpc_core::LoggingSink::Entry::EventType::kCancel:
       return "CANCEL";
-    case LoggingSink::Entry::EventType::kUnkown:
+    case grpc_core::LoggingSink::Entry::EventType::kUnkown:
     default:
       return "EVENT_TYPE_UNKNOWN";
   }
 }
 
-std::string LoggerToString(LoggingSink::Entry::Logger type) {
+std::string LoggerToString(grpc_core::LoggingSink::Entry::Logger type) {
   switch (type) {
-    case LoggingSink::Entry::Logger::kClient:
+    case grpc_core::LoggingSink::Entry::Logger::kClient:
       return "CLIENT";
-    case LoggingSink::Entry::Logger::kServer:
+    case grpc_core::LoggingSink::Entry::Logger::kServer:
       return "SERVER";
-    case LoggingSink::Entry::Logger::kUnkown:
+    case grpc_core::LoggingSink::Entry::Logger::kUnkown:
     default:
       return "LOGGER_UNKNOWN";
   }
 }
 
-void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
+void PayloadToJsonStructProto(grpc_core::LoggingSink::Entry::Payload payload,
                               ::google::protobuf::Struct* payload_proto) {
   grpc_core::Json::Object payload_json;
   if (!payload.metadata.empty()) {
@@ -175,25 +175,26 @@ void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
   }
 }
 
-std::string AddressTypeToString(LoggingSink::Entry::Address::Type type) {
+std::string AddressTypeToString(
+    grpc_core::LoggingSink::Entry::Address::Type type) {
   switch (type) {
-    case LoggingSink::Entry::Address::Type::kIpv4:
+    case grpc_core::LoggingSink::Entry::Address::Type::kIpv4:
       return "TYPE_IPV4";
-    case LoggingSink::Entry::Address::Type::kIpv6:
+    case grpc_core::LoggingSink::Entry::Address::Type::kIpv6:
       return "TYPE_IPV6";
-    case LoggingSink::Entry::Address::Type::kUnix:
+    case grpc_core::LoggingSink::Entry::Address::Type::kUnix:
       return "TYPE_UNIX";
-    case LoggingSink::Entry::Address::Type::kUnknown:
+    case grpc_core::LoggingSink::Entry::Address::Type::kUnknown:
     default:
       return "TYPE_UNKNOWN";
   }
 }
 
-void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
+void PeerToJsonStructProto(grpc_core::LoggingSink::Entry::Address peer,
                            ::google::protobuf::Struct* peer_json) {
   (*peer_json->mutable_fields())["type"].set_string_value(
       AddressTypeToString(peer.type));
-  if (peer.type != LoggingSink::Entry::Address::Type::kUnknown) {
+  if (peer.type != grpc_core::LoggingSink::Entry::Address::Type::kUnknown) {
     (*peer_json->mutable_fields())["address"].set_string_value(
         std::move(peer.address));
     (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
@@ -202,7 +203,7 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
 
 }  // namespace
 
-void EntryToJsonStructProto(LoggingSink::Entry entry,
+void EntryToJsonStructProto(grpc_core::LoggingSink::Entry entry,
                             ::google::protobuf::Struct* json_payload) {
   (*json_payload->mutable_fields())["callId"].set_string_value(
       absl::StrCat(entry.call_id));
@@ -232,7 +233,7 @@ void EntryToJsonStructProto(LoggingSink::Entry entry,
 
 namespace {
 
-uint64_t EstimateEntrySize(const LoggingSink::Entry& entry) {
+uint64_t EstimateEntrySize(const grpc_core::LoggingSink::Entry& entry) {
   uint64_t size = sizeof(entry);
   for (const auto& pair : entry.payload.metadata) {
     size += pair.first.size() + pair.second.size();
