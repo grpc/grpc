@@ -102,6 +102,34 @@ Here is the same example service config in JSON form:
 }
 ```
 
+Here is the an example with a "default config" in JSON form:
+
+```
+{
+  "loadBalancingConfig": [ { "round_robin": {} } ],
+  "methodConfig": [
+    {
+      "name": [
+        { "service": "foo", "method": "bar" },
+        { "service": "baz" }
+      ],
+      "timeout": "1.000000001s"
+    },
+    {
+      "name": [
+        {  }
+      ],
+      "timeout": "2.000000001s"
+    }
+  ]
+}
+```
+
+The second method config specifying the timeout of "2.000000001s" is
+called the default config because both 'service' field and the 'method'
+field are empty. It specifies the default for all methods of all
+services unless there is a more specific matching method config.
+
 # APIs
 
 The service config is used in the following APIs:
