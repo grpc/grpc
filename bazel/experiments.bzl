@@ -31,12 +31,6 @@ EXPERIMENTS = {
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
         ],
-        "event_engine_client_test": [
-            "event_engine_client",
-        ],
-        "event_engine_listener_test": [
-            "event_engine_listener",
-        ],
         "flow_control_test": [
             "peer_state_based_framing",
             "tcp_frame_size_tuning",
@@ -52,6 +46,12 @@ EXPERIMENTS = {
         ],
     },
     "on": {
+        "event_engine_client_test": [
+            "event_engine_client",
+        ],
+        "event_engine_listener_test": [
+            "event_engine_listener",
+        ],
         "flow_control_test": [
             "flow_control_fixes",
         ],
