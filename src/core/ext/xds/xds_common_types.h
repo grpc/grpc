@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_COMMON_TYPES_H
-#define GRPC_CORE_EXT_XDS_XDS_COMMON_TYPES_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_COMMON_TYPES_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_COMMON_TYPES_H
 
 #include <grpc/support/port_platform.h>
 
@@ -105,4 +105,4 @@ absl::optional<XdsExtension> ExtractXdsExtension(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_COMMON_TYPES_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_COMMON_TYPES_H

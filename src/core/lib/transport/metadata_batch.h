@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
-#define GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -375,8 +376,8 @@ struct GrpcStreamNetworkState {
 struct PeerString {
   static absl::string_view DebugKey() { return "PeerString"; }
   static constexpr bool kRepeatable = false;
-  using ValueType = absl::string_view;
-  static std::string DisplayValue(ValueType x);
+  using ValueType = Slice;
+  static std::string DisplayValue(const ValueType& x);
 };
 
 // Annotation added by various systems to describe the reason for a failure.
@@ -1332,4 +1333,4 @@ struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;
 };
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H

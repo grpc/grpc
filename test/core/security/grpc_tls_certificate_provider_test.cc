@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
@@ -485,6 +486,13 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Clean up.
   CancelWatch(watcher_state_1);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderTooShortRefreshIntervalIsOverwritten) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 0);
+  ASSERT_THAT(provider.TestOnlyGetRefreshIntervalSecond(), 1);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {

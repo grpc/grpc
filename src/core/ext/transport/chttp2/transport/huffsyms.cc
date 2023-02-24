@@ -1,28 +1,28 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-/* Constants pulled from the HPACK spec, and converted to C using the vim
-   command:
-   :%s/.*   \([0-9a-f]\+\)  \[ *\([0-9]\+\)\]/{0x\1, \2},/g */
+// Constants pulled from the HPACK spec, and converted to C using the vim
+// command:
+// :%s/.*   \([0-9a-f]\+\)  \[ *\([0-9]\+\)\]/{0x\1, \2},/g
 const grpc_chttp2_huffsym grpc_chttp2_huffsyms[GRPC_CHTTP2_NUM_HUFFSYMS] = {
     {0x1ff8, 13},     {0x7fffd8, 23},   {0xfffffe2, 28},  {0xfffffe3, 28},
     {0xfffffe4, 28},  {0xfffffe5, 28},  {0xfffffe6, 28},  {0xfffffe7, 28},

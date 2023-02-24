@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <memory>
 #include <utility>
 
@@ -34,7 +35,6 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

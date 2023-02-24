@@ -1,27 +1,45 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/call_once.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
+
+#include <grpc/event_engine/event_engine.h>
 #include <grpcpp/opencensus.h>
+
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc {
 
@@ -116,6 +134,8 @@ using experimental::ServerSentMessagesPerRpcHour;      // NOLINT
 using experimental::ServerServerLatencyHour;           // NOLINT
 using experimental::ServerStartedRpcsHour;             // NOLINT
 
+namespace internal {
+
 // Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
 // of a program, before any channels/servers are built.
 void EnableOpenCensusStats(bool enable);
@@ -124,6 +144,133 @@ void EnableOpenCensusTracing(bool enable);
 bool OpenCensusStatsEnabled();
 bool OpenCensusTracingEnabled();
 
+// Registers various things for the OpenCensus plugin.
+class OpenCensusRegistry {
+ public:
+  struct Label {
+    std::string key;
+    opencensus::tags::TagKey tag_key;
+    std::string value;
+  };
+
+  struct Attribute {
+    std::string key;
+    std::string value;
+  };
+
+  static OpenCensusRegistry& Get();
+
+  // Registers the functions to be run post-init.
+  void RegisterFunctions(std::function<void()> f) {
+    exporter_registry_.push_back(std::move(f));
+  }
+
+  void RegisterWaitOnReady() { wait_on_ready_ = true; }
+
+  // Runs the registry post-init exactly once. Protected with an absl::CallOnce.
+  void RunFunctionsPostInit() {
+    absl::call_once(once_, &OpenCensusRegistry::RunFunctionsPostInitHelper,
+                    this);
+  }
+
+  void RegisterConstantLabels(
+      const std::map<std::string, std::string>& labels) {
+    grpc_core::MutexLock lock(&mu_);
+    constant_labels_.reserve(labels.size());
+    for (const auto& label : labels) {
+      auto tag_key = opencensus::tags::TagKey::Register(label.first);
+      constant_labels_.emplace_back(Label{label.first, tag_key, label.second});
+    }
+  }
+
+  void RegisterConstantAttributes(std::vector<Attribute> attributes) {
+    grpc_core::MutexLock lock(&mu_);
+    constant_attributes_ = std::move(attributes);
+  }
+
+  void NotifyOnReady(absl::AnyInvocable<void()> callback) {
+    grpc_core::MutexLock lock(&mu_);
+    // Environment has already been detected
+    if (ready_) {
+      // Execute on the event engine to avoid deadlocks.
+      return event_engine()->Run(std::move(callback));
+    }
+    callbacks_.push_back(std::move(callback));
+  }
+
+  ::opencensus::tags::TagMap PopulateTagMapWithConstantLabels(
+      const ::opencensus::tags::TagMap& tag_map);
+
+  void PopulateCensusContextWithConstantAttributes(
+      grpc::experimental::CensusContext* context);
+
+  void SetReady() {
+    std::vector<absl::AnyInvocable<void()>> callbacks;
+    {
+      grpc_core::MutexLock lock(&mu_);
+      ready_ = true;
+      callbacks = std::move(callbacks_);
+    }
+    for (auto& callback : callbacks) {
+      callback();
+    }
+  }
+
+  bool Ready() {
+    if (!wait_on_ready_) {
+      return true;
+    }
+    grpc_core::MutexLock lock(&mu_);
+    return ready_;
+  }
+
+  const std::vector<Label>& ConstantLabels() {
+    grpc_core::MutexLock lock(&mu_);
+    return constant_labels_;
+  }
+
+  const std::vector<Attribute>& ConstantAttributes() {
+    grpc_core::MutexLock lock(&mu_);
+    return constant_attributes_;
+  }
+
+ private:
+  void RunFunctionsPostInitHelper() {
+    for (const auto& f : exporter_registry_) {
+      f();
+    }
+  }
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    if (event_engine_ == nullptr) {
+      event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+    }
+    return event_engine_;
+  }
+
+  OpenCensusRegistry() = default;
+
+  std::vector<std::function<void()>> exporter_registry_;
+  absl::once_flag once_;
+  // Some setups might need to set up the constant labels that are fetched after
+  // start up. wait_on_ready_ allows implementations to check whether there is
+  // such a need. This is only set before grpc_init in a single thread, so it
+  // should not need any protection.
+  bool wait_on_ready_ = false;
+  grpc_core::Mutex mu_;
+  // If wait_on_ready_ is true, ready_ indicates whether the plugin is now ready
+  // to start serving.
+  bool ready_ ABSL_GUARDED_BY(mu_) = false;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
+      ABSL_GUARDED_BY(mu_);
+  std::vector<Label> constant_labels_ ABSL_GUARDED_BY(mu_);
+  std::vector<Attribute> constant_attributes_ ABSL_GUARDED_BY(mu_);
+  std::vector<absl::AnyInvocable<void()>> callbacks_ ABSL_GUARDED_BY(mu_);
+};
+
+}  // namespace internal
+
 }  // namespace grpc
 
-#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H */
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H

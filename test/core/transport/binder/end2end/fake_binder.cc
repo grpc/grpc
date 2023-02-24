@@ -19,6 +19,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 namespace grpc_binder {
 namespace end2end_testing {
 

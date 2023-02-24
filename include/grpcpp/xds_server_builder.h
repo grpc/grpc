@@ -19,7 +19,7 @@
 #ifndef GRPCPP_XDS_SERVER_BUILDER_H
 #define GRPCPP_XDS_SERVER_BUILDER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <grpcpp/server_builder.h>
 
@@ -108,4 +108,4 @@ class XdsServerBuilder : public grpc::ServerBuilder {
 
 }  // namespace grpc
 
-#endif /* GRPCPP_XDS_SERVER_BUILDER_H */
+#endif  // GRPCPP_XDS_SERVER_BUILDER_H

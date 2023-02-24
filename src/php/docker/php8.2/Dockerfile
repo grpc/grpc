@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:8.2.0RC7-zts-buster
+FROM php:8.2-zts-buster
 
 RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \

@@ -1,25 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SERVER_CONTEXT_H
 #define GRPCPP_SERVER_CONTEXT_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 #include <cassert>
@@ -64,8 +64,6 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 template <class ServiceType, class RequestType, class ResponseType>
@@ -118,8 +116,8 @@ class DefaultReactorTestPeer;
 }  // namespace testing
 
 namespace experimental {
-class OrcaServerInterceptor;
 class CallMetricRecorder;
+class ServerMetricRecorder;
 }  // namespace experimental
 
 /// Base class of ServerContext.
@@ -149,15 +147,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  ///\endverbatim
+  ///
   void AddInitialMetadata(const std::string& key, const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -174,15 +172,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  ///\endverbatim
+  ///
   void AddTrailingMetadata(const std::string& key, const std::string& value);
 
   /// Return whether this RPC failed before the server could provide its status
@@ -406,7 +404,6 @@ class ServerContextBase {
   friend class grpc::ClientContext;
   friend class grpc::GenericServerContext;
   friend class grpc::GenericCallbackServerContext;
-  friend class grpc::experimental::OrcaServerInterceptor;
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -420,7 +417,13 @@ class ServerContextBase {
   /// Return the tag queued by BeginCompletionOp()
   grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
-  void set_call(grpc_call* call) { call_.call = call; }
+  void set_call(grpc_call* call, bool call_metric_recording_enabled,
+                experimental::ServerMetricRecorder* server_metric_recorder) {
+    call_.call = call;
+    if (call_metric_recording_enabled) {
+      CreateCallMetricRecorder(server_metric_recorder);
+    }
+  }
 
   void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
 
@@ -447,7 +450,10 @@ class ServerContextBase {
     }
   }
 
-  void CreateCallMetricRecorder();
+  // This should be called only once and only when call metric recording is
+  // enabled.
+  void CreateCallMetricRecorder(
+      experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
 
   struct CallWrapper {
     ~CallWrapper();

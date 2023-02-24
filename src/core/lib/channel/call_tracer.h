@@ -16,17 +16,17 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CALL_TRACER_H
-#define GRPC_CORE_LIB_CHANNEL_CALL_TRACER_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/atm.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -51,11 +51,6 @@ class CallTracer {
     // arguments.
     virtual void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) = 0;
-    // TODO(yashkt): We are using gpr_atm here instead of absl::string_view
-    // since that's what the transport API uses, and performing an atomic load
-    // is unnecessary if the census tracer does not need it at present. Fix this
-    // when the transport API changes.
-    virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
     virtual void RecordSendTrailingMetadata(
         grpc_metadata_batch* send_trailing_metadata) = 0;
     virtual void RecordSendMessage(const SliceBuffer& send_message) = 0;
@@ -75,6 +70,10 @@ class CallTracer {
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
+    // Records an annotation on the call attempt.
+    // TODO(yashykt): If needed, extend this to attach attributes with
+    // annotations.
+    virtual void RecordAnnotation(absl::string_view annotation) = 0;
   };
 
   virtual ~CallTracer() {}
@@ -87,8 +86,12 @@ class CallTracer {
   // serves as an indication that the call stack is done with all API calls, and
   // the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
+  // Records an annotation on the call attempt.
+  // TODO(yashykt): If needed, extend this to attach attributes with
+  // annotations.
+  virtual void RecordAnnotation(absl::string_view annotation) = 0;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CALL_TRACER_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H

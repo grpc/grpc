@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"

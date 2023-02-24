@@ -16,10 +16,13 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
+#include <stdint.h>
+
+#include <utility>
+
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -31,7 +34,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
-#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"

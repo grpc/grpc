@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_FILTERS_CHANNEL_IDLE_IDLE_FILTER_STATE_H
-#define GRPC_CORE_EXT_FILTERS_CHANNEL_IDLE_IDLE_FILTER_STATE_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_IDLE_FILTER_STATE_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_IDLE_FILTER_STATE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -65,4 +65,4 @@ class IdleFilterState {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CHANNEL_IDLE_IDLE_FILTER_STATE_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_IDLE_FILTER_STATE_H

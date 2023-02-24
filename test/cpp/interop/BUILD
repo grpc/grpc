@@ -340,3 +340,19 @@ grpc_cc_binary(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_binary(
+    name = "xds_federation_client",
+    srcs = [
+        "xds_federation_client.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    language = "C++",
+    deps = [
+        ":client_helper_lib",
+        "//:grpc++",
+        "//test/cpp/util:test_config",
+    ],
+)

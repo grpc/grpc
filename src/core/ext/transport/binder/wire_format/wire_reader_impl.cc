@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 namespace grpc_binder {

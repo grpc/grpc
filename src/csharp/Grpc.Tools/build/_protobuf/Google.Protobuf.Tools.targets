@@ -6,8 +6,9 @@
     <Protobuf_Generator Condition=" '$(Protobuf_Generator)' == '' and '$(Language)' == 'C#' ">CSharp</Protobuf_Generator>
     <!-- Configuration is passing the smoke test. -->
     <Protobuf_ProjectSupported Condition=" '$(Protobuf_Generator)' != '' ">true</Protobuf_ProjectSupported>
-    <_Protobuf_MsBuildAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
-    <_Protobuf_MsBuildAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    <!-- Allow assembly file to be specified externally for testing by setting property _Protobuf_MsBuildAssembly -->
+    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoToolsPlatform" />

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.52.0-dev
+PROJECT_NUMBER         = 1.54.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -827,8 +827,6 @@ include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/config_protobuf.h \
-include/grpc++/impl/codegen/core_codegen.h \
-include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
 include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
@@ -884,6 +882,7 @@ include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/internal/memory_allocator_impl.h \
+include/grpc/event_engine/internal/slice_cast.h \
 include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
@@ -917,6 +916,10 @@ include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
 include/grpc/impl/compression_types.h \
+include/grpc/impl/connectivity_state.h \
+include/grpc/impl/grpc_types.h \
+include/grpc/impl/propagation_bits.h \
+include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
@@ -949,6 +952,7 @@ include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
+include/grpcpp/ext/server_metric_recorder.h \
 include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
@@ -978,8 +982,6 @@ include/grpcpp/impl/codegen/completion_queue.h \
 include/grpcpp/impl/codegen/completion_queue_tag.h \
 include/grpcpp/impl/codegen/config.h \
 include/grpcpp/impl/codegen/config_protobuf.h \
-include/grpcpp/impl/codegen/core_codegen.h \
-include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/delegating_channel.h \
 include/grpcpp/impl/codegen/intercepted_channel.h \

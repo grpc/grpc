@@ -1,31 +1,34 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/global_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
@@ -48,8 +51,13 @@ static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
 static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "UNREACHABLE CODE: %s", reason);
-  abort();
+  grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
+                   grpc_core::SourceLocation(file, line));
+}
+
+void gpr_assertion_failed(const char* filename, int line, const char* message) {
+  grpc_core::Crash(absl::StrCat("ASSERTION FAILED: ", message),
+                   grpc_core::SourceLocation(filename, line));
 }
 
 const char* gpr_log_severity_string(gpr_log_severity severity) {
