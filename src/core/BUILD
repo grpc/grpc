@@ -2218,6 +2218,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/strings:str_format",
         "absl/synchronization",
+        "absl/types:optional",
         "cares",
     ],
     select_deps = [{
@@ -2225,6 +2226,7 @@ grpc_cc_library(
         "//:windows_msvc": ["windows_iocp"],
         "//:windows_other": ["windows_iocp"],
         "//conditions:default": [
+            "posix_event_engine_closure",
             "posix_event_engine_event_poller",
             "posix_event_engine_tcp_socket_utils",
         ],
@@ -2233,6 +2235,7 @@ grpc_cc_library(
         "error",
         "examine_stack",
         "//:event_engine_base_hdrs",
+        "//:grpc_trace",
         "//:orphanable",
     ],
 )

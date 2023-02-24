@@ -30,7 +30,6 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef _WIN32
 #else
@@ -151,6 +150,10 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
 
 }  // namespace
 
+GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
+  GRPC_CARES_TRACE_LOG("request:%p destructor", this);
+}
+
 void GrpcAresHostnameRequest::Start() {
   GPR_ASSERT(initialized_);
   // TODO(yijiem): factor out
@@ -186,6 +189,18 @@ void GrpcAresHostnameRequest::OnResolve(
     // TODO(yijiem): cancel timers here
   }
 }
+
+GrpcAresRequest::GrpcAresRequest(
+    absl::string_view host, uint16_t port, EventEngine::Duration timeout,
+    RegisterSocketWithPollerCallback register_socket_with_poller_cb)
+    : grpc_core::InternallyRefCounted<GrpcAresRequest>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver) ? "GrpcAresRequest"
+                                                             : nullptr),
+      host_(host),
+      port_(port),
+      timeout_(timeout),
+      register_socket_with_poller_cb_(
+          std::move(register_socket_with_poller_cb)) {}
 
 GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
@@ -334,16 +349,6 @@ void GrpcAresRequest::OnHandleDestroyed(FdNodeList::FdNode* fd_node,
                        fd_node->WrappedFd());
   GRPC_CARES_STACKTRACE();
   delete fd_node;
-  // TODO(yijiem): revisit this
-  // If request does not have active fd_nodes, considers it as complete and
-  // frees its memory.
-  if (fd_node_list_->IsEmpty()) {
-    GRPC_CARES_TRACE_LOG(
-        "request: %p has no active fd_node and appears done, freeing its "
-        "memory",
-        this);
-    delete this;
-  }
 }
 
 }  // namespace experimental

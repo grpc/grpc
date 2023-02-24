@@ -146,12 +146,8 @@ class GrpcAresRequest
  public:
   explicit GrpcAresRequest(
       absl::string_view host, uint16_t port, EventEngine::Duration timeout,
-      RegisterSocketWithPollerCallback register_socket_with_poller_cb)
-      : host_(host),
-        port_(port),
-        timeout_(timeout),
-        register_socket_with_poller_cb_(
-            std::move(register_socket_with_poller_cb)) {}
+      RegisterSocketWithPollerCallback register_socket_with_poller_cb);
+  ~GrpcAresRequest() override;
 
   bool Initialize();
   virtual void Start() = 0;
@@ -182,7 +178,6 @@ class GrpcAresRequest
   }
 
  protected:
-  ~GrpcAresRequest() override;
   void Work();
 
  private:
@@ -230,7 +225,7 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result);
 
  private:
-  ~GrpcAresHostnameRequest() override {}
+  ~GrpcAresHostnameRequest() override;
 
   size_t pending_queries_ = 0;
   std::vector<EventEngine::ResolvedAddress> result_;
