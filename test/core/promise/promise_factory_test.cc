@@ -43,13 +43,12 @@ TEST(AdaptorTest, FactoryFromPromise) {
               return Poll<int>(Poll<int>(42));
             }).Make()(),
             Poll<int>(42));
-  EXPECT_EQ(MakeOnceFactory<void>(Promise<int>([]() {
+  EXPECT_EQ(
+      MakeOnceFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Make()(),
+      Poll<int>(42));
+  EXPECT_EQ(MakeRepeatedFactory<void>([]() {
               return Poll<int>(Poll<int>(42));
-            })).Make()(),
-            Poll<int>(42));
-  EXPECT_EQ(MakeRepeatedFactory<void>(Promise<int>([]() {
-              return Poll<int>(Poll<int>(42));
-            })).Make()(),
+            }).Make()(),
             Poll<int>(42));
 }
 

@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -34,7 +35,7 @@ namespace grpc_core {
 // Most of the time we just pass around the functor, but occasionally
 // it pays to have a type erased variant, which we define here.
 template <typename T>
-using Promise = std::function<Poll<T>()>;
+using Promise = absl::AnyInvocable<Poll<T>()>;
 
 // Helper to execute a promise immediately and return either the result or
 // nothing.

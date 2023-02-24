@@ -311,25 +311,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "observable_test",
-    srcs = ["observable_test.cc"],
-    external_deps = [
-        "absl/status",
-        "gtest",
-    ],
-    language = "c++",
-    tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "test_wakeup_schedulers",
-        "//:promise",
-        "//src/core:observable",
-        "//src/core:seq",
-    ],
-)
-
-grpc_cc_test(
     name = "for_each_test",
     srcs = ["for_each_test.cc"],
     external_deps = ["gtest"],

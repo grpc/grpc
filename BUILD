@@ -2349,6 +2349,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "promise",
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/types:optional",
         "absl/types:variant",

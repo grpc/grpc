@@ -794,26 +794,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "observable",
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/types:optional",
-        "absl/types:variant",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "lib/promise/observable.h",
-    ],
-    deps = [
-        "activity",
-        "poll",
-        "promise_like",
-        "wait_set",
-        "//:gpr",
-    ],
-)
-
-grpc_cc_library(
     name = "interceptor_list",
     hdrs = [
         "lib/promise/interceptor_list.h",
