@@ -44,6 +44,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -86,7 +87,7 @@ uint64_t GetCallId() {
 class MetadataEncoder {
  public:
   MetadataEncoder(LoggingSink::Entry::Payload* payload,
-                  absl::string_view* status_details_bin, uint64_t log_len)
+                  std::string* status_details_bin, uint64_t log_len)
       : payload_(payload),
         status_details_bin_(status_details_bin),
         log_len_(log_len) {}
@@ -96,7 +97,7 @@ class MetadataEncoder {
     auto key = key_slice.as_string_view();
     auto value = value_slice.as_string_view();
     if (status_details_bin_ != nullptr && key == "grpc-status-details-bin") {
-      *status_details_bin_ = value;
+      *status_details_bin_ = std::string(value);
       return;
     }
     if (absl::ConsumePrefix(&key, "grpc-")) {
@@ -121,11 +122,20 @@ class MetadataEncoder {
   template <typename Which>
   void Encode(Which, const typename Which::ValueType&) {}
 
+  void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status) {
+    payload_->status_code = status;
+  }
+
+  void Encode(grpc_core::GrpcMessageMetadata,
+              const grpc_core::Slice& status_message) {
+    payload_->status_message = std::string(status_message.as_string_view());
+  }
+
   bool truncated() const { return truncated_; }
 
  private:
   LoggingSink::Entry::Payload* const payload_;
-  absl::string_view* const status_details_bin_;
+  std::string* const status_details_bin_;
   uint64_t log_len_;
   bool truncated_ = false;
 };
@@ -269,7 +279,7 @@ class CallData {
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kServerTrailer);
     if (metadata != nullptr) {
-      MetadataEncoder encoder(&entry.payload, nullptr,
+      MetadataEncoder encoder(&entry.payload, &entry.payload.status_details,
                               config_.max_metadata_bytes());
       metadata->Encode(&encoder);
       entry.payload_truncated = encoder.truncated();
