@@ -2476,7 +2476,7 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
   }
   recv_message_ = op.data.recv_message.recv_message;
   Spawn(
-      "call_recv_message", receiver->Next(),
+      "call_recv_message", [receiver]() { return receiver->Next(); },
       [this,
        completion = AddOpToCompletion(completion, PendingOp::kReceiveMessage)](
           NextResult<MessageHandle> result) mutable {
