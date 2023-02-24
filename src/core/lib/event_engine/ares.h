@@ -16,15 +16,27 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <arpa/inet.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <memory>
 #include <sstream>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <ares.h>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 
 #include "include/grpc/event_engine/event_engine.h"
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 
@@ -169,15 +181,16 @@ class GrpcAresRequest
     return s.str();
   }
 
- private:
+ protected:
+  ~GrpcAresRequest() override;
   void Work();
+
+ private:
   void OnReadable(FdNodeList::FdNode* fd_node, absl::Status status);
   void OnWritable(FdNodeList::FdNode* fd_node, absl::Status status);
   void OnHandleDestroyed(FdNodeList::FdNode* fd_node, absl::Status status);
 
  protected:
-  ~GrpcAresRequest() override;
-
   bool initialized_ = false;
   /// synchronizes access to this request, and also to associated
   /// ev_driver and fd_node objects

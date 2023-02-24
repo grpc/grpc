@@ -15,20 +15,14 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
 
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -38,7 +32,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "posix_engine.h"
 #include "posix_engine_closure.h"
 
@@ -62,7 +55,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -515,13 +507,16 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
         // TODO(yijiem): proper locking
         PosixEventPoller* poller = poller_manager_->Poller();
         GPR_DEBUG_ASSERT(poller != nullptr);
+        gpr_log(GPR_INFO, "Register socket %d with poller %p", socket, poller);
         return poller->CreateHandle(socket, "c-ares", poller->CanTrackErrors());
       },
       std::move(on_resolve));
   if (!request->Initialize()) {
     abort();
   }
+  gpr_log(GPR_INFO, "initialized");
   request->Start();
+  gpr_log(GPR_INFO, "started");
   // TODO(yijiem): return a LookupTaskHandle to the caller
   LookupTaskHandle handle;
   handle.keys[0] = reinterpret_cast<intptr_t>(request);

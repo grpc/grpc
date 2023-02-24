@@ -24,6 +24,7 @@
 
 #include <condition_variable>
 #include <initializer_list>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>

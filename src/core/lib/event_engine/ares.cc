@@ -14,11 +14,23 @@
 
 #include "src/core/lib/event_engine/ares.h"
 
+#include <netdb.h>
+#include <string.h>
+
+#include <algorithm>
+#include <initializer_list>
+
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 #include "ares.h"
 
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef _WIN32
 #else
@@ -152,6 +164,7 @@ void GrpcAresHostnameRequest::Start() {
   pending_queries_++;
   ares_gethostbyname(channel_, host_.c_str(), AF_INET,
                      &on_hostbyname_done_locked, static_cast<void*>(this));
+  Work();
 }
 
 void GrpcAresHostnameRequest::OnResolve(
