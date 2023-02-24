@@ -76,7 +76,7 @@ class LoggingSink {
 
     struct Payload {
       std::map<std::string, std::string> metadata;
-      grpc_core::Duration timeout;
+      Duration timeout;
       uint32_t status_code = 0;
       std::string status_message;
       std::string status_details;
@@ -101,7 +101,7 @@ class LoggingSink {
     std::string authority;
     std::string service_name;
     std::string method_name;
-    grpc_core::Timestamp timestamp;
+    Timestamp timestamp;
   };
 
   virtual ~LoggingSink() = default;
