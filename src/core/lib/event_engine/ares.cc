@@ -178,12 +178,20 @@ void GrpcAresHostnameRequest::OnResolve(
   if (pending_queries_ == 0) {
     // TODO(yijiem): sort the addresses
     on_resolve_(std::move(result_));
+    // We mark the event driver as being shut down.
+    // grpc_ares_notify_on_event_locked will shut down any remaining
+    // fds.
+    shutting_down_ = true;
+    Unref(DEBUG_LOCATION, "shutting down");
+    // TODO(yijiem): cancel timers here
   }
 }
 
 GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
     ares_destroy(channel_);
+    GRPC_CARES_TRACE_LOG("request:%p destructor", this);
+    GRPC_CARES_STACKTRACE();
   }
 }
 
@@ -226,9 +234,8 @@ void GrpcAresRequest::Work() {
         GRPC_CARES_TRACE_LOG("request:%p notify read on: %d", this,
                              fd_node->WrappedFd());
         PosixEngineClosure* on_read = new PosixEngineClosure(
-            [this, fd_node](absl::Status status) {
-              OnReadable(fd_node, status);
-            },
+            [self = Ref(DEBUG_LOCATION, "ares OnReadable"), fd_node](
+                absl::Status status) { self->OnReadable(fd_node, status); },
             /*is_permanent=*/false);
         fd_node->handle()->NotifyOnRead(on_read);
         fd_node->set_readable_registered(true);
@@ -240,9 +247,8 @@ void GrpcAresRequest::Work() {
         GRPC_CARES_TRACE_LOG("request:%p notify write on: %d", this,
                              fd_node->WrappedFd());
         PosixEngineClosure* on_write = new PosixEngineClosure(
-            [this, fd_node](absl::Status status) {
-              OnWritable(fd_node, status);
-            },
+            [self = Ref(DEBUG_LOCATION, "ares OnWritable"), fd_node](
+                absl::Status status) { self->OnWritable(fd_node, status); },
             /*is_permanent=*/false);
         fd_node->handle()->NotifyOnWrite(on_write);
         fd_node->set_writable_registered(true);
@@ -259,8 +265,9 @@ void GrpcAresRequest::Work() {
       // TODO(yijiem): other destroy steps
       fd_node->handle()->ShutdownHandle(absl::OkStatus());
       PosixEngineClosure* on_handle_destroyed = new PosixEngineClosure(
-          [this, fd_node](absl::Status status) {
-            OnHandleDestroyed(fd_node, status);
+          [self = Ref(DEBUG_LOCATION, "ares OnHandleDestroyed"),
+           fd_node](absl::Status status) {
+            self->OnHandleDestroyed(fd_node, status);
           },
           /*is_permanent=*/false);
       int release_fd = -1;
@@ -297,7 +304,6 @@ void GrpcAresRequest::OnReadable(FdNodeList::FdNode* fd_node,
     ares_cancel(channel_);
   }
   Work();
-  // request->Unref();
 }
 
 void GrpcAresRequest::OnWritable(FdNodeList::FdNode* fd_node,
@@ -318,7 +324,6 @@ void GrpcAresRequest::OnWritable(FdNodeList::FdNode* fd_node,
     ares_cancel(channel_);
   }
   Work();
-  // request->Unref();
 }
 
 void GrpcAresRequest::OnHandleDestroyed(FdNodeList::FdNode* fd_node,

@@ -508,7 +508,7 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
         PosixEventPoller* poller = poller_manager_->Poller();
         GPR_DEBUG_ASSERT(poller != nullptr);
         gpr_log(GPR_INFO, "Register socket %d with poller %p", socket, poller);
-        return poller->CreateHandle(socket, "c-ares", poller->CanTrackErrors());
+        return poller->CreateHandle(socket, "ares", poller->CanTrackErrors());
       },
       std::move(on_resolve));
   if (!request->Initialize()) {

@@ -2913,9 +2913,7 @@ grpc_cc_binary(
         "//src/core:lib/http/httpcli_main.cc",
     ],
     language = "c++",
-    deps = [
-        "httpcli",
-    ],
+    deps = ["httpcli"],
 )
 
 grpc_cc_library(
