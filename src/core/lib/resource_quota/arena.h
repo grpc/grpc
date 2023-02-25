@@ -30,9 +30,9 @@
 #include <stddef.h>
 
 #include <atomic>
-#include <iosfwd>
 #include <limits>
 #include <memory>
+#include <new>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
