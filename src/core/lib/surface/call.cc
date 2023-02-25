@@ -2620,7 +2620,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
   absl::string_view GetServerAuthority() const override { abort(); }
   bool is_trailers_only() const override { return is_trailers_only_; }
-  bool failed_before_recv_message() const override { abort(); }
+  bool failed_before_recv_message() const override { return false; }
 
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
@@ -2923,7 +2923,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   void CancelWithError(grpc_error_handle) override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
-  bool failed_before_recv_message() const override { abort(); }
+  bool failed_before_recv_message() const override { return false; }
   bool is_trailers_only() const override { abort(); }
   absl::string_view GetServerAuthority() const override { return ""; }
 
@@ -3187,16 +3187,22 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         Spawn(
             "call_send_status_from_server",
             [this, metadata = std::move(metadata)]() mutable {
-              send_trailing_metadata_.Set(std::move(metadata));
-              return Map(WaitForSendingStarted(), [this](Empty) {
+              bool r = true;
+              if (send_trailing_metadata_.is_set()) {
+                r = false;
+              } else {
+                send_trailing_metadata_.Set(std::move(metadata));
+              }
+              return Map(WaitForSendingStarted(), [this, r](Empty) {
                 server_initial_metadata_->Close();
                 server_to_client_messages_->Close();
-                return Empty{};
+                return r;
               });
             },
-            [this,
-             completion = AddOpToCompletion(
-                 completion, PendingOp::kSendStatusFromServer)](Empty) mutable {
+            [this, completion = AddOpToCompletion(
+                       completion, PendingOp::kSendStatusFromServer)](
+                bool ok) mutable {
+              if (!ok) FailCompletion(completion);
               FinishOpOnCompletion(&completion,
                                    PendingOp::kSendStatusFromServer);
             });

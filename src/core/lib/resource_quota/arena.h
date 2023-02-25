@@ -46,6 +46,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 // #define GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
+// #define GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
 
 namespace grpc_core {
 
@@ -116,7 +117,10 @@ PoolAndSize ChoosePoolForAllocationSize(
 }  // namespace arena_detail
 
 class Arena {
-  using PoolSizes = absl::integer_sequence<size_t, 256, 512, 768>;
+  // Selected pool sizes.
+  // How to tune: see tools/codegen/core/optimize_arena_pool_sizes.py
+  using PoolSizes =
+      absl::integer_sequence<size_t, 80, 104, 144, 304, 528, 1024>;
   struct FreePoolNode {
     FreePoolNode* next;
   };
@@ -212,6 +216,7 @@ class Arena {
         &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
     return PoolPtr<T>(
         new (AllocPooled(
+            sizeof(T),
             arena_detail::AllocationSizeFromObjectSize<sizeof(T)>(PoolSizes()),
             free_list)) T(std::forward<Args>(args)...),
         PooledDeleter(free_list));
@@ -232,9 +237,9 @@ class Arena {
       return PoolPtr<T[]>(new (Alloc(where.alloc_size)) T[n],
                           PooledDeleter(nullptr));
     } else {
-      return PoolPtr<T[]>(
-          new (AllocPooled(where.alloc_size, &pools_[where.pool_index])) T[n],
-          PooledDeleter(&pools_[where.pool_index]));
+      return PoolPtr<T[]>(new (AllocPooled(where.alloc_size, where.alloc_size,
+                                           &pools_[where.pool_index])) T[n],
+                          PooledDeleter(&pools_[where.pool_index]));
     }
   }
 
@@ -247,6 +252,7 @@ class Arena {
     auto* free_list =
         &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
     return new (AllocPooled(
+        sizeof(T),
         arena_detail::AllocationSizeFromObjectSize<sizeof(T)>(PoolSizes()),
         free_list)) T(std::forward<Args>(args)...);
   }
@@ -360,8 +366,20 @@ class Arena {
 
   void* AllocZone(size_t size);
 
-  void* AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head);
+  void* AllocPooled(size_t obj_size, size_t alloc_size,
+                    std::atomic<FreePoolNode*>* head);
   static void FreePooled(void* p, std::atomic<FreePoolNode*>* head);
+
+  void TracePoolAlloc(size_t size, void* ptr) {
+#ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
+    gpr_log(GPR_ERROR, "ARENA %p ALLOC %" PRIdPTR " @ %p", this, size, ptr);
+#endif
+  }
+  static void TracePoolFree(void* ptr) {
+#ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
+    gpr_log(GPR_ERROR, "FREE %p", ptr);
+#endif
+  }
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
