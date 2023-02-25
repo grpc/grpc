@@ -21,7 +21,7 @@ CPPFLAGS += `pkg-config --cflags protobuf grpc absl_flags absl_flags_parse`
 CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib
-					 `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse`\
+           `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse`\
            -pthread\
            -lgrpc++_reflection\
            -ldl
