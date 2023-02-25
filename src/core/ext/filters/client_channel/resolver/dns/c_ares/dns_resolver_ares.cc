@@ -825,6 +825,7 @@ class AresDNSResolver : public DNSResolver {
     return handle;
   };
 
+#ifndef USE_EVENT_ENGINE_IMPL
   bool Cancel(TaskHandle handle) override {
     MutexLock lock(&mu_);
     if (!open_requests_.contains(handle)) {
@@ -839,6 +840,11 @@ class AresDNSResolver : public DNSResolver {
                          request);
     return request->Cancel();
   }
+#else
+  bool Cancel(TaskHandle handle) override {
+    return dns_resolver_->CancelLookup(handle);
+  }
+#endif
 
  private:
   // Called exclusively from the AresRequest destructor.

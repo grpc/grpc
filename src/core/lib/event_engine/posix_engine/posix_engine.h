@@ -24,11 +24,13 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -128,6 +130,7 @@ class PosixEnginePollerManager
 };
 #endif  // GRPC_POSIX_SOCKET_TCP
 
+class GrpcAresRequest;
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
@@ -137,9 +140,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
-    explicit PosixDNSResolver(
-        ResolverOptions const& options,
-        std::shared_ptr<PosixEnginePollerManager> poller_manager);
+    explicit PosixDNSResolver(ResolverOptions const& options,
+                              PosixEnginePollerManager* poller_manager,
+                              PosixEventEngine* event_engine);
     ~PosixDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,
@@ -154,8 +157,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     bool CancelLookup(LookupTaskHandle handle) override;
 
    private:
+    absl::Mutex mu_;
+    absl::flat_hash_set<GrpcAresRequest*> inflight_requests_;
     const ResolverOptions options_;
-    std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+    PosixEnginePollerManager* poller_manager_;
+    PosixEventEngine* event_engine_;
   };
 
 #ifdef GRPC_POSIX_SOCKET_TCP

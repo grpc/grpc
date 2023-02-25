@@ -485,9 +485,11 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 }
 
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
-    ResolverOptions const& options,
-    std::shared_ptr<PosixEnginePollerManager> poller_manager)
-    : options_(options), poller_manager_(poller_manager) {}
+    ResolverOptions const& options, PosixEnginePollerManager* poller_manager,
+    PosixEventEngine* event_engine)
+    : options_(options),
+      poller_manager_(poller_manager),
+      event_engine_(event_engine) {}
 
 PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {}
 
@@ -501,18 +503,31 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
   if (port.empty()) {
     port = default_port;
   }
-  GrpcAresHostnameRequest* request = new GrpcAresHostnameRequest(
+  GrpcAresRequest* request = new GrpcAresHostnameRequest(
       host, grpc_strhtons(std::string(port).c_str()), timeout,
       [this](AresSocket socket) {
-        // TODO(yijiem): proper locking
+        // TODO(yijiem): no locks?
         PosixEventPoller* poller = poller_manager_->Poller();
         GPR_DEBUG_ASSERT(poller != nullptr);
         gpr_log(GPR_INFO, "Register socket %d with poller %p", socket, poller);
         return poller->CreateHandle(socket, "ares", poller->CanTrackErrors());
       },
-      std::move(on_resolve));
+      [on_resolve = std::move(on_resolve), this](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result,
+          GrpcAresRequest* request) mutable {
+        {
+          absl::MutexLock lock(&mu_);
+          GPR_ASSERT(inflight_requests_.erase(request) == 1);
+        }
+        on_resolve(std::move(result));
+      },
+      event_engine_);
   if (!request->Initialize()) {
     abort();
+  }
+  {
+    absl::MutexLock lock(&mu_);
+    inflight_requests_.insert(request);
   }
   gpr_log(GPR_INFO, "initialized");
   request->Start();
@@ -539,14 +554,21 @@ PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
 }
 
 bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
-  grpc_core::Crash("unimplemented");
-  // request->Orphan();
+  // grpc_core::Crash("unimplemented");
+  absl::MutexLock lock(&mu_);
+  auto iter = inflight_requests_.find(
+      reinterpret_cast<GrpcAresRequest*>(handle.keys[0]));
+  if (iter != inflight_requests_.end()) {
+    (*iter)->Cancel();
+    return true;
+  }
+  return false;
 }
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
-  return std::make_unique<PosixEventEngine::PosixDNSResolver>(options,
-                                                              poller_manager_);
+  return std::make_unique<PosixEventEngine::PosixDNSResolver>(
+      options, poller_manager_.get(), this);
 }
 
 bool PosixEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

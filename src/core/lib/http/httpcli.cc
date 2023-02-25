@@ -237,6 +237,7 @@ void HttpRequest::Start() {
         uri_.authority(), uri_.scheme(), kDefaultDNSRequestTimeout,
         pollset_set_,
         /*name_server=*/"");
+    resolver_->Cancel(*dns_request_handle_);
     mu_.Unlock();
     c.cv.wait(l, [&c] { return c.completed; });
   }

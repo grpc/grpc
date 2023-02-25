@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <type_traits>
 
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
@@ -28,8 +29,11 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef _WIN32
 #else
@@ -155,6 +159,7 @@ GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
 }
 
 void GrpcAresHostnameRequest::Start() {
+  absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   // TODO(yijiem): factor out
   if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
@@ -171,28 +176,53 @@ void GrpcAresHostnameRequest::Start() {
 }
 
 void GrpcAresHostnameRequest::OnResolve(
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
   // TODO(yijiem): handle failure case
-  GPR_ASSERT(result.ok());
   GPR_ASSERT(pending_queries_ > 0);
   pending_queries_--;
-  result_.insert(result_.end(), result->begin(), result->end());
+  if (result.ok()) {
+    result_.insert(result_.end(), result->begin(), result->end());
+  } else {
+    error_ = result.status();
+  }
   if (pending_queries_ == 0) {
-    // TODO(yijiem): sort the addresses
-    on_resolve_(std::move(result_));
     // We mark the event driver as being shut down.
     // grpc_ares_notify_on_event_locked will shut down any remaining
     // fds.
     shutting_down_ = true;
     Unref(DEBUG_LOCATION, "shutting down");
     // TODO(yijiem): cancel timers here
+    if (error_.ok()) {
+      // TODO(yijiem): sort the addresses
+      event_engine_->Run(
+          [on_resolve = std::move(on_resolve_), result = std::move(result_),
+           request = static_cast<GrpcAresRequest*>(this)]() mutable {
+            on_resolve(std::move(result),
+                       static_cast<GrpcAresRequest*>(request));
+          });
+    } else {
+      // The reason that we are using EventEngine::Run() here is that we are
+      // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
+      // the Engine to clean up some state there (which will take its own
+      // mutex). The call could go further all the way back to the caller of the
+      // Lookup* call which may then take its own mutex. This mutex order is
+      // inverted from the order from which the caller calls into the
+      // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
+      // warning though it might be false positive.
+      event_engine_->Run(
+          [on_resolve = std::move(on_resolve_), error = std::move(error_),
+           request = static_cast<GrpcAresRequest*>(this)]() mutable {
+            on_resolve(std::move(error),
+                       static_cast<GrpcAresRequest*>(request));
+          });
+    }
   }
 }
 
 GrpcAresRequest::GrpcAresRequest(
     absl::string_view host, uint16_t port, EventEngine::Duration timeout,
-    RegisterSocketWithPollerCallback register_socket_with_poller_cb)
+    RegisterSocketWithPollerCallback register_socket_with_poller_cb,
+    EventEngine* event_engine)
     : grpc_core::InternallyRefCounted<GrpcAresRequest>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver) ? "GrpcAresRequest"
                                                              : nullptr),
@@ -200,7 +230,8 @@ GrpcAresRequest::GrpcAresRequest(
       port_(port),
       timeout_(timeout),
       register_socket_with_poller_cb_(
-          std::move(register_socket_with_poller_cb)) {}
+          std::move(register_socket_with_poller_cb)),
+      event_engine_(event_engine) {}
 
 GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
@@ -223,7 +254,8 @@ bool GrpcAresRequest::Initialize() {
   return true;
 }
 
-void GrpcAresRequest::Orphan() {
+void GrpcAresRequest::Cancel() {
+  absl::MutexLock lock(&mu_);
   // TODO(yijiem): implement
   // TODO(yijiem): really need to add locking now
   if (!shutting_down_) {
@@ -242,9 +274,10 @@ void GrpcAresRequest::Orphan() {
                                       "no longer used by ares");
       GPR_ASSERT(release_fd == fd_node->WrappedFd());
     }
-    Unref(DEBUG_LOCATION, "cancel lookup");
   }
 }
+
+void GrpcAresRequest::Orphan() {}
 
 void GrpcAresRequest::Work() {
   std::unique_ptr<FdNodeList> new_list = std::make_unique<FdNodeList>();
@@ -317,6 +350,7 @@ void GrpcAresRequest::Work() {
 
 void GrpcAresRequest::OnReadable(FdNodeList::FdNode* fd_node,
                                  absl::Status status) {
+  absl::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->readable_registered());
   fd_node->set_readable_registered(false);
   GRPC_CARES_TRACE_LOG("request:%p %s readable on %d", this, ToString().c_str(),
@@ -342,6 +376,7 @@ void GrpcAresRequest::OnReadable(FdNodeList::FdNode* fd_node,
 
 void GrpcAresRequest::OnWritable(FdNodeList::FdNode* fd_node,
                                  absl::Status status) {
+  absl::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->writable_registered());
   fd_node->set_writable_registered(false);
   GRPC_CARES_TRACE_LOG("request:%p writable on %d", this, fd_node->WrappedFd());
@@ -362,6 +397,7 @@ void GrpcAresRequest::OnWritable(FdNodeList::FdNode* fd_node,
 
 void GrpcAresRequest::OnHandleDestroyed(FdNodeList::FdNode* fd_node,
                                         absl::Status status) {
+  absl::MutexLock lock(&mu_);
   GPR_ASSERT(status.ok());
   // TODO(yijiem): destroy request
   GRPC_CARES_TRACE_LOG("request: %p OnDone for fd_node: %d", this,
