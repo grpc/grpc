@@ -19,11 +19,11 @@
 # Capture the output to a text file.
 # Invoke this program with that as an argument, and let it work its magic.
 
-import re
-import sys
 import collections
 import heapq
 import random
+import re
+import sys
 
 # A single allocation, negative size => free
 Allocation = collections.namedtuple('Allocation', 'size ptr')
@@ -38,7 +38,8 @@ smallest = 1024
 sizes = set()
 for filename in sys.argv[1:]:
     for line in open(filename):
-        m = re.search(r'ARENA 0x([0-9a-f]+) ALLOC ([0-9]+) @ 0x([0-9a-f]+)', line)
+        m = re.search(r'ARENA 0x([0-9a-f]+) ALLOC ([0-9]+) @ 0x([0-9a-f]+)',
+                      line)
         if m:
             size = int(m.group(2))
             if size > biggest:
@@ -60,11 +61,13 @@ for filename in sys.argv[1:]:
             if trace:
                 arenas.append(trace)
 
+
 # Given a list of pool sizes, return which bucket an allocation should go into
 def bucket(pool_sizes, size):
     for bucket in sorted(pool_sizes):
         if abs(size) <= bucket:
             return bucket
+
 
 # Given a list of pool sizes, determine the total outstanding bytes in the arena for once trace
 def outstanding_bytes(pool_sizes, trace):
@@ -81,19 +84,23 @@ def outstanding_bytes(pool_sizes, trace):
                 allocated += b
     return allocated + len(pool_sizes) * 8
 
+
 # Given a list of pool sizes, determine the maximum outstanding bytes for any seen trace
 def measure(pool_sizes):
     max_outstanding = 0
     for trace in arenas:
-        max_outstanding = max(max_outstanding, outstanding_bytes(pool_sizes, trace))
+        max_outstanding = max(max_outstanding,
+                              outstanding_bytes(pool_sizes, trace))
     return max_outstanding
+
 
 ALWAYS_INCLUDE = 1024
 best = [ALWAYS_INCLUDE, biggest]
-best_measure = measure(best)    
+best_measure = measure(best)
 
 testq = []
 step = 0
+
 
 def add(l):
     global testq, best_measure, best
@@ -104,6 +111,8 @@ def add(l):
     if l[-1] == smallest:
         return
     heapq.heappush(testq, (m, l))
+
+
 add(best)
 
 while testq:
@@ -111,7 +120,8 @@ while testq:
     m = measure(top)
     step += 1
     if step % 1000 == 0:
-        print("iter %d; pending=%d; top=%r/%d" % (step, len(testq), top, measure(top)))
+        print("iter %d; pending=%d; top=%r/%d" %
+              (step, len(testq), top, measure(top)))
     for i in sizes:
         if i >= top[-1]:
             continue

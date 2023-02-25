@@ -427,6 +427,7 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
+        "//:ref_counted_ptr",
     ],
 )
 
