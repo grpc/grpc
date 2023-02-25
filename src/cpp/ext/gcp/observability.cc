@@ -43,9 +43,9 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
-#include "src/cpp/ext/filters/logging/logging_filter.h"
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
@@ -172,7 +172,7 @@ absl::Status GcpObservabilityInit() {
   if (config->cloud_logging.has_value()) {
     g_logging_sink = new grpc::internal::ObservabilityLoggingSink(
         config->cloud_logging.value(), config->project_id, config->labels);
-    grpc::internal::RegisterLoggingFilter(g_logging_sink);
+    grpc_core::RegisterLoggingFilter(g_logging_sink);
   }
   return absl::OkStatus();
 }
