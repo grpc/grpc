@@ -54,6 +54,8 @@
 namespace grpc {
 namespace internal {
 
+using grpc_core::LoggingSink;
+
 ObservabilityLoggingSink::ObservabilityLoggingSink(
     GcpObservabilityConfig::CloudLogging logging_config, std::string project_id,
     std::map<std::string, std::string> labels)
