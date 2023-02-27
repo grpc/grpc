@@ -2269,7 +2269,7 @@ class PromiseBasedCall : public Call,
   // Waiter for when sends_queued_ becomes 0.
   IntraActivityWaiter waiting_for_queued_sends_;
   grpc_byte_buffer** recv_message_ = nullptr;
-  grpc_transport_stream_op_batch_payload batch_payload_;
+  grpc_transport_stream_op_batch_payload batch_payload_{context_};
 };
 
 template <typename T>

@@ -459,7 +459,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
                return GetContext<BatchBuilder>()->SendClientTrailingMetadata(
                    stream->batch_target());
              }),
-      [](absl::StatusOr<ClientMetadataHandle>) {});
+      [](absl::Status) {});
   // Start a promise to receive server initial metadata and then forward it up
   // through the receiving pipe.
   auto server_initial_metadata =
@@ -487,7 +487,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
           stream->batch_target(), std::move(call_args.client_initial_metadata)),
       [sent_initial_metadata_token =
            std::move(call_args.client_initial_metadata_outstanding)](
-          absl::StatusOr<ClientMetadataHandle> status) mutable {
+          absl::Status status) mutable {
         sent_initial_metadata_token.Complete(status.ok());
         return status;
       });

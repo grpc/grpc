@@ -21,28 +21,31 @@
 
 namespace grpc_core {
 
+BatchBuilder::BatchBuilder(grpc_transport_stream_op_batch_payload* payload)
+    : payload_(payload) {}
+
 void BatchBuilder::PendingCompletion::CompletionCallback(
     void* self, grpc_error_handle error) {
   auto* pc = static_cast<PendingCompletion*>(self);
-  RefCountedPtr<Batch> batch = std::exchange(pc->batch, nullptr);
-  auto* party = batch->party.get();
+  auto* party = pc->batch->party.get();
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Finish batch %s: status=%s",
-            party->DebugTag().c_str(),
-            grpc_transport_stream_op_batch_string(&batch->batch).c_str(),
-            status.ToString().c_str());
+    gpr_log(GPR_DEBUG,
+            "%s[connected] Finish batch-component %s for %s: status=%s",
+            party->DebugTag().c_str(), std::string(pc->name()).c_str(),
+            grpc_transport_stream_op_batch_string(&pc->batch->batch).c_str(),
+            error.ToString().c_str());
   }
   party->Spawn(
-      name,
-      [batch = std::move(batch), error = std::move(error)]() mutable {
-        batch->done_latch.Set(std::move(error));
+      "batch-completion",
+      [pc, error = std::move(error)]() mutable {
+        RefCountedPtr<Batch> batch = std::exchange(pc->batch, nullptr);
+        pc->done_latch.Set(std::move(error));
         return Empty{};
       },
       [](Empty) {});
 }
 
-BatchBuilder::PendingCompletion::PendingCompletion(RefCountedPtr<Batch> batch,
-                                                   absl::string_view name)
+BatchBuilder::PendingCompletion::PendingCompletion(RefCountedPtr<Batch> batch)
     : batch(std::move(batch)) {
   GRPC_CLOSURE_INIT(&on_done_closure, CompletionCallback, this, nullptr);
 }
@@ -53,7 +56,11 @@ BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
       stream_refcount(stream_refcount) {
   memset(&batch, 0, sizeof(batch));
   batch.payload = payload;
+#ifndef NDEBUG
+  grpc_stream_ref(stream_refcount, "pending-batch");
+#else
   grpc_stream_ref(stream_refcount);
+#endif
 }
 
 BatchBuilder::Batch::~Batch() {
@@ -70,10 +77,17 @@ BatchBuilder::Batch::~Batch() {
   if (pending_sends != nullptr) {
     arena->DeletePooled(pending_sends);
   }
+  if (batch.cancel_stream) {
+    arena->DeletePooled(batch.payload);
+  }
+#ifndef NDEBUG
+  grpc_stream_unref(stream_refcount, "pending-batch");
+#else
   grpc_stream_unref(stream_refcount);
+#endif
 }
 
-Batch* BatchBuilder::GetBatch(Target target) {
+BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
   if (target_.has_value() && target_->stream != target.stream) {
     FlushBatch();
   }
@@ -89,43 +103,67 @@ Batch* BatchBuilder::GetBatch(Target target) {
 void BatchBuilder::FlushBatch() {
   GPR_ASSERT(batch_ != nullptr);
   GPR_ASSERT(target_.has_value());
-  std::exchange(batch_, nullptr)->Perform(*target_);
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Perform transport stream op batch: %s",
+            Activity::current()->DebugTag().c_str(),
+            grpc_transport_stream_op_batch_string(&batch_->batch).c_str());
+  }
+  std::exchange(batch_, nullptr)->PerformWith(*target_);
   target_.reset();
 }
 
-void BatchBuilder::Batch::Perform(Target target) {
-  grpc_transport_perform_stream_op(transport_, stream_, &batch);
+void BatchBuilder::Batch::PerformWith(Target target) {
+  grpc_transport_perform_stream_op(target.transport, target.stream, &batch);
 }
 
 ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(
-    ServerMetadataHandle sent_metadata, absl::Status send_result, bool sent) {
-  if (!status.ok()) {
+    ServerMetadataHandle sent_metadata, absl::Status send_result,
+    bool actually_sent) {
+  if (!send_result.ok()) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "%s[connected] Send metadata failed with error: %s, "
               "fabricating trailing metadata",
               Activity::current()->DebugTag().c_str(),
-              status.status().ToString().c_str());
+              send_result.ToString().c_str());
     }
     sent_metadata->Clear();
     sent_metadata->Set(GrpcStatusMetadata(),
-                       static_cast<grpc_status_code>(status.status().code()));
+                       static_cast<grpc_status_code>(send_result.code()));
     sent_metadata->Set(GrpcMessageMetadata(),
-                       Slice::FromCopiedString(status.status().message()));
+                       Slice::FromCopiedString(send_result.message()));
     sent_metadata->Set(GrpcCallWasCancelled(), true);
   }
   if (!sent_metadata->get(GrpcCallWasCancelled()).has_value()) {
     if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "%s[connected] Tagging trailing metadata with "
-              "cancellation status from transport: %s",
-              Activity::current()->DebugTag().c_str(),
-              call_data->sent_trailing_metadata ? "sent => not-cancelled"
-                                                : "not-sent => cancelled");
+      gpr_log(
+          GPR_DEBUG,
+          "%s[connected] Tagging trailing metadata with "
+          "cancellation status from transport: %s",
+          Activity::current()->DebugTag().c_str(),
+          actually_sent ? "sent => not-cancelled" : "not-sent => cancelled");
     }
-    sent_metadata->Set(GrpcCallWasCancelled(), !sent);
+    sent_metadata->Set(GrpcCallWasCancelled(), !actually_sent);
   }
   return sent_metadata;
+}
+
+BatchBuilder::Batch* BatchBuilder::MakeCancel(
+    grpc_stream_refcount* stream_refcount, absl::Status status) {
+  auto* arena = GetContext<Arena>();
+  auto* payload =
+      arena->NewPooled<grpc_transport_stream_op_batch_payload>(nullptr);
+  auto* batch = arena->NewPooled<Batch>(payload, stream_refcount);
+  batch->batch.cancel_stream = true;
+  payload->cancel_stream.cancel_error = std::move(status);
+  return batch;
+}
+
+void BatchBuilder::Cancel(Target target, absl::Status status) {
+  auto* batch = MakeCancel(target.stream_refcount, std::move(status));
+  batch->batch.on_complete = NewClosure(
+      [batch](absl::Status) { batch->party->arena()->DeletePooled(batch); });
+  batch->PerformWith(target);
 }
 
 }  // namespace grpc_core

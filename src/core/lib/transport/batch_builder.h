@@ -97,6 +97,7 @@ class BatchBuilder {
   // Base pending operation
   struct PendingCompletion {
     explicit PendingCompletion(RefCountedPtr<Batch> batch);
+    virtual absl::string_view name() const = 0;
     static void CompletionCallback(void* self, grpc_error_handle error);
     grpc_closure on_done_closure;
     Latch<absl::Status> done_latch;
@@ -106,6 +107,8 @@ class BatchBuilder {
   // A pending receive message.
   struct PendingReceiveMessage final : public PendingCompletion {
     using PendingCompletion::PendingCompletion;
+
+    absl::string_view name() const override { return "receive_message"; }
 
     MessageHandle IntoMessageHandle() {
       return GetContext<Arena>()->MakePooled<Message>(std::move(*payload),
@@ -125,9 +128,25 @@ class BatchBuilder {
             GetContext<Arena>());
   };
 
+  struct PendingReceiveInitialMetadata final : public PendingReceiveMetadata {
+    using PendingReceiveMetadata::PendingReceiveMetadata;
+    absl::string_view name() const override {
+      return "receive_initial_metadata";
+    }
+  };
+
+  struct PendingReceiveTrailingMetadata final : public PendingReceiveMetadata {
+    using PendingReceiveMetadata::PendingReceiveMetadata;
+    absl::string_view name() const override {
+      return "receive_trailing_metadata";
+    }
+  };
+
   // Pending sends in a batch
   struct PendingSends final : public PendingCompletion {
     using PendingCompletion::PendingCompletion;
+
+    absl::string_view name() const override { return "sends"; }
 
     MessageHandle send_message;
     Arena::PoolPtr<grpc_metadata_batch> send_initial_metadata;
@@ -156,7 +175,7 @@ class BatchBuilder {
       this->*field = party->arena()->NewPooled<T>(Ref());
       return this->*field;
     }
-    void Perform(Target target);
+    void PerformWith(Target target);
     template <typename P>
     auto RefUntil(P promise) {
       return [self = Ref(), promise = std::move(promise)]() mutable {
@@ -166,8 +185,8 @@ class BatchBuilder {
 
     grpc_transport_stream_op_batch batch;
     PendingReceiveMessage* pending_receive_message = nullptr;
-    PendingReceiveMetadata* pending_receive_initial_metadata = nullptr;
-    PendingReceiveMetadata* pending_receive_trailing_metadata = nullptr;
+    PendingReceiveInitialMetadata* pending_receive_initial_metadata = nullptr;
+    PendingReceiveTrailingMetadata* pending_receive_trailing_metadata = nullptr;
     PendingSends* pending_sends = nullptr;
     const RefCountedPtr<Party> party;
     grpc_stream_refcount* const stream_refcount;
@@ -176,7 +195,7 @@ class BatchBuilder {
 
   Batch* GetBatch(Target target);
   void FlushBatch();
-  Batch* MakeCancel(absl::Status status);
+  Batch* MakeCancel(grpc_stream_refcount* stream_refcount, absl::Status status);
 
   // Note: we don't distinguish between client and server metadata here.
   // At the time of writing they're both the same thing - and it's unclear
@@ -190,8 +209,8 @@ class BatchBuilder {
   // Combine send status and server metadata into a final status to report back
   // to the containing call.
   static ServerMetadataHandle CompleteSendServerTrailingMetadata(
-      ServerMetadataHandle send_metadata, absl::Status send_status,
-      bool sent_metadata);
+      ServerMetadataHandle sent_metadata, absl::Status send_result,
+      bool actually_sent);
 
   grpc_transport_stream_op_batch_payload* const payload_;
   absl::optional<Target> target_;
@@ -230,7 +249,8 @@ inline auto BatchBuilder::SendClientTrailingMetadata(Target target) {
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
   batch->batch.send_trailing_metadata = true;
-  auto metadata = GetContext<Arena>()->MakePooled<grpc_metadata_batch>();
+  auto metadata =
+      GetContext<Arena>()->MakePooled<grpc_metadata_batch>(GetContext<Arena>());
   payload_->send_trailing_metadata.send_trailing_metadata = metadata.get();
   payload_->send_trailing_metadata.sent = nullptr;
   pc->send_trailing_metadata = std::move(metadata);
@@ -246,6 +266,7 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
     Target target, ServerMetadataHandle metadata,
     bool convert_to_cancellation) {
   Batch* batch;
+  PendingSends* pc;
   if (convert_to_cancellation) {
     const auto status_code =
         metadata->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
@@ -254,16 +275,16 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
                      metadata->GetOrCreatePointer(GrpcMessageMetadata())
                          ->as_string_view()),
         StatusIntProperty::kRpcStatus, status_code);
-    batch = MakeCancel(std::move(status));
+    batch = MakeCancel(target.stream_refcount, std::move(status));
+    pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   } else {
     batch = GetBatch(target);
-    auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
-    batch->batch.on_complete = &pc->on_done_closure;
+    pc = batch->GetInitializedCompletion(&Batch::pending_sends);
     batch->batch.send_trailing_metadata = true;
     payload_->send_trailing_metadata.send_trailing_metadata = metadata.get();
     payload_->send_trailing_metadata.sent = &pc->trailing_metadata_sent;
   }
-  auto* pc = batch->pending_sends;
+  batch->batch.on_complete = &pc->on_done_closure;
   pc->send_trailing_metadata = std::move(metadata);
   return batch->RefUntil(Map(pc->done_latch.Wait(), [pc](absl::Status status) {
     return CompleteSendServerTrailingMetadata(
