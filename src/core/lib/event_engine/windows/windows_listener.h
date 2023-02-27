@@ -59,30 +59,50 @@ class WindowsEventEngineListener : public EventEngine::Listener {
     // Two-stage initialization, allows creation of all bound sockets before the
     // listener is started.
     absl::Status Start();
-    absl::Status StartLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+    absl::Status StartLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(io_state_->mu);
 
     // Accessor methods
     EventEngine::ResolvedAddress listener_sockname() {
       return listener_sockname_;
     };
     int port() { return port_; }
-    WinSocket* listener_socket() { return listener_socket_.get(); }
 
    private:
+    struct AsyncIOState;
+
     class OnAcceptCallbackWrapper : public EventEngine::Closure {
      public:
-      OnAcceptCallbackWrapper(SinglePortSocketListener* port_listener)
-          : port_listener_(port_listener) {}
-      void Run() override { port_listener_->OnAcceptCallbackImpl(); };
+      void Run() override;
+      void Prime(std::shared_ptr<AsyncIOState> io_state);
 
      private:
-      SinglePortSocketListener* port_listener_;
+      std::shared_ptr<AsyncIOState> io_state_;
+    };
+
+    // A class to manage the data that must outlive the Endpoint.
+    //
+    // Once a listener is done and destroyed, there still may be overlapped
+    // operations pending. To clean up safely, this data must outlive the
+    // Listener, and be destroyed asynchronously when all pending overlapped
+    // events are complete.
+    struct AsyncIOState {
+      AsyncIOState(SinglePortSocketListener* port_listener,
+                   std::unique_ptr<WinSocket> listener_socket);
+      ~AsyncIOState();
+      SinglePortSocketListener* const port_listener;
+      OnAcceptCallbackWrapper on_accept_cb;
+      // Syncronize accept handling on the same socket.
+      grpc_core::Mutex mu;
+      // This will hold the socket for the next accept.
+      SOCKET accept_socket ABSL_GUARDED_BY(mu) = INVALID_SOCKET;
+      // The listener winsocket.
+      std::unique_ptr<WinSocket> listener_socket ABSL_GUARDED_BY(mu);
     };
 
     SinglePortSocketListener(WindowsEventEngineListener* listener,
                              LPFN_ACCEPTEX AcceptEx,
-                             std::unique_ptr<WinSocket> win_socket, int port,
-                             EventEngine::ResolvedAddress hostbyname);
+                             std::unique_ptr<WinSocket> listener_socket,
+                             int port, EventEngine::ResolvedAddress hostbyname);
 
     // Bind a recently-created socket for listening
     struct PrepareListenerSocketResult {
@@ -92,7 +112,7 @@ class WindowsEventEngineListener : public EventEngine::Listener {
     static absl::StatusOr<PrepareListenerSocketResult> PrepareListenerSocket(
         SOCKET sock, const EventEngine::ResolvedAddress& addr);
 
-    void OnAcceptCallbackImpl();
+    void OnAcceptCallbackLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(io_state_->mu);
 
     // The cached AcceptEx for that port.
     LPFN_ACCEPTEX AcceptEx;
@@ -101,16 +121,10 @@ class WindowsEventEngineListener : public EventEngine::Listener {
     uint8_t addresses_[(sizeof(sockaddr_in6) + 16) * 2] = {};
     // The parent listener
     WindowsEventEngineListener* listener_;
-    // closure for socket notification of accept being ready
-    OnAcceptCallbackWrapper on_accept_;
+    // shared state for asynchronous cleanup of overlapped operations
+    std::shared_ptr<AsyncIOState> io_state_;
     // The actual TCP port number.
     int port_;
-    // Syncronize accept handling on the same socket.
-    grpc_core::Mutex mu_;
-    // This will hold the socket for the next accept.
-    SOCKET accept_socket_ ABSL_GUARDED_BY(mu_) = INVALID_SOCKET;
-    // The listener winsocket.
-    std::unique_ptr<WinSocket> listener_socket_ ABSL_GUARDED_BY(mu_);
     EventEngine::ResolvedAddress listener_sockname_;
   };
   absl::StatusOr<SinglePortSocketListener*> AddSinglePortSocketListener(

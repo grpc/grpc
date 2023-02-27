@@ -31,11 +31,46 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+// ---- SinglePortSocketListener::AsyncIOState ----
+
+WindowsEventEngineListener::SinglePortSocketListener::AsyncIOState::
+    AsyncIOState(SinglePortSocketListener* port_listener,
+                 std::unique_ptr<WinSocket> listener_socket)
+    : port_listener(port_listener),
+      listener_socket(std::move(listener_socket)) {}
+
+WindowsEventEngineListener::SinglePortSocketListener::AsyncIOState::
+    ~AsyncIOState() {
+  closesocket(accept_socket);
+}
+
+void WindowsEventEngineListener::SinglePortSocketListener::
+    OnAcceptCallbackWrapper::Run() {
+  GPR_ASSERT(io_state_ != nullptr);
+  grpc_core::ReleasableMutexLock lock(&io_state_->mu);
+  if (io_state_->listener_socket->IsShutdown()) {
+    GRPC_EVENT_ENGINE_TRACE(
+        "SinglePortSocketListener::%p listener socket is shut down. Shutting "
+        "down listener.",
+        io_state_->port_listener);
+    lock.Release();
+    io_state_.reset();
+    return;
+  }
+  io_state_->port_listener->OnAcceptCallbackLocked();
+}
+
+void WindowsEventEngineListener::SinglePortSocketListener::
+    OnAcceptCallbackWrapper::Prime(std::shared_ptr<AsyncIOState> io_state) {
+  io_state_ = std::move(io_state);
+}
+
 // ---- SinglePortSocketListener ----
 
 WindowsEventEngineListener::SinglePortSocketListener::
     ~SinglePortSocketListener() {
-  listener_socket_->Shutdown(DEBUG_LOCATION, "~SinglePortSocketListener");
+  io_state_->listener_socket->Shutdown(DEBUG_LOCATION,
+                                       "~SinglePortSocketListener");
   GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
 }
 
@@ -67,7 +102,7 @@ WindowsEventEngineListener::SinglePortSocketListener::Create(
 }
 
 absl::Status WindowsEventEngineListener::SinglePortSocketListener::Start() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&io_state_->mu);
   return StartLocked();
 }
 
@@ -87,9 +122,10 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
   // Start the "accept" asynchronously.
   DWORD addrlen = sizeof(sockaddr_in6) + 16;
   DWORD bytes_received = 0;
-  int success = AcceptEx(listener_socket_->raw_socket(), accept_socket,
-                         addresses_, 0, addrlen, addrlen, &bytes_received,
-                         listener_socket_->read_info()->overlapped());
+  int success =
+      AcceptEx(io_state_->listener_socket->raw_socket(), accept_socket,
+               addresses_, 0, addrlen, addrlen, &bytes_received,
+               io_state_->listener_socket->read_info()->overlapped());
   // It is possible to get an accept immediately without delay. However, we
   // will still get an IOCP notification for it. So let's just ignore it.
   if (success != 0) {
@@ -100,24 +136,25 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
   }
   // We're ready to do the accept. Calling NotifyOnRead may immediately process
   // an accept that happened in the meantime.
-  accept_socket_ = accept_socket;
-  listener_socket_->NotifyOnRead(&on_accept_);
+  io_state_->accept_socket = accept_socket;
+  io_state_->listener_socket->NotifyOnRead(&io_state_->on_accept_cb);
   GRPC_EVENT_ENGINE_TRACE(
       "SinglePortSocketListener::%p listening. listener_socket::%p", this,
-      listener_socket_.get());
+      io_state_->listener_socket.get());
   return absl::OkStatus();
 }
 
 void WindowsEventEngineListener::SinglePortSocketListener::
-    OnAcceptCallbackImpl() {
-  grpc_core::MutexLock lock(&mu_);
+    OnAcceptCallbackLocked() {
   auto close_socket_and_restart =
-      [&](bool do_close_socket = true) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        if (do_close_socket) closesocket(accept_socket_);
-        GPR_ASSERT(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
-                                     StartLocked()));
-      };
-  const auto& overlapped_result = listener_socket_->read_info()->result();
+      [&](bool do_close_socket = true)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(io_state_->mu) {
+            if (do_close_socket) closesocket(io_state_->accept_socket);
+            GPR_ASSERT(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
+                                         StartLocked()));
+          };
+  const auto& overlapped_result =
+      io_state_->listener_socket->read_info()->result();
   if (overlapped_result.wsa_error != 0) {
     gpr_log(GPR_ERROR, "%s",
             GRPC_WSA_ERROR(overlapped_result.wsa_error,
@@ -126,10 +163,11 @@ void WindowsEventEngineListener::SinglePortSocketListener::
                 .c_str());
     return close_socket_and_restart();
   }
-  SOCKET tmp_listener_socket = listener_socket_->raw_socket();
-  int err = setsockopt(accept_socket_, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
-                       reinterpret_cast<char*>(&tmp_listener_socket),
-                       sizeof(tmp_listener_socket));
+  SOCKET tmp_listener_socket = io_state_->listener_socket->raw_socket();
+  int err =
+      setsockopt(io_state_->accept_socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+                 reinterpret_cast<char*>(&tmp_listener_socket),
+                 sizeof(tmp_listener_socket));
   if (err != 0) {
     gpr_log(GPR_ERROR, "%s",
             GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt").ToString().c_str());
@@ -137,9 +175,9 @@ void WindowsEventEngineListener::SinglePortSocketListener::
   }
   EventEngine::ResolvedAddress peer_address;
   int peer_name_len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  err =
-      getpeername(accept_socket_, const_cast<sockaddr*>(peer_address.address()),
-                  &peer_name_len);
+  err = getpeername(io_state_->accept_socket,
+                    const_cast<sockaddr*>(peer_address.address()),
+                    &peer_name_len);
   if (err != 0) {
     gpr_log(
         GPR_ERROR, "%s",
@@ -158,7 +196,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
     peer_name = *addr_uri;
   }
   auto endpoint = std::make_unique<WindowsEndpoint>(
-      peer_address, listener_->iocp_->Watch(accept_socket_),
+      peer_address, listener_->iocp_->Watch(io_state_->accept_socket),
       listener_->memory_allocator_factory_->CreateMemoryAllocator(
           absl::StrFormat("listener endpoint %s", peer_name)),
       listener_->config_, listener_->executor_);
@@ -171,14 +209,16 @@ void WindowsEventEngineListener::SinglePortSocketListener::
 
 WindowsEventEngineListener::SinglePortSocketListener::SinglePortSocketListener(
     WindowsEventEngineListener* listener, LPFN_ACCEPTEX AcceptEx,
-    std::unique_ptr<WinSocket> win_socket, int port,
+    std::unique_ptr<WinSocket> listener_socket, int port,
     EventEngine::ResolvedAddress hostbyname)
     : AcceptEx(AcceptEx),
       listener_(listener),
-      on_accept_(this),
+      io_state_(
+          std::make_shared<AsyncIOState>(this, std::move(listener_socket))),
       port_(port),
-      listener_socket_(std::move(win_socket)),
-      listener_sockname_(hostbyname) {}
+      listener_sockname_(hostbyname) {
+  io_state_->on_accept_cb.Prime(io_state_);
+}
 
 absl::StatusOr<WindowsEventEngineListener::SinglePortSocketListener::
                    PrepareListenerSocketResult>
@@ -226,12 +266,12 @@ WindowsEventEngineListener::WindowsEventEngineListener(
     std::shared_ptr<EventEngine> engine, Executor* executor,
     const EndpointConfig& config)
     : iocp_(iocp),
-      accept_cb_(std::move(accept_cb)),
-      on_shutdown_(std::move(on_shutdown)),
-      memory_allocator_factory_(std::move(memory_allocator_factory)),
       config_(config),
       engine_(std::move(engine)),
-      executor_(executor) {}
+      executor_(executor),
+      memory_allocator_factory_(std::move(memory_allocator_factory)),
+      accept_cb_(std::move(accept_cb)),
+      on_shutdown_(std::move(on_shutdown)) {}
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
   GRPC_EVENT_ENGINE_TRACE(
