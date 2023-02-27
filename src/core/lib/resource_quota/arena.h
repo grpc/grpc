@@ -136,6 +136,13 @@ class Arena {
       size_t initial_size, size_t alloc_size,
       MemoryAllocator* memory_allocator);
 
+  // Destroy all `ManagedNew` allocated objects.
+  // Allows safe destruction of these objects even if they need context held by
+  // the arena.
+  // Idempotent.
+  // TODO(ctiller): eliminate ManagedNew.
+  void DestroyManagedNewObjects();
+
   // Destroy an arena.
   void Destroy();
 

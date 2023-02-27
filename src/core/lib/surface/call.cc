@@ -2233,6 +2233,7 @@ class PromiseBasedCall : public Call,
     {
       ScopedContext ctx(this);
       CancelRemainingParticipants();
+      arena()->DestroyManagedNewObjects();
     }
     DeleteThis();
   }

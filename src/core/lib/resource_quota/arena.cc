@@ -74,7 +74,7 @@ std::pair<Arena*, void*> Arena::CreateWithAlloc(
   return std::make_pair(new_arena, first_alloc);
 }
 
-void Arena::Destroy() {
+void Arena::DestroyManagedNewObjects() {
   ManagedNewObject* p;
   // Outer loop: clear the managed new object list.
   // We do this repeatedly in case a destructor ends up allocating something.
@@ -85,6 +85,10 @@ void Arena::Destroy() {
       Destruct(std::exchange(p, p->next));
     }
   }
+}
+
+void Arena::Destroy() {
+  DestroyManagedNewObjects();
   memory_allocator_->Release(total_allocated_.load(std::memory_order_relaxed));
   this->~Arena();
   gpr_free_aligned(this);
