@@ -279,7 +279,7 @@ PosixEngineListenerImpl::~PosixEngineListenerImpl() {
   // been destroyed. This is because each AsyncConnectionAcceptor has a
   // shared_ptr ref to the parent PosixEngineListenerImpl.
   if (on_shutdown_ != nullptr) {
-    on_shutdown_(absl::InternalError("Shutting down listener"));
+    on_shutdown_(absl::OkStatus());
   }
 }
 

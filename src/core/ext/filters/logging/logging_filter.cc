@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/logging/logging_filter.h"
+#include "src/core/ext/filters/logging/logging_filter.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -48,6 +48,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -70,10 +71,8 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "src/cpp/ext/filters/logging/logging_sink.h"
 
-namespace grpc {
-namespace internal {
+namespace grpc_core {
 
 namespace {
 
@@ -92,8 +91,7 @@ class MetadataEncoder {
         status_details_bin_(status_details_bin),
         log_len_(log_len) {}
 
-  void Encode(const grpc_core::Slice& key_slice,
-              const grpc_core::Slice& value_slice) {
+  void Encode(const Slice& key_slice, const Slice& value_slice) {
     auto key = key_slice.as_string_view();
     auto value = value_slice.as_string_view();
     if (status_details_bin_ != nullptr && key == "grpc-status-details-bin") {
@@ -122,12 +120,11 @@ class MetadataEncoder {
   template <typename Which>
   void Encode(Which, const typename Which::ValueType&) {}
 
-  void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status) {
+  void Encode(GrpcStatusMetadata, grpc_status_code status) {
     payload_->status_code = status;
   }
 
-  void Encode(grpc_core::GrpcMessageMetadata,
-              const grpc_core::Slice& status_message) {
+  void Encode(GrpcMessageMetadata, const Slice& status_message) {
     payload_->status_message = std::string(status_message.as_string_view());
   }
 
@@ -143,8 +140,8 @@ class MetadataEncoder {
 void SetIpPort(absl::string_view s, LoggingSink::Entry::Address* peer) {
   absl::string_view host;
   absl::string_view port;
-  if (grpc_core::SplitHostPort(absl::string_view(s.data(), s.length()), &host,
-                               &port) == 1) {
+  if (SplitHostPort(absl::string_view(s.data(), s.length()), &host, &port) ==
+      1) {
     if (!host.empty()) {
       peer->address = std::string(host);
     }
@@ -157,11 +154,9 @@ void SetIpPort(absl::string_view s, LoggingSink::Entry::Address* peer) {
   }
 }
 
-LoggingSink::Entry::Address PeerStringToAddress(
-    const grpc_core::Slice& peer_string) {
+LoggingSink::Entry::Address PeerStringToAddress(const Slice& peer_string) {
   LoggingSink::Entry::Address address;
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse(peer_string.as_string_view());
+  absl::StatusOr<URI> uri = URI::Parse(peer_string.as_string_view());
   if (!uri.ok()) {
     gpr_log(GPR_DEBUG, "peer_string is in invalid format and cannot be logged");
     return address;
@@ -181,8 +176,8 @@ LoggingSink::Entry::Address PeerStringToAddress(
   return address;
 }
 
-void EncodeMessageToPayload(const grpc_core::SliceBuffer* message,
-                            uint32_t log_len, LoggingSink::Entry* entry) {
+void EncodeMessageToPayload(const SliceBuffer* message, uint32_t log_len,
+                            LoggingSink::Entry* entry) {
   auto* sb = message->c_slice_buffer();
   entry->payload.message_length = sb->length;
   // Log the message to a max of the configured message length
@@ -203,12 +198,12 @@ void EncodeMessageToPayload(const grpc_core::SliceBuffer* message,
 
 class CallData {
  public:
-  CallData(bool is_client, const grpc_core::CallArgs& call_args,
+  CallData(bool is_client, const CallArgs& call_args,
            const std::string& authority)
       : call_id_(GetCallId()) {
     absl::string_view path;
     if (auto* value = call_args.client_initial_metadata->get_pointer(
-            grpc_core::HttpPathMetadata())) {
+            HttpPathMetadata())) {
       path = value->as_string_view();
     }
     std::vector<std::string> parts =
@@ -220,7 +215,7 @@ class CallData {
     config_ = g_logging_sink->FindMatch(is_client, service_name_, method_name_);
     if (config_.ShouldLog()) {
       if (auto* value = call_args.client_initial_metadata->get_pointer(
-              grpc_core::HttpAuthorityMetadata())) {
+              HttpAuthorityMetadata())) {
         authority_ = std::string(value->as_string_view());
       } else {
         authority_ = authority;
@@ -230,8 +225,7 @@ class CallData {
 
   bool ShouldLog() { return config_.ShouldLog(); }
 
-  void LogClientHeader(bool is_client,
-                       const grpc_core::ClientMetadataHandle& metadata) {
+  void LogClientHeader(bool is_client, const ClientMetadataHandle& metadata) {
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kClientHeader);
@@ -240,7 +234,7 @@ class CallData {
     metadata->Encode(&encoder);
     entry.payload_truncated = encoder.truncated();
     if (!is_client) {
-      if (auto* value = metadata->get_pointer(grpc_core::PeerString())) {
+      if (auto* value = metadata->get_pointer(PeerString())) {
         peer_ = PeerStringToAddress(*value);
       }
     }
@@ -254,8 +248,7 @@ class CallData {
     g_logging_sink->LogEntry(std::move(entry));
   }
 
-  void LogServerHeader(bool is_client,
-                       const grpc_core::ServerMetadata* metadata) {
+  void LogServerHeader(bool is_client, const ServerMetadata* metadata) {
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kServerHeader);
@@ -265,7 +258,7 @@ class CallData {
       metadata->Encode(&encoder);
       entry.payload_truncated = encoder.truncated();
       if (is_client) {
-        if (auto* value = metadata->get_pointer(grpc_core::PeerString())) {
+        if (auto* value = metadata->get_pointer(PeerString())) {
           peer_ = PeerStringToAddress(*value);
         }
       }
@@ -273,8 +266,7 @@ class CallData {
     g_logging_sink->LogEntry(std::move(entry));
   }
 
-  void LogServerTrailer(bool is_client,
-                        const grpc_core::ServerMetadata* metadata) {
+  void LogServerTrailer(bool is_client, const ServerMetadata* metadata) {
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kServerTrailer);
@@ -287,7 +279,7 @@ class CallData {
     g_logging_sink->LogEntry(std::move(entry));
   }
 
-  void LogClientMessage(bool is_client, const grpc_core::SliceBuffer* message) {
+  void LogClientMessage(bool is_client, const SliceBuffer* message) {
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kClientMessage);
@@ -295,7 +287,7 @@ class CallData {
     g_logging_sink->LogEntry(std::move(entry));
   }
 
-  void LogServerMessage(bool is_client, const grpc_core::SliceBuffer* message) {
+  void LogServerMessage(bool is_client, const SliceBuffer* message) {
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kServerMessage);
@@ -322,7 +314,7 @@ class CallData {
     entry->peer = peer_;
     entry->service_name = service_name_;
     entry->method_name = method_name_;
-    entry->timestamp = grpc_core::Timestamp::Now();
+    entry->timestamp = Timestamp::Now();
   }
   uint64_t call_id_;
   uint32_t sequence_id_ = 0;
@@ -333,12 +325,12 @@ class CallData {
   LoggingSink::Config config_;
 };
 
-class ClientLoggingFilter final : public grpc_core::ChannelFilter {
+class ClientLoggingFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientLoggingFilter> Create(
-      const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+      const ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
     absl::optional<absl::string_view> default_authority =
         args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
     if (default_authority.has_value()) {
@@ -347,48 +339,45 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
     absl::optional<std::string> server_uri =
         args.GetOwnedString(GRPC_ARG_SERVER_URI);
     if (server_uri.has_value()) {
-      return ClientLoggingFilter(grpc_core::CoreConfiguration::Get()
-                                     .resolver_registry()
-                                     .GetDefaultAuthority(*server_uri));
+      return ClientLoggingFilter(
+          CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+              *server_uri));
     }
     return ClientLoggingFilter("");
   }
 
   // Construct a promise for one call.
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-      grpc_core::CallArgs call_args,
-      grpc_core::NextPromiseFactory next_promise_factory) override {
-    CallData* calld =
-        grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<CallData>(
-            true, call_args, default_authority_);
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override {
+    CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
+        true, call_args, default_authority_);
     if (!calld->ShouldLog()) {
       return next_promise_factory(std::move(call_args));
     }
     calld->LogClientHeader(/*is_client=*/true,
                            call_args.client_initial_metadata);
     call_args.server_initial_metadata->InterceptAndMap(
-        [calld](grpc_core::ServerMetadataHandle metadata) {
+        [calld](ServerMetadataHandle metadata) {
           calld->LogServerHeader(/*is_client=*/true, metadata.get());
           return metadata;
         });
     call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
-        [calld](grpc_core::MessageHandle message) {
+        [calld](MessageHandle message) {
           calld->LogClientMessage(/*is_client=*/true, message->payload());
           return message;
         },
         [calld] { calld->LogClientHalfClose(/*is_client=*/true); });
     call_args.server_to_client_messages->InterceptAndMap(
-        [calld](grpc_core::MessageHandle message) {
+        [calld](MessageHandle message) {
           calld->LogServerMessage(/*is_client=*/true, message->payload());
           return message;
         });
-    return grpc_core::OnCancel(
-        Map(next_promise_factory(std::move(call_args)),
-            [calld](grpc_core::ServerMetadataHandle md) {
-              calld->LogServerTrailer(/*is_client=*/true, md.get());
-              return md;
-            }),
-        [calld]() { calld->LogCancel(/*is_client=*/true); });
+    return OnCancel(Map(next_promise_factory(std::move(call_args)),
+                        [calld](ServerMetadataHandle md) {
+                          calld->LogServerTrailer(/*is_client=*/true, md.get());
+                          return md;
+                        }),
+                    [calld]() { calld->LogCancel(/*is_client=*/true); });
   }
 
  private:
@@ -398,99 +387,90 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
 };
 
 const grpc_channel_filter ClientLoggingFilter::kFilter =
-    grpc_core::MakePromiseBasedFilter<
-        ClientLoggingFilter, grpc_core::FilterEndpoint::kClient,
-        grpc_core::kFilterExaminesServerInitialMetadata |
-            grpc_core::kFilterExaminesInboundMessages |
-            grpc_core::kFilterExaminesOutboundMessages>("logging");
+    MakePromiseBasedFilter<ClientLoggingFilter, FilterEndpoint::kClient,
+                           kFilterExaminesServerInitialMetadata |
+                               kFilterExaminesInboundMessages |
+                               kFilterExaminesOutboundMessages>("logging");
 
-class ServerLoggingFilter final : public grpc_core::ChannelFilter {
+class ServerLoggingFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerLoggingFilter> Create(
-      const grpc_core::ChannelArgs& /*args*/,
-      ChannelFilter::Args /*filter_args*/) {
+      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
     return ServerLoggingFilter();
   }
 
   // Construct a promise for one call.
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-      grpc_core::CallArgs call_args,
-      grpc_core::NextPromiseFactory next_promise_factory) override {
-    CallData* calld =
-        grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<CallData>(
-            false, call_args, /*default_authority=*/"");
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override {
+    CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
+        false, call_args, /*default_authority=*/"");
     if (!calld->ShouldLog()) {
       return next_promise_factory(std::move(call_args));
     }
     calld->LogClientHeader(/*is_client=*/false,
                            call_args.client_initial_metadata);
     call_args.server_initial_metadata->InterceptAndMap(
-        [calld](grpc_core::ServerMetadataHandle metadata) {
+        [calld](ServerMetadataHandle metadata) {
           calld->LogServerHeader(/*is_client=*/false, metadata.get());
           return metadata;
         });
     call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
-        [calld](grpc_core::MessageHandle message) {
+        [calld](MessageHandle message) {
           calld->LogClientMessage(/*is_client=*/false, message->payload());
           return message;
         },
         [calld] { calld->LogClientHalfClose(/*is_client=*/false); });
     call_args.server_to_client_messages->InterceptAndMap(
-        [calld](grpc_core::MessageHandle message) {
+        [calld](MessageHandle message) {
           calld->LogServerMessage(/*is_client=*/false, message->payload());
           return message;
         });
-    return grpc_core::OnCancel(
-        Map(next_promise_factory(std::move(call_args)),
-            [calld](grpc_core::ServerMetadataHandle md) {
-              calld->LogServerTrailer(/*is_client=*/false, md.get());
-              return md;
-            }),
-        [calld]() { calld->LogCancel(/*is_client=*/false); });
+    return OnCancel(Map(next_promise_factory(std::move(call_args)),
+                        [calld](ServerMetadataHandle md) {
+                          calld->LogServerTrailer(/*is_client=*/false,
+                                                  md.get());
+                          return md;
+                        }),
+                    [calld]() { calld->LogCancel(/*is_client=*/false); });
   }
 };
 
 const grpc_channel_filter ServerLoggingFilter::kFilter =
-    grpc_core::MakePromiseBasedFilter<
-        ServerLoggingFilter, grpc_core::FilterEndpoint::kServer,
-        grpc_core::kFilterExaminesServerInitialMetadata |
-            grpc_core::kFilterExaminesInboundMessages |
-            grpc_core::kFilterExaminesOutboundMessages>("logging");
+    MakePromiseBasedFilter<ServerLoggingFilter, FilterEndpoint::kServer,
+                           kFilterExaminesServerInitialMetadata |
+                               kFilterExaminesInboundMessages |
+                               kFilterExaminesOutboundMessages>("logging");
 
 }  // namespace
 
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(
-            GRPC_SERVER_CHANNEL, INT_MAX,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              // TODO(yashykt) : Figure out a good place to place this channel
-              // arg
-              if (builder->channel_args()
-                      .GetInt("grpc.experimental.enable_observability")
-                      .value_or(true)) {
-                builder->PrependFilter(&ServerLoggingFilter::kFilter);
-              }
-              return true;
-            });
-        builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_CHANNEL, INT_MAX,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              // TODO(yashykt) : Figure out a good place to place this channel
-              // arg
-              if (builder->channel_args()
-                      .GetInt("grpc.experimental.enable_observability")
-                      .value_or(true)) {
-                builder->PrependFilter(&ClientLoggingFilter::kFilter);
-              }
-              return true;
-            });
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_init()->RegisterStage(
+        GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
+          // TODO(yashykt) : Figure out a good place to place this channel
+          // arg
+          if (builder->channel_args()
+                  .GetInt("grpc.experimental.enable_observability")
+                  .value_or(true)) {
+            builder->PrependFilter(&ServerLoggingFilter::kFilter);
+          }
+          return true;
+        });
+    builder->channel_init()->RegisterStage(
+        GRPC_CLIENT_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
+          // TODO(yashykt) : Figure out a good place to place this channel
+          // arg
+          if (builder->channel_args()
+                  .GetInt("grpc.experimental.enable_observability")
+                  .value_or(true)) {
+            builder->PrependFilter(&ClientLoggingFilter::kFilter);
+          }
+          return true;
+        });
+  });
 }
 
-}  // namespace internal
-}  // namespace grpc
+}  // namespace grpc_core
