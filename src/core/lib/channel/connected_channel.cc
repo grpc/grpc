@@ -81,6 +81,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/batch_builder.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -272,6 +273,10 @@ class ConnectedChannelStream : public Orphanable {
   grpc_transport* transport() { return transport_; }
   grpc_closure* stream_destroyed_closure() { return &stream_destroyed_; }
 
+  BatchBuilder::Target batch_target() {
+    return BatchBuilder::Target{transport_, stream_.get(), &stream_refcount_};
+  }
+
   void IncrementRefCount(const char* reason = "smartptr") {
 #ifndef NDEBUG
     grpc_stream_ref(&stream_refcount_, reason);
@@ -313,35 +318,11 @@ class ConnectedChannelStream : public Orphanable {
             return Empty{};
           },
           [](Empty) {});
-      IncrementRefCount("shutdown client stream");
-      auto* cancel_op =
-          GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
-      cancel_op->cancel_stream = true;
-      cancel_op->payload = &batch_payload_;
-      cancel_op->on_complete = NewClosure(
-          [this](grpc_error_handle) { Unref("shutdown client stream"); });
-      batch_payload_.cancel_stream.cancel_error = absl::CancelledError();
-      grpc_transport_perform_stream_op(transport_, stream_.get(), cancel_op);
+      GetContext<BatchBuilder>()->Cancel(batch_target(),
+                                         absl::CancelledError());
     }
     Unref("orphan connected stream");
   }
-
-  // Push one batch to the transport.
-  // Takes care of allocating space for the transport stream op batch, and of
-  // creating a completion closure.
-  // Calls configurator with two arguments:
-  // - a `grpc_transport_stream_op_batch*` to be filled in by the caller with
-  //   the desired batch (payload is already set, but the batch is otherwise
-  //   all-zeros)
-  // - a `grpc_closure*` to be called when the batch is complete
-  // The configurator can return a value of a type of its choosing (let's call
-  // it T). This value is captured and kept alive for the lifetime of the batch.
-  // Returns a promise that will resolve to an absl::StatusOr<T> when the batch
-  // completes. If the batch fails, then the promise will resolve to an error -
-  // and if it succeeds it will resolve to the value returned by the
-  // configurator.
-  template <typename F>
-  auto PushBatchToTransport(absl::string_view name, F configurator);
 
   // Returns a promise that implements the receive message loop.
   auto RecvMessages(PipeSender<MessageHandle>* incoming_messages);
@@ -356,43 +337,6 @@ class ConnectedChannelStream : public Orphanable {
   auto WaitFinished() { return finished_.Wait(); }
 
  private:
-  template <typename R>
-  struct Batch final {
-    grpc_transport_stream_op_batch batch;
-    grpc_closure on_done_closure;
-    ConnectedChannelStream* stream;
-    Latch<absl::Status> done;
-    absl::string_view name;
-    RefCountedPtr<Party> party;
-    R result_if_ok;
-    // Start with two refs - one for the batch completion, the other for the
-    // promise observing it.
-    uint8_t refs = 2;
-    void IncrementRefCount() { ++refs; }
-    void Unref() {
-      if (--refs == 0) stream->arena_->DeletePooled(this);
-    }
-  };
-
-  struct PendingReceiveMessage final {
-    absl::optional<SliceBuffer> payload;
-    uint32_t flags;
-
-    void ConfigureBatch(grpc_transport_stream_op_batch* batch,
-                        grpc_closure* on_done) {
-      batch->recv_message = true;
-      batch->payload->recv_message.recv_message = &payload;
-      batch->payload->recv_message.flags = &flags;
-      batch->payload->recv_message.call_failed_before_recv_message = nullptr;
-      batch->payload->recv_message.recv_message_ready = on_done;
-    }
-
-    MessageHandle IntoMessageHandle() {
-      return GetContext<Arena>()->MakePooled<Message>(std::move(*payload),
-                                                      flags);
-    }
-  };
-
   class StreamDeleter {
    public:
     explicit StreamDeleter(ConnectedChannelStream* impl) : impl_(impl) {}
@@ -431,108 +375,39 @@ class ConnectedChannelStream : public Orphanable {
   Arena* arena_ = GetContext<Arena>();
   Party* const party_ = static_cast<Party*>(Activity::current());
   ExternallyObservableLatch<void> finished_;
-
-  grpc_transport_stream_op_batch_payload batch_payload_{
-      GetContext<grpc_call_context_element>()};
 };
-
-template <typename F>
-auto ConnectedChannelStream::PushBatchToTransport(absl::string_view name,
-                                                  F configurator) {
-  using R = decltype(configurator(nullptr, nullptr));
-
-  auto batch = GetContext<Arena>()->NewPooled<Batch<R>>();
-  memset(&batch->batch, 0, sizeof(batch->batch));
-  batch->stream = this;
-  batch->name = name;
-  batch->batch.payload = &batch_payload_;
-  batch->party = static_cast<Party*>(Activity::current())->Ref();
-  batch->refs = 2;
-  RefCountedPtr<Batch<R>> batch_reffed_by_promise(batch);
-  GRPC_CLOSURE_INIT(
-      &batch->on_done_closure,
-      [](void* arg, grpc_error_handle status) {
-        RefCountedPtr<Batch<R>> batch(static_cast<Batch<R>*>(arg));
-        auto name = batch->name;
-        auto* stream = batch->stream;
-        auto party = std::exchange(batch->party, nullptr);
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_DEBUG, "%s[connected] Finish batch '%s' %s: status=%s",
-                  party->DebugTag().c_str(), std::string(batch->name).c_str(),
-                  grpc_transport_stream_op_batch_string(&batch->batch).c_str(),
-                  status.ToString().c_str());
-        }
-        party->Spawn(
-            name,
-            [batch = std::move(batch), status = std::move(status)]() mutable {
-              batch->done.Set(std::move(status));
-              return Empty{};
-            },
-            [stream](Empty) { stream->Unref("push batch"); });
-      },
-      batch, nullptr);
-  batch->result_if_ok = configurator(&batch->batch, &batch->on_done_closure);
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Start batch '%s' %s",
-            batch->stream->party_->DebugTag().c_str(),
-            std::string(batch->name).c_str(),
-            grpc_transport_stream_op_batch_string(&batch->batch).c_str());
-  }
-  GPR_ASSERT(batch->batch.HasOp());
-  IncrementRefCount("push batch");
-  grpc_transport_perform_stream_op(transport_, stream_.get(), &batch->batch);
-  return Map(batch->done.Wait(),
-             [batch = std::move(batch_reffed_by_promise)](
-                 absl::Status status) -> absl::StatusOr<R> {
-               if (status.ok()) {
-                 return absl::StatusOr<R>(std::move(batch->result_if_ok));
-               }
-               return std::move(status);
-             });
-}
 
 auto ConnectedChannelStream::RecvMessages(
     PipeSender<MessageHandle>* incoming_messages) {
   return Loop([self = InternalRef(),
                incoming_messages = std::move(*incoming_messages)]() mutable {
-    auto pending_message =
-        GetContext<Arena>()->MakePooled<PendingReceiveMessage>();
     return Seq(
-        self->PushBatchToTransport(
-            "recv_message",
-            [pending_message = std::move(pending_message)](
-                grpc_transport_stream_op_batch* batch,
-                grpc_closure* on_done) mutable {
-              pending_message->ConfigureBatch(batch, on_done);
-              return std::move(pending_message);
-            }),
+        GetContext<BatchBuilder>()->ReceiveMessage(self->batch_target()),
         [&incoming_messages](
-            absl::StatusOr<Arena::PoolPtr<PendingReceiveMessage>>
-                status) mutable {
-          bool has_message = status.ok() && (*status)->payload.has_value();
+            absl::StatusOr<absl::optional<MessageHandle>> status) mutable {
+          bool has_message = status.ok() && status->has_value();
           auto publish_message = [&incoming_messages, &status]() {
-            auto pending_message = std::move(*status);
+            auto pending_message = std::move(**status);
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: received payload of %" PRIdPTR
                       " bytes",
                       Activity::current()->DebugTag().c_str(),
-                      pending_message->payload->Length());
+                      pending_message->payload()->Length());
             }
-            return Map(
-                incoming_messages.Push(pending_message->IntoMessageHandle()),
-                [](bool ok) -> LoopCtl<absl::Status> {
-                  if (!ok) {
-                    if (grpc_call_trace.enabled()) {
-                      gpr_log(GPR_INFO,
-                              "%s[connected] RecvMessage: failed to "
-                              "push message towards the application",
-                              Activity::current()->DebugTag().c_str());
-                    }
-                    return absl::OkStatus();
-                  }
-                  return Continue{};
-                });
+            return Map(incoming_messages.Push(std::move(pending_message)),
+                       [](bool ok) -> LoopCtl<absl::Status> {
+                         if (!ok) {
+                           if (grpc_call_trace.enabled()) {
+                             gpr_log(GPR_INFO,
+                                     "%s[connected] RecvMessage: failed to "
+                                     "push message towards the application",
+                                     Activity::current()->DebugTag().c_str());
+                           }
+                           return absl::OkStatus();
+                         }
+                         return Continue{};
+                       });
           };
           auto publish_close = [&status]() mutable {
             if (grpc_call_trace.enabled()) {
@@ -542,7 +417,7 @@ auto ConnectedChannelStream::RecvMessages(
                       Activity::current()->DebugTag().c_str(),
                       status.status().ToString().c_str());
             }
-            return Immediate(LoopCtl<absl::Status>(std::move(status.status())));
+            return Immediate(LoopCtl<absl::Status>(status.status()));
           };
           return If(has_message, std::move(publish_message),
                     std::move(publish_close));
@@ -552,22 +427,11 @@ auto ConnectedChannelStream::RecvMessages(
 
 auto ConnectedChannelStream::SendMessages(
     PipeReceiver<MessageHandle>* outgoing_messages) {
-  return ForEach(std::move(*outgoing_messages), [self = InternalRef()](
-                                                    MessageHandle message) {
-    auto done = self->PushBatchToTransport(
-        "send_message",
-        [message = std::move(message)](grpc_transport_stream_op_batch* batch,
-                                       grpc_closure* on_done) mutable {
-          batch->send_message = true;
-          batch->payload->send_message.send_message = message->payload();
-          batch->payload->send_message.flags = message->flags();
-          batch->on_complete = on_done;
-          return std::move(message);
-        });
-    return Map(std::move(done), [](absl::StatusOr<MessageHandle> status) {
-      return status.status();
-    });
-  });
+  return ForEach(std::move(*outgoing_messages),
+                 [self = InternalRef()](MessageHandle message) {
+                   return GetContext<BatchBuilder>()->SendMessage(
+                       self->batch_target(), std::move(message));
+                 });
 }
 #endif  // defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) ||
         // defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
@@ -592,96 +456,49 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
       "send_messages",
       TrySeq(stream->SendMessages(call_args.client_to_server_messages),
              [stream = stream->InternalRef()]() {
-               return stream->PushBatchToTransport(
-                   "close_sends", [](grpc_transport_stream_op_batch* batch,
-                                     grpc_closure* on_done) {
-                     auto client_metadata =
-                         GetContext<Arena>()->MakePooled<ClientMetadata>(
-                             GetContext<Arena>());
-                     batch->send_trailing_metadata = true;
-                     batch->on_complete = on_done;
-                     batch->payload->send_trailing_metadata
-                         .send_trailing_metadata = client_metadata.get();
-                     batch->payload->send_trailing_metadata.sent = nullptr;
-                     return client_metadata;
-                   });
+               return GetContext<BatchBuilder>()->SendClientTrailingMetadata(
+                   stream->batch_target());
              }),
       [](absl::StatusOr<ClientMetadataHandle>) {});
   // Start a promise to receive server initial metadata and then forward it up
   // through the receiving pipe.
   auto server_initial_metadata =
       GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-  party->Spawn(
-      "recv_initial_metadata",
-      TrySeq(stream->PushBatchToTransport(
-                 "recv_initial_metadata_batch",
-                 [server_initial_metadata = std::move(server_initial_metadata)](
-                     grpc_transport_stream_op_batch* batch,
-                     grpc_closure* on_done) mutable {
-                   batch->recv_initial_metadata = true;
-                   batch->payload->recv_initial_metadata.recv_initial_metadata =
-                       server_initial_metadata.get();
-                   batch->payload->recv_initial_metadata
-                       .recv_initial_metadata_ready = on_done;
-                   batch->payload->recv_initial_metadata
-                       .trailing_metadata_available = nullptr;
-                   return std::move(server_initial_metadata);
-                 }),
-             [pipe = call_args.server_initial_metadata](
-                 ServerMetadataHandle server_initial_metadata) {
-               return Map(pipe->Push(std::move(server_initial_metadata)),
-                          [](bool r) {
-                            if (r) return absl::OkStatus();
-                            return absl::CancelledError();
-                          });
-             }),
-      [](absl::Status) {});
+  party->Spawn("recv_initial_metadata",
+               TrySeq(GetContext<BatchBuilder>()->ReceiveServerInitialMetadata(
+                          stream->batch_target()),
+                      [pipe = call_args.server_initial_metadata](
+                          ServerMetadataHandle server_initial_metadata) {
+                        return Map(
+                            pipe->Push(std::move(server_initial_metadata)),
+                            [](bool r) {
+                              if (r) return absl::OkStatus();
+                              return absl::CancelledError();
+                            });
+                      }),
+               [](absl::Status) {});
 
   // Build up the rest of the main call promise:
 
   // Create a promise that will send initial metadata and then signal completion
   // of that via the token.
-  auto client_initial_metadata = std::move(call_args.client_initial_metadata);
-  auto send_initial_metadata =
-      Seq(stream->PushBatchToTransport(
-              "send_initial_metadata_batch",
-              [client_initial_metadata = std::move(client_initial_metadata)](
-                  grpc_transport_stream_op_batch* batch,
-                  grpc_closure* on_done) mutable {
-                batch->send_initial_metadata = true;
-                batch->payload->send_initial_metadata.send_initial_metadata =
-                    client_initial_metadata.get();
-                batch->on_complete = on_done;
-                return std::move(client_initial_metadata);
-              }),
-          [sent_initial_metadata_token =
-               std::move(call_args.client_initial_metadata_outstanding)](
-              absl::StatusOr<ClientMetadataHandle> status) mutable {
-            sent_initial_metadata_token.Complete(status.ok());
-            return status;
-          });
+  auto send_initial_metadata = Seq(
+      GetContext<BatchBuilder>()->SendClientInitialMetadata(
+          stream->batch_target(), std::move(call_args.client_initial_metadata)),
+      [sent_initial_metadata_token =
+           std::move(call_args.client_initial_metadata_outstanding)](
+          absl::StatusOr<ClientMetadataHandle> status) mutable {
+        sent_initial_metadata_token.Complete(status.ok());
+        return status;
+      });
   // Create a promise that will receive server trailing metadata.
   // If this fails, we massage the error into metadata that we can report
   // upwards.
   auto server_trailing_metadata =
       GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
   auto recv_trailing_metadata =
-      Map(stream->PushBatchToTransport(
-              "recv_trailing_metadata",
-              [server_trailing_metadata = std::move(server_trailing_metadata)](
-                  grpc_transport_stream_op_batch* batch,
-                  grpc_closure* on_done) mutable {
-                batch->recv_trailing_metadata = true;
-                batch->payload->recv_trailing_metadata.recv_trailing_metadata =
-                    server_trailing_metadata.get();
-                batch->payload->recv_trailing_metadata.collect_stats =
-                    &GetContext<CallContext>()
-                         ->call_stats()
-                         ->transport_stream_stats;
-                batch->payload->recv_trailing_metadata
-                    .recv_trailing_metadata_ready = on_done;
-                return std::move(server_trailing_metadata);
-              }),
+      Map(GetContext<BatchBuilder>()->ReceiveServerTrailingMetadata(
+              stream->batch_target()),
           [](absl::StatusOr<ServerMetadataHandle> status) mutable {
             if (!status.ok()) {
               auto server_trailing_metadata =
@@ -754,19 +571,8 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   // Race the main call with failure_latch, allowing us to forcefully complete
   // the call in the case of a failure.
   auto recv_initial_metadata_then_run_promise = TrySeq(
-      stream->PushBatchToTransport(
-          "recv_initial_metadata",
-          [](grpc_transport_stream_op_batch* batch, grpc_closure* on_done) {
-            auto client_initial_metadata =
-                GetContext<Arena>()->MakePooled<ClientMetadata>(
-                    GetContext<Arena>());
-            batch->recv_initial_metadata = true;
-            batch->payload->recv_initial_metadata.recv_initial_metadata =
-                client_initial_metadata.get();
-            batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-                on_done;
-            return client_initial_metadata;
-          }),
+      GetContext<BatchBuilder>()->ReceiveClientInitialMetadata(
+          stream->batch_target()),
       [next_promise_factory = std::move(next_promise_factory),
        server_to_client_empty = std::move(server_to_client_empty),
        call_data](ClientMetadataHandle client_initial_metadata) {
@@ -792,92 +598,13 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   // Promise factory that accepts a ServerMetadataHandle, and sends it as the
   // trailing metadata for this call.
-  auto send_trailing_metadata = [call_data, stream = stream->InternalRef(),
-                                 server_initial_metadata_empty =
-                                     std::move(server_initial_metadata_empty)](
-                                    ServerMetadataHandle
-                                        server_trailing_metadata) {
-    return Map(
-        stream->PushBatchToTransport(
-            "send_trailing_metadata",
-            [call_data,
-             server_trailing_metadata = std::move(server_trailing_metadata),
-             server_initial_metadata_empty =
-                 std::move(server_initial_metadata_empty)](
-                grpc_transport_stream_op_batch* batch,
-                grpc_closure* on_done) mutable {
-              if (call_data->sent_initial_metadata) {
-                batch->send_trailing_metadata = true;
-                batch->payload->send_trailing_metadata.sent =
-                    &call_data->sent_trailing_metadata;
-                batch->payload->send_trailing_metadata.send_trailing_metadata =
-                    server_trailing_metadata.get();
-              } else {
-                call_data->sent_initial_metadata = true;
-                gpr_log(
-                    GPR_DEBUG,
-                    "%s[connected] Cancelling call because initial metadata "
-                    "not sent: %s; empty=%s",
-                    Activity::current()->DebugTag().c_str(),
-                    server_trailing_metadata->DebugString().c_str(),
-                    absl::holds_alternative<Pending>(
-                        server_initial_metadata_empty())
-                        ? "no"
-                        : "yes");
-                batch->cancel_stream = true;
-                const auto status_code =
-                    server_trailing_metadata->get(GrpcStatusMetadata())
-                        .value_or(GRPC_STATUS_UNKNOWN);
-                batch->payload->cancel_stream.cancel_error = grpc_error_set_int(
-                    absl::Status(static_cast<absl::StatusCode>(status_code),
-                                 server_trailing_metadata
-                                     ->GetOrCreatePointer(GrpcMessageMetadata())
-                                     ->as_string_view()),
-                    StatusIntProperty::kRpcStatus, status_code);
-              }
-              batch->on_complete = on_done;
-              return std::move(server_trailing_metadata);
-            }),
-        [call_data](absl::StatusOr<ServerMetadataHandle> status) mutable {
-          ServerMetadataHandle server_trailing_metadata;
-          if (!status.ok()) {
-            if (grpc_call_trace.enabled()) {
-              gpr_log(GPR_DEBUG,
-                      "%s[connected] Send metadata failed with error: %s, "
-                      "fabricating trailing metadata",
-                      Activity::current()->DebugTag().c_str(),
-                      status.status().ToString().c_str());
-            }
-            server_trailing_metadata =
-                GetContext<Arena>()->MakePooled<ServerMetadata>(
-                    GetContext<Arena>());
-            server_trailing_metadata->Set(
-                GrpcStatusMetadata(),
-                static_cast<grpc_status_code>(status.status().code()));
-            server_trailing_metadata->Set(
-                GrpcMessageMetadata(),
-                Slice::FromCopiedString(status.status().message()));
-            server_trailing_metadata->Set(GrpcCallWasCancelled(), true);
-          } else {
-            server_trailing_metadata = std::move(*status);
-          }
-          if (!server_trailing_metadata->get(GrpcCallWasCancelled())
-                   .has_value()) {
-            if (grpc_call_trace.enabled()) {
-              gpr_log(GPR_DEBUG,
-                      "%s[connected] Tagging trailing metadata with "
-                      "cancellation status from transport: %s",
-                      Activity::current()->DebugTag().c_str(),
-                      call_data->sent_trailing_metadata
-                          ? "sent => not-cancelled"
-                          : "not-sent => cancelled");
-            }
-            server_trailing_metadata->Set(GrpcCallWasCancelled(),
-                                          !call_data->sent_trailing_metadata);
-          }
-          return server_trailing_metadata;
-        });
-  };
+  auto send_trailing_metadata =
+      [call_data, stream = stream->InternalRef()](
+          ServerMetadataHandle server_trailing_metadata) {
+        return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
+            stream->batch_target(), std::move(server_trailing_metadata),
+            !std::exchange(call_data->sent_trailing_metadata, true));
+      };
 
   // Runs the receive message loop, either until all the messages
   // are received or the server call is complete.
@@ -903,30 +630,16 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
            call_data->server_initial_metadata.receiver.Next()),
       [call_data, stream = stream->InternalRef()](
           NextResult<ServerMetadataHandle> next_result) mutable {
-        auto* md = !call_data->sent_initial_metadata && next_result.has_value()
-                       ? next_result.value().get()
-                       : nullptr;
+        auto md = !call_data->sent_initial_metadata && next_result.has_value()
+                      ? std::move(next_result.value())
+                      : nullptr;
         if (md != nullptr) call_data->sent_initial_metadata = true;
         return If(
             md != nullptr,
-            [md, stream = std::move(stream),
+            [&md, stream = std::move(stream),
              next_result = std::move(next_result)]() mutable {
-              return Map(
-                  stream->PushBatchToTransport(
-                      "send_initial_metadata",
-                      [md, next_result = std::move(next_result)](
-                          grpc_transport_stream_op_batch* batch,
-                          grpc_closure* on_done) mutable {
-                        GPR_ASSERT(md != nullptr);
-                        batch->send_initial_metadata = true;
-                        batch->payload->send_initial_metadata
-                            .send_initial_metadata = md;
-                        batch->on_complete = on_done;
-                        return std::move(next_result);
-                      }),
-                  [](absl::StatusOr<NextResult<ServerMetadataHandle>> status) {
-                    return status.status();
-                  });
+              return GetContext<BatchBuilder>()->SendServerInitialMetadata(
+                  stream->batch_target(), std::move(md));
             },
             Immediate(absl::CancelledError()));
       });
@@ -943,23 +656,8 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   party->Spawn(
       "recv_trailing_metadata",
-      Seq(stream->PushBatchToTransport(
-              "recv_trailing_metadata",
-              [](grpc_transport_stream_op_batch* batch, grpc_closure* on_done) {
-                auto trailing_metadata =
-                    GetContext<Arena>()->MakePooled<ClientMetadata>(
-                        GetContext<Arena>());
-                batch->recv_trailing_metadata = true;
-                batch->payload->recv_trailing_metadata.recv_trailing_metadata =
-                    trailing_metadata.get();
-                batch->payload->recv_trailing_metadata.collect_stats =
-                    &GetContext<CallContext>()
-                         ->call_stats()
-                         ->transport_stream_stats;
-                batch->payload->recv_trailing_metadata
-                    .recv_trailing_metadata_ready = on_done;
-                return trailing_metadata;
-              }),
+      Seq(GetContext<BatchBuilder>()->ReceiveClientTrailingMetadata(
+              stream->batch_target()),
           [failure_latch = &call_data->failure_latch](
               absl::StatusOr<ClientMetadataHandle> status) mutable {
             if (grpc_call_trace.enabled()) {

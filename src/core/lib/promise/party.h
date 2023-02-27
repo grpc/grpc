@@ -76,6 +76,8 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
+  Arena* arena() const { return arena_; }
+
  protected:
   explicit Party(Arena* arena, size_t initial_refs)
       : state_(kOneRef * initial_refs), arena_(arena) {}

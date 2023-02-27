@@ -100,6 +100,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/batch_builder.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -1947,20 +1948,26 @@ class PromiseBasedCall : public Call,
 
   virtual ServerCallContext* server_call_context() { return nullptr; }
 
+  using Call::arena;
+
  protected:
   class ScopedContext
       : public ScopedActivity,
+        public BatchBuilder,
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallContext>,
-        public promise_detail::Context<CallFinalization> {
+        public promise_detail::Context<CallFinalization>,
+        public promise_detail::Context<BatchBuilder> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
+          BatchBuilder(&call->batch_payload_),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
-          promise_detail::Context<CallFinalization>(&call->finalization_) {}
+          promise_detail::Context<CallFinalization>(&call->finalization_),
+          promise_detail::Context<BatchBuilder>{this} {}
   };
 
   class Completion {
@@ -2262,6 +2269,7 @@ class PromiseBasedCall : public Call,
   // Waiter for when sends_queued_ becomes 0.
   IntraActivityWaiter waiting_for_queued_sends_;
   grpc_byte_buffer** recv_message_ = nullptr;
+  grpc_transport_stream_op_batch_payload batch_payload_;
 };
 
 template <typename T>
