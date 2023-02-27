@@ -230,7 +230,7 @@ CFStreamEndpoint::~CFStreamEndpoint() {
   write_event_.DestroyEvent();
 }
 
-void CFStreamEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+bool CFStreamEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                             SliceBuffer* buffer, const ReadArgs* /* args */) {
   read_event_.NotifyOn(new PosixEngineClosure(
       [this, on_read = std::move(on_read),
@@ -242,6 +242,8 @@ void CFStreamEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
         }
       },
       false /* is_permanent*/));
+
+  return false;
 }
 
 void CFStreamEndpoint::DoRead(absl::AnyInvocable<void(absl::Status)> on_read,
@@ -280,7 +282,7 @@ void CFStreamEndpoint::DoRead(absl::AnyInvocable<void(absl::Status)> on_read,
   on_read(absl::OkStatus());
 }
 
-void CFStreamEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+bool CFStreamEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                              SliceBuffer* data, const WriteArgs* /* args */) {
   write_event_.NotifyOn(new PosixEngineClosure(
       [this, on_writable = std::move(on_writable),
@@ -292,6 +294,8 @@ void CFStreamEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
         }
       },
       false /* is_permanent*/));
+
+  return false;
 }
 
 void CFStreamEndpoint::DoWrite(
