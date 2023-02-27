@@ -209,6 +209,9 @@ void GrpcAresHostnameRequest::OnResolve(
       // inverted from the order from which the caller calls into the
       // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
       // warning though it might be false positive.
+      //
+      // Another way might work is to unlock and then call on_resolve_ provided
+      // that on_resolve_ will not change after object construction.
       event_engine_->Run(
           [on_resolve = std::move(on_resolve_), error = std::move(error_),
            request = static_cast<GrpcAresRequest*>(this)]() mutable {
