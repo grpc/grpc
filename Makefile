@@ -842,48 +842,48 @@ endif
 LIBGPR_SRC = \
     src/core/lib/event_engine/thread_local.cc \
     src/core/lib/gpr/alloc.cc \
+    src/core/lib/gpr/android/log.cc \
     src/core/lib/gpr/atm.cc \
-    src/core/lib/gpr/cpu_iphone.cc \
-    src/core/lib/gpr/cpu_linux.cc \
-    src/core/lib/gpr/cpu_posix.cc \
-    src/core/lib/gpr/cpu_windows.cc \
+    src/core/lib/gpr/iphone/cpu.cc \
+    src/core/lib/gpr/linux/cpu.cc \
+    src/core/lib/gpr/linux/log.cc \
     src/core/lib/gpr/log.cc \
-    src/core/lib/gpr/log_android.cc \
-    src/core/lib/gpr/log_linux.cc \
-    src/core/lib/gpr/log_posix.cc \
-    src/core/lib/gpr/log_windows.cc \
+    src/core/lib/gpr/msys/tmpfile.cc \
+    src/core/lib/gpr/posix/cpu.cc \
+    src/core/lib/gpr/posix/log.cc \
+    src/core/lib/gpr/posix/string.cc \
+    src/core/lib/gpr/posix/sync.cc \
+    src/core/lib/gpr/posix/time.cc \
+    src/core/lib/gpr/posix/tmpfile.cc \
     src/core/lib/gpr/string.cc \
-    src/core/lib/gpr/string_posix.cc \
-    src/core/lib/gpr/string_util_windows.cc \
-    src/core/lib/gpr/string_windows.cc \
     src/core/lib/gpr/sync.cc \
     src/core/lib/gpr/sync_abseil.cc \
-    src/core/lib/gpr/sync_posix.cc \
-    src/core/lib/gpr/sync_windows.cc \
     src/core/lib/gpr/time.cc \
-    src/core/lib/gpr/time_posix.cc \
     src/core/lib/gpr/time_precise.cc \
-    src/core/lib/gpr/time_windows.cc \
-    src/core/lib/gpr/tmpfile_msys.cc \
-    src/core/lib/gpr/tmpfile_posix.cc \
-    src/core/lib/gpr/tmpfile_windows.cc \
+    src/core/lib/gpr/windows/cpu.cc \
+    src/core/lib/gpr/windows/log.cc \
+    src/core/lib/gpr/windows/string.cc \
+    src/core/lib/gpr/windows/string_util.cc \
+    src/core/lib/gpr/windows/sync.cc \
+    src/core/lib/gpr/windows/time.cc \
+    src/core/lib/gpr/windows/tmpfile.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/crash.cc \
-    src/core/lib/gprpp/env_linux.cc \
-    src/core/lib/gprpp/env_posix.cc \
-    src/core/lib/gprpp/env_windows.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/host_port.cc \
+    src/core/lib/gprpp/linux/env.cc \
     src/core/lib/gprpp/mpscq.cc \
-    src/core/lib/gprpp/stat_posix.cc \
-    src/core/lib/gprpp/stat_windows.cc \
+    src/core/lib/gprpp/posix/env.cc \
+    src/core/lib/gprpp/posix/stat.cc \
+    src/core/lib/gprpp/posix/thd.cc \
     src/core/lib/gprpp/strerror.cc \
     src/core/lib/gprpp/tchar.cc \
-    src/core/lib/gprpp/thd_posix.cc \
-    src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time_util.cc \
+    src/core/lib/gprpp/windows/env.cc \
+    src/core/lib/gprpp/windows/stat.cc \
+    src/core/lib/gprpp/windows/thd.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm.h \

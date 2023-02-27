@@ -44,9 +44,9 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   explicit PosixOracleEndpoint(int socket_fd);
   static std::unique_ptr<PosixOracleEndpoint> Create(int socket_fd);
   ~PosixOracleEndpoint() override;
-  void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
-  void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
              SliceBuffer* data, const WriteArgs* args) override;
   void Shutdown();
   EventEngine::ResolvedAddress& GetPeerAddress() const override {
