@@ -2065,10 +2065,10 @@ grpc_cc_library(
         "lib/event_engine/windows/windows_listener.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
-        "absl/base:core_headers",
     ],
     deps = [
         "common_event_engine_closures",
