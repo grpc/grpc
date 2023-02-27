@@ -30,7 +30,6 @@ python3.7 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.8 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.9 -m pip install -U cython setuptools==65.4.1 wheel --user
 python3.10 -m pip install -U cython setuptools==65.4.1 wheel --user
-python3.11 -m pip install -U cython setuptools==65.4.1 wheel --user
 
 # Build all python macos artifacts (this step actually builds all the binary wheels and source archives)
 tools/run_tests/task_runner.py -f artifact macos python ${TASK_RUNNER_EXTRA_FILTERS} -j 4 -x build_artifacts/sponge_log.xml || FAILED="true"
