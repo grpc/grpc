@@ -151,7 +151,7 @@ class BatchBuilder {
     MessageHandle send_message;
     Arena::PoolPtr<grpc_metadata_batch> send_initial_metadata;
     Arena::PoolPtr<grpc_metadata_batch> send_trailing_metadata;
-    bool trailing_metadata_sent = true;
+    bool trailing_metadata_sent = false;
   };
 
   // One outstanding batch.
@@ -279,10 +279,11 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
     Target target, ServerMetadataHandle metadata,
     bool convert_to_cancellation) {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Queue send trailing metadata: %s%s",
+    gpr_log(GPR_DEBUG, "%s[connected] %s: %s",
             Activity::current()->DebugTag().c_str(),
-            metadata->DebugString().c_str(),
-            convert_to_cancellation ? " (as cancellation)" : "");
+            convert_to_cancellation ? "Send trailing metadata as cancellation"
+                                    : "Queue send trailing metadata",
+            metadata->DebugString().c_str());
   }
   Batch* batch;
   PendingSends* pc;
@@ -305,7 +306,7 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
   }
   batch->batch.on_complete = &pc->on_done_closure;
   pc->send_trailing_metadata = std::move(metadata);
-  return batch->RefUntil(
+  auto promise = batch->RefUntil(
       Map(pc->done_latch.WaitAndCopy(), [pc](absl::Status status) {
         return CompleteSendServerTrailingMetadata(
             std::move(pc->send_trailing_metadata), std::move(status),
@@ -314,6 +315,7 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
   if (convert_to_cancellation) {
     batch->PerformWith(target);
   }
+  return promise;
 }
 
 inline auto BatchBuilder::ReceiveMessage(Target target) {
