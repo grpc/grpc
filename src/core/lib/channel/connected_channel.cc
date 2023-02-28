@@ -627,15 +627,16 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
         auto md = !call_data->sent_initial_metadata && next_result.has_value()
                       ? std::move(next_result.value())
                       : nullptr;
-        if (md != nullptr) call_data->sent_initial_metadata = true;
-        return If(
-            md != nullptr,
-            [&md, stream = std::move(stream),
-             next_result = std::move(next_result)]() mutable {
-              return GetContext<BatchBuilder>()->SendServerInitialMetadata(
-                  stream->batch_target(), std::move(md));
-            },
-            Immediate(absl::CancelledError()));
+        if (md != nullptr) {
+          call_data->sent_initial_metadata = true;
+          auto* party = static_cast<Party*>(Activity::current());
+          party->Spawn("connected/send_initial_metadata",
+                       GetContext<BatchBuilder>()->SendServerInitialMetadata(
+                           stream->batch_target(), std::move(md)),
+                       [](absl::Status) {});
+          return Immediate(absl::OkStatus());
+        }
+        return Immediate(absl::CancelledError());
       });
   party->Spawn(
       "send_initial_metadata_then_messages",

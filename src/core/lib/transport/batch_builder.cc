@@ -96,12 +96,6 @@ BatchBuilder::Batch::~Batch() {
 }
 
 BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
-  gpr_log(
-      GPR_DEBUG, "TRANSPORT: %s hack:%s", target.transport->vtable->name,
-      target.transport->vtable
-              ->hacky_disable_stream_op_batch_coalescing_in_connected_channel
-          ? "true"
-          : "false");
   if (target_.has_value() &&
       (target_->stream != target.stream ||
        target.transport->vtable
