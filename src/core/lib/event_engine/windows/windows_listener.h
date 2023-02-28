@@ -91,7 +91,7 @@ class WindowsEventEngineListener : public EventEngine::Listener {
       ~AsyncIOState();
       SinglePortSocketListener* const port_listener;
       OnAcceptCallbackWrapper on_accept_cb;
-      // Syncronize accept handling on the same socket.
+      // Synchronize accept handling on the same socket.
       grpc_core::Mutex mu;
       // This will hold the socket for the next accept.
       SOCKET accept_socket ABSL_GUARDED_BY(mu) = INVALID_SOCKET;
