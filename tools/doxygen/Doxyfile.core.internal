@@ -2391,6 +2391,8 @@ src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
+src/core/lib/transport/batch_builder.cc \
+src/core/lib/transport/batch_builder.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/connectivity_state.cc \

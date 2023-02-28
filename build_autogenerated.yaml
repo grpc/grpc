@@ -1051,6 +1051,7 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
@@ -1803,6 +1804,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -2359,6 +2361,7 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
@@ -2722,6 +2725,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -3813,6 +3817,7 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -4058,6 +4063,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -7608,6 +7614,7 @@ targets:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker_factory.h
@@ -7836,6 +7843,7 @@ targets:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker_registry.cc

@@ -15,14 +15,40 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_BATCH_BUILDER_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_BATCH_BUILDER_H
 
-#include "metadata_batch.h"
-#include "transport.h"
+#include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_trace.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 
