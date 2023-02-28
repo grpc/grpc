@@ -115,7 +115,6 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -l "dotnet:${GRPC_DOTNET_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
-    -l "php7:${GRPC_CORE_GITREF}" \
     -l "python:${GRPC_CORE_GITREF}" \
     -l "ruby:${GRPC_CORE_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \

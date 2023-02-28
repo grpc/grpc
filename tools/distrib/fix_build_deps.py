@@ -425,7 +425,6 @@ for dirname in [
         "",
         "src/core",
         "src/cpp/ext/gcp",
-        "src/cpp/ext/filters/logging",
         "test/core/backoff",
         "test/core/uri",
         "test/core/util",

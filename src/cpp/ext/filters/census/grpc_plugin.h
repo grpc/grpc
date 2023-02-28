@@ -153,6 +153,11 @@ class OpenCensusRegistry {
     std::string value;
   };
 
+  struct Attribute {
+    std::string key;
+    std::string value;
+  };
+
   static OpenCensusRegistry& Get();
 
   // Registers the functions to be run post-init.
@@ -176,6 +181,11 @@ class OpenCensusRegistry {
       auto tag_key = opencensus::tags::TagKey::Register(label.first);
       constant_labels_.emplace_back(Label{label.first, tag_key, label.second});
     }
+  }
+
+  void RegisterConstantAttributes(std::vector<Attribute> attributes) {
+    grpc_core::MutexLock lock(&mu_);
+    constant_attributes_ = std::move(attributes);
   }
 
   void NotifyOnReady(absl::AnyInvocable<void()> callback) {
@@ -219,6 +229,11 @@ class OpenCensusRegistry {
     return constant_labels_;
   }
 
+  const std::vector<Attribute>& ConstantAttributes() {
+    grpc_core::MutexLock lock(&mu_);
+    return constant_attributes_;
+  }
+
  private:
   void RunFunctionsPostInitHelper() {
     for (const auto& f : exporter_registry_) {
@@ -250,6 +265,7 @@ class OpenCensusRegistry {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
       ABSL_GUARDED_BY(mu_);
   std::vector<Label> constant_labels_ ABSL_GUARDED_BY(mu_);
+  std::vector<Attribute> constant_attributes_ ABSL_GUARDED_BY(mu_);
   std::vector<absl::AnyInvocable<void()>> callbacks_ ABSL_GUARDED_BY(mu_);
 };
 

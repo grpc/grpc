@@ -278,24 +278,32 @@ def extension_modules():
         return extensions
 
 
-setuptools.setup(name='grpcio-tools',
-                 version=grpc_version.VERSION,
-                 description='Protobuf code generator for gRPC',
-                 long_description=open(_README_PATH, 'r').read(),
-                 author='The gRPC Authors',
-                 author_email='grpc-io@googlegroups.com',
-                 url='https://grpc.io',
-                 license='Apache License 2.0',
-                 classifiers=CLASSIFIERS,
-                 ext_modules=extension_modules(),
-                 packages=setuptools.find_packages('.'),
-                 python_requires='>=3.7',
-                 install_requires=[
-                     'protobuf>=4.21.6,<5.0dev',
-                     'grpcio>={version}'.format(version=grpc_version.VERSION),
-                     'setuptools',
-                 ],
-                 package_data=package_data(),
-                 cmdclass={
-                     'build_ext': BuildExt,
-                 })
+setuptools.setup(
+    name='grpcio-tools',
+    version=grpc_version.VERSION,
+    description='Protobuf code generator for gRPC',
+    long_description_content_type='text/x-rst',
+    long_description=open(_README_PATH, 'r').read(),
+    author='The gRPC Authors',
+    author_email='grpc-io@googlegroups.com',
+    url='https://grpc.io',
+    project_urls={
+        "Source Code":
+            "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools",
+        "Bug Tracker":
+            "https://github.com/grpc/grpc/issues",
+    },
+    license='Apache License 2.0',
+    classifiers=CLASSIFIERS,
+    ext_modules=extension_modules(),
+    packages=setuptools.find_packages('.'),
+    python_requires='>=3.7',
+    install_requires=[
+        'protobuf>=4.21.6,<5.0dev',
+        'grpcio>={version}'.format(version=grpc_version.VERSION),
+        'setuptools',
+    ],
+    package_data=package_data(),
+    cmdclass={
+        'build_ext': BuildExt,
+    })

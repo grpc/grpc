@@ -25,6 +25,10 @@ namespace experimental {
 // Initialize GCP Observability for gRPC.
 absl::Status GcpObservabilityInit();
 
+// Gracefully shuts down GCP Observability.
+// Note that graceful shutdown for stats and tracing is not yet supported.
+void GcpObservabilityClose();
+
 }  // namespace experimental
 }  // namespace grpc
 
