@@ -291,7 +291,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
 }
 
 GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
-  grpc_channel_destroy(channel_);
+  grpc_channel_destroy_internal(channel_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
