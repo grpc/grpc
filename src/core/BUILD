@@ -1962,7 +1962,7 @@ grpc_cc_library(
         "absl/synchronization",
     ],
     deps = [
-        "ares",
+        "ares_driver",
         "event_engine_common",
         "event_engine_poller",
         "event_engine_shim",
@@ -2208,12 +2208,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "ares",
+    name = "ares_driver",
     srcs = [
-        "lib/event_engine/ares.cc",
+        "lib/event_engine/ares_driver.cc",
     ],
     hdrs = [
-        "lib/event_engine/ares.h",
+        "lib/event_engine/ares_driver.h",
     ],
     external_deps = [
         "absl/base:core_headers",
