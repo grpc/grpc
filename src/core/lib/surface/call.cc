@@ -2700,12 +2700,19 @@ void ClientPromiseBasedCall::StartPromise(
       "client_promise",
       [this, client_initial_metadata = std::move(client_initial_metadata),
        token = std::move(token)]() mutable {
-        return Race(cancel_error_.Wait(),
-                    channel()->channel_stack()->MakeClientCallPromise(CallArgs{
-                        std::move(client_initial_metadata), std::move(token),
-                        &server_initial_metadata_.sender,
-                        &client_to_server_messages_.receiver,
-                        &server_to_client_messages_.sender}));
+        return Race(
+            cancel_error_.Wait(),
+            Map(channel()->channel_stack()->MakeClientCallPromise(
+                    CallArgs{std::move(client_initial_metadata),
+                             std::move(token), &server_initial_metadata_.sender,
+                             &client_to_server_messages_.receiver,
+                             &server_to_client_messages_.sender}),
+                [this](ServerMetadataHandle trailing_metadata) {
+                  // If we're cancelled the transport doesn't get to return
+                  // stats.
+                  AcceptTransportStatsFromContext();
+                  return trailing_metadata;
+                }));
       },
       [this](ServerMetadataHandle trailing_metadata) {
         Finish(std::move(trailing_metadata));
@@ -2853,7 +2860,6 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
     gpr_log(GPR_INFO, "%s[call] Finish: %s", DebugTag().c_str(),
             trailing_metadata->DebugString().c_str());
   }
-  AcceptTransportStatsFromContext();
   ResetDeadline();
   set_completed();
   client_to_server_messages_.sender.Close();
