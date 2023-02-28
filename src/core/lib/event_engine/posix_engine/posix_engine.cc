@@ -43,7 +43,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/ares.h"
+#include "src/core/lib/event_engine/ares_driver.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -497,14 +497,8 @@ PosixEventEngine::PosixDNSResolver::LookupTaskHandle
 PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port, Duration timeout) {
-  absl::string_view host;
-  absl::string_view port;
-  GPR_ASSERT(grpc_core::SplitHostPort(name, &host, &port));
-  if (port.empty()) {
-    port = default_port;
-  }
   GrpcAresRequest* request = new GrpcAresHostnameRequest(
-      host, grpc_strhtons(std::string(port).c_str()), timeout,
+      name, default_port, timeout,
       [this](AresSocket socket) {
         // TODO(yijiem): no locks?
         PosixEventPoller* poller = poller_manager_->Poller();
@@ -522,7 +516,7 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
         on_resolve(std::move(result));
       },
       event_engine_);
-  if (!request->Initialize()) {
+  if (!request->Initialize(/*check_port=*/true).ok()) {
     abort();
   }
   {

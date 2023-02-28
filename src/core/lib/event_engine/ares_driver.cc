@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/event_engine/ares.h"
+#include "src/core/lib/event_engine/ares_driver.h"
 
 #include <netdb.h>
 #include <string.h>
@@ -27,10 +27,12 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -96,7 +98,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
   }
   GRPC_CARES_TRACE_LOG(
       "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS",
-      request, request->qtype(), request->host());
+      request, request->qtype(), std::string(request->host()).c_str());
   GRPC_CARES_STACKTRACE();
 
   std::vector<EventEngine::ResolvedAddress> resolved_addresses;
@@ -153,83 +155,16 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
 
 }  // namespace
 
-GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
-  GRPC_CARES_TRACE_LOG("request:%p destructor", this);
-}
-
-void GrpcAresHostnameRequest::Start() {
-  absl::MutexLock lock(&mu_);
-  GPR_ASSERT(initialized_);
-  // TODO(yijiem): factor out
-  if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
-    // TODO(yijiem): set_request_dns_server if specified
-    pending_queries_++;
-    ares_gethostbyname(channel_, host_.c_str(), AF_INET6,
-                       &on_hostbyname_done_locked, static_cast<void*>(this));
-  }
-  // TODO(yijiem): set_request_dns_server if specified
-  pending_queries_++;
-  ares_gethostbyname(channel_, host_.c_str(), AF_INET,
-                     &on_hostbyname_done_locked, static_cast<void*>(this));
-  Work();
-}
-
-void GrpcAresHostnameRequest::OnResolve(
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
-  // TODO(yijiem): handle failure case
-  GPR_ASSERT(pending_queries_ > 0);
-  pending_queries_--;
-  if (result.ok()) {
-    result_.insert(result_.end(), result->begin(), result->end());
-  } else {
-    error_ = result.status();
-  }
-  if (pending_queries_ == 0) {
-    // We mark the event driver as being shut down.
-    // grpc_ares_notify_on_event_locked will shut down any remaining
-    // fds.
-    shutting_down_ = true;
-    Unref(DEBUG_LOCATION, "shutting down");
-    // TODO(yijiem): cancel timers here
-    if (error_.ok()) {
-      // TODO(yijiem): sort the addresses
-      event_engine_->Run(
-          [on_resolve = std::move(on_resolve_), result = std::move(result_),
-           request = static_cast<GrpcAresRequest*>(this)]() mutable {
-            on_resolve(std::move(result),
-                       static_cast<GrpcAresRequest*>(request));
-          });
-    } else {
-      // The reason that we are using EventEngine::Run() here is that we are
-      // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
-      // the Engine to clean up some state there (which will take its own
-      // mutex). The call could go further all the way back to the caller of the
-      // Lookup* call which may then take its own mutex. This mutex order is
-      // inverted from the order from which the caller calls into the
-      // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
-      // warning though it might be false positive.
-      //
-      // Another way might work is to unlock and then call on_resolve_ provided
-      // that on_resolve_ will not change after object construction.
-      event_engine_->Run(
-          [on_resolve = std::move(on_resolve_), error = std::move(error_),
-           request = static_cast<GrpcAresRequest*>(this)]() mutable {
-            on_resolve(std::move(error),
-                       static_cast<GrpcAresRequest*>(request));
-          });
-    }
-  }
-}
-
 GrpcAresRequest::GrpcAresRequest(
-    absl::string_view host, uint16_t port, EventEngine::Duration timeout,
+    absl::string_view name, absl::optional<absl::string_view> default_port,
+    EventEngine::Duration timeout,
     RegisterSocketWithPollerCallback register_socket_with_poller_cb,
     EventEngine* event_engine)
     : grpc_core::InternallyRefCounted<GrpcAresRequest>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver) ? "GrpcAresRequest"
                                                              : nullptr),
-      host_(host),
-      port_(port),
+      name_(name),
+      default_port_(default_port.has_value() ? *default_port : ""),
       timeout_(timeout),
       register_socket_with_poller_cb_(
           std::move(register_socket_with_poller_cb)),
@@ -243,17 +178,39 @@ GrpcAresRequest::~GrpcAresRequest() {
   }
 }
 
-bool GrpcAresRequest::Initialize() {
+absl::Status GrpcAresRequest::Initialize(bool check_port) {
   GPR_ASSERT(!initialized_);
+  absl::string_view host;
+  absl::string_view port;
+  GPR_ASSERT(grpc_core::SplitHostPort(name_, &host, &port));
+  absl::Status error;
+  if (host.empty()) {
+    error =
+        grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                           grpc_core::StatusStrProperty::kTargetAddress, name_);
+    return error;
+  } else if (check_port && port.empty()) {
+    if (default_port_.empty()) {
+      error = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
+                                 grpc_core::StatusStrProperty::kTargetAddress,
+                                 name_);
+      return error;
+    }
+    port = default_port_;
+  }
+  if (!port.empty()) {
+    port_ = grpc_strhtons(std::string(port).c_str());
+  }
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
   int status = ares_init_options(&channel_, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
     gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
-    return false;
+    return GRPC_ERROR_CREATE(absl::StrCat(
+        "Failed to init ares channel. C-ares error: ", ares_strerror(status));
   }
   initialized_ = true;
-  return true;
+  return absl::OkStatus();
 }
 
 void GrpcAresRequest::Cancel() {
@@ -406,6 +363,81 @@ void GrpcAresRequest::OnHandleDestroyed(FdNodeList::FdNode* fd_node,
                        fd_node->WrappedFd());
   GRPC_CARES_STACKTRACE();
   delete fd_node;
+}
+
+GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
+  GRPC_CARES_TRACE_LOG("request:%p destructor", this);
+}
+
+void GrpcAresHostnameRequest::Start() {
+  absl::MutexLock lock(&mu_);
+  GPR_ASSERT(initialized_);
+  // TODO(yijiem): factor out
+  if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
+    // TODO(yijiem): set_request_dns_server if specified
+    pending_queries_++;
+    ares_gethostbyname(channel_, host_.c_str(), AF_INET6,
+                       &on_hostbyname_done_locked, static_cast<void*>(this));
+  }
+  // TODO(yijiem): set_request_dns_server if specified
+  pending_queries_++;
+  ares_gethostbyname(channel_, host_.c_str(), AF_INET,
+                     &on_hostbyname_done_locked, static_cast<void*>(this));
+  Work();
+}
+
+void GrpcAresHostnameRequest::OnResolve(
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+  // TODO(yijiem): handle failure case
+  GPR_ASSERT(pending_queries_ > 0);
+  pending_queries_--;
+  if (result.ok()) {
+    result_.insert(result_.end(), result->begin(), result->end());
+  } else {
+    error_ = result.status();
+  }
+  if (pending_queries_ == 0) {
+    // We mark the event driver as being shut down.
+    // grpc_ares_notify_on_event_locked will shut down any remaining
+    // fds.
+    shutting_down_ = true;
+    Unref(DEBUG_LOCATION, "shutting down");
+    // TODO(yijiem): cancel timers here
+    if (error_.ok()) {
+      // TODO(yijiem): sort the addresses
+      event_engine_->Run(
+          [on_resolve = std::move(on_resolve_), result = std::move(result_),
+           request = static_cast<GrpcAresRequest*>(this)]() mutable {
+            on_resolve(std::move(result),
+                       static_cast<GrpcAresRequest*>(request));
+          });
+    } else {
+      // The reason that we are using EventEngine::Run() here is that we are
+      // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
+      // the Engine to clean up some state there (which will take its own
+      // mutex). The call could go further all the way back to the caller of the
+      // Lookup* call which may then take its own mutex. This mutex order is
+      // inverted from the order from which the caller calls into the
+      // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
+      // warning though it might be false positive.
+      //
+      // Another way might work is to unlock and then call on_resolve_ provided
+      // that on_resolve_ will not change after object construction.
+      event_engine_->Run(
+          [on_resolve = std::move(on_resolve_), error = std::move(error_),
+           request = static_cast<GrpcAresRequest*>(this)]() mutable {
+            on_resolve(std::move(error),
+                       static_cast<GrpcAresRequest*>(request));
+          });
+    }
+  }
+}
+
+void GrpcAresSRVRequest::Start() {
+  absl::MutexLock lock(&mu_);
+  GPR_ASSERT(initialized_);
+  // ares_query(channel_, service_name.c_str(), ns_c_in, ns_t_srv,
+  //            on_srv_query_done_locked, static_cast<void*>(this));
 }
 
 }  // namespace experimental

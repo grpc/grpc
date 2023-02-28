@@ -145,19 +145,20 @@ class GrpcAresRequest
     : public grpc_core::InternallyRefCounted<GrpcAresRequest> {
  public:
   explicit GrpcAresRequest(
-      absl::string_view host, uint16_t port, EventEngine::Duration timeout,
+      absl::string_view name, absl::optional<absl::string_view> default_port,
+      EventEngine::Duration timeout,
       RegisterSocketWithPollerCallback register_socket_with_poller_cb,
       EventEngine* event_engine);
   ~GrpcAresRequest() override;
 
-  bool Initialize();
+  absl::Status Initialize(bool check_port);
   virtual void Start() = 0;
   // Cancel the lookup and start the shutdown process
   void Cancel();
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_) override;
 
   ares_channel channel() const { return channel_; }
-  const char* host() const { return host_.c_str(); }
+  absl::string_view host() const { return host_; }
   uint16_t port() const { return port_; }
   bool shutting_down() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return shutting_down_;
@@ -195,12 +196,14 @@ class GrpcAresRequest
   /// synchronizes access to this request, and also to associated
   /// ev_driver and fd_node objects
   absl::Mutex mu_;
+  const std::string name_;
+  const std::string default_port_;
   // ares channel
   ares_channel channel_ = nullptr;
   /// host to resolve, parsed from the name to resolve
-  const std::string host_;
+  absl::string_view host_;
   /// port to fill in sockaddr_in, parsed from the name to resolve
-  const uint16_t port_;
+  uint16_t port_ = 0;
   const EventEngine::Duration timeout_;
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
   absl::Status error_ = absl::OkStatus();
@@ -220,10 +223,11 @@ using OnResolveCallback = absl::AnyInvocable<void(
 class GrpcAresHostnameRequest : public GrpcAresRequest {
  public:
   explicit GrpcAresHostnameRequest(
-      absl::string_view host, uint16_t port, EventEngine::Duration timeout,
+      absl::string_view name, absl::string_view default_port,
+      EventEngine::Duration timeout,
       RegisterSocketWithPollerCallback register_socket_with_poller_cb,
       OnResolveCallback on_resolve, EventEngine* event_engine)
-      : GrpcAresRequest(host, port, timeout,
+      : GrpcAresRequest(name, default_port, timeout,
                         std::move(register_socket_with_poller_cb),
                         event_engine),
         on_resolve_(std::move(on_resolve)) {}
@@ -248,7 +252,14 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
   OnResolveCallback on_resolve_ ABSL_GUARDED_BY(mu_);
 };
 
-class GrpcAresSRVRequest : public GrpcAresRequest {};
+class GrpcAresSRVRequest : public GrpcAresRequest {
+ public:
+  explicit GrpcAresSRVRequest();
+
+  void Start() ABSL_LOCKS_EXCLUDED(mu_) override;
+
+ private:
+};
 
 class GrpcAresTXTRequest : public GrpcAresRequest {};
 
