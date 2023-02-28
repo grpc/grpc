@@ -1631,7 +1631,7 @@ void RlsLb::RlsChannel::Orphan() {
       client_channel->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;
     }
-    grpc_channel_destroy(channel_);
+    grpc_channel_destroy_internal(channel_);
   }
   Unref(DEBUG_LOCATION, "Orphan");
 }
