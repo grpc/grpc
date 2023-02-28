@@ -365,9 +365,6 @@ class Center : public InterceptorList<T> {
         on_closed_.Wake();
         break;
       case ValueState::kClosed:
-        value_state_ = ValueState::kCancelled;
-        on_closed_.Wake();
-        break;
       case ValueState::kCancelled:
         break;
     }
@@ -532,7 +529,7 @@ class PipeReceiver {
   PipeReceiver(PipeReceiver&& other) noexcept = default;
   PipeReceiver& operator=(PipeReceiver&& other) noexcept = default;
   ~PipeReceiver() {
-    if (center_ != nullptr) center_->MarkClosed();
+    if (center_ != nullptr) center_->MarkCancelled();
   }
 
   void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
