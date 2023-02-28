@@ -51,7 +51,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h"
@@ -462,7 +462,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake CallState implementation, for use in PickArgs.
-  class FakeCallState : public LbCallStateInternal {
+  class FakeCallState : public ClientChannelLbCallState {
    public:
     explicit FakeCallState(
         const std::map<UniqueTypeName, absl::string_view>& attributes) {

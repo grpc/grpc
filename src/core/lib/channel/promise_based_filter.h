@@ -182,7 +182,7 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
@@ -538,8 +538,8 @@ class BaseCallData : public Activity, private Wakeable {
 
  private:
   // Wakeable implementation.
-  void Wakeup() final;
-  void Drop() final;
+  void Wakeup(void*) final;
+  void Drop(void*) final;
 
   virtual void OnWakeup() = 0;
 

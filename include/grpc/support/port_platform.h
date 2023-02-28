@@ -625,7 +625,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NORETURN
 #endif
 
-#if GPR_FORBID_UNREACHABLE_CODE
+#if defined(GPR_FORBID_UNREACHABLE_CODE) && GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
 #ifdef __cplusplus

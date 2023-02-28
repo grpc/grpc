@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
@@ -51,12 +50,14 @@ class Wakeable {
  public:
   // Wake up the underlying activity.
   // After calling, this Wakeable cannot be used again.
-  virtual void Wakeup() = 0;
+  // arg comes from the Waker object and allows one Wakeable instance to be used
+  // for multiple disjoint subparts of an Activity.
+  virtual void Wakeup(void* arg) = 0;
   // Drop this wakeable without waking up the underlying activity.
-  virtual void Drop() = 0;
+  virtual void Drop(void* arg) = 0;
 
   // Return the underlying activity debug tag, or "<unknown>" if not available.
-  virtual std::string ActivityDebugTag() const = 0;
+  virtual std::string ActivityDebugTag(void* arg) const = 0;
 
  protected:
   inline ~Wakeable() {}
@@ -64,95 +65,78 @@ class Wakeable {
 
 namespace promise_detail {
 struct Unwakeable final : public Wakeable {
-  void Wakeup() override {}
-  void Drop() override {}
-  std::string ActivityDebugTag() const override;
+  void Wakeup(void*) override {}
+  void Drop(void*) override {}
+  std::string ActivityDebugTag(void*) const override;
 };
 static Unwakeable* unwakeable() {
   return NoDestructSingleton<Unwakeable>::Get();
 }
 }  // namespace promise_detail
 
-class AtomicWaker;
-
 // An owning reference to a Wakeable.
 // This type is non-copyable but movable.
 class Waker {
  public:
-  explicit Waker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  Waker() : Waker(promise_detail::unwakeable()) {}
-  ~Waker() { wakeable_->Drop(); }
+  Waker(Wakeable* wakeable, void* arg) : wakeable_and_arg_{wakeable, arg} {}
+  Waker() : Waker(promise_detail::unwakeable(), nullptr) {}
+  ~Waker() { wakeable_and_arg_.Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
-  Waker(Waker&& other) noexcept : wakeable_(other.Take()) {}
+  Waker(Waker&& other) noexcept : wakeable_and_arg_(other.Take()) {}
   Waker& operator=(Waker&& other) noexcept {
-    std::swap(wakeable_, other.wakeable_);
+    std::swap(wakeable_and_arg_, other.wakeable_and_arg_);
     return *this;
   }
 
   // Wake the underlying activity.
-  void Wakeup() { Take()->Wakeup(); }
+  void Wakeup() { Take().Wakeup(); }
 
   template <typename H>
   friend H AbslHashValue(H h, const Waker& w) {
-    return H::combine(std::move(h), w.wakeable_);
+    return H::combine(H::combine(std::move(h), w.wakeable_and_arg_.wakeable),
+                      w.wakeable_and_arg_.arg);
   }
 
   bool operator==(const Waker& other) const noexcept {
-    return wakeable_ == other.wakeable_;
+    return wakeable_and_arg_ == other.wakeable_and_arg_;
   }
 
   bool operator!=(const Waker& other) const noexcept {
-    return wakeable_ != other.wakeable_;
+    return !operator==(other);
   }
 
   std::string ActivityDebugTag() {
-    return wakeable_ == nullptr ? "<unknown>" : wakeable_->ActivityDebugTag();
+    return wakeable_and_arg_.ActivityDebugTag();
+  }
+
+  // This is for tests to assert that a waker is occupied or not.
+  bool is_unwakeable() const {
+    return wakeable_and_arg_.wakeable == promise_detail::unwakeable();
   }
 
  private:
-  friend class AtomicWaker;
+  struct WakeableAndArg {
+    Wakeable* wakeable;
+    void* arg;
 
-  Wakeable* Take() {
-    return std::exchange(wakeable_, promise_detail::unwakeable());
+    void Wakeup() { wakeable->Wakeup(arg); }
+    void Drop() { wakeable->Drop(arg); }
+    std::string ActivityDebugTag() const {
+      return wakeable == nullptr ? "<unknown>"
+                                 : wakeable->ActivityDebugTag(arg);
+    }
+    bool operator==(const WakeableAndArg& other) const noexcept {
+      return wakeable == other.wakeable && arg == other.arg;
+    }
+  };
+
+  WakeableAndArg Take() {
+    return std::exchange(wakeable_and_arg_,
+                         {promise_detail::unwakeable(), nullptr});
   }
 
-  Wakeable* wakeable_;
-};
-
-// An atomic variant of Waker - this type is non-copyable and non-movable.
-class AtomicWaker {
- public:
-  explicit AtomicWaker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  AtomicWaker() : AtomicWaker(promise_detail::unwakeable()) {}
-  explicit AtomicWaker(Waker waker) : AtomicWaker(waker.Take()) {}
-  ~AtomicWaker() { wakeable_.load(std::memory_order_acquire)->Drop(); }
-  AtomicWaker(const AtomicWaker&) = delete;
-  AtomicWaker& operator=(const AtomicWaker&) = delete;
-  AtomicWaker(AtomicWaker&& other) noexcept = delete;
-  AtomicWaker& operator=(AtomicWaker&& other) noexcept = delete;
-
-  // Wake the underlying activity.
-  void Wakeup() { Take()->Wakeup(); }
-
-  // Return true if there is a not-unwakeable wakeable present.
-  bool Armed() const noexcept {
-    return wakeable_.load(std::memory_order_relaxed) !=
-           promise_detail::unwakeable();
-  }
-
-  // Set to some new waker
-  void Set(Waker waker) {
-    wakeable_.exchange(waker.Take(), std::memory_order_acq_rel)->Wakeup();
-  }
-
- private:
-  Wakeable* Take() {
-    return wakeable_.exchange(promise_detail::unwakeable(),
-                              std::memory_order_acq_rel);
-  }
-
-  std::atomic<Wakeable*> wakeable_;
+  WakeableAndArg wakeable_and_arg_;
 };
 
 // An Activity tracks execution of a single promise.
@@ -302,7 +286,7 @@ class FreestandingActivity : public Activity, private Wakeable {
  public:
   Waker MakeOwningWaker() final {
     Ref();
-    return Waker(this);
+    return Waker(this, nullptr);
   }
   Waker MakeNonOwningWaker() final;
 
@@ -351,7 +335,7 @@ class FreestandingActivity : public Activity, private Wakeable {
 
   Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
  private:
   class Handle;
@@ -485,7 +469,7 @@ class PromiseActivity final
   // the activity to an external threadpool to run. If the activity is already
   // running on this thread, a note is taken of such and the activity is
   // repolled if it doesn't complete.
-  void Wakeup() final {
+  void Wakeup(void*) final {
     // If there is an active activity, but hey it's us, flag that and we'll loop
     // in RunLoop (that's calling from above here!).
     if (Activity::is_current()) {
@@ -504,12 +488,12 @@ class PromiseActivity final
   }
 
   // Drop a wakeup
-  void Drop() final { this->WakeupComplete(); }
+  void Drop(void*) final { this->WakeupComplete(); }
 
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
   void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    GPR_ASSERT(!absl::exchange(done_, true));
+    GPR_ASSERT(!std::exchange(done_, true));
     ScopedContext contexts(this);
     Destruct(&promise_holder_.promise);
   }

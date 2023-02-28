@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2022 gRPC authors.
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,23 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
-#define GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#include <string>
 
-#include <grpc/support/port_platform.h>
+namespace grpc_generator {
 
-#include "src/cpp/ext/filters/logging/logging_sink.h"
+std::string EscapeVariableDelimiters(const std::string& original) {
+  std::string mut_str = original;
+  size_t index = 0;
+  while ((index = mut_str.find('$', index)) != std::string::npos) {
+    mut_str.replace(index, 1, "$$");
+    index += 2;
+  }
+  return mut_str;
+}
 
-namespace grpc {
-namespace internal {
-
-// TODO(yashykt): Add logging sink registration
-void RegisterLoggingFilter(LoggingSink* sink);
-
-}  // namespace internal
-}  // namespace grpc
-
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+}  // namespace grpc_generator

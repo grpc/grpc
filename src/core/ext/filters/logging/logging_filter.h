@@ -1,5 +1,6 @@
 //
-// Copyright 2015 gRPC authors.
+//
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,27 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+//
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_CALL_STATE_INTERNAL_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_CALL_STATE_INTERNAL_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
-
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/ext/filters/logging/logging_sink.h"
 
 namespace grpc_core {
 
-//
-// LbCallStateInternal
-//
-class LbCallStateInternal : public LoadBalancingPolicy::CallState {
- public:
-  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
-};
+void RegisterLoggingFilter(LoggingSink* sink);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_CALL_STATE_INTERNAL_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H

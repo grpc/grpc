@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <atomic>
@@ -144,8 +145,6 @@ class Call : public CppImplOf<Call, grpc_call> {
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
 
-  gpr_atm* peer_string_atm_ptr() { return &peer_string_; }
-
  protected:
   // The maximum number of concurrent batches possible.
   // Based upon the maximum number of individually queueable ops in the batch
@@ -203,7 +202,17 @@ class Call : public CppImplOf<Call, grpc_call> {
     send_deadline_ = send_deadline;
   }
 
-  void ClearPeerString() { gpr_atm_rel_store(&peer_string_, 0); }
+  Slice GetPeerString() const {
+    MutexLock lock(&peer_mu_);
+    return peer_string_.Ref();
+  }
+
+  void SetPeerString(Slice peer_string) {
+    MutexLock lock(&peer_mu_);
+    peer_string_ = std::move(peer_string);
+  }
+
+  void ClearPeerString() { SetPeerString(Slice(grpc_empty_slice())); }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -214,8 +223,11 @@ class Call : public CppImplOf<Call, grpc_call> {
   const bool is_client_;
   // flag indicating that cancellation is inherited
   bool cancellation_is_inherited_ = false;
-  // A char* indicating the peer name.
-  gpr_atm peer_string_ = 0;
+  // Peer name is protected by a mutex because it can be accessed by the
+  // application at the same moment as it is being set by the completion
+  // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
+  mutable Mutex peer_mu_;
+  Slice peer_string_ ABSL_GUARDED_BY(&peer_mu_);
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -337,9 +349,16 @@ void Call::PropagateCancellationToChildren() {
 }
 
 char* Call::GetPeer() {
-  char* peer_string = reinterpret_cast<char*>(gpr_atm_acq_load(&peer_string_));
-  if (peer_string != nullptr) return gpr_strdup(peer_string);
-  peer_string = grpc_channel_get_target(channel_->c_ptr());
+  Slice peer_slice = GetPeerString();
+  if (!peer_slice.empty()) {
+    absl::string_view peer_string_view = peer_slice.as_string_view();
+    char* peer_string =
+        static_cast<char*>(gpr_malloc(peer_string_view.size() + 1));
+    memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
+    peer_string[peer_string_view.size()] = '\0';
+    return peer_string;
+  }
+  char* peer_string = grpc_channel_get_target(channel_->c_ptr());
   if (peer_string != nullptr) return peer_string;
   return gpr_strdup("unknown");
 }
@@ -348,7 +367,8 @@ void Call::DeleteThis() {
   RefCountedPtr<Channel> channel = std::move(channel_);
   Arena* arena = arena_;
   this->~Call();
-  channel->UpdateCallSizeEstimate(arena->Destroy());
+  channel->UpdateCallSizeEstimate(arena->TotalUsedBytes());
+  arena->Destroy();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1051,11 +1071,11 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
       grpc_status_code status_code = *grpc_status;
       grpc_error_handle error;
       if (status_code != GRPC_STATUS_OK) {
-        char* peer = GetPeer();
+        Slice peer = GetPeerString();
         error = grpc_error_set_int(
-            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ", peer)),
+            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
+                                           peer.as_string_view())),
             StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
-        gpr_free(peer);
       }
       auto grpc_message = b->Take(GrpcMessageMetadata());
       if (grpc_message.has_value()) {
@@ -1305,6 +1325,9 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     // TODO(ctiller): this could be moved into recv_initial_filter now
     ValidateFilteredMetadata();
 
+    Slice* peer_string = md->get_pointer(PeerString());
+    if (peer_string != nullptr) call->SetPeerString(peer_string->Ref());
+
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
       call_->set_send_deadline(*deadline);
@@ -1511,10 +1534,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
-        if (is_client()) {
-          stream_op_payload->send_initial_metadata.peer_string =
-              peer_string_atm_ptr();
-        }
         pending_ops |= PendingOpMask(PendingOp::kSends);
         break;
       }
@@ -1663,9 +1682,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         if (is_client()) {
           stream_op_payload->recv_initial_metadata.trailing_metadata_available =
               &is_trailers_only_;
-        } else {
-          stream_op_payload->recv_initial_metadata.peer_string =
-              peer_string_atm_ptr();
         }
         pending_ops |= PendingOpMask(PendingOp::kRecvInitialMetadata);
         break;
@@ -1969,34 +1985,34 @@ class PromiseBasedCall : public Call,
      public:
       explicit AsanWaker(PromiseBasedCall* call) : call_(call) {}
 
-      void Wakeup() override {
-        call_->Wakeup();
+      void Wakeup(void*) override {
+        call_->Wakeup(nullptr);
         delete this;
       }
 
-      void Drop() override {
-        call_->Drop();
+      void Drop(void*) override {
+        call_->Drop(nullptr);
         delete this;
       }
 
-      std::string ActivityDebugTag() const override {
+      std::string ActivityDebugTag(void*) const override {
         return call_->DebugTag();
       }
 
      private:
       PromiseBasedCall* call_;
     };
-    return Waker(new AsanWaker(this));
+    return Waker(new AsanWaker(this), nullptr);
 #endif
 #endif
 #ifndef GRPC_CALL_USES_ASAN_WAKER
-    return Waker(this);
+    return Waker(this, nullptr);
 #endif
   }
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
 
   // Wakeable methods
-  void Wakeup() override {
+  void Wakeup(void*) override {
     channel()->event_engine()->Run([this] {
       ApplicationCallbackExecCtx app_exec_ctx;
       ExecCtx exec_ctx;
@@ -2008,7 +2024,7 @@ class PromiseBasedCall : public Call,
       InternalUnref("wakeup");
     });
   }
-  void Drop() override { InternalUnref("wakeup"); }
+  void Drop(void*) override { InternalUnref("wakeup"); }
 
   void RunInContext(absl::AnyInvocable<void()> fn) {
     if (Activity::current() == this) {
@@ -2178,7 +2194,7 @@ class PromiseBasedCall : public Call,
   void CToMetadata(grpc_metadata* metadata, size_t count,
                    grpc_metadata_batch* batch);
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
   // At the end of the call run any finalization actions.
   void RunFinalization(grpc_status_code status, const char* status_details) {
@@ -2269,7 +2285,7 @@ class PromiseBasedCall : public Call,
 
     // Activity needs to wake up (if it still exists!) - wake it up, and drop
     // the ref that was kept for this handle.
-    void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
+    void Wakeup(void*) override ABSL_LOCKS_EXCLUDED(mu_) {
       // Drop the ref to the handle at end of scope (we have one ref = one
       // wakeup semantics).
       auto unref = absl::MakeCleanup([this]() { Unref(); });
@@ -2282,16 +2298,16 @@ class PromiseBasedCall : public Call,
         lock.Release();
         // Activity still exists and we have a reference: wake it up, which will
         // drop the ref.
-        call->Wakeup();
+        call->Wakeup(nullptr);
       }
     }
 
-    std::string ActivityDebugTag() const override {
+    std::string ActivityDebugTag(void*) const override {
       MutexLock lock(&mu_);
       return call_ == nullptr ? "<unknown>" : call_->DebugTag();
     }
 
-    void Drop() override { Unref(); }
+    void Drop(void*) override { Unref(); }
 
    private:
     // Unref the Handle (not the activity).
@@ -2401,7 +2417,7 @@ Waker PromiseBasedCall::MakeNonOwningWaker() {
   } else {
     non_owning_wakeable_->Ref();
   }
-  return Waker(non_owning_wakeable_);
+  return Waker(non_owning_wakeable_, nullptr);
 }
 
 void PromiseBasedCall::CToMetadata(grpc_metadata* metadata, size_t count,
@@ -2689,10 +2705,6 @@ void CallContext::IncrementRefCount(const char* reason) {
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
 
-gpr_atm* CallContext::peer_string_atm_ptr() {
-  return call_->peer_string_atm_ptr();
-}
-
 void CallContext::UpdateDeadline(Timestamp deadline) {
   call_->UpdateDeadline(deadline);
 }
@@ -2948,6 +2960,8 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
   incoming_compression_algorithm_ =
       metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  Slice* peer_string = metadata->get_pointer(PeerString());
+  if (peer_string != nullptr) SetPeerString(peer_string->Ref());
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
   PublishMetadataArray(metadata,

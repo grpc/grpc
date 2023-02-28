@@ -117,6 +117,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
+    src/core/ext/gcp/metadata_query.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -544,53 +545,53 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gpr/alloc.cc \
+    src/core/lib/gpr/android/log.cc \
     src/core/lib/gpr/atm.cc \
-    src/core/lib/gpr/cpu_iphone.cc \
-    src/core/lib/gpr/cpu_linux.cc \
-    src/core/lib/gpr/cpu_posix.cc \
-    src/core/lib/gpr/cpu_windows.cc \
+    src/core/lib/gpr/iphone/cpu.cc \
+    src/core/lib/gpr/linux/cpu.cc \
+    src/core/lib/gpr/linux/log.cc \
     src/core/lib/gpr/log.cc \
-    src/core/lib/gpr/log_android.cc \
-    src/core/lib/gpr/log_linux.cc \
-    src/core/lib/gpr/log_posix.cc \
-    src/core/lib/gpr/log_windows.cc \
+    src/core/lib/gpr/msys/tmpfile.cc \
+    src/core/lib/gpr/posix/cpu.cc \
+    src/core/lib/gpr/posix/log.cc \
+    src/core/lib/gpr/posix/string.cc \
+    src/core/lib/gpr/posix/sync.cc \
+    src/core/lib/gpr/posix/time.cc \
+    src/core/lib/gpr/posix/tmpfile.cc \
     src/core/lib/gpr/string.cc \
-    src/core/lib/gpr/string_posix.cc \
-    src/core/lib/gpr/string_util_windows.cc \
-    src/core/lib/gpr/string_windows.cc \
     src/core/lib/gpr/sync.cc \
     src/core/lib/gpr/sync_abseil.cc \
-    src/core/lib/gpr/sync_posix.cc \
-    src/core/lib/gpr/sync_windows.cc \
     src/core/lib/gpr/time.cc \
-    src/core/lib/gpr/time_posix.cc \
     src/core/lib/gpr/time_precise.cc \
-    src/core/lib/gpr/time_windows.cc \
-    src/core/lib/gpr/tmpfile_msys.cc \
-    src/core/lib/gpr/tmpfile_posix.cc \
-    src/core/lib/gpr/tmpfile_windows.cc \
+    src/core/lib/gpr/windows/cpu.cc \
+    src/core/lib/gpr/windows/log.cc \
+    src/core/lib/gpr/windows/string.cc \
+    src/core/lib/gpr/windows/string_util.cc \
+    src/core/lib/gpr/windows/sync.cc \
+    src/core/lib/gpr/windows/time.cc \
+    src/core/lib/gpr/windows/tmpfile.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/crash.cc \
-    src/core/lib/gprpp/env_linux.cc \
-    src/core/lib/gprpp/env_posix.cc \
-    src/core/lib/gprpp/env_windows.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/host_port.cc \
+    src/core/lib/gprpp/linux/env.cc \
     src/core/lib/gprpp/load_file.cc \
     src/core/lib/gprpp/mpscq.cc \
-    src/core/lib/gprpp/stat_posix.cc \
-    src/core/lib/gprpp/stat_windows.cc \
+    src/core/lib/gprpp/posix/env.cc \
+    src/core/lib/gprpp/posix/stat.cc \
+    src/core/lib/gprpp/posix/thd.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/strerror.cc \
     src/core/lib/gprpp/tchar.cc \
-    src/core/lib/gprpp/thd_posix.cc \
-    src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/time_util.cc \
     src/core/lib/gprpp/validation_errors.cc \
+    src/core/lib/gprpp/windows/env.cc \
+    src/core/lib/gprpp/windows/stat.cc \
+    src/core/lib/gprpp/windows/thd.cc \
     src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
@@ -1268,7 +1269,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.53.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.54.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
@@ -1305,6 +1306,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/rbac)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/stateful_session)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/gcp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server)
@@ -1419,7 +1421,16 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/android)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/iphone)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/linux)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/msys)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/posix)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/linux)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/posix)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)

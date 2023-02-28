@@ -72,6 +72,7 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
+inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
@@ -107,8 +108,12 @@ inline bool IsTransportSuppliesClientLatencyEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(12); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
+inline bool IsScheduleCancellationOverWriteEnabled() {
+  return IsExperimentEnabled(13);
+}
 
-constexpr const size_t kNumExperiments = 13;
+constexpr const size_t kNumExperiments = 14;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

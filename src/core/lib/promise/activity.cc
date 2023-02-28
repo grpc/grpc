@@ -36,7 +36,7 @@ namespace promise_detail {
 ///////////////////////////////////////////////////////////////////////////////
 // HELPER TYPES
 
-std::string Unwakeable::ActivityDebugTag() const { return "<unknown>"; }
+std::string Unwakeable::ActivityDebugTag(void*) const { return "<unknown>"; }
 
 // Weak handle to an Activity.
 // Handle can persist while Activity goes away.
@@ -58,7 +58,7 @@ class FreestandingActivity::Handle final : public Wakeable {
 
   // Activity needs to wake up (if it still exists!) - wake it up, and drop the
   // ref that was kept for this handle.
-  void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
+  void Wakeup(void*) override ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
@@ -68,7 +68,7 @@ class FreestandingActivity::Handle final : public Wakeable {
       mu_.Unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
-      activity->Wakeup();
+      activity->Wakeup(nullptr);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
@@ -78,9 +78,9 @@ class FreestandingActivity::Handle final : public Wakeable {
     Unref();
   }
 
-  void Drop() override { Unref(); }
+  void Drop(void*) override { Unref(); }
 
-  std::string ActivityDebugTag() const override {
+  std::string ActivityDebugTag(void*) const override {
     MutexLock lock(&mu_);
     return activity_ == nullptr ? "<unknown>" : activity_->DebugTag();
   }
@@ -124,7 +124,7 @@ void FreestandingActivity::DropHandle() {
 
 Waker FreestandingActivity::MakeNonOwningWaker() {
   mu_.AssertHeld();
-  return Waker(RefHandle());
+  return Waker(RefHandle(), nullptr);
 }
 
 }  // namespace promise_detail
