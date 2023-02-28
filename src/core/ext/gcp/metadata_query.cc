@@ -64,7 +64,7 @@ MetadataQuery::MetadataQuery(
         callback,
     Duration timeout)
     : MetadataQuery("metadata.google.internal.", std::move(attribute), pollent,
-                    std::move(callback), std::move(timeout)) {}
+                    std::move(callback), timeout) {}
 
 MetadataQuery::MetadataQuery(
     std::string metadata_server_name, std::string attribute,
