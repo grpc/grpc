@@ -18,6 +18,7 @@
 #include "transport.h"
 
 #include "src/core/lib/surface/call_trace.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
 
@@ -88,7 +89,16 @@ BatchBuilder::Batch::~Batch() {
 }
 
 BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
-  if (target_.has_value() && target_->stream != target.stream) {
+  gpr_log(
+      GPR_DEBUG, "TRANSPORT: %s hack:%s", target.transport->vtable->name,
+      target.transport->vtable
+              ->hacky_disable_stream_op_batch_coalescing_in_connected_channel
+          ? "true"
+          : "false");
+  if (target_.has_value() &&
+      (target_->stream != target.stream ||
+       target.transport->vtable
+           ->hacky_disable_stream_op_batch_coalescing_in_connected_channel)) {
     FlushBatch();
   }
   if (!target_.has_value()) {

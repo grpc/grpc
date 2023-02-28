@@ -3045,6 +3045,7 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
 }
 
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
+                                             false,
                                              "chttp2",
                                              init_stream,
                                              nullptr,
