@@ -158,9 +158,11 @@ class Center : public InterceptorList<T> {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
       case ValueState::kCancelled:
+      case ValueState::kWaitingForAckAndClosed:
         return false;
       case ValueState::kReady:
       case ValueState::kAcked:
+      case ValueState::kWaitingForAck:
         return on_empty_.pending();
       case ValueState::kEmpty:
         value_state_ = ValueState::kReady;
@@ -184,6 +186,8 @@ class Center : public InterceptorList<T> {
       case ValueState::kReady:
       case ValueState::kReadyClosed:
       case ValueState::kEmpty:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
         return on_empty_.pending();
       case ValueState::kAcked:
         value_state_ = ValueState::kEmpty;
@@ -205,9 +209,14 @@ class Center : public InterceptorList<T> {
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
         return on_full_.pending();
       case ValueState::kReadyClosed:
+        value_state_ = ValueState::kWaitingForAckAndClosed;
+        return std::move(value_);
       case ValueState::kReady:
+        value_state_ = ValueState::kWaitingForAck;
         return std::move(value_);
       case ValueState::kClosed:
       case ValueState::kCancelled:
@@ -227,7 +236,9 @@ class Center : public InterceptorList<T> {
       case ValueState::kEmpty:
       case ValueState::kAcked:
       case ValueState::kReady:
+      case ValueState::kWaitingForAck:
         return on_closed_.pending();
+      case ValueState::kWaitingForAckAndClosed:
       case ValueState::kReadyClosed:
       case ValueState::kClosed:
         return false;
@@ -249,6 +260,8 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
       case ValueState::kReady:
       case ValueState::kReadyClosed:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
         return on_closed_.pending();
       case ValueState::kClosed:
         return false;
@@ -267,6 +280,8 @@ class Center : public InterceptorList<T> {
       case ValueState::kReady:
       case ValueState::kReadyClosed:
         return on_empty_.pending();
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
       case ValueState::kAcked:
       case ValueState::kEmpty:
       case ValueState::kClosed:
@@ -282,10 +297,12 @@ class Center : public InterceptorList<T> {
     }
     switch (value_state_) {
       case ValueState::kReady:
+      case ValueState::kWaitingForAck:
         value_state_ = ValueState::kAcked;
         on_empty_.Wake();
         break;
       case ValueState::kReadyClosed:
+      case ValueState::kWaitingForAckAndClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
         on_closed_.Wake();
@@ -318,9 +335,14 @@ class Center : public InterceptorList<T> {
         value_state_ = ValueState::kReadyClosed;
         on_closed_.Wake();
         break;
+      case ValueState::kWaitingForAck:
+        value_state_ = ValueState::kWaitingForAckAndClosed;
+        on_closed_.Wake();
+        break;
       case ValueState::kReadyClosed:
       case ValueState::kClosed:
       case ValueState::kCancelled:
+      case ValueState::kWaitingForAckAndClosed:
         break;
     }
   }
@@ -334,6 +356,8 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
       case ValueState::kReady:
       case ValueState::kReadyClosed:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kCancelled;
         on_empty_.Wake();
@@ -370,6 +394,8 @@ class Center : public InterceptorList<T> {
     kEmpty,
     // Value has been pushed but not acked, it's possible to receive.
     kReady,
+    // Value has been read and not acked, both send/receive blocked until ack.
+    kWaitingForAck,
     // Value has been received and acked, we can unblock senders and transition
     // to empty.
     kAcked,
@@ -378,6 +404,9 @@ class Center : public InterceptorList<T> {
     // Pipe is closed successfully, no more values can be sent
     // (but one value is queued and ready to be received)
     kReadyClosed,
+    // Pipe is closed successfully, no more values can be sent
+    // (but one value is queued and waiting to be acked)
+    kWaitingForAckAndClosed,
     // Pipe is closed unsuccessfully, no more values can be sent
     kCancelled,
   };
@@ -402,6 +431,10 @@ class Center : public InterceptorList<T> {
         return "Closed";
       case ValueState::kReadyClosed:
         return "ReadyClosed";
+      case ValueState::kWaitingForAck:
+        return "WaitingForAck";
+      case ValueState::kWaitingForAckAndClosed:
+        return "WaitingForAckAndClosed";
       case ValueState::kCancelled:
         return "Cancelled";
     }

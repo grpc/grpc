@@ -61,17 +61,37 @@ class Latch {
   }
 
   // Produce a promise to wait for a value from this latch.
+  // Moves the result out of the latch.
   auto Wait() {
 #ifndef NDEBUG
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<T> {
       if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
+        gpr_log(GPR_INFO, "%sWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
       if (has_value_) {
         return std::move(value_);
+      } else {
+        return waiter_.pending();
+      }
+    };
+  }
+
+  // Produce a promise to wait for a value from this latch.
+  // Copies the result out of the latch.
+  auto WaitAndCopy() {
+#ifndef NDEBUG
+    has_had_waiters_ = true;
+#endif
+    return [this]() -> Poll<T> {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_INFO, "%sWaitAndCopy %s", DebugTag().c_str(),
+                StateString().c_str());
+      }
+      if (has_value_) {
+        return value_;
       } else {
         return waiter_.pending();
       }

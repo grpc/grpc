@@ -562,8 +562,6 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   auto server_to_client_empty =
       call_data->server_to_client.receiver.AwaitEmpty();
-  auto server_initial_metadata_empty =
-      call_data->server_initial_metadata.receiver.AwaitEmpty();
 
   // Create a promise that will receive client initial metadata, and then run
   // the main stem of the call (calling next_promise_factory up through the
@@ -603,7 +601,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
           ServerMetadataHandle server_trailing_metadata) {
         return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
             stream->batch_target(), std::move(server_trailing_metadata),
-            !std::exchange(call_data->sent_trailing_metadata, true));
+            !std::exchange(call_data->sent_initial_metadata, true));
       };
 
   // Runs the receive message loop, either until all the messages

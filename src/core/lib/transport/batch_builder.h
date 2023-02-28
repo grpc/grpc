@@ -218,6 +218,11 @@ class BatchBuilder {
 };
 
 inline auto BatchBuilder::SendMessage(Target target, MessageHandle message) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Queue send message: %s",
+            Activity::current()->DebugTag().c_str(),
+            message->DebugString().c_str());
+  }
   auto* batch = GetBatch(target);
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
@@ -225,18 +230,22 @@ inline auto BatchBuilder::SendMessage(Target target, MessageHandle message) {
   payload_->send_message.send_message = message->payload();
   payload_->send_message.flags = message->flags();
   pc->send_message = std::move(message);
-  return batch->RefUntil(pc->done_latch.Wait());
+  return batch->RefUntil(pc->done_latch.WaitAndCopy());
 }
 
 inline auto BatchBuilder::SendInitialMetadata(
     Target target, Arena::PoolPtr<grpc_metadata_batch> md) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Queue send initial metadata: %s",
+            Activity::current()->DebugTag().c_str(), md->DebugString().c_str());
+  }
   auto* batch = GetBatch(target);
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
   batch->batch.send_initial_metadata = true;
   payload_->send_initial_metadata.send_initial_metadata = md.get();
   pc->send_initial_metadata = std::move(md);
-  return batch->RefUntil(pc->done_latch.Wait());
+  return batch->RefUntil(pc->done_latch.WaitAndCopy());
 }
 
 inline auto BatchBuilder::SendClientInitialMetadata(
@@ -245,6 +254,10 @@ inline auto BatchBuilder::SendClientInitialMetadata(
 }
 
 inline auto BatchBuilder::SendClientTrailingMetadata(Target target) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Queue send trailing metadata",
+            Activity::current()->DebugTag().c_str());
+  }
   auto* batch = GetBatch(target);
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
@@ -254,7 +267,7 @@ inline auto BatchBuilder::SendClientTrailingMetadata(Target target) {
   payload_->send_trailing_metadata.send_trailing_metadata = metadata.get();
   payload_->send_trailing_metadata.sent = nullptr;
   pc->send_trailing_metadata = std::move(metadata);
-  return batch->RefUntil(pc->done_latch.Wait());
+  return batch->RefUntil(pc->done_latch.WaitAndCopy());
 }
 
 inline auto BatchBuilder::SendServerInitialMetadata(
@@ -265,6 +278,12 @@ inline auto BatchBuilder::SendServerInitialMetadata(
 inline auto BatchBuilder::SendServerTrailingMetadata(
     Target target, ServerMetadataHandle metadata,
     bool convert_to_cancellation) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Queue send trailing metadata: %s%s",
+            Activity::current()->DebugTag().c_str(),
+            metadata->DebugString().c_str(),
+            convert_to_cancellation ? " (as cancellation)" : "");
+  }
   Batch* batch;
   PendingSends* pc;
   if (convert_to_cancellation) {
@@ -286,14 +305,22 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
   }
   batch->batch.on_complete = &pc->on_done_closure;
   pc->send_trailing_metadata = std::move(metadata);
-  return batch->RefUntil(Map(pc->done_latch.Wait(), [pc](absl::Status status) {
-    return CompleteSendServerTrailingMetadata(
-        std::move(pc->send_trailing_metadata), std::move(status),
-        pc->trailing_metadata_sent);
-  }));
+  return batch->RefUntil(
+      Map(pc->done_latch.WaitAndCopy(), [pc](absl::Status status) {
+        return CompleteSendServerTrailingMetadata(
+            std::move(pc->send_trailing_metadata), std::move(status),
+            pc->trailing_metadata_sent);
+      }));
+  if (convert_to_cancellation) {
+    batch->PerformWith(target);
+  }
 }
 
 inline auto BatchBuilder::ReceiveMessage(Target target) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Queue receive message",
+            Activity::current()->DebugTag().c_str());
+  }
   auto* batch = GetBatch(target);
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_receive_message);
   batch->batch.recv_message = true;
@@ -311,6 +338,10 @@ inline auto BatchBuilder::ReceiveMessage(Target target) {
 }
 
 inline auto BatchBuilder::ReceiveInitialMetadata(Target target) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Queue receive initial metadata",
+            Activity::current()->DebugTag().c_str());
+  }
   auto* batch = GetBatch(target);
   auto* pc =
       batch->GetInitializedCompletion(&Batch::pending_receive_initial_metadata);
@@ -335,6 +366,10 @@ inline auto BatchBuilder::ReceiveServerInitialMetadata(Target target) {
 }
 
 inline auto BatchBuilder::ReceiveTrailingMetadata(Target target) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] Queue receive trailing metadata",
+            Activity::current()->DebugTag().c_str());
+  }
   auto* batch = GetBatch(target);
   auto* pc = batch->GetInitializedCompletion(
       &Batch::pending_receive_trailing_metadata);

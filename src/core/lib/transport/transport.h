@@ -107,6 +107,8 @@ class Message {
   SliceBuffer* payload() { return &payload_; }
   const SliceBuffer* payload() const { return &payload_; }
 
+  std::string DebugString() const;
+
  private:
   SliceBuffer payload_;
   uint32_t flags_ = 0;

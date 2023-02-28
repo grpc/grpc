@@ -33,10 +33,15 @@ struct ContextType;  // IWYU pragma: keep
 
 namespace promise_detail {
 
+struct KeepExistingIfPresent {};
+
 template <typename T>
 class Context : public ContextType<T> {
  public:
   explicit Context(T* p) : old_(current_) { current_ = p; }
+  Context(KeepExistingIfPresent, T* p) : old_(current_) {
+    if (current_ == nullptr) current_ = p;
+  }
   ~Context() { current_ = old_; }
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;

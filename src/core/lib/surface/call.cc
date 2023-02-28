@@ -1951,23 +1951,30 @@ class PromiseBasedCall : public Call,
   using Call::arena;
 
  protected:
+  class ScopedBatchCoalescer : public BatchBuilder,
+                               public promise_detail::Context<BatchBuilder> {
+   public:
+    explicit ScopedBatchCoalescer(PromiseBasedCall* call)
+        : BatchBuilder(&call->batch_payload_),
+          promise_detail::Context<BatchBuilder>(
+              promise_detail::KeepExistingIfPresent{}, this) {}
+  };
+
   class ScopedContext
       : public ScopedActivity,
-        public BatchBuilder,
+        public ScopedBatchCoalescer,
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallContext>,
-        public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<BatchBuilder> {
+        public promise_detail::Context<CallFinalization> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
-          BatchBuilder(&call->batch_payload_),
+          ScopedBatchCoalescer(call),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
-          promise_detail::Context<CallFinalization>(&call->finalization_),
-          promise_detail::Context<BatchBuilder>{this} {}
+          promise_detail::Context<CallFinalization>(&call->finalization_) {}
   };
 
   class Completion {
@@ -2133,7 +2140,8 @@ class PromiseBasedCall : public Call,
     return [this]() -> Poll<Empty> {
       int n = sends_queued_.load(std::memory_order_relaxed);
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "%s[call] WaitForSends n=%d", DebugTag().c_str(), n);
+        gpr_log(GPR_DEBUG, "%s[call] WaitForSendingStarted n=%d",
+                DebugTag().c_str(), n);
       }
       if (n != 0) return waiting_for_queued_sends_.pending();
       return Empty{};
@@ -2742,6 +2750,7 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 
 void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
+  ScopedBatchCoalescer coalescer(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
@@ -3146,6 +3155,7 @@ grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 
 void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
+  ScopedBatchCoalescer coalescer(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {

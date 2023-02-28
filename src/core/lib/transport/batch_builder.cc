@@ -105,7 +105,7 @@ void BatchBuilder::FlushBatch() {
   GPR_ASSERT(target_.has_value());
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s[connected] Perform transport stream op batch: %s",
-            Activity::current()->DebugTag().c_str(),
+            batch_->party->DebugTag().c_str(),
             grpc_transport_stream_op_batch_string(&batch_->batch).c_str());
   }
   std::exchange(batch_, nullptr)->PerformWith(*target_);
