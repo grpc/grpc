@@ -128,6 +128,9 @@ class BatchBuilder {
     grpc_closure on_done_closure;
     Latch<absl::Status> done_latch;
     RefCountedPtr<Batch> batch;
+
+   protected:
+    ~PendingCompletion() = default;
   };
 
   // A pending receive message.
@@ -152,6 +155,9 @@ class BatchBuilder {
     Arena::PoolPtr<grpc_metadata_batch> metadata =
         GetContext<Arena>()->MakePooled<grpc_metadata_batch>(
             GetContext<Arena>());
+
+   protected:
+    ~PendingReceiveMetadata() = default;
   };
 
   struct PendingReceiveInitialMetadata final : public PendingReceiveMetadata {

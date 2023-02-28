@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <initializer_list>
 #include <vector>
 
@@ -85,7 +86,7 @@ class Party::Handle final : public Wakeable {
     Unref();
   }
 
-  void Drop(WakeupMask wakeup_mask) override { Unref(); }
+  void Drop(WakeupMask) override { Unref(); }
 
   std::string ActivityDebugTag(WakeupMask) const override {
     MutexLock lock(&mu_);
@@ -213,7 +214,7 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 
   if (grpc_trace_promise_primitives.enabled()) {
     std::vector<int> wakeups;
-    for (int i = 0; i < 8 * sizeof(WakeupMask); i++) {
+    for (size_t i = 0; i < 8 * sizeof(WakeupMask); i++) {
       if (mask & (1 << i)) wakeups.push_back(i);
     }
     gpr_log(GPR_DEBUG, "%s[party] ForceImmediateRepoll({%s}): prev_state=%s",
@@ -325,7 +326,7 @@ void Party::AddParticipant(Participant* participant) {
   do {
     slot = -1;
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
-    for (int bit = 0; bit < kMaxParticipants; bit++) {
+    for (size_t bit = 0; bit < kMaxParticipants; bit++) {
       if (allocated & (1 << bit)) continue;
       slot = bit;
       allocated |= 1 << bit;
@@ -360,7 +361,7 @@ void Party::ScheduleWakeup(WakeupMask mask) {
                                         std::memory_order_acquire);
   if (grpc_trace_promise_primitives.enabled()) {
     std::vector<int> wakeups;
-    for (int i = 0; i < 8 * sizeof(WakeupMask); i++) {
+    for (size_t i = 0; i < 8 * sizeof(WakeupMask); i++) {
       if (mask & (1 << i)) wakeups.push_back(i);
     }
     gpr_log(GPR_DEBUG, "%s[party] ScheduleWakeup({%s}): prev_state=%s",

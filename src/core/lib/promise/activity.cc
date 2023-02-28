@@ -143,7 +143,7 @@ std::string Activity::DebugTag() const {
 
 std::string IntraActivityWaiter::DebugString() const {
   std::vector<int> bits;
-  for (int i = 0; i < 8 * sizeof(WakeupMask); i++) {
+  for (size_t i = 0; i < 8 * sizeof(WakeupMask); i++) {
     if (wakeups_ & (1 << i)) bits.push_back(i);
   }
   return absl::StrCat("{", absl::StrJoin(bits, ","), "}");

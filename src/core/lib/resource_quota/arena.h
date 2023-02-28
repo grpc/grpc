@@ -378,11 +378,14 @@ class Arena {
   static void FreePooled(void* p, std::atomic<FreePoolNode*>* head);
 
   void TracePoolAlloc(size_t size, void* ptr) {
+    (void)size;
+    (void)ptr;
 #ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
     gpr_log(GPR_ERROR, "ARENA %p ALLOC %" PRIdPTR " @ %p", this, size, ptr);
 #endif
   }
   static void TracePoolFree(void* ptr) {
+    (void)ptr;
 #ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
     gpr_log(GPR_ERROR, "FREE %p", ptr);
 #endif

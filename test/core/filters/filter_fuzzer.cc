@@ -111,6 +111,8 @@ namespace {
 const grpc_transport_vtable kFakeTransportVTable = {
     // sizeof_stream
     0,
+    // hacky_disable_stream_op_batch_coalescing_in_connected_channel
+    false,
     // name
     "fake_transport",
     // init_stream
