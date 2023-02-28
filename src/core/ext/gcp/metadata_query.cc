@@ -63,11 +63,21 @@ MetadataQuery::MetadataQuery(
                             absl::StatusOr<std::string> /* result */)>
         callback,
     Duration timeout)
+    : MetadataQuery("metadata.google.internal.", std::move(attribute), pollent,
+                    std::move(callback), std::move(timeout)) {}
+
+MetadataQuery::MetadataQuery(
+    std::string metadata_server_name, std::string attribute,
+    grpc_polling_entity* pollent,
+    absl::AnyInvocable<void(std::string /* attribute */,
+                            absl::StatusOr<std::string> /* result */)>
+        callback,
+    Duration timeout)
     : InternallyRefCounted<MetadataQuery>(nullptr, 2),
       attribute_(std::move(attribute)),
       callback_(std::move(callback)) {
   GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
-  auto uri = URI::Create("http", "metadata.google.internal.", attribute_,
+  auto uri = URI::Create("http", std::move(metadata_server_name), attribute_,
                          {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());  // params are hardcoded
   grpc_http_request request;
