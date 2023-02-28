@@ -33,7 +33,6 @@
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef _WIN32
 #else

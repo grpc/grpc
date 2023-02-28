@@ -248,6 +248,10 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
   OnResolveCallback on_resolve_ ABSL_GUARDED_BY(mu_);
 };
 
+class GrpcAresSRVRequest : public GrpcAresRequest {};
+
+class GrpcAresTXTRequest : public GrpcAresRequest {};
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

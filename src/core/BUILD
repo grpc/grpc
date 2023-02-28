@@ -2236,9 +2236,11 @@ grpc_cc_library(
     deps = [
         "error",
         "examine_stack",
+        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:grpc_trace",
         "//:orphanable",
+        "//:ref_counted_ptr",
     ],
 )
 
