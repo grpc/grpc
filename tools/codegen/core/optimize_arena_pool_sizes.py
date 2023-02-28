@@ -127,5 +127,6 @@ while testq:
             continue
         add(top + [i])
 
+print("SAW SIZES: %r" % sorted(list(sizes)))
 print("BEST: %r" % list(reversed(best)))
 print("BEST MEASURE: %d" % best_measure)

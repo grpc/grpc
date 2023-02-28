@@ -119,8 +119,7 @@ PoolAndSize ChoosePoolForAllocationSize(
 class Arena {
   // Selected pool sizes.
   // How to tune: see tools/codegen/core/optimize_arena_pool_sizes.py
-  using PoolSizes =
-      absl::integer_sequence<size_t, 80, 104, 144, 304, 528, 1024>;
+  using PoolSizes = absl::integer_sequence<size_t, 80, 304, 528, 1024>;
   struct FreePoolNode {
     FreePoolNode* next;
   };
