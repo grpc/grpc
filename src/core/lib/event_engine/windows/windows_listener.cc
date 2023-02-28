@@ -347,6 +347,14 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
   auto* single_port_listener_ptr = single_port_listener->get();
   grpc_core::MutexLock lock(&socket_listeners_mu_);
   port_listeners_.emplace_back(std::move(*single_port_listener));
+  if (started_.load()) {
+    gpr_log(GPR_ERROR,
+            "WindowsEventEngineListener::%p Bind was called concurrently while "
+            "the Listener was starting. This is invalid usage, all ports must "
+            "be bound before the Listener is started.",
+            this);
+    single_port_listener_ptr->Start();
+  }
   return single_port_listener_ptr;
 }
 
