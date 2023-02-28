@@ -180,11 +180,10 @@ GrpcAresRequest::~GrpcAresRequest() {
 
 absl::Status GrpcAresRequest::Initialize(bool check_port) {
   GPR_ASSERT(!initialized_);
-  absl::string_view host;
   absl::string_view port;
-  GPR_ASSERT(grpc_core::SplitHostPort(name_, &host, &port));
+  GPR_ASSERT(grpc_core::SplitHostPort(name_, &host_, &port));
   absl::Status error;
-  if (host.empty()) {
+  if (host_.empty()) {
     error =
         grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
                            grpc_core::StatusStrProperty::kTargetAddress, name_);
@@ -207,7 +206,7 @@ absl::Status GrpcAresRequest::Initialize(bool check_port) {
   if (status != ARES_SUCCESS) {
     gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     return GRPC_ERROR_CREATE(absl::StrCat(
-        "Failed to init ares channel. C-ares error: ", ares_strerror(status));
+        "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
   }
   initialized_ = true;
   return absl::OkStatus();
@@ -372,16 +371,21 @@ GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
 void GrpcAresHostnameRequest::Start() {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
+  // We add up pending_queries_ here since ares_gethostbyname may directly
+  // invoke the callback inline if there is any error with the input. The
+  // callback will invoke OnResolve with an error status and may destroy the
+  // object too early (before the second ares_gethostbyname) if we haven't added
+  // up here.
+  pending_queries_++;
   // TODO(yijiem): factor out
   if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
     // TODO(yijiem): set_request_dns_server if specified
     pending_queries_++;
-    ares_gethostbyname(channel_, host_.c_str(), AF_INET6,
+    ares_gethostbyname(channel_, std::string(host_).c_str(), AF_INET6,
                        &on_hostbyname_done_locked, static_cast<void*>(this));
   }
   // TODO(yijiem): set_request_dns_server if specified
-  pending_queries_++;
-  ares_gethostbyname(channel_, host_.c_str(), AF_INET,
+  ares_gethostbyname(channel_, std::string(host_).c_str(), AF_INET,
                      &on_hostbyname_done_locked, static_cast<void*>(this));
   Work();
 }
@@ -401,7 +405,6 @@ void GrpcAresHostnameRequest::OnResolve(
     // grpc_ares_notify_on_event_locked will shut down any remaining
     // fds.
     shutting_down_ = true;
-    Unref(DEBUG_LOCATION, "shutting down");
     // TODO(yijiem): cancel timers here
     if (error_.ok()) {
       // TODO(yijiem): sort the addresses
@@ -430,6 +433,7 @@ void GrpcAresHostnameRequest::OnResolve(
                        static_cast<GrpcAresRequest*>(request));
           });
     }
+    Unref(DEBUG_LOCATION, "shutting down");
   }
 }
 

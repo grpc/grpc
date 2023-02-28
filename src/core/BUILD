@@ -2238,8 +2238,10 @@ grpc_cc_library(
         "examine_stack",
         "//:debug_location",
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:grpc_trace",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
     ],
 )
