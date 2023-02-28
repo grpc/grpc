@@ -58,6 +58,9 @@ Updating some dependencies requires extra care.
 
 ### Updating third_party/boringssl-with-bazel
 
+NOTE: updating the boringssl dependency is now part of the internal grpc release tooling (see [go/grpc-release](http://go/grpc-release)).
+Prefer using the release tooling when possible. The instructions below are provided as a reference and aren't guaranteed to be up-to-date.
+
 - Update the `third_party/boringssl-with-bazel` submodule to the latest [`master-with-bazel`](https://github.com/google/boringssl/tree/master-with-bazel) branch
 ```
 git submodule update --init      # just to start in a clean state
@@ -104,7 +107,7 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 
 ### Updating third_party/protobuf
 
-See http://go/grpc-third-party-protobuf-update-instructions (internal only)
+Updating the protobuf dependency is now part of the internal release process (see [go/grpc-release](http://go/grpc-release)).
 
 ### Updating third_party/envoy-api
 
