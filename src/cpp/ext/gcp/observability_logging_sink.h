@@ -37,8 +37,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/cpp/ext/filters/logging/logging_sink.h"
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
@@ -46,7 +46,7 @@ namespace grpc {
 namespace internal {
 
 // Interface for a logging sink that will be used by the logging filter.
-class ObservabilityLoggingSink : public LoggingSink {
+class ObservabilityLoggingSink : public grpc_core::LoggingSink {
  public:
   ObservabilityLoggingSink(GcpObservabilityConfig::CloudLogging logging_config,
                            std::string project_id,
@@ -115,7 +115,7 @@ class ObservabilityLoggingSink : public LoggingSink {
 };
 
 // Exposed for just for testing purposes
-void EntryToJsonStructProto(LoggingSink::Entry entry,
+void EntryToJsonStructProto(grpc_core::LoggingSink::Entry entry,
                             ::google::protobuf::Struct* json_payload);
 
 }  // namespace internal

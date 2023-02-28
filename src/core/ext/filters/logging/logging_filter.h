@@ -16,20 +16,17 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
-#define GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/logging/logging_sink.h"
+#include "src/core/ext/filters/logging/logging_sink.h"
 
-namespace grpc {
-namespace internal {
+namespace grpc_core {
 
-// TODO(yashykt): Add logging sink registration
 void RegisterLoggingFilter(LoggingSink* sink);
 
-}  // namespace internal
-}  // namespace grpc
+}  // namespace grpc_core
 
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
