@@ -1531,7 +1531,7 @@ void GrpcLb::ShutdownLocked() {
       GPR_ASSERT(child_channelz_node != nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
-    grpc_channel_destroy(lb_channel_);
+    grpc_channel_destroy_internal(lb_channel_);
     lb_channel_ = nullptr;
   }
 }

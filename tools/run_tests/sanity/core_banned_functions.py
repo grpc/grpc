@@ -47,6 +47,10 @@ BANNED_EXCEPT = {
         'src/core/lib/slice/slice.cc', 'src/core/lib/slice/slice.h'
     ],
     'grpc_call_cancel(': ['src/core/lib/surface/call.cc'],
+    'grpc_channel_destroy(': [
+        'src/core/lib/surface/channel.cc',
+        'src/core/tsi/alts/handshaker/alts_shared_resource.cc',
+    ],
     'grpc_closure_create(': [
         'src/core/lib/iomgr/closure.cc', 'src/core/lib/iomgr/closure.h'
     ],
