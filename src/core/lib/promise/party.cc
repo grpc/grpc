@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstddef>
 #include <initializer_list>
 #include <vector>
 
