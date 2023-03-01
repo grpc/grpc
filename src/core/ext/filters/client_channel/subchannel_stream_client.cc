@@ -139,10 +139,11 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
     }
   }
   retry_timer_handle_ = event_engine_->RunAfter(
-      timeout, [self = Ref(DEBUG_LOCATION, "health_retry_timer")] {
+      timeout, [self = Ref(DEBUG_LOCATION, "health_retry_timer")]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnRetryTimer();
+        self.reset(DEBUG_LOCATION, "health_retry_timer");
       });
 }
 
