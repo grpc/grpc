@@ -500,6 +500,7 @@ class FilterStackCall final : public Call {
   }
   struct BatchControl {
     FilterStackCall* call_ = nullptr;
+    CallTracer* call_tracer_ = nullptr;
     grpc_transport_stream_op_batch op_;
     // Share memory for cq_completion and notify_tag as they are never needed
     // simultaneously. Each byte used in this data structure count as six bytes
@@ -530,9 +531,10 @@ class FilterStackCall final : public Call {
     bool completed_batch_step(PendingOp op) {
       auto mask = PendingOpMask(op);
       // Acquire call tracer before ops_pending_.fetch_sub to avoid races with
-      // call_ being set to nullptr in PostCompletion method.
-      CallTracer* call_tracer =
-          static_cast<CallTracer*>(call_->ContextGet(GRPC_CONTEXT_CALL_TRACER));
+      // call_ being set to nullptr in PostCompletion method. Store the
+      // call_tracer_ and call_ variables locally as well because they could be
+      // modified by another thread after the fetch_sub operation.
+      CallTracer* call_tracer = call_tracer_;
       FilterStackCall* call = call_;
       bool is_call_trace_enabled = grpc_call_trace.enabled();
       bool is_call_ops_annotate_enabled =
@@ -1171,6 +1173,8 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
+  bctl->call_tracer_ =
+      static_cast<CallTracer*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
