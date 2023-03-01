@@ -273,21 +273,23 @@ class BasicSeq {
   absl::enable_if_t<I != N - 1, Poll<Result>> RunState() {
     // Get a pointer to the state object.
     auto* s = state<I>();
-    // Poll the current promise in this state.
-    auto r = s->current_promise();
-    // If we are still pending, say so by returning.
-    if (absl::holds_alternative<Pending>(r)) {
-      return Pending();
-    }
-    // Current promise is ready, as the traits to do the next thing.
-    // That may be returning - eg if TrySeq sees an error.
-    // Or it may be by calling the callable we hand down - RunNext - which
-    // will advance the state and call the next promise.
-    return Traits<
-        typename absl::remove_reference_t<decltype(*s)>::Types::PromiseResult>::
-        template CheckResultAndRunNext<Result>(
-            std::move(absl::get<kPollReadyIdx>(std::move(r))),
-            RunNext<I>{this});
+    using StateType = absl::remove_reference_t<decltype(*s)>;
+    return [this](Poll<typename StateType::Types::Promise::Result> r)
+               -> Poll<Result> {
+      // If we are still pending, say so by returning.
+      if (absl::holds_alternative<Pending>(r)) {
+        return Pending();
+      }
+      // Current promise is ready, as the traits to do the next thing.
+      // That may be returning - eg if TrySeq sees an error.
+      // Or it may be by calling the callable we hand down - RunNext - which
+      // will advance the state and call the next promise.
+      return Traits<typename absl::remove_reference_t<
+          decltype(*s)>::Types::PromiseResult>::
+          template CheckResultAndRunNext<Result>(
+              std::move(absl::get<kPollReadyIdx>(std::move(r))),
+              RunNext<I>{this});
+    }(s->current_promise());
   }
 
   // Specialization of RunState to run the final state.
