@@ -457,7 +457,7 @@ def insecure_channel(
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
       interceptors: An optional sequence of interceptors that will be executed for
         any call executed with this channel.
 
@@ -481,7 +481,7 @@ def secure_channel(target: str,
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
       interceptors: An optional sequence of interceptors that will be executed for
         any call executed with this channel.
 

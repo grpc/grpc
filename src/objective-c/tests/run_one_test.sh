@@ -22,7 +22,7 @@ cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
 
-INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
+INTEROP=../../../bazel-bin/test/cpp/interop/interop_server
 
 [ -d Tests.xcworkspace ] || {
     ./build_tests.sh

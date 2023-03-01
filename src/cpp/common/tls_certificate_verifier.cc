@@ -28,7 +28,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/support/status.h>
@@ -36,8 +35,6 @@
 
 namespace grpc {
 namespace experimental {
-
-static internal::GrpcLibraryInitializer g_gli_initializer;
 
 TlsCustomVerificationCheckRequest::TlsCustomVerificationCheckRequest(
     grpc_tls_custom_verification_check_request* request)
@@ -106,9 +103,7 @@ std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::ip_names()
 }
 
 CertificateVerifier::CertificateVerifier(grpc_tls_certificate_verifier* v)
-    : verifier_(v) {
-  g_gli_initializer.summon();
-}
+    : verifier_(v) {}
 
 CertificateVerifier::~CertificateVerifier() {
   grpc_tls_certificate_verifier_release(verifier_);

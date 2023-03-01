@@ -40,30 +40,32 @@ const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext
   UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_submsgs[6] = {
+static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_submsgs[7] = {
   {.submsg = &envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_msginit},
   {.submsg = &google_protobuf_BoolValue_msginit},
   {.submsg = &google_protobuf_BoolValue_msginit},
   {.submsg = &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit},
   {.submsg = &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit},
   {.submsg = &google_protobuf_Duration_msginit},
+  {.submsg = &google_protobuf_BoolValue_msginit},
 };
 
-static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext__fields[8] = {
+static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext__fields[9] = {
   {1, UPB_SIZE(12, 16), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 32), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(28, 48), UPB_SIZE(-5, -5), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(28, 48), UPB_SIZE(-5, -5), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(32, 56), UPB_SIZE(-5, -5), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(32, 56), UPB_SIZE(-5, -5), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(24, 40), UPB_SIZE(4, 4), 5, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(28, 48), UPB_SIZE(-5, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(32, 56), UPB_SIZE(-5, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(28, 48), UPB_SIZE(5, 5), 6, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext__fields[0],
-  UPB_SIZE(32, 56), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 64), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_TlsKeyLog_submsgs[2] = {

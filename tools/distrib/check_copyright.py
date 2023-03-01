@@ -135,12 +135,32 @@ _EXEMPT = frozenset((
     'src/boringssl/boringssl_prefix_symbols.h',
 ))
 
+_ENFORCE_CPP_STYLE_COMMENT_PATH_PREFIX = tuple([
+    'include/grpc++/',
+    'include/grpcpp/',
+    'src/core/',
+    'src/cpp/',
+    'test/core/',
+    'test/cpp/',
+])
+
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'
 RE_LICENSE = dict(
     (k, r'\n'.join(LICENSE_PREFIX_RE[k] +
                    (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
                    for line in LICENSE_NOTICE))
     for k, v in list(LICENSE_PREFIX_RE.items()))
+
+RE_C_STYLE_COMMENT_START = r'^/\*\s*\n'
+RE_C_STYLE_COMMENT_OPTIONAL_LINE = r'(?:\s*\*\s*\n)*'
+RE_C_STYLE_COMMENT_END = r'\s*\*/'
+RE_C_STYLE_COMMENT_LICENSE = RE_C_STYLE_COMMENT_START + RE_C_STYLE_COMMENT_OPTIONAL_LINE + r'\n'.join(
+    r'\s*(?:\*)\s*' + (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
+    for line in LICENSE_NOTICE
+) + r'\n' + RE_C_STYLE_COMMENT_OPTIONAL_LINE + RE_C_STYLE_COMMENT_END
+RE_CPP_STYLE_COMMENT_LICENSE = r'\n'.join(
+    r'\s*(?://)\s*' + (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
+    for line in LICENSE_NOTICE)
 
 YEAR = datetime.datetime.now().year
 
@@ -212,6 +232,16 @@ def write_copyright(license_text, file_text, filename):
         f.write(rewritten_text)
 
 
+def replace_copyright(license_text, file_text, filename):
+    m = re.search(RE_C_STYLE_COMMENT_LICENSE, text)
+    if m:
+        rewritten_text = license_text + file_text[m.end():]
+        with open(filename, 'w') as f:
+            f.write(rewritten_text)
+        return True
+    return False
+
+
 # scan files, validate the text
 ok = True
 filename_list = []
@@ -222,6 +252,7 @@ except subprocess.CalledProcessError:
     sys.exit(0)
 
 for filename in filename_list:
+    enforce_cpp_style_comment = False
     if filename in _EXEMPT:
         continue
     # Skip check for upb generated code.
@@ -230,7 +261,13 @@ for filename in filename_list:
         continue
     ext = os.path.splitext(filename)[1]
     base = os.path.basename(filename)
-    if ext in RE_LICENSE:
+    if filename.startswith(_ENFORCE_CPP_STYLE_COMMENT_PATH_PREFIX) and ext in [
+            '.cc', '.h'
+    ]:
+        enforce_cpp_style_comment = True
+        re_license = RE_CPP_STYLE_COMMENT_LICENSE
+        license_text = LICENSE_TEXT[ext]
+    elif ext in RE_LICENSE:
         re_license = RE_LICENSE[ext]
         license_text = LICENSE_TEXT[ext]
     elif base in RE_LICENSE:
@@ -246,6 +283,16 @@ for filename in filename_list:
     m = re.search(re_license, text)
     if m:
         pass
+    elif enforce_cpp_style_comment:
+        log(1, 'copyright missing or does not use cpp-style copyright header',
+            filename)
+        if args.fix:
+            # Attempt fix: search for c-style copyright header and replace it
+            # with cpp-style copyright header. If that doesn't work
+            # (e.g. missing copyright header), write cpp-style copyright header.
+            if not replace_copyright(license_text, text, filename):
+                write_copyright(license_text, text, filename)
+        ok = False
     elif 'DO NOT EDIT' not in text:
         if args.fix:
             write_copyright(license_text, text, filename)

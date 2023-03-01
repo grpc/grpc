@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 /// A completion queue implements a concurrent producer-consumer queue, with
 /// two main API-exposed methods: \a Next and \a AsyncNext. These
@@ -36,8 +36,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -95,8 +95,6 @@ class BlockingUnaryCallImpl;
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
 class CallOpSet;
 }  // namespace internal
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
@@ -325,7 +323,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
-        GPR_CODEGEN_ASSERT(ignored == tag);
+        GPR_ASSERT(ignored == tag);
         return ok;
       }
     }
@@ -346,7 +344,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
     bool ok = ev.success != 0;
     void* ignored = tag;
     // the tag must be swallowed if using TryPluck
-    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Performs a single polling pluck on \a tag. Calls tag->FinalizeResult if
@@ -363,7 +361,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
 
     bool ok = ev.success != 0;
     void* ignored = tag;
-    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Manage state of avalanching operations : completion queue tags that

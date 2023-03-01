@@ -35,6 +35,7 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
+#include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
@@ -76,8 +77,8 @@ bool XdsCustomLbPolicyEnabled() {
 }
 
 // TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool XdsHostOverrideEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+bool XdsOverrideHostEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
@@ -121,6 +122,15 @@ std::string XdsClusterResource::ToString() const {
   }
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
+  if (!override_host_statuses.empty()) {
+    std::vector<const char*> statuses;
+    statuses.reserve(override_host_statuses.size());
+    for (const auto& status : override_host_statuses) {
+      statuses.push_back(status.ToString());
+    }
+    contents.push_back(absl::StrCat("override_host_statuses={",
+                                    absl::StrJoin(statuses, ", "), "}"));
+  }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -296,6 +306,10 @@ XdsClusterResource::Aggregate AggregateClusterParse(
   const upb_StringView* clusters =
       envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
           aggregate_cluster_config, &size);
+  if (size == 0) {
+    ValidationErrors::ScopedField field(errors, ".clusters");
+    errors->AddError("must be non-empty");
+  }
   for (size_t i = 0; i < size; ++i) {
     aggregate.prioritized_cluster_names.emplace_back(
         UpbStringToStdString(clusters[i]));
@@ -616,6 +630,29 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       }
     }
     cds_update.outlier_detection = outlier_detection_update;
+  }
+  // Validate override host status.
+  if (XdsOverrideHostEnabled()) {
+    const auto* common_lb_config =
+        envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
+    if (common_lb_config != nullptr) {
+      ValidationErrors::ScopedField field(&errors, ".common_lb_config");
+      const auto* override_host_status =
+          envoy_config_cluster_v3_Cluster_CommonLbConfig_override_host_status(
+              common_lb_config);
+      if (override_host_status != nullptr) {
+        ValidationErrors::ScopedField field(&errors, ".override_host_status");
+        size_t size;
+        const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
+            override_host_status, &size);
+        for (size_t i = 0; i < size; ++i) {
+          auto status = XdsHealthStatus::FromUpb(statuses[i]);
+          if (status.has_value()) {
+            cds_update.override_host_statuses.insert(*status);
+          }
+        }
+      }
+    }
   }
   // Return result.
   if (!errors.ok()) return errors.status("errors validating Cluster resource");

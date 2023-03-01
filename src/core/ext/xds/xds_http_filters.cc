@@ -88,7 +88,7 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
     RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
-    if (XdsHostOverrideEnabled()) {
+    if (XdsOverrideHostEnabled()) {
       RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     }
   }

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_LOOP_H
-#define GRPC_CORE_LIB_PROMISE_LOOP_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
+#define GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -135,4 +135,4 @@ promise_detail::Loop<F> Loop(F f) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_LOOP_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_LOOP_H

@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -29,11 +30,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
@@ -42,6 +44,7 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -52,7 +55,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -358,7 +360,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
 
 // Generates the discovery mechanism config for the specified cluster name.
 //
-// If no CdsUpdate has been received for the cluster, starts the watcher
+// If no CDS update has been received for the cluster, starts the watcher
 // if needed, and returns false.  Otherwise, generates the discovery
 // mechanism config, adds it to *discovery_mechanisms, and returns true.
 //
@@ -462,6 +464,13 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     mechanism["lrsLoadReportingServer"] =
         state.update->lrs_load_reporting_server->ToJson();
   }
+  if (!state.update->override_host_statuses.empty()) {
+    Json::Array status_list;
+    for (const auto& status : state.update->override_host_statuses) {
+      status_list.emplace_back(status.ToString());
+    }
+    mechanism["overrideHostStatus"] = std::move(status_list);
+  }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;
 }
@@ -508,8 +517,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
         Json::Object{
             {"xds_cluster_resolver_experimental",
              Json::Object{
-                 {"xdsLbPolicy",
-                  std::move(it->second.update->lb_policy_config)},
+                 {"xdsLbPolicy", it->second.update->lb_policy_config},
                  {"discoveryMechanisms", std::move(discovery_mechanisms)},
              }},
         },
@@ -519,7 +527,6 @@ void CdsLb::OnClusterChanged(const std::string& name,
       gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
               this, json_str.c_str());
     }
-    grpc_error_handle error;
     auto config =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             json);

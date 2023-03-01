@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include "upb/msg_internal.h"
 #include "xds/type/v3/typed_struct.upb.h"
-#include "validate/validate.upb.h"
 #include "google/protobuf/struct.upb.h"
 
 #include "upb/port_def.inc"

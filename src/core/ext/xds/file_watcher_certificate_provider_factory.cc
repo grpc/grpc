@@ -21,6 +21,7 @@
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <vector>
 

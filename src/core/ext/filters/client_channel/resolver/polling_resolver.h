@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_POLLING_RESOLVER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_POLLING_RESOLVER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_POLLING_RESOLVER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_POLLING_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -44,8 +44,7 @@ namespace grpc_core {
 // Implementations need only to implement StartRequest().
 class PollingResolver : public Resolver {
  public:
-  PollingResolver(ResolverArgs args, const ChannelArgs& channel_args,
-                  Duration min_time_between_resolutions,
+  PollingResolver(ResolverArgs args, Duration min_time_between_resolutions,
                   BackOff::Options backoff_options, TraceFlag* tracer);
   ~PollingResolver() override;
 
@@ -118,4 +117,4 @@ class PollingResolver : public Resolver {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_POLLING_RESOLVER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_POLLING_RESOLVER_H

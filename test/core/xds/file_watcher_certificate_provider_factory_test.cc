@@ -18,6 +18,8 @@
 
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
+#include <initializer_list>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -174,7 +176,7 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
 }
 
 TEST(FileWatcherConfigTest, EmptyJsonObject) {
-  std::string json_str = absl::StrFormat("{}");
+  std::string json_str = "{}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;

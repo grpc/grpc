@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include <functional>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -46,13 +47,12 @@ namespace grpc_core {
 using ::grpc_event_engine::experimental::EventEngine;
 
 PollingResolver::PollingResolver(ResolverArgs args,
-                                 const ChannelArgs& channel_args,
                                  Duration min_time_between_resolutions,
                                  BackOff::Options backoff_options,
                                  TraceFlag* tracer)
     : authority_(args.uri.authority()),
       name_to_resolve_(absl::StripPrefix(args.uri.path(), "/")),
-      channel_args_(channel_args),
+      channel_args_(std::move(args.args)),
       work_serializer_(std::move(args.work_serializer)),
       result_handler_(std::move(args.result_handler)),
       tracer_(tracer),
@@ -88,8 +88,11 @@ void PollingResolver::RequestReresolutionLocked() {
 }
 
 void PollingResolver::ResetBackoffLocked() {
-  MaybeCancelNextResolutionTimer();
   backoff_.Reset();
+  if (next_resolution_timer_handle_.has_value()) {
+    MaybeCancelNextResolutionTimer();
+    StartResolvingLocked();
+  }
 }
 
 void PollingResolver::ShutdownLocked() {
@@ -121,8 +124,9 @@ void PollingResolver::OnNextResolutionLocked() {
             "[polling resolver %p] re-resolution timer fired: shutdown_=%d",
             this, shutdown_);
   }
-  next_resolution_timer_handle_.reset();
-  if (!shutdown_) {
+  // If we haven't been cancelled nor shutdown, then start resolving.
+  if (next_resolution_timer_handle_.has_value() && !shutdown_) {
+    next_resolution_timer_handle_.reset();
     StartResolvingLocked();
   }
 }

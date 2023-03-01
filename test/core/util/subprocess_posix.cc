@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -56,7 +56,7 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     memcpy(exec_args, argv, static_cast<size_t>(argc) * sizeof(char*));
     exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
-    /* if we reach here, an error has occurred */
+    // if we reach here, an error has occurred
     gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0],
             grpc_core::StrError(errno).c_str());
     _exit(1);
@@ -98,4 +98,4 @@ void gpr_subprocess_interrupt(gpr_subprocess* p) {
 
 int gpr_subprocess_get_process_id(gpr_subprocess* p) { return p->pid; }
 
-#endif /* GPR_POSIX_SUBPROCESS */
+#endif  // GPR_POSIX_SUBPROCESS
