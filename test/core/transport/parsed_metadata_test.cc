@@ -41,6 +41,9 @@ struct CharTrait {
     return slice[0];
   }
   static std::string DisplayValue(char value) { return std::string(1, value); }
+  static std::string DisplayMemento(MementoType memento) {
+    return DisplayValue(memento);
+  }
 };
 
 struct Int32Trait {
@@ -57,6 +60,9 @@ struct Int32Trait {
   }
   static std::string DisplayValue(int32_t value) {
     return std::to_string(value);
+  }
+  static std::string DisplayMemento(MementoType memento) {
+    return DisplayValue(memento);
   }
 };
 
@@ -75,6 +81,9 @@ struct Int64Trait {
   static std::string DisplayValue(int64_t value) {
     return std::to_string(value);
   }
+  static std::string DisplayMemento(MementoType memento) {
+    return DisplayValue(memento);
+  }
 };
 
 struct IntptrTrait {
@@ -92,6 +101,9 @@ struct IntptrTrait {
   static std::string DisplayValue(intptr_t value) {
     return std::to_string(value);
   }
+  static std::string DisplayMemento(MementoType memento) {
+    return DisplayValue(memento);
+  }
 };
 
 struct StringTrait {
@@ -108,6 +120,9 @@ struct StringTrait {
     return std::string(view.begin(), view.end());
   }
   static std::string DisplayValue(const std::string& value) { return value; }
+  static std::string DisplayMemento(MementoType memento) {
+    return DisplayValue(memento);
+  }
 };
 
 class FakeContainer {
