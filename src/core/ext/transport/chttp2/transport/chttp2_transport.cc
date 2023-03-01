@@ -209,6 +209,9 @@ namespace {
 void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
                                     absl::string_view annotation) {
   GPR_ASSERT(s->context);
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
+    return;
+  }
   grpc_core::CallTracer* call_tracer = static_cast<grpc_core::CallTracer*>(
       static_cast<grpc_call_context_element*>(
           s->context)[GRPC_CONTEXT_CALL_TRACER]
