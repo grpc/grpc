@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_SERVER_H
-#define GRPC_CORE_LIB_SURFACE_SERVER_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
+#define GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -56,6 +56,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -236,6 +237,8 @@ class Server : public InternallyRefCounted<Server>,
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
+    static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+        grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
 
    private:
     class ConnectivityWatcher;
@@ -521,4 +524,4 @@ struct grpc_server_config_fetcher {
   virtual grpc_pollset_set* interested_parties() = 0;
 };
 
-#endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_SERVER_H

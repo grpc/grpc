@@ -625,7 +625,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NORETURN
 #endif
 
-#if GPR_FORBID_UNREACHABLE_CODE
+#if defined(GPR_FORBID_UNREACHABLE_CODE) && GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
 #ifdef __cplusplus
@@ -759,6 +759,19 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
+
+/* MSVC doesn't do the empty base class optimization in debug builds by default,
+ * and because of ABI likely won't.
+ * This enables it for specific types, use as:
+ * class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Foo : public A, public B, public C
+ * {}; */
+#ifndef GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND
+#ifdef GPR_WINDOWS
+#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND __declspec(empty_bases)
+#else
+#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND
+#endif
 #endif
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL

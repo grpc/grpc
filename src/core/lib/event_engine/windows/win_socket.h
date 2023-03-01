@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WIN_SOCKET_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WIN_SOCKET_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WIN_SOCKET_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WIN_SOCKET_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,14 +24,19 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/executor/executor.h"
-#include "src/core/lib/event_engine/socket_notifier.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class WinSocket final : public SocketNotifier {
+class WinSocket {
  public:
+  struct OverlappedResult {
+    int wsa_error;
+    DWORD bytes_transferred;
+  };
+
   // State related to a Read or Write socket operation
   class OpState {
    public:
@@ -43,25 +48,28 @@ class WinSocket final : public SocketNotifier {
     void SetReady();
     // Set error results for a completed op
     void SetError(int wsa_error);
-    // Retrieve results of overlapped operation (via Winsock API)
+    // Set an OverlappedResult. Useful when WSARecv returns immediately.
+    void SetResult(OverlappedResult result);
+    // Retrieve the results of an overlapped operation (via Winsock API) and
+    // store them locally.
     void GetOverlappedResult();
+    // Retrieve the results of an overlapped operation (via Winsock API) and
+    // store them locally. This overload allows acceptance of connections on new
+    // sockets.
+    void GetOverlappedResult(SOCKET sock);
+    // Retrieve the cached result from GetOverlappedResult
+    const OverlappedResult& result() const { return result_; }
     // OVERLAPPED, needed for Winsock API calls
     LPOVERLAPPED overlapped() { return &overlapped_; }
-    // Data from the previous operation, set via GetOverlappedResult
-    DWORD bytes_transferred() const { return bytes_transferred_; }
-    // Previous error if set.
-    int wsa_error() const { return wsa_error_; }
-    EventEngine::Closure* closure() { return closure_; }
 
    private:
     friend class WinSocket;
 
     OVERLAPPED overlapped_;
     WinSocket* win_socket_ = nullptr;
-    EventEngine::Closure* closure_ = nullptr;
+    std::atomic<EventEngine::Closure*> closure_{nullptr};
     bool has_pending_iocp_ = false;
-    DWORD bytes_transferred_;
-    int wsa_error_;
+    OverlappedResult result_;
   };
 
   WinSocket(SOCKET socket, Executor* executor) noexcept;
@@ -70,16 +78,17 @@ class WinSocket final : public SocketNotifier {
   //  - The IOCP already completed in the background, and we need to call
   //    the callback now.
   //  - The IOCP hasn't completed yet, and we're queuing it for later.
-  void NotifyOnRead(EventEngine::Closure* on_read) override;
-  void NotifyOnWrite(EventEngine::Closure* on_write) override;
-  void SetReadable() override;
-  void SetWritable() override;
-  // Schedule a shutdown of the socket operations. Will call the pending
-  // operations to abort them. We need to do that this way because of the
-  // various callsites of that function, which happens to be in various
-  // mutex hold states, and that'd be unsafe to call them directly.
-  void MaybeShutdown(absl::Status why) override;
-  bool IsShutdown() override;
+  void NotifyOnRead(EventEngine::Closure* on_read);
+  void NotifyOnWrite(EventEngine::Closure* on_write);
+  bool IsShutdown();
+  // Shutdown socket operations, but do not delete the WinSocket.
+  // Connections will be disconnected, and the socket will be closed.
+  // If the socket is managed by a shared_ptr (most should be), then the
+  // WinSocket will be deleted when the last outstanding overlapped event comes
+  // back.
+  void Shutdown();
+  void Shutdown(const grpc_core::DebugLocation& location,
+                absl::string_view reason);
 
   // Return the appropriate OpState for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.
@@ -88,7 +97,7 @@ class WinSocket final : public SocketNotifier {
   OpState* read_info() { return &read_info_; }
   OpState* write_info() { return &write_info_; }
   // Accessor method for underlying socket
-  SOCKET socket();
+  SOCKET raw_socket();
 
  private:
   void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
@@ -117,4 +126,4 @@ absl::Status PrepareSocket(SOCKET sock);
 
 #endif
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WIN_SOCKET_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WIN_SOCKET_H

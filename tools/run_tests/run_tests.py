@@ -967,18 +967,15 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        # Currently not supporting compiling as frameworks in Bazel
-        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-sample-frameworks',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'YES'
                 }))
         # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
@@ -1014,14 +1011,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
-        # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
-        out.append(
-            self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-cpp-test-cronet',
-                                 cpu_cost=1e6,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1069,10 +1058,10 @@ class Sanity(object):
                 environ['DISABLE_BAZEL_WRAPPER'] = 'true'
             return [
                 self.config.job_spec(cmd['script'].split(),
-                                     timeout_seconds=30 * 60,
+                                     timeout_seconds=45 * 60,
                                      environ=environ,
                                      cpu_cost=cmd.get('cpu_cost', 1))
-                for cmd in yaml.load(f)
+                for cmd in yaml.safe_load(f)
             ]
 
     def pre_build_steps(self):

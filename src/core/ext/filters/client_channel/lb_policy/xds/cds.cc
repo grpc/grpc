@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -54,7 +55,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -464,9 +464,9 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     mechanism["lrsLoadReportingServer"] =
         state.update->lrs_load_reporting_server->ToJson();
   }
-  if (!state.update->host_override_statuses.empty()) {
+  if (!state.update->override_host_statuses.empty()) {
     Json::Array status_list;
-    for (const auto& status : state.update->host_override_statuses) {
+    for (const auto& status : state.update->override_host_statuses) {
       status_list.emplace_back(status.ToString());
     }
     mechanism["overrideHostStatus"] = std::move(status_list);
@@ -517,8 +517,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
         Json::Object{
             {"xds_cluster_resolver_experimental",
              Json::Object{
-                 {"xdsLbPolicy",
-                  std::move(it->second.update->lb_policy_config)},
+                 {"xdsLbPolicy", it->second.update->lb_policy_config},
                  {"discoveryMechanisms", std::move(discovery_mechanisms)},
              }},
         },
@@ -528,7 +527,6 @@ void CdsLb::OnClusterChanged(const std::string& name,
       gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
               this, json_str.c_str());
     }
-    grpc_error_handle error;
     auto config =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             json);

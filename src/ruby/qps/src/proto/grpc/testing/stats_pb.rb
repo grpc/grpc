@@ -3,8 +3,6 @@
 
 require 'google/protobuf'
 
-require 'src/proto/grpc/core/stats_pb'
-
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("src/proto/grpc/testing/stats.proto", :syntax => :proto3) do
     add_message "grpc.testing.ServerStats" do
@@ -14,7 +12,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :total_cpu_time, :uint64, 4
       optional :idle_cpu_time, :uint64, 5
       optional :cq_poll_count, :uint64, 6
-      optional :core_stats, :message, 7, "grpc.core.Stats"
     end
     add_message "grpc.testing.HistogramParams" do
       optional :resolution, :double, 1
@@ -39,7 +36,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :time_system, :double, 4
       repeated :request_results, :message, 5, "grpc.testing.RequestResultCount"
       optional :cq_poll_count, :uint64, 6
-      optional :core_stats, :message, 7, "grpc.core.Stats"
     end
   end
 end

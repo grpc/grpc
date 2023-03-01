@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -57,7 +58,7 @@ struct grpc_binder_transport {
     return next_free_tx_code++;
   }
 
-  grpc_transport base; /* must be first */
+  grpc_transport base;  // must be first
 
   std::shared_ptr<grpc_binder::TransportStreamReceiver>
       transport_stream_receiver;
@@ -95,4 +96,4 @@ grpc_transport* grpc_create_binder_transport_server(
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy);
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H

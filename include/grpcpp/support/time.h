@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SUPPORT_TIME_H
 #define GRPCPP_SUPPORT_TIME_H
@@ -26,16 +26,16 @@
 
 namespace grpc {
 
-/** If you are trying to use CompletionQueue::AsyncNext with a time class that
-    isn't either gpr_timespec or std::chrono::system_clock::time_point, you
-    will most likely be looking at this comment as your compiler will have
-    fired an error below. In order to fix this issue, you have two potential
-    solutions:
+/// If you are trying to use CompletionQueue::AsyncNext with a time class that
+/// isn't either gpr_timespec or std::chrono::system_clock::time_point, you
+/// will most likely be looking at this comment as your compiler will have
+/// fired an error below. In order to fix this issue, you have two potential
+/// solutions:
 
-      1. Use gpr_timespec or std::chrono::system_clock::time_point instead
-      2. Specialize the TimePoint class with whichever time class that you
-         want to use here. See below for two examples of how to do this.
- */
+///   1. Use gpr_timespec or std::chrono::system_clock::time_point instead
+///   2. Specialize the TimePoint class with whichever time class that you
+///      want to use here. See below for two examples of how to do this.
+///
 template <typename T>
 class TimePoint {
  public:
@@ -50,7 +50,7 @@ class TimePoint {
 template <>
 class TimePoint<gpr_timespec> {
  public:
-  /* NOLINTNEXTLINE(google-explicit-constructor) */
+  // NOLINTNEXTLINE(google-explicit-constructor)
   TimePoint(const gpr_timespec& time) : time_(time) {}
   gpr_timespec raw_time() { return time_; }
 
@@ -74,7 +74,7 @@ std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
 template <>
 class TimePoint<std::chrono::system_clock::time_point> {
  public:
-  /* NOLINTNEXTLINE(google-explicit-constructor) */
+  // NOLINTNEXTLINE(google-explicit-constructor)
   TimePoint(const std::chrono::system_clock::time_point& time) {
     Timepoint2Timespec(time, &time_);
   }

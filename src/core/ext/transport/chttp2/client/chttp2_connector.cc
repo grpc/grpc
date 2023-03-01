@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,7 +22,9 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -166,10 +168,10 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     } else if (args->endpoint != nullptr) {
       self->result_->transport =
           grpc_create_chttp2_transport(args->args, args->endpoint, true);
+      GPR_ASSERT(self->result_->transport != nullptr);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
-      GPR_ASSERT(self->result_->transport != nullptr);
       self->endpoint_ = args->endpoint;
       self->Ref().release();  // Ref held by OnReceiveSettings()
       GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
@@ -205,9 +207,6 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
                                             self->args_.interested_parties);
       if (!error.ok()) {
         // Transport got an error while waiting on SETTINGS frame.
-        // TODO(yashykt): The following two lines should be moved to
-        // SubchannelConnector::Result::Reset()
-        grpc_transport_destroy(self->result_->transport);
         self->result_->Reset();
       }
       self->MaybeNotify(error);
@@ -235,9 +234,6 @@ void Chttp2Connector::OnTimeout() {
     // The transport did not receive the settings frame in time. Destroy the
     // transport.
     grpc_endpoint_delete_from_pollset_set(endpoint_, args_.interested_parties);
-    // TODO(yashykt): The following two lines should be moved to
-    // SubchannelConnector::Result::Reset()
-    grpc_transport_destroy(result_->transport);
     result_->Reset();
     MaybeNotify(GRPC_ERROR_CREATE(
         "connection attempt timed out before receiving SETTINGS frame"));

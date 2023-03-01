@@ -14,6 +14,7 @@
 
 #include "src/core/lib/promise/seq.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -27,9 +28,21 @@ TEST(SeqTest, Immediate) {
 }
 
 TEST(SeqTest, OneThen) {
-  auto initial = [] { return 3; };
-  auto then = [](int i) { return [i]() { return i + 4; }; };
-  EXPECT_EQ(Seq(initial, then)(), Poll<int>(7));
+  auto initial = [a = std::make_unique<int>(0)] { return 3; };
+  auto then = [a = std::make_unique<int>(1)](int i) {
+    return [i, b = std::make_unique<int>(2)]() { return i + 4; };
+  };
+  EXPECT_EQ(Seq(std::move(initial), std::move(then))(), Poll<int>(7));
+}
+
+TEST(SeqTest, OneThenIncomplete) {
+  auto initial = [a = std::make_unique<int>(0)]() -> Poll<int> {
+    return Pending{};
+  };
+  auto then = [a = std::make_unique<int>(1)](int i) {
+    return [i, b = std::make_unique<int>(2)]() { return i + 4; };
+  };
+  EXPECT_EQ(Seq(std::move(initial), std::move(then))(), Poll<int>(Pending{}));
 }
 
 TEST(SeqTest, TwoTypedThens) {
@@ -42,15 +55,15 @@ TEST(SeqTest, TwoTypedThens) {
   EXPECT_FALSE(absl::holds_alternative<Pending>(Seq(initial, next1, next2)()));
 }
 
-/* This does not compile, but is useful for testing error messages generated
-TEST(SeqTest, MisTypedThen) {
-  struct A {};
-  struct B {};
-  auto initial = [] { return A{}; };
-  auto next = [](B) { return []() { return B{}; }; };
-  Seq(initial, next)().take();
-}
-*/
+// This does not compile, but is useful for testing error messages generated
+// TEST(SeqTest, MisTypedThen) {
+// struct A {};
+// struct B {};
+// auto initial = [] { return A{}; };
+// auto next = [](B) { return []() { return B{}; }; };
+// Seq(initial, next)().take();
+//}
+//
 
 TEST(SeqTest, TwoThens) {
   auto initial = [] { return std::string("a"); };
@@ -60,11 +73,18 @@ TEST(SeqTest, TwoThens) {
 }
 
 TEST(SeqTest, ThreeThens) {
-  EXPECT_EQ(Seq([] { return std::string("a"); },
-                [](std::string i) { return [i]() { return i + "b"; }; },
-                [](std::string i) { return [i]() { return i + "c"; }; },
-                [](std::string i) { return [i]() { return i + "d"; }; })(),
-            Poll<std::string>("abcd"));
+  EXPECT_EQ(
+      Seq([x = std::make_unique<int>(1)] { return std::string("a"); },
+          [x = std::make_unique<int>(1)](std::string i) {
+            return [i, y = std::make_unique<int>(2)]() { return i + "b"; };
+          },
+          [x = std::make_unique<int>(1)](std::string i) {
+            return [i, y = std::make_unique<int>(2)]() { return i + "c"; };
+          },
+          [x = std::make_unique<int>(1)](std::string i) {
+            return [i, y = std::make_unique<int>(2)]() { return i + "d"; };
+          })(),
+      Poll<std::string>("abcd"));
 }
 
 struct Big {

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CLUSTER_H
-#define GRPC_CORE_EXT_XDS_XDS_CLUSTER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -48,7 +48,7 @@
 namespace grpc_core {
 
 bool XdsCustomLbPolicyEnabled();
-bool XdsHostOverrideEnabled();
+bool XdsOverrideHostEnabled();
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {
@@ -98,7 +98,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   absl::optional<OutlierDetectionConfig> outlier_detection;
 
-  std::set<XdsHealthStatus> host_override_statuses;
+  std::set<XdsHealthStatus> override_host_statuses;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
@@ -106,7 +106,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
            common_tls_context == other.common_tls_context &&
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection &&
-           host_override_statuses == other.host_override_statuses;
+           override_host_statuses == other.override_host_statuses;
   }
 
   std::string ToString() const;
@@ -134,4 +134,4 @@ class XdsClusterResourceType
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_CLUSTER_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_H

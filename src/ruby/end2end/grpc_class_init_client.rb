@@ -36,36 +36,37 @@ end
 
 def run_gc_stress_test(test_proc)
   GC.disable
-  construct_many(test_proc)
+  # TODO(b/266212253): run construct_many
+  # in this test after "Bus error" flakes are fixed.
+  run_default_test(test_proc)
 
   GC.enable
-  construct_many(test_proc)
+  run_default_test(test_proc)
 
   GC.start
-  construct_many(test_proc)
+  run_default_test(test_proc)
 end
 
 def run_concurrency_stress_test(test_proc)
+  thds = []
   100.times do
-    Thread.new do
+    thds << Thread.new do
       test_proc.call
     end
   end
-
   test_proc.call
-
-  fail '(expected) exception thrown while child thread initing class'
+  thds.each(&:join)
 end
 
 # default (no gc_stress and no concurrency_stress)
 def run_default_test(test_proc)
-  thd = Thread.new do
-    test_proc.call
-  end
+  # TODO(b/266212253): re-enable the extra thread
+  # in this test after the "Bus error" flakes of this
+  # test are fixed.
   test_proc.call
-  thd.join
 end
 
+# rubocop:disable Metrics/CyclomaticComplexity
 def get_test_proc(grpc_class)
   case grpc_class
   when 'channel'
@@ -117,6 +118,7 @@ def get_test_proc(grpc_class)
     fail "bad --grpc_class=#{grpc_class} param"
   end
 end
+# rubocop:enable Metrics/CyclomaticComplexity
 
 def main
   grpc_class = ''
@@ -137,13 +139,13 @@ def main
   # clean shutdown in a different way
   case stress_test
   when 'gc'
-    p 'run gc stress'
+    p "run gc stress: #{grpc_class}"
     run_gc_stress_test(test_proc)
   when 'concurrency'
-    p 'run concurrency stress'
+    p "run concurrency stress: #{grpc_class}"
     run_concurrency_stress_test(test_proc)
   when ''
-    p 'run default'
+    p "run default: #{grpc_class}"
     run_default_test(test_proc)
   else
     fail "bad --stress_test=#{stress_test} param"

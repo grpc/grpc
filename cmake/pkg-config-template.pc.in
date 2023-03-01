@@ -1,7 +1,7 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
-includedir=${prefix}/include
-libdir=${exec_prefix}/lib
+includedir=${prefix}/@gRPC_INSTALL_INCLUDEDIR@
+libdir=${exec_prefix}/@gRPC_INSTALL_LIBDIR@
 
 Name: @PC_NAME@
 Description: @PC_DESCRIPTION@

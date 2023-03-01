@@ -396,7 +396,7 @@ Json ParseHttpRbacToJson(const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
     }
     Json::Object inner_rbac_json;
     inner_rbac_json.emplace("action", envoy_config_rbac_v3_RBAC_action(rules));
-    if (envoy_config_rbac_v3_RBAC_has_policies(rules)) {
+    if (envoy_config_rbac_v3_RBAC_policies_size(rules) != 0) {
       Json::Object policies_object;
       size_t iter = kUpb_Map_Begin;
       while (true) {

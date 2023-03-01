@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/gpr/string.h"
 
@@ -103,16 +103,16 @@ TEST(StringTest, Asprintf) {
   char* buf;
   int i, j;
 
-  /* Print an empty string. */
+  // Print an empty string.
   ASSERT_EQ(gpr_asprintf(&buf, "%s", ""), 0);
   ASSERT_EQ(buf[0], '\0');
   gpr_free(buf);
 
-  /* Print strings of various lengths. */
+  // Print strings of various lengths.
   for (i = 1; i < 100; i++) {
     ASSERT_EQ(gpr_asprintf(&buf, "%0*d", i, 1), i);
 
-    /* The buffer should resemble "000001\0". */
+    // The buffer should resemble "000001\0".
     for (j = 0; j < i - 2; j++) {
       ASSERT_EQ(buf[j], '0');
     }
@@ -149,17 +149,17 @@ TEST(StringTest, StrjoinSep) {
   ASSERT_STREQ("one, two, three, four", joined);
   gpr_free(joined);
 
-  /* empty separator */
+  // empty separator
   joined = gpr_strjoin_sep(parts, 4, "", &joined_len);
   ASSERT_STREQ("onetwothreefour", joined);
   gpr_free(joined);
 
-  /* degenerated case specifying zero input parts */
+  // degenerated case specifying zero input parts
   joined = gpr_strjoin_sep(parts, 0, ", ", &joined_len);
   ASSERT_STREQ("", joined);
   gpr_free(joined);
 
-  /* single part should have no separator */
+  // single part should have no separator
   joined = gpr_strjoin_sep(parts, 1, ", ", &joined_len);
   ASSERT_STREQ("one", joined);
   gpr_free(joined);
@@ -169,19 +169,19 @@ TEST(StringTest, Ltoa) {
   char* str;
   char buf[GPR_LTOA_MIN_BUFSIZE];
 
-  /* zero */
+  // zero
   ASSERT_EQ(1, gpr_ltoa(0, buf));
   ASSERT_STREQ("0", buf);
 
-  /* positive number */
+  // positive number
   ASSERT_EQ(3, gpr_ltoa(123, buf));
   ASSERT_STREQ("123", buf);
 
-  /* negative number */
+  // negative number
   ASSERT_EQ(6, gpr_ltoa(-12345, buf));
   ASSERT_STREQ("-12345", buf);
 
-  /* large negative - we don't know the size of long in advance */
+  // large negative - we don't know the size of long in advance
   ASSERT_TRUE(gpr_asprintf(&str, "%lld", (long long)LONG_MIN));
   ASSERT_EQ(strlen(str), (size_t)gpr_ltoa(LONG_MIN, buf));
   ASSERT_STREQ(str, buf);
@@ -191,19 +191,19 @@ TEST(StringTest, Ltoa) {
 TEST(StringTest, Int64Toa) {
   char buf[GPR_INT64TOA_MIN_BUFSIZE];
 
-  /* zero */
+  // zero
   ASSERT_EQ(1, int64_ttoa(0, buf));
   ASSERT_STREQ("0", buf);
 
-  /* positive */
+  // positive
   ASSERT_EQ(3, int64_ttoa(123, buf));
   ASSERT_STREQ("123", buf);
 
-  /* large positive */
+  // large positive
   ASSERT_EQ(19, int64_ttoa(9223372036854775807LL, buf));
   ASSERT_STREQ("9223372036854775807", buf);
 
-  /* large negative */
+  // large negative
   ASSERT_EQ(20, int64_ttoa(-9223372036854775807LL - 1, buf));
   ASSERT_STREQ("-9223372036854775808", buf);
 }

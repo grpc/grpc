@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
 #include <grpc/support/port_platform.h>
 
@@ -168,7 +168,7 @@ auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
       &state->next_factory, std::forward<T>(arg));
 }
 
-// A sequence under stome traits for some set of callables Fs.
+// A sequence under some traits for some set of callables Fs.
 // Fs[0] should be a promise-like object that yields a value.
 // Fs[1..] should be promise-factory-like objects that take the value from the
 // previous step and yield a promise. Note that most of the machinery in
@@ -494,4 +494,4 @@ class BasicSeqIter {
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H

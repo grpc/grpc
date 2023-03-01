@@ -24,6 +24,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -97,7 +98,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     std::string eds_service_name;
     std::string dns_hostname;
 
-    Json::Array host_override_statuses;
+    Json::Array override_host_statuses;
 
     // This is type Json::Object instead of OutlierDetectionConfig, because we
     // don't actually need to validate the contents of the outlier detection
@@ -114,7 +115,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
               type == other.type &&
               eds_service_name == other.eds_service_name &&
               dns_hostname == other.dns_hostname &&
-              host_override_statuses == other.host_override_statuses &&
+              override_host_statuses == other.override_host_statuses &&
               outlier_detection_lb_config == other.outlier_detection_lb_config);
     }
 
@@ -882,12 +883,17 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         child_policy = config_->xds_lb_policy();
       }
       // Wrap the xDS LB policy in the xds_override_host policy.
+      Json::Object xds_override_host_lb_config = {
+          {"childPolicy", std::move(child_policy)},
+      };
+      if (!discovery_config.override_host_statuses.empty()) {
+        xds_override_host_lb_config["overrideHostStatus"] =
+            discovery_config.override_host_statuses;
+      }
       Json::Array xds_override_host_config = {Json::Object{
           {"xds_override_host_experimental",
-           Json::Object{
-               {"overrideHostStatus", discovery_config.host_override_statuses},
-               {"childPolicy", std::move(child_policy)},
-           }}}};
+           std::move(xds_override_host_lb_config)},
+      }};
       // Wrap it in the xds_cluster_impl policy.
       Json::Array drop_categories;
       if (discovery_entry.latest_update->drop_config != nullptr) {
@@ -1045,7 +1051,7 @@ XdsClusterResolverLbConfig::DiscoveryMechanism::JsonLoader(const JsonArgs&) {
           .OptionalField("outlierDetection",
                          &DiscoveryMechanism::outlier_detection_lb_config)
           .OptionalField("overrideHostStatus",
-                         &DiscoveryMechanism::host_override_statuses)
+                         &DiscoveryMechanism::override_host_statuses)
           .Finish();
   return loader;
 }

@@ -58,6 +58,7 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -70,6 +71,7 @@ grpc_cc_library(
         "//:httpcli",
         "//:sockaddr_utils",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
         "//src/core:error",
@@ -201,6 +203,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "inproc_callback_test",
     srcs = ["inproc_callback_test.cc"],
+    external_deps = ["absl/strings:str_format"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -253,6 +256,32 @@ grpc_cc_test(
 )
 
 grpc_end2end_tests()
+
+grpc_cc_test(
+    name = "h2_ssl_cert_test",
+    srcs = [
+        "end2end_tests.h",
+        "h2_ssl_cert_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "libcrypto",
+    ],
+    language = "C++",
+    deps = [
+        "cq_verifier",
+        "local_util",
+        "ssl_test_data",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "h2_ssl_session_reuse_test",

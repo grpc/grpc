@@ -38,10 +38,10 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -168,36 +168,33 @@ class RetryFilter {
                              const grpc_channel_info* /*info*/) {}
 
  private:
-  static size_t GetMaxPerRpcRetryBufferSize(const grpc_channel_args* args) {
-    return static_cast<size_t>(grpc_channel_args_find_integer(
-        args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
-        {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX}));
+  static size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
+    return Clamp(args.GetInt(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE)
+                     .value_or(DEFAULT_PER_RPC_RETRY_BUFFER_SIZE),
+                 0, INT_MAX);
   }
 
-  RetryFilter(const grpc_channel_args* args, grpc_error_handle* error)
-      : client_channel_(grpc_channel_args_find_pointer<ClientChannel>(
-            args, GRPC_ARG_CLIENT_CHANNEL)),
+  RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
+      : client_channel_(args.GetObject<ClientChannel>()),
         per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
         service_config_parser_index_(
             internal::RetryServiceConfigParser::ParserIndex()) {
     // Get retry throttling parameters from service config.
-    auto* service_config = grpc_channel_args_find_pointer<ServiceConfig>(
-        args, GRPC_ARG_SERVICE_CONFIG_OBJ);
+    auto* service_config = args.GetObject<ServiceConfig>();
     if (service_config == nullptr) return;
     const auto* config = static_cast<const RetryGlobalConfig*>(
         service_config->GetGlobalParsedConfig(
             RetryServiceConfigParser::ParserIndex()));
     if (config == nullptr) return;
     // Get server name from target URI.
-    const char* server_uri =
-        grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
-    if (server_uri == nullptr) {
+    auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
+    if (!server_uri.has_value()) {
       *error = GRPC_ERROR_CREATE(
           "server URI channel arg missing or wrong type in client channel "
           "filter");
       return;
     }
-    absl::StatusOr<URI> uri = URI::Parse(server_uri);
+    absl::StatusOr<URI> uri = URI::Parse(*server_uri);
     if (!uri.ok() || uri->path().empty()) {
       *error =
           GRPC_ERROR_CREATE("could not extract server name from target URI");
@@ -451,7 +448,7 @@ class RetryFilter::CallData {
 
     CallData* calld_;
     AttemptDispatchController attempt_dispatch_controller_;
-    OrphanablePtr<ClientChannel::LoadBalancedCall> lb_call_;
+    OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall> lb_call_;
     bool lb_call_committed_ = false;
 
     grpc_timer per_attempt_recv_timer_;
@@ -558,7 +555,8 @@ class RetryFilter::CallData {
   void AddClosureToStartTransparentRetry(CallCombinerClosureList* closures);
   static void StartTransparentRetry(void* arg, grpc_error_handle error);
 
-  OrphanablePtr<ClientChannel::LoadBalancedCall> CreateLoadBalancedCall(
+  OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
+  CreateLoadBalancedCall(
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
 
@@ -589,7 +587,7 @@ class RetryFilter::CallData {
   // LB call used when we've committed to a call attempt and the retry
   // state for that attempt is no longer needed.  This provides a fast
   // path for long-running streaming calls that minimizes overhead.
-  OrphanablePtr<ClientChannel::LoadBalancedCall> committed_call_;
+  OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall> committed_call_;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but
@@ -615,15 +613,6 @@ class RetryFilter::CallData {
   // send_initial_metadata
   bool seen_send_initial_metadata_ = false;
   grpc_metadata_batch send_initial_metadata_{arena_};
-  // TODO(roth): As part of implementing hedging, we'll probably need to
-  // have the LB call set a value in CallAttempt and then propagate it
-  // from CallAttempt to the parent call when we commit.  Otherwise, we
-  // may leave this with a value for a peer other than the one we
-  // actually commit to.  Alternatively, maybe see if there's a way to
-  // change the surface API such that the peer isn't available until
-  // after initial metadata is received?  (Could even change the
-  // transport API to return this with the recv_initial_metadata op.)
-  gpr_atm* peer_string_;
   // send_message
   // When we get a send_message op, we replace the original byte stream
   // with a CachingByteStream that caches the slices to a local buffer for
@@ -884,7 +873,7 @@ namespace {
 void StartBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call = static_cast<ClientChannel::LoadBalancedCall*>(
+  auto* lb_call = static_cast<ClientChannel::FilterBasedLoadBalancedCall*>(
       batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
@@ -1354,8 +1343,9 @@ RetryFilter::CallData::CallAttempt::BatchData::~BatchData() {
             this);
   }
   CallAttempt* call_attempt = std::exchange(call_attempt_, nullptr);
-  GRPC_CALL_STACK_UNREF(call_attempt->calld_->owning_call_, "Retry BatchData");
+  grpc_call_stack* owning_call = call_attempt->calld_->owning_call_;
   call_attempt->Unref(DEBUG_LOCATION, "~BatchData");
+  GRPC_CALL_STACK_UNREF(owning_call, "Retry BatchData");
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::
@@ -1989,7 +1979,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   batch_.send_initial_metadata = true;
   batch_.payload->send_initial_metadata.send_initial_metadata =
       &call_attempt_->send_initial_metadata_;
-  batch_.payload->send_initial_metadata.peer_string = calld->peer_string_;
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::
@@ -2303,7 +2292,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   call_attempt_->StartRetriableBatches();
 }
 
-OrphanablePtr<ClientChannel::LoadBalancedCall>
+OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
 RetryFilter::CallData::CreateLoadBalancedCall(
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry) {
@@ -2337,7 +2326,6 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
     send_initial_metadata_ = send_initial_metadata->Copy();
-    peer_string_ = batch->payload->send_initial_metadata.peer_string;
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {

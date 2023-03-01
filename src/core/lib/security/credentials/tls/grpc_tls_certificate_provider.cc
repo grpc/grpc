@@ -117,6 +117,8 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 }  // namespace
 
+static constexpr int64_t kMinimumFileWatcherRefreshIntervalSeconds = 1;
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
     std::string root_cert_path, int64_t refresh_interval_sec)
@@ -125,6 +127,12 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       root_cert_path_(std::move(root_cert_path)),
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+  if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
+    gpr_log(GPR_INFO,
+            "FileWatcherCertificateProvider refresh_interval_sec_ set to value "
+            "less than minimum. Overriding configured value to minimum.");
+    refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
+  }
   // Private key and identity cert files must be both set or both unset.
   GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
@@ -297,7 +305,7 @@ namespace {
 // it logs the error and returns 0.
 time_t GetModificationTime(const char* filename) {
   time_t ts = 0;
-  absl::Status status = GetFileModificationTime(filename, &ts);
+  (void)GetFileModificationTime(filename, &ts);
   return ts;
 }
 
@@ -381,6 +389,11 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
+int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
+    const {
+  return refresh_interval_sec_;
+}
+
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain) {
   if (private_key.empty()) {
@@ -432,7 +445,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 
 }  // namespace grpc_core
 
-/** -- Wrapper APIs declared in grpc_security.h -- **/
+/// -- Wrapper APIs declared in grpc_security.h -- *
 
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {

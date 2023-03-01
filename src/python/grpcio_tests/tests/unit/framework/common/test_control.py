@@ -26,6 +26,13 @@ class Defect(Exception):
   """
 
 
+class NestedDefect(Exception):
+    """Simulates a nested programming defect raised into in a system under test."""
+
+    def __str__(self):
+        raise Exception('Nested Exception')
+
+
 class Control(abc.ABC):
     """An object that accepts program control from a system under test.
 

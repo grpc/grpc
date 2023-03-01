@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
+#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -44,17 +44,17 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 
-/* --- URL schemes. --- */
+// --- URL schemes. ---
 
 #define GRPC_SSL_URL_SCHEME "https"
 #define GRPC_FAKE_SECURITY_URL_SCHEME "http+fake_security"
 
 typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 
-/* --- security_connector object. ---
+// --- security_connector object. ---
 
-    A security connector object represents away to configure the underlying
-    transport security mechanism and check the resulting trusted peer.  */
+//  A security connector object represents away to configure the underlying
+//  transport security mechanism and check the resulting trusted peer.
 
 #define GRPC_ARG_SECURITY_CONNECTOR "grpc.internal.security_connector"
 
@@ -85,7 +85,7 @@ class grpc_security_connector
   virtual void cancel_check_peer(grpc_closure* on_peer_checked,
                                  grpc_error_handle error) = 0;
 
-  /* Compares two security connectors. */
+  // Compares two security connectors.
   virtual int cmp(const grpc_security_connector* other) const = 0;
 
   static int ChannelArgsCompare(const grpc_security_connector* a,
@@ -101,20 +101,20 @@ class grpc_security_connector
   absl::string_view url_scheme_;
 };
 
-/* Util to encapsulate the connector in a channel arg. */
+// Util to encapsulate the connector in a channel arg.
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc);
 
-/* Util to get the connector from a channel arg. */
+// Util to get the connector from a channel arg.
 grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg);
 
-/* Util to find the connector from channel args. */
+// Util to find the connector from channel args.
 grpc_security_connector* grpc_security_connector_find_in_args(
     const grpc_channel_args* args);
 
-/* --- channel_security_connector object. ---
+// --- channel_security_connector object. ---
 
-    A channel security connector object represents a way to configure the
-    underlying transport security mechanism on the client side.  */
+//  A channel security connector object represents a way to configure the
+//  underlying transport security mechanism on the client side.
 
 class grpc_channel_security_connector : public grpc_security_connector {
  public:
@@ -164,10 +164,10 @@ class grpc_channel_security_connector : public grpc_security_connector {
   std::unique_ptr<grpc_channel_args> channel_args_;
 };
 
-/* --- server_security_connector object. ---
+// --- server_security_connector object. ---
 
-    A server security connector object represents a way to configure the
-    underlying transport security mechanism on the server side.  */
+//  A server security connector object represents a way to configure the
+//  underlying transport security mechanism on the server side.
 
 class grpc_server_security_connector : public grpc_security_connector {
  public:
@@ -197,4 +197,4 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_core::RefCountedPtr<grpc_server_credentials> server_creds_;
 };
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H

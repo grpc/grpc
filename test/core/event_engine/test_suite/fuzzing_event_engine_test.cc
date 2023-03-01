@@ -24,7 +24,8 @@
 #include "absl/time/time.h"
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
+#include "test/core/event_engine/test_suite/tests/timer_test.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -72,5 +73,6 @@ int main(int argc, char** argv) {
             grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
       },
       nullptr);
+  grpc_event_engine::experimental::InitTimerTests();
   return RUN_ALL_TESTS();
 }

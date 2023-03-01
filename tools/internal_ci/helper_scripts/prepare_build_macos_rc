@@ -80,13 +80,13 @@ then
   set +x
   source $HOME/.rvm/scripts/rvm
 
-  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0 3.1.0; do
-    echo "Installing ruby-${RUBY_VERSION}"
-    time rvm install "ruby-${RUBY_VERSION}"
-  done;
+  RUBY_VERSION=3.2.0
+  echo "Installing ruby-${RUBY_VERSION}"
+  time rvm install "ruby-${RUBY_VERSION}"
   echo "Setting default ruby version."
-  rvm use 2.7.0 --default
+  rvm use "$RUBY_VERSION" --default
   echo "Updating osx-ssl-certs."
+  gem install bundler -v 2.4
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
 
@@ -99,7 +99,7 @@ then
   # cocoapods
   export LANG=en_US.UTF-8
   # use "sudo" to avoid permission error on kokoro monterey image
-  time sudo gem install cocoapods --version 1.7.2 --no-document --user-install
+  time sudo gem install cocoapods --version 1.11.3 --no-document --user-install
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 #include <string.h>
@@ -196,8 +196,8 @@ void request_with_flags(grpc_end2end_test_config config) {
   uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
   {
-    /* check that all grpc_op_types fail when their flag value is set to an
-     * invalid value */
+    // check that all grpc_op_types fail when their flag value is set to an
+    // invalid value
     int indices[] = {GRPC_OP_SEND_INITIAL_METADATA, GRPC_OP_SEND_MESSAGE,
                      GRPC_OP_SEND_CLOSE_FROM_CLIENT,
                      GRPC_OP_RECV_INITIAL_METADATA,
@@ -210,7 +210,7 @@ void request_with_flags(grpc_end2end_test_config config) {
     }
   }
   {
-    /* check valid operation with allowed flags for GRPC_OP_SEND_BUFFER */
+    // check valid operation with allowed flags for GRPC_OP_SEND_BUFFER
     uint32_t flags[] = {GRPC_WRITE_BUFFER_HINT, GRPC_WRITE_NO_COMPRESS,
                         GRPC_WRITE_INTERNAL_COMPRESS};
     for (i = 0; i < GPR_ARRAY_SIZE(flags); ++i) {
