@@ -274,7 +274,8 @@ class BasicSeq {
     // Get a pointer to the state object.
     auto* s = state<I>();
     // Poll the current promise in this state.
-    auto r = s->current_promise();
+    Poll<typename absl::remove_cvref_t<decltype(*s)>::Types::Promise::Result> r(
+        s->current_promise());
     // If we are still pending, say so by returning.
     if (absl::holds_alternative<Pending>(r)) {
       return Pending();
