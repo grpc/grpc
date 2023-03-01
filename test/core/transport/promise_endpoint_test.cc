@@ -362,7 +362,7 @@ TEST_F(PromiseEndpointTest, MutipleReadsOneInternalReadSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
   }
 
@@ -383,7 +383,7 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsFailed) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
   }
   mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
@@ -550,7 +550,7 @@ TEST_F(PromiseEndpointTest, OneReadAndWaitFailed) {
 TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
   }
 
@@ -558,7 +558,7 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitSuccessful) {
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
   auto promise = promise_endpoint_.Read(kBuffer.size());
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
     mock_endpoint_.MarkNextReadReady();
   }
@@ -575,7 +575,7 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitFailed) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
   }
   mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
@@ -585,7 +585,7 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitFailed) {
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
   auto promise = promise_endpoint_.Read(kDummyRequestSize);
-  for (int i = 0; i < kReadTaskSize; ++i) {
+  for (size_t i = 0; i < kReadTaskSize; ++i) {
     EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
     mock_endpoint_.MarkNextReadReady();
   }
@@ -731,7 +731,7 @@ TEST_F(PromiseEndpointTest, MutipleReadSlicesOneInternalReadSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
   }
 
@@ -751,7 +751,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsFailed) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
   }
   mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
@@ -910,7 +910,7 @@ TEST_F(PromiseEndpointTest,
        OneReadSliceMultipleInternalReadsAndWaitSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
   }
 
@@ -918,7 +918,7 @@ TEST_F(PromiseEndpointTest,
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
   auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
     mock_endpoint_.MarkNextReadReady();
   }
@@ -934,7 +934,7 @@ TEST_F(PromiseEndpointTest,
 TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsAndWaitFailed) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
   }
   mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
@@ -944,7 +944,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsAndWaitFailed) {
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
   auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
-  for (int i = 0; i < kReadTaskSize; ++i) {
+  for (size_t i = 0; i < kReadTaskSize; ++i) {
     EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
     mock_endpoint_.MarkNextReadReady();
   }
@@ -1053,7 +1053,7 @@ TEST_F(PromiseEndpointTest, MutipleReadBytesOneInternalReadSuccessful) {
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
-  for (int i = 0; i < kBuffer.size(); ++i) {
+  for (size_t i = 0; i < kBuffer.size(); ++i) {
     auto promise = promise_endpoint_.ReadByte();
     auto poll = promise();
     ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);

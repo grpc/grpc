@@ -5435,8 +5435,8 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
-        "absl/types:optional",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = [
