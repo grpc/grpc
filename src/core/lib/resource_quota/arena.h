@@ -114,7 +114,7 @@ PoolAndSize ChoosePoolForAllocationSize(
 }  // namespace arena_detail
 
 class Arena {
-  using PoolSizes = absl::integer_sequence<size_t, 256, 512, 768, 2048>;
+  using PoolSizes = absl::integer_sequence<size_t, 256, 512, 768>;
   struct FreePoolNode {
     FreePoolNode* next;
   };
