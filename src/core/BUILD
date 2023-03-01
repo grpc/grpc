@@ -371,12 +371,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "poll",
-    external_deps = ["absl/types:variant"],
+    external_deps = ["absl/types:optional"],
     language = "c++",
     public_hdrs = [
         "lib/promise/poll.h",
     ],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "construct_destruct",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(

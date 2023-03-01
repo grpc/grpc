@@ -49,8 +49,7 @@ TEST(PromiseTest, SucceedAndThenFail) {
         m.Set(GrpcStatusMetadata(), GRPC_STATUS_UNAVAILABLE);
         return m;
       })();
-  EXPECT_EQ(absl::get<TestMap>(r).get(GrpcStatusMetadata()),
-            GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(r.value().get(GrpcStatusMetadata()), GRPC_STATUS_UNAVAILABLE);
 }
 
 }  // namespace grpc_core

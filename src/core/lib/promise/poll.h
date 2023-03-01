@@ -23,6 +23,10 @@
 
 #include "absl/types/optional.h"
 
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/construct_destruct.h"
+
 namespace grpc_core {
 
 // A type that signals a Promise is still pending and not yet completed.
@@ -46,38 +50,87 @@ template <typename T>
 class Poll {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(Pending) : value_() {}
-  Poll() : value_() {}
-  // NOLINTNEXTLINE(google-explicit-constructor)
+  Poll(Pending) : ready_(false) {}
+  Poll() : ready_(false) {}
+  Poll(const Poll& other) : ready_(other.ready_) {
+    if (ready_) Construct(&value_, other.value_);
+  }
+  Poll(Poll&& other) noexcept : ready_(other.ready_) {
+    if (ready_) Construct(&value_, std::move(other.value_));
+  }
+  Poll& operator=(const Poll& other) {
+    if (ready_) {
+      if (other.ready_) {
+        value_ = other.value_;
+      } else {
+        Destruct(&value_);
+        ready_ = false;
+      }
+    } else if (other.ready_) {
+      Construct(&value_, other.value_);
+      ready_ = true;
+    }
+    return *this;
+  }
+  Poll& operator=(Poll&& other) noexcept {
+    if (ready_) {
+      if (other.ready_) {
+        value_ = std::move(other.value_);
+      } else {
+        Destruct(&value_);
+        ready_ = false;
+      }
+    } else if (other.ready_) {
+      Construct(&value_, std::move(other.value_));
+      ready_ = true;
+    }
+    return *this;
+  }
   template <typename U>
-  Poll(U&& value) : value_(std::move(value)) {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  Poll(U value) : ready_(true) {
+    Construct(&value_, std::move(value));
+  }
+  ~Poll() {
+    if (ready_) Destruct(&value_);
+  }
 
-  bool pending() const { return !value_.has_value(); }
-  bool ready() const { return value_.has_value(); }
+  bool pending() const { return !ready_; }
+  bool ready() const { return ready_; }
 
   T& value() {
     GPR_DEBUG_ASSERT(ready());
-    return *value_;
+    return value_;
   }
 
   const T& value() const {
     GPR_DEBUG_ASSERT(ready());
-    return *value_;
+    return value_;
   }
 
   T* value_if_ready() {
-    if (ready()) return &*value_;
+    if (ready()) return &value_;
     return nullptr;
   }
 
   const T* value_if_ready() const {
-    if (ready()) return &*value_;
+    if (ready()) return &value_;
     return nullptr;
   }
 
  private:
-  absl::optional<T> value_;
+  bool ready_;
+  union {
+    T value_;
+  };
 };
+
+template <typename T>
+bool operator==(const Poll<T>& a, const Poll<T>& b) {
+  if (a.pending() && b.pending()) return true;
+  if (a.ready() && b.ready()) return a.value() == b.value();
+  return false;
+}
 
 template <typename T, typename U>
 Poll<T> poll_cast(Poll<U> poll) {
