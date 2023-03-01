@@ -97,7 +97,7 @@ struct Joint : public Joint<Traits, kRemaining - 1, Fs...> {
     if (!bits->is_set(kIdx)) {
       // Poll the promise
       auto r = fused.f();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto* p = r.value_if_ready()) {
         // If it's done, then ask the trait to unwrap it and store that result
         // in the Fused, and continue the iteration. Note that OnResult could
         // instead choose to return a value instead of recursing through the

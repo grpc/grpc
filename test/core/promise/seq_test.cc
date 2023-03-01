@@ -39,7 +39,7 @@ TEST(SeqTest, TwoTypedThens) {
   auto initial = [] { return A{}; };
   auto next1 = [](A) { return []() { return B{}; }; };
   auto next2 = [](B) { return []() { return C{}; }; };
-  EXPECT_FALSE(absl::holds_alternative<Pending>(Seq(initial, next1, next2)()));
+  EXPECT_FALSE(Seq(initial, next1, next2)().pending());
 }
 
 // This does not compile, but is useful for testing error messages generated

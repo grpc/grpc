@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "absl/types/variant.h"
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -43,16 +43,47 @@ struct Empty {
 // Can be either pending - the Promise has not yet completed, or ready -
 // indicating that the Promise has completed AND should not be polled again.
 template <typename T>
-using Poll = absl::variant<Pending, T>;
+class Poll {
+ public:
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  Poll(Pending) : value_() {}
+  Poll() : value_() {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  template <typename U>
+  Poll(U&& value) : value_(std::move(value)) {}
+
+  bool pending() const { return !value_.has_value(); }
+  bool ready() const { return value_.has_value(); }
+
+  T& value() {
+    GPR_DEBUG_ASSERT(ready());
+    return *value_;
+  }
+
+  const T& value() const {
+    GPR_DEBUG_ASSERT(ready());
+    return *value_;
+  }
+
+  T* value_if_ready() {
+    if (ready()) return &*value_;
+    return nullptr;
+  }
+
+  const T* value_if_ready() const {
+    if (ready()) return &*value_;
+    return nullptr;
+  }
+
+ private:
+  absl::optional<T> value_;
+};
 
 template <typename T, typename U>
 Poll<T> poll_cast(Poll<U> poll) {
-  if (absl::holds_alternative<Pending>(poll)) return Pending{};
-  return std::move(absl::get<U>(poll));
+  if (poll.pending()) return Pending{};
+  return static_cast<T>(std::move(poll.value()));
 }
-
-// Variant of Poll that serves as a ready value
-static constexpr size_t kPollReadyIdx = 1;
 
 // PollTraits tells us whether a type is Poll<> or some other type, and is
 // leveraged in the PromiseLike/PromiseFactory machinery to select the
@@ -74,10 +105,10 @@ template <typename T, typename F>
 std::string PollToString(
     const Poll<T>& poll,
     F t_to_string = [](const T& t) { return t.ToString(); }) {
-  if (absl::holds_alternative<Pending>(poll)) {
+  if (poll.pending()) {
     return "<<pending>>";
   }
-  return t_to_string(absl::get<T>(poll));
+  return t_to_string(poll.value());
 }
 
 }  // namespace grpc_core

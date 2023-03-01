@@ -190,7 +190,7 @@ class ObservableWatch final : private WatchCommitter {
 
   Poll<Result> operator()() {
     auto r = state_->PollWatch(&version_seen_);
-    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+    if (auto* p = r.value_if_ready()) {
       if (p->has_value()) {
         promise_ = Promise(factory_(std::move(**p), this));
       } else {

@@ -543,7 +543,7 @@ class PromiseActivity final
       // Run the promise.
       GPR_ASSERT(!done_);
       auto r = promise_holder_.promise();
-      if (auto* status = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto* status = r.value_if_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.
         MarkDone();
         return IntoStatus(status);
