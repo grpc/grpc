@@ -203,11 +203,10 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
     void* ignored = ops_;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
-#ifndef NDEBUG
-    auto* ops = ops_;
-#endif
+    auto* ops_tag = ops_;
+
     bool do_callback = ops_->FinalizeResult(&ignored, &ok);
-    GPR_DEBUG_ASSERT(ignored == ops);
+    GPR_DEBUG_ASSERT(ignored == ops_tag);
 
     if (do_callback) {
       CatchingCallback(func_, ok);
