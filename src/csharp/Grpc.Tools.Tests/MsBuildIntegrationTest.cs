@@ -155,10 +155,10 @@ namespace Grpc.Tools.Tests
         }
 
         [Test]
-        public void TestGrpcServices()
+        public void TestGrpcServicesMetadata()
         {
             // Test different values for GrpcServices item metadata
-            SetUpForTest(nameof(TestGrpcServices));
+            SetUpForTest(nameof(TestGrpcServicesMetadata));
 
             var expectedFiles = new ExpectedFilesBuilder();
             expectedFiles.Add("messages.proto", "Messages.cs");
@@ -166,13 +166,13 @@ namespace Grpc.Tools.Tests
             expectedFiles.Add("clientonly.proto", "Clientonly.cs", "ClientonlyGrpc.cs");
             expectedFiles.Add("clientandserver.proto", "Clientandserver.cs", "ClientandserverGrpc.cs");
 
-            TryRunMsBuild("TestGrpcServices", expectedFiles.ToString());
+            TryRunMsBuild("TestGrpcServicesMetadata", expectedFiles.ToString());
         }
 
         [Test]
         public void TestSetOutputDirs()
         {
-            // Test setting different GrpcOututDir and OutputDir
+            // Test setting different GrpcOutputDir and OutputDir
             SetUpForTest(nameof(TestSetOutputDirs));
 
             var expectedFiles = new ExpectedFilesBuilder();
