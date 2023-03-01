@@ -3025,7 +3025,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
           case kFinishedWithFailure:
             return false;
           case kFinishedWithSuccess:
-            abort();  // unreachable
+            Crash("unreachable");
           default:
             new_state = cancelled ? kFinishedWithFailure : kFinishedWithSuccess;
             r = true;
