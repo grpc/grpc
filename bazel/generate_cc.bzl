@@ -163,7 +163,7 @@ def generate_cc_impl(ctx):
         use_default_shell_env = True,
     )
 
-    return struct(files = depset(out_files))  # buildifier: disable=rule-impl-return
+    return DefaultInfo(files = depset(out_files))
 
 _generate_cc = rule(
     attrs = {

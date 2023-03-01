@@ -365,7 +365,6 @@ class RlsLb : public LoadBalancingPolicy {
   class Picker : public LoadBalancingPolicy::SubchannelPicker {
    public:
     explicit Picker(RefCountedPtr<RlsLb> lb_policy);
-    ~Picker() override;
 
     PickResult Pick(PickArgs args) override;
 
@@ -1008,19 +1007,6 @@ RlsLb::Picker::Picker(RefCountedPtr<RlsLb> lb_policy)
   }
 }
 
-RlsLb::Picker::~Picker() {
-  // It's not safe to unref the default child policy in the picker,
-  // since that needs to be done in the WorkSerializer.
-  if (default_child_policy_ != nullptr) {
-    auto* default_child_policy = default_child_policy_.release();
-    lb_policy_->work_serializer()->Run(
-        [default_child_policy]() {
-          default_child_policy->Unref(DEBUG_LOCATION, "Picker");
-        },
-        DEBUG_LOCATION);
-  }
-}
-
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   // Construct key for request.
   RequestKey key = {BuildKeyMap(config_->key_builder_map(), args.path,
@@ -1645,7 +1631,7 @@ void RlsLb::RlsChannel::Orphan() {
       client_channel->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;
     }
-    grpc_channel_destroy(channel_);
+    grpc_channel_destroy_internal(channel_);
   }
   Unref(DEBUG_LOCATION, "Orphan");
 }

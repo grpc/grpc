@@ -45,22 +45,21 @@ readonly MAIN_BRANCH="${MAIN_BRANCH:-master}"
 #######################################
 main() {
   local script_dir
-  script_dir="$(dirname "$0")"
+  script_dir="${PWD}/$(dirname "$0")"
 
   # Source the test driver from the master branch.
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
-
-  if [ "${TESTING_VERSION}" != "master" ]; then
-    echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
-    exit 0
-  fi
 
   activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
+    if [ "${TESTING_VERSION}" != "master" ]; then
+      echo "Skipping cross lang testing for non-master branch ${TESTING_VERSION}"
+      exit 0
+    fi
     cd "${TEST_DRIVER_FULL_DIR}"
   else
     local_setup_test_driver "${script_dir}"

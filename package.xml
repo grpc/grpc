@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.53.0dev</release>
-  <api>1.53.0dev</api>
+  <release>1.54.0dev</release>
+  <api>1.54.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.53.0 update
+- gRPC Core 1.54.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -116,6 +116,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_service_config.h" role="src" />
@@ -130,7 +131,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_call_state_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/address_filtering.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/address_filtering.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h" role="src" />
@@ -236,6 +236,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/gcp/metadata_query.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/gcp/metadata_query.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
@@ -1095,42 +1097,44 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_listener.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/android/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/cpu_iphone.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/cpu_linux.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/cpu_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/cpu_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/iphone/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/linux/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/linux/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/log_android.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/log_linux.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/log_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/log_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/msys/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/posix/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/posix/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/posix/string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/posix/sync.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/posix/time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/posix/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/string_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/string_util_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/string_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_abseil.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/sync_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/sync_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/time_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/time_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_msys.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/windows/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/windows/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/windows/string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/windows/string_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/windows/sync.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/windows/time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/windows/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
@@ -1142,9 +1146,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/env.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/env_linux.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/env_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/env_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
@@ -1156,6 +1157,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/linux/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
@@ -1169,13 +1171,14 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/packed_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/posix/env.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/posix/stat.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/posix/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/single_set_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sorted_pack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/stat_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/stat_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/strerror.cc" role="src" />
@@ -1185,8 +1188,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/tchar.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/tchar.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.cc" role="src" />
@@ -1196,6 +1197,9 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/windows/env.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/windows/stat.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/windows/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/handshaker/proxy_mapper.h" role="src" />

@@ -61,6 +61,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <atomic>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -389,19 +390,15 @@ class GrpcLb : public LoadBalancingPolicy {
     // Returns the LB token to use for a drop, or null if the call
     // should not be dropped.
     //
-    // Note: This is called from the picker, so it will be invoked in
-    // the channel's data plane mutex, NOT the control plane
-    // work_serializer.  It should not be accessed by any other part of the LB
-    // policy.
+    // Note: This is called from the picker, NOT from inside the control
+    // plane work_serializer.
     const char* ShouldDrop();
 
    private:
     std::vector<GrpcLbServer> serverlist_;
 
-    // Guarded by the channel's data plane mutex, NOT the control
-    // plane work_serializer.  It should not be accessed by anything but the
-    // picker via the ShouldDrop() method.
-    size_t drop_index_ = 0;
+    // Accessed from the picker, so needs synchronization.
+    std::atomic<size_t> drop_index_{0};
   };
 
   class Picker : public SubchannelPicker {
@@ -717,8 +714,8 @@ bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
 
 const char* GrpcLb::Serverlist::ShouldDrop() {
   if (serverlist_.empty()) return nullptr;
-  GrpcLbServer& server = serverlist_[drop_index_];
-  drop_index_ = (drop_index_ + 1) % serverlist_.size();
+  size_t index = drop_index_.fetch_add(1, std::memory_order_relaxed);
+  GrpcLbServer& server = serverlist_[index % serverlist_.size()];
   return server.drop ? server.load_balance_token : nullptr;
 }
 
@@ -1165,13 +1162,15 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   upb::Arena arena;
   if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
       (response.type == response.INITIAL && seen_initial_response_)) {
-    char* response_slice_str =
-        grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
-            "Ignoring.",
-            grpclb_policy(), this, response_slice_str);
-    gpr_free(response_slice_str);
+    if (gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
+      char* response_slice_str =
+          grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
+      gpr_log(GPR_ERROR,
+              "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
+              "Ignoring.",
+              grpclb_policy(), this, response_slice_str);
+      gpr_free(response_slice_str);
+    }
   } else {
     switch (response.type) {
       case response.INITIAL: {
@@ -1532,7 +1531,7 @@ void GrpcLb::ShutdownLocked() {
       GPR_ASSERT(child_channelz_node != nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
-    grpc_channel_destroy(lb_channel_);
+    grpc_channel_destroy_internal(lb_channel_);
     lb_channel_ = nullptr;
   }
 }

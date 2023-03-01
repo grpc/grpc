@@ -88,6 +88,12 @@ class WindowsEventEngine : public EventEngine,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
+  // Retrieve the base executor.
+  // This is public because most classes that know the concrete
+  // WindowsEventEngine type are effectively friends.
+  // Not intended for external use.
+  Executor* executor() { return executor_.get(); }
+
  private:
   // State of an active connection.
   // Managed by a shared_ptr, owned exclusively by the timeout callback and the
@@ -133,7 +139,7 @@ class WindowsEventEngine : public EventEngine,
   bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
-  class TimerClosure;
+  struct TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
