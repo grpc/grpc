@@ -3240,10 +3240,12 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   recv_close_op_cancel_state_.ToString().c_str());
         }
         ForceCompletionSuccess(completion);
-        if (!recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
+        recv_close_completion_ =
+            AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
+        if (recv_close_op_cancel_state_.ReceiveCloseOnServerOpStarted(
                 op.data.recv_close_on_server.cancelled)) {
-          recv_close_completion_ =
-              AddOpToCompletion(completion, PendingOp::kReceiveCloseOnServer);
+          FinishOpOnCompletion(&recv_close_completion_,
+                               PendingOp::kReceiveCloseOnServer);
         }
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
