@@ -1271,7 +1271,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO,
             "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
-            op, grpc_transport_stream_op_batch_string(op).c_str(),
+            op, grpc_transport_stream_op_batch_string(op, false).c_str(),
             op->on_complete);
     if (op->send_initial_metadata) {
       log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
@@ -1524,7 +1524,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "perform_stream_op[s=%p; op=%p]: %s", s, op,
-            grpc_transport_stream_op_batch_string(op).c_str());
+            grpc_transport_stream_op_batch_string(op, false).c_str());
   }
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
