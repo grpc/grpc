@@ -3000,6 +3000,8 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
           case kFinishedWithSuccess:
             *receiver = 0;
             return true;
+          default:
+            Crash("Two threads offered ReceiveCloseOnServerOpStarted");
         }
       } while (!state_.compare_exchange_weak(state, new_state,
                                              std::memory_order_acq_rel,
