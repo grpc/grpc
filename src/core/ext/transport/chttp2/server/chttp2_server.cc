@@ -175,7 +175,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       Timestamp const deadline_;
       absl::optional<EventEngine::TaskHandle> timer_handle_
           ABSL_GUARDED_BY(&connection_->mu_);
-      EventEngine* event_engine_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_closure on_receive_settings_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_pollset_set* const interested_parties_;
     };
@@ -375,7 +374,6 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
       acceptor_(acceptor),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()),
       deadline_(GetConnectionDeadline(args)),
-      event_engine_(args.GetObject<EventEngine>()),
       interested_parties_(grpc_pollset_set_create()) {
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
@@ -420,7 +418,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout() {
       timer_handle_.reset();
     }
   }
-  if (transport) {
+  if (transport != nullptr) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = GRPC_ERROR_CREATE(
         "Did not receive HTTP/2 settings before handshake timeout");
@@ -434,7 +432,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::
   {
     MutexLock lock(&self->connection_->mu_);
     if (self->timer_handle_.has_value()) {
-      self->event_engine_->Cancel(*self->timer_handle_);
+      self->connection_->event_engine_->Cancel(*self->timer_handle_);
       self->timer_handle_.reset();
     }
   }
@@ -510,7 +508,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
                                               &self->on_receive_settings_,
                                               on_close);
-          self->timer_handle_ = self->event_engine_->RunAfter(
+          self->timer_handle_ = self->connection_->event_engine_->RunAfter(
               self->deadline_ - Timestamp::Now(),
               [self = self->Ref()]() mutable {
                 ApplicationCallbackExecCtx callback_exec_ctx;
@@ -562,7 +560,8 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_pollset* accepting_pollset, grpc_tcp_server_acceptor* acceptor,
     const ChannelArgs& args, MemoryOwner memory_owner)
     : handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
-          Ref(), accepting_pollset, acceptor, args)) {
+          Ref(), accepting_pollset, acceptor, args)),
+      event_engine_(args.GetObject<EventEngine>()) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
 }
@@ -597,10 +596,11 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
                        .GetDurationFromIntMillis(
                            GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
                        .value_or(Duration::Minutes(10))),
-          [self = Ref()] {
+          [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             self->OnDrainGraceTimeExpiry();
+            self.reset(DEBUG_LOCATION, "drain_grace_timer");
           });
       shutdown_ = true;
     }
@@ -624,7 +624,6 @@ void Chttp2ServerListener::ActiveConnection::Start(
     // Hold a ref to HandshakingState to allow starting the handshake outside
     // the critical region.
     handshaking_state_ref = handshaking_state_->Ref();
-    event_engine_ = listener_->args_.GetObject<EventEngine>();
   }
   handshaking_state_ref->Start(endpoint, args);
 }
@@ -666,7 +665,7 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry() {
       drain_grace_timer_handle_.reset();
     }
   }
-  if (transport) {
+  if (transport != nullptr) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = GRPC_ERROR_CREATE(
         "Drain grace time expired. Closing connection immediately.");
