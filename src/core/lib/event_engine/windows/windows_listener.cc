@@ -150,6 +150,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
       [&](bool do_close_socket = true)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(io_state_->mu) {
             if (do_close_socket) closesocket(io_state_->accept_socket);
+            io_state_->accept_socket = INVALID_SOCKET;
             GPR_ASSERT(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
                                          StartLocked()));
           };
