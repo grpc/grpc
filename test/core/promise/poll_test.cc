@@ -36,7 +36,8 @@ TEST(PollTest, Pending) {
 
 TEST(PollTest, Ready) {
   Poll<int> i = 1;
-  EXPECT_TRUE(absl::holds_alternative<int>(i));
+  EXPECT_TRUE(i.ready());
+  EXPECT_EQ(i.value(), 1);
 }
 
 }  // namespace grpc_core

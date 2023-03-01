@@ -126,7 +126,7 @@ TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
   }
   auto promise = list.Run("");
   for (size_t i = 0; i < 26 * 1000; i++) {
-    EXPECT_TRUE(promise().ready()) << i;
+    EXPECT_TRUE(promise().pending()) << i;
   }
   std::string expected;
   for (size_t i = 0; i < 1000; i++) {
