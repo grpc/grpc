@@ -662,17 +662,16 @@ auto PipeReceiver<T>::Next() {
             open,
             [center = std::move(center), value = std::move(value)]() mutable {
               auto run = center->Run(std::move(value));
-              return Map(std::move(run),
-                         [center = std::move(center)](
-                             absl::optional<T> value) mutable {
-                           if (value.has_value()) {
-                             center->value() = std::move(*value);
-                             return NextResult<T>(std::move(center));
-                           } else {
-                             center->MarkCancelled();
-                             return NextResult<T>(true);
-                           }
-                         });
+              return Map(std::move(run), [center = std::move(center)](
+                                             absl::optional<T> value) mutable {
+                if (value.has_value()) {
+                  center->value() = std::move(*value);
+                  return NextResult<T>(std::move(center));
+                } else {
+                  center->MarkCancelled();
+                  return NextResult<T>(true);
+                }
+              });
             },
             [cancelled]() { return NextResult<T>(cancelled); });
       });
