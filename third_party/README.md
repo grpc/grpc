@@ -58,26 +58,29 @@ Updating some dependencies requires extra care.
 
 ### Updating third_party/boringssl-with-bazel
 
-- Update the `third_party/boringssl-with-bazel` submodule to the latest [`main-with-bazel`](https://github.com/google/boringssl/tree/main-with-bazel) branch
+NOTE: updating the boringssl dependency is now part of the internal grpc release tooling (see [go/grpc-release](http://go/grpc-release)).
+Prefer using the release tooling when possible. The instructions below are provided as a reference and aren't guaranteed to be up-to-date.
+
+- Update the `third_party/boringssl-with-bazel` submodule to the latest [`master-with-bazel`](https://github.com/google/boringssl/tree/master-with-bazel) branch
 ```
 git submodule update --init      # just to start in a clean state
 cd third_party/boringssl-with-bazel
 git fetch origin   # fetch what's new in the boringssl repository
-git checkout origin/main-with-bazel  # checkout the current state of main-with-bazel branch in the boringssl repo
-# Note the latest commit SHA on main-with-bazel branch
+git checkout origin/master-with-bazel  # checkout the current state of master-with-bazel branch in the boringssl repo
+# Note the latest commit SHA on master-with-bazel branch
 cd ../..   # go back to grpc repo root
 git status   #  will show that there are new commits in third_party/boringssl-with-bazel
 git add  third_party/boringssl-with-bazel     # we actually want to update the changes to the submodule
-git commit -m "update submodule boringssl-with-bazel with origin/main-with-bazel"   # commit
+git commit -m "update submodule boringssl-with-bazel with origin/master-with-bazel"   # commit
 ```
 
-- Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit SHA as main-with-bazel branch
+- Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit SHA as master-with-bazel branch
     - Update `http_archive(name = "boringssl",` section by updating the sha in `strip_prefix` and `urls` fields.
     - Also, set `sha256` field to "" as the existing value is not valid. This will be added later once we know what that value is.
 
 - Update `tools/run_tests/sanity/check_submodules.sh` with the same commit
 
-- Commit these changes `git commit -m "update boringssl dependency to main-with-bazel commit SHA"`
+- Commit these changes `git commit -m "update boringssl dependency to master-with-bazel commit SHA"`
 
 - Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
     - Because `sha256` in `bazel/grpc_deps.bzl` was left empty, you will get a DEBUG msg like this one:
@@ -104,7 +107,7 @@ git commit -m "update submodule boringssl-with-bazel with origin/main-with-bazel
 
 ### Updating third_party/protobuf
 
-See http://go/grpc-third-party-protobuf-update-instructions (internal only)
+Updating the protobuf dependency is now part of the internal release process (see [go/grpc-release](http://go/grpc-release)).
 
 ### Updating third_party/envoy-api
 

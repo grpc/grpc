@@ -51,6 +51,16 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
           callback,
       Duration timeout);
 
+  // Alternative ctor allows overriding the metadata server address, mainly
+  // to inject fakes in tests
+  MetadataQuery(
+      std::string metadata_server_name, std::string attribute,
+      grpc_polling_entity* pollent,
+      absl::AnyInvocable<void(std::string /* attribute */,
+                              absl::StatusOr<std::string> /* result */)>
+          callback,
+      Duration timeout);
+
   ~MetadataQuery() override;
 
   void Orphan() override;

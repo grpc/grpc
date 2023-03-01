@@ -967,18 +967,15 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        # Currently not supporting compiling as frameworks in Bazel
-        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-sample-frameworks',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'YES'
                 }))
         # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
