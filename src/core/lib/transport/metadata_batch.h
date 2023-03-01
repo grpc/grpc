@@ -53,8 +53,9 @@ namespace grpc_core {
 // Defaults to calling the key's Encode() method and then calculating the size
 // of that, but can be overridden for specific keys if there's a better way of
 // doing this.
+// May return 0 if the size is unknown/unknowable.
 template <typename Key>
-size_t EncodedSizeOfKey(Key key, const typename Key::ValueType& value) {
+size_t EncodedSizeOfKey(Key, const typename Key::ValueType& value) {
   return Key::Encode(value).size();
 }
 
