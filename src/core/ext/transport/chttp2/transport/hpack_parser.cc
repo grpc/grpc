@@ -910,9 +910,9 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
   dynamic_table_updates_allowed_ = 2;
   frame_length_ = 0;
   // TODO(alishananda): make soft limit configurable
-  metadata_early_detection_ =
-      new RandomEarlyDetection(/*soft_limit=*/0.75 * metadata_size_limit,
-                               /*hard_limit=*/metadata_size_limit);
+  metadata_early_detection_ = absl::make_unique<RandomEarlyDetection>(
+      /*soft_limit=*/0.75 * metadata_size_limit,
+      /*hard_limit=*/metadata_size_limit);
   log_info_ = log_info;
 }
 
@@ -958,7 +958,8 @@ bool HPackParser::ParseInputInner(Input* input, bool is_last) {
   while (!input->end_of_stream()) {
     if (GPR_UNLIKELY(!Parser(input, metadata_buffer_, &table_,
                              &dynamic_table_updates_allowed_, &frame_length_,
-                             metadata_early_detection_, is_last, log_info_)
+                             metadata_early_detection_.get(), is_last,
+                             log_info_)
                           .Parse())) {
       return false;
     }
