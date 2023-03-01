@@ -2170,6 +2170,7 @@ class PromiseBasedCall : public Call,
   union CompletionInfo {
     static constexpr uint32_t kOpFailed = 0x8000'0000u;
     static constexpr uint32_t kOpForceSuccess = 0x4000'0000u;
+    CompletionInfo() {}
     enum CompletionState {
       kPending,
       kSuccess,
