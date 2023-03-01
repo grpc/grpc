@@ -273,6 +273,7 @@ class BasicSeq {
   absl::enable_if_t<I != N - 1, Poll<Result>> RunState() {
     // Get a pointer to the state object.
     auto* s = state<I>();
+#error poop
     using StateType = absl::remove_reference_t<decltype(*s)>;
     return [this](Poll<typename StateType::Types::Promise::Result> r)
                -> Poll<Result> {
