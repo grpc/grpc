@@ -88,178 +88,186 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-// Request with a large amount of metadata.
-static void test_request_with_large_metadata(grpc_end2end_test_config config) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_metadata meta;
+// Request with some amount of metadata under the soft limit. Should not be
+// rejected.
+static void test_request_with_large_metadata_no_reject(
+    grpc_end2end_test_config config) {
+  grpc_arg arg;
+  const size_t large_size = 64 * 1024;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE);
+  arg.value.integer = static_cast<int>(large_size) + 1024;
+  grpc_channel_args args = {1, &arg};
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_request_with_metadata_no_reject", &args, &args);
+  grpc_core::CqVerifier cqv(f.cq);
+  for (int i = 0; i < 100; i++) {
+    grpc_call* c;
+    grpc_call* s;
+    grpc_slice request_payload_slice =
+        grpc_slice_from_copied_string("hello world");
+    grpc_byte_buffer* request_payload =
+        grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+    grpc_metadata meta;
+    meta.key = grpc_slice_from_static_string("key");
+    meta.value = grpc_slice_malloc(large_size * 0.5);
+    // Metadata much less than limit.
+    memset(GRPC_SLICE_START_PTR(meta.value), 'a', large_size * 0.5);
+    grpc_op ops[6];
+    grpc_op* op;
+    grpc_metadata_array initial_metadata_recv;
+    grpc_metadata_array trailing_metadata_recv;
+    grpc_metadata_array request_metadata_recv;
+    grpc_byte_buffer* request_payload_recv = nullptr;
+    grpc_call_details call_details;
+    grpc_status_code status;
+    grpc_call_error error;
+    grpc_slice details;
+    int was_cancelled = 2;
+
+    gpr_timespec deadline = five_seconds_from_now();
+    c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                 f.cq, grpc_slice_from_static_string("/foo"),
+                                 nullptr, deadline, nullptr);
+    GPR_ASSERT(c);
+
+    grpc_metadata_array_init(&initial_metadata_recv);
+    grpc_metadata_array_init(&trailing_metadata_recv);
+    grpc_metadata_array_init(&request_metadata_recv);
+    grpc_call_details_init(&call_details);
+
+    memset(ops, 0, sizeof(ops));
+    // Client: send request.
+    op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 1;
+    op->data.send_initial_metadata.metadata = &meta;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_MESSAGE;
+    op->data.send_message.send_message = request_payload;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_INITIAL_METADATA;
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        &initial_metadata_recv;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+    op->data.recv_status_on_client.status = &status;
+    op->data.recv_status_on_client.status_details = &details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                  nullptr);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    error =
+        grpc_server_request_call(f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101));
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    cqv.Expect(tag(101), true);
+    cqv.Verify();
+
+    memset(ops, 0, sizeof(ops));
+    // Server: send initial metadata and receive request.
+    op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message.recv_message = &request_payload_recv;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    cqv.Expect(tag(102), true);
+    cqv.Verify();
+
+    memset(ops, 0, sizeof(ops));
+    // Server: receive close and send status.  This should trigger
+    // completion of request on client.
+    op = ops;
+    op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    op->data.recv_close_on_server.cancelled = &was_cancelled;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count = 0;
+    op->data.send_status_from_server.status = GRPC_STATUS_OK;
+    grpc_slice status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(103), nullptr);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    cqv.Expect(tag(103), true);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
+
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+    GPR_ASSERT(was_cancelled == 0);
+    GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
+    GPR_ASSERT(contains_metadata_slices(&request_metadata_recv,
+                                        grpc_slice_from_static_string("key"),
+                                        meta.value));
+
+    grpc_slice_unref(details);
+    grpc_metadata_array_destroy(&initial_metadata_recv);
+    grpc_metadata_array_destroy(&trailing_metadata_recv);
+    grpc_metadata_array_destroy(&request_metadata_recv);
+    grpc_call_details_destroy(&call_details);
+
+    grpc_call_unref(c);
+    grpc_call_unref(s);
+
+    grpc_byte_buffer_destroy(request_payload);
+    grpc_byte_buffer_destroy(request_payload_recv);
+
+    grpc_slice_unref(meta.value);
+  }
+
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+// Server responds with metadata between soft and hard limits of what client
+// accepts. Around half of requests should be rejected.
+static void test_request_with_large_metadata_might_reject(
+    grpc_end2end_test_config config) {
   const size_t large_size = 64 * 1024;
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
   arg.key = const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE);
   arg.value.integer = static_cast<int>(large_size) + 1024;
   grpc_channel_args args = {1, &arg};
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_request_with_large_metadata", &args, &args);
-  grpc_core::CqVerifier cqv(f.cq);
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
-
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
-  GPR_ASSERT(c);
-
-  meta.key = grpc_slice_from_static_string("key");
-  meta.value = grpc_slice_malloc(large_size);
-  memset(GRPC_SLICE_START_PTR(meta.value), 'a', large_size);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  // Client: send request.
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 1;
-  op->data.send_initial_metadata.metadata = &meta;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(101), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  // Server: send initial metadata and receive request.
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(102), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  // Server: receive close and send status.  This should trigger
-  // completion of request on client.
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(103), true);
-  cqv.Expect(tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-  GPR_ASSERT(contains_metadata_slices(&request_metadata_recv,
-                                      grpc_slice_from_static_string("key"),
-                                      meta.value));
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-
-  grpc_slice_unref(meta.value);
-
-  end_test(&f);
-  config.tear_down_data(&f);
-}
-
-// Server responds with metadata larger than what the client accepts.
-static void test_request_with_bad_large_metadata_response(
-    grpc_end2end_test_config config) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE);
-  arg.value.integer = 1024;
-  grpc_channel_args args = {1, &arg};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_with_bad_large_metadata_response", &args, &args);
   grpc_core::CqVerifier cqv(f.cq);
 
-  for (int i = 0; i < 10; i++) {
+  int num_requests_rejected = 0;
+  for (int i = 0; i < 100; i++) {
     grpc_call* c;
     grpc_call* s;
     grpc_metadata meta;
@@ -282,8 +290,148 @@ static void test_request_with_bad_large_metadata_response(
     GPR_ASSERT(c);
 
     meta.key = grpc_slice_from_static_string("key");
-    meta.value = grpc_slice_malloc(large_size);
-    memset(GRPC_SLICE_START_PTR(meta.value), 'a', large_size);
+    meta.value = grpc_slice_malloc(large_size * 0.875);
+    memset(GRPC_SLICE_START_PTR(meta.value), 'a', large_size * 0.875);
+
+    grpc_metadata_array_init(&initial_metadata_recv);
+    grpc_metadata_array_init(&trailing_metadata_recv);
+    grpc_metadata_array_init(&request_metadata_recv);
+    grpc_call_details_init(&call_details);
+
+    memset(ops, 0, sizeof(ops));
+    // Client: send request.
+    op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_INITIAL_METADATA;
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        &initial_metadata_recv;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+    op->data.recv_status_on_client.status = &status;
+    op->data.recv_status_on_client.status_details = &details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                  nullptr);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    error =
+        grpc_server_request_call(f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101));
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    cqv.Expect(tag(101), true);
+    cqv.Verify();
+
+    memset(ops, 0, sizeof(ops));
+    // Server: send large initial metadata
+    op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 1;
+    op->data.send_initial_metadata.metadata = &meta;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    op->data.recv_close_on_server.cancelled = &was_cancelled;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count = 0;
+    op->data.send_status_from_server.status = GRPC_STATUS_OK;
+    grpc_slice status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+    cqv.Expect(tag(102), true);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
+    if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
+      num_requests_rejected++;
+      const char* expected_error =
+          "received initial metadata size exceeds soft limit";
+      grpc_slice actual_error =
+          grpc_slice_split_head(&details, strlen(expected_error));
+      GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+      GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+
+      grpc_slice_unref(actual_error);
+    } else {
+      GPR_ASSERT(status == GRPC_STATUS_OK);
+    }
+    grpc_slice_unref(details);
+    grpc_metadata_array_destroy(&initial_metadata_recv);
+    grpc_metadata_array_destroy(&trailing_metadata_recv);
+    grpc_metadata_array_destroy(&request_metadata_recv);
+    grpc_call_details_destroy(&call_details);
+
+    grpc_call_unref(c);
+    grpc_call_unref(s);
+
+    grpc_slice_unref(meta.value);
+  }
+
+  // Check that roughly half of requests were rejected.
+  GPR_ASSERT(num_requests_rejected >= 25 && num_requests_rejected <= 75);
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+// Server responds with metadata larger than what the client accepts. All
+// requests should be rejected.
+static void test_request_with_large_metadata_must_reject(
+    grpc_end2end_test_config config) {
+  const size_t large_size = 64 * 1024;
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE);
+  arg.value.integer = static_cast<int>(large_size) + 1024;
+  grpc_channel_args args = {1, &arg};
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_request_with_bad_large_metadata_response", &args, &args);
+  grpc_core::CqVerifier cqv(f.cq);
+
+  for (int i = 0; i < 100; i++) {
+    grpc_call* c;
+    grpc_call* s;
+    grpc_metadata meta;
+    grpc_op ops[6];
+    grpc_op* op;
+    grpc_metadata_array initial_metadata_recv;
+    grpc_metadata_array trailing_metadata_recv;
+    grpc_metadata_array request_metadata_recv;
+    grpc_call_details call_details;
+    grpc_status_code status;
+    grpc_call_error error;
+    grpc_slice details;
+    int was_cancelled = 2;
+
+    gpr_timespec deadline = five_seconds_from_now();
+    c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                 f.cq, grpc_slice_from_static_string("/foo"),
+                                 nullptr, deadline, nullptr);
+    GPR_ASSERT(c);
+
+    meta.key = grpc_slice_from_static_string("key");
+    meta.value = grpc_slice_malloc(large_size * 1.25);
+    memset(GRPC_SLICE_START_PTR(meta.value), 'a', large_size * 1.25);
 
     grpc_metadata_array_init(&initial_metadata_recv);
     grpc_metadata_array_init(&trailing_metadata_recv);
@@ -357,7 +505,8 @@ static void test_request_with_bad_large_metadata_response(
     cqv.Verify();
 
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    const char* expected_error = "received initial metadata size exceeds limit";
+    const char* expected_error =
+        "received initial metadata size exceeds hard limit";
     grpc_slice actual_error =
         grpc_slice_split_head(&details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -381,10 +530,11 @@ static void test_request_with_bad_large_metadata_response(
 }
 
 void large_metadata(grpc_end2end_test_config config) {
-  test_request_with_large_metadata(config);
+  test_request_with_large_metadata_no_reject(config);
   // TODO(yashykt): Maybe add checks for metadata size in inproc transport too.
   if (strcmp(config.name, "inproc") != 0) {
-    test_request_with_bad_large_metadata_response(config);
+    test_request_with_large_metadata_might_reject(config);
+    test_request_with_large_metadata_must_reject(config);
   }
 }
 
