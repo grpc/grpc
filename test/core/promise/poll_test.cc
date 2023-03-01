@@ -31,7 +31,7 @@ TEST(PollTest, IsItPoll) {
 
 TEST(PollTest, Pending) {
   Poll<int> i = Pending();
-  EXPECT_TRUE(absl::holds_alternative<Pending>(i));
+  EXPECT_TRUE(i.pending());
 }
 
 TEST(PollTest, Ready) {

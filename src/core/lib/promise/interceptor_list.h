@@ -135,7 +135,7 @@ class InterceptorList {
       while (true) {
         auto r = async_resolution_.current_factory->PollOnce(
             async_resolution_.space.get());
-        if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+        if (auto* p = r.value_if_ready()) {
           async_resolution_.current_factory->Destroy(
               async_resolution_.space.get());
           async_resolution_.current_factory =

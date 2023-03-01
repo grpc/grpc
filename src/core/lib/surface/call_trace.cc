@@ -66,7 +66,7 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                           Activity::current()->DebugTag().c_str(),
                           source_filter->name);
                   auto r = child();
-                  if (auto* p = absl::get_if<ServerMetadataHandle>(&r)) {
+                  if (auto* p = r.value_if_ready()) {
                     gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: done: %s",
                             Activity::current()->DebugTag().c_str(),
                             source_filter->name, (*p)->DebugString().c_str());

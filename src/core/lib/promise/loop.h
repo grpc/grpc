@@ -98,7 +98,7 @@ class Loop {
       // Poll the inner promise.
       auto promise_result = promise_();
       // If it returns a value:
-      if (auto* p = absl::get_if<kPollReadyIdx>(&promise_result)) {
+      if (auto* p = promise_result.value_if_ready()) {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);

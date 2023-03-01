@@ -2583,7 +2583,7 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
 bool PromiseBasedCall::PollSendMessage() {
   if (!outstanding_send_.has_value()) return true;
   Poll<bool> r = (*outstanding_send_)();
-  if (const bool* result = absl::get_if<bool>(&r)) {
+  if (const bool* result = r.value_if_ready()) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%sPollSendMessage completes %s", DebugTag().c_str(),
               *result ? "successfully" : "with failure");
@@ -2618,7 +2618,7 @@ void PromiseBasedCall::PollRecvMessage(
     grpc_compression_algorithm incoming_compression_algorithm) {
   if (!outstanding_recv_.has_value()) return;
   Poll<NextResult<MessageHandle>> r = (*outstanding_recv_)();
-  if (auto* result = absl::get_if<NextResult<MessageHandle>>(&r)) {
+  if (auto* result = r.value_if_ready()) {
     outstanding_recv_.reset();
     if (result->has_value()) {
       MessageHandle& message = **result;
@@ -2971,8 +2971,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
   if (server_initial_metadata_ready_.has_value()) {
     Poll<NextResult<ServerMetadataHandle>> r =
         (*server_initial_metadata_ready_)();
-    if (auto* server_initial_metadata =
-            absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+    if (auto* server_initial_metadata = r.value_if_ready()) {
       PublishInitialMetadata(server_initial_metadata->value().get());
     } else if (completed()) {
       ServerMetadata no_metadata{GetContext<Arena>()};
@@ -2997,7 +2996,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
                 return h->DebugString();
               }).c_str());
     }
-    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+    if (auto* result = r.value_if_ready()) {
       AcceptTransportStatsFromContext();
       Finish(std::move(*result));
     }
@@ -3027,7 +3026,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   Poll<NextResult<ServerMetadataHandle>> r =
       (*server_initial_metadata_ready_)();
   server_initial_metadata_ready_.reset();
-  if (auto* result = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+  if (auto* result = r.value_if_ready()) {
     if (pending_initial_metadata) PublishInitialMetadata(result->value().get());
     is_trailers_only_ = false;
   } else {
@@ -3312,7 +3311,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
   if (auto* p =
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
               &send_initial_metadata_state_)) {
-    if (!absl::holds_alternative<Pending>((*p)())) {
+    if ((*p)().ready()) {
       send_initial_metadata_state_ = absl::monostate{};
     }
   }
@@ -3325,7 +3324,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
                 return h->DebugString();
               }).c_str());
     }
-    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+    if (auto* result = r.value_if_ready()) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
                 DebugTag().c_str(),
