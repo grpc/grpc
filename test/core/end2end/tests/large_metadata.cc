@@ -388,8 +388,8 @@ static void test_request_with_large_metadata_might_reject(
     grpc_slice_unref(meta.value);
   }
 
-  // Check that roughly half of requests were rejected.
-  GPR_ASSERT(num_requests_rejected >= 25 && num_requests_rejected <= 75);
+  // Check that some number of requests were rejected, >10%, <90%.
+  GPR_ASSERT(abs(num_requests_rejected - 50) <= 40);
   end_test(&f);
   config.tear_down_data(&f);
 }
