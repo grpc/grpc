@@ -5436,6 +5436,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
+        "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = [

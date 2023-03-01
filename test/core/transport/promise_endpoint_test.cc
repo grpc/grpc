@@ -16,9 +16,11 @@
 
 #include "src/core/lib/transport/promise_endpoint.h"
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <queue>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -27,7 +29,13 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 
+#include "grpc/support/log.h"
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc {
 
@@ -39,6 +47,10 @@ class MockEndpoint
     : public grpc_event_engine::experimental::EventEngine::Endpoint {
  public:
   MockEndpoint() {
+    ON_CALL(*this, Read)
+        .WillByDefault(std::bind(&MockEndpoint::ReadImpl, this,
+                                 std::placeholders::_1, std::placeholders::_2,
+                                 std::placeholders::_3));
     ON_CALL(*this, Write)
         .WillByDefault(std::bind(&MockEndpoint::WriteImpl, this,
                                  std::placeholders::_1, std::placeholders::_2,
@@ -50,7 +62,7 @@ class MockEndpoint
   }
 
   MOCK_METHOD(
-      void, Read,
+      bool, Read,
       (absl::AnyInvocable<void(absl::Status)> on_read,
        grpc_event_engine::experimental::SliceBuffer* buffer,
        const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
@@ -58,7 +70,7 @@ class MockEndpoint
       (override));
 
   MOCK_METHOD(
-      void, Write,
+      bool, Write,
       (absl::AnyInvocable<void(absl::Status)> on_writable,
        grpc_event_engine::experimental::SliceBuffer* data,
        const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
@@ -67,10 +79,10 @@ class MockEndpoint
 
   MOCK_METHOD(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
-      GetPeerAddress, (), (const override));
+      GetPeerAddress, (), (const, override));
   MOCK_METHOD(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
-      GetLocalAddress, (), (const override));
+      GetLocalAddress, (), (const, override));
 
   void set_peer_address(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
@@ -84,13 +96,45 @@ class MockEndpoint
     local_address_ = local_address;
   }
 
-  void ScheduleWriteTask(const absl::Status& status) {
-    write_task_queue_.push({false, status, {}});
+  // only for an error read task
+  void ScheduleReadTask(const absl::Status& status, bool ready = false) {
+    GPR_ASSERT(!status.ok());
+    read_task_queue_.push({ready, status, {}, {}, {}});
+  }
+
+  // only for a successful read task
+  void ScheduleReadTask(const std::string& buffer, bool ready = false) {
+    read_task_queue_.push({ready, absl::OkStatus(), buffer, {}, {}});
+  }
+
+  void MarkNextReadReady() {
+    GPR_ASSERT(!read_task_queue_.empty());
+    GPR_ASSERT(!read_task_queue_.front().ready);
+
+    read_task_queue_.front().ready = true;
+    if (read_task_queue_.front().callback.has_value()) {
+      if (read_task_queue_.front().status.ok()) {
+        GPR_ASSERT(read_task_queue_.front().source_buffer.has_value());
+        grpc_event_engine::experimental::Slice slice(grpc_slice_from_cpp_string(
+            *(read_task_queue_.front().source_buffer)));
+        GPR_ASSERT(read_task_queue_.front().destination_buffer.has_value());
+        (*read_task_queue_.front().destination_buffer)
+            ->Append(std::move(slice));
+      }
+      auto callback = std::move(*read_task_queue_.front().callback);
+      auto status = read_task_queue_.front().status;
+      read_task_queue_.pop();
+      callback(status);
+    }
+  }
+
+  void ScheduleWriteTask(const absl::Status& status, bool ready = false) {
+    write_task_queue_.push({ready, status, {}});
   }
 
   void MarkNextWriteReady() {
-    ASSERT_FALSE(write_task_queue_.empty());
-    ASSERT_FALSE(write_task_queue_.front().ready);
+    GPR_ASSERT(!write_task_queue_.empty());
+    GPR_ASSERT(!write_task_queue_.front().ready);
 
     write_task_queue_.front().ready = true;
     if (write_task_queue_.front().callback.has_value()) {
@@ -100,6 +144,46 @@ class MockEndpoint
   }
 
  private:
+  struct ReadTask {
+    bool ready;
+    const absl::Status status;
+    absl::optional<std::string> source_buffer;
+    absl::optional<grpc_event_engine::experimental::SliceBuffer*>
+        destination_buffer;
+    absl::optional<absl::AnyInvocable<void(absl::Status)>> callback;
+  };
+  std::queue<ReadTask> read_task_queue_;
+
+  bool ReadImpl(
+      absl::AnyInvocable<void(absl::Status)> on_read,
+      grpc_event_engine::experimental::SliceBuffer* buffer,
+      const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
+      /* args */) {
+    // should always schedule a read first
+    GPR_ASSERT(!read_task_queue_.empty());
+    GPR_ASSERT(buffer != nullptr);
+
+    if (read_task_queue_.front().ready) {
+      if (read_task_queue_.front().status.ok()) {
+        GPR_ASSERT(read_task_queue_.front().source_buffer.has_value());
+        grpc_event_engine::experimental::Slice slice(grpc_slice_from_cpp_string(
+            *(read_task_queue_.front().source_buffer)));
+        buffer->Append(std::move(slice));
+        read_task_queue_.pop();
+        return true;  // returns true since the data is already available
+      } else {
+        auto status = read_task_queue_.front().status;
+        read_task_queue_.pop();
+        on_read(status);
+      }
+    } else {
+      read_task_queue_.front().destination_buffer = buffer;
+      read_task_queue_.front().callback = std::move(on_read);
+    }
+
+    return false;
+  }
+
   struct WriteTask {
     bool ready;
     const absl::Status status;
@@ -107,19 +191,28 @@ class MockEndpoint
   };
   std::queue<WriteTask> write_task_queue_;
 
-  void WriteImpl(
+  bool WriteImpl(
       absl::AnyInvocable<void(absl::Status)> on_writable,
       grpc_event_engine::experimental::SliceBuffer* /* data */,
       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
       /* args */) {
-    ASSERT_FALSE(write_task_queue_.empty());
+    // should always schedule a write first
+    GPR_ASSERT(!write_task_queue_.empty());
 
     if (write_task_queue_.front().ready) {
-      on_writable(write_task_queue_.front().status);
-      write_task_queue_.pop();
+      if (write_task_queue_.front().status.ok()) {
+        write_task_queue_.pop();
+        return true;  // returns true since the data is already available
+      } else {
+        auto status = write_task_queue_.front().status;
+        write_task_queue_.pop();
+        on_writable(status);
+      }
     } else {
       write_task_queue_.front().callback = std::move(on_writable);
     }
+
+    return false;
   }
 
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
@@ -182,72 +275,989 @@ class PromiseEndpointTest : public ::testing::Test {
  protected:
   MockEndpoint& mock_endpoint_;
   grpc::internal::PromiseEndpoint promise_endpoint_;
+
+  const absl::Status kDummyErrorStatus =
+      absl::ErrnoToStatus(5566, "just an error");
+  static constexpr size_t kDummyRequestSize = 5566u;
 };
 
-TEST_F(PromiseEndpointTest, WriteOneSuccessful) {
+TEST_F(PromiseEndpointTest, OneReadSuccessful) {
   MockActivity activity;
-  const absl::Status kStatus = absl::OkStatus();
-  mock_endpoint_.ScheduleWriteTask(kStatus);
-  mock_endpoint_.MarkNextWriteReady();
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04};
+  mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
 
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
-  EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.Read(kBuffer.size());
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->JoinIntoString(), kBuffer);
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, WriteOneFailed) {
+TEST_F(PromiseEndpointTest, OneReadFailed) {
   MockActivity activity;
-  const absl::Status kStatus = absl::ErrnoToStatus(5566, "just an error");
-  mock_endpoint_.ScheduleWriteTask(kStatus);
-  mock_endpoint_.MarkNextWriteReady();
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.Read(kDummyRequestSize);
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, MutipleReadsOneInternalReadSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  {
+    auto promise = promise_endpoint_.Read(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(0, 4));
+  }
+  {
+    auto promise = promise_endpoint_.Read(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(4, 2));
+  }
+  {
+    auto promise = promise_endpoint_.Read(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(6));
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
+  }
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
+  auto promise = promise_endpoint_.Read(kBuffer.size());
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->JoinIntoString(), kBuffer);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsFailed) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
+  }
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+  const size_t kReadTaskSize = kBuffer.size() + 1u;
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
+  auto promise = promise_endpoint_.Read(kDummyRequestSize);
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, MutipleReadsMutipleInternalReadsSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer1 = {0x01, 0x02};
+  mock_endpoint_.ScheduleReadTask(kBuffer1, /*ready=*/true);
+  const std::string kBuffer2 = {0x03};
+  mock_endpoint_.ScheduleReadTask(kBuffer2, /*ready=*/true);
+  const std::string kBuffer3 = {0x04, 0x05};
+  mock_endpoint_.ScheduleReadTask(kBuffer3, /*ready=*/true);
+  const std::string kBuffer4 = {0x06};
+  mock_endpoint_.ScheduleReadTask(kBuffer4, /*ready=*/true);
+  const std::string kBuffer5 = {0x07};
+  mock_endpoint_.ScheduleReadTask(kBuffer5, /*ready=*/true);
+  const std::string kBuffer6 = {0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer6, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(6);
+  {
+    auto promise = promise_endpoint_.Read(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(),
+              kBuffer1 + kBuffer2 + kBuffer3.substr(0, 1));
+  }
+  {
+    auto promise = promise_endpoint_.Read(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer3.substr(1) + kBuffer4);
+  }
+  {
+    auto promise = promise_endpoint_.Read(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer5 + kBuffer6);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest,
+       FailedInternalReadsInvalidatesPreviousReadsFromReads) {
+  MockActivity activity;
+  const std::string kBuffer1 = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer1, /*ready=*/true);
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+  const std::string kBuffer2 = {0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
+  mock_endpoint_.ScheduleReadTask(kBuffer2, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(3);
+  {
+    auto promise = promise_endpoint_.Read(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer1.substr(0, 4));
+  }
+  {
+    auto promise = promise_endpoint_.Read(kDummyRequestSize);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(!result.ok());
+    EXPECT_EQ(kDummyErrorStatus, result.status());
+  }
+  // What remains from `kBuffer1` will be invalidated since there is an error
+  // after it.
+  {
+    auto promise = promise_endpoint_.Read(kBuffer2.size());
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer2);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadAndWaitSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04};
+  mock_endpoint_.ScheduleReadTask(kBuffer);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.Read(kBuffer.size());
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  mock_endpoint_.MarkNextReadReady();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(*absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->JoinIntoString(), kBuffer);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadAndWaitFailed) {
+  MockActivity activity;
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.Read(kDummyRequestSize);
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  mock_endpoint_.MarkNextReadReady();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(*absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
+  }
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
+  auto promise = promise_endpoint_.Read(kBuffer.size());
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    mock_endpoint_.MarkNextReadReady();
+  }
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->JoinIntoString(), kBuffer);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitFailed) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
+  }
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
+  const size_t kReadTaskSize = kBuffer.size() + 1u;
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
+  auto promise = promise_endpoint_.Read(kDummyRequestSize);
+  for (int i = 0; i < kReadTaskSize; ++i) {
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    mock_endpoint_.MarkNextReadReady();
+  }
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+            nullptr);
+  absl::StatusOr<grpc_core::SliceBuffer> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest,
+       FailedInternalReadsInvalidatesPreviousReadsFromReadsWait) {
+  MockActivity activity;
+  const std::string kBuffer1 = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer1);
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
+  const std::string kBuffer2 = {0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
+  mock_endpoint_.ScheduleReadTask(kBuffer2);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(3);
+  {
+    auto promise = promise_endpoint_.Read(4u);
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_CALL(activity, WakeupRequested).Times(1);
+    mock_endpoint_.MarkNextReadReady();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer1.substr(0, 4));
+  }
+  {
+    auto promise = promise_endpoint_.Read(kDummyRequestSize);
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_CALL(activity, WakeupRequested).Times(1);
+    mock_endpoint_.MarkNextReadReady();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(!result.ok());
+    EXPECT_EQ(kDummyErrorStatus, result.status());
+  }
+  // What remains from `kBuffer1` will be invalidated since there is an error
+  // after it.
+  {
+    auto promise = promise_endpoint_.Read(kBuffer2.size());
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_CALL(activity, WakeupRequested).Times(1);
+    mock_endpoint_.MarkNextReadReady();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer2);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadSliceSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04};
+  mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->as_string_view(), kBuffer);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
+  MockActivity activity;
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, MutipleReadSlicesOneInternalReadSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  {
+    auto promise = promise_endpoint_.ReadSlice(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer.substr(0, 4));
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer.substr(4, 2));
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer.substr(6));
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
+  }
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
+  auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->as_string_view(), kBuffer);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsFailed) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1), /*ready=*/true);
+  }
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+  const size_t kReadTaskSize = kBuffer.size() + 1u;
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
+  auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, MutipleReadSlicesMutipleInternalReadsSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer1 = {0x01, 0x02};
+  mock_endpoint_.ScheduleReadTask(kBuffer1, /*ready=*/true);
+  const std::string kBuffer2 = {0x03};
+  mock_endpoint_.ScheduleReadTask(kBuffer2, /*ready=*/true);
+  const std::string kBuffer3 = {0x04, 0x05};
+  mock_endpoint_.ScheduleReadTask(kBuffer3, /*ready=*/true);
+  const std::string kBuffer4 = {0x06};
+  mock_endpoint_.ScheduleReadTask(kBuffer4, /*ready=*/true);
+  const std::string kBuffer5 = {0x07};
+  mock_endpoint_.ScheduleReadTask(kBuffer5, /*ready=*/true);
+  const std::string kBuffer6 = {0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer6, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(6);
+  {
+    auto promise = promise_endpoint_.ReadSlice(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(),
+              kBuffer1 + kBuffer2 + kBuffer3.substr(0, 1));
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer3.substr(1) + kBuffer4);
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(2u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer5 + kBuffer6);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest,
+       FailedInternalReadsInvalidatesPreviousReadsFromReadSlices) {
+  MockActivity activity;
+  const std::string kBuffer1 = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer1, /*ready=*/true);
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+  const std::string kBuffer2 = {0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
+  mock_endpoint_.ScheduleReadTask(kBuffer2, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(3);
+  {
+    auto promise = promise_endpoint_.ReadSlice(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer1.substr(0, 4));
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(!result.ok());
+    EXPECT_EQ(kDummyErrorStatus, result.status());
+  }
+  // What remains from `kBuffer1` will be invalidated since there is an error
+  // after it.
+  {
+    auto promise = promise_endpoint_.ReadSlice(kBuffer2.size());
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer2);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadSliceAndWaitSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04};
+  mock_endpoint_.ScheduleReadTask(kBuffer);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  mock_endpoint_.MarkNextReadReady();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(*absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->as_string_view(), kBuffer);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadSliceAndWaitFailed) {
+  MockActivity activity;
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  mock_endpoint_.MarkNextReadReady();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(*absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest,
+       OneReadSliceMultipleInternalReadsAndWaitSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
+  }
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
+  auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    mock_endpoint_.MarkNextReadReady();
+  }
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->as_string_view(), kBuffer);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsAndWaitFailed) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    mock_endpoint_.ScheduleReadTask(kBuffer.substr(i, 1));
+  }
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
+  const size_t kReadTaskSize = kBuffer.size() + 1u;
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
+  auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+  for (int i = 0; i < kReadTaskSize; ++i) {
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    mock_endpoint_.MarkNextReadReady();
+  }
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+  absl::StatusOr<grpc_core::Slice> result =
+      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest,
+       FailedInternalReadsInvalidatesPreviousReadsFromReadSlicesWait) {
+  MockActivity activity;
+  const std::string kBuffer1 = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer1);
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
+  const std::string kBuffer2 = {0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
+  mock_endpoint_.ScheduleReadTask(kBuffer2);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(3);
+  {
+    auto promise = promise_endpoint_.ReadSlice(4u);
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_CALL(activity, WakeupRequested).Times(1);
+    mock_endpoint_.MarkNextReadReady();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer1.substr(0, 4));
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_CALL(activity, WakeupRequested).Times(1);
+    mock_endpoint_.MarkNextReadReady();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(!result.ok());
+    EXPECT_EQ(kDummyErrorStatus, result.status());
+  }
+  // What remains from `kBuffer1` will be invalidated since there is an error
+  // after it.
+  {
+    auto promise = promise_endpoint_.ReadSlice(kBuffer2.size());
+    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_CALL(activity, WakeupRequested).Times(1);
+    mock_endpoint_.MarkNextReadReady();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer2);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadByteSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01};
+  mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadByte();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
+  absl::StatusOr<uint8_t> result =
+      std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(*result, kBuffer[0]);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadByteFailed) {
+  MockActivity activity;
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadByte();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
+  absl::StatusOr<uint8_t> result =
+      std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, MutipleReadBytesOneInternalReadSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  for (int i = 0; i < kBuffer.size(); ++i) {
+    auto promise = promise_endpoint_.ReadByte();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
+    absl::StatusOr<uint8_t> result =
+        std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(*result, kBuffer[i]);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadByteAndWaitSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01};
+  mock_endpoint_.ScheduleReadTask(kBuffer);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadByte();
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  mock_endpoint_.MarkNextReadReady();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
+  absl::StatusOr<uint8_t> result =
+      std::move(*absl::get_if<absl::StatusOr<uint8_t>>(&poll));
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(*result, kBuffer[0]);
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest,
+       MutipleReadsReadSlicesReadBytesOneInternalReadSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  {
+    auto promise = promise_endpoint_.Read(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(0, 4));
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(3u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(), kBuffer.substr(4, 3));
+  }
+  {
+    auto promise = promise_endpoint_.ReadByte();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
+    absl::StatusOr<uint8_t> result =
+        std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(*result, kBuffer[7]);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest,
+       MutipleReadsReadSlicesReadBytesMutipleInternalReadsSuccessful) {
+  MockActivity activity;
+  const std::string kBuffer1 = {0x01, 0x02};
+  mock_endpoint_.ScheduleReadTask(kBuffer1, /*ready=*/true);
+  const std::string kBuffer2 = {0x03};
+  mock_endpoint_.ScheduleReadTask(kBuffer2, /*ready=*/true);
+  const std::string kBuffer3 = {0x04, 0x05};
+  mock_endpoint_.ScheduleReadTask(kBuffer3, /*ready=*/true);
+  const std::string kBuffer4 = {0x06};
+  mock_endpoint_.ScheduleReadTask(kBuffer4, /*ready=*/true);
+  const std::string kBuffer5 = {0x07};
+  mock_endpoint_.ScheduleReadTask(kBuffer5, /*ready=*/true);
+  const std::string kBuffer6 = {0x08};
+  mock_endpoint_.ScheduleReadTask(kBuffer6, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(6);
+  {
+    auto promise = promise_endpoint_.Read(4u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
+              nullptr);
+    absl::StatusOr<grpc_core::SliceBuffer> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->JoinIntoString(),
+              kBuffer1 + kBuffer2 + kBuffer3.substr(0, 1));
+  }
+  {
+    auto promise = promise_endpoint_.ReadSlice(3u);
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
+    absl::StatusOr<grpc_core::Slice> result =
+        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result->as_string_view(),
+              kBuffer3.substr(1) + kBuffer4 + kBuffer5);
+  }
+  {
+    auto promise = promise_endpoint_.ReadByte();
+    auto poll = promise();
+    ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
+    absl::StatusOr<uint8_t> result =
+        std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(*result, kBuffer6[0]);
+  }
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneReadByteAndWaitFailed) {
+  MockActivity activity;
+  mock_endpoint_.ScheduleReadTask(kDummyErrorStatus);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Read).Times(1);
+  auto promise = promise_endpoint_.ReadByte();
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  mock_endpoint_.MarkNextReadReady();
+  auto poll = promise();
+  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
+  absl::StatusOr<uint8_t> result =
+      std::move(*absl::get_if<absl::StatusOr<uint8_t>>(&poll));
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(kDummyErrorStatus, result.status());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneWriteSuccessful) {
+  MockActivity activity;
+  mock_endpoint_.ScheduleWriteTask(absl::OkStatus(), /*ready=*/true);
 
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(absl::OkStatus(), absl::get<absl::Status>(promise()));
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, OneWriteFailed) {
+  MockActivity activity;
+  mock_endpoint_.ScheduleWriteTask(kDummyErrorStatus, /*ready=*/true);
+
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Write).Times(1);
+  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(kDummyErrorStatus, absl::get<absl::Status>(promise()));
   activity.Deactivate();
 }
 
 TEST_F(PromiseEndpointTest, WriteAndWaitSuccessful) {
   MockActivity activity;
-  const absl::Status kStatus = absl::OkStatus();
-  mock_endpoint_.ScheduleWriteTask(kStatus);
+  mock_endpoint_.ScheduleWriteTask(absl::OkStatus());
 
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(ret()));
+  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextWriteReady();
-  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  EXPECT_EQ(absl::OkStatus(), absl::get<absl::Status>(promise()));
   activity.Deactivate();
 }
 
 TEST_F(PromiseEndpointTest, WriteAndWaitFailed) {
   MockActivity activity;
-  const absl::Status kStatus = absl::ErrnoToStatus(5566, "just an error");
-  mock_endpoint_.ScheduleWriteTask(kStatus);
+  mock_endpoint_.ScheduleWriteTask(kDummyErrorStatus);
 
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(ret()));
+  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextWriteReady();
-  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+  EXPECT_EQ(kDummyErrorStatus, absl::get<absl::Status>(promise()));
   activity.Deactivate();
 }
 
 TEST_F(PromiseEndpointTest, GetPeerAddress) {
-  /// just some random bytes
+  // just some random bytes
   const char raw_peer_address[] = {0x55, 0x66, 0x01, 0x55, 0x66, 0x01};
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address(
       reinterpret_cast<const sockaddr*>(raw_peer_address),
@@ -264,7 +1274,7 @@ TEST_F(PromiseEndpointTest, GetPeerAddress) {
 }
 
 TEST_F(PromiseEndpointTest, GetLocalAddress) {
-  /// just some random bytes
+  // just some random bytes
   const char raw_local_address[] = {0x52, 0x55, 0x66, 0x52, 0x55, 0x66};
   grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address(
       reinterpret_cast<const sockaddr*>(raw_local_address),
