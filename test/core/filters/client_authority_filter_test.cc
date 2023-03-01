@@ -86,7 +86,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
             });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
+  EXPECT_TRUE(result.ready());
   EXPECT_TRUE(seen);
 }
 
@@ -121,7 +121,7 @@ TEST(ClientAuthorityFilterTest,
             });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
+  EXPECT_TRUE(result.ready());
   EXPECT_TRUE(seen);
 }
 
