@@ -342,6 +342,10 @@ void Party::AddParticipant(Participant* participant) {
   }
 
   // We've allocated the slot, next we need to populate it.
+  // Once we do so however a spurious wakeup could occur, and that wakeup might
+  // release the last ref.
+  // We need to hold one here.
+  auto ref = Ref();
   participants_[slot].store(participant, std::memory_order_release);
 
   // Now we need to wake up the party.
