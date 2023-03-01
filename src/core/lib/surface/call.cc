@@ -533,8 +533,8 @@ class FilterStackCall final : public Call {
       auto* call_tracer =
           static_cast<CallTracer*>(call_->ContextGet(GRPC_CONTEXT_CALL_TRACER));
       bool is_call_trace_enabled = grpc_call_trace.enabled();
-      if (is_call_trace_enabled || (grpc_core::IsTraceRecordCallopsEnabled() &&
-                                    call_tracer != nullptr)) {
+      if (is_call_trace_enabled ||
+          (IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
         std::string trace_string = absl::StrFormat(
             "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
             PendingOpString(mask).c_str(), PendingOpString(r & ~mask).c_str(),
@@ -1828,7 +1828,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
 
   call_tracer = static_cast<CallTracer*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
   if (is_call_trace_enabled ||
-      (grpc_core::IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
+      (IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
     std::string trace_string = absl::StrFormat(
         "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
         PendingOpString(pending_ops).c_str(),
