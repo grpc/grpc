@@ -1992,6 +1992,7 @@ grpc_cc_library(
         "posix_event_engine_timer_manager",
         "time",
         "windows_endpoint",
+        "windows_event_engine_listener",
         "windows_iocp",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -2049,6 +2050,33 @@ grpc_cc_library(
         "status_helper",
         "windows_iocp",
         "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "windows_event_engine_listener",
+    srcs = [
+        "lib/event_engine/windows/windows_listener.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/windows/windows_listener.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "common_event_engine_closures",
+        "error",
+        "event_engine_tcp_socket_utils",
+        "event_engine_trace",
+        "windows_endpoint",
+        "windows_iocp",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
