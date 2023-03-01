@@ -377,6 +377,11 @@ struct GrpcLbClientStatsMetadata {
   }
 };
 
+inline size_t EncodedSizeOfKey(GrpcLbClientStatsMetadata,
+                               GrpcLbClientStatsMetadata::ValueType) {
+  return 0;
+}
+
 // lb-token metadata
 struct LbTokenMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
