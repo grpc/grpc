@@ -1314,7 +1314,7 @@ static void perform_stream_op_locked(void* stream_op,
     MaybeRecordTransportAnnotation(
         s, absl::StrFormat(
                "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
-               op, grpc_transport_stream_op_batch_string(op, false).c_str(),
+               op, grpc_transport_stream_op_batch_string(op, true).c_str(),
                op->on_complete));
   }
 
