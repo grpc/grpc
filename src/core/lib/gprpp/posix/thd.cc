@@ -19,10 +19,8 @@
 // Posix implementation for gpr threads.
 
 #include <grpc/support/port_platform.h>
-
-#include <string.h>
-
 #include <grpc/support/time.h>
+#include <string>
 
 #ifdef GPR_POSIX_SYNC
 
@@ -30,7 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
