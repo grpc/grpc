@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
-#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/construct_destruct.h"

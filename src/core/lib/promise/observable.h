@@ -26,7 +26,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"

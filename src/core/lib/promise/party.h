@@ -25,10 +25,8 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
