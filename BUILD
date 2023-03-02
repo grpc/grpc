@@ -699,6 +699,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/memory",
         "absl/random",
         "absl/status",

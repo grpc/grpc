@@ -35,11 +35,10 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/trace.h"
 
-// #define GRPC_PARTY_MAXIMIZE_THREADS
+#define GRPC_PARTY_MAXIMIZE_THREADS
 
 #ifdef GRPC_PARTY_MAXIMIZE_THREADS
-#include <thread>  // IWYU pragma: keep
-
+#include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
 
@@ -230,11 +229,15 @@ void Party::RunLocked() {
     }
   };
 #ifdef GRPC_PARTY_MAXIMIZE_THREADS
-  std::thread([body]() {
-    ApplicationCallbackExecCtx app_exec_ctx;
-    ExecCtx exec_ctx;
-    body();
-  }).detach();
+  Thread thd(
+      "RunParty",
+      [body]() {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        body();
+      },
+      nullptr, Thread::Options().set_joinable(false));
+  thd.Start();
 #else
   body();
 #endif
