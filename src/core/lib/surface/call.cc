@@ -1940,8 +1940,8 @@ class PromiseBasedCall : public Call,
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
 
-  void UpdateDeadline(Timestamp deadline);
-  void ResetDeadline();
+  void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() override;
@@ -2263,8 +2263,10 @@ class PromiseBasedCall : public Call,
   grpc_call_stats final_stats_{};
   CallFinalization finalization_;
   // Current deadline.
-  Timestamp deadline_ = Timestamp::InfFuture();
-  grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
+  Mutex deadline_mu_;
+  Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
+  grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
+      deadline_mu_) deadline_task_;
   // finished_ & completed_ represent the same state: is the call all done.
   // finished_ is used for the promise returned by finished(), and can be
   // awaited in a promise.
@@ -2428,6 +2430,7 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
 }
 
 void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
+  MutexLock lock(&deadline_mu_);
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s[call] UpdateDeadline from=%s to=%s",
             DebugTag().c_str(), deadline_.ToString().c_str(),
@@ -2445,6 +2448,7 @@ void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
 }
 
 void PromiseBasedCall::ResetDeadline() {
+  MutexLock lock(&deadline_mu_);
   if (deadline_ == Timestamp::InfFuture()) return;
   auto* const event_engine = channel()->event_engine();
   if (!event_engine->Cancel(deadline_task_)) return;
