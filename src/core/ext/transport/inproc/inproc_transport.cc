@@ -408,7 +408,7 @@ void complete_if_batch_end_locked(inproc_stream* s, grpc_error_handle error,
   int is_rtm = static_cast<int>(op == s->recv_trailing_md_op);
 
   if ((is_sm + is_stm + is_rim + is_rm + is_rtm) == 1) {
-    INPROC_LOG(GPR_INFO, "%s %p %p %s", msg, s, op,
+    INPROC_LOG(GPR_INFO, "%s %p %p %p %s", msg, s, op, op->on_complete,
                grpc_core::StatusToString(error).c_str());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, error);
   }
@@ -697,8 +697,9 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       s->to_read_initial_md_filled = false;
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
-          s->recv_initial_md_op->payload->recv_initial_metadata
-              .recv_initial_metadata_ready,
+          std::exchange(s->recv_initial_md_op->payload->recv_initial_metadata
+                            .recv_initial_metadata_ready,
+                        nullptr),
           absl::OkStatus());
       complete_if_batch_end_locked(
           s, absl::OkStatus(), s->recv_initial_md_op,

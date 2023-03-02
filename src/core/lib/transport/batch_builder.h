@@ -205,6 +205,12 @@ class BatchBuilder {
     T* GetInitializedCompletion(T*(Batch::*field)) {
       if (this->*field != nullptr) return this->*field;
       this->*field = party->arena()->NewPooled<T>(Ref());
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_DEBUG, "%s[connected] Add batch closure for %s @ %s",
+                Activity::current()->DebugTag().c_str(),
+                std::string((this->*field)->name()).c_str(),
+                (this->*field)->on_done_closure.DebugString().c_str());
+      }
       return this->*field;
     }
     void PerformWith(Target target);
