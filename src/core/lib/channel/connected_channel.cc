@@ -516,14 +516,15 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
   // Concurrently: send initial metadata and receive messages, until BOTH
   // complete (or one fails).
   // Next: receive trailing metadata, and return that up the stack.
-  return Map(
-      TrySeq(TryJoin(std::move(send_initial_metadata),
-                     stream->RecvMessages(call_args.server_to_client_messages)),
-             std::move(recv_trailing_metadata)),
-      [stream = std::move(stream)](ServerMetadataHandle result) {
-        stream->set_finished();
-        return result;
-      });
+  auto recv_messages =
+      stream->RecvMessages(call_args.server_to_client_messages);
+  return Map(TrySeq(TryJoin(std::move(send_initial_metadata),
+                            std::move(recv_messages)),
+                    std::move(recv_trailing_metadata)),
+             [stream = std::move(stream)](ServerMetadataHandle result) {
+               stream->set_finished();
+               return result;
+             });
 }
 #endif
 
