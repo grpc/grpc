@@ -211,6 +211,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     grpc_closure on_close_;
     absl::optional<EventEngine::TaskHandle> drain_grace_timer_handle_
         ABSL_GUARDED_BY(&mu_);
+    // Use a raw pointer since this event_engine_ is grabbed from the
+    // ChannelArgs of the listener_.
     EventEngine* const event_engine_ ABSL_GUARDED_BY(&mu_);
     bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   };
