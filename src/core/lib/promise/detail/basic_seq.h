@@ -167,7 +167,7 @@ auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
       &state->next_factory, std::forward<T>(arg));
 }
 
-// A sequence under stome traits for some set of callables Fs.
+// A sequence under some traits for some set of callables Fs.
 // Fs[0] should be a promise-like object that yields a value.
 // Fs[1..] should be promise-factory-like objects that take the value from the
 // previous step and yield a promise. Note that most of the machinery in

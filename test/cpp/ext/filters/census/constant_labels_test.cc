@@ -49,6 +49,8 @@ class ConstantLabelsTest : public StatsPluginEnd2EndTest {
   static void SetUpTestSuite() {
     grpc::internal::OpenCensusRegistry::Get().RegisterConstantLabels(
         {{"key", "value"}});
+    grpc::internal::OpenCensusRegistry::Get().RegisterConstantAttributes(
+        {{"key", "value"}});
     StatsPluginEnd2EndTest::SetUpTestSuite();
   }
 };

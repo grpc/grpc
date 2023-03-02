@@ -64,11 +64,14 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
     PosixListenerWithFdSupport::OnPosixBindNewFdCallback on_bind_new_fd) {
+  absl::MutexLock lock(&this->mu_);
+  if (this->started_) {
+    return absl::FailedPreconditionError(
+        "Listener is already started, ports can no longer be bound");
+  }
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
-  absl::MutexLock lock(&this->mu_);
-  GPR_ASSERT(!this->started_);
   GPR_ASSERT(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
@@ -279,7 +282,7 @@ PosixEngineListenerImpl::~PosixEngineListenerImpl() {
   // been destroyed. This is because each AsyncConnectionAcceptor has a
   // shared_ptr ref to the parent PosixEngineListenerImpl.
   if (on_shutdown_ != nullptr) {
-    on_shutdown_(absl::InternalError("Shutting down listener"));
+    on_shutdown_(absl::OkStatus());
   }
 }
 

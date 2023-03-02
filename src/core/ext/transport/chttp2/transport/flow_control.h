@@ -30,6 +30,7 @@
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -168,7 +169,7 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // to be as performant as possible.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(const char* name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 

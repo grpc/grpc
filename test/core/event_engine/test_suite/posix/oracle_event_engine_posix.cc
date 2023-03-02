@@ -231,7 +231,7 @@ PosixOracleEndpoint::~PosixOracleEndpoint() {
   close(socket_fd_);
 }
 
-void PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+bool PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                                SliceBuffer* buffer, const ReadArgs* args) {
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(buffer != nullptr);
@@ -241,15 +241,17 @@ void PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   read_ops_channel_ =
       ReadOperation(read_hint_bytes, buffer, std::move(on_read));
   read_op_signal_->Notify();
+  return false;
 }
 
-void PosixOracleEndpoint::Write(
+bool PosixOracleEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs* /*args*/) {
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(data != nullptr);
   write_ops_channel_ = WriteOperation(data, std::move(on_writable));
   write_op_signal_->Notify();
+  return false;
 }
 
 void PosixOracleEndpoint::ProcessReadOperations() {
@@ -386,6 +388,10 @@ void PosixOracleListener::HandleIncomingConnections() {
 absl::StatusOr<int> PosixOracleListener::Bind(
     const EventEngine::ResolvedAddress& addr) {
   grpc_core::MutexLock lock(&mu_);
+  if (is_started_) {
+    return absl::FailedPreconditionError(
+        "Listener is already started, ports can no longer be bound");
+  }
   int new_socket;
   int opt = -1;
   grpc_resolved_address address = CreateGRPCResolvedAddress(addr);

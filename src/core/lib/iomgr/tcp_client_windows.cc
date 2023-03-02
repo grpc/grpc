@@ -31,7 +31,9 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -67,7 +69,7 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
-static void on_alarm(void* acp, grpc_error_handle error) {
+static void on_alarm(void* acp, grpc_error_handle /* error */) {
   async_connect* ac = (async_connect*)acp;
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
@@ -122,10 +124,14 @@ static void on_connect(void* acp, grpc_error_handle error) {
 // Tries to issue one async connection, then schedules both an IOCP
 // notification request for the connection, and one timeout alert.
 static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
-                           grpc_pollset_set* interested_parties,
+                           grpc_pollset_set* /* interested_parties */,
                            const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
+        on_done, endpoint, config, addr, deadline);
+  }
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -232,7 +238,13 @@ failure:
   return 0;
 }
 
-static bool tcp_cancel_connect(int64_t /*connection_handle*/) { return false; }
+static bool tcp_cancel_connect(int64_t connection_handle) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::
+        event_engine_tcp_client_cancel_connect(connection_handle);
+  }
+  return false;
+}
 
 grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect,
                                                          tcp_cancel_connect};
