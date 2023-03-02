@@ -181,7 +181,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     ActiveConnection(grpc_pollset* accepting_pollset,
                      grpc_tcp_server_acceptor* acceptor,
-                     const ChannelArgs& args, MemoryOwner memory_owner);
+                     EventEngine* event_engine, const ChannelArgs& args,
+                     MemoryOwner memory_owner);
     ~ActiveConnection() override;
 
     void Orphan() override;
@@ -210,9 +211,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     grpc_closure on_close_;
     absl::optional<EventEngine::TaskHandle> drain_grace_timer_handle_
         ABSL_GUARDED_BY(&mu_);
-    // Use a raw pointer since this event_engine_ is grabbed from the
-    // ChannelArgs of the listener_.
-    EventEngine* event_engine_ ABSL_GUARDED_BY(&mu_);
+    EventEngine* const event_engine_ ABSL_GUARDED_BY(&mu_);
     bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
@@ -560,10 +559,11 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
 
 Chttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_pollset* accepting_pollset, grpc_tcp_server_acceptor* acceptor,
-    const ChannelArgs& args, MemoryOwner memory_owner)
+    EventEngine* event_engine, const ChannelArgs& args,
+    MemoryOwner memory_owner)
     : handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
           Ref(), accepting_pollset, acceptor, args)),
-      event_engine_(args.GetObject<EventEngine>()) {
+      event_engine_(event_engine) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
 }
@@ -842,8 +842,9 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   }
   auto memory_owner = self->memory_quota_->CreateMemoryOwner(
       absl::StrCat(grpc_endpoint_get_peer(tcp), ":server_channel"));
+  EventEngine* const event_engine = self->args_.GetObject<EventEngine>();
   auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
-      accepting_pollset, acceptor, args, std::move(memory_owner));
+      accepting_pollset, acceptor, event_engine, args, std::move(memory_owner));
   // We no longer own acceptor
   acceptor = nullptr;
   // Hold a ref to connection to allow starting handshake outside the
