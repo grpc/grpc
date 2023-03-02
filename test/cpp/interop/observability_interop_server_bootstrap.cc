@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2015 gRPC authors.
+// Copyright 2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,31 +16,40 @@
 //
 //
 
-#include <memory>
-#include <unordered_map>
+#include <signal.h>
 
 #include "absl/flags/flag.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
+#include <grpcpp/ext/gcp_observability.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/interop/client_helper.h"
-#include "test/cpp/interop/interop_client.h"
+#include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc::testing::RunClient;
+gpr_atm grpc::testing::interop::g_got_sigint;
+
+ABSL_FLAG(bool, enable_observability, false,
+          "Whether to enable GCP Observability");
+
+static void sigint_handler(int /*x*/) {
+  gpr_atm_no_barrier_store(&grpc::testing::interop::g_got_sigint, true);
+}
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing these cases: %s",
-          absl::GetFlag(FLAGS_test_case).c_str());
+  signal(SIGINT, sigint_handler);
 
-  return RunClient();
+  if (absl::GetFlag(FLAGS_enable_observability)) {
+    auto status = grpc::experimental::GcpObservabilityInit();
+    gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
+    if (!status.ok()) {
+      return 1;
+    }
+  }
+
+  grpc::testing::interop::RunServer(
+      grpc::testing::CreateInteropServerCredentials());
+
+  return 0;
 }

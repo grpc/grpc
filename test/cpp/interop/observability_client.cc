@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/ext/gcp_observability.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -33,6 +34,9 @@
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
+
+ABSL_FLAG(bool, enable_observability, false,
+          "Whether to enable GCP Observability");
 
 using grpc::testing::RunClient;
 
@@ -42,5 +46,29 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Testing these cases: %s",
           absl::GetFlag(FLAGS_test_case).c_str());
 
-  return RunClient();
+  if (absl::GetFlag(FLAGS_enable_observability)) {
+    auto status = grpc::experimental::GcpObservabilityInit();
+    gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
+    if (!status.ok()) {
+      return 1;
+    }
+  }
+
+  int ret = RunClient();
+
+  if (absl::GetFlag(FLAGS_enable_observability)) {
+    grpc::experimental::GcpObservabilityClose();
+    // TODO(stanleycheung): remove this once the observability exporter plugin
+    //                      is able to gracefully flush observability data to
+    //                      cloud at shutdown
+    const int observability_exporter_sleep_seconds = 65;
+    gpr_log(GPR_DEBUG, "Sleeping %ds before shutdown.",
+            observability_exporter_sleep_seconds);
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_seconds(observability_exporter_sleep_seconds,
+                                           GPR_TIMESPAN)));
+  }
+
+  return ret;
 }
