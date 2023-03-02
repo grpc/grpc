@@ -20,6 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/support/time.h>
 
 #ifdef GPR_POSIX_SYNC
