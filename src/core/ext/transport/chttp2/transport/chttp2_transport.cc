@@ -60,7 +60,9 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -202,6 +204,24 @@ static void keepalive_watchdog_fired(grpc_chttp2_transport* t);
 static void keepalive_watchdog_fired_locked(
     void* arg, GRPC_UNUSED grpc_error_handle error);
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
+
+namespace {
+void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
+                                    absl::string_view annotation) {
+  GPR_ASSERT(s->context);
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
+    return;
+  }
+  grpc_core::CallTracer* call_tracer = static_cast<grpc_core::CallTracer*>(
+      static_cast<grpc_call_context_element*>(
+          s->context)[GRPC_CONTEXT_CALL_TRACER]
+          .value);
+  if (!call_tracer) {
+    return;
+  }
+  call_tracer->RecordAnnotation(annotation);
+}
+}  // namespace
 
 namespace grpc_core {
 
@@ -1188,7 +1208,7 @@ static void null_then_sched_closure(grpc_closure** closure) {
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* /*s*/,
+                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc,
@@ -1212,6 +1232,13 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         desc, grpc_core::StatusToString(error).c_str(),
         write_state_name(t->write_state), whence.file(), whence.line());
   }
+
+  if (s->context != nullptr) {
+    MaybeRecordTransportAnnotation(
+        s, absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure,
+                           desc, grpc_core::StatusToString(error).c_str()));
+  }
+
   if (!error.ok()) {
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
@@ -1272,7 +1299,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO,
             "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
-            op, grpc_transport_stream_op_batch_string(op).c_str(),
+            op, grpc_transport_stream_op_batch_string(op, false).c_str(),
             op->on_complete);
     if (op->send_initial_metadata) {
       log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
@@ -1282,6 +1309,14 @@ static void perform_stream_op_locked(void* stream_op,
       log_metadata(op_payload->send_trailing_metadata.send_trailing_metadata,
                    s->id, t->is_client, false);
     }
+  }
+
+  if (s->context != nullptr) {
+    MaybeRecordTransportAnnotation(
+        s, absl::StrFormat(
+               "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
+               op, grpc_transport_stream_op_batch_string(op, true).c_str(),
+               op->on_complete));
   }
 
   grpc_closure* on_complete = op->on_complete;
@@ -1525,7 +1560,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "perform_stream_op[s=%p; op=%p]: %s", s, op,
-            grpc_transport_stream_op_batch_string(op).c_str());
+            grpc_transport_stream_op_batch_string(op, false).c_str());
   }
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");

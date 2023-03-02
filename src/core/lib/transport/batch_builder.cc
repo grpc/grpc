@@ -37,11 +37,11 @@ void BatchBuilder::PendingCompletion::CompletionCallback(
   auto* pc = static_cast<PendingCompletion*>(self);
   auto* party = pc->batch->party.get();
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
-            "%s[connected] Finish batch-component %s for %s: status=%s",
-            party->DebugTag().c_str(), std::string(pc->name()).c_str(),
-            grpc_transport_stream_op_batch_string(&pc->batch->batch).c_str(),
-            error.ToString().c_str());
+    gpr_log(
+        GPR_DEBUG, "%s[connected] Finish batch-component %s for %s: status=%s",
+        party->DebugTag().c_str(), std::string(pc->name()).c_str(),
+        grpc_transport_stream_op_batch_string(&pc->batch->batch, false).c_str(),
+        error.ToString().c_str());
   }
   party->Spawn(
       "batch-completion",
@@ -115,9 +115,10 @@ void BatchBuilder::FlushBatch() {
   GPR_ASSERT(batch_ != nullptr);
   GPR_ASSERT(target_.has_value());
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Perform transport stream op batch: %p %s",
-            batch_->party->DebugTag().c_str(), &batch_->batch,
-            grpc_transport_stream_op_batch_string(&batch_->batch).c_str());
+    gpr_log(
+        GPR_DEBUG, "%s[connected] Perform transport stream op batch: %p %s",
+        batch_->party->DebugTag().c_str(), &batch_->batch,
+        grpc_transport_stream_op_batch_string(&batch_->batch, false).c_str());
   }
   std::exchange(batch_, nullptr)->PerformWith(*target_);
   target_.reset();
