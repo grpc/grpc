@@ -887,7 +887,7 @@ void RetryFilter::CallData::CallAttempt::AddClosureForBatch(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: adding batch (%s): %s",
             calld_->chand_, calld_, this, reason,
-            grpc_transport_stream_op_batch_string(batch).c_str());
+            grpc_transport_stream_op_batch_string(batch, false).c_str());
   }
   batch->handler_private.extra_arg = lb_call_.get();
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
@@ -1872,7 +1872,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
             "got on_complete, error=%s, batch=%s",
             calld->chand_, calld, call_attempt, batch_data.get(),
             StatusToString(error).c_str(),
-            grpc_transport_stream_op_batch_string(&batch_data->batch_).c_str());
+            grpc_transport_stream_op_batch_string(&batch_data->batch_, false)
+                .c_str());
   }
   // If this attempt has been abandoned, then we're not going to propagate
   // the completion of this batch, so do nothing.
@@ -1947,7 +1948,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnCompleteForCancelOp(
             "got on_complete for cancel_stream batch, error=%s, batch=%s",
             calld->chand_, calld, call_attempt, batch_data.get(),
             StatusToString(error).c_str(),
-            grpc_transport_stream_op_batch_string(&batch_data->batch_).c_str());
+            grpc_transport_stream_op_batch_string(&batch_data->batch_, false)
+                .c_str());
   }
   GRPC_CALL_COMBINER_STOP(
       calld->call_combiner_,
@@ -2170,7 +2172,8 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) &&
       !GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from surface: %s",
-            chand_, this, grpc_transport_stream_op_batch_string(batch).c_str());
+            chand_, this,
+            grpc_transport_stream_op_batch_string(batch, false).c_str());
   }
   // If we have an LB call, delegate to the LB call.
   if (committed_call_ != nullptr) {

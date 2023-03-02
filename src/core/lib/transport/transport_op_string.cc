@@ -44,13 +44,19 @@
 // representations of various transport data structures
 
 std::string grpc_transport_stream_op_batch_string(
-    grpc_transport_stream_op_batch* op) {
+    grpc_transport_stream_op_batch* op, bool truncate) {
   std::vector<std::string> out;
 
   if (op->send_initial_metadata) {
     out.push_back(" SEND_INITIAL_METADATA{");
-    out.push_back(op->payload->send_initial_metadata.send_initial_metadata
-                      ->DebugString());
+    if (truncate) {
+      out.push_back(absl::StrFormat(
+          "Length=%zu", op->payload->send_initial_metadata
+                            .send_initial_metadata->TransportSize()));
+    } else {
+      out.push_back(op->payload->send_initial_metadata.send_initial_metadata
+                        ->DebugString());
+    }
     out.push_back("}");
   }
 
@@ -68,8 +74,14 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->send_trailing_metadata) {
     out.push_back(" SEND_TRAILING_METADATA{");
-    out.push_back(op->payload->send_trailing_metadata.send_trailing_metadata
-                      ->DebugString());
+    if (truncate) {
+      out.push_back(absl::StrFormat(
+          "Length=%zu", op->payload->send_trailing_metadata
+                            .send_trailing_metadata->TransportSize()));
+    } else {
+      out.push_back(op->payload->send_trailing_metadata.send_trailing_metadata
+                        ->DebugString());
+    }
     out.push_back("}");
   }
 
@@ -144,5 +156,5 @@ void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
                       grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op) {
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
-          grpc_transport_stream_op_batch_string(op).c_str());
+          grpc_transport_stream_op_batch_string(op, false).c_str());
 }
