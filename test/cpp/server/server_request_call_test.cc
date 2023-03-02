@@ -155,6 +155,87 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
   t.join();
 }
 
+void ServerFunction(testing::EchoTestService::AsyncService* service,
+                    ServerCompletionQueue* cq, std::atomic_bool* shutdown) {
+  for (;;) {
+    ServerContext ctx;
+    testing::EchoRequest req;
+    ServerAsyncResponseWriter<testing::EchoResponse> responder(&ctx);
+    // if shutting down, don't enqueue a new request.
+    if (!shutdown->load()) {
+      service->RequestEcho(&ctx, &req, &responder, cq, cq,
+                           reinterpret_cast<void*>(1));
+    }
+    bool ok;
+    void* tag;
+    if (!cq->Next(&tag, &ok)) {
+      break;
+    }
+    if (shutdown->load()) {
+      break;
+    }
+    grpc_core::Crash("unreached");
+  }
+}
+
+void ClientFunction(testing::UnimplementedEchoService::Stub* stub) {
+  constexpr int kNumRpcPerThreads = 5000;
+  for (int i = 0; i < kNumRpcPerThreads; i++) {
+    testing::EchoRequest request;
+    request.set_message("foobar");
+    testing::EchoResponse response;
+    grpc::ClientContext ctx;
+    grpc::Status status = stub->Unimplemented(&ctx, request, &response);
+    EXPECT_EQ(StatusCode::UNIMPLEMENTED, status.error_code());
+  }
+}
+
+TEST(ServerRequestCallTest, UnimplementedService) {
+  std::atomic_bool shutdown(false);
+  // grpc server config.
+  std::ostringstream s;
+  int p = grpc_pick_unused_port_or_die();
+  s << "[::1]:" << p;
+  const string address = s.str();
+  testing::EchoTestService::AsyncService service;
+  ServerBuilder builder;
+  builder.AddListeningPort(address, InsecureServerCredentials());
+  auto cq = builder.AddCompletionQueue();
+  builder.RegisterService(&service);
+  auto server = builder.BuildAndStart();
+
+  // server threads
+  constexpr int kNumServerThreads = 2;
+  std::vector<std::thread> server_threads;
+  for (int i = 0; i < kNumServerThreads; i++) {
+    server_threads.emplace_back(ServerFunction, &service, cq.get(), &shutdown);
+  }
+
+  auto stub = testing::UnimplementedEchoService::NewStub(
+      grpc::CreateChannel(address, InsecureChannelCredentials()));
+
+  // client threads
+  constexpr int kNumClientThreads = 2;
+  std::vector<std::thread> client_threads;
+  for (int i = 0; i < kNumClientThreads; i++) {
+    client_threads.emplace_back(ClientFunction, stub.get());
+  }
+  for (auto& t : client_threads) {
+    t.join();
+  }
+
+  // Shut down everything properly.
+  gpr_log(GPR_INFO, "Shutting down.");
+  shutdown.store(true);
+  server->Shutdown();
+  cq->Shutdown();
+  server->Wait();
+
+  for (auto& t : server_threads) {
+    t.join();
+  }
+}
+
 }  // namespace
 }  // namespace grpc
 
