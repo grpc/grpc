@@ -35,6 +35,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_core {
@@ -151,7 +152,7 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
     if (!(*success)) {
       gpr_log(GPR_ERROR, "pthread_create failed: %s",
-              strerror(pthread_create_err));
+              StrError(pthread_create_err).c_str());
       // don't use gpr_free, as this was allocated using malloc (see above)
       free(info);
       if (options.tracked()) {
