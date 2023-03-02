@@ -25,6 +25,9 @@
 
 #include <stddef.h>
 
+#include <memory>
+#include <utility>
+
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>

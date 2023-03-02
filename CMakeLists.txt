@@ -1634,6 +1634,7 @@ target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
   absl::core_headers
+  absl::any_invocable
   absl::memory
   absl::random_random
   absl::status
@@ -2501,7 +2502,6 @@ target_link_libraries(grpc
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
-  absl::any_invocable
   absl::bind_front
   absl::function_ref
   absl::hash
@@ -3133,7 +3133,6 @@ target_link_libraries(grpc_unsecure
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
-  absl::any_invocable
   absl::bind_front
   absl::function_ref
   absl::hash
@@ -4639,7 +4638,6 @@ target_link_libraries(grpc_authorization_provider
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -5421,7 +5419,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::algorithm_container
-    absl::any_invocable
     absl::span
     ${_gRPC_BENCHMARK_LIBRARIES}
     gpr
@@ -5549,7 +5546,6 @@ target_link_libraries(activity_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::hash
   absl::type_traits
   absl::statusor
@@ -8368,7 +8364,6 @@ target_link_libraries(chunked_vector_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -9117,7 +9112,6 @@ target_link_libraries(common_closures_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -10145,7 +10139,6 @@ target_link_libraries(endpoint_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::type_traits
   absl::statusor
   gpr
@@ -10655,7 +10648,6 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::hash
   absl::type_traits
   absl::statusor
@@ -11137,7 +11129,6 @@ target_link_libraries(flow_control_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11208,7 +11199,6 @@ target_link_libraries(for_each_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11293,7 +11283,6 @@ target_link_libraries(forkable_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -11694,7 +11683,6 @@ target_link_libraries(frame_test
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14068,7 +14056,6 @@ target_link_libraries(interceptor_list_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14819,7 +14806,6 @@ target_link_libraries(map_pipe_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -15401,7 +15387,6 @@ target_link_libraries(mpsc_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::hash
   absl::type_traits
   absl::statusor
@@ -16177,7 +16162,6 @@ target_link_libraries(periodic_update_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::statusor
@@ -18930,7 +18914,6 @@ target_link_libraries(slice_string_helpers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::hash
   absl::statusor
   gpr
@@ -19410,7 +19393,6 @@ target_link_libraries(static_stride_scheduler_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::span
   gpr
 )
@@ -20240,7 +20222,6 @@ target_link_libraries(test_core_event_engine_posix_timer_heap_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -20283,7 +20264,6 @@ target_link_libraries(test_core_event_engine_posix_timer_list_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -20332,7 +20312,6 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::hash
   absl::statusor
   absl::utility
@@ -20448,7 +20427,6 @@ target_link_libraries(test_core_gprpp_time_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -20940,7 +20918,6 @@ target_link_libraries(thread_pool_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
-  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -25896,7 +25873,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_base absl_cord absl_core_headers absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  "absl_any_invocable absl_base absl_cord absl_core_headers absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
   ""
   "-lgpr"
   ""
