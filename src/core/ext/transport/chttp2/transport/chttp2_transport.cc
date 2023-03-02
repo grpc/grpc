@@ -60,9 +60,12 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -75,6 +78,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -92,6 +96,10 @@
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+#include "src/core/lib/iomgr/ev_posix.h"
+#endif
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -196,6 +204,24 @@ static void keepalive_watchdog_fired(grpc_chttp2_transport* t);
 static void keepalive_watchdog_fired_locked(
     void* arg, GRPC_UNUSED grpc_error_handle error);
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
+
+namespace {
+void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
+                                    absl::string_view annotation) {
+  GPR_ASSERT(s->context);
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
+    return;
+  }
+  grpc_core::CallTracer* call_tracer = static_cast<grpc_core::CallTracer*>(
+      static_cast<grpc_call_context_element*>(
+          s->context)[GRPC_CONTEXT_CALL_TRACER]
+          .value);
+  if (!call_tracer) {
+    return;
+  }
+  call_tracer->RecordAnnotation(annotation);
+}
+}  // namespace
 
 namespace grpc_core {
 
@@ -569,6 +595,14 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   if (grpc_core::test_only_init_callback != nullptr) {
     grpc_core::test_only_init_callback();
   }
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+  closure_barrier_may_cover_write =
+      grpc_event_engine_run_in_background() &&
+              grpc_core::IsScheduleCancellationOverWriteEnabled()
+          ? 0
+          : CLOSURE_BARRIER_MAY_COVER_WRITE;
+#endif
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
@@ -1156,14 +1190,6 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   }
 }
 
-// Flag that this closure barrier may be covering a write in a pollset, and so
-//   we should not complete this closure until we can prove that the write got
-//   scheduled
-#define CLOSURE_BARRIER_MAY_COVER_WRITE (1 << 0)
-// First bit of the reference count, stored in the high order bits (with the low
-//   bits being used for flags defined above)
-#define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
-
 static grpc_closure* add_closure_barrier(grpc_closure* closure) {
   closure->next_data.scratch += CLOSURE_BARRIER_FIRST_REF_BIT;
   return closure;
@@ -1182,7 +1208,7 @@ static void null_then_sched_closure(grpc_closure** closure) {
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* /*s*/,
+                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc) {
@@ -1205,6 +1231,13 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         desc, grpc_core::StatusToString(error).c_str(),
         write_state_name(t->write_state));
   }
+
+  if (s->context != nullptr) {
+    MaybeRecordTransportAnnotation(
+        s, absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure,
+                           desc, grpc_core::StatusToString(error).c_str()));
+  }
+
   if (!error.ok()) {
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
@@ -1265,7 +1298,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO,
             "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
-            op, grpc_transport_stream_op_batch_string(op).c_str(),
+            op, grpc_transport_stream_op_batch_string(op, false).c_str(),
             op->on_complete);
     if (op->send_initial_metadata) {
       log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
@@ -1275,6 +1308,14 @@ static void perform_stream_op_locked(void* stream_op,
       log_metadata(op_payload->send_trailing_metadata.send_trailing_metadata,
                    s->id, t->is_client, false);
     }
+  }
+
+  if (s->context != nullptr) {
+    MaybeRecordTransportAnnotation(
+        s, absl::StrFormat(
+               "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
+               op, grpc_transport_stream_op_batch_string(op, true).c_str(),
+               op->on_complete));
   }
 
   grpc_closure* on_complete = op->on_complete;
@@ -1295,7 +1336,7 @@ static void perform_stream_op_locked(void* stream_op,
       t->channelz_socket->RecordStreamStartedFromLocal();
     }
     GPR_ASSERT(s->send_initial_metadata_finished == nullptr);
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
 
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
@@ -1351,7 +1392,7 @@ static void perform_stream_op_locked(void* stream_op,
     t->num_messages_in_next_write++;
     grpc_core::global_stats().IncrementHttp2SendMessageSize(
         op->payload->send_message.send_message->Length());
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
     s->send_message_finished = add_closure_barrier(op->on_complete);
     const uint32_t flags = op_payload->send_message.flags;
     if (s->write_closed) {
@@ -1425,7 +1466,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->send_trailing_metadata) {
     GPR_ASSERT(s->send_trailing_metadata_finished == nullptr);
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+    on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->send_trailing_metadata =
         op_payload->send_trailing_metadata.send_trailing_metadata;
@@ -1518,7 +1559,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "perform_stream_op[s=%p; op=%p]: %s", s, op,
-            grpc_transport_stream_op_batch_string(op).c_str());
+            grpc_transport_stream_op_batch_string(op, false).c_str());
   }
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");

@@ -69,6 +69,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
+#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/port.h"
@@ -83,6 +84,32 @@ namespace testing {
 namespace {
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
+
+// A noop health check service that just terminates the call and returns OK
+// status in its methods. This is used to test the retry mechanism in
+// SubchannelStreamClient.
+class NoopHealthCheckServiceImpl : public health::v1::Health::Service {
+ public:
+  ~NoopHealthCheckServiceImpl() override = default;
+  Status Check(ServerContext*, const health::v1::HealthCheckRequest*,
+               health::v1::HealthCheckResponse*) override {
+    return Status::OK;
+  }
+  Status Watch(ServerContext*, const health::v1::HealthCheckRequest*,
+               ServerWriter<health::v1::HealthCheckResponse>*) override {
+    grpc_core::MutexLock lock(&mu_);
+    request_count_++;
+    return Status::OK;
+  }
+  int request_count() {
+    grpc_core::MutexLock lock(&mu_);
+    return request_count_;
+  }
+
+ private:
+  grpc_core::Mutex mu_;
+  int request_count_ ABSL_GUARDED_BY(&mu_) = 0;
+};
 
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo RPC.
@@ -405,6 +432,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
     experimental::OrcaService orca_service_;
     std::unique_ptr<std::thread> thread_;
+    bool enable_noop_health_check_service_ = false;
+    NoopHealthCheckServiceImpl noop_health_check_service_impl_;
 
     grpc_core::Mutex mu_;
     grpc_core::CondVar cond_;
@@ -441,6 +470,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
+      if (enable_noop_health_check_service_) {
+        builder.RegisterService(&noop_health_check_service_impl_);
+      }
       grpc::ServerBuilder::experimental_type(&builder)
           .EnableCallMetricRecording(server_metric_recorder_.get());
       server_ = builder.BuildAndStart();
@@ -564,6 +596,12 @@ class ClientLbEnd2endTest : public ::testing::Test {
           return;
         }
       }
+    }
+  }
+
+  void EnableNoopHealthCheckService() {
+    for (auto& server : servers_) {
+      server->enable_noop_health_check_service_ = true;
     }
   }
 
@@ -2185,6 +2223,26 @@ TEST_F(RoundRobinTest,
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   // Clean up.
   EnableDefaultHealthCheckService(false);
+}
+
+TEST_F(RoundRobinTest, HealthCheckingRetryOnStreamEnd) {
+  // Start servers.
+  const int kNumServers = 2;
+  CreateServers(kNumServers);
+  EnableNoopHealthCheckService();
+  StartServer(0);
+  StartServer(1);
+  ChannelArguments args;
+  // Create a channel with health-checking enabled.
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator, args);
+  response_generator.SetNextResolution(GetServersPorts());
+  EXPECT_FALSE(WaitForChannelReady(channel.get()));
+  EXPECT_GT(servers_[0]->noop_health_check_service_impl_.request_count(), 1);
+  EXPECT_GT(servers_[1]->noop_health_check_service_impl_.request_count(), 1);
 }
 
 //

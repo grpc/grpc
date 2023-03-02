@@ -300,7 +300,7 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
         return metadata_detail::MakeDebugStringPipeline(
             Which::key(), value,
             metadata_detail::FieldFromTrivial<typename Which::MementoType>,
-            Which::DisplayValue);
+            Which::DisplayMemento);
       },
       // key
       Which::key(),
@@ -334,7 +334,7 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
         return metadata_detail::MakeDebugStringPipeline(
             Which::key(), value,
             metadata_detail::FieldFromPointer<typename Which::MementoType>,
-            Which::DisplayValue);
+            Which::DisplayMemento);
       },
       // key
       Which::key(),
@@ -362,7 +362,7 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       [](const Buffer& value) {
         return metadata_detail::MakeDebugStringPipeline(
             Which::key(), value, metadata_detail::SliceFromBuffer,
-            Which::DisplayValue);
+            Which::DisplayMemento);
       },
       // key
       Which::key(),

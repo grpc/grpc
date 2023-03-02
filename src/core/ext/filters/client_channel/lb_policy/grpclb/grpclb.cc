@@ -1162,13 +1162,15 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   upb::Arena arena;
   if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
       (response.type == response.INITIAL && seen_initial_response_)) {
-    char* response_slice_str =
-        grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
-            "Ignoring.",
-            grpclb_policy(), this, response_slice_str);
-    gpr_free(response_slice_str);
+    if (gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
+      char* response_slice_str =
+          grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
+      gpr_log(GPR_ERROR,
+              "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
+              "Ignoring.",
+              grpclb_policy(), this, response_slice_str);
+      gpr_free(response_slice_str);
+    }
   } else {
     switch (response.type) {
       case response.INITIAL: {
@@ -1529,7 +1531,7 @@ void GrpcLb::ShutdownLocked() {
       GPR_ASSERT(child_channelz_node != nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
-    grpc_channel_destroy(lb_channel_);
+    grpc_channel_destroy_internal(lb_channel_);
     lb_channel_ = nullptr;
   }
 }

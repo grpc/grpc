@@ -803,7 +803,7 @@ class HPackParser::Parser {
 
     template <typename Key, typename Value>
     void Encode(Key, const Value& value) {
-      AddToSummary(Key::key(), Key::Encode(value).size());
+      AddToSummary(Key::key(), EncodedSizeOfKey(Key(), value));
     }
 
    private:

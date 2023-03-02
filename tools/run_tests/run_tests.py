@@ -816,12 +816,16 @@ class RubyLanguage(object):
         # after dropping support for ruby 2.5:
         #   - src/ruby/end2end/channel_state_test.rb
         #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
+        # TODO(apolcyn): the following test is skipped because it sometimes
+        # hits "Bus Error" crashes while requiring the grpc/ruby C-extension.
+        # This crashes have been unreproducible outside of CI. Also see
+        # b/266212253.
+        #   - src/ruby/end2end/grpc_class_init_test.rb
         for test in [
                 'src/ruby/end2end/sig_handling_test.rb',
                 'src/ruby/end2end/channel_closing_test.rb',
                 'src/ruby/end2end/killed_client_thread_test.rb',
                 'src/ruby/end2end/forking_client_test.rb',
-                'src/ruby/end2end/grpc_class_init_test.rb',
                 'src/ruby/end2end/multiple_killed_watching_threads_test.rb',
                 'src/ruby/end2end/load_grpc_with_gc_stress_test.rb',
                 'src/ruby/end2end/client_memory_usage_test.rb',
@@ -967,18 +971,15 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        # Currently not supporting compiling as frameworks in Bazel
-        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-sample-frameworks',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'YES'
                 }))
         # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(

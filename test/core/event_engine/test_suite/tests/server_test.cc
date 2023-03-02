@@ -74,6 +74,26 @@ constexpr int kNumExchangedMessages = 100;
 
 }  // namespace
 
+TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
+  std::shared_ptr<EventEngine> engine(this->NewEventEngine());
+  ChannelArgsEndpointConfig config;
+  auto listener = engine->CreateListener(
+      [](std::unique_ptr<Endpoint>, grpc_core::MemoryAllocator) {},
+      [](absl::Status) {}, config,
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
+  // Bind an initial port to ensure normal listener startup
+  auto resolved_addr = URIToResolvedAddress(absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
+  ASSERT_TRUE(resolved_addr.ok());
+  ASSERT_TRUE((*listener)->Bind(*resolved_addr).ok());
+  ASSERT_TRUE((*listener)->Start().ok());
+  // A subsequent bind, which should fail
+  auto resolved_addr2 = URIToResolvedAddress(absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
+  ASSERT_TRUE(resolved_addr2.ok());
+  ASSERT_FALSE((*listener)->Bind(*resolved_addr2).ok());
+}
+
 // Create a connection using the oracle EventEngine to a listener created
 // by the Test EventEngine and exchange bi-di data over the connection.
 // For each data transfer, verify that data written at one end of the stream
@@ -105,8 +125,11 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
   auto listener = *test_ee->CreateListener(
-      std::move(accept_cb), [](absl::Status /*status*/) {}, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::move(accept_cb),
+      [](absl::Status status) {
+        ASSERT_TRUE(status.ok()) << status.ToString();
+      },
+      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
@@ -174,8 +197,11 @@ TEST_F(EventEngineServerTest,
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
   auto listener = *test_ee->CreateListener(
-      std::move(accept_cb), [](absl::Status /*status*/) {}, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::move(accept_cb),
+      [](absl::Status status) {
+        ASSERT_TRUE(status.ok()) << status.ToString();
+      },
+      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {

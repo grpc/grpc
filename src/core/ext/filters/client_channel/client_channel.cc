@@ -2097,7 +2097,7 @@ void ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace) &&
       !GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from above: %s", chand,
-            calld, grpc_transport_stream_op_batch_string(batch).c_str());
+            calld, grpc_transport_stream_op_batch_string(batch, false).c_str());
   }
   if (GPR_LIKELY(chand->deadline_checking_enabled_)) {
     grpc_deadline_state_client_start_transport_stream_op_batch(
@@ -3009,7 +3009,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: batch started from above: %s, "
             "call_attempt_tracer_=%p",
-            chand(), this, grpc_transport_stream_op_batch_string(batch).c_str(),
+            chand(), this,
+            grpc_transport_stream_op_batch_string(batch, false).c_str(),
             call_attempt_tracer());
   }
   // Handle call tracing.
@@ -3285,11 +3286,28 @@ void ClientChannel::FilterBasedLoadBalancedCall::RetryPickLocked() {
   lb_call_canceller_ = nullptr;
   // Do an async callback to resume call processing, so that we're not
   // doing it while holding the channel's LB mutex.
-  chand()->owning_stack_->EventEngine()->Run([this]() {
-    ApplicationCallbackExecCtx application_exec_ctx;
-    ExecCtx exec_ctx;
-    TryPick(/*was_queued=*/true);
-  });
+  // TODO(roth): We should really be using EventEngine::Run() here
+  // instead of ExecCtx::Run().  Unfortunately, doing that seems to cause
+  // a flaky TSAN failure for reasons that I do not fully understand.
+  // However, given that we are working toward eliminating this code as
+  // part of the promise conversion, it doesn't seem worth further
+  // investigation right now.
+  ExecCtx::Run(DEBUG_LOCATION, NewClosure([this](grpc_error_handle) {
+                 // If there are a lot of queued calls here, resuming them
+                 // all may cause us to stay inside C-core for a long period
+                 // of time. All of that work would be done using the same
+                 // ExecCtx instance and therefore the same cached value of
+                 // "now". The longer it takes to finish all of this work
+                 // and exit from C-core, the more stale the cached value of
+                 // "now" may become. This can cause problems whereby (e.g.)
+                 // we calculate a timer deadline based on the stale value,
+                 // which results in the timer firing too early. To avoid
+                 // this, we invalidate the cached value for each call we
+                 // process.
+                 ExecCtx::Get()->InvalidateNow();
+                 TryPick(/*was_queued=*/true);
+               }),
+               absl::OkStatus());
 }
 
 void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {

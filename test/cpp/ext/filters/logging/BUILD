@@ -34,7 +34,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
-        "//src/cpp/ext/filters/logging:logging_filter",
+        "//src/core:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
