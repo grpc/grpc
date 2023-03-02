@@ -816,12 +816,16 @@ class RubyLanguage(object):
         # after dropping support for ruby 2.5:
         #   - src/ruby/end2end/channel_state_test.rb
         #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
+        # TODO(apolcyn): the following test is skipped because it sometimes
+        # hits "Bus Error" crashes while requiring the grpc/ruby C-extension.
+        # This crashes have been unreproducible outside of CI. Also see
+        # b/266212253.
+        #   - src/ruby/end2end/grpc_class_init_test.rb
         for test in [
                 'src/ruby/end2end/sig_handling_test.rb',
                 'src/ruby/end2end/channel_closing_test.rb',
                 'src/ruby/end2end/killed_client_thread_test.rb',
                 'src/ruby/end2end/forking_client_test.rb',
-                'src/ruby/end2end/grpc_class_init_test.rb',
                 'src/ruby/end2end/multiple_killed_watching_threads_test.rb',
                 'src/ruby/end2end/load_grpc_with_gc_stress_test.rb',
                 'src/ruby/end2end/client_memory_usage_test.rb',
