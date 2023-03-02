@@ -15,7 +15,7 @@ settings:
   core_version: 31.0.0
   csharp_major_version: 2
   g_stands_for: gracious
-  protobuf_version: 3.21.12
+  protobuf_version: 3.22.2
   version: 1.55.0-dev
 configs:
   asan:
