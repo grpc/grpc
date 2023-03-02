@@ -174,6 +174,14 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   }
 }
 
+bool AwsExternalAccountCredentials::ShouldUseMetadataServer() {
+  if ((GetEnv(kRegionEnvVar).has_value() || GetEnv(kDefaultRegionEnvVar).has_value()) &&
+      (GetEnv(kAccessKeyIdEnvVar).has_value() && GetEnv(kSecretAccessKeyEnvVar).has_value())) {
+    return false;
+  }
+  return true;
+}
+
 void AwsExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
@@ -196,6 +204,9 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
 }
 
 void AwsExternalAccountCredentials::RetrieveImdsV2SessionToken() {
+  if (!ShouldUseMetadataServer()) {
+    return;
+  }
   absl::StatusOr<URI> uri = URI::Parse(imdsv2_session_token_url_);
   if (!uri.ok()) {
     return;

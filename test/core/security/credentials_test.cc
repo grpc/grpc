@@ -3048,6 +3048,47 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredShouldNotUseMetadataServer) {
+  ExecCtx exec_ctx;
+  SetEnv("AWS_REGION", "test_regionz");
+  SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");
+  SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
+  auto credential_source = Json::Parse(
+      valid_aws_imdsv2_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(
+      aws_imdsv2_external_account_creds_httpcli_get_success,
+      aws_external_account_creds_httpcli_post_success,
+      httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("AWS_REGION");
+  UnsetEnv("AWS_ACCESS_KEY_ID");
+  UnsetEnv("AWS_SECRET_ACCESS_KEY");
+}
+
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
   ExecCtx exec_ctx;
   auto credential_source = Json::Parse(
