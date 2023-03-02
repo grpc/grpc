@@ -15,14 +15,6 @@
 licenses(["notice"])
 
 exports_files([
-    "ca.pem",
-    "revoked.key",
-    "revoked.pem",
-    "valid.key",
-    "valid.pem",
-    "leaf_signed_by_intermediate.key",
-    "leaf_signed_by_intermediate.pem",
-    "leaf_and_intermediate_chain.pem",
-    "intermediate_ca.key",
-    "intermediate_ca.pem",
+    "ab06acdd.r0",
+    "b9322cac.r0",
 ])
