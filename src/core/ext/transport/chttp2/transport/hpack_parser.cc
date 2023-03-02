@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -911,7 +910,7 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
   dynamic_table_updates_allowed_ = 2;
   frame_length_ = 0;
   // TODO(alishananda): make soft limit configurable
-  metadata_early_detection_ = absl::make_unique<RandomEarlyDetection>(
+  metadata_early_detection_ = std::make_unique<RandomEarlyDetection>(
       /*soft_limit=*/0.75 * metadata_size_limit,
       /*hard_limit=*/metadata_size_limit);
   log_info_ = log_info;
