@@ -28,7 +28,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
@@ -39,7 +38,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
-#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 

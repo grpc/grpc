@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
