@@ -7469,7 +7469,7 @@ target_link_libraries(cancel_callback_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::variant
+  gpr
 )
 
 
@@ -13816,7 +13816,7 @@ target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
-  absl::variant
+  gpr
 )
 
 
@@ -14239,9 +14239,8 @@ target_link_libraries(join_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::strings
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -14689,10 +14688,9 @@ target_link_libraries(loop_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -16322,7 +16320,7 @@ target_link_libraries(poll_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::variant
+  gpr
 )
 
 
@@ -16587,9 +16585,7 @@ target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::bind_front
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -16627,9 +16623,7 @@ target_link_libraries(promise_map_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -16667,9 +16661,7 @@ target_link_libraries(promise_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -16954,7 +16946,7 @@ target_link_libraries(race_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::variant
+  gpr
 )
 
 
@@ -17881,8 +17873,8 @@ target_link_libraries(seq_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -21612,11 +21604,9 @@ target_link_libraries(try_join_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::strings
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -21691,10 +21681,9 @@ target_link_libraries(try_seq_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
 )
 
 
