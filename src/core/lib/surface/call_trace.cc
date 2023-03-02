@@ -26,7 +26,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
@@ -36,6 +35,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 

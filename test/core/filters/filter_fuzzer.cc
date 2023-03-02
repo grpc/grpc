@@ -28,7 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
