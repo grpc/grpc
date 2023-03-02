@@ -122,6 +122,9 @@ class Poll {
   };
 };
 
+template <>
+class Poll<Pending>;
+
 template <typename T>
 bool operator==(const Poll<T>& a, const Poll<T>& b) {
   if (a.pending() && b.pending()) return true;
