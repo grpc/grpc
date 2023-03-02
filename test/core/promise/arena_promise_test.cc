@@ -17,7 +17,6 @@
 #include <array>
 #include <memory>
 
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>

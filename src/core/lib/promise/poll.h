@@ -17,11 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include <string>
-
-#include "absl/types/optional.h"
+#include <utility>
 
 #include <grpc/support/log.h>
 

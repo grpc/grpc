@@ -20,10 +20,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/types/variant.h"
-
-#include "src/core/lib/promise/poll.h"
-
 namespace grpc_core {
 
 namespace promise_detail {

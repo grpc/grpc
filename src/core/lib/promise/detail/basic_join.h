@@ -25,7 +25,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/bitset.h"
