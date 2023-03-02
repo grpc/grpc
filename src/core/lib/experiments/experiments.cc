@@ -56,6 +56,8 @@ const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
+const char* const description_trace_record_callops =
+    "Enables tracing of call batch initiation and completion.";
 }  // namespace
 
 namespace grpc_core {
@@ -79,6 +81,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_listener", description_event_engine_listener, false},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write, false},
+    {"trace_record_callops", description_trace_record_callops, false},
 };
 
 }  // namespace grpc_core

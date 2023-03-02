@@ -274,7 +274,7 @@ BaseCallData::Flusher::~Flusher() {
         static_cast<BaseCallData*>(batch->handler_private.extra_arg);
     if (grpc_trace_channel.enabled()) {
       gpr_log(GPR_INFO, "FLUSHER:forward batch via closure: %s",
-              grpc_transport_stream_op_batch_string(batch).c_str());
+              grpc_transport_stream_op_batch_string(batch, false).c_str());
     }
     grpc_call_next_op(call->elem(), batch);
     GRPC_CALL_STACK_UNREF(call->call_stack(), "flusher_batch");
@@ -282,8 +282,9 @@ BaseCallData::Flusher::~Flusher() {
   for (size_t i = 1; i < release_.size(); i++) {
     auto* batch = release_[i];
     if (grpc_trace_channel.enabled()) {
-      gpr_log(GPR_INFO, "FLUSHER:queue batch to forward in closure: %s",
-              grpc_transport_stream_op_batch_string(release_[i]).c_str());
+      gpr_log(
+          GPR_INFO, "FLUSHER:queue batch to forward in closure: %s",
+          grpc_transport_stream_op_batch_string(release_[i], false).c_str());
     }
     batch->handler_private.extra_arg = call_;
     GRPC_CLOSURE_INIT(&batch->handler_private.closure, call_next_op, batch,
@@ -295,7 +296,7 @@ BaseCallData::Flusher::~Flusher() {
   call_closures_.RunClosuresWithoutYielding(call_->call_combiner());
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_INFO, "FLUSHER:forward batch: %s",
-            grpc_transport_stream_op_batch_string(release_[0]).c_str());
+            grpc_transport_stream_op_batch_string(release_[0], false).c_str());
   }
   grpc_call_next_op(call_->elem(), release_[0]);
   GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");

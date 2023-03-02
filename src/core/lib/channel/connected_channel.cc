@@ -330,7 +330,7 @@ class ConnectedChannelStream : public Orphanable {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%s[connected] Push batch to transport: %s",
               Activity::current()->DebugTag().c_str(),
-              grpc_transport_stream_op_batch_string(batch).c_str());
+              grpc_transport_stream_op_batch_string(batch, false).c_str());
     }
     if (push_batches_.empty()) {
       IncrementRefCount("push");

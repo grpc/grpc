@@ -533,7 +533,7 @@ void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error);
 
 std::string grpc_transport_stream_op_batch_string(
-    grpc_transport_stream_op_batch* op);
+    grpc_transport_stream_op_batch* op, bool truncate);
 std::string grpc_transport_op_string(grpc_transport_op* op);
 
 // Send a batch of operations on a transport
