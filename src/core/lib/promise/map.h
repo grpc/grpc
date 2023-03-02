@@ -52,9 +52,6 @@ class Map {
       RemoveCVRef<decltype(std::declval<Fn>()(std::declval<PromiseResult>()))>;
 
   Poll<Result> operator()() {
-#ifndef NDEBUG
-    asan_canary_ = std::make_unique<int>(1 + *asan_canary_);
-#endif
     Poll<PromiseResult> r = promise_();
     if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
       return fn_(std::move(*p));
@@ -65,10 +62,6 @@ class Map {
  private:
   PromiseLike<Promise> promise_;
   Fn fn_;
-  // Make failure to destruct show up in ASAN builds.
-#ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
-#endif
 };
 
 }  // namespace promise_detail
