@@ -116,7 +116,22 @@ class Poll {
   }
 
  private:
+  // Flag indicating readiness, followed by an optional value.
+  //
+  // Why not optional<T>?
+  //
+  // We have cases where we want to return absl::nullopt{} from a promise, and
+  // have that upgraded to a Poll<absl::nullopt_t> prior to a cast to some
+  // Poll<optional<T>>.
+  //
+  // Since optional<nullopt_t> is not allowed, we'd not be allowed to make
+  // Poll<nullopt_t> and so we'd need to pollute all poll handling code with
+  // some edge case handling template magic - the complexity would explode and
+  // grow over time - versus hand coding the pieces we need here and containing
+  // that quirk to one place.
   bool ready_;
+  // We do a single element union so we can choose when to construct/destruct
+  // this value.
   union {
     T value_;
   };
