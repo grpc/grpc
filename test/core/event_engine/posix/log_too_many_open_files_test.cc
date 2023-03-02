@@ -24,6 +24,8 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "test/core/util/test_config.h"
 
+using ::grpc_event_engine::experimental::PosixSocketWrapper;
+
 // There is a special code path in create_socket to log errors upon EMFILE.
 // Goal of this test is just to exercise that code path and also make sure
 // it doesn't mess up "errno", so that we get the right error message.
@@ -35,11 +37,10 @@ TEST(LogTooManyOpenFilesTest, MainTest) {
   auto addr = grpc_event_engine::experimental::URIToResolvedAddress(
       "ipv4:127.0.0.1:80");
   ASSERT_TRUE(addr.ok());
-  grpc_event_engine::experimental::PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<grpc_event_engine::experimental::PosixSocketWrapper> result =
-      grpc_event_engine::experimental::PosixSocketWrapper::
-          CreateDualStackSocket(mock_socket_factory, *addr, SOCK_STREAM,
-                                AF_INET, dsmode);
+  PosixSocketWrapper::DSMode dsmode;
+  absl::StatusOr<PosixSocketWrapper> result =
+      PosixSocketWrapper::CreateDualStackSocket(mock_socket_factory, *addr,
+                                                SOCK_STREAM, AF_INET, dsmode);
   EXPECT_FALSE(result.ok());
   EXPECT_THAT(result.status().message(),
               ::testing::HasSubstr("Too many open files"));
