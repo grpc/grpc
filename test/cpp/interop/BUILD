@@ -93,10 +93,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "client_helper_lib",
     srcs = [
+        "client_flags.cc",
         "client_helper.cc",
         "interop_client.cc",
     ],
     hdrs = [
+        "client_flags.h",
         "client_helper.h",
         "interop_client.h",
     ],
