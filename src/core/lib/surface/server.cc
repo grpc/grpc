@@ -1283,7 +1283,9 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     };
   }
   // TODO(ctiller): deadline handling
-  Timestamp deadline = Timestamp::InfFuture();
+  Timestamp deadline =
+      call_args.client_initial_metadata->get(GrpcTimeoutMetadata())
+          .value_or(Timestamp::InfFuture());
   // Find request matcher.
   RequestMatcherInterface* matcher;
   ChannelRegisteredMethod* rm =
