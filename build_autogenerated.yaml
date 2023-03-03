@@ -9206,6 +9206,20 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: log_too_many_open_files_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/log_too_many_open_files_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: loop_test
   gtest: true
   build: test
