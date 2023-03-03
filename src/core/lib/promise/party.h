@@ -24,9 +24,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
@@ -37,7 +35,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
