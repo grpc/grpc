@@ -36,7 +36,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/trace.h"
 
-#define GRPC_PARTY_MAXIMIZE_THREADS
+// #define GRPC_PARTY_MAXIMIZE_THREADS
 
 #ifdef GRPC_PARTY_MAXIMIZE_THREADS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
@@ -354,6 +354,10 @@ void Party::AddParticipant(Participant* participant) {
 
   // Now we need to wake up the party.
   state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_relaxed);
+
+  gpr_log(GPR_DEBUG, "%s[party] Wakeup for %s@%d - prev_state=%s",
+          DebugTag().c_str(), std::string(participant->name()).c_str(), slot,
+          StateToString(state).c_str());
 
   // If the party was already locked, we're done.
   if ((state & kLocked) != 0) return;
