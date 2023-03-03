@@ -366,6 +366,7 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     language = "C++",
+    tags = ["nobuilder"],
     deps = [
         ":interop_server_lib",
         "//:grpc++",
@@ -383,6 +384,7 @@ grpc_cc_library(
         "absl/flags:flag",
     ],
     language = "C++",
+    tags = ["nobuilder"],
     deps = [
         ":client_helper_lib",
         "//:grpcpp_gcp_observability",
@@ -392,6 +394,7 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "observability_interop_client",
     language = "C++",
+    tags = ["nobuilder"],
     deps = [
         ":observability_interop_client_main",
         "//:grpc++",
@@ -409,7 +412,10 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        "nobuilder",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
