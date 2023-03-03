@@ -730,8 +730,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
     tags = [
+        "cpp_end2end_test",
         "no_test_ios",
         "no_windows",
     ],
@@ -817,8 +817,10 @@ grpc_cc_test(
         "gtest",
     ],
     shard_count = 5,
-    tags = ["cpp_end2end_test"],
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+    tags = [
+        "cpp_end2end_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:gpr",
         "//:grpc",
