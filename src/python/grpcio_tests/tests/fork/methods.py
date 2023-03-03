@@ -493,8 +493,6 @@ def _in_progress_bidi_new_channel_blocking_call(channel, args):
             stub = test_pb2_grpc.TestServiceStub(channel)
             _blocking_unary(stub)
 
-    while True:
-        time.sleep(1)
     _ping_pong_with_child_processes_after_first_response(
         channel, args, child_target)
 
