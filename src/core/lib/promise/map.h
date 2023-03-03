@@ -41,8 +41,10 @@ class Map {
 
   Map(const Map&) = delete;
   Map& operator=(const Map&) = delete;
-  Map(Map&& other) noexcept = default;
-  Map& operator=(Map&& other) noexcept = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map(Map&& other) = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map& operator=(Map&& other) = default;
 
   using PromiseResult = typename PromiseLike<Promise>::Result;
   using Result =

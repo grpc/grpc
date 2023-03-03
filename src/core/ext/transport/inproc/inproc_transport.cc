@@ -936,8 +936,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   // completed).  This can go away once we move to a new C++ closure API
   // that provides the ability to create a barrier closure.
   if (on_complete == nullptr) {
-    on_complete = GRPC_CLOSURE_INIT(&op->handler_private.closure, do_nothing,
-                                    nullptr, grpc_schedule_on_exec_ctx);
+    on_complete = grpc_core::NewClosure([](grpc_error_handle) {});
   }
 
   if (op->cancel_stream) {
