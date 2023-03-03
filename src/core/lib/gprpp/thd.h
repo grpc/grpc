@@ -96,9 +96,9 @@ class Thread {
       : Thread(
             thd_name,
             [](void* p) {
-              std::unique_ptr<absl::AnyInvocable<void()>> fn(
+              std::unique_ptr<absl::AnyInvocable<void()>> fn_from_p(
                   static_cast<absl::AnyInvocable<void()>*>(p));
-              (*fn)();
+              (*fn_from_p)();
             },
             new absl::AnyInvocable<void()>(std::move(fn)), success, options) {}
 
