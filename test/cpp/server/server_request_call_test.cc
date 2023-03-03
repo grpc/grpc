@@ -174,6 +174,8 @@ void ServerFunction(testing::EchoTestService::AsyncService* service,
     if (shutdown->load()) {
       break;
     }
+    // For UnimplementedAsyncRequest, the server never returns from Next except
+    // when shutdown.
     grpc_core::Crash("unreached");
   }
 }
@@ -190,7 +192,7 @@ void ClientFunction(testing::UnimplementedEchoService::Stub* stub) {
   }
 }
 
-TEST(ServerRequestCallTest, UnimplementedService) {
+TEST(ServerRequestCallTest, MultithreadedUnimplementedService) {
   std::atomic_bool shutdown(false);
   // grpc server config.
   std::ostringstream s;
