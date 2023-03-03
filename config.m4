@@ -1241,23 +1241,27 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/third_party/utf8_range/naive.c \
     third_party/upb/third_party/utf8_range/range2-neon.c \
     third_party/upb/third_party/utf8_range/range2-sse.c \
-    third_party/upb/upb/arena.c \
-    third_party/upb/upb/array.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/decode_fast.c \
-    third_party/upb/upb/def.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/extension_registry.c \
-    third_party/upb/upb/json_decode.c \
-    third_party/upb/upb/json_encode.c \
-    third_party/upb/upb/map.c \
-    third_party/upb/upb/mini_table.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/reflection.c \
-    third_party/upb/upb/status.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/text_encode.c \
-    third_party/upb/upb/upb.c \
+    third_party/upb/upb/base/status.c \
+    third_party/upb/upb/collections/array.c \
+    third_party/upb/upb/collections/map.c \
+    third_party/upb/upb/collections/map_sorter.c \
+    third_party/upb/upb/hash/common.c \
+    third_party/upb/upb/lex/atoi.c \
+    third_party/upb/upb/lex/round_trip.c \
+    third_party/upb/upb/lex/strtod.c \
+    third_party/upb/upb/lex/unicode.c \
+    third_party/upb/upb/mem/alloc.c \
+    third_party/upb/upb/mem/arena.c \
+    third_party/upb/upb/message/message.c \
+    third_party/upb/upb/mini_table/common.c \
+    third_party/upb/upb/mini_table/decode.c \
+    third_party/upb/upb/mini_table/encode.c \
+    third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/wire/decode.c \
+    third_party/upb/upb/wire/decode_fast.c \
+    third_party/upb/upb/wire/encode.c \
+    third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/reader.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -1545,5 +1549,12 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/third_party/utf8_range)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/collections)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/hash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
 fi
