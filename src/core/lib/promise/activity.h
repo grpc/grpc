@@ -38,6 +38,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
