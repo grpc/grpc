@@ -413,11 +413,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:variant",
     ],
     language = "c++",
     deps = [
@@ -425,7 +423,6 @@ grpc_cc_library(
         "arena",
         "construct_destruct",
         "context",
-        "poll",
         "promise_factory",
         "promise_trace",
         "//:debug_location",
@@ -580,6 +577,7 @@ grpc_cc_library(
         "lib/promise/loop.h",
     ],
     deps = [
+        "construct_destruct",
         "poll",
         "promise_factory",
         "//:gpr_platform",
@@ -718,6 +716,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "no_destruct",
+        "poll",
         "promise_factory",
         "promise_status",
         "//:gpr",
