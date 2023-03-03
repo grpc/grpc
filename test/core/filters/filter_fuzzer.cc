@@ -28,7 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
@@ -608,8 +607,8 @@ class MainLoop {
     void Step() {
       if (!promise_.has_value()) return;
       auto r = (*promise_)();
-      if (absl::holds_alternative<Pending>(r)) return;
-      ServerMetadataHandle md = std::move(absl::get<ServerMetadataHandle>(r));
+      if (r.pending()) return;
+      ServerMetadataHandle md = std::move(r.value());
       if (md.get() != server_trailing_metadata_.get()) md->~ServerMetadata();
       promise_.reset();
     }

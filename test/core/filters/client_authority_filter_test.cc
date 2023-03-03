@@ -18,7 +18,6 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -86,7 +85,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
             });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
+  EXPECT_TRUE(result.ready());
   EXPECT_TRUE(seen);
 }
 
@@ -121,7 +120,7 @@ TEST(ClientAuthorityFilterTest,
             });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
+  EXPECT_TRUE(result.ready());
   EXPECT_TRUE(seen);
 }
 
