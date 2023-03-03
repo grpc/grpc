@@ -99,7 +99,7 @@ class If {
           !kSetState,
           "shouldn't need to set state coming through the initial branch");
       auto r = evaluating.condition();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto* p = r.value_if_ready()) {
         return ChooseIf(CallPoll<true>{self}, std::move(*p),
                         &evaluating.if_true, &evaluating.if_false);
       }
@@ -109,7 +109,7 @@ class If {
     template <class Promise>
     PollResult operator()(Promise& promise) const {
       auto r = promise();
-      if (kSetState && absl::holds_alternative<Pending>(r)) {
+      if (kSetState && r.pending()) {
         self->state_.template emplace<Promise>(std::move(promise));
       }
       return r;
