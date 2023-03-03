@@ -460,19 +460,25 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
   // through the receiving pipe.
   auto server_initial_metadata =
       GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-  party->Spawn("recv_initial_metadata",
-               TrySeq(GetContext<BatchBuilder>()->ReceiveServerInitialMetadata(
-                          stream->batch_target()),
-                      [pipe = call_args.server_initial_metadata](
-                          ServerMetadataHandle server_initial_metadata) {
-                        return Map(
-                            pipe->Push(std::move(server_initial_metadata)),
-                            [](bool r) {
-                              if (r) return absl::OkStatus();
-                              return absl::CancelledError();
-                            });
-                      }),
-               [](absl::Status) {});
+  party->Spawn(
+      "recv_initial_metadata",
+      TrySeq(GetContext<BatchBuilder>()->ReceiveServerInitialMetadata(
+                 stream->batch_target()),
+             [pipe = call_args.server_initial_metadata](
+                 ServerMetadataHandle server_initial_metadata) {
+               if (grpc_call_trace.enabled()) {
+                 gpr_log(GPR_DEBUG,
+                         "%s[connected] Publish client initial metadata: %s",
+                         Activity::current()->DebugTag().c_str(),
+                         server_initial_metadata->DebugString().c_str());
+               }
+               return Map(pipe->Push(std::move(server_initial_metadata)),
+                          [](bool r) {
+                            if (r) return absl::OkStatus();
+                            return absl::CancelledError();
+                          });
+             }),
+      [](absl::Status) {});
 
   // Build up the rest of the main call promise:
 

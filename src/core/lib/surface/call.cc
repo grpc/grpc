@@ -2870,9 +2870,9 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 void ClientPromiseBasedCall::StartRecvInitialMetadata(
     grpc_metadata_array* array, const Completion& completion) {
   Spawn("recv_initial_metadata",
-        Race(Map(finished(),
-                 [](Empty) { return NextResult<ServerMetadataHandle>(true); }),
-             server_initial_metadata_.receiver.Next()),
+        Race(server_initial_metadata_.receiver.Next(),
+             Map(finished(),
+                 [](Empty) { return NextResult<ServerMetadataHandle>(true); })),
         [this, array,
          completion =
              AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
