@@ -206,6 +206,7 @@ TEST(ServerRequestCallTest, MultithreadedUnimplementedService) {
   // server threads
   constexpr int kNumServerThreads = 2;
   std::vector<std::thread> server_threads;
+  server_threads.reserve(kNumServerThreads);
   for (int i = 0; i < kNumServerThreads; i++) {
     server_threads.emplace_back(ServerFunction, cq.get(), &shutdown);
   }
@@ -216,6 +217,7 @@ TEST(ServerRequestCallTest, MultithreadedUnimplementedService) {
   // client threads
   constexpr int kNumClientThreads = 2;
   std::vector<std::thread> client_threads;
+  client_threads.reserve(kNumClientThreads);
   for (int i = 0; i < kNumClientThreads; i++) {
     client_threads.emplace_back(ClientFunction, stub.get());
   }
