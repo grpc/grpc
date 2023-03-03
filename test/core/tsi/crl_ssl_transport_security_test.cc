@@ -122,6 +122,7 @@ class CrlSslTransportSecurityTest
       for (size_t i = 0; i < kSslTsiTestRevokedKeyCertPairsNum; i++) {
         PemKeyCertPairDestroy(revoked_pem_key_cert_pairs_[i]);
       }
+      gpr_free(revoked_pem_key_cert_pairs_);
       for (size_t i = 0; i < kSslTsiTestRevokedIntermedidateKeyCertPairsNum;
            i++) {
         PemKeyCertPairDestroy(revoked_intermediate_pem_key_cert_pairs_[i]);
