@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load(":grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -356,4 +357,9 @@ grpc_cc_library(
         "//:gpr_platform",
         "//src/core:env",
     ],
+)
+
+grpc_fuzz_test(
+    name = "fuzztest_test",
+    srcs = ["fuzztest_test.cc"],
 )
