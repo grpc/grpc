@@ -1311,7 +1311,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   return TrySeq(
       TryJoin(matcher->MatchRequest(chand->cq_idx()),
               std::move(maybe_read_first_message)),
-      [path = std::move(*path), host = std::move(*host_ptr), deadline, server,
+      [path = std::move(*path), host_ptr, deadline, server,
        call_args = std::move(call_args)](
           std::tuple<RequestMatcherInterface::MatchResult,
                      NextResult<MessageHandle>>
@@ -1323,7 +1323,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
         switch (rc->type) {
           case RequestedCall::Type::BATCH_CALL:
             GPR_ASSERT(!payload.has_value());
-            rc->data.batch.details->host = CSliceRef(host.c_slice());
+            rc->data.batch.details->host = CSliceRef(host_ptr->c_slice());
             rc->data.batch.details->method = CSliceRef(path.c_slice());
             rc->data.batch.details->deadline =
                 deadline.as_timespec(GPR_CLOCK_MONOTONIC);

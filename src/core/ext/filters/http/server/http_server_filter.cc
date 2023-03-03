@@ -65,6 +65,8 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   const auto& md = call_args.client_initial_metadata;
 
+  gpr_log(GPR_ERROR, "HTTP server filter: %s", md->DebugString().c_str());
+
   auto method = md->get(HttpMethodMetadata());
   if (method.has_value()) {
     switch (*method) {
