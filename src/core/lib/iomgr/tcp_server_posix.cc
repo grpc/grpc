@@ -79,6 +79,7 @@ static std::atomic<int64_t> num_dropped_connections{0};
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::MemoryAllocator;
+using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::PosixEventEngineWithFdSupport;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
