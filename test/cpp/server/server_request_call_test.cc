@@ -155,17 +155,8 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
   t.join();
 }
 
-void ServerFunction(testing::EchoTestService::AsyncService* service,
-                    ServerCompletionQueue* cq, std::atomic_bool* shutdown) {
+void ServerFunction(ServerCompletionQueue* cq, std::atomic_bool* shutdown) {
   for (;;) {
-    ServerContext ctx;
-    testing::EchoRequest req;
-    ServerAsyncResponseWriter<testing::EchoResponse> responder(&ctx);
-    // if shutting down, don't enqueue a new request.
-    if (!shutdown->load()) {
-      service->RequestEcho(&ctx, &req, &responder, cq, cq,
-                           reinterpret_cast<void*>(1));
-    }
     bool ok;
     void* tag;
     if (!cq->Next(&tag, &ok)) {
@@ -174,8 +165,8 @@ void ServerFunction(testing::EchoTestService::AsyncService* service,
     if (shutdown->load()) {
       break;
     }
-    // For UnimplementedAsyncRequest, the server never returns from Next except
-    // when shutdown.
+    // For UnimplementedAsyncRequest, the server handles it internally and never
+    // returns from Next except when shutdown.
     grpc_core::Crash("unreached");
   }
 }
@@ -206,11 +197,17 @@ TEST(ServerRequestCallTest, MultithreadedUnimplementedService) {
   builder.RegisterService(&service);
   auto server = builder.BuildAndStart();
 
+  ServerContext ctx;
+  testing::EchoRequest req;
+  ServerAsyncResponseWriter<testing::EchoResponse> responder(&ctx);
+  service.RequestEcho(&ctx, &req, &responder, cq.get(), cq.get(),
+                      reinterpret_cast<void*>(1));
+
   // server threads
   constexpr int kNumServerThreads = 2;
   std::vector<std::thread> server_threads;
   for (int i = 0; i < kNumServerThreads; i++) {
-    server_threads.emplace_back(ServerFunction, &service, cq.get(), &shutdown);
+    server_threads.emplace_back(ServerFunction, cq.get(), &shutdown);
   }
 
   auto stub = testing::UnimplementedEchoService::NewStub(
