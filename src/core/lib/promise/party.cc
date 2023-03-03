@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -354,10 +353,6 @@ void Party::AddParticipant(Participant* participant) {
 
   // Now we need to wake up the party.
   state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_relaxed);
-
-  gpr_log(GPR_DEBUG, "%s[party] Wakeup for %s@%d - prev_state=%s",
-          DebugTag().c_str(), std::string(participant->name()).c_str(), slot,
-          StateToString(state).c_str());
 
   // If the party was already locked, we're done.
   if ((state & kLocked) != 0) return;
