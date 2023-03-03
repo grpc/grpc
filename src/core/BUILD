@@ -1822,6 +1822,7 @@ grpc_cc_library(
         "socket_mutator",
         "status_helper",
         "strerror",
+        "time",
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
