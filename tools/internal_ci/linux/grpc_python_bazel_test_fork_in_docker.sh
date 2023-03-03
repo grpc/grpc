@@ -15,11 +15,6 @@
 
 set -ex
 
-sudo apt-get update -y && sudo apt-get install -y gdb
-
-# Allows the test driver to spin up a GDB subprocess and have it attach to
-# another subprocess of the test driver.
-sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
 
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 BAZEL_FLAGS="--test_output=errors"
