@@ -15,6 +15,9 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_MEMORY_ALLOCATOR_FACTORY_H
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <utility>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/memory_allocator.h>

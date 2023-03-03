@@ -1065,6 +1065,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "event_engine_memory_allocator",
+        "memory_quota",
         "//:gpr_platform",
     ],
 )
