@@ -14,9 +14,9 @@
 
 #include "src/core/lib/promise/race.h"
 
-#include <utility>
-
 #include "gtest/gtest.h"
+
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 

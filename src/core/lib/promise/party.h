@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
@@ -157,7 +158,7 @@ class Party : public Activity, private Wakeable {
         started_ = true;
       }
       auto p = promise_();
-      if (auto* r = absl::get_if<kPollReadyIdx>(&p)) {
+      if (auto* r = p.value_if_ready()) {
         on_complete_(std::move(*r));
         GetContext<Arena>()->DeletePooled(this);
         return true;

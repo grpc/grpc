@@ -565,94 +565,98 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   // filters).
   // Race the main call with failure_latch, allowing us to forcefully complete
   // the call in the case of a failure.
-  auto recv_initial_metadata_then_run_promise = TrySeq(
-      GetContext<BatchBuilder>()->ReceiveClientInitialMetadata(
-          stream->batch_target()),
-      [next_promise_factory = std::move(next_promise_factory),
-       server_to_client_empty = std::move(server_to_client_empty),
-       call_data](ClientMetadataHandle client_initial_metadata) {
-        auto call_promise = next_promise_factory(CallArgs{
-            std::move(client_initial_metadata),
-            ClientInitialMetadataOutstandingToken::Empty(),
-            &call_data->server_initial_metadata.sender,
-            &call_data->client_to_server.receiver,
-            &call_data->server_to_client.sender,
-        });
-        return Race(
-            call_data->failure_latch.Wait(),
-            [call_promise = std::move(call_promise),
-             server_to_client_empty =
-                 std::move(server_to_client_empty)]() mutable
-            -> Poll<ServerMetadataHandle> {
-              // TODO(ctiller): this is deeply weird and we need to
-              // clean this up.
-              //
-              // The following few lines check to ensure that there's no
-              // message currently pending in the outgoing message
-              // queue, and if (and only if) that's true decides to poll
-              // the main promise to see if there's a result.
-              //
-              // This essentially introduces a polling priority scheme
-              // that makes the current promise structure work out the
-              // way we want when talking to transports.
-              //
-              // The problem is that transports are going to need to
-              // replicate this structure when they convert to promises,
-              // and that becomes troubling as we'll be replicating
-              // weird throughout the stack.
-              //
-              // Instead we likely need to change the way we're
-              // composing promises through the stack.
-              //
-              // Proposed is to change filters from a promise that takes
-              // ClientInitialMetadata and returns
-              // ServerTrailingMetadata with three pipes for
-              // ServerInitialMetadata and ClientToServerMessages,
-              // ServerToClientMessages. Instead we'll have five pipes,
-              // moving ClientInitialMetadata and ServerTrailingMetadata
-              // to pipes that can be intercepted.
-              //
-              // The effect of this change will be to cripple the things
-              // that can be done in a filter (but cripple in line with
-              // what most filters actually do). We'll likely need to
-              // add a `CallContext::Cancel` to allow filters to cancel
-              // a request, but this would also have the advantage of
-              // centralizing our cancellation machinery which seems
-              // like an additional win - with the net effect that the
-              // shape of the call gets made explicit at the top &
-              // bottom of the stack.
-              //
-              // There's a small set of filters (retry, this one, lame
-              // client) that terminate stacks and need a richer set of
-              // semantics, but that ends up being fine because we can
-              // spawn tasks in parties to handle those edge cases, and
-              // keep the majority of filters simple: they just call
-              // InterceptAndMap on a handful of filters at call
-              // initialization time and then proceed to actually
-              // filter.
-              //
-              // So that's the plan, why isn't it enacted here?
-              //
-              // Well, the plan ends up being easy to implement in the
-              // promise based world (I did a prototype on a branch in
-              // an afternoon). It's heinous to implement in
-              // promise_based_filter, and that code is load bearing for
-              // us at the time of writing. It's not worth delaying
-              // promises for a further N months (N ~ 6) to make that
-              // change.
-              //
-              // Instead, we'll move forward with this, get
-              // promise_based_filter out of the picture, and then
-              // during the mop-up phase for promises tweak the compute
-              // structure to move to the magical five pipes (I'm
-              // reminded of an old Onion article), and end up in a good
-              // happy place.
-              if (absl::holds_alternative<Pending>(server_to_client_empty())) {
-                return Pending{};
-              }
-              return call_promise();
-            });
-      });
+  auto recv_initial_metadata_then_run_promise =
+      TrySeq(GetContext<BatchBuilder>()->ReceiveClientInitialMetadata(
+                 stream->batch_target()),
+             [next_promise_factory = std::move(next_promise_factory),
+              server_to_client_empty = std::move(server_to_client_empty),
+              call_data](ClientMetadataHandle client_initial_metadata) {
+               auto call_promise = next_promise_factory(CallArgs{
+                   std::move(client_initial_metadata),
+                   ClientInitialMetadataOutstandingToken::Empty(),
+                   &call_data->server_initial_metadata.sender,
+                   &call_data->client_to_server.receiver,
+                   &call_data->server_to_client.sender,
+               });
+               return Race(call_data->failure_latch.Wait(),
+                           [call_promise = std::move(call_promise),
+                            server_to_client_empty =
+                                std::move(server_to_client_empty)]() mutable
+                           -> Poll<ServerMetadataHandle> {
+                             // TODO(ctiller): this is deeply weird and we need
+                             // to clean this up.
+                             //
+                             // The following few lines check to ensure that
+                             // there's no message currently pending in the
+                             // outgoing message queue, and if (and only if)
+                             // that's true decides to poll the main promise to
+                             // see if there's a result.
+                             //
+                             // This essentially introduces a polling priority
+                             // scheme that makes the current promise structure
+                             // work out the way we want when talking to
+                             // transports.
+                             //
+                             // The problem is that transports are going to need
+                             // to replicate this structure when they convert to
+                             // promises, and that becomes troubling as we'll be
+                             // replicating weird throughout the stack.
+                             //
+                             // Instead we likely need to change the way we're
+                             // composing promises through the stack.
+                             //
+                             // Proposed is to change filters from a promise
+                             // that takes ClientInitialMetadata and returns
+                             // ServerTrailingMetadata with three pipes for
+                             // ServerInitialMetadata and
+                             // ClientToServerMessages, ServerToClientMessages.
+                             // Instead we'll have five pipes, moving
+                             // ClientInitialMetadata and ServerTrailingMetadata
+                             // to pipes that can be intercepted.
+                             //
+                             // The effect of this change will be to cripple the
+                             // things that can be done in a filter (but cripple
+                             // in line with what most filters actually do).
+                             // We'll likely need to add a `CallContext::Cancel`
+                             // to allow filters to cancel a request, but this
+                             // would also have the advantage of centralizing
+                             // our cancellation machinery which seems like an
+                             // additional win - with the net effect that the
+                             // shape of the call gets made explicit at the top
+                             // & bottom of the stack.
+                             //
+                             // There's a small set of filters (retry, this one,
+                             // lame client) that terminate stacks and need a
+                             // richer set of semantics, but that ends up being
+                             // fine because we can spawn tasks in parties to
+                             // handle those edge cases, and keep the majority
+                             // of filters simple: they just call
+                             // InterceptAndMap on a handful of filters at call
+                             // initialization time and then proceed to actually
+                             // filter.
+                             //
+                             // So that's the plan, why isn't it enacted here?
+                             //
+                             // Well, the plan ends up being easy to implement
+                             // in the promise based world (I did a prototype on
+                             // a branch in an afternoon). It's heinous to
+                             // implement in promise_based_filter, and that code
+                             // is load bearing for us at the time of writing.
+                             // It's not worth delaying promises for a further N
+                             // months (N ~ 6) to make that change.
+                             //
+                             // Instead, we'll move forward with this, get
+                             // promise_based_filter out of the picture, and
+                             // then during the mop-up phase for promises tweak
+                             // the compute structure to move to the magical
+                             // five pipes (I'm reminded of an old Onion
+                             // article), and end up in a good happy place.
+                             if (server_to_client_empty().pending()) {
+                               return Pending{};
+                             }
+                             return call_promise();
+                           });
+             });
 
   // Promise factory that accepts a ServerMetadataHandle, and sends it as the
   // trailing metadata for this call.

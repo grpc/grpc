@@ -371,12 +371,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "poll",
-    external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = [
         "lib/promise/poll.h",
     ],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "construct_destruct",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -410,6 +413,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
@@ -443,7 +447,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "map",
-    external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = ["lib/promise/map.h"],
     deps = [
@@ -505,13 +508,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "cancel_callback",
-    external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = [
         "lib/promise/cancel_callback.h",
     ],
     deps = [
-        "poll",
         "promise_like",
         "//:gpr_platform",
     ],
@@ -562,13 +563,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "race",
-    external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = ["lib/promise/race.h"],
-    deps = [
-        "poll",
-        "//:gpr_platform",
-    ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
@@ -591,10 +588,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "basic_join",
-    external_deps = [
-        "absl/types:variant",
-        "absl/utility",
-    ],
+    external_deps = ["absl/utility"],
     language = "c++",
     public_hdrs = [
         "lib/promise/detail/basic_join.h",
@@ -653,7 +647,6 @@ grpc_cc_library(
     name = "basic_seq",
     external_deps = [
         "absl/meta:type_traits",
-        "absl/types:variant",
         "absl/utility",
     ],
     language = "c++",
@@ -715,7 +708,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = [
@@ -726,7 +718,6 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "no_destruct",
-        "poll",
         "promise_factory",
         "promise_status",
         "//:gpr",
@@ -805,7 +796,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     deps = [
         "arena",
@@ -885,7 +875,6 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
-        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = ["lib/promise/for_each.h"],

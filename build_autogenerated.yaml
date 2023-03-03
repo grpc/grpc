@@ -5300,7 +5300,7 @@ targets:
   - test/core/promise/cancel_callback_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
@@ -8779,7 +8779,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
@@ -8789,7 +8788,7 @@ targets:
   deps:
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: init_test
   gtest: true
@@ -9009,9 +9008,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/join.h
@@ -9020,9 +9017,8 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/strings:strings
-  - absl/types:variant
   - absl/utility:utility
+  - gpr
   uses_polling: false
 - name: json_object_loader_test
   gtest: true
@@ -9219,7 +9215,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -9231,10 +9226,9 @@ targets:
   - test/core/promise/loop_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/status:status
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
+  - gpr
   uses_polling: false
 - name: map_pipe_test
   gtest: true
@@ -9930,7 +9924,7 @@ targets:
   src:
   - test/core/promise/poll_test.cc
   deps:
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: port_sharing_end2end_test
   gtest: true
@@ -10041,7 +10035,7 @@ targets:
   deps:
   - absl/functional:bind_front
   - absl/meta:type_traits
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: promise_map_test
   gtest: true
@@ -10055,11 +10049,8 @@ targets:
   src:
   - test/core/promise/map_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/meta:type_traits
-  - absl/status:status
-  - absl/types:optional
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: promise_test
   gtest: true
@@ -10072,11 +10063,8 @@ targets:
   src:
   - test/core/promise/promise_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/meta:type_traits
-  - absl/status:status
-  - absl/types:optional
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
@@ -10193,7 +10181,7 @@ targets:
   src:
   - test/core/promise/race_test.cc
   deps:
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: random_early_detection_test
   gtest: true
@@ -10625,7 +10613,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -10636,8 +10623,8 @@ targets:
   - test/core/promise/seq_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/types:variant
   - absl/utility:utility
+  - gpr
   uses_polling: false
 - name: sequential_connectivity_test
   gtest: true
@@ -12226,9 +12213,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
@@ -12238,11 +12223,9 @@ targets:
   - test/core/promise/try_join_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/status:status
   - absl/status:statusor
-  - absl/strings:strings
-  - absl/types:variant
   - absl/utility:utility
+  - gpr
   uses_polling: false
 - name: try_seq_metadata_test
   gtest: true
@@ -12259,7 +12242,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -12271,10 +12253,9 @@ targets:
   - test/core/promise/try_seq_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/status:status
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
+  - gpr
   uses_polling: false
 - name: unique_type_name_test
   gtest: true
