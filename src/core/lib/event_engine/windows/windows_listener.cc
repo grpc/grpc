@@ -279,10 +279,7 @@ WindowsEventEngineListener::~WindowsEventEngineListener() {
       "%s",
       absl::StrFormat("WindowsEventEngineListener::%p shutting down", this)
           .c_str());
-  // Shut down each port listener before destroying this EventEngine::Listener
-  for (auto& port_listener : port_listeners_) {
-    port_listener.reset();
-  }
+  ShutdownListeners();
   on_shutdown_(absl::OkStatus());
 }
 
@@ -300,7 +297,7 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
   // Check if this is a  wildcard port, and if so, try to keep the port the same
   // as some previously created listener.
   if (out_port == 0) {
-    grpc_core::MutexLock lock(&socket_listeners_mu_);
+    grpc_core::MutexLock lock(&port_listeners_mu_);
     for (const auto& port_listener : port_listeners_) {
       tmp_addr = port_listener->listener_sockname();
       out_port = ResolvedAddressGetPort(tmp_addr);
@@ -332,11 +329,20 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
 
 absl::Status WindowsEventEngineListener::Start() {
   GPR_ASSERT(!started_.exchange(true));
-  grpc_core::MutexLock lock(&socket_listeners_mu_);
+  grpc_core::MutexLock lock(&port_listeners_mu_);
   for (auto& port_listener : port_listeners_) {
     GRPC_RETURN_IF_ERROR(port_listener->Start());
   }
   return absl::OkStatus();
+}
+
+void WindowsEventEngineListener::ShutdownListeners() {
+  grpc_core::MutexLock lock(&port_listeners_mu_);
+  if (std::exchange(listeners_shutdown_, true)) return;
+  // Shut down each port listener before destroying this EventEngine::Listener
+  for (auto& port_listener : port_listeners_) {
+    port_listener.reset();
+  }
 }
 
 absl::StatusOr<WindowsEventEngineListener::SinglePortSocketListener*>
@@ -346,7 +352,7 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
       SinglePortSocketListener::Create(this, sock, addr);
   GRPC_RETURN_IF_ERROR(single_port_listener.status());
   auto* single_port_listener_ptr = single_port_listener->get();
-  grpc_core::MutexLock lock(&socket_listeners_mu_);
+  grpc_core::MutexLock lock(&port_listeners_mu_);
   port_listeners_.emplace_back(std::move(*single_port_listener));
   if (started_.load()) {
     gpr_log(GPR_ERROR,
