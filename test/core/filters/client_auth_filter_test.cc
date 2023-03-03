@@ -22,7 +22,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -164,8 +163,7 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
             });
       });
   auto result = promise();
-  ServerMetadataHandle* server_metadata =
-      absl::get_if<ServerMetadataHandle>(&result);
+  ServerMetadataHandle* server_metadata = result.value_if_ready();
   ASSERT_TRUE(server_metadata != nullptr);
   auto status_md = (*server_metadata)->get(GrpcStatusMetadata());
   ASSERT_TRUE(status_md.has_value());
@@ -194,8 +192,7 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
             });
       });
   auto result = promise();
-  ServerMetadataHandle* server_metadata =
-      absl::get_if<ServerMetadataHandle>(&result);
+  ServerMetadataHandle* server_metadata = result.value_if_ready();
   ASSERT_TRUE(server_metadata != nullptr);
   auto status_md = (*server_metadata)->get(GrpcStatusMetadata());
   ASSERT_TRUE(status_md.has_value());

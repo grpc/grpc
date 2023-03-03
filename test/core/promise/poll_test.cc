@@ -31,12 +31,13 @@ TEST(PollTest, IsItPoll) {
 
 TEST(PollTest, Pending) {
   Poll<int> i = Pending();
-  EXPECT_TRUE(absl::holds_alternative<Pending>(i));
+  EXPECT_TRUE(i.pending());
 }
 
 TEST(PollTest, Ready) {
   Poll<int> i = 1;
-  EXPECT_TRUE(absl::holds_alternative<int>(i));
+  EXPECT_TRUE(i.ready());
+  EXPECT_EQ(i.value(), 1);
 }
 
 }  // namespace grpc_core
