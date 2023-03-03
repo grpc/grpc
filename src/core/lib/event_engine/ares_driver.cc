@@ -208,6 +208,7 @@ absl::Status GrpcAresRequest::Initialize(bool check_port) {
     return GRPC_ERROR_CREATE(absl::StrCat(
         "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
   }
+  // TODO(yijiem): If dns_server is specified, use it.
   initialized_ = true;
   return absl::OkStatus();
 }
@@ -379,7 +380,6 @@ void GrpcAresHostnameRequest::Start() {
   pending_queries_++;
   // TODO(yijiem): factor out
   if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
-    // TODO(yijiem): set_request_dns_server if specified
     pending_queries_++;
     ares_gethostbyname(channel_, std::string(host_).c_str(), AF_INET6,
                        &on_hostbyname_done_locked, static_cast<void*>(this));
