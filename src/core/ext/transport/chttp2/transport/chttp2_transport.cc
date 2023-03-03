@@ -37,7 +37,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -1936,7 +1935,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                       return r.ToString();
                     }).c_str());
           }
-          if (absl::holds_alternative<grpc_core::Pending>(r)) {
+          if (r.pending()) {
             if (s->read_closed) {
               grpc_slice_buffer_reset_and_unref(&s->frame_storage);
               s->recv_message->reset();
@@ -1946,7 +1945,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
               return;  // Out of lambda to enclosing function
             }
           } else {
-            error = absl::get<grpc_error_handle>(r);
+            error = std::move(r.value());
             if (!error.ok()) {
               s->seen_error = true;
               grpc_slice_buffer_reset_and_unref(&s->frame_storage);
