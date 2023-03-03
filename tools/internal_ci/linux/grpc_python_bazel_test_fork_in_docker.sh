@@ -15,12 +15,19 @@
 
 set -ex
 
+sudo apt-get update -y && sudo apt-get install -y gdb
+
+# Allows the test driver to spin up a GDB subprocess and have it attach to
+# another subprocess of the test driver.
+sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
+
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 BAZEL_FLAGS="--test_output=errors"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 
+# TODO: Reduce back down to 16 before merging.
 # TODO(https://github.com/grpc/grpc/issues/32207): Pull this out into a 
 # separate Kokoro job so we can do more runs without impacting overall PR 
 # presubmit duration.
-python_bazel_tests_fork_support/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test --config=fork_support --runs_per_test=16 ${BAZEL_FLAGS} //src/python/grpcio_tests/tests/fork:fork_test
+python_bazel_tests_fork_support/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test --config=fork_support --runs_per_test=256 ${BAZEL_FLAGS} //src/python/grpcio_tests/tests/fork:fork_test
