@@ -2994,7 +2994,9 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
                              bool is_notify_tag_closure) override;
   bool failed_before_recv_message() const override { return false; }
   bool is_trailers_only() const override { abort(); }
-  absl::string_view GetServerAuthority() const override { return ""; }
+  absl::string_view GetServerAuthority() const override {
+    return server_authority_.as_string_view();
+  }
 
   // Polling order for the server promise stack:
   //
@@ -3121,6 +3123,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   RecvCloseOpCancelState recv_close_op_cancel_state_;
   ClientMetadataHandle client_initial_metadata_;
   Completion recv_close_completion_;
+  Slice server_authority_;
   std::atomic<bool> cancelled_{false};
 };
 
@@ -3355,6 +3358,10 @@ ServerCallContext::MakeTopOfServerCallPromise(
   call_->server_to_client_messages_ = call_args.server_to_client_messages;
   call_->client_to_server_messages_ = call_args.client_to_server_messages;
   call_->server_initial_metadata_ = call_args.server_initial_metadata;
+  if (auto* auth = call_args.client_initial_metadata->get_pointer(
+          HttpAuthorityMetadata())) {
+    call_->server_authority_ = auth->Ref();
+  }
   call_->client_initial_metadata_ =
       std::move(call_args.client_initial_metadata);
   call_->ProcessIncomingInitialMetadata(*call_->client_initial_metadata_);
