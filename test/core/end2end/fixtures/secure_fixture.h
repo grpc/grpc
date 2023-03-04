@@ -22,6 +22,11 @@
 #include "test/core/util/port.h"
 
 class SecureFixture : public CoreTestFixture {
+ public:
+  explicit SecureFixture(std::string localaddr = grpc_core::JoinHostPort(
+                             "localhost", grpc_pick_unused_port_or_die()))
+      : localaddr_(std::move(localaddr)) {}
+
  private:
   virtual grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs& args) = 0;
@@ -53,12 +58,14 @@ class SecureFixture : public CoreTestFixture {
     return client;
   }
 
-  std::string localaddr_ =
-      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
+  std::string localaddr_;
 };
 
 class InsecureFixture : public SecureFixture {
  public:
+  using SecureFixture::SecureFixture;
+
+ private:
   grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs& args) override {
     return grpc_insecure_credentials_create();
