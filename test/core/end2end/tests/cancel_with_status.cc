@@ -38,32 +38,16 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static CoreTestFixture begin_test(CoreTestConfiguration config,
-                                  const char* test_name, size_t num_ops,
-                                  grpc_channel_args* client_args,
-                                  grpc_channel_args* server_args) {
-  CoreTestFixture f;
+static std::unique_ptr<CoreTestFixture> begin_test(
+    const CoreTestConfiguration& config, const char* test_name, size_t num_ops,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s [%" PRIdPTR " ops]", test_name,
           config.name, num_ops);
-  f = config.create_fixture(client_args, server_args);
-  config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
+                                 grpc_core::ChannelArgs::FromC(server_args));
+  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
+  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
   return f;
-}
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(CoreTestFixture* f) {
@@ -76,12 +60,6 @@ static void shutdown_server(CoreTestFixture* f) {
   GPR_ASSERT(ev.tag == tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
-}
-
-static void shutdown_client(CoreTestFixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
 }
 
 static void end_test(CoreTestFixture* f) {
@@ -165,8 +143,6 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 
 static void test_invoke_simple_request(CoreTestConfiguration config,
                                        size_t num_ops) {
-  CoreTestFixture f;
-
   f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr,
                  nullptr);
   simple_request_body(config, f, num_ops);

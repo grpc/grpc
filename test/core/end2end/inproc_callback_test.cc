@@ -214,7 +214,6 @@ static grpc_completion_queue_functor* tag(intptr_t t) {
 static CoreTestFixture inproc_create_fixture(
     const grpc_channel_args* /*client_args*/,
     const grpc_channel_args* /*server_args*/) {
-  CoreTestFixture f;
   inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
       gpr_malloc(sizeof(inproc_fixture_data)));
   memset(&f, 0, sizeof(f));
@@ -248,20 +247,16 @@ void inproc_tear_down(CoreTestFixture* f) {
   gpr_free(ffd);
 }
 
-static CoreTestFixture begin_test(CoreTestConfiguration config,
-                                  const char* test_name,
-                                  const grpc_channel_args* client_args,
-                                  const grpc_channel_args* server_args) {
-  CoreTestFixture f;
+static std::unique_ptr<CoreTestFixture> begin_test(
+    const CoreTestConfiguration& config, const char* test_name,
+    const grpc_channel_args* client_args,
+    const grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  f = config.create_fixture(client_args, server_args);
-  config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
+                                 grpc_core::ChannelArgs::FromC(server_args));
+  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
+  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
   return f;
-}
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_from_now() { return n_seconds_from_now(5); }
@@ -280,21 +275,6 @@ static void shutdown_server(CoreTestFixture* f) {
   verify_tags(five_seconds_from_now());
   grpc_server_destroy(f->server);
   f->server = nullptr;
-}
-
-static void shutdown_client(CoreTestFixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(CoreTestFixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
 }
 
 static void simple_request_body(CoreTestConfiguration /* config */,
@@ -434,8 +414,6 @@ static void simple_request_body(CoreTestConfiguration /* config */,
 }
 
 static void test_invoke_simple_request(CoreTestConfiguration config) {
-  CoreTestFixture f;
-
   f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f);
   end_test(&f);
@@ -444,7 +422,7 @@ static void test_invoke_simple_request(CoreTestConfiguration config) {
 
 static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
   int i;
-  CoreTestFixture f =
+  auto f =
       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
   for (i = 0; i < 10; i++) {
     simple_request_body(config, f);
@@ -457,7 +435,7 @@ static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
 static void test_invoke_many_simple_requests(CoreTestConfiguration config) {
   int i;
   const int many = 1000;
-  CoreTestFixture f =
+  auto f =
       begin_test(config, "test_invoke_many_simple_requests", nullptr, nullptr);
   gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   for (i = 0; i < many; i++) {

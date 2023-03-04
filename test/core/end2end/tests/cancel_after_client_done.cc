@@ -35,59 +35,17 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static CoreTestFixture begin_test(CoreTestConfiguration config,
-                                  const char* test_name, cancellation_mode mode,
-                                  grpc_channel_args* client_args,
-                                  grpc_channel_args* server_args) {
-  CoreTestFixture f;
+static std::unique_ptr<CoreTestFixture> begin_test(
+    const CoreTestConfiguration& config, const char* test_name,
+    cancellation_mode mode, grpc_channel_args* client_args,
+    grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s/%s", test_name, config.name,
           mode.name);
-  f = config.create_fixture(client_args, server_args);
-  config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
+                                 grpc_core::ChannelArgs::FromC(server_args));
+  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
+  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
   return f;
-}
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(CoreTestFixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(CoreTestFixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
 }
 
 // Cancel after accept with a writes closed, no payload
@@ -97,9 +55,8 @@ static void test_cancel_after_accept_and_writes_closed(
   grpc_op* op;
   grpc_call* c;
   grpc_call* s;
-  CoreTestFixture f =
-      begin_test(config, "test_cancel_after_accept_and_writes_closed", mode,
-                 nullptr, nullptr);
+  auto f = begin_test(config, "test_cancel_after_accept_and_writes_closed",
+                      mode, nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;

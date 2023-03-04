@@ -106,7 +106,6 @@ static void process_oauth2_failure(void* state, grpc_auth_context* /*ctx*/,
 static CoreTestFixture chttp2_create_fixture_secure_fullstack(
     const grpc_channel_args* /*client_args*/,
     const grpc_channel_args* /*server_args*/, grpc_tls_version tls_version) {
-  CoreTestFixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
