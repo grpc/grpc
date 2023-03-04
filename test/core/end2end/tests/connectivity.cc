@@ -30,8 +30,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 typedef struct {
   gpr_event started;
   grpc_channel* channel;
@@ -57,7 +55,7 @@ static void child_thread(void* arg) {
   ev = grpc_completion_queue_next(ce->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC),
                                   nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == tag(1));
+  GPR_ASSERT(ev.tag == CoreTestFixture::tag(1));
   GPR_ASSERT(ev.success == 0);
 }
 
@@ -92,8 +90,9 @@ static void test_connectivity(const CoreTestConfiguration& config) {
 
   // start watching for a change
   gpr_log(GPR_DEBUG, "watching");
-  grpc_channel_watch_connectivity_state(
-      f.client, GRPC_CHANNEL_IDLE, gpr_now(GPR_CLOCK_MONOTONIC), f.cq, tag(1));
+  grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_IDLE,
+                                        gpr_now(GPR_CLOCK_MONOTONIC), f.cq,
+                                        CoreTestFixture::tag(1));
 
   // eventually the child thread completion should trigger
   thd.Join();
@@ -104,10 +103,10 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   // start watching for a change
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_IDLE,
                                         grpc_timeout_seconds_to_deadline(10),
-                                        f.cq, tag(2));
+                                        f.cq, CoreTestFixture::tag(2));
 
   // and now the watch should trigger
-  cqv.Expect(tag(2), true);
+  cqv.Expect(CoreTestFixture::tag(2), true);
   cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
@@ -116,8 +115,8 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   // quickly followed by a transition to TRANSIENT_FAILURE
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_CONNECTING,
                                         grpc_timeout_seconds_to_deadline(10),
-                                        f.cq, tag(3));
-  cqv.Expect(tag(3), true);
+                                        f.cq, CoreTestFixture::tag(3));
+  cqv.Expect(CoreTestFixture::tag(3), true);
   cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
@@ -133,9 +132,10 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   // we'll go through some set of transitions (some might be missed), until
   // READY is reached
   while (state != GRPC_CHANNEL_READY) {
-    grpc_channel_watch_connectivity_state(
-        f.client, state, grpc_timeout_seconds_to_deadline(10), f.cq, tag(4));
-    cqv.Expect(tag(4), true);
+    grpc_channel_watch_connectivity_state(f.client, state,
+                                          grpc_timeout_seconds_to_deadline(10),
+                                          f.cq, CoreTestFixture::tag(4));
+    cqv.Expect(CoreTestFixture::tag(4), true);
     cqv.Verify(grpc_core::Duration::Seconds(20));
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
@@ -149,11 +149,11 @@ static void test_connectivity(const CoreTestConfiguration& config) {
 
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_READY,
                                         grpc_timeout_seconds_to_deadline(10),
-                                        f.cq, tag(5));
+                                        f.cq, CoreTestFixture::tag(5));
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
 
-  cqv.Expect(tag(5), true);
+  cqv.Expect(CoreTestFixture::tag(5), true);
   cqv.Expect(tag(0xdead), true);
   cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);

@@ -43,8 +43,6 @@
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -148,16 +146,16 @@ static void test_retry_cancel_during_delay(CoreTestConfiguration config,
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call and fails with retryable status.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -182,11 +180,11 @@ static void test_retry_cancel_during_delay(CoreTestConfiguration config,
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
   cqv.Verify();
 
   grpc_call_unref(s);
@@ -197,15 +195,15 @@ static void test_retry_cancel_during_delay(CoreTestConfiguration config,
 
   // Server should never get a second call, because the initial retry
   // delay is longer than the call's deadline.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(201));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   gpr_timespec finish_time = gpr_now(GPR_CLOCK_MONOTONIC);

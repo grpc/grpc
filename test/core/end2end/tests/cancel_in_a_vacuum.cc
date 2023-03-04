@@ -29,8 +29,6 @@
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     cancellation_mode mode, grpc_channel_args* client_args,

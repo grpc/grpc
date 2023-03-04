@@ -43,8 +43,6 @@ std::atomic<int> g_num_lb_picks;
 
 }  // namespace
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -121,11 +119,11 @@ static void test_retry_lb_fail(const CoreTestConfiguration& config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(1), false);
+  cqv.Expect(CoreTestFixture::tag(1), false);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -135,11 +133,11 @@ static void test_retry_lb_fail(const CoreTestConfiguration& config) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(2), true);
+  cqv.Expect(CoreTestFixture::tag(2), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);

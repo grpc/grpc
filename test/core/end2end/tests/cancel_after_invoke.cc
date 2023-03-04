@@ -34,8 +34,6 @@
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     cancellation_mode mode, size_t test_ops, grpc_channel_args* client_args,
@@ -51,11 +49,11 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_server_shutdown_and_notify(f->server, f->cq, CoreTestFixture::tag(1000));
   grpc_event ev = grpc_completion_queue_next(
       f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == tag(1000));
+  GPR_ASSERT(ev.tag == CoreTestFixture::tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -126,12 +124,13 @@ static void test_cancel_after_invoke(CoreTestConfiguration config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, test_ops, tag(1), nullptr);
+  error =
+      grpc_call_start_batch(c, ops, test_ops, CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);

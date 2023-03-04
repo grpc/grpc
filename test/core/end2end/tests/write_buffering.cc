@@ -31,8 +31,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -88,8 +86,8 @@ static void test_invoke_request_with_payload(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -99,15 +97,16 @@ static void test_invoke_request_with_payload(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
-  cqv.Expect(tag(1), true);  // send message is buffered
-  cqv.Expect(tag(101), true);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s, &call_details,
+                                      &request_metadata_recv, f.cq, f.cq,
+                                      CoreTestFixture::tag(101)));
+  cqv.Expect(CoreTestFixture::tag(1), true);  // send message is buffered
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -116,8 +115,8 @@ static void test_invoke_request_with_payload(
   op->data.send_message.send_message = request_payload1;
   op->flags = GRPC_WRITE_BUFFER_HINT;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -125,8 +124,8 @@ static void test_invoke_request_with_payload(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // recv message should not succeed yet - it's buffered at the client still
@@ -135,13 +134,13 @@ static void test_invoke_request_with_payload(
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv1;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(2), true);
-  cqv.Expect(tag(3), true);
-  cqv.Expect(tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(2), true);
+  cqv.Expect(CoreTestFixture::tag(3), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
   cqv.Verify();
 
   // send another message, this time not buffered
@@ -151,13 +150,13 @@ static void test_invoke_request_with_payload(
   op->data.send_message.send_message = request_payload2;
   op->flags = 0;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(4), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // now the first send should match up with the first recv
-  cqv.Expect(tag(103), true);
-  cqv.Expect(tag(4), true);
+  cqv.Expect(CoreTestFixture::tag(103), true);
+  cqv.Expect(CoreTestFixture::tag(4), true);
   cqv.Verify();
 
   // and the next recv should be ready immediately also
@@ -166,11 +165,11 @@ static void test_invoke_request_with_payload(
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv2;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(104), true);
+  cqv.Expect(CoreTestFixture::tag(104), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -186,8 +185,8 @@ static void test_invoke_request_with_payload(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(4), nullptr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -204,12 +203,12 @@ static void test_invoke_request_with_payload(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(105),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(105), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(105), true);
-  cqv.Expect(tag(4), true);
+  cqv.Expect(CoreTestFixture::tag(105), true);
+  cqv.Expect(CoreTestFixture::tag(4), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);

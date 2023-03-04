@@ -44,8 +44,6 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -85,7 +83,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_call(server, &call1, &call_details1,
-                                        &request_metadata1, cq, cq, tag(1)));
+                                        &request_metadata1, cq, cq,
+                                        CoreTestFixture::tag(1)));
     requested_calls++;
 
     grpc_event ev;
@@ -99,7 +98,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         case GRPC_QUEUE_SHUTDOWN:
           break;
         case GRPC_OP_COMPLETE:
-          if (ev.tag == tag(1)) {
+          if (ev.tag == CoreTestFixture::tag(1)) {
             requested_calls--;
             // TODO(ctiller): keep reading that call!
           }

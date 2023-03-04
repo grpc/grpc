@@ -38,8 +38,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -58,11 +56,11 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_server_shutdown_and_notify(f->server, f->cq, CoreTestFixture::tag(1000));
   grpc_event ev = grpc_completion_queue_next(
       f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == tag(1000));
+  GPR_ASSERT(ev.tag == CoreTestFixture::tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -191,21 +189,21 @@ static void test_max_message_length_on_request(CoreTestConfiguration config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (send_limit) {
-    cqv.Expect(tag(1), true);
+    cqv.Expect(CoreTestFixture::tag(1), true);
     cqv.Verify();
     goto done;
   }
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -220,12 +218,12 @@ static void test_max_message_length_on_request(CoreTestConfiguration config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
@@ -375,15 +373,15 @@ static void test_max_message_length_on_response(CoreTestConfiguration config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -411,12 +409,12 @@ static void test_max_message_length_on_response(CoreTestConfiguration config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
@@ -529,15 +527,15 @@ static void test_max_receive_message_length_on_compressed_request(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -547,8 +545,8 @@ static void test_max_receive_message_length_on_compressed_request(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -558,16 +556,16 @@ static void test_max_receive_message_length_on_compressed_request(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // WARNING!!
   // It's believed the following line (and the associated batch) is the only
   // test we have for failing a receive operation in a batch.
-  cqv.Expect(tag(102), false);
-  cqv.Expect(tag(103), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(102), false);
+  cqv.Expect(CoreTestFixture::tag(103), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
@@ -668,15 +666,15 @@ static void test_max_receive_message_length_on_compressed_response(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   grpc_metadata compression_md = gzip_compression_override();
@@ -706,12 +704,12 @@ static void test_max_receive_message_length_on_compressed_response(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));

@@ -36,8 +36,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel* chan;
   grpc_call* call;
@@ -107,11 +105,11 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), tag(1),
-                                                   nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                   CoreTestFixture::tag(1), nullptr));
   // verify that all tags get completed
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   if (wait_for_ready) {

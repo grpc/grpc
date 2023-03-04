@@ -63,8 +63,6 @@ typedef struct {
 // calls and 1 extra for the snapshot calls.
 static fling_call calls[100001];
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 // A call is intentionally divided into two steps. First step is to initiate a
 // call (i.e send and recv metadata). A call is outstanding after we initated,
 // so we can measure the call memory usage.

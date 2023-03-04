@@ -26,8 +26,6 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
@@ -63,7 +61,8 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
 
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_call(server, &call1, &call_details1,
-                                        &request_metadata1, cq, cq, tag(1)));
+                                        &request_metadata1, cq, cq,
+                                        CoreTestFixture::tag(1)));
     requested_calls++;
 
     grpc_event ev;
@@ -77,7 +76,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         case GRPC_QUEUE_SHUTDOWN:
           break;
         case GRPC_OP_COMPLETE:
-          if (ev.tag == tag(1)) {
+          if (ev.tag == CoreTestFixture::tag(1)) {
             requested_calls--;
             // TODO(ctiller): keep reading that call!
           }

@@ -40,8 +40,6 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
@@ -101,10 +99,10 @@ static void run_test(const char* target, size_t nops) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, nops, tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, nops, CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status != GRPC_STATUS_OK);

@@ -60,8 +60,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
 

@@ -36,8 +36,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -138,16 +136,16 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call but does not respond to the call.
-  error =
-      grpc_server_request_call(f.server, &s0, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s0, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
@@ -164,11 +162,11 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
   grpc_call_details_init(&call_details);
 
   // Server gets a second call, which it also does not respond to.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(201));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(201), true);
+  cqv.Expect(CoreTestFixture::tag(201), true);
   cqv.Verify();
 
   // Now we can unref the first call.
@@ -189,7 +187,7 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
   GPR_ASSERT(found_retry_header);
 
   // Client sees call completion.
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);

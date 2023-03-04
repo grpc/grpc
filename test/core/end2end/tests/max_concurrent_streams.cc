@@ -30,8 +30,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -93,15 +91,15 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -124,12 +122,12 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
@@ -209,9 +207,10 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
                                 nullptr, deadline, nullptr);
   GPR_ASSERT(c2);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s1, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s1, &call_details,
+                                      &request_metadata_recv, f.cq, f.cq,
+                                      CoreTestFixture::tag(101)));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -225,7 +224,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
-                                tag(301), nullptr);
+                                CoreTestFixture::tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -244,7 +243,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
-                                tag(302), nullptr);
+                                CoreTestFixture::tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -259,7 +258,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
-                                tag(401), nullptr);
+                                CoreTestFixture::tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -278,7 +277,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
-                                tag(402), nullptr);
+                                CoreTestFixture::tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   got_client_start = 0;
@@ -289,12 +288,13 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
                                     nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(ev.success);
-    if (ev.tag == tag(101)) {
+    if (ev.tag == CoreTestFixture::tag(101)) {
       GPR_ASSERT(!got_server_start);
       got_server_start = 1;
     } else {
       GPR_ASSERT(!got_client_start);
-      GPR_ASSERT(ev.tag == tag(301) || ev.tag == tag(401));
+      GPR_ASSERT(ev.tag == CoreTestFixture::tag(301) ||
+                 ev.tag == CoreTestFixture::tag(401));
       // The /alpha or /beta calls started above could be invoked (but NOT
       // both);
       // check this here
@@ -326,10 +326,10 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s1, ops, static_cast<size_t>(op - ops),
-                                tag(102), nullptr);
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
   cqv.Expect(tag(live_call + 2), true);
   // first request is finished, we should be able to start the second
   live_call = (live_call == 300) ? 400 : 300;
@@ -338,10 +338,11 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
 
   grpc_call_details_destroy(&call_details);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s2, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(201)));
-  cqv.Expect(tag(201), true);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s2, &call_details,
+                                      &request_metadata_recv, f.cq, f.cq,
+                                      CoreTestFixture::tag(201)));
+  cqv.Expect(CoreTestFixture::tag(201), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -364,11 +365,11 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s2, ops, static_cast<size_t>(op - ops),
-                                tag(202), nullptr);
+                                CoreTestFixture::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(live_call + 2), true);
-  cqv.Expect(tag(202), true);
+  cqv.Expect(CoreTestFixture::tag(202), true);
   cqv.Verify();
 
   grpc_call_unref(c1);
@@ -447,9 +448,10 @@ static void test_max_concurrent_streams_with_timeout_on_first(
                                 nullptr, n_seconds_from_now(1000), nullptr);
   GPR_ASSERT(c2);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s1, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s1, &call_details,
+                                      &request_metadata_recv, f.cq, f.cq,
+                                      CoreTestFixture::tag(101)));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -463,7 +465,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
-                                tag(301), nullptr);
+                                CoreTestFixture::tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -482,11 +484,11 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
-                                tag(302), nullptr);
+                                CoreTestFixture::tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(101), true);
-  cqv.Expect(tag(301), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(301), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -501,7 +503,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
-                                tag(401), nullptr);
+                                CoreTestFixture::tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -520,19 +522,20 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
-                                tag(402), nullptr);
+                                CoreTestFixture::tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_call_details_destroy(&call_details);
   grpc_call_details_init(&call_details);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s2, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(201)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s2, &call_details,
+                                      &request_metadata_recv, f.cq, f.cq,
+                                      CoreTestFixture::tag(201)));
 
-  cqv.Expect(tag(302), true);
+  cqv.Expect(CoreTestFixture::tag(302), true);
   // first request is finished, we should be able to start the second
-  cqv.Expect(tag(401), true);
-  cqv.Expect(tag(201), true);
+  cqv.Expect(CoreTestFixture::tag(401), true);
+  cqv.Expect(CoreTestFixture::tag(201), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -556,11 +559,11 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s2, ops, static_cast<size_t>(op - ops),
-                                tag(202), nullptr);
+                                CoreTestFixture::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(402), true);
-  cqv.Expect(tag(202), true);
+  cqv.Expect(CoreTestFixture::tag(402), true);
+  cqv.Expect(CoreTestFixture::tag(202), true);
   cqv.Verify();
 
   grpc_call_unref(c1);
@@ -639,9 +642,10 @@ static void test_max_concurrent_streams_with_timeout_on_second(
                                 nullptr, n_seconds_from_now(3), nullptr);
   GPR_ASSERT(c2);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s1, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s1, &call_details,
+                                      &request_metadata_recv, f.cq, f.cq,
+                                      CoreTestFixture::tag(101)));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -655,7 +659,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
-                                tag(301), nullptr);
+                                CoreTestFixture::tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -674,11 +678,11 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
-                                tag(302), nullptr);
+                                CoreTestFixture::tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(101), true);
-  cqv.Expect(tag(301), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(301), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -693,7 +697,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
-                                tag(401), nullptr);
+                                CoreTestFixture::tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -712,12 +716,12 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
-                                tag(402), nullptr);
+                                CoreTestFixture::tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // the second request is time out
-  cqv.Expect(tag(401), false);
-  cqv.Expect(tag(402), true);
+  cqv.Expect(CoreTestFixture::tag(401), false);
+  cqv.Expect(CoreTestFixture::tag(402), true);
   cqv.Verify();
 
   // second request is finished because of time out, so destroy the second call
@@ -746,11 +750,11 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s1, ops, static_cast<size_t>(op - ops),
-                                tag(102), nullptr);
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(302), true);
-  cqv.Expect(tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(302), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
   cqv.Verify();
 
   grpc_call_unref(c1);

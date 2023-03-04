@@ -31,8 +31,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -91,15 +89,15 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(100));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(100), true);
+  cqv.Expect(CoreTestFixture::tag(100), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -109,12 +107,12 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(101), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(101), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   // Client writes bunch of messages and server reads them
@@ -128,7 +126,7 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                  tag(103), nullptr);
+                                  CoreTestFixture::tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     grpc_byte_buffer_destroy(request_payload);
 
@@ -140,10 +138,10 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  tag(102), nullptr);
+                                  CoreTestFixture::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(tag(102), true);
-    cqv.Expect(tag(103), true);
+    cqv.Expect(CoreTestFixture::tag(102), true);
+    cqv.Expect(CoreTestFixture::tag(103), true);
     cqv.Verify();
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
     grpc_byte_buffer_destroy(request_payload_recv);
@@ -160,10 +158,10 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(104), true);
+  cqv.Expect(CoreTestFixture::tag(104), true);
   cqv.Verify();
   // Do an empty verify to make sure that the client receives the status
   cqv.VerifyEmpty();
@@ -177,11 +175,11 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_byte_buffer_destroy(request_payload);
-  cqv.Expect(tag(103), false);
+  cqv.Expect(CoreTestFixture::tag(103), false);
   cqv.Verify();
 
   // Client sends close and requests status
@@ -198,10 +196,10 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(3), true);
+  cqv.Expect(CoreTestFixture::tag(3), true);
   cqv.Verify();
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

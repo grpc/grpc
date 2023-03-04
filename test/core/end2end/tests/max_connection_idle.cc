@@ -36,8 +36,6 @@
 #define MAX_CONNECTION_IDLE_MS 2000
 #define MAX_CONNECTION_AGE_MS 9999
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
@@ -103,15 +101,15 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+  error = grpc_server_request_call(f->server, &s, &call_details,
+                                   &request_metadata_recv, f->cq, f->cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -143,12 +141,12 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
@@ -194,9 +192,10 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
   // we'll go through some set of transitions (some might be missed), until
   // READY is reached
   while (state != GRPC_CHANNEL_READY) {
-    grpc_channel_watch_connectivity_state(
-        f.client, state, grpc_timeout_seconds_to_deadline(10), f.cq, tag(99));
-    cqv.Expect(tag(99), true);
+    grpc_channel_watch_connectivity_state(f.client, state,
+                                          grpc_timeout_seconds_to_deadline(10),
+                                          f.cq, CoreTestFixture::tag(99));
+    cqv.Expect(CoreTestFixture::tag(99), true);
     cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
@@ -212,8 +211,8 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
       f.client, GRPC_CHANNEL_READY,
       gpr_time_add(grpc_timeout_milliseconds_to_deadline(3000),
                    gpr_time_from_millis(MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN)),
-      f.cq, tag(99));
-  cqv.Expect(tag(99), true);
+      f.cq, CoreTestFixture::tag(99));
+  cqv.Expect(CoreTestFixture::tag(99), true);
   cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||

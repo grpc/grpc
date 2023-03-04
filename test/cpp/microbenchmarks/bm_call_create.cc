@@ -148,7 +148,7 @@ static void BM_LameChannelCallCreateCpp(benchmark::State& state) {
   for (auto _ : state) {
     grpc::ClientContext cli_ctx;
     auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
-    reader->Finish(&recv_response, &recv_status, tag(0));
+    reader->Finish(&recv_response, &recv_status, CoreTestFixture::tag(0));
     void* t;
     bool ok;
     GPR_ASSERT(cq.Next(&t, &ok));
@@ -774,7 +774,7 @@ static void BM_IsolatedCall_Unary(benchmark::State& state) {
     grpc_call* call = grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, nullptr);
-    grpc_call_start_batch(call, ops, 6, tag(1), nullptr);
+    grpc_call_start_batch(call, ops, 6, CoreTestFixture::tag(1), nullptr);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
     grpc_call_unref(call);
@@ -806,14 +806,14 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State& state) {
   grpc_call* call = grpc_channel_create_registered_call(
       fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
       method_hdl, deadline, nullptr);
-  grpc_call_start_batch(call, ops, 2, tag(1), nullptr);
+  grpc_call_start_batch(call, ops, 2, CoreTestFixture::tag(1), nullptr);
   grpc_completion_queue_next(fixture.cq(), gpr_inf_future(GPR_CLOCK_MONOTONIC),
                              nullptr);
   memset(ops, 0, sizeof(ops));
   ops[0].op = GRPC_OP_SEND_MESSAGE;
   ops[0].data.send_message.send_message = send_message;
   for (auto _ : state) {
-    grpc_call_start_batch(call, ops, 1, tag(2), nullptr);
+    grpc_call_start_batch(call, ops, 1, CoreTestFixture::tag(2), nullptr);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   }

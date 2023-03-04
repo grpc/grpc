@@ -26,8 +26,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -59,13 +57,14 @@ static void test_early_server_shutdown_finishes_tags(
 
   // upon shutdown, the server should finish all requested calls indicating
   // no new call
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s, &call_details,
+                                      &request_metadata_recv, f.cq, f.cq,
+                                      CoreTestFixture::tag(101)));
   shutdown_client(&f);
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
-  cqv.Expect(tag(101), false);
-  cqv.Expect(tag(1000), true);
+  grpc_server_shutdown_and_notify(f.server, f.cq, CoreTestFixture::tag(1000));
+  cqv.Expect(CoreTestFixture::tag(101), false);
+  cqv.Expect(CoreTestFixture::tag(1000), true);
   cqv.Verify();
   GPR_ASSERT(s == nullptr);
 

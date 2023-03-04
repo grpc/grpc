@@ -31,8 +31,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -91,10 +89,11 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   op->reserved = nullptr;
   op++;
   GPR_ASSERT(num_ops <= (size_t)(op - ops));
-  error = grpc_call_start_batch(c, ops, num_ops, tag(1), nullptr);
+  error =
+      grpc_call_start_batch(c, ops, num_ops, CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);

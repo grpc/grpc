@@ -61,8 +61,6 @@ static int got_sigint = 0;
 static grpc_byte_buffer* payload_buffer = nullptr;
 static int was_cancelled = 2;
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
   FLING_SERVER_SEND_INIT_METADATA,
@@ -229,9 +227,10 @@ int main(int argc, char** argv) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
 
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-      grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
+      grpc_server_shutdown_and_notify(server, shutdown_cq,
+                                      CoreTestFixture::tag(1000));
       GPR_ASSERT(grpc_completion_queue_pluck(
-                     shutdown_cq, tag(1000),
+                     shutdown_cq, CoreTestFixture::tag(1000),
                      grpc_timeout_seconds_to_deadline(5), nullptr)
                      .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);

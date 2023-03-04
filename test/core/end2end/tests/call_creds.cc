@@ -44,8 +44,6 @@ static const char overridden_fake_md_value[] = "overridden_fake_value";
 
 typedef enum { NONE, OVERRIDE, DESTROY, FAIL } override_mode;
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     bool use_secure_call_creds, int fail_server_auth_check) {
@@ -195,22 +193,22 @@ static void request_response_with_payload_and_call_creds(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (mode == FAIL) {
     // Expect the call to fail since the channel credentials did not satisfy the
     // minimum security level requirements.
-    cqv.Expect(tag(1), true);
+    cqv.Expect(CoreTestFixture::tag(1), true);
     cqv.Verify();
     GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
   } else {
-    error =
-        grpc_server_request_call(f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101));
+    error = grpc_server_request_call(f.server, &s, &call_details,
+                                     &request_metadata_recv, f.cq, f.cq,
+                                     CoreTestFixture::tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(tag(101), true);
+    cqv.Expect(CoreTestFixture::tag(101), true);
     cqv.Verify();
     server_auth_context = grpc_call_auth_context(s);
     GPR_ASSERT(server_auth_context != nullptr);
@@ -238,10 +236,10 @@ static void request_response_with_payload_and_call_creds(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  tag(102), nullptr);
+                                  CoreTestFixture::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv.Expect(tag(102), true);
+    cqv.Expect(CoreTestFixture::tag(102), true);
     cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
@@ -265,11 +263,11 @@ static void request_response_with_payload_and_call_creds(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  tag(103), nullptr);
+                                  CoreTestFixture::tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv.Expect(tag(103), true);
-    cqv.Expect(tag(1), true);
+    cqv.Expect(CoreTestFixture::tag(103), true);
+    cqv.Expect(CoreTestFixture::tag(1), true);
     cqv.Verify();
 
     GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -450,11 +448,11 @@ static void test_request_with_server_rejecting_client_creds(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);

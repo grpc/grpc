@@ -31,8 +31,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -113,8 +111,8 @@ static void test_retry_cancel_after_first_attempt_starts(
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client starts recv_initial_metadata and recv_message, but not
@@ -127,8 +125,8 @@ static void test_retry_cancel_after_first_attempt_starts(
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client starts recv_trailing_metadata.
@@ -139,8 +137,8 @@ static void test_retry_cancel_after_first_attempt_starts(
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client unrefs the call without starting recv_trailing_metadata.
@@ -149,9 +147,9 @@ static void test_retry_cancel_after_first_attempt_starts(
 
   // The send ops batch and the first recv ops batch will fail in most
   // fixtures but will pass in the proxy fixtures on some platforms.
-  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
-  cqv.Expect(tag(2), grpc_core::CqVerifier::AnyStatus());
-  cqv.Expect(tag(3), true);
+  cqv.Expect(CoreTestFixture::tag(1), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(CoreTestFixture::tag(2), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(CoreTestFixture::tag(3), true);
   cqv.Verify();
 
   grpc_slice_unref(details);

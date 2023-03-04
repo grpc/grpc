@@ -48,8 +48,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -117,8 +115,8 @@ static void test_retry_transparent_goaway(const CoreTestConfiguration& config) {
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start a batch containing recv ops.
@@ -135,20 +133,20 @@ static void test_retry_transparent_goaway(const CoreTestConfiguration& config) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client send ops should now complete.
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   // Server should get a call.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   // Server receives the request.
@@ -157,10 +155,10 @@ static void test_retry_transparent_goaway(const CoreTestConfiguration& config) {
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
   cqv.Verify();
 
   // Server sends a response with status OK.
@@ -180,15 +178,15 @@ static void test_retry_transparent_goaway(const CoreTestConfiguration& config) {
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = &status_details;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // In principle, the server batch should complete before the client
   // recv ops batch, but in the proxy fixtures, there are multiple threads
   // involved, so the completion order tends to be a little racy.
-  cqv.Expect(tag(103), true);
-  cqv.Expect(tag(2), true);
+  cqv.Expect(CoreTestFixture::tag(103), true);
+  cqv.Expect(CoreTestFixture::tag(2), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);

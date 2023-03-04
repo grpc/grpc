@@ -32,8 +32,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name, size_t num_ops,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -114,14 +112,15 @@ static void test_cancel_before_invoke(CoreTestConfiguration config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, test_ops, tag(1), nullptr);
+  error =
+      grpc_call_start_batch(c, ops, test_ops, CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Filter based stack tracks this as a failed op, promise based stack tracks
   // it as a successful one with a failed request. The latter probably makes
   // more sense, but since we can't tell from outside which case we have we
   // accept either.
-  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(CoreTestFixture::tag(1), grpc_core::CqVerifier::AnyStatus());
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);

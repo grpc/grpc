@@ -30,8 +30,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_destroy(f->server);
@@ -88,20 +86,20 @@ static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+  error = grpc_server_request_call(f->server, &s, &call_details,
+                                   &request_metadata_recv, f->cq, f->cq,
+                                   CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(CoreTestFixture::tag(101), true);
   cqv.Verify();
 
   // should be able to shut down the server early
   // - and still complete the request
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_server_shutdown_and_notify(f->server, f->cq, CoreTestFixture::tag(1000));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -123,13 +121,13 @@ static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
-  cqv.Expect(tag(1000), true);
+  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1000), true);
   cqv.Verify();
   // Please refer https://github.com/grpc/grpc/issues/21221 for additional
   // details.

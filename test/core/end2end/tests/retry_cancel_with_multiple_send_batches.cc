@@ -54,8 +54,6 @@
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -135,8 +133,8 @@ static void test_retry_cancel_with_multiple_send_batches(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start a batch containing send_message.
@@ -145,8 +143,8 @@ static void test_retry_cancel_with_multiple_send_batches(
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start a batch containing send_trailing_metadata.
@@ -154,8 +152,8 @@ static void test_retry_cancel_with_multiple_send_batches(
   op = ops;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start a batch containing recv ops.
@@ -172,18 +170,18 @@ static void test_retry_cancel_with_multiple_send_batches(
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                CoreTestFixture::tag(4), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
   // Client ops should now complete.
-  cqv.Expect(tag(1), false);
-  cqv.Expect(tag(2), false);
-  cqv.Expect(tag(3), false);
-  cqv.Expect(tag(4), true);
+  cqv.Expect(CoreTestFixture::tag(1), false);
+  cqv.Expect(CoreTestFixture::tag(2), false);
+  cqv.Expect(CoreTestFixture::tag(3), false);
+  cqv.Expect(CoreTestFixture::tag(4), true);
   cqv.Verify();
 
   gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);

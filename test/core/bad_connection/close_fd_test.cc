@@ -62,8 +62,6 @@
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 typedef struct test_ctx test_ctx;
 
 struct test_ctx {
@@ -172,11 +170,12 @@ static void drain_and_destroy_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server() {
   if (!g_ctx.server) return;
-  grpc_server_shutdown_and_notify(g_ctx.server, g_ctx.shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(g_ctx.shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(1),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(g_ctx.server, g_ctx.shutdown_cq,
+                                  CoreTestFixture::tag(1000));
+  GPR_ASSERT(
+      grpc_completion_queue_pluck(g_ctx.shutdown_cq, CoreTestFixture::tag(1000),
+                                  grpc_timeout_seconds_to_deadline(1), nullptr)
+          .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(g_ctx.server);
   g_ctx.server = nullptr;
 }
@@ -284,17 +283,17 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(1), nullptr);
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(g_ctx.server, &server_call, &call_details,
                                    &request_metadata_recv, g_ctx.bound_cq,
-                                   g_ctx.cq, tag(101));
+                                   g_ctx.cq, CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(101));
+  GPR_ASSERT(event.tag == CoreTestFixture::tag(101));
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
 
   memset(ops, 0, sizeof(ops));
@@ -322,7 +321,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   close(fd);
 
   error = grpc_call_start_batch(server_call, ops, static_cast<size_t>(op - ops),
-                                tag(102), nullptr);
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   event = grpc_completion_queue_next(
@@ -335,7 +334,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   // failing due to stream closure.
   //
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(event.tag == tag(102));
+  GPR_ASSERT(event.tag == CoreTestFixture::tag(102));
 
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
@@ -355,7 +354,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   } else {
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(event.success == 1);
-    GPR_ASSERT(event.tag == tag(1));
+    GPR_ASSERT(event.tag == CoreTestFixture::tag(1));
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 
@@ -459,17 +458,17 @@ static void _test_close_before_server_send(fd_type fdtype) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(1), nullptr);
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(g_ctx.server, &server_call, &call_details,
                                    &request_metadata_recv, g_ctx.bound_cq,
-                                   g_ctx.cq, tag(101));
+                                   g_ctx.cq, CoreTestFixture::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(101));
+  GPR_ASSERT(event.tag == CoreTestFixture::tag(101));
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
 
   memset(ops, 0, sizeof(ops));
@@ -485,14 +484,14 @@ static void _test_close_before_server_send(fd_type fdtype) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(server_call, ops, static_cast<size_t>(op - ops),
-                                tag(102), nullptr);
+                                CoreTestFixture::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   event = grpc_completion_queue_next(
       g_ctx.bound_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(102));
+  GPR_ASSERT(event.tag == CoreTestFixture::tag(102));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -528,7 +527,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   // client.
   close(fd);
   error = grpc_call_start_batch(server_call, ops, static_cast<size_t>(op - ops),
-                                tag(103), nullptr);
+                                CoreTestFixture::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Batch operation succeeds on the server side
@@ -536,7 +535,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
       g_ctx.bound_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(103));
+  GPR_ASSERT(event.tag == CoreTestFixture::tag(103));
 
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
@@ -547,7 +546,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   //
   if (event.type == GRPC_OP_COMPLETE) {
     GPR_ASSERT(event.success == 1);
-    GPR_ASSERT(event.tag == tag(1));
+    GPR_ASSERT(event.tag == CoreTestFixture::tag(1));
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   } else {
     GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
@@ -667,7 +666,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
   close(fd);
 
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(1), nullptr);
+                                CoreTestFixture::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Status unavailable is returned to the client when client or server fd is
@@ -676,7 +675,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.success == 1);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(event.tag == tag(1));
+  GPR_ASSERT(event.tag == CoreTestFixture::tag(1));
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
 
   // No event is received on the server

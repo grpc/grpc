@@ -33,8 +33,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 void run_test(bool wait_for_ready) {
   gpr_log(GPR_INFO, "TEST: wait_for_ready=%d", wait_for_ready);
 
@@ -78,9 +76,9 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), tag(1),
-                                                   nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                   CoreTestFixture::tag(1), nullptr));
 
   {
     grpc_core::ExecCtx exec_ctx;
@@ -88,7 +86,7 @@ void run_test(bool wait_for_ready) {
   }
 
   // verify that all tags get completed
-  cqv.Expect(tag(1), true);
+  cqv.Expect(CoreTestFixture::tag(1), true);
   cqv.Verify();
 
   gpr_log(GPR_INFO, "call status: %d", status);

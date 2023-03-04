@@ -62,6 +62,8 @@ class CoreTestFixture {
   void InitServer(const grpc_core::ChannelArgs& args);
   void InitClient(const grpc_core::ChannelArgs& args);
 
+  static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+
  protected:
   void SetServer(grpc_server* server);
   void SetClient(grpc_channel* client);
@@ -73,19 +75,20 @@ class CoreTestFixture {
   void DrainCq() {
     grpc_event ev;
     do {
-      ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
+      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
                                       nullptr);
     } while (ev.type != GRPC_QUEUE_SHUTDOWN);
   }
 
   void ShutdownServer() {
     if (server_ == nullptr) return;
-    grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+    grpc_server_shutdown_and_notify(server_, cq_, CoreTestFixture::tag(1000));
     grpc_event ev;
     do {
       ev = grpc_completion_queue_next(
           f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
-    } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
+    } while (ev.type != GRPC_OP_COMPLETE ||
+             ev.tag != CoreTestFixture::tag(1000));
     grpc_server_destroy(f->server);
     server_ = nullptr;
   }
