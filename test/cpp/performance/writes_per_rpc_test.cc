@@ -184,10 +184,10 @@ static double UnaryPingPong(int request_size, int response_size) {
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
                       &server_env[0]->response_writer, fixture->cq(),
-                      fixture->cq(), CoreTestFixture::tag(0));
+                      fixture->cq(), grpc_core::CqVerifier::tag(0));
   service.RequestEcho(&server_env[1]->ctx, &server_env[1]->recv_request,
                       &server_env[1]->response_writer, fixture->cq(),
-                      fixture->cq(), CoreTestFixture::tag(1));
+                      fixture->cq(), grpc_core::CqVerifier::tag(1));
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   for (int iteration = 0; iteration < kIterations; iteration++) {
@@ -198,14 +198,15 @@ static double UnaryPingPong(int request_size, int response_size) {
     void* t;
     bool ok;
     response_reader->Finish(&recv_response, &recv_status,
-                            CoreTestFixture::tag(4));
+                            grpc_core::CqVerifier::tag(4));
     GPR_ASSERT(fixture->cq()->Next(&t, &ok));
     GPR_ASSERT(ok);
-    GPR_ASSERT(t == CoreTestFixture::tag(0) || t == CoreTestFixture::tag(1));
+    GPR_ASSERT(t == grpc_core::CqVerifier::tag(0) ||
+               t == grpc_core::CqVerifier::tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK,
-                                 CoreTestFixture::tag(3));
+                                 grpc_core::CqVerifier::tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);

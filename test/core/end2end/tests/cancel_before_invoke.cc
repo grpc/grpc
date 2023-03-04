@@ -112,15 +112,15 @@ static void test_cancel_before_invoke(CoreTestConfiguration config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error =
-      grpc_call_start_batch(c, ops, test_ops, CoreTestFixture::tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, test_ops, grpc_core::CqVerifier::tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Filter based stack tracks this as a failed op, promise based stack tracks
   // it as a successful one with a failed request. The latter probably makes
   // more sense, but since we can't tell from outside which case we have we
   // accept either.
-  cqv.Expect(CoreTestFixture::tag(1), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(grpc_core::CqVerifier::tag(1), grpc_core::CqVerifier::AnyStatus());
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);

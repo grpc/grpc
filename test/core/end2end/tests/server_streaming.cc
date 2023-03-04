@@ -105,7 +105,7 @@ static void test_server_streaming(CoreTestConfiguration config,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client sends close early
@@ -116,16 +116,16 @@ static void test_server_streaming(CoreTestConfiguration config,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(3), nullptr);
+                                grpc_core::CqVerifier::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(CoreTestFixture::tag(3), true);
+  cqv->Expect(grpc_core::CqVerifier::tag(3), true);
   cqv->Verify();
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(100));
+                                   grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(CoreTestFixture::tag(100), true);
+  cqv->Expect(grpc_core::CqVerifier::tag(100), true);
   cqv->Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -136,10 +136,10 @@ static void test_server_streaming(CoreTestConfiguration config,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(101), nullptr);
+                                grpc_core::CqVerifier::tag(101), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv->Expect(CoreTestFixture::tag(101), true);
+  cqv->Expect(grpc_core::CqVerifier::tag(101), true);
   cqv->Verify();
 
   // Server writes bunch of messages
@@ -154,9 +154,9 @@ static void test_server_streaming(CoreTestConfiguration config,
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(103), nullptr);
+                                  grpc_core::CqVerifier::tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv->Expect(CoreTestFixture::tag(103), true);
+    cqv->Expect(grpc_core::CqVerifier::tag(103), true);
     cqv->Verify();
 
     grpc_byte_buffer_destroy(response_payload);
@@ -179,12 +179,12 @@ static void test_server_streaming(CoreTestConfiguration config,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(104), nullptr);
+                                grpc_core::CqVerifier::tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   bool seen_status = false;
-  cqv->Expect(CoreTestFixture::tag(1),
+  cqv->Expect(grpc_core::CqVerifier::tag(1),
               grpc_core::CqVerifier::Maybe{&seen_status});
-  cqv->Expect(CoreTestFixture::tag(104), true);
+  cqv->Expect(grpc_core::CqVerifier::tag(104), true);
   cqv->Verify();
 
   // Client keeps reading messages till it gets the status
@@ -198,11 +198,11 @@ static void test_server_streaming(CoreTestConfiguration config,
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(102), nullptr);
+                                  grpc_core::CqVerifier::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv->Expect(CoreTestFixture::tag(1),
+    cqv->Expect(grpc_core::CqVerifier::tag(1),
                 grpc_core::CqVerifier::Maybe{&seen_status});
-    cqv->Expect(CoreTestFixture::tag(102), true);
+    cqv->Expect(grpc_core::CqVerifier::tag(102), true);
     cqv->Verify();
     if (request_payload_recv == nullptr) {
       // The transport has received the trailing metadata.
@@ -214,7 +214,7 @@ static void test_server_streaming(CoreTestConfiguration config,
   }
   GPR_ASSERT(num_messages_received == num_messages);
   if (!seen_status) {
-    cqv->Expect(CoreTestFixture::tag(1), true);
+    cqv->Expect(grpc_core::CqVerifier::tag(1), true);
     cqv->Verify();
   }
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);

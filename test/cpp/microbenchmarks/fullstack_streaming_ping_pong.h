@@ -71,12 +71,12 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
       service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                                fixture->cq(), CoreTestFixture::tag(0));
+                                fixture->cq(), grpc_core::CqVerifier::tag(0));
 
       ClientContext cli_ctx;
       ClientContextMutator cli_ctx_mut(&cli_ctx);
       auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(),
-                                              CoreTestFixture::tag(1));
+                                              grpc_core::CqVerifier::tag(1));
 
       // Establish async stream between client side and server side
       void* t;
@@ -94,11 +94,11 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       int ping_pong_cnt = 0;
       while (ping_pong_cnt < max_ping_pongs) {
         request_rw->Write(send_request,
-                          CoreTestFixture::tag(0));  // Start client send
+                          grpc_core::CqVerifier::tag(0));  // Start client send
         response_rw.Read(&recv_request,
-                         CoreTestFixture::tag(1));  // Start server recv
+                         grpc_core::CqVerifier::tag(1));  // Start server recv
         request_rw->Read(&recv_response,
-                         CoreTestFixture::tag(2));  // Start client recv
+                         grpc_core::CqVerifier::tag(2));  // Start client recv
 
         need_tags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
         while (need_tags) {
@@ -108,7 +108,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
 
           // If server recv is complete, start the server send operation
           if (i == 1) {
-            response_rw.Write(send_response, CoreTestFixture::tag(3));
+            response_rw.Write(send_response, grpc_core::CqVerifier::tag(3));
           }
 
           GPR_ASSERT(need_tags & (1 << i));
@@ -118,11 +118,11 @@ static void BM_StreamingPingPong(benchmark::State& state) {
         ping_pong_cnt++;
       }
 
-      request_rw->WritesDone(CoreTestFixture::tag(0));
-      response_rw.Finish(Status::OK, CoreTestFixture::tag(1));
+      request_rw->WritesDone(grpc_core::CqVerifier::tag(0));
+      response_rw.Finish(Status::OK, grpc_core::CqVerifier::tag(1));
 
       Status recv_status;
-      request_rw->Finish(&recv_status, CoreTestFixture::tag(2));
+      request_rw->Finish(&recv_status, grpc_core::CqVerifier::tag(2));
 
       need_tags = (1 << 0) | (1 << 1) | (1 << 2);
       while (need_tags) {
@@ -166,12 +166,12 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     ServerContextMutator svr_ctx_mut(&svr_ctx);
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
     service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                              fixture->cq(), CoreTestFixture::tag(0));
+                              fixture->cq(), grpc_core::CqVerifier::tag(0));
 
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
-    auto request_rw =
-        stub->AsyncBidiStream(&cli_ctx, fixture->cq(), CoreTestFixture::tag(1));
+    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(),
+                                            grpc_core::CqVerifier::tag(1));
 
     // Establish async stream between client side and server side
     void* t;
@@ -187,11 +187,11 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 
     for (auto _ : state) {
       request_rw->Write(send_request,
-                        CoreTestFixture::tag(0));  // Start client send
+                        grpc_core::CqVerifier::tag(0));  // Start client send
       response_rw.Read(&recv_request,
-                       CoreTestFixture::tag(1));  // Start server recv
+                       grpc_core::CqVerifier::tag(1));  // Start server recv
       request_rw->Read(&recv_response,
-                       CoreTestFixture::tag(2));  // Start client recv
+                       grpc_core::CqVerifier::tag(2));  // Start client recv
 
       need_tags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
       while (need_tags) {
@@ -201,7 +201,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 
         // If server recv is complete, start the server send operation
         if (i == 1) {
-          response_rw.Write(send_response, CoreTestFixture::tag(3));
+          response_rw.Write(send_response, grpc_core::CqVerifier::tag(3));
         }
 
         GPR_ASSERT(need_tags & (1 << i));
@@ -209,10 +209,10 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
       }
     }
 
-    request_rw->WritesDone(CoreTestFixture::tag(0));
-    response_rw.Finish(Status::OK, CoreTestFixture::tag(1));
+    request_rw->WritesDone(grpc_core::CqVerifier::tag(0));
+    response_rw.Finish(Status::OK, grpc_core::CqVerifier::tag(1));
     Status recv_status;
-    request_rw->Finish(&recv_status, CoreTestFixture::tag(2));
+    request_rw->Finish(&recv_status, grpc_core::CqVerifier::tag(2));
 
     need_tags = (1 << 0) | (1 << 1) | (1 << 2);
     while (need_tags) {
@@ -273,7 +273,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
       service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                                fixture->cq(), CoreTestFixture::tag(0));
+                                fixture->cq(), grpc_core::CqVerifier::tag(0));
 
       ClientContext cli_ctx;
       ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -281,7 +281,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
       // tag:1 here will never comes up, since we are not performing any op due
       // to initial metadata coalescing.
       auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(),
-                                              CoreTestFixture::tag(1));
+                                              grpc_core::CqVerifier::tag(1));
 
       void* t;
       bool ok;
@@ -292,10 +292,11 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
       while (ping_pong_cnt < max_ping_pongs) {
         if (ping_pong_cnt == max_ping_pongs - 1) {
           request_rw->WriteLast(send_request, WriteOptions(),
-                                CoreTestFixture::tag(2));
+                                grpc_core::CqVerifier::tag(2));
         } else {
-          request_rw->Write(send_request,
-                            CoreTestFixture::tag(2));  // Start client send
+          request_rw->Write(
+              send_request,
+              grpc_core::CqVerifier::tag(2));  // Start client send
         }
 
         int await_tags = (1 << 2);
@@ -317,9 +318,9 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
         }
 
         response_rw.Read(&recv_request,
-                         CoreTestFixture::tag(3));  // Start server recv
+                         grpc_core::CqVerifier::tag(3));  // Start server recv
         request_rw->Read(&recv_response,
-                         CoreTestFixture::tag(4));  // Start client recv
+                         grpc_core::CqVerifier::tag(4));  // Start client recv
 
         await_tags |= (1 << 3) | (1 << 4);
         expect_tags = await_tags;
@@ -335,11 +336,12 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
             if (ping_pong_cnt == max_ping_pongs - 1) {
               if (write_and_finish == 1) {
                 response_rw.WriteAndFinish(send_response, WriteOptions(),
-                                           Status::OK, CoreTestFixture::tag(5));
+                                           Status::OK,
+                                           grpc_core::CqVerifier::tag(5));
                 expect_tags |= (1 << 5);
               } else {
                 response_rw.WriteLast(send_response, WriteOptions(),
-                                      CoreTestFixture::tag(5));
+                                      grpc_core::CqVerifier::tag(5));
                 // WriteLast buffers the write, so it's possible neither server
                 // write op nor client read op will finish inside the while
                 // loop.
@@ -348,7 +350,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
                 expect_tags |= (1 << 5);
               }
             } else {
-              response_rw.Write(send_response, CoreTestFixture::tag(5));
+              response_rw.Write(send_response, grpc_core::CqVerifier::tag(5));
               expect_tags |= (1 << 5);
             }
           }
@@ -375,7 +377,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
       // No message write or initial metadata write happened yet.
       if (max_ping_pongs == 0) {
-        request_rw->WritesDone(CoreTestFixture::tag(6));
+        request_rw->WritesDone(grpc_core::CqVerifier::tag(6));
         // wait for server call data structure(call_hook, etc.) to be
         // initialized, since initial metadata is corked.
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -385,15 +387,15 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
           expect_tags &= ~(1 << i);
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
         }
-        response_rw.Finish(Status::OK, CoreTestFixture::tag(7));
+        response_rw.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
       } else {
         if (write_and_finish != 1) {
-          response_rw.Finish(Status::OK, CoreTestFixture::tag(7));
+          response_rw.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
         }
       }
 
       Status recv_status;
-      request_rw->Finish(&recv_status, CoreTestFixture::tag(8));
+      request_rw->Finish(&recv_status, grpc_core::CqVerifier::tag(8));
 
       while (expect_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));

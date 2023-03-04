@@ -52,9 +52,10 @@ static void empty_batch_body(CoreTestConfiguration /*config*/,
                                deadline, nullptr);
   GPR_ASSERT(c);
 
-  error = grpc_call_start_batch(c, op, 0, CoreTestFixture::tag(1), nullptr);
+  error =
+      grpc_call_start_batch(c, op, 0, grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   grpc_call_unref(c);

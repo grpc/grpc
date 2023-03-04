@@ -56,9 +56,9 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
 
   error = grpc_server_request_registered_call(
       server, registered_method, &s, &deadline, &request_metadata_recv,
-      &payload, cq, cq, CoreTestFixture::tag(101));
+      &payload, cq, cq, grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   GPR_ASSERT(payload != nullptr);

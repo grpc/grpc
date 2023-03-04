@@ -357,17 +357,18 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
           stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
       service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
-                            cq_.get(), cq_.get(), CoreTestFixture::tag(2));
+                            cq_.get(), cq_.get(),
+                            grpc_core::CqVerifier::tag(2));
 
       response_reader->Finish(&recv_response, &recv_status,
-                              CoreTestFixture::tag(4));
+                              grpc_core::CqVerifier::tag(4));
 
       Verifier().Expect(2, true).Verify(cq_.get());
       EXPECT_EQ(send_request.message(), recv_request.message());
 
       send_response.set_message(recv_request.message());
       response_writer.Finish(send_response, Status::OK,
-                             CoreTestFixture::tag(3));
+                             grpc_core::CqVerifier::tag(3));
       Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
       EXPECT_EQ(send_response.message(), recv_response.message());
@@ -411,12 +412,12 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
-  srv_ctx.AsyncNotifyWhenDone(CoreTestFixture::tag(5));
+  srv_ctx.AsyncNotifyWhenDone(grpc_core::CqVerifier::tag(5));
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
 
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -427,7 +428,7 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
       Status(
           static_cast<StatusCode>(recv_request.param().expected_error().code()),
           recv_request.param().expected_error().error_message()),
-      CoreTestFixture::tag(3));
+      grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Expect(5, true).Verify(cq_.get());
 
   EXPECT_EQ(recv_response.message(), "");
@@ -519,15 +520,16 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
   Verifier().Verify(cq_.get(), time_now);
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get(), time_limit);
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(3));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(
       cq_.get(), std::chrono::system_clock::time_point::max());
 
@@ -563,17 +565,18 @@ TEST_P(AsyncEnd2endTest, DoThenAsyncNextRpc) {
   auto resp_writer_ptr = &response_writer;
   auto lambda_2 = [&, this, resp_writer_ptr]() {
     service_->RequestEcho(&srv_ctx, &recv_request, resp_writer_ptr, cq_.get(),
-                          cq_.get(), CoreTestFixture::tag(2));
+                          cq_.get(), grpc_core::CqVerifier::tag(2));
   };
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get(), time_limit, lambda_2);
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
   auto lambda_3 = [resp_writer_ptr, send_response]() {
-    resp_writer_ptr->Finish(send_response, Status::OK, CoreTestFixture::tag(3));
+    resp_writer_ptr->Finish(send_response, Status::OK,
+                            grpc_core::CqVerifier::tag(3));
   };
   Verifier().Expect(3, true).Expect(4, true).Verify(
       cq_.get(), std::chrono::system_clock::time_point::max(), lambda_3);
@@ -598,30 +601,30 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(),
-                                CoreTestFixture::tag(1)));
+                                grpc_core::CqVerifier::tag(1)));
 
   service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                 CoreTestFixture::tag(2));
+                                 grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(2, true).Expect(1, true).Verify(cq_.get());
 
-  cli_stream->Write(send_request, CoreTestFixture::tag(3));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(4));
+  cli_stream->Write(send_request, grpc_core::CqVerifier::tag(3));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
-  cli_stream->Write(send_request, CoreTestFixture::tag(5));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(6));
+  cli_stream->Write(send_request, grpc_core::CqVerifier::tag(5));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
 
   EXPECT_EQ(send_request.message(), recv_request.message());
-  cli_stream->WritesDone(CoreTestFixture::tag(7));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(8));
+  cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Finish(send_response, Status::OK, CoreTestFixture::tag(9));
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(10));
+  srv_stream.Finish(send_response, Status::OK, grpc_core::CqVerifier::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(10));
   Verifier().Expect(9, true).Expect(10, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
@@ -646,34 +649,35 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   // tag:1 never comes up since no op is performed
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(),
-                                CoreTestFixture::tag(1)));
+                                grpc_core::CqVerifier::tag(1)));
 
   service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                 CoreTestFixture::tag(2));
+                                 grpc_core::CqVerifier::tag(2));
 
-  cli_stream->Write(send_request, CoreTestFixture::tag(3));
+  cli_stream->Write(send_request, grpc_core::CqVerifier::tag(3));
 
   bool seen3 = false;
 
   Verifier().Expect(2, true).ExpectMaybe(3, true, &seen3).Verify(cq_.get());
 
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(4));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
 
   Verifier().ExpectUnless(3, true, seen3).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(send_request.message(), recv_request.message());
 
-  cli_stream->WriteLast(send_request, WriteOptions(), CoreTestFixture::tag(5));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(6));
+  cli_stream->WriteLast(send_request, WriteOptions(),
+                        grpc_core::CqVerifier::tag(5));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(7));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(7));
   Verifier().Expect(7, false).Verify(cq_.get());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Finish(send_response, Status::OK, CoreTestFixture::tag(8));
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(9));
+  srv_stream.Finish(send_response, Status::OK, grpc_core::CqVerifier::tag(8));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
   Verifier().Expect(8, true).Expect(9, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
@@ -696,31 +700,31 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreaming) {
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(),
-                                 CoreTestFixture::tag(1)));
+                                 grpc_core::CqVerifier::tag(1)));
 
   service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                   cq_.get(), cq_.get(),
-                                  CoreTestFixture::tag(2));
+                                  grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Write(send_response, CoreTestFixture::tag(3));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(4));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(3));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  srv_stream.Write(send_response, CoreTestFixture::tag(5));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(5));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(7));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(8));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
   Verifier().Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -742,31 +746,31 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreamingWithCoalescingApiWAF) {
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(),
-                                 CoreTestFixture::tag(1)));
+                                 grpc_core::CqVerifier::tag(1)));
 
   service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                   cq_.get(), cq_.get(),
-                                  CoreTestFixture::tag(2));
+                                  grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Write(send_response, CoreTestFixture::tag(3));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(4));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(3));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
   srv_stream.WriteAndFinish(send_response, WriteOptions(), Status::OK,
-                            CoreTestFixture::tag(5));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
+                            grpc_core::CqVerifier::tag(5));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(7));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(7));
   Verifier().Expect(7, false).Verify(cq_.get());
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(8));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(8, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -788,31 +792,32 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreamingWithCoalescingApiWL) {
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(),
-                                 CoreTestFixture::tag(1)));
+                                 grpc_core::CqVerifier::tag(1)));
 
   service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                   cq_.get(), cq_.get(),
-                                  CoreTestFixture::tag(2));
+                                  grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Write(send_response, CoreTestFixture::tag(3));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(4));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(3));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  srv_stream.WriteLast(send_response, WriteOptions(), CoreTestFixture::tag(5));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(7));
+  srv_stream.WriteLast(send_response, WriteOptions(),
+                       grpc_core::CqVerifier::tag(5));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
   Verifier().Expect(5, true).Expect(6, true).Expect(7, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(8));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(8, false).Verify(cq_.get());
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
   Verifier().Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -833,31 +838,31 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
 
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(
-          stub_->AsyncBidiStream(&cli_ctx, cq_.get(), CoreTestFixture::tag(1)));
+      cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(),
+                                        grpc_core::CqVerifier::tag(1)));
 
   service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                              CoreTestFixture::tag(2));
+                              grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
-  cli_stream->Write(send_request, CoreTestFixture::tag(3));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(4));
+  cli_stream->Write(send_request, grpc_core::CqVerifier::tag(3));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Write(send_response, CoreTestFixture::tag(5));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(5));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->WritesDone(CoreTestFixture::tag(7));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(8));
+  cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(9));
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(10));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(10));
   Verifier().Expect(9, true).Expect(10, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -879,34 +884,35 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   send_request.set_message(GetParam().message_content);
   cli_ctx.set_initial_metadata_corked(true);
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(
-          stub_->AsyncBidiStream(&cli_ctx, cq_.get(), CoreTestFixture::tag(1)));
+      cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(),
+                                        grpc_core::CqVerifier::tag(1)));
 
   service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                              CoreTestFixture::tag(2));
+                              grpc_core::CqVerifier::tag(2));
 
-  cli_stream->WriteLast(send_request, WriteOptions(), CoreTestFixture::tag(3));
+  cli_stream->WriteLast(send_request, WriteOptions(),
+                        grpc_core::CqVerifier::tag(3));
 
   bool seen3 = false;
 
   Verifier().Expect(2, true).ExpectMaybe(3, true, &seen3).Verify(cq_.get());
 
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(4));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
 
   Verifier().ExpectUnless(3, true, seen3).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(5));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(5));
   Verifier().Expect(5, false).Verify(cq_.get());
 
   send_response.set_message(recv_request.message());
   srv_stream.WriteAndFinish(send_response, WriteOptions(), Status::OK,
-                            CoreTestFixture::tag(6));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(7));
+                            grpc_core::CqVerifier::tag(6));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(7));
   Verifier().Expect(6, true).Expect(7, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(8));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(8, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -928,34 +934,36 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   send_request.set_message(GetParam().message_content);
   cli_ctx.set_initial_metadata_corked(true);
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(
-          stub_->AsyncBidiStream(&cli_ctx, cq_.get(), CoreTestFixture::tag(1)));
+      cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(),
+                                        grpc_core::CqVerifier::tag(1)));
 
   service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                              CoreTestFixture::tag(2));
+                              grpc_core::CqVerifier::tag(2));
 
-  cli_stream->WriteLast(send_request, WriteOptions(), CoreTestFixture::tag(3));
+  cli_stream->WriteLast(send_request, WriteOptions(),
+                        grpc_core::CqVerifier::tag(3));
 
   bool seen3 = false;
 
   Verifier().Expect(2, true).ExpectMaybe(3, true, &seen3).Verify(cq_.get());
 
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(4));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
 
   Verifier().ExpectUnless(3, true, seen3).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(5));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(5));
   Verifier().Expect(5, false).Verify(cq_.get());
 
   send_response.set_message(recv_request.message());
-  srv_stream.WriteLast(send_response, WriteOptions(), CoreTestFixture::tag(6));
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(7));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(8));
+  srv_stream.WriteLast(send_response, WriteOptions(),
+                       grpc_core::CqVerifier::tag(6));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(6, true).Expect(7, true).Expect(8, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
   Verifier().Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -986,10 +994,10 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   const auto& client_initial_metadata = srv_ctx.client_metadata();
@@ -1002,7 +1010,8 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   EXPECT_GE(client_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(3));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
@@ -1028,15 +1037,15 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
-  response_reader->ReadInitialMetadata(CoreTestFixture::tag(4));
+  response_reader->ReadInitialMetadata(grpc_core::CqVerifier::tag(4));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
   srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
-  response_writer.SendInitialMetadata(CoreTestFixture::tag(3));
+  response_writer.SendInitialMetadata(grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta1.second,
@@ -1046,9 +1055,10 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   EXPECT_EQ(2, server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(5));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(5));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(6));
+                          grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
@@ -1072,17 +1082,17 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
 
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(),
-                                 CoreTestFixture::tag(1)));
-  cli_stream->ReadInitialMetadata(CoreTestFixture::tag(11));
+                                 grpc_core::CqVerifier::tag(1)));
+  cli_stream->ReadInitialMetadata(grpc_core::CqVerifier::tag(11));
   service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                   cq_.get(), cq_.get(),
-                                  CoreTestFixture::tag(2));
+                                  grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
   srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
-  srv_stream.SendInitialMetadata(CoreTestFixture::tag(10));
+  srv_stream.SendInitialMetadata(grpc_core::CqVerifier::tag(10));
   Verifier().Expect(10, true).Expect(11, true).Verify(cq_.get());
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta1.second,
@@ -1091,20 +1101,20 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
             ToString(server_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(2, server_initial_metadata.size());
 
-  srv_stream.Write(send_response, CoreTestFixture::tag(3));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(3));
 
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(4));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
-  srv_stream.Write(send_response, CoreTestFixture::tag(5));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(5));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
 
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(7));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(8));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
   Verifier().Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -1129,10 +1139,10 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
 
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(),
-                                 CoreTestFixture::tag(1)));
+                                 grpc_core::CqVerifier::tag(1)));
   service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                   cq_.get(), cq_.get(),
-                                  CoreTestFixture::tag(2));
+                                  grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -1140,9 +1150,9 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
   srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
   send_response.set_message(recv_request.message());
-  srv_stream.Write(send_response, CoreTestFixture::tag(3));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(3));
 
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(4));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
@@ -1153,15 +1163,15 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
             ToString(server_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(2, server_initial_metadata.size());
 
-  srv_stream.Write(send_response, CoreTestFixture::tag(5));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(5));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
 
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(7));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(8));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
   Verifier().Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -1187,19 +1197,20 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(5));
+                          grpc_core::CqVerifier::tag(5));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
-  response_writer.SendInitialMetadata(CoreTestFixture::tag(3));
+  response_writer.SendInitialMetadata(grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Verify(cq_.get());
 
   send_response.set_message(recv_request.message());
   srv_ctx.AddTrailingMetadata(meta1.first, meta1.second);
   srv_ctx.AddTrailingMetadata(meta2.first, meta2.second);
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(4));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(4));
 
   Verifier().Expect(4, true).Expect(5, true).Verify(cq_.get());
 
@@ -1247,10 +1258,10 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
-  response_reader->ReadInitialMetadata(CoreTestFixture::tag(4));
+  response_reader->ReadInitialMetadata(grpc_core::CqVerifier::tag(4));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   const auto& client_initial_metadata = srv_ctx.client_metadata();
@@ -1262,7 +1273,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
-  response_writer.SendInitialMetadata(CoreTestFixture::tag(3));
+  response_writer.SendInitialMetadata(grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta3.second,
@@ -1274,9 +1285,10 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   send_response.set_message(recv_request.message());
   srv_ctx.AddTrailingMetadata(meta5.first, meta5.second);
   srv_ctx.AddTrailingMetadata(meta6.first, meta6.second);
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(5));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(5));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(6));
+                          grpc_core::CqVerifier::tag(6));
 
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
 
@@ -1308,11 +1320,11 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
 
-  srv_ctx.AsyncNotifyWhenDone(CoreTestFixture::tag(5));
+  srv_ctx.AsyncNotifyWhenDone(grpc_core::CqVerifier::tag(5));
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -1342,17 +1354,18 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
 
-  srv_ctx.AsyncNotifyWhenDone(CoreTestFixture::tag(5));
+  srv_ctx.AsyncNotifyWhenDone(grpc_core::CqVerifier::tag(5));
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), CoreTestFixture::tag(2));
+                        cq_.get(), grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(3));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Expect(5, true).Verify(cq_.get());
   EXPECT_FALSE(srv_ctx.IsCancelled());
 
@@ -1380,7 +1393,7 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
       stub->AsyncUnimplemented(&cli_ctx, send_request, cq_.get()));
 
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
   Verifier().Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
@@ -1429,13 +1442,13 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
         stub_->AsyncRequestStream(&cli_ctx, &recv_response, &cli_cq,
-                                  CoreTestFixture::tag(1)));
+                                  grpc_core::CqVerifier::tag(1)));
 
     // On the server, request to be notified of 'RequestStream' calls
     // and receive the 'RequestStream' call just made by the client
-    srv_ctx.AsyncNotifyWhenDone(CoreTestFixture::tag(11));
+    srv_ctx.AsyncNotifyWhenDone(grpc_core::CqVerifier::tag(11));
     service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                   CoreTestFixture::tag(2));
+                                   grpc_core::CqVerifier::tag(2));
     std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
     t1.join();
@@ -1470,7 +1483,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
             .Expect(tag_idx, expected_client_cq_result)
             .Verify(&cli_cq, ignore_client_cq_result);
       }
-      cli_stream->WritesDone(CoreTestFixture::tag(6));
+      cli_stream->WritesDone(grpc_core::CqVerifier::tag(6));
       // Ignore ok on WritesDone since cancel can affect it
       Verifier()
           .Expect(6, expected_client_cq_result)
@@ -1541,11 +1554,11 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // Server sends the final message and cancelled status (but the RPC is
     // already cancelled at this point. So we expect the operation to fail)
     srv_stream.Finish(send_response, Status::CANCELLED,
-                      CoreTestFixture::tag(9));
+                      grpc_core::CqVerifier::tag(9));
     Verifier().Expect(9, false).Verify(cq_.get());
 
     // Client will see the cancellation
-    cli_stream->Finish(&recv_status, CoreTestFixture::tag(10));
+    cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(10));
     Verifier().Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
@@ -1586,13 +1599,13 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     CompletionQueue cli_cq;
     std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
         stub_->AsyncResponseStream(&cli_ctx, send_request, &cli_cq,
-                                   CoreTestFixture::tag(1)));
+                                   grpc_core::CqVerifier::tag(1)));
     // On the server, request to be notified of 'ResponseStream' calls and
     // receive the call just made by the client
-    srv_ctx.AsyncNotifyWhenDone(CoreTestFixture::tag(11));
+    srv_ctx.AsyncNotifyWhenDone(grpc_core::CqVerifier::tag(11));
     service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                     cq_.get(), cq_.get(),
-                                    CoreTestFixture::tag(2));
+                                    grpc_core::CqVerifier::tag(2));
 
     std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
@@ -1692,11 +1705,11 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // know that cq results are supposed to return false on server.
 
     // Server finishes the stream (but the RPC is already cancelled)
-    srv_stream.Finish(Status::CANCELLED, CoreTestFixture::tag(9));
+    srv_stream.Finish(Status::CANCELLED, grpc_core::CqVerifier::tag(9));
     Verifier().Expect(9, false).Verify(cq_.get());
 
     // Client will see the cancellation
-    cli_stream->Finish(&recv_status, CoreTestFixture::tag(10));
+    cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(10));
     Verifier().Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
@@ -1738,20 +1751,20 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // Initiate the call from the client side
     std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
         cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(),
-                                          CoreTestFixture::tag(1)));
+                                          grpc_core::CqVerifier::tag(1)));
 
     // On the server, request to be notified of the 'BidiStream' call and
     // receive the call just made by the client
-    srv_ctx.AsyncNotifyWhenDone(CoreTestFixture::tag(11));
+    srv_ctx.AsyncNotifyWhenDone(grpc_core::CqVerifier::tag(11));
     service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                CoreTestFixture::tag(2));
+                                grpc_core::CqVerifier::tag(2));
     Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
     auto verif = Verifier();
 
     // Client sends the first and the only message
     send_request.set_message("Ping");
-    cli_stream->Write(send_request, CoreTestFixture::tag(3));
+    cli_stream->Write(send_request, grpc_core::CqVerifier::tag(3));
     verif.Expect(3, true);
 
     bool expected_cq_result = true;
@@ -1796,7 +1809,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       verif.Expect(11, true);
     }
 
-    srv_stream.Read(&recv_request, CoreTestFixture::tag(4));
+    srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
     verif.Expect(4, expected_cq_result);
     got_tag = tag_3_done ? 3 : verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
@@ -1814,10 +1827,10 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     }
 
     send_response.set_message("Pong");
-    srv_stream.Write(send_response, CoreTestFixture::tag(5));
+    srv_stream.Write(send_response, grpc_core::CqVerifier::tag(5));
     verif.Expect(5, expected_cq_result);
 
-    cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
+    cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
     verif.Expect(6, expected_cq_result);
     got_tag = verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
@@ -1835,7 +1848,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     }
 
     // This is expected to succeed in all cases
-    cli_stream->WritesDone(CoreTestFixture::tag(7));
+    cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
     verif.Expect(7, true);
     // TODO(vjpai): Consider whether the following is too flexible
     // or whether it should just be reset to ignore_cq_result
@@ -1854,7 +1867,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // server_try_cancel. This is because at this point, either there are no
     // more msgs from the client (because client called WritesDone) or the RPC
     // is cancelled on the server
-    srv_stream.Read(&recv_request, CoreTestFixture::tag(8));
+    srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(8));
     verif.Expect(8, false);
     got_tag = verif.Next(cq_.get(), ignore_cq_result);
     GPR_ASSERT((got_tag == 8) || (got_tag == 11 && want_done_tag));
@@ -1886,10 +1899,10 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // the value of `server_try_cancel` is). So, from this point forward, we
     // know that cq results are supposed to return false on server.
 
-    srv_stream.Finish(Status::CANCELLED, CoreTestFixture::tag(9));
+    srv_stream.Finish(Status::CANCELLED, grpc_core::CqVerifier::tag(9));
     Verifier().Expect(9, false).Verify(cq_.get());
 
-    cli_stream->Finish(&recv_status, CoreTestFixture::tag(10));
+    cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(10));
     Verifier().Expect(10, true).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());

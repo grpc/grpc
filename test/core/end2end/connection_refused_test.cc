@@ -107,9 +107,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                   CoreTestFixture::tag(1), nullptr));
+                                   grpc_core::CqVerifier::tag(1), nullptr));
   // verify that all tags get completed
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   if (wait_for_ready) {

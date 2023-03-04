@@ -147,15 +147,15 @@ static void test_retry_cancel_during_delay(CoreTestConfiguration config,
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call and fails with retryable status.
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -181,10 +181,10 @@ static void test_retry_cancel_during_delay(CoreTestConfiguration config,
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
 
   grpc_call_unref(s);
@@ -197,13 +197,13 @@ static void test_retry_cancel_during_delay(CoreTestConfiguration config,
   // delay is longer than the call's deadline.
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(201));
+                                   grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   gpr_timespec finish_time = gpr_now(GPR_CLOCK_MONOTONIC);

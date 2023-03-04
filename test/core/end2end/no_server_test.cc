@@ -78,7 +78,7 @@ void run_test(bool wait_for_ready) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                   CoreTestFixture::tag(1), nullptr));
+                                   grpc_core::CqVerifier::tag(1), nullptr));
 
   {
     grpc_core::ExecCtx exec_ctx;
@@ -86,7 +86,7 @@ void run_test(bool wait_for_ready) {
   }
 
   // verify that all tags get completed
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   gpr_log(GPR_INFO, "call status: %d", status);

@@ -153,7 +153,7 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client sends initial metadata and a message.
@@ -166,17 +166,17 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.send_message.send_message = request_payload;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(2), nullptr);
+                                grpc_core::CqVerifier::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify();
 
   // Server gets a call with received initial metadata.
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -195,9 +195,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
 
   // Client sends a second message.
@@ -207,9 +207,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.send_message.send_message = request2_payload;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(3), nullptr);
+                                grpc_core::CqVerifier::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(3), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(3), true);
   cqv.Verify();
 
   // Server receives the second message.
@@ -219,9 +219,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.recv_message.recv_message = &request2_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(103), nullptr);
+                                grpc_core::CqVerifier::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(103), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Verify();
 
   // Server sends both initial and trailing metadata.
@@ -239,9 +239,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.send_status_from_server.status_details = &status_details;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(104), nullptr);
+                                grpc_core::CqVerifier::tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(104), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(104), true);
   cqv.Verify();
 
   // Clean up from first attempt.
@@ -261,9 +261,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   // Server gets a second call (the retry).
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(201));
+                                   grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(201), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(201), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -282,9 +282,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(202), nullptr);
+                                grpc_core::CqVerifier::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(202), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(202), true);
   cqv.Verify();
 
   // Server receives a second message.
@@ -294,9 +294,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.recv_message.recv_message = &request2_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(203), nullptr);
+                                grpc_core::CqVerifier::tag(203), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(203), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(203), true);
   cqv.Verify();
 
   // Client sends a third message and a close.
@@ -308,9 +308,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(4), nullptr);
+                                grpc_core::CqVerifier::tag(4), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(4), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(4), true);
   cqv.Verify();
 
   // Server receives a third message.
@@ -320,9 +320,9 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.recv_message.recv_message = &request3_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(204), nullptr);
+                                grpc_core::CqVerifier::tag(204), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(204), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(204), true);
   cqv.Verify();
 
   // Server receives a close and sends initial metadata, a message, and
@@ -346,10 +346,10 @@ static void test_retry_streaming(const CoreTestConfiguration& config) {
   op->data.send_status_from_server.status_details = &status_details;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(205), nullptr);
+                                grpc_core::CqVerifier::tag(205), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(205), true);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(205), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);

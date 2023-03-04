@@ -114,7 +114,7 @@ void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub->AsyncEcho(&cli_ctx, send_request, &cq));
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(1));
+                          grpc_core::CqVerifier::tag(1));
   Verifier().Expect(1, true).Verify(&cq);
   EXPECT_EQ(send_request.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
@@ -137,19 +137,19 @@ void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub->AsyncResponseStream(&cli_ctx, send_request, &cq,
-                                CoreTestFixture::tag(1)));
+                                grpc_core::CqVerifier::tag(1)));
   Verifier().Expect(1, true).Verify(&cq);
   // Read the expected number of messages
   for (int i = 0; i < kNumStreamingMessages; i++) {
-    cli_stream->Read(&recv_response, CoreTestFixture::tag(2));
+    cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(2));
     Verifier().Expect(2, true).Verify(&cq);
     ASSERT_EQ(recv_response.message(), send_request.message());
   }
   // The next read should fail
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(3));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, false).Verify(&cq);
   // Get the status
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(4));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(4, true).Verify(&cq);
   EXPECT_TRUE(recv_status.ok());
 }

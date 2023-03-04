@@ -270,7 +270,8 @@ static void drain_cq(grpc_completion_queue* /*cq*/) {
 
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, CoreTestFixture::tag(1));
+  grpc_server_shutdown_and_notify(f->server, f->cq,
+                                  grpc_core::CqVerifier::tag(1));
   expect_tag(1, true);
   verify_tags(five_seconds_from_now());
   grpc_server_destroy(f->server);
@@ -336,13 +337,13 @@ static void simple_request_body(CoreTestConfiguration /* config */,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Register a call at the server-side to match the incoming client call
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(2));
+                                   grpc_core::CqVerifier::tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // We expect that the server call creation callback (and no others) will
@@ -381,7 +382,7 @@ static void simple_request_body(CoreTestConfiguration /* config */,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(3), nullptr);
+                                grpc_core::CqVerifier::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Both the client request and server response batches should get complete

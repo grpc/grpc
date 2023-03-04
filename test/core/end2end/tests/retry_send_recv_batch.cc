@@ -114,7 +114,7 @@ static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client starts a batch with send_message and recv_trailing_metadata.
@@ -129,15 +129,15 @@ static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(2), nullptr);
+                                grpc_core::CqVerifier::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call.
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   // Client starts a batch containing recv_message.
@@ -147,7 +147,7 @@ static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(3), nullptr);
+                                grpc_core::CqVerifier::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server fails the call with a non-retriable status.
@@ -165,13 +165,13 @@ static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(102), true);
-  cqv.Expect(CoreTestFixture::tag(1), true);
-  cqv.Expect(CoreTestFixture::tag(2), true);
-  cqv.Expect(CoreTestFixture::tag(3), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(3), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);

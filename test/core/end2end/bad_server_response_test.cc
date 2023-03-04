@@ -103,6 +103,8 @@ static grpc_closure on_read;
 static grpc_closure on_writing_settings_frame;
 static grpc_closure on_write;
 
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+
 static void done_write(void* /*arg*/, grpc_error_handle error) {
   GPR_ASSERT(error.ok());
   gpr_atm_rel_store(&state.done_atm, 1);
@@ -246,11 +248,11 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                tag(1), nullptr);
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == expected_status);

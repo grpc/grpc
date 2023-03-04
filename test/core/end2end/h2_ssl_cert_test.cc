@@ -287,7 +287,8 @@ static void drain_cq(grpc_completion_queue* cq) {
 // Side effect - Also shuts down and drains the completion queue.
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, CoreTestFixture::tag(1000));
+  grpc_server_shutdown_and_notify(f->server, f->cq,
+                                  grpc_core::CqVerifier::tag(1000));
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_server_destroy(f->server);
@@ -323,10 +324,10 @@ static void simple_request_body(CoreTestFixture f,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(1), expected_result == SUCCESS);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), expected_result == SUCCESS);
   cqv.Verify();
 
   grpc_call_unref(c);

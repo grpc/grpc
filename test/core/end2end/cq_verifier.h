@@ -73,6 +73,8 @@ class CqVerifier {
 
   std::string ToString() const;
 
+  static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+
  private:
   struct Expectation {
     SourceLocation location;

@@ -133,21 +133,21 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_event ev = grpc_completion_queue_next(
       f.cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == CoreTestFixture::tag(1) ||
-             ev.tag == CoreTestFixture::tag(101));
+  GPR_ASSERT(ev.tag == grpc_core::CqVerifier::tag(1) ||
+             ev.tag == grpc_core::CqVerifier::tag(101));
 
-  if (ev.tag == CoreTestFixture::tag(101)) {
+  if (ev.tag == grpc_core::CqVerifier::tag(101)) {
     // Request got through to the server before connection timeout
 
     // Wait for the channel to reach its max age
@@ -156,7 +156,7 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
 
     // After the channel reaches its max age, we still do nothing here. And wait
     // for it to use up its max age grace period.
-    cqv->Expect(CoreTestFixture::tag(1), true);
+    cqv->Expect(grpc_core::CqVerifier::tag(1), true);
     cqv->Verify();
 
     gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
@@ -188,9 +188,9 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(102), nullptr);
+                                  grpc_core::CqVerifier::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv->Expect(CoreTestFixture::tag(102), true);
+    cqv->Expect(grpc_core::CqVerifier::tag(102), true);
     cqv->Verify();
 
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
@@ -202,7 +202,7 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv->Expect(tag(0xdead), true);
   if (s == nullptr) {
-    cqv->Expect(CoreTestFixture::tag(101), false);
+    cqv->Expect(grpc_core::CqVerifier::tag(101), false);
   }
   cqv->Verify();
 
@@ -292,21 +292,21 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_event ev = grpc_completion_queue_next(
       f.cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == CoreTestFixture::tag(1) ||
-             ev.tag == CoreTestFixture::tag(101));
+  GPR_ASSERT(ev.tag == grpc_core::CqVerifier::tag(1) ||
+             ev.tag == grpc_core::CqVerifier::tag(101));
 
-  if (ev.tag == CoreTestFixture::tag(101)) {
+  if (ev.tag == grpc_core::CqVerifier::tag(101)) {
     // Request got through to the server before connection timeout
 
     // Wait for the channel to reach its max age
@@ -339,11 +339,11 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(102), nullptr);
+                                  grpc_core::CqVerifier::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv->Expect(CoreTestFixture::tag(102), true);
-    cqv->Expect(CoreTestFixture::tag(1), true);
+    cqv->Expect(grpc_core::CqVerifier::tag(102), true);
+    cqv->Expect(grpc_core::CqVerifier::tag(1), true);
     cqv->Verify();
 
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
@@ -355,7 +355,7 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv->Expect(tag(0xdead), true);
   if (s == nullptr) {
-    cqv->Expect(CoreTestFixture::tag(101), false);
+    cqv->Expect(grpc_core::CqVerifier::tag(101), false);
   }
   cqv->Verify();
 

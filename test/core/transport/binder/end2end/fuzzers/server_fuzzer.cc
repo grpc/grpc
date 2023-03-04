@@ -62,7 +62,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_call(server, &call1, &call_details1,
                                         &request_metadata1, cq, cq,
-                                        CoreTestFixture::tag(1)));
+                                        grpc_core::CqVerifier::tag(1)));
     requested_calls++;
 
     grpc_event ev;
@@ -76,7 +76,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         case GRPC_QUEUE_SHUTDOWN:
           break;
         case GRPC_OP_COMPLETE:
-          if (ev.tag == CoreTestFixture::tag(1)) {
+          if (ev.tag == grpc_core::CqVerifier::tag(1)) {
             requested_calls--;
             // TODO(ctiller): keep reading that call!
           }

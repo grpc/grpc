@@ -142,15 +142,15 @@ static void test_retry_per_attempt_recv_timeout(
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call but does not respond to the call.
   error = grpc_server_request_call(f.server, &s0, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
@@ -169,9 +169,9 @@ static void test_retry_per_attempt_recv_timeout(
   // Server gets a second call.
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(201));
+                                   grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(201), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(201), true);
   cqv.Verify();
 
   // Now we can unref the first call.
@@ -215,9 +215,9 @@ static void test_retry_per_attempt_recv_timeout(
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(202), nullptr);
+                                grpc_core::CqVerifier::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(202), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(202), true);
   cqv.Verify();
 
   grpc_call_unref(s);
@@ -229,9 +229,9 @@ static void test_retry_per_attempt_recv_timeout(
   // Server gets a third call.
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(301));
+                                   grpc_core::CqVerifier::tag(301));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(301), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(301), true);
   cqv.Verify();
 
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
@@ -254,7 +254,7 @@ static void test_retry_per_attempt_recv_timeout(
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(302), nullptr);
+                                grpc_core::CqVerifier::tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server sends OK status.
@@ -275,12 +275,12 @@ static void test_retry_per_attempt_recv_timeout(
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(303), nullptr);
+                                grpc_core::CqVerifier::tag(303), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(302), true);
-  cqv.Expect(CoreTestFixture::tag(303), true);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(302), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(303), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);

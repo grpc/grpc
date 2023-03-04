@@ -143,14 +143,14 @@ static void test_cancel_after_accept(CoreTestConfiguration config,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(2));
+                                   grpc_core::CqVerifier::tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -176,13 +176,13 @@ static void test_cancel_after_accept(CoreTestConfiguration config,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(3), nullptr);
+                                grpc_core::CqVerifier::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  cqv.Expect(CoreTestFixture::tag(3), true);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(3), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);

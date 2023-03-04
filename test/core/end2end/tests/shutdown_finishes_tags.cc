@@ -60,11 +60,12 @@ static void test_early_server_shutdown_finishes_tags(
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(f.server, &s, &call_details,
                                       &request_metadata_recv, f.cq, f.cq,
-                                      CoreTestFixture::tag(101)));
+                                      grpc_core::CqVerifier::tag(101)));
   shutdown_client(&f);
-  grpc_server_shutdown_and_notify(f.server, f.cq, CoreTestFixture::tag(1000));
-  cqv.Expect(CoreTestFixture::tag(101), false);
-  cqv.Expect(CoreTestFixture::tag(1000), true);
+  grpc_server_shutdown_and_notify(f.server, f.cq,
+                                  grpc_core::CqVerifier::tag(1000));
+  cqv.Expect(grpc_core::CqVerifier::tag(101), false);
+  cqv.Expect(grpc_core::CqVerifier::tag(1000), true);
   cqv.Verify();
   GPR_ASSERT(s == nullptr);
 

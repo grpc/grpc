@@ -120,10 +120,10 @@ static void test_retry_lb_fail(const CoreTestConfiguration& config) {
   op->data.send_initial_metadata.count = 0;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(1), false);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), false);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -134,10 +134,10 @@ static void test_retry_lb_fail(const CoreTestConfiguration& config) {
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(2), nullptr);
+                                grpc_core::CqVerifier::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);

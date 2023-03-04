@@ -376,10 +376,10 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
       stub->AsyncEcho(&cli_ctx, send_request, cq.get()));
 
   service.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq.get(),
-                      cq.get(), CoreTestFixture::tag(2));
+                      cq.get(), grpc_core::CqVerifier::tag(2));
 
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
 
   Verifier().Expect(2, true).Verify(cq.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -388,7 +388,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
 
   send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(3));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
@@ -446,34 +447,34 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   send_request.set_message("Hello");
   cli_ctx.AddMetadata("testkey", "testvalue");
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(
-          stub->AsyncBidiStream(&cli_ctx, cq.get(), CoreTestFixture::tag(1)));
+      cli_stream(stub->AsyncBidiStream(&cli_ctx, cq.get(),
+                                       grpc_core::CqVerifier::tag(1)));
 
   service.RequestBidiStream(&srv_ctx, &srv_stream, cq.get(), cq.get(),
-                            CoreTestFixture::tag(2));
+                            grpc_core::CqVerifier::tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq.get());
 
   EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
 
-  cli_stream->Write(send_request, CoreTestFixture::tag(3));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(4));
+  cli_stream->Write(send_request, grpc_core::CqVerifier::tag(3));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Write(send_response, CoreTestFixture::tag(5));
-  cli_stream->Read(&recv_response, CoreTestFixture::tag(6));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(5));
+  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->WritesDone(CoreTestFixture::tag(7));
-  srv_stream.Read(&recv_request, CoreTestFixture::tag(8));
+  cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
+  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq.get());
 
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(9));
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(10));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(9));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(10));
   Verifier().Expect(9, true).Expect(10, true).Verify(cq.get());
 
   EXPECT_TRUE(recv_status.ok());
@@ -535,19 +536,19 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   std::thread request_call([cq]() { Verifier().Expect(4, true).Verify(cq); });
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
       generic_stub.PrepareCall(&cli_ctx, kMethodName, &cli_cq);
-  call->StartCall(CoreTestFixture::tag(1));
+  call->StartCall(grpc_core::CqVerifier::tag(1));
   Verifier().Expect(1, true).Verify(&cli_cq);
   std::unique_ptr<ByteBuffer> send_buffer =
       SerializeToByteBuffer(&send_request);
-  call->Write(*send_buffer, CoreTestFixture::tag(2));
+  call->Write(*send_buffer, grpc_core::CqVerifier::tag(2));
   // Send ByteBuffer can be destroyed after calling Write.
   send_buffer.reset();
   Verifier().Expect(2, true).Verify(&cli_cq);
-  call->WritesDone(CoreTestFixture::tag(3));
+  call->WritesDone(grpc_core::CqVerifier::tag(3));
   Verifier().Expect(3, true).Verify(&cli_cq);
 
   service.RequestCall(&srv_ctx, &stream, srv_cq.get(), srv_cq.get(),
-                      CoreTestFixture::tag(4));
+                      grpc_core::CqVerifier::tag(4));
 
   request_call.join();
   EXPECT_EQ(kMethodName, srv_ctx.method());
@@ -555,18 +556,18 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
 
   ByteBuffer recv_buffer;
-  stream.Read(&recv_buffer, CoreTestFixture::tag(5));
+  stream.Read(&recv_buffer, grpc_core::CqVerifier::tag(5));
   Verifier().Expect(5, true).Verify(srv_cq.get());
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
   send_buffer = SerializeToByteBuffer(&send_response);
-  stream.Write(*send_buffer, CoreTestFixture::tag(6));
+  stream.Write(*send_buffer, grpc_core::CqVerifier::tag(6));
   send_buffer.reset();
   Verifier().Expect(6, true).Verify(srv_cq.get());
 
-  stream.Finish(Status::OK, CoreTestFixture::tag(7));
+  stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
   // Shutdown srv_cq before we try to get the tag back, to verify that the
   // interception API handles completion queue shutdowns that take place before
   // all the tags are returned
@@ -574,11 +575,11 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   Verifier().Expect(7, true).Verify(srv_cq.get());
 
   recv_buffer.Clear();
-  call->Read(&recv_buffer, CoreTestFixture::tag(8));
+  call->Read(&recv_buffer, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(8, true).Verify(&cli_cq);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
 
-  call->Finish(&recv_status, CoreTestFixture::tag(9));
+  call->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
   cli_cq.Shutdown();
   Verifier().Expect(9, true).Verify(&cli_cq);
 
@@ -631,7 +632,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
       stub->AsyncUnimplemented(&cli_ctx, send_request, cq.get()));
 
   response_reader->Finish(&recv_response, &recv_status,
-                          CoreTestFixture::tag(4));
+                          grpc_core::CqVerifier::tag(4));
   Verifier().Expect(4, true).Verify(cq.get());
 
   EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());

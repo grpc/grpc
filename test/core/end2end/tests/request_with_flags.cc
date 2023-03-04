@@ -131,14 +131,14 @@ static void test_invoke_request_with_flags(
   op++;
   expectation = call_start_batch_expected_result;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {
     if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES) {
       GPR_ASSERT(GRPC_CALL_OK == grpc_call_cancel(c, nullptr));
     }
-    cqv.Expect(CoreTestFixture::tag(1), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     cqv.Verify();
     grpc_slice_unref(details);
   }

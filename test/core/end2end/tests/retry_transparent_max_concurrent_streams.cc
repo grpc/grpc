@@ -106,7 +106,7 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server should get a call.
@@ -117,9 +117,9 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_call_details_init(&call_details);
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   grpc_call_details_destroy(&call_details);
@@ -166,11 +166,12 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.recv_status_on_client.status_details = &details2;
   op++;
   error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(2), nullptr);
+                                grpc_core::CqVerifier::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start server shutdown.
-  grpc_server_shutdown_and_notify(f.server, f.cq, CoreTestFixture::tag(102));
+  grpc_server_shutdown_and_notify(f.server, f.cq,
+                                  grpc_core::CqVerifier::tag(102));
 
   // Server handles the first call.
   grpc_byte_buffer* request_payload_recv = nullptr;
@@ -183,7 +184,7 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(103), nullptr);
+                                grpc_core::CqVerifier::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -203,15 +204,15 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.send_status_from_server.status_details = &status_details;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(104), nullptr);
+                                grpc_core::CqVerifier::tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server completes first call and shutdown.
   // Client completes first call.
-  cqv.Expect(CoreTestFixture::tag(104), true);
-  cqv.Expect(CoreTestFixture::tag(103), true);
-  cqv.Expect(CoreTestFixture::tag(102), true);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(104), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   // Clean up from first call.
@@ -241,9 +242,9 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_call_details_init(&call_details);
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(201));
+                                   grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(201), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(201), true);
   cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   grpc_call_details_destroy(&call_details);
@@ -267,7 +268,7 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(202), nullptr);
+                                grpc_core::CqVerifier::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -287,13 +288,13 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.send_status_from_server.status_details = &status_details;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(203), nullptr);
+                                grpc_core::CqVerifier::tag(203), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Second call completes.
-  cqv.Expect(CoreTestFixture::tag(203), true);
-  cqv.Expect(CoreTestFixture::tag(202), true);
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(203), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(202), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify();
 
   // Clean up from second call.

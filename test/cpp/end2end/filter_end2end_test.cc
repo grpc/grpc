@@ -186,44 +186,45 @@ class FilterEnd2endTest : public ::testing::Test {
       std::thread request_call([this]() { server_ok(4); });
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
           generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
-      call->StartCall(CoreTestFixture::tag(1));
+      call->StartCall(grpc_core::CqVerifier::tag(1));
       client_ok(1);
       std::unique_ptr<ByteBuffer> send_buffer =
           SerializeToByteBuffer(&send_request);
-      call->Write(*send_buffer, CoreTestFixture::tag(2));
+      call->Write(*send_buffer, grpc_core::CqVerifier::tag(2));
       // Send ByteBuffer can be destroyed after calling Write.
       send_buffer.reset();
       client_ok(2);
-      call->WritesDone(CoreTestFixture::tag(3));
+      call->WritesDone(grpc_core::CqVerifier::tag(3));
       client_ok(3);
 
       generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
-                                   srv_cq_.get(), CoreTestFixture::tag(4));
+                                   srv_cq_.get(),
+                                   grpc_core::CqVerifier::tag(4));
 
       request_call.join();
       EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
       ByteBuffer recv_buffer;
-      stream.Read(&recv_buffer, CoreTestFixture::tag(5));
+      stream.Read(&recv_buffer, grpc_core::CqVerifier::tag(5));
       server_ok(5);
       EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
       EXPECT_EQ(send_request.message(), recv_request.message());
 
       send_response.set_message(recv_request.message());
       send_buffer = SerializeToByteBuffer(&send_response);
-      stream.Write(*send_buffer, CoreTestFixture::tag(6));
+      stream.Write(*send_buffer, grpc_core::CqVerifier::tag(6));
       send_buffer.reset();
       server_ok(6);
 
-      stream.Finish(Status::OK, CoreTestFixture::tag(7));
+      stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
       server_ok(7);
 
       recv_buffer.Clear();
-      call->Read(&recv_buffer, CoreTestFixture::tag(8));
+      call->Read(&recv_buffer, grpc_core::CqVerifier::tag(8));
       client_ok(8);
       EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
 
-      call->Finish(&recv_status, CoreTestFixture::tag(9));
+      call->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
       client_ok(9);
 
       EXPECT_EQ(send_response.message(), recv_response.message());
@@ -281,11 +282,11 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   std::thread request_call([this]() { server_ok(2); });
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
-  cli_stream->StartCall(CoreTestFixture::tag(1));
+  cli_stream->StartCall(grpc_core::CqVerifier::tag(1));
   client_ok(1);
 
   generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(),
-                               srv_cq_.get(), CoreTestFixture::tag(2));
+                               srv_cq_.get(), grpc_core::CqVerifier::tag(2));
 
   request_call.join();
   EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
@@ -293,37 +294,37 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 
   std::unique_ptr<ByteBuffer> send_buffer =
       SerializeToByteBuffer(&send_request);
-  cli_stream->Write(*send_buffer, CoreTestFixture::tag(3));
+  cli_stream->Write(*send_buffer, grpc_core::CqVerifier::tag(3));
   send_buffer.reset();
   client_ok(3);
 
   ByteBuffer recv_buffer;
-  srv_stream.Read(&recv_buffer, CoreTestFixture::tag(4));
+  srv_stream.Read(&recv_buffer, grpc_core::CqVerifier::tag(4));
   server_ok(4);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
   send_buffer = SerializeToByteBuffer(&send_response);
-  srv_stream.Write(*send_buffer, CoreTestFixture::tag(5));
+  srv_stream.Write(*send_buffer, grpc_core::CqVerifier::tag(5));
   send_buffer.reset();
   server_ok(5);
 
-  cli_stream->Read(&recv_buffer, CoreTestFixture::tag(6));
+  cli_stream->Read(&recv_buffer, grpc_core::CqVerifier::tag(6));
   client_ok(6);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->WritesDone(CoreTestFixture::tag(7));
+  cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
   client_ok(7);
 
-  srv_stream.Read(&recv_buffer, CoreTestFixture::tag(8));
+  srv_stream.Read(&recv_buffer, grpc_core::CqVerifier::tag(8));
   server_fail(8);
 
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(9));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(9));
   server_ok(9);
 
-  cli_stream->Finish(&recv_status, CoreTestFixture::tag(10));
+  cli_stream->Finish(&recv_status, grpc_core::CqVerifier::tag(10));
   client_ok(10);
 
   EXPECT_EQ(send_response.message(), recv_response.message());

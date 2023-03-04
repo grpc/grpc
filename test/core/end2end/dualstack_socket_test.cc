@@ -199,16 +199,16 @@ void test_connect(const char* server_host, const char* client_host, int port,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (expect_ok) {
     // Check for a successful request.
     error = grpc_server_request_call(server, &s, &call_details,
                                      &request_metadata_recv, cq, cq,
-                                     CoreTestFixture::tag(101));
+                                     grpc_core::CqVerifier::tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(CoreTestFixture::tag(101), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(101), true);
     cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
@@ -229,11 +229,11 @@ void test_connect(const char* server_host, const char* client_host, int port,
     op->flags = 0;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(102), nullptr);
+                                  grpc_core::CqVerifier::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv.Expect(CoreTestFixture::tag(102), true);
-    cqv.Expect(CoreTestFixture::tag(1), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(102), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     cqv.Verify();
 
     peer = grpc_call_get_peer(c);
@@ -250,7 +250,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     grpc_call_unref(s);
   } else {
     // Check for a failed connection.
-    cqv.Expect(CoreTestFixture::tag(1), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     cqv.Verify();
 
     gpr_log(GPR_INFO, "status: %d (expected: %d)", status,
@@ -264,12 +264,13 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_channel_destroy(client);
 
   // Destroy server.
-  grpc_server_shutdown_and_notify(server, cq, CoreTestFixture::tag(1000));
+  grpc_server_shutdown_and_notify(server, cq, grpc_core::CqVerifier::tag(1000));
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
                                     nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != CoreTestFixture::tag(1000));
+  } while (ev.type != GRPC_OP_COMPLETE ||
+           ev.tag != grpc_core::CqVerifier::tag(1000));
 
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);

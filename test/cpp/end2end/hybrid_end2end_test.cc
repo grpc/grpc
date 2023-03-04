@@ -65,13 +65,14 @@ void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
   EchoRequest recv_request;
   EchoResponse send_response;
   service->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq, cq,
-                       CoreTestFixture::tag(1));
+                       grpc_core::CqVerifier::tag(1));
   Verify(cq, 1, true);
   send_response.set_message(recv_request.message());
   if (dup_service) {
     send_response.mutable_message()->append("_dup");
   }
-  response_writer.Finish(send_response, Status::OK, CoreTestFixture::tag(2));
+  response_writer.Finish(send_response, Status::OK,
+                         grpc_core::CqVerifier::tag(2));
   Verify(cq, 2, true);
 }
 
@@ -85,14 +86,15 @@ void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
   GenericServerAsyncResponseWriter response_writer(&srv_ctx);
   ByteBuffer recv_buffer;
   service->RequestEcho(&srv_ctx, &recv_buffer, &response_writer, cq, cq,
-                       CoreTestFixture::tag(1));
+                       grpc_core::CqVerifier::tag(1));
   Verify(cq, 1, true);
   EchoRequest recv_request;
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EchoResponse send_response;
   send_response.set_message(recv_request.message());
   auto send_buffer = SerializeToByteBuffer(&send_response);
-  response_writer.Finish(*send_buffer, Status::OK, CoreTestFixture::tag(2));
+  response_writer.Finish(*send_buffer, Status::OK,
+                         grpc_core::CqVerifier::tag(2));
   Verify(cq, 2, true);
 }
 
@@ -103,7 +105,7 @@ void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
   EchoResponse send_response;
   ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
   service->RequestRequestStream(&srv_ctx, &srv_stream, cq, cq,
-                                CoreTestFixture::tag(1));
+                                grpc_core::CqVerifier::tag(1));
   Verify(cq, 1, true);
   int i = 1;
   do {
@@ -111,7 +113,7 @@ void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
     send_response.mutable_message()->append(recv_request.message());
     srv_stream.Read(&recv_request, tag(i));
   } while (VerifyReturnSuccess(cq, i));
-  srv_stream.Finish(send_response, Status::OK, CoreTestFixture::tag(100));
+  srv_stream.Finish(send_response, Status::OK, grpc_core::CqVerifier::tag(100));
   Verify(cq, 100, true);
 }
 
@@ -123,7 +125,7 @@ void HandleRawClientStreaming(Service* service, ServerCompletionQueue* cq) {
   EchoResponse send_response;
   GenericServerAsyncReader srv_stream(&srv_ctx);
   service->RequestRequestStream(&srv_ctx, &srv_stream, cq, cq,
-                                CoreTestFixture::tag(1));
+                                grpc_core::CqVerifier::tag(1));
   Verify(cq, 1, true);
   int i = 1;
   while (true) {
@@ -136,7 +138,7 @@ void HandleRawClientStreaming(Service* service, ServerCompletionQueue* cq) {
     send_response.mutable_message()->append(recv_request.message());
   }
   auto send_buffer = SerializeToByteBuffer(&send_response);
-  srv_stream.Finish(*send_buffer, Status::OK, CoreTestFixture::tag(100));
+  srv_stream.Finish(*send_buffer, Status::OK, grpc_core::CqVerifier::tag(100));
   Verify(cq, 100, true);
 }
 
@@ -147,34 +149,34 @@ void HandleServerStreaming(Service* service, ServerCompletionQueue* cq) {
   EchoResponse send_response;
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
   service->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq, cq,
-                                 CoreTestFixture::tag(1));
+                                 grpc_core::CqVerifier::tag(1));
   Verify(cq, 1, true);
   send_response.set_message(recv_request.message() + "0");
-  srv_stream.Write(send_response, CoreTestFixture::tag(2));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(2));
   Verify(cq, 2, true);
   send_response.set_message(recv_request.message() + "1");
-  srv_stream.Write(send_response, CoreTestFixture::tag(3));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(3));
   Verify(cq, 3, true);
   send_response.set_message(recv_request.message() + "2");
-  srv_stream.Write(send_response, CoreTestFixture::tag(4));
+  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(4));
   Verify(cq, 4, true);
-  srv_stream.Finish(Status::OK, CoreTestFixture::tag(5));
+  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(5));
   Verify(cq, 5, true);
 }
 
 void HandleGenericEcho(GenericServerAsyncReaderWriter* stream,
                        CompletionQueue* cq) {
   ByteBuffer recv_buffer;
-  stream->Read(&recv_buffer, CoreTestFixture::tag(2));
+  stream->Read(&recv_buffer, grpc_core::CqVerifier::tag(2));
   Verify(cq, 2, true);
   EchoRequest recv_request;
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EchoResponse send_response;
   send_response.set_message(recv_request.message());
   auto send_buffer = SerializeToByteBuffer(&send_response);
-  stream->Write(*send_buffer, CoreTestFixture::tag(3));
+  stream->Write(*send_buffer, grpc_core::CqVerifier::tag(3));
   Verify(cq, 3, true);
-  stream->Finish(Status::OK, CoreTestFixture::tag(4));
+  stream->Finish(Status::OK, grpc_core::CqVerifier::tag(4));
   Verify(cq, 4, true);
 }
 
@@ -194,9 +196,9 @@ void HandleGenericRequestStream(GenericServerAsyncReaderWriter* stream,
     send_response.mutable_message()->append(recv_request.message());
   }
   auto send_buffer = SerializeToByteBuffer(&send_response);
-  stream->Write(*send_buffer, CoreTestFixture::tag(99));
+  stream->Write(*send_buffer, grpc_core::CqVerifier::tag(99));
   Verify(cq, 99, true);
-  stream->Finish(Status::OK, CoreTestFixture::tag(100));
+  stream->Finish(Status::OK, grpc_core::CqVerifier::tag(100));
   Verify(cq, 100, true);
 }
 
@@ -205,7 +207,8 @@ void HandleGenericCall(AsyncGenericService* service,
                        ServerCompletionQueue* cq) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter stream(&srv_ctx);
-  service->RequestCall(&srv_ctx, &stream, cq, cq, CoreTestFixture::tag(1));
+  service->RequestCall(&srv_ctx, &stream, cq, cq,
+                       grpc_core::CqVerifier::tag(1));
   Verify(cq, 1, true);
   if (srv_ctx.method() == "/grpc.testing.EchoTestService/Echo") {
     HandleGenericEcho(&stream, cq);

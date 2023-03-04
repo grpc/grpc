@@ -107,10 +107,10 @@ static void test_keepalive_timeout(const CoreTestConfiguration& config) {
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
@@ -209,14 +209,14 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(100));
+                                   grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(100), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(100), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -232,7 +232,7 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(101), nullptr);
+                                grpc_core::CqVerifier::tag(101), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (i = 0; i < 30; i++) {
@@ -252,7 +252,7 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(2), nullptr);
+                                  grpc_core::CqVerifier::tag(2), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -263,9 +263,9 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(102), nullptr);
+                                  grpc_core::CqVerifier::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(CoreTestFixture::tag(102), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(102), true);
     cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
@@ -276,10 +276,10 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(103), nullptr);
+                                  grpc_core::CqVerifier::tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(CoreTestFixture::tag(103), true);
-    cqv.Expect(CoreTestFixture::tag(2), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(103), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(2), true);
     cqv.Verify();
 
     grpc_byte_buffer_destroy(request_payload);
@@ -300,7 +300,7 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(3), nullptr);
+                                grpc_core::CqVerifier::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -314,13 +314,13 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(104), nullptr);
+                                grpc_core::CqVerifier::tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(1), true);
-  cqv.Expect(CoreTestFixture::tag(3), true);
-  cqv.Expect(CoreTestFixture::tag(101), true);
-  cqv.Expect(CoreTestFixture::tag(104), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(3), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(104), true);
   cqv.Verify();
 
   grpc_call_unref(c);

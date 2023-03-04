@@ -84,7 +84,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_call(server, &call1, &call_details1,
                                         &request_metadata1, cq, cq,
-                                        CoreTestFixture::tag(1)));
+                                        grpc_core::CqVerifier::tag(1)));
     requested_calls++;
 
     grpc_event ev;
@@ -98,7 +98,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         case GRPC_QUEUE_SHUTDOWN:
           break;
         case GRPC_OP_COMPLETE:
-          if (ev.tag == CoreTestFixture::tag(1)) {
+          if (ev.tag == grpc_core::CqVerifier::tag(1)) {
             requested_calls--;
             // TODO(ctiller): keep reading that call!
           }

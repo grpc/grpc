@@ -51,32 +51,32 @@ const uint8_t kMessage[] = {0x0A, 0x0B, 0x4F, 0x62, 0x6A, 0x65, 0x63,
 
   grpc::ClientContext cli_ctx;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call =
-      generic_stub_->Call(&cli_ctx, kMethodName, &cq_, CoreTestFixture::tag(1));
+      generic_stub_->Call(&cli_ctx, kMethodName, &cq_, grpc_core::CqVerifier::tag(1));
   cq_.Next(&got_tag, &ok);
-  if (!ok || got_tag != CoreTestFixture::tag(1)) {
+  if (!ok || got_tag != grpc_core::CqVerifier::tag(1)) {
     NSLog(@"Failed to create call.");
     abort();
   }
   grpc::Slice send_slice = grpc::Slice(kMessage, sizeof(kMessage) / sizeof(kMessage[0]));
   std::unique_ptr<grpc::ByteBuffer> send_buffer(new grpc::ByteBuffer(&send_slice, 1));
-  call->Write(*send_buffer, CoreTestFixture::tag(2));
+  call->Write(*send_buffer, grpc_core::CqVerifier::tag(2));
   cq_.Next(&got_tag, &ok);
-  if (!ok || got_tag != CoreTestFixture::tag(2)) {
+  if (!ok || got_tag != grpc_core::CqVerifier::tag(2)) {
     NSLog(@"Failed to send message.");
     abort();
   }
   grpc::ByteBuffer recv_buffer;
-  call->Read(&recv_buffer, CoreTestFixture::tag(3));
+  call->Read(&recv_buffer, grpc_core::CqVerifier::tag(3));
   cq_.Next(&got_tag, &ok);
-  if (!ok || got_tag != CoreTestFixture::tag(3)) {
+  if (!ok || got_tag != grpc_core::CqVerifier::tag(3)) {
     NSLog(@"Failed to receive message.");
     abort();
   }
 
   grpc::Status status;
-  call->Finish(&status, CoreTestFixture::tag(4));
+  call->Finish(&status, grpc_core::CqVerifier::tag(4));
   cq_.Next(&got_tag, &ok);
-  if (!ok || got_tag != CoreTestFixture::tag(4)) {
+  if (!ok || got_tag != grpc_core::CqVerifier::tag(4)) {
     NSLog(@"Failed to finish call.");
     abort();
   }

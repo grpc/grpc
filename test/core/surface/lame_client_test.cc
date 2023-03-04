@@ -119,14 +119,14 @@ TEST(LameClientTest, MainTest) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
   // Filter stack code considers this a failed to receive initial metadata
   // result, where as promise based code interprets this as a trailers only
   // failed request. Both are rational interpretations, so we accept the one
   // that is implemented for each stack.
-  cqv.Expect(CoreTestFixture::tag(1),
+  cqv.Expect(grpc_core::CqVerifier::tag(1),
              grpc_core::IsPromiseBasedClientCallEnabled());
   cqv.Verify();
 
@@ -140,11 +140,11 @@ TEST(LameClientTest, MainTest) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(2), nullptr);
+                                grpc_core::CqVerifier::tag(2), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
   // the call should immediately fail
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(call);

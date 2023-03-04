@@ -56,8 +56,8 @@ static void test_ping(CoreTestConfiguration config,
   config.init_client(&f, &client_args);
   config.init_server(&f, &server_args);
 
-  grpc_channel_ping(f.client, f.cq, CoreTestFixture::tag(0), nullptr);
-  cqv.Expect(CoreTestFixture::tag(0), false);
+  grpc_channel_ping(f.client, f.cq, grpc_core::CqVerifier::tag(0), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(0), false);
 
   // check that we're still in idle, and start connecting
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
@@ -70,8 +70,8 @@ static void test_ping(CoreTestConfiguration config,
         gpr_time_add(grpc_timeout_seconds_to_deadline(3),
                      gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
                                           GPR_TIMESPAN)),
-        f.cq, CoreTestFixture::tag(99));
-    cqv.Expect(CoreTestFixture::tag(99), true);
+        f.cq, grpc_core::CqVerifier::tag(99));
+    cqv.Expect(grpc_core::CqVerifier::tag(99), true);
     cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||

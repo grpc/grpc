@@ -105,7 +105,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     op++;
     grpc_call_error error =
         grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                              CoreTestFixture::tag(1), nullptr);
+                              grpc_core::CqVerifier::tag(1), nullptr);
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
     grpc_event ev;

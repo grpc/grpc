@@ -153,18 +153,18 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   grpc_call_cancel_with_status(s, GRPC_STATUS_PERMISSION_DENIED, "test status",
                                nullptr);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
   // cleanup
   grpc_slice_unref(details);
@@ -283,14 +283,14 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   // Since the server is configured to allow only a single ping strike, it would
   // take 3 pings to trigger the GOAWAY frame with "too_many_pings" from the
@@ -299,7 +299,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   // GOAWAY.) If the client settings match with the server's settings, there
   // won't be a bad ping, and the call will end due to the deadline expiring
   // instead.
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   // The call will end after this
   cqv.Verify(grpc_core::Duration::Seconds(60));
   // cleanup
@@ -659,14 +659,14 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -677,10 +677,10 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -704,11 +704,11 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(103), nullptr);
+                                grpc_core::CqVerifier::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(103), true);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -770,12 +770,12 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_core::CqVerifier cqv(cq);
   // Channel should be able to send two pings without disconnect if there was no
   // BDP sent.
-  grpc_channel_ping(channel, cq, CoreTestFixture::tag(1), nullptr);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  grpc_channel_ping(channel, cq, grpc_core::CqVerifier::tag(1), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify(grpc_core::Duration::Seconds(5));
   // Second ping
-  grpc_channel_ping(channel, cq, CoreTestFixture::tag(2), nullptr);
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  grpc_channel_ping(channel, cq, grpc_core::CqVerifier::tag(2), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify(grpc_core::Duration::Seconds(5));
   ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
             GRPC_CHANNEL_READY);
@@ -785,12 +785,12 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   // The call with a response payload should have triggered a BDP ping.
   // Send two more pings to verify. The second ping should cause a disconnect.
   // If BDP was not sent, the second ping would not cause a disconnect.
-  grpc_channel_ping(channel, cq, CoreTestFixture::tag(3), nullptr);
-  cqv.Expect(CoreTestFixture::tag(3), true);
+  grpc_channel_ping(channel, cq, grpc_core::CqVerifier::tag(3), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(3), true);
   cqv.Verify(grpc_core::Duration::Seconds(5));
   // Second ping
-  grpc_channel_ping(channel, cq, CoreTestFixture::tag(4), nullptr);
-  cqv.Expect(CoreTestFixture::tag(4), true);
+  grpc_channel_ping(channel, cq, grpc_core::CqVerifier::tag(4), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(4), true);
   cqv.Verify(grpc_core::Duration::Seconds(5));
   // Make sure that the transports have been destroyed
   VerifyChannelDisconnected(channel, cq);
@@ -843,16 +843,16 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
   grpc_core::CqVerifier cqv(cq);
   // First ping
-  grpc_channel_ping(channel, cq, CoreTestFixture::tag(1), nullptr);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  grpc_channel_ping(channel, cq, grpc_core::CqVerifier::tag(1), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify(grpc_core::Duration::Seconds(5));
   // Second ping
-  grpc_channel_ping(channel, cq, CoreTestFixture::tag(2), nullptr);
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  grpc_channel_ping(channel, cq, grpc_core::CqVerifier::tag(2), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify(grpc_core::Duration::Seconds(5));
   // Third ping caused disconnect
-  grpc_channel_ping(channel, cq, CoreTestFixture::tag(2), nullptr);
-  cqv.Expect(CoreTestFixture::tag(2), true);
+  grpc_channel_ping(channel, cq, grpc_core::CqVerifier::tag(2), nullptr);
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify(grpc_core::Duration::Seconds(5));
   // Make sure that the transports have been destroyed
   VerifyChannelDisconnected(channel, cq);

@@ -69,9 +69,9 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
@@ -90,10 +90,11 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(102), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(grpc_core::CqVerifier::tag(102),
+             grpc_core::CqVerifier::AnyStatus());
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -112,10 +113,10 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(103), nullptr);
+                                grpc_core::CqVerifier::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(103), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Verify();
 
   grpc_metadata_array_destroy(&request_metadata_recv);

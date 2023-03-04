@@ -122,14 +122,14 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   // Send too many pings to the server to trigger the punishment:
@@ -142,7 +142,7 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
     grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
     cqv.Expect(tag(200 + i), true);
     if (i == MAX_PING_STRIKES + 2) {
-      cqv.Expect(CoreTestFixture::tag(1), true);
+      cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     }
     cqv.Verify();
   }
@@ -168,10 +168,10 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
@@ -273,14 +273,14 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   // Send too many pings to the server similar to the previous test case.
@@ -316,12 +316,12 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   // Client call should return.
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));

@@ -99,10 +99,11 @@ static void run_test(const char* target, size_t nops) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, nops, CoreTestFixture::tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, nops, grpc_core::CqVerifier::tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status != GRPC_STATUS_OK);

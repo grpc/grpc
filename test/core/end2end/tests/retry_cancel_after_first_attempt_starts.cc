@@ -112,7 +112,7 @@ static void test_retry_cancel_after_first_attempt_starts(
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client starts recv_initial_metadata and recv_message, but not
@@ -126,7 +126,7 @@ static void test_retry_cancel_after_first_attempt_starts(
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(2), nullptr);
+                                grpc_core::CqVerifier::tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client starts recv_trailing_metadata.
@@ -138,7 +138,7 @@ static void test_retry_cancel_after_first_attempt_starts(
   op->data.recv_status_on_client.status_details = &details;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(3), nullptr);
+                                grpc_core::CqVerifier::tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client unrefs the call without starting recv_trailing_metadata.
@@ -147,9 +147,9 @@ static void test_retry_cancel_after_first_attempt_starts(
 
   // The send ops batch and the first recv ops batch will fail in most
   // fixtures but will pass in the proxy fixtures on some platforms.
-  cqv.Expect(CoreTestFixture::tag(1), grpc_core::CqVerifier::AnyStatus());
-  cqv.Expect(CoreTestFixture::tag(2), grpc_core::CqVerifier::AnyStatus());
-  cqv.Expect(CoreTestFixture::tag(3), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(grpc_core::CqVerifier::tag(2), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(grpc_core::CqVerifier::tag(3), true);
   cqv.Verify();
 
   grpc_slice_unref(details);

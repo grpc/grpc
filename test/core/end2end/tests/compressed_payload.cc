@@ -123,7 +123,7 @@ static void request_for_disabled_algorithm(
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(101));
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -160,11 +160,11 @@ static void request_for_disabled_algorithm(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(101), true);
-  cqv.Expect(CoreTestFixture::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   op = ops;
@@ -179,10 +179,10 @@ static void request_for_disabled_algorithm(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(102), nullptr);
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(102), false);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), false);
 
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -191,10 +191,10 @@ static void request_for_disabled_algorithm(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(103), nullptr);
+                                grpc_core::CqVerifier::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(103), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Verify();
 
   // call was cancelled (closed) ...
@@ -306,9 +306,9 @@ static void request_with_payload_template_inner(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(2), nullptr);
+                                  grpc_core::CqVerifier::tag(2), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(CoreTestFixture::tag(2), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   }
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -335,14 +335,14 @@ static void request_with_payload_template_inner(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq,
-                                   CoreTestFixture::tag(100));
+                                   grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(CoreTestFixture::tag(100), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(100), true);
   cqv.Verify();
 
   GPR_ASSERT(grpc_core::BitCount(
@@ -375,7 +375,7 @@ static void request_with_payload_template_inner(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(101), nullptr);
+                                grpc_core::CqVerifier::tag(101), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   for (int i = 0; i < 2; i++) {
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
@@ -390,9 +390,9 @@ static void request_with_payload_template_inner(
       op->reserved = nullptr;
       op++;
       error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                    CoreTestFixture::tag(2), nullptr);
+                                    grpc_core::CqVerifier::tag(2), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
-      cqv.Expect(CoreTestFixture::tag(2), true);
+      cqv.Expect(grpc_core::CqVerifier::tag(2), true);
     }
 
     memset(ops, 0, sizeof(ops));
@@ -403,10 +403,10 @@ static void request_with_payload_template_inner(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(102), nullptr);
+                                  grpc_core::CqVerifier::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv.Expect(CoreTestFixture::tag(102), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(102), true);
     cqv.Verify();
 
     GPR_ASSERT(request_payload_recv->type == GRPC_BB_RAW);
@@ -423,7 +423,7 @@ static void request_with_payload_template_inner(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(103), nullptr);
+                                  grpc_core::CqVerifier::tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -434,11 +434,11 @@ static void request_with_payload_template_inner(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                  CoreTestFixture::tag(3), nullptr);
+                                  grpc_core::CqVerifier::tag(3), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv.Expect(CoreTestFixture::tag(103), true);
-    cqv.Expect(CoreTestFixture::tag(3), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(103), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(3), true);
     cqv.Verify();
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
@@ -470,7 +470,7 @@ static void request_with_payload_template_inner(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(4), nullptr);
+                                grpc_core::CqVerifier::tag(4), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -484,13 +484,13 @@ static void request_with_payload_template_inner(
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                CoreTestFixture::tag(104), nullptr);
+                                grpc_core::CqVerifier::tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(CoreTestFixture::tag(1), true);
-  cqv.Expect(CoreTestFixture::tag(4), true);
-  cqv.Expect(CoreTestFixture::tag(101), true);
-  cqv.Expect(CoreTestFixture::tag(104), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(4), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(104), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);

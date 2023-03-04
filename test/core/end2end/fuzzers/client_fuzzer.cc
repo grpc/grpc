@@ -130,7 +130,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     op->reserved = nullptr;
     op++;
     grpc_call_error error = grpc_call_start_batch(
-        call, ops, (size_t)(op - ops), CoreTestFixture::tag(1), nullptr);
+        call, ops, (size_t)(op - ops), grpc_core::CqVerifier::tag(1), nullptr);
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
 

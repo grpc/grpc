@@ -106,13 +106,12 @@ grpc_cc_library(
         "end2end_tests.h",
         "fixtures/local_util.h",
     ],
-    external_deps = [
-        "absl/functional:any_invocable",
-    ],
+    external_deps = ["absl/functional:any_invocable"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc_public_hdrs",
+        "//src/core:channel_args",
     ],
 )
 
@@ -267,6 +266,7 @@ grpc_cc_test(
         "h2_ssl_cert_test.cc",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "gtest",
         "libcrypto",
     ],
