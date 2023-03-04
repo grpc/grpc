@@ -21,11 +21,12 @@
 
 #include <stdint.h>
 
+#include "absl/functional/any_invocable.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
-typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
-typedef struct grpc_end2end_test_config grpc_end2end_test_config;
+#include "src/core/lib/channel/channel_args.h"
 
 // Test feature flags.
 #define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
@@ -44,14 +45,31 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
-struct grpc_end2end_test_fixture {
-  grpc_completion_queue* cq;
-  grpc_server* server;
-  grpc_channel* client;
-  void* fixture_data;
+class CoreTestFixture {
+ public:
+  virtual ~CoreTestFixture() {}
+
+  grpc_completion_queue* cq() { return cq_; }
+  grpc_server* server() { return server_; }
+  grpc_channel* client() { return client_; }
+
+  void InitServer(const grpc_core::ChannelArgs& args);
+  void InitClient(const grpc_core::ChannelArgs& args);
+
+ protected:
+  void SetServer(grpc_server* server);
+  void SetClient(grpc_channel* client);
+
+ private:
+  virtual grpc_server* MakeServer(const grpc_core::ChannelArgs& args) = 0;
+  virtual grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) = 0;
+
+  grpc_completion_queue* cq_ = grpc_completion_queue_create_for_next(nullptr);
+  grpc_server* server_ = nullptr;
+  grpc_channel* client_ = nullptr;
 };
 
-struct grpc_end2end_test_config {
+struct CoreTestConfiguration {
   // A descriptive name for this test fixture.
   const char* name;
 
@@ -59,31 +77,28 @@ struct grpc_end2end_test_config {
   uint32_t feature_mask;
 
   // If the call host is setup by the fixture (for example, via the
-  // GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg), which value should the test
-  // expect to find in call_details.host
+  // GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg), which value should the
+  // test expect to find in call_details.host
   const char* overridden_call_host;
 
-  grpc_end2end_test_fixture (*create_fixture)(
-      const grpc_channel_args* client_args,
-      const grpc_channel_args* server_args);
-  void (*init_client)(grpc_end2end_test_fixture* f,
-                      const grpc_channel_args* client_args);
-  void (*init_server)(grpc_end2end_test_fixture* f,
-                      const grpc_channel_args* server_args);
-  void (*tear_down_data)(grpc_end2end_test_fixture* f);
+  absl::AnyInvocable<std::unique_ptr<CoreTestFixture>(
+      const grpc_core::ChannelArgs& client_args,
+      const grpc_core::ChannelArgs& server_args)>
+      create_fixture;
 };
 
 void grpc_end2end_tests_pre_init(void);
-void grpc_end2end_tests(int argc, char** argv, grpc_end2end_test_config config);
+void grpc_end2end_tests(int argc, char** argv,
+                        const CoreTestConfiguration& config);
 
 const char* get_host_override_string(const char* str,
-                                     grpc_end2end_test_config config);
+                                     const CoreTestConfiguration& config);
 // Returns a pointer to a statically allocated slice: future invocations
 // overwrite past invocations, not threadsafe, etc...
 const grpc_slice* get_host_override_slice(const char* str,
-                                          grpc_end2end_test_config config);
+                                          const CoreTestConfiguration& config);
 
 void validate_host_override_string(const char* pattern, grpc_slice str,
-                                   grpc_end2end_test_config config);
+                                   const CoreTestConfiguration& config);
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H

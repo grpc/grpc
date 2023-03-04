@@ -33,9 +33,9 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void test_ping(grpc_end2end_test_config config,
+static void test_ping(CoreTestConfiguration config,
                       int min_time_between_pings_ms) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
@@ -101,7 +101,7 @@ static void test_ping(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
-void ping(grpc_end2end_test_config config) {
+void ping(CoreTestConfiguration config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_ping(config, 0);
   test_ping(config, 100);

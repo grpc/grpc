@@ -36,12 +36,12 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args,
-                                            int num_messages) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args,
+                                  int num_messages) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "%s\nRunning test: %s/%s/%d", std::string(100, '*').c_str(),
           test_name, config.name, num_messages);
   f = config.create_fixture(client_args, server_args);
@@ -65,7 +65,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -77,13 +77,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -95,10 +95,10 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // Client requests status along with the initial metadata. Server streams
 // messages and ends with a non-OK status. Client reads after server is done
 // writing, and expects to get the status after the messages.
-static void test_server_streaming(grpc_end2end_test_config config,
+static void test_server_streaming(CoreTestConfiguration config,
                                   int num_messages) {
-  grpc_end2end_test_fixture f = begin_test(config, "test_server_streaming",
-                                           nullptr, nullptr, num_messages);
+  CoreTestFixture f = begin_test(config, "test_server_streaming", nullptr,
+                                 nullptr, num_messages);
   grpc_call* c;
   grpc_call* s;
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
@@ -279,7 +279,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
-void server_streaming(grpc_end2end_test_config config) {
+void server_streaming(CoreTestConfiguration config) {
   test_server_streaming(config, 0);
   test_server_streaming(config, 1);
   test_server_streaming(config, 10);

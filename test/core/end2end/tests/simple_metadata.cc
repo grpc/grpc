@@ -33,11 +33,11 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
@@ -60,7 +60,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -72,13 +72,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -89,7 +89,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Request/response with metadata and payload.
 static void test_request_response_with_metadata_and_payload(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -112,7 +112,7 @@ static void test_request_response_with_metadata_and_payload(
                              {grpc_slice_from_static_string("key4"),
                               grpc_slice_from_static_string("val4"),
                               {{nullptr, nullptr, nullptr, nullptr}}}};
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_request_response_with_metadata_and_payload",
                  nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
@@ -262,7 +262,7 @@ static void test_request_response_with_metadata_and_payload(
   config.tear_down_data(&f);
 }
 
-void simple_metadata(grpc_end2end_test_config config) {
+void simple_metadata(CoreTestConfiguration config) {
   test_request_response_with_metadata_and_payload(config);
 }
 

@@ -47,19 +47,19 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -68,8 +68,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
-                                           grpc_end2end_test_fixture* f,
+static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
+                                           CoreTestFixture* f,
                                            grpc_core::CqVerifier& cqv) {
   grpc_call* c;
   grpc_call* s;
@@ -185,8 +185,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   grpc_call_unref(s);
 }
 
-static void disappearing_server_test(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+static void disappearing_server_test(CoreTestConfiguration config) {
+  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
 
   gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
@@ -206,7 +206,7 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void disappearing_server(grpc_end2end_test_config config) {
+void disappearing_server(CoreTestConfiguration config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
 #ifndef GPR_WINDOWS  // b/148110727 for more details
   disappearing_server_test(config);

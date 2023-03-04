@@ -36,12 +36,12 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args,
-                                            bool request_status_early) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args,
+                                  bool request_status_early) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s/request_status_early=%s", test_name,
           config.name, request_status_early ? "true" : "false");
   f = config.create_fixture(client_args, server_args);
@@ -65,7 +65,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -77,13 +77,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_client(f);
   shutdown_server(f);
 
@@ -96,7 +96,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // server reads and streams responses. The client cancels the RPC to get an
 // error status. (Server sending a non-OK status is not considered an error
 // status.)
-static void test(grpc_end2end_test_config config, bool request_status_early,
+static void test(CoreTestConfiguration config, bool request_status_early,
                  bool recv_message_separately) {
   grpc_call* c;
   grpc_call* s;
@@ -106,9 +106,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
   grpc_byte_buffer* response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
-  grpc_end2end_test_fixture f =
-      begin_test(config, "streaming_error_response", nullptr, nullptr,
-                 request_status_early);
+  CoreTestFixture f = begin_test(config, "streaming_error_response", nullptr,
+                                 nullptr, request_status_early);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -287,7 +286,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   config.tear_down_data(&f);
 }
 
-void streaming_error_response(grpc_end2end_test_config config) {
+void streaming_error_response(CoreTestConfiguration config) {
   test(config, false, false);
   test(config, true, false);
   test(config, true, true);

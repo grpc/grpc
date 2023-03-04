@@ -48,7 +48,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -60,13 +60,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -75,8 +75,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_delayed_request_body(grpc_end2end_test_config config,
-                                        grpc_end2end_test_fixture* f,
+static void simple_delayed_request_body(CoreTestConfiguration config,
+                                        CoreTestFixture* f,
                                         const grpc_channel_args* client_args,
                                         const grpc_channel_args* server_args,
                                         long /*delay_us*/) {
@@ -185,8 +185,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   grpc_call_unref(s);
 }
 
-static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
+static void test_simple_delayed_request_short(CoreTestConfiguration config) {
+  CoreTestFixture f;
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -201,8 +201,8 @@ static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
+static void test_simple_delayed_request_long(CoreTestConfiguration config) {
+  CoreTestFixture f;
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -218,7 +218,7 @@ static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void simple_delayed_request(grpc_end2end_test_config config) {
+void simple_delayed_request(CoreTestConfiguration config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);

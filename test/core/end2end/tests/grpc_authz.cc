@@ -43,11 +43,11 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "%s", std::string(80, '*').c_str());
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -71,7 +71,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -82,13 +82,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -97,7 +97,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
+static void test_allow_authorized_request(CoreTestFixture f) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -201,7 +201,7 @@ static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
   grpc_call_unref(s);
 }
 
-static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
+static void test_deny_unauthorized_request(CoreTestFixture f) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -266,7 +266,7 @@ static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
 }
 
 static void test_static_init_allow_authorized_request(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -294,7 +294,7 @@ static void test_static_init_allow_authorized_request(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_static_init_allow_authorized_request", nullptr,
                  &server_args);
   grpc_authorization_policy_provider_release(provider);
@@ -305,7 +305,7 @@ static void test_static_init_allow_authorized_request(
 }
 
 static void test_static_init_deny_unauthorized_request(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -343,7 +343,7 @@ static void test_static_init_deny_unauthorized_request(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_static_init_deny_unauthorized_request", nullptr,
                  &server_args);
   grpc_authorization_policy_provider_release(provider);
@@ -354,7 +354,7 @@ static void test_static_init_deny_unauthorized_request(
 }
 
 static void test_static_init_deny_request_no_match_in_policy(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -382,7 +382,7 @@ static void test_static_init_deny_request_no_match_in_policy(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_static_init_deny_request_no_match_in_policy",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
@@ -393,7 +393,7 @@ static void test_static_init_deny_request_no_match_in_policy(
 }
 
 static void test_file_watcher_init_allow_authorized_request(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -423,7 +423,7 @@ static void test_file_watcher_init_allow_authorized_request(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_file_watcher_init_allow_authorized_request",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
@@ -434,7 +434,7 @@ static void test_file_watcher_init_allow_authorized_request(
 }
 
 static void test_file_watcher_init_deny_unauthorized_request(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -474,7 +474,7 @@ static void test_file_watcher_init_deny_unauthorized_request(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_file_watcher_init_deny_unauthorized_request",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
@@ -485,7 +485,7 @@ static void test_file_watcher_init_deny_unauthorized_request(
 }
 
 static void test_file_watcher_init_deny_request_no_match_in_policy(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -515,7 +515,7 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f = begin_test(
+  CoreTestFixture f = begin_test(
       config, "test_file_watcher_init_deny_request_no_match_in_policy", nullptr,
       &server_args);
   grpc_authorization_policy_provider_release(provider);
@@ -526,7 +526,7 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
 }
 
 static void test_file_watcher_valid_policy_reload(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -556,7 +556,7 @@ static void test_file_watcher_valid_policy_reload(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f = begin_test(
+  CoreTestFixture f = begin_test(
       config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
@@ -609,7 +609,7 @@ static void test_file_watcher_valid_policy_reload(
 }
 
 static void test_file_watcher_invalid_policy_skip_reload(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -639,7 +639,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_file_watcher_invalid_policy_skip_reload",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
@@ -671,7 +671,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
 }
 
 static void test_file_watcher_recovers_from_failure(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -701,7 +701,7 @@ static void test_file_watcher_recovers_from_failure(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f = begin_test(
+  CoreTestFixture f = begin_test(
       config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
@@ -773,7 +773,7 @@ static void test_file_watcher_recovers_from_failure(
   config.tear_down_data(&f);
 }
 
-void grpc_authz(grpc_end2end_test_config config) {
+void grpc_authz(CoreTestConfiguration config) {
   test_static_init_allow_authorized_request(config);
   test_static_init_deny_unauthorized_request(config);
   test_static_init_deny_request_no_match_in_policy(config);

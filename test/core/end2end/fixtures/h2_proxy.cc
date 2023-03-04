@@ -52,10 +52,10 @@ static grpc_channel* create_proxy_client(const char* target,
 static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,
                                                  create_proxy_client};
 
-static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
+static CoreTestFixture chttp2_create_fixture_fullstack(
     const grpc_channel_args* client_args,
     const grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   fullstack_fixture_data* ffd = static_cast<fullstack_fixture_data*>(
       gpr_malloc(sizeof(fullstack_fixture_data)));
   memset(&f, 0, sizeof(f));
@@ -68,7 +68,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   return f;
 }
 
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
+void chttp2_init_client_fullstack(CoreTestFixture* f,
                                   const grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
@@ -79,7 +79,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   GPR_ASSERT(f->client);
 }
 
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
+void chttp2_init_server_fullstack(CoreTestFixture* f,
                                   const grpc_channel_args* server_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
@@ -96,7 +96,7 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
+void chttp2_tear_down_fullstack(CoreTestFixture* f) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   grpc_end2end_proxy_destroy(ffd->proxy);
@@ -104,7 +104,7 @@ void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
 }
 
 // All test configurations
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/fullstack+proxy",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |

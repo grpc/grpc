@@ -46,11 +46,11 @@ typedef enum { NONE, OVERRIDE, DESTROY, FAIL } override_mode;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            bool use_secure_call_creds,
-                                            int fail_server_auth_check) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  bool use_secure_call_creds,
+                                  int fail_server_auth_check) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "Running test: %s%s/%s", test_name,
           use_secure_call_creds ? "_with_secure_call_creds"
                                 : "_with_insecure_call_creds",
@@ -87,7 +87,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -99,13 +99,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -132,7 +132,7 @@ static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
 }
 
 static void request_response_with_payload_and_call_creds(
-    const char* test_name, grpc_end2end_test_config config, override_mode mode,
+    const char* test_name, CoreTestConfiguration config, override_mode mode,
     bool use_secure_call_creds) {
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
@@ -144,7 +144,7 @@ static void request_response_with_payload_and_call_creds(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -394,39 +394,39 @@ static void request_response_with_payload_and_call_creds(
 }
 
 static void test_request_response_with_payload_and_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    CoreTestConfiguration config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_call_creds", config, NONE,
       use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_and_overridden_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    CoreTestConfiguration config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_overridden_call_creds", config,
       OVERRIDE, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_and_deleted_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    CoreTestConfiguration config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_deleted_call_creds", config,
       DESTROY, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_fail_to_send_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    CoreTestConfiguration config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_fail_to_send_call_creds", config,
       FAIL, use_secure_call_creds);
 }
 
 static void test_request_with_server_rejecting_client_creds(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_call* c;
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   gpr_timespec deadline = five_seconds_from_now();
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -518,7 +518,7 @@ static void test_request_with_server_rejecting_client_creds(
   config.tear_down_data(&f);
 }
 
-void call_creds(grpc_end2end_test_config config) {
+void call_creds(CoreTestConfiguration config) {
   // Test fixtures that support call credentials with a minimum security level
   // of GRPC_PRIVACY_AND_INTEGRITY
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {

@@ -46,8 +46,8 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void simple_request_body(grpc_end2end_test_config /*config*/,
-                                grpc_end2end_test_fixture* f) {
+static void simple_request_body(CoreTestConfiguration /*config*/,
+                                CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq);
@@ -166,8 +166,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_max_connection_idle(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+static void test_max_connection_idle(CoreTestConfiguration config) {
+  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_core::CqVerifier cqv(f.cq);
 
@@ -231,7 +231,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void max_connection_idle(grpc_end2end_test_config config) {
+void max_connection_idle(CoreTestConfiguration config) {
   test_max_connection_idle(config);
 }
 

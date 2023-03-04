@@ -32,191 +32,200 @@
 
 static bool g_pre_init_called = false;
 
-extern void authority_not_supported(grpc_end2end_test_config config);
+extern void authority_not_supported(CoreTestConfiguration config);
 extern void authority_not_supported_pre_init(void);
-extern void bad_hostname(grpc_end2end_test_config config);
+extern void bad_hostname(CoreTestConfiguration config);
 extern void bad_hostname_pre_init(void);
-extern void bad_ping(grpc_end2end_test_config config);
+extern void bad_ping(CoreTestConfiguration config);
 extern void bad_ping_pre_init(void);
-extern void binary_metadata(grpc_end2end_test_config config);
+extern void binary_metadata(CoreTestConfiguration config);
 extern void binary_metadata_pre_init(void);
-extern void call_creds(grpc_end2end_test_config config);
+extern void call_creds(CoreTestConfiguration config);
 extern void call_creds_pre_init(void);
-extern void call_host_override(grpc_end2end_test_config config);
+extern void call_host_override(CoreTestConfiguration config);
 extern void call_host_override_pre_init(void);
-extern void cancel_after_accept(grpc_end2end_test_config config);
+extern void cancel_after_accept(CoreTestConfiguration config);
 extern void cancel_after_accept_pre_init(void);
-extern void cancel_after_client_done(grpc_end2end_test_config config);
+extern void cancel_after_client_done(CoreTestConfiguration config);
 extern void cancel_after_client_done_pre_init(void);
-extern void cancel_after_invoke(grpc_end2end_test_config config);
+extern void cancel_after_invoke(CoreTestConfiguration config);
 extern void cancel_after_invoke_pre_init(void);
-extern void cancel_after_round_trip(grpc_end2end_test_config config);
+extern void cancel_after_round_trip(CoreTestConfiguration config);
 extern void cancel_after_round_trip_pre_init(void);
-extern void cancel_before_invoke(grpc_end2end_test_config config);
+extern void cancel_before_invoke(CoreTestConfiguration config);
 extern void cancel_before_invoke_pre_init(void);
-extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
+extern void cancel_in_a_vacuum(CoreTestConfiguration config);
 extern void cancel_in_a_vacuum_pre_init(void);
-extern void cancel_with_status(grpc_end2end_test_config config);
+extern void cancel_with_status(CoreTestConfiguration config);
 extern void cancel_with_status_pre_init(void);
-extern void channelz(grpc_end2end_test_config config);
+extern void channelz(CoreTestConfiguration config);
 extern void channelz_pre_init(void);
-extern void client_streaming(grpc_end2end_test_config config);
+extern void client_streaming(CoreTestConfiguration config);
 extern void client_streaming_pre_init(void);
-extern void compressed_payload(grpc_end2end_test_config config);
+extern void compressed_payload(CoreTestConfiguration config);
 extern void compressed_payload_pre_init(void);
-extern void connectivity(grpc_end2end_test_config config);
+extern void connectivity(CoreTestConfiguration config);
 extern void connectivity_pre_init(void);
-extern void default_host(grpc_end2end_test_config config);
+extern void default_host(CoreTestConfiguration config);
 extern void default_host_pre_init(void);
-extern void disappearing_server(grpc_end2end_test_config config);
+extern void disappearing_server(CoreTestConfiguration config);
 extern void disappearing_server_pre_init(void);
-extern void empty_batch(grpc_end2end_test_config config);
+extern void empty_batch(CoreTestConfiguration config);
 extern void empty_batch_pre_init(void);
-extern void filter_causes_close(grpc_end2end_test_config config);
+extern void filter_causes_close(CoreTestConfiguration config);
 extern void filter_causes_close_pre_init(void);
-extern void filter_context(grpc_end2end_test_config config);
+extern void filter_context(CoreTestConfiguration config);
 extern void filter_context_pre_init(void);
-extern void filter_init_fails(grpc_end2end_test_config config);
+extern void filter_init_fails(CoreTestConfiguration config);
 extern void filter_init_fails_pre_init(void);
-extern void filter_latency(grpc_end2end_test_config config);
+extern void filter_latency(CoreTestConfiguration config);
 extern void filter_latency_pre_init(void);
-extern void filter_status_code(grpc_end2end_test_config config);
+extern void filter_status_code(CoreTestConfiguration config);
 extern void filter_status_code_pre_init(void);
-extern void filtered_metadata(grpc_end2end_test_config config);
+extern void filtered_metadata(CoreTestConfiguration config);
 extern void filtered_metadata_pre_init(void);
-extern void graceful_server_shutdown(grpc_end2end_test_config config);
+extern void graceful_server_shutdown(CoreTestConfiguration config);
 extern void graceful_server_shutdown_pre_init(void);
-extern void grpc_authz(grpc_end2end_test_config config);
+extern void grpc_authz(CoreTestConfiguration config);
 extern void grpc_authz_pre_init(void);
-extern void high_initial_seqno(grpc_end2end_test_config config);
+extern void high_initial_seqno(CoreTestConfiguration config);
 extern void high_initial_seqno_pre_init(void);
-extern void hpack_size(grpc_end2end_test_config config);
+extern void hpack_size(CoreTestConfiguration config);
 extern void hpack_size_pre_init(void);
-extern void invoke_large_request(grpc_end2end_test_config config);
+extern void invoke_large_request(CoreTestConfiguration config);
 extern void invoke_large_request_pre_init(void);
-extern void keepalive_timeout(grpc_end2end_test_config config);
+extern void keepalive_timeout(CoreTestConfiguration config);
 extern void keepalive_timeout_pre_init(void);
-extern void large_metadata(grpc_end2end_test_config config);
+extern void large_metadata(CoreTestConfiguration config);
 extern void large_metadata_pre_init(void);
-extern void max_concurrent_streams(grpc_end2end_test_config config);
+extern void max_concurrent_streams(CoreTestConfiguration config);
 extern void max_concurrent_streams_pre_init(void);
-extern void max_connection_age(grpc_end2end_test_config config);
+extern void max_connection_age(CoreTestConfiguration config);
 extern void max_connection_age_pre_init(void);
-extern void max_connection_idle(grpc_end2end_test_config config);
+extern void max_connection_idle(CoreTestConfiguration config);
 extern void max_connection_idle_pre_init(void);
-extern void max_message_length(grpc_end2end_test_config config);
+extern void max_message_length(CoreTestConfiguration config);
 extern void max_message_length_pre_init(void);
-extern void negative_deadline(grpc_end2end_test_config config);
+extern void negative_deadline(CoreTestConfiguration config);
 extern void negative_deadline_pre_init(void);
-extern void no_logging(grpc_end2end_test_config config);
+extern void no_logging(CoreTestConfiguration config);
 extern void no_logging_pre_init(void);
-extern void no_op(grpc_end2end_test_config config);
+extern void no_op(CoreTestConfiguration config);
 extern void no_op_pre_init(void);
-extern void payload(grpc_end2end_test_config config);
+extern void payload(CoreTestConfiguration config);
 extern void payload_pre_init(void);
-extern void ping(grpc_end2end_test_config config);
+extern void ping(CoreTestConfiguration config);
 extern void ping_pre_init(void);
-extern void ping_pong_streaming(grpc_end2end_test_config config);
+extern void ping_pong_streaming(CoreTestConfiguration config);
 extern void ping_pong_streaming_pre_init(void);
-extern void proxy_auth(grpc_end2end_test_config config);
+extern void proxy_auth(CoreTestConfiguration config);
 extern void proxy_auth_pre_init(void);
-extern void registered_call(grpc_end2end_test_config config);
+extern void registered_call(CoreTestConfiguration config);
 extern void registered_call_pre_init(void);
-extern void request_with_flags(grpc_end2end_test_config config);
+extern void request_with_flags(CoreTestConfiguration config);
 extern void request_with_flags_pre_init(void);
-extern void request_with_payload(grpc_end2end_test_config config);
+extern void request_with_payload(CoreTestConfiguration config);
 extern void request_with_payload_pre_init(void);
-extern void resource_quota_server(grpc_end2end_test_config config);
+extern void resource_quota_server(CoreTestConfiguration config);
 extern void resource_quota_server_pre_init(void);
-extern void retry(grpc_end2end_test_config config);
+extern void retry(CoreTestConfiguration config);
 extern void retry_pre_init(void);
-extern void retry_cancel_after_first_attempt_starts(grpc_end2end_test_config config);
+extern void retry_cancel_after_first_attempt_starts(
+    CoreTestConfiguration config);
 extern void retry_cancel_after_first_attempt_starts_pre_init(void);
-extern void retry_cancel_during_delay(grpc_end2end_test_config config);
+extern void retry_cancel_during_delay(CoreTestConfiguration config);
 extern void retry_cancel_during_delay_pre_init(void);
-extern void retry_cancel_with_multiple_send_batches(grpc_end2end_test_config config);
+extern void retry_cancel_with_multiple_send_batches(
+    CoreTestConfiguration config);
 extern void retry_cancel_with_multiple_send_batches_pre_init(void);
-extern void retry_cancellation(grpc_end2end_test_config config);
+extern void retry_cancellation(CoreTestConfiguration config);
 extern void retry_cancellation_pre_init(void);
-extern void retry_disabled(grpc_end2end_test_config config);
+extern void retry_disabled(CoreTestConfiguration config);
 extern void retry_disabled_pre_init(void);
-extern void retry_exceeds_buffer_size_in_delay(grpc_end2end_test_config config);
+extern void retry_exceeds_buffer_size_in_delay(CoreTestConfiguration config);
 extern void retry_exceeds_buffer_size_in_delay_pre_init(void);
-extern void retry_exceeds_buffer_size_in_initial_batch(grpc_end2end_test_config config);
+extern void retry_exceeds_buffer_size_in_initial_batch(
+    CoreTestConfiguration config);
 extern void retry_exceeds_buffer_size_in_initial_batch_pre_init(void);
-extern void retry_exceeds_buffer_size_in_subsequent_batch(grpc_end2end_test_config config);
+extern void retry_exceeds_buffer_size_in_subsequent_batch(
+    CoreTestConfiguration config);
 extern void retry_exceeds_buffer_size_in_subsequent_batch_pre_init(void);
-extern void retry_lb_drop(grpc_end2end_test_config config);
+extern void retry_lb_drop(CoreTestConfiguration config);
 extern void retry_lb_drop_pre_init(void);
-extern void retry_lb_fail(grpc_end2end_test_config config);
+extern void retry_lb_fail(CoreTestConfiguration config);
 extern void retry_lb_fail_pre_init(void);
-extern void retry_non_retriable_status(grpc_end2end_test_config config);
+extern void retry_non_retriable_status(CoreTestConfiguration config);
 extern void retry_non_retriable_status_pre_init(void);
-extern void retry_non_retriable_status_before_recv_trailing_metadata_started(grpc_end2end_test_config config);
-extern void retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init(void);
-extern void retry_per_attempt_recv_timeout(grpc_end2end_test_config config);
+extern void retry_non_retriable_status_before_recv_trailing_metadata_started(
+    CoreTestConfiguration config);
+extern void
+retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init(void);
+extern void retry_per_attempt_recv_timeout(CoreTestConfiguration config);
 extern void retry_per_attempt_recv_timeout_pre_init(void);
-extern void retry_per_attempt_recv_timeout_on_last_attempt(grpc_end2end_test_config config);
+extern void retry_per_attempt_recv_timeout_on_last_attempt(
+    CoreTestConfiguration config);
 extern void retry_per_attempt_recv_timeout_on_last_attempt_pre_init(void);
-extern void retry_recv_initial_metadata(grpc_end2end_test_config config);
+extern void retry_recv_initial_metadata(CoreTestConfiguration config);
 extern void retry_recv_initial_metadata_pre_init(void);
-extern void retry_recv_message(grpc_end2end_test_config config);
+extern void retry_recv_message(CoreTestConfiguration config);
 extern void retry_recv_message_pre_init(void);
-extern void retry_recv_message_replay(grpc_end2end_test_config config);
+extern void retry_recv_message_replay(CoreTestConfiguration config);
 extern void retry_recv_message_replay_pre_init(void);
-extern void retry_recv_trailing_metadata_error(grpc_end2end_test_config config);
+extern void retry_recv_trailing_metadata_error(CoreTestConfiguration config);
 extern void retry_recv_trailing_metadata_error_pre_init(void);
-extern void retry_send_initial_metadata_refs(grpc_end2end_test_config config);
+extern void retry_send_initial_metadata_refs(CoreTestConfiguration config);
 extern void retry_send_initial_metadata_refs_pre_init(void);
-extern void retry_send_op_fails(grpc_end2end_test_config config);
+extern void retry_send_op_fails(CoreTestConfiguration config);
 extern void retry_send_op_fails_pre_init(void);
-extern void retry_send_recv_batch(grpc_end2end_test_config config);
+extern void retry_send_recv_batch(CoreTestConfiguration config);
 extern void retry_send_recv_batch_pre_init(void);
-extern void retry_server_pushback_delay(grpc_end2end_test_config config);
+extern void retry_server_pushback_delay(CoreTestConfiguration config);
 extern void retry_server_pushback_delay_pre_init(void);
-extern void retry_server_pushback_disabled(grpc_end2end_test_config config);
+extern void retry_server_pushback_disabled(CoreTestConfiguration config);
 extern void retry_server_pushback_disabled_pre_init(void);
-extern void retry_streaming(grpc_end2end_test_config config);
+extern void retry_streaming(CoreTestConfiguration config);
 extern void retry_streaming_pre_init(void);
-extern void retry_streaming_after_commit(grpc_end2end_test_config config);
+extern void retry_streaming_after_commit(CoreTestConfiguration config);
 extern void retry_streaming_after_commit_pre_init(void);
-extern void retry_streaming_succeeds_before_replay_finished(grpc_end2end_test_config config);
+extern void retry_streaming_succeeds_before_replay_finished(
+    CoreTestConfiguration config);
 extern void retry_streaming_succeeds_before_replay_finished_pre_init(void);
-extern void retry_throttled(grpc_end2end_test_config config);
+extern void retry_throttled(CoreTestConfiguration config);
 extern void retry_throttled_pre_init(void);
-extern void retry_too_many_attempts(grpc_end2end_test_config config);
+extern void retry_too_many_attempts(CoreTestConfiguration config);
 extern void retry_too_many_attempts_pre_init(void);
-extern void retry_transparent_goaway(grpc_end2end_test_config config);
+extern void retry_transparent_goaway(CoreTestConfiguration config);
 extern void retry_transparent_goaway_pre_init(void);
-extern void retry_transparent_max_concurrent_streams(grpc_end2end_test_config config);
+extern void retry_transparent_max_concurrent_streams(
+    CoreTestConfiguration config);
 extern void retry_transparent_max_concurrent_streams_pre_init(void);
-extern void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config);
+extern void retry_transparent_not_sent_on_wire(CoreTestConfiguration config);
 extern void retry_transparent_not_sent_on_wire_pre_init(void);
-extern void retry_unref_before_finish(grpc_end2end_test_config config);
+extern void retry_unref_before_finish(CoreTestConfiguration config);
 extern void retry_unref_before_finish_pre_init(void);
-extern void retry_unref_before_recv(grpc_end2end_test_config config);
+extern void retry_unref_before_recv(CoreTestConfiguration config);
 extern void retry_unref_before_recv_pre_init(void);
-extern void server_finishes_request(grpc_end2end_test_config config);
+extern void server_finishes_request(CoreTestConfiguration config);
 extern void server_finishes_request_pre_init(void);
-extern void server_streaming(grpc_end2end_test_config config);
+extern void server_streaming(CoreTestConfiguration config);
 extern void server_streaming_pre_init(void);
-extern void shutdown_finishes_calls(grpc_end2end_test_config config);
+extern void shutdown_finishes_calls(CoreTestConfiguration config);
 extern void shutdown_finishes_calls_pre_init(void);
-extern void shutdown_finishes_tags(grpc_end2end_test_config config);
+extern void shutdown_finishes_tags(CoreTestConfiguration config);
 extern void shutdown_finishes_tags_pre_init(void);
-extern void simple_delayed_request(grpc_end2end_test_config config);
+extern void simple_delayed_request(CoreTestConfiguration config);
 extern void simple_delayed_request_pre_init(void);
-extern void simple_metadata(grpc_end2end_test_config config);
+extern void simple_metadata(CoreTestConfiguration config);
 extern void simple_metadata_pre_init(void);
-extern void simple_request(grpc_end2end_test_config config);
+extern void simple_request(CoreTestConfiguration config);
 extern void simple_request_pre_init(void);
-extern void streaming_error_response(grpc_end2end_test_config config);
+extern void streaming_error_response(CoreTestConfiguration config);
 extern void streaming_error_response_pre_init(void);
-extern void trailing_metadata(grpc_end2end_test_config config);
+extern void trailing_metadata(CoreTestConfiguration config);
 extern void trailing_metadata_pre_init(void);
-extern void write_buffering(grpc_end2end_test_config config);
+extern void write_buffering(CoreTestConfiguration config);
 extern void write_buffering_pre_init(void);
-extern void write_buffering_at_end(grpc_end2end_test_config config);
+extern void write_buffering_at_end(CoreTestConfiguration config);
 extern void write_buffering_at_end_pre_init(void);
 
 void grpc_end2end_tests_pre_init(void) {
@@ -318,8 +327,7 @@ void grpc_end2end_tests_pre_init(void) {
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-void grpc_end2end_tests(int argc, char **argv,
-                        grpc_end2end_test_config config) {
+void grpc_end2end_tests(int argc, char** argv, CoreTestConfiguration config) {
   int i;
 
   GPR_ASSERT(g_pre_init_called);
@@ -662,7 +670,10 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_non_retriable_status(config);
       continue;
     }
-    if (0 == strcmp("retry_non_retriable_status_before_recv_trailing_metadata_started", argv[i])) {
+    if (0 ==
+        strcmp(
+            "retry_non_retriable_status_before_recv_trailing_metadata_started",
+            argv[i])) {
       retry_non_retriable_status_before_recv_trailing_metadata_started(config);
       continue;
     }
@@ -670,7 +681,8 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_per_attempt_recv_timeout(config);
       continue;
     }
-    if (0 == strcmp("retry_per_attempt_recv_timeout_on_last_attempt", argv[i])) {
+    if (0 ==
+        strcmp("retry_per_attempt_recv_timeout_on_last_attempt", argv[i])) {
       retry_per_attempt_recv_timeout_on_last_attempt(config);
       continue;
     }
@@ -718,7 +730,8 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_streaming_after_commit(config);
       continue;
     }
-    if (0 == strcmp("retry_streaming_succeeds_before_replay_finished", argv[i])) {
+    if (0 ==
+        strcmp("retry_streaming_succeeds_before_replay_finished", argv[i])) {
       retry_streaming_succeeds_before_replay_finished(config);
       continue;
     }
@@ -794,6 +807,6 @@ void grpc_end2end_tests(int argc, char **argv,
       write_buffering_at_end(config);
       continue;
     }
-    grpc_core::Crash(absl::StrFormat( "not a test: '%s'", argv[i]));
+    grpc_core::Crash(absl::StrFormat("not a test: '%s'", argv[i]));
   }
 }

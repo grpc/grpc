@@ -62,19 +62,19 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -83,8 +83,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+static void test_max_age_forcibly_close(CoreTestConfiguration config) {
+  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
@@ -241,8 +241,8 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+static void test_max_age_gracefully_close(CoreTestConfiguration config) {
+  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
@@ -394,7 +394,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void max_connection_age(grpc_end2end_test_config config) {
+void max_connection_age(CoreTestConfiguration config) {
   test_max_age_forcibly_close(config);
   test_max_age_gracefully_close(config);
 }

@@ -106,6 +106,9 @@ grpc_cc_library(
         "end2end_tests.h",
         "fixtures/local_util.h",
     ],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

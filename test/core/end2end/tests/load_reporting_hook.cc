@@ -53,11 +53,11 @@ typedef struct {
   bool fully_processed;
 } load_reporting_data;
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
 
   f = config.create_fixture(client_args, server_args);
@@ -82,7 +82,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -94,13 +94,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -110,8 +110,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static void request_response_with_payload(
-    grpc_end2end_test_config config, grpc_end2end_test_fixture f,
-    const char* method_name, const char* request_msg, const char* response_msg,
+    CoreTestConfiguration config, CoreTestFixture f, const char* method_name,
+    const char* request_msg, const char* response_msg,
     grpc_metadata* initial_lr_metadata, grpc_metadata* trailing_lr_metadata) {
   grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
   grpc_slice response_payload_slice =
@@ -263,7 +263,7 @@ static void request_response_with_payload(
 extern void (*g_load_reporting_fn)(
     const grpc_load_reporting_call_data* call_data);
 
-static void test_load_reporting_hook(grpc_end2end_test_config config) {
+static void test_load_reporting_hook(CoreTestConfiguration config) {
   // TODO(dgq): this test is currently a noop until LR is fully defined.
   // Leaving the rest here, as it'll likely be reusable.
 
@@ -272,7 +272,7 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   grpc_channel_args* lr_server_args =
       grpc_channel_args_copy_and_add(nullptr, &arg, 1);
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_load_reporting_hook", nullptr, lr_server_args);
 
   const char* method_name = "/gRPCFTW";
@@ -303,7 +303,7 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void load_reporting_hook(grpc_end2end_test_config config) {
+void load_reporting_hook(CoreTestConfiguration config) {
   test_load_reporting_hook(config);
 }
 

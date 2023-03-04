@@ -45,19 +45,19 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -67,8 +67,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Send more pings than server allows to trigger server's GOAWAY.
-static void test_bad_ping(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+static void test_bad_ping(CoreTestConfiguration config) {
+  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_arg client_a[] = {
       grpc_channel_arg_integer_create(
@@ -215,8 +215,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
 
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
-static void test_pings_without_data(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+static void test_pings_without_data(CoreTestConfiguration config) {
+  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
@@ -366,7 +366,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void bad_ping(grpc_end2end_test_config config) {
+void bad_ping(CoreTestConfiguration config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_bad_ping(config);
   test_pings_without_data(config);

@@ -83,10 +83,10 @@ ssl_server_certificate_config_callback(
   }
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
+static CoreTestFixture chttp2_create_fixture_secure_fullstack(
     const grpc_channel_args* /*client_args*/,
     const grpc_channel_args* /*server_args*/, grpc_tls_version tls_version) {
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
@@ -99,7 +99,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
+static CoreTestFixture chttp2_create_fixture_secure_fullstack_tls1_3(
     const grpc_channel_args* client_args,
     const grpc_channel_args* server_args) {
   return chttp2_create_fixture_secure_fullstack(client_args, server_args,
@@ -116,7 +116,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
 }
 
 static void chttp2_init_client_secure_fullstack(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args,
+    CoreTestFixture* f, const grpc_channel_args* client_args,
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
@@ -126,7 +126,7 @@ static void chttp2_init_client_secure_fullstack(
 }
 
 static void chttp2_init_server_secure_fullstack(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args,
+    CoreTestFixture* f, const grpc_channel_args* server_args,
     grpc_server_credentials* server_creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
@@ -142,14 +142,14 @@ static void chttp2_init_server_secure_fullstack(
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
+void chttp2_tear_down_secure_fullstack(CoreTestFixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
   delete ffd;
 }
 
 static void chttp2_init_client_simple_ssl_secure_fullstack(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
+    CoreTestFixture* f, const grpc_channel_args* client_args) {
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
   if (f != nullptr && ssl_creds != nullptr) {
@@ -184,7 +184,7 @@ static int fail_server_auth_check(const grpc_channel_args* server_args) {
 }
 
 static void chttp2_init_server_simple_ssl_secure_fullstack(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args) {
+    CoreTestFixture* f, const grpc_channel_args* server_args) {
   grpc_ssl_server_credentials_options* options =
       grpc_ssl_server_credentials_create_options_using_config_fetcher(
           GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
@@ -210,7 +210,7 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 
 // All test configurations
 
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/simple_ssl_fullstack_tls1_3",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |

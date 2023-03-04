@@ -42,11 +42,11 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
@@ -69,7 +69,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -81,13 +81,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -98,7 +98,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Client sends a request, then waits for the keepalive watchdog timeouts before
 // returning status.
-static void test_keepalive_timeout(grpc_end2end_test_config config) {
+static void test_keepalive_timeout(CoreTestConfiguration config) {
   grpc_call* c;
 
   grpc_arg keepalive_arg_elems[3];
@@ -114,7 +114,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_channel_args keepalive_args = {GPR_ARRAY_SIZE(keepalive_arg_elems),
                                       keepalive_arg_elems};
 
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "keepalive_timeout", &keepalive_args, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
@@ -176,7 +176,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 // with a sleep of 10ms in between. It has a configured keepalive timer of
 // 200ms. In the success case, each ping ack should reset the keepalive timer so
 // that the keepalive ping is never sent.
-static void test_read_delays_keepalive(grpc_end2end_test_config config) {
+static void test_read_delays_keepalive(CoreTestConfiguration config) {
 #ifdef GRPC_POSIX_SOCKET
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   // It is hard to get the timing right for the polling engine poll.
@@ -197,8 +197,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   keepalive_arg_elems[2].value.integer = 0;
   grpc_channel_args keepalive_args = {GPR_ARRAY_SIZE(keepalive_arg_elems),
                                       keepalive_arg_elems};
-  grpc_end2end_test_fixture f = begin_test(config, "test_read_delays_keepalive",
-                                           &keepalive_args, nullptr);
+  CoreTestFixture f = begin_test(config, "test_read_delays_keepalive",
+                                 &keepalive_args, nullptr);
   // Disable ping ack to trigger the keepalive timeout
   grpc_set_disable_ping_ack(true);
   grpc_call* c;
@@ -382,7 +382,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void keepalive_timeout(grpc_end2end_test_config config) {
+void keepalive_timeout(CoreTestConfiguration config) {
   test_keepalive_timeout(config);
   test_read_delays_keepalive(config);
 }

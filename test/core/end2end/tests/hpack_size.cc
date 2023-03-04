@@ -180,11 +180,11 @@ const char* hobbits[][2] = {
 const char* dragons[] = {"Ancalagon", "Glaurung", "Scatha",
                          "Smaug the Magnificent"};
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
@@ -207,7 +207,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -219,13 +219,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -234,8 +234,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config /*config*/,
-                                grpc_end2end_test_fixture f, size_t index) {
+static void simple_request_body(CoreTestConfiguration /*config*/,
+                                CoreTestFixture f, size_t index) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f.cq);
@@ -350,10 +350,10 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_size(grpc_end2end_test_config config, int encode_size,
+static void test_size(CoreTestConfiguration config, int encode_size,
                       int decode_size) {
   size_t i;
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_arg server_arg;
   grpc_channel_args server_args;
   grpc_arg client_arg;
@@ -383,7 +383,7 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
   config.tear_down_data(&f);
 }
 
-void hpack_size(grpc_end2end_test_config config) {
+void hpack_size(CoreTestConfiguration config) {
   static const int interesting_sizes[] = {4096, 0,     100,
                                           1000, 32768, 4 * 1024 * 1024};
   size_t i, j;

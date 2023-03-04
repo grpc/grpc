@@ -54,7 +54,7 @@ struct custom_fixture_data {
 };
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
-  grpc_end2end_test_fixture* f = static_cast<grpc_end2end_test_fixture*>(ts);
+  CoreTestFixture* f = static_cast<CoreTestFixture*>(ts);
   grpc_core::ExecCtx exec_ctx;
   custom_fixture_data* fixture_data =
       static_cast<custom_fixture_data*>(f->fixture_data);
@@ -70,7 +70,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 typedef struct {
-  grpc_end2end_test_fixture* f;
+  CoreTestFixture* f;
   const grpc_channel_args* client_args;
 } sp_client_setup;
 
@@ -92,12 +92,12 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
   }
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
+static CoreTestFixture chttp2_create_fixture_socketpair(
     const grpc_channel_args* /*client_args*/,
     const grpc_channel_args* /*server_args*/) {
   custom_fixture_data* fixture_data = static_cast<custom_fixture_data*>(
       gpr_malloc(sizeof(custom_fixture_data)));
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   memset(&f, 0, sizeof(f));
   f.fixture_data = fixture_data;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
@@ -117,7 +117,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
 }
 
 static void chttp2_init_client_socketpair(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
+    CoreTestFixture* f, const grpc_channel_args* client_args) {
   grpc_core::ExecCtx exec_ctx;
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
@@ -135,7 +135,7 @@ static void chttp2_init_client_socketpair(
 }
 
 static void chttp2_init_server_socketpair(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args) {
+    CoreTestFixture* f, const grpc_channel_args* server_args) {
   grpc_core::ExecCtx exec_ctx;
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
@@ -151,13 +151,13 @@ static void chttp2_init_server_socketpair(
   server_setup_transport(f, transport);
 }
 
-static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
+static void chttp2_tear_down_socketpair(CoreTestFixture* f) {
   grpc_core::ExecCtx exec_ctx;
   gpr_free(f->fixture_data);
 }
 
 // All test configurations
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/socketpair_one_byte_at_a_time",
      FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
      chttp2_create_fixture_socketpair, chttp2_init_client_socketpair,

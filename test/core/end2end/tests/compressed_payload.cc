@@ -44,11 +44,12 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(
-    grpc_end2end_test_config config, const char* test_name,
-    const grpc_channel_args* client_args, const grpc_channel_args* server_args,
-    bool decompress_in_core) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  const grpc_channel_args* client_args,
+                                  const grpc_channel_args* server_args,
+                                  bool decompress_in_core) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "Running test: %s%s/%s", test_name,
           decompress_in_core ? "" : "_with_decompression_disabled",
           config.name);
@@ -73,7 +74,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
@@ -85,13 +86,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -101,7 +102,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static void request_for_disabled_algorithm(
-    grpc_end2end_test_config config, const char* test_name,
+    CoreTestConfiguration config, const char* test_name,
     uint32_t send_flags_bitmask,
     grpc_compression_algorithm algorithm_to_disable,
     grpc_compression_algorithm requested_client_compression_algorithm,
@@ -113,7 +114,7 @@ static void request_for_disabled_algorithm(
   grpc_byte_buffer* request_payload;
   grpc_core::ChannelArgs client_args;
   grpc_core::ChannelArgs server_args;
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -271,7 +272,7 @@ static void request_for_disabled_algorithm(
 }
 
 static void request_with_payload_template_inner(
-    grpc_end2end_test_config config, const char* test_name,
+    CoreTestConfiguration config, const char* test_name,
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
@@ -286,7 +287,7 @@ static void request_with_payload_template_inner(
   grpc_byte_buffer* request_payload = nullptr;
   grpc_core::ChannelArgs client_args;
   grpc_core::ChannelArgs server_args;
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -556,7 +557,7 @@ static void request_with_payload_template_inner(
 }
 
 static void request_with_payload_template(
-    grpc_end2end_test_config config, const char* test_name,
+    CoreTestConfiguration config, const char* test_name,
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
@@ -582,7 +583,7 @@ static void request_with_payload_template(
 }
 
 static void test_invoke_request_with_exceptionally_uncompressed_payload(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   request_with_payload_template(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
       GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
@@ -591,7 +592,7 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
 }
 
 static void test_invoke_request_with_uncompressed_payload(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   request_with_payload_template(
       config, "test_invoke_request_with_uncompressed_payload", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
@@ -600,7 +601,7 @@ static void test_invoke_request_with_uncompressed_payload(
 }
 
 static void test_invoke_request_with_compressed_payload(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
@@ -609,7 +610,7 @@ static void test_invoke_request_with_compressed_payload(
 }
 
 static void test_invoke_request_with_send_message_before_initial_metadata(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
@@ -618,7 +619,7 @@ static void test_invoke_request_with_send_message_before_initial_metadata(
 }
 
 static void test_invoke_request_with_server_level(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   request_with_payload_template(
       config, "test_invoke_request_with_server_level", 0, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE /* ignored */,
@@ -626,7 +627,7 @@ static void test_invoke_request_with_server_level(
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   grpc_metadata gzip_compression_override;
   grpc_metadata identity_compression_override;
 
@@ -666,7 +667,7 @@ static void test_invoke_request_with_compressed_payload_md_override(
 }
 
 static void test_invoke_request_with_disabled_algorithm(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   request_for_disabled_algorithm(config,
                                  "test_invoke_request_with_disabled_algorithm",
                                  0, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
@@ -677,7 +678,7 @@ static void test_invoke_request_with_disabled_algorithm(
                                  GRPC_STATUS_UNIMPLEMENTED, nullptr, true);
 }
 
-void compressed_payload(grpc_end2end_test_config config) {
+void compressed_payload(CoreTestConfiguration config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);

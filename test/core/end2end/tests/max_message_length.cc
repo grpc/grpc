@@ -40,11 +40,11 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  grpc_channel_args* client_args,
+                                  grpc_channel_args* server_args) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "\n\n\nRunning test: %s/%s client_args=%s server_args=%s",
           test_name, config.name,
           grpc_core::ChannelArgs::FromC(client_args).ToString().c_str(),
@@ -73,7 +73,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev = grpc_completion_queue_next(
@@ -84,13 +84,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -102,7 +102,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // Test with request larger than the limit.
 // If send_limit is true, applies send limit on client; otherwise, applies
 // recv limit on server.
-static void test_max_message_length_on_request(grpc_end2end_test_config config,
+static void test_max_message_length_on_request(CoreTestConfiguration config,
                                                bool send_limit,
                                                bool use_service_config,
                                                bool use_string_json_value) {
@@ -111,7 +111,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
           "use_string_json_value=%d",
           send_limit, use_service_config, use_string_json_value);
 
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
   grpc_op ops[6];
@@ -290,7 +290,7 @@ done:
 // Test with response larger than the limit.
 // If send_limit is true, applies send limit on server; otherwise, applies
 // recv limit on client.
-static void test_max_message_length_on_response(grpc_end2end_test_config config,
+static void test_max_message_length_on_response(CoreTestConfiguration config,
                                                 bool send_limit,
                                                 bool use_service_config,
                                                 bool use_string_json_value) {
@@ -299,7 +299,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
           "use_string_json_value=%d",
           send_limit, use_service_config, use_string_json_value);
 
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
   grpc_op ops[6];
@@ -487,9 +487,9 @@ static grpc_metadata gzip_compression_override() {
 
 // Test receive message limit with compressed request larger than the limit
 static void test_max_receive_message_length_on_compressed_request(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   gpr_log(GPR_INFO, "test max receive message length on compressed request");
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
   grpc_op ops[6];
@@ -626,10 +626,10 @@ static void test_max_receive_message_length_on_compressed_request(
 
 // Test receive message limit with compressed response larger than the limit.
 static void test_max_receive_message_length_on_compressed_response(
-    grpc_end2end_test_config config) {
+    CoreTestConfiguration config) {
   gpr_log(GPR_INFO,
           "testing max receive message length on compressed response");
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
   grpc_op ops[6];
@@ -768,7 +768,7 @@ static void test_max_receive_message_length_on_compressed_response(
   config.tear_down_data(&f);
 }
 
-void max_message_length(grpc_end2end_test_config config) {
+void max_message_length(CoreTestConfiguration config) {
   test_max_message_length_on_request(config, false /* send_limit */,
                                      false /* use_service_config */,
                                      false /* use_string_json_value */);

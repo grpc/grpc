@@ -211,10 +211,10 @@ static grpc_completion_queue_functor* tag(intptr_t t) {
   return cb;
 }
 
-static grpc_end2end_test_fixture inproc_create_fixture(
+static CoreTestFixture inproc_create_fixture(
     const grpc_channel_args* /*client_args*/,
     const grpc_channel_args* /*server_args*/) {
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
       gpr_malloc(sizeof(inproc_fixture_data)));
   memset(&f, 0, sizeof(f));
@@ -227,13 +227,13 @@ static grpc_end2end_test_fixture inproc_create_fixture(
   return f;
 }
 
-void inproc_init_client(grpc_end2end_test_fixture* f,
+void inproc_init_client(CoreTestFixture* f,
                         const grpc_channel_args* client_args) {
   f->client = grpc_inproc_channel_create(f->server, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
-void inproc_init_server(grpc_end2end_test_fixture* f,
+void inproc_init_server(CoreTestFixture* f,
                         const grpc_channel_args* server_args) {
   if (f->server) {
     grpc_server_destroy(f->server);
@@ -243,16 +243,16 @@ void inproc_init_server(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 }
 
-void inproc_tear_down(grpc_end2end_test_fixture* f) {
+void inproc_tear_down(CoreTestFixture* f) {
   inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(f->fixture_data);
   gpr_free(ffd);
 }
 
-static grpc_end2end_test_fixture begin_test(
-    grpc_end2end_test_config config, const char* test_name,
-    const grpc_channel_args* client_args,
-    const grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static CoreTestFixture begin_test(CoreTestConfiguration config,
+                                  const char* test_name,
+                                  const grpc_channel_args* client_args,
+                                  const grpc_channel_args* server_args) {
+  CoreTestFixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
@@ -273,7 +273,7 @@ static void drain_cq(grpc_completion_queue* /*cq*/) {
   delete g_shutdown_callback;
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1));
   expect_tag(1, true);
@@ -282,13 +282,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(CoreTestFixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(CoreTestFixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -297,8 +297,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config /* config */,
-                                grpc_end2end_test_fixture f) {
+static void simple_request_body(CoreTestConfiguration /* config */,
+                                CoreTestFixture f) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -433,8 +433,8 @@ static void simple_request_body(grpc_end2end_test_config /* config */,
   grpc_call_unref(s);
 }
 
-static void test_invoke_simple_request(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
+static void test_invoke_simple_request(CoreTestConfiguration config) {
+  CoreTestFixture f;
 
   f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f);
@@ -442,9 +442,9 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
+static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
   int i;
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
   for (i = 0; i < 10; i++) {
     simple_request_body(config, f);
@@ -454,10 +454,10 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-static void test_invoke_many_simple_requests(grpc_end2end_test_config config) {
+static void test_invoke_many_simple_requests(CoreTestConfiguration config) {
   int i;
   const int many = 1000;
-  grpc_end2end_test_fixture f =
+  CoreTestFixture f =
       begin_test(config, "test_invoke_many_simple_requests", nullptr, nullptr);
   gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   for (i = 0; i < many; i++) {
@@ -471,7 +471,7 @@ static void test_invoke_many_simple_requests(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-static void simple_request(grpc_end2end_test_config config) {
+static void simple_request(CoreTestConfiguration config) {
   int i;
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
@@ -486,7 +486,7 @@ static void simple_request_pre_init() {
 }
 
 // All test configurations
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"inproc-callback", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
      inproc_create_fixture, inproc_init_client, inproc_init_server,
      inproc_tear_down},

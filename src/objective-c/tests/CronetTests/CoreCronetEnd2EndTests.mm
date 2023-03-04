@@ -56,9 +56,9 @@ struct fullstack_secure_fixture_data {
   std::string localaddr;
 };
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
+static CoreTestFixture chttp2_create_fixture_secure_fullstack(
     const grpc_channel_args *client_args, const grpc_channel_args *server_args) {
-  grpc_end2end_test_fixture f;
+  CoreTestFixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data *ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
@@ -78,7 +78,7 @@ static void process_auth_failure(void *state, grpc_auth_context *ctx, const grpc
   cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
 }
 
-static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
+static void cronet_init_client_secure_fullstack(CoreTestFixture *f,
                                                 const grpc_channel_args *client_args,
                                                 stream_engine *cronetEngine) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
@@ -87,7 +87,7 @@ static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
   GPR_ASSERT(f->client != NULL);
 }
 
-static void chttp2_init_server_secure_fullstack(grpc_end2end_test_fixture *f,
+static void chttp2_init_server_secure_fullstack(CoreTestFixture *f,
                                                 const grpc_channel_args *server_args,
                                                 grpc_server_credentials *server_creds) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
@@ -101,12 +101,12 @@ static void chttp2_init_server_secure_fullstack(grpc_end2end_test_fixture *f,
   grpc_server_start(f->server);
 }
 
-static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
+static void chttp2_tear_down_secure_fullstack(CoreTestFixture *f) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
   delete ffd;
 }
 
-static void cronet_init_client_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
+static void cronet_init_client_simple_ssl_secure_fullstack(CoreTestFixture *f,
                                                            const grpc_channel_args *client_args) {
   grpc_core::ExecCtx exec_ctx;
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
@@ -127,7 +127,7 @@ static int fail_server_auth_check(const grpc_channel_args *server_args) {
   return 0;
 }
 
-static void chttp2_init_server_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
+static void chttp2_init_server_simple_ssl_secure_fullstack(CoreTestFixture *f,
                                                            const grpc_channel_args *server_args) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key, test_server1_cert};
   grpc_server_credentials *ssl_creds =
@@ -141,7 +141,7 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(grpc_end2end_test_fix
 
 /* All test configurations */
 
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS, nullptr,
      chttp2_create_fixture_secure_fullstack, cronet_init_client_simple_ssl_secure_fullstack,
