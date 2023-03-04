@@ -574,6 +574,52 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
             **test_args
         )
 
+def grpc_py_test(name, main = None, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True, deps = []):
+    """Execute a py_test for every <poller> x <EventEngine> combination
+
+    Args:
+        name: The name of the test.
+        main: name of the source file that contains the test main
+        srcs: The source files.
+        args: The args to supply to the test binary.
+        data: Data dependencies.
+        uses_polling: Whether the test uses polling.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        exec_properties: A dictionary of strings that will be added to the
+            exec_properties of a platform selected for this target.
+        shard_count: The number of shards for this test.
+        flaky: Whether this test is flaky.
+        exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_event_engine: set to False if the test is not sensitive to
+            EventEngine implementation differences
+        deps: list of dependencies
+    """
+    test_args = {
+        "data": data,
+        "size": size,
+        "timeout": timeout,
+        "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
+        "shard_count": shard_count,
+        "flaky": flaky,
+    }
+    if main:
+        test_args["main"] = main
+    for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine):
+        native.py_test(
+            name = poller_config["name"],
+            srcs = poller_config["srcs"],
+            deps = poller_config["deps"] + deps,
+            tags = poller_config["tags"],
+            args = poller_config["args"],
+            env = poller_config["env"],
+            **test_args
+        )
+
 def grpc_sh_binary(name, srcs, data = []):
     native.sh_binary(
         name = name,
