@@ -16,9 +16,11 @@
 //
 //
 
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <functional>
+#include <memory>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>

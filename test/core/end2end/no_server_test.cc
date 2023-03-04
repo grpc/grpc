@@ -16,7 +16,6 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
 
 #include <grpc/grpc.h>

@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
+#include <stdint.h>
+
 #include <string>
 #include <vector>
 

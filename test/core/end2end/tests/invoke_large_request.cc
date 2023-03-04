@@ -16,9 +16,10 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
 
+#include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/no_destruct.h"

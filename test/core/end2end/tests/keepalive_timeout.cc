@@ -16,8 +16,10 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
+
+#include <functional>
+#include <memory>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -28,6 +30,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"

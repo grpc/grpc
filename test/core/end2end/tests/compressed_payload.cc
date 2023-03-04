@@ -19,7 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <functional>
 #include <initializer_list>
+#include <memory>
 #include <string>
 
 #include "absl/strings/str_format.h"

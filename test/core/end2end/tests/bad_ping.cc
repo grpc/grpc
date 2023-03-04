@@ -44,9 +44,9 @@ static void drain_cq(grpc_completion_queue* cq) {
 }
 
 static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
+  if (!f->server()) return;
+  grpc_server_destroy(f->server());
+  f->server() = nullptr;
 }
 
 // Send more pings than server allows to trigger server's GOAWAY.
@@ -139,8 +139,8 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   // needed here.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
-    grpc_channel_ping(f->client(), f->cq(), tag(200 + i), nullptr);
-    cqv.Expect(tag(200 + i), true);
+    grpc_channel_ping(f->client(), f->cq(), tan(200 + i), nullptr);
+    cqv.Expect(tan(200 + i), true);
     if (i == MAX_PING_STRIKES + 2) {
       cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     }
@@ -287,9 +287,9 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   // MAX_PING_STRIKES will actually be sent and the rpc will still succeed.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
-    grpc_channel_ping(f->client(), f->cq(), tag(200 + i), nullptr);
+    grpc_channel_ping(f->client(), f->cq(), tan(200 + i), nullptr);
     if (i <= MAX_PING_STRIKES) {
-      cqv.Expect(tag(200 + i), true);
+      cqv.Expect(tan(200 + i), true);
     }
     cqv.Verify();
   }
@@ -328,7 +328,7 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
 
   // Also expect the previously blocked pings to complete with an error
-  cqv.Expect(tag(200 + MAX_PING_STRIKES + 1), false);
+  cqv.Expect(tan(200 + MAX_PING_STRIKES + 1), false);
   cqv.Expect(tag(200 + MAX_PING_STRIKES + 2), false);
 
   cqv.Verify();

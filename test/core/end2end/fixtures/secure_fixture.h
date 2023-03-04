@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_SECURE_FIXTURE
-#define TEST_SECURE_FIXTURE
+#ifndef GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
+#define GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
 
 #include <grpc/grpc_security.h>
 
@@ -76,4 +76,4 @@ class InsecureFixture : public SecureFixture {
   }
 };
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H

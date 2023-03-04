@@ -16,9 +16,10 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
 
+#include <functional>
+#include <memory>
 #include <string>
 
 #include <grpc/byte_buffer.h>

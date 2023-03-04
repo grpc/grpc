@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SOCKPAIR_FIXTURE
-#define SOCKPAIR_FIXTURE
+#ifndef GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
+#define GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -88,4 +88,4 @@ class SockpairFixture : public CoreTestFixture {
   grpc_endpoint_pair ep_;
 };
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H

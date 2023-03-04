@@ -19,6 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <functional>
+#include <memory>
+
 #include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
@@ -29,6 +32,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"

@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H2_SSL_CRED_RELOAD_H
-#define H2_SSL_CRED_RELOAD_H
-
-#include "secure_fixture.h"
+#ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_SSL_CRED_RELOAD_FIXTURE_H
+#define GRPC_TEST_CORE_END2END_FIXTURES_H2_SSL_CRED_RELOAD_FIXTURE_H
 
 #include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "test/core/end2end/fixtures/secure_fixture.h"
 
 class SslCredReloadFixture : public SecureFixture {
  public:
@@ -126,4 +125,4 @@ class SslCredReloadFixture : public SecureFixture {
   bool server_credential_reloaded_ = false;
 };
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FIXTURES_H2_SSL_CRED_RELOAD_FIXTURE_H

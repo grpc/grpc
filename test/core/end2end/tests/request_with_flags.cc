@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <functional>
+#include <memory>
 #include <string>
 
 #include "absl/strings/str_cat.h"
@@ -31,6 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"

@@ -16,10 +16,11 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
 
+#include <functional>
 #include <initializer_list>
+#include <memory>
 #include <new>
 #include <string>
 

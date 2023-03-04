@@ -376,10 +376,9 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
       stub->AsyncEcho(&cli_ctx, send_request, cq.get()));
 
   service.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq.get(),
-                      cq.get(), grpc_core::CqVerifier::tag(2));
+                      cq.get(), tag(2));
 
-  response_reader->Finish(&recv_response, &recv_status,
-                          grpc_core::CqVerifier::tag(4));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   Verifier().Expect(2, true).Verify(cq.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -388,8 +387,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
 
   send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK,
-                         grpc_core::CqVerifier::tag(3));
+  response_writer.Finish(send_response, Status::OK, tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
@@ -447,29 +445,27 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   send_request.set_message("Hello");
   cli_ctx.AddMetadata("testkey", "testvalue");
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(stub->AsyncBidiStream(&cli_ctx, cq.get(),
-                                       grpc_core::CqVerifier::tag(1)));
+      cli_stream(stub->AsyncBidiStream(&cli_ctx, cq.get(), tag(1)));
 
-  service.RequestBidiStream(&srv_ctx, &srv_stream, cq.get(), cq.get(),
-                            grpc_core::CqVerifier::tag(2));
+  service.RequestBidiStream(&srv_ctx, &srv_stream, cq.get(), cq.get(), tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq.get());
 
   EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
 
-  cli_stream->Write(send_request, grpc_core::CqVerifier::tag(3));
-  srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(4));
+  cli_stream->Write(send_request, tag(3));
+  srv_stream.Read(&recv_request, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  srv_stream.Write(send_response, grpc_core::CqVerifier::tag(5));
-  cli_stream->Read(&recv_response, grpc_core::CqVerifier::tag(6));
+  srv_stream.Write(send_response, tag(5));
+  cli_stream->Read(&recv_response, tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
 
-  cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
+  cli_stream->WritesDone(Verifier::tag(7));
   srv_stream.Read(&recv_request, grpc_core::CqVerifier::tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq.get());
 

@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>

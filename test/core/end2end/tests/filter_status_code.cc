@@ -25,10 +25,11 @@
 //
 
 #include <limits.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
+#include <memory>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -41,6 +42,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"

@@ -54,7 +54,7 @@ static void simple_delayed_request_body(CoreTestConfiguration config,
   config.init_server(f, server_args);
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
                                f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -91,7 +91,7 @@ static void simple_delayed_request_body(CoreTestConfiguration config,
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f->server, &s, &call_details,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
                                    &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);

@@ -20,11 +20,13 @@
 
 #include <string.h>
 
-#include "local_util.h"
+#include <utility>
 
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+
+#include "test/core/end2end/fixtures/local_util.h"
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,
