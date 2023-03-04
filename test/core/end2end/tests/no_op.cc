@@ -38,12 +38,12 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void test_no_op(CoreTestConfiguration config) {
+static void test_no_op(const CoreTestConfiguration& config) {
   CoreTestFixture f = begin_test(config, "no-op", nullptr, nullptr);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-void no_op(CoreTestConfiguration config) { test_no_op(config); }
+void no_op(const CoreTestConfiguration& config) { test_no_op(config); }
 
 void no_op_pre_init(void) {}

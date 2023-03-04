@@ -34,7 +34,7 @@
 static bool g_pre_init_called = false;
 
 % for test in tests:
-extern void ${test}(CoreTestConfiguration config);
+extern void ${test}(const CoreTestConfiguration& config);
 extern void ${test}_pre_init(void);
 % endfor
 

@@ -162,7 +162,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   config.tear_down_data(&f);
 }
 
-void shutdown_finishes_calls(CoreTestConfiguration config) {
+void shutdown_finishes_calls(const CoreTestConfiguration& config) {
   test_early_server_shutdown_finishes_inflight_calls(config);
 }
 

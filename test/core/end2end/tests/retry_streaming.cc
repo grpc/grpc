@@ -60,7 +60,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // replayed ops happen under the hood -- they are not surfaced to the
 // C-core API, and therefore we have no way to inject the commit at the
 // right point.
-static void test_retry_streaming(CoreTestConfiguration config) {
+static void test_retry_streaming(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -397,7 +397,7 @@ static void test_retry_streaming(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_streaming(CoreTestConfiguration config) {
+void retry_streaming(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
 
   test_retry_streaming(config);

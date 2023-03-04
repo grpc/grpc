@@ -262,7 +262,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   gpr_free(buf);
 }
 
-void retry_exceeds_buffer_size_in_delay(CoreTestConfiguration config) {
+void retry_exceeds_buffer_size_in_delay(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_exceeds_buffer_size_in_delay(config);
 }

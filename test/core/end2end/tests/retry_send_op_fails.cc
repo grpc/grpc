@@ -69,7 +69,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 //   all without ever going out on the wire
 // - second attempt returns ABORTED but does not retry, because only 2
 //   attempts are allowed
-static void test_retry_send_op_fails(CoreTestConfiguration config) {
+static void test_retry_send_op_fails(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -324,7 +324,7 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 
 }  // namespace
 
-void retry_send_op_fails(CoreTestConfiguration config) {
+void retry_send_op_fails(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {

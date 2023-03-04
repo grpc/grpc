@@ -159,7 +159,7 @@ static void test_invoke_request_with_flags(
   config.tear_down_data(&f);
 }
 
-void request_with_flags(CoreTestConfiguration config) {
+void request_with_flags(const CoreTestConfiguration& config) {
   size_t i;
   uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 

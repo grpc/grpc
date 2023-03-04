@@ -236,7 +236,7 @@ static void test_server_streaming(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void server_streaming(CoreTestConfiguration config) {
+void server_streaming(const CoreTestConfiguration& config) {
   test_server_streaming(config, 0);
   test_server_streaming(config, 1);
   test_server_streaming(config, 10);

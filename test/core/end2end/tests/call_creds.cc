@@ -474,7 +474,7 @@ static void test_request_with_server_rejecting_client_creds(
   config.tear_down_data(&f);
 }
 
-void call_creds(CoreTestConfiguration config) {
+void call_creds(const CoreTestConfiguration& config) {
   // Test fixtures that support call credentials with a minimum security level
   // of GRPC_PRIVACY_AND_INTEGRITY
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {

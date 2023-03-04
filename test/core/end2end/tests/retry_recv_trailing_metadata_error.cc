@@ -318,7 +318,7 @@ bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
 
 }  // namespace
 
-void retry_recv_trailing_metadata_error(CoreTestConfiguration config) {
+void retry_recv_trailing_metadata_error(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {

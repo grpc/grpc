@@ -146,7 +146,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_invoke_simple_request(CoreTestConfiguration config) {
+static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   void* rc = grpc_channel_register_call(f.client, "/foo", nullptr, nullptr);
 
@@ -155,7 +155,8 @@ static void test_invoke_simple_request(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
+static void test_invoke_10_simple_requests(
+    const CoreTestConfiguration& config) {
   int i;
   auto f =
       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
@@ -169,7 +170,7 @@ static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void registered_call(CoreTestConfiguration config) {
+void registered_call(const CoreTestConfiguration& config) {
   test_invoke_simple_request(config);
   test_invoke_10_simple_requests(config);
 }

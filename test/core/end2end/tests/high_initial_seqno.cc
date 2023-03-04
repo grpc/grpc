@@ -182,7 +182,7 @@ static void test_invoke_10_simple_requests(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void high_initial_seqno(CoreTestConfiguration config) {
+void high_initial_seqno(const CoreTestConfiguration& config) {
   test_invoke_10_simple_requests(config, 16777213);
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) {
     test_invoke_10_simple_requests(config, 2147483645);

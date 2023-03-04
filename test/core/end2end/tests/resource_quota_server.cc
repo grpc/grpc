@@ -68,7 +68,7 @@ static grpc_slice generate_random_slice() {
   return out;
 }
 
-void resource_quota_server(CoreTestConfiguration config) {
+void resource_quota_server(const CoreTestConfiguration& config) {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);

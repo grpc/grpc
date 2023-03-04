@@ -252,7 +252,7 @@ static void test(CoreTestConfiguration config, bool request_status_early,
   config.tear_down_data(&f);
 }
 
-void streaming_error_response(CoreTestConfiguration config) {
+void streaming_error_response(const CoreTestConfiguration& config) {
   test(config, false, false);
   test(config, true, false);
   test(config, true, true);

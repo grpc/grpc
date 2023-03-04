@@ -147,7 +147,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_max_concurrent_streams(CoreTestConfiguration config) {
+static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   grpc_arg server_arg;
   grpc_channel_args server_args;
   grpc_call* c1;
@@ -769,7 +769,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   config.tear_down_data(&f);
 }
 
-void max_concurrent_streams(CoreTestConfiguration config) {
+void max_concurrent_streams(const CoreTestConfiguration& config) {
   test_max_concurrent_streams_with_timeout_on_first(config);
   test_max_concurrent_streams_with_timeout_on_second(config);
   test_max_concurrent_streams(config);

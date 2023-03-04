@@ -51,7 +51,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
-static void test_retry_server_pushback_disabled(CoreTestConfiguration config) {
+static void test_retry_server_pushback_disabled(
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -248,7 +249,7 @@ static void test_retry_server_pushback_disabled(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_server_pushback_disabled(CoreTestConfiguration config) {
+void retry_server_pushback_disabled(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_server_pushback_disabled(config);
 }

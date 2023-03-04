@@ -738,7 +738,7 @@ static void test_file_watcher_recovers_from_failure(
   config.tear_down_data(&f);
 }
 
-void grpc_authz(CoreTestConfiguration config) {
+void grpc_authz(const CoreTestConfiguration& config) {
   test_static_init_allow_authorized_request(config);
   test_static_init_deny_unauthorized_request(config);
   test_static_init_deny_request_no_match_in_policy(config);

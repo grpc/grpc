@@ -143,14 +143,14 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_invoke_simple_request(CoreTestConfiguration config) {
+static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-void server_finishes_request(CoreTestConfiguration config) {
+void server_finishes_request(const CoreTestConfiguration& config) {
   test_invoke_simple_request(config);
 }
 

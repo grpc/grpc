@@ -51,7 +51,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - 1 retry allowed for ABORTED status
 // - first attempt receives a message and therefore does not retry even
 //   though the final status is ABORTED
-static void test_retry_recv_message(CoreTestConfiguration config) {
+static void test_retry_recv_message(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -202,7 +202,7 @@ static void test_retry_recv_message(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_recv_message(CoreTestConfiguration config) {
+void retry_recv_message(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_recv_message(config);
 }

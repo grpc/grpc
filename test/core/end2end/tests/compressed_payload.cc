@@ -635,7 +635,7 @@ static void test_invoke_request_with_disabled_algorithm(
                                  GRPC_STATUS_UNIMPLEMENTED, nullptr, true);
 }
 
-void compressed_payload(CoreTestConfiguration config) {
+void compressed_payload(const CoreTestConfiguration& config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);

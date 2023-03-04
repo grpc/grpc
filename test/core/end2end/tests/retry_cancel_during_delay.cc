@@ -238,7 +238,7 @@ static void test_retry_cancel_during_delay(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void retry_cancel_during_delay(CoreTestConfiguration config) {
+void retry_cancel_during_delay(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); ++i) {
     test_retry_cancel_during_delay(config, cancellation_modes[i]);

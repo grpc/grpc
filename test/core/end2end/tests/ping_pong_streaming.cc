@@ -227,7 +227,7 @@ static void test_pingpong_streaming(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void ping_pong_streaming(CoreTestConfiguration config) {
+void ping_pong_streaming(const CoreTestConfiguration& config) {
   int i;
 
   for (i = 1; i < 10; i++) {

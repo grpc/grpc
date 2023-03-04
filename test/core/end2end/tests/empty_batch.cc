@@ -62,14 +62,14 @@ static void empty_batch_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(c);
 }
 
-static void test_invoke_empty_body(CoreTestConfiguration config) {
+static void test_invoke_empty_body(const CoreTestConfiguration& config) {
   f = begin_test(config, "test_invoke_empty_body", nullptr, nullptr);
   empty_batch_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-void empty_batch(CoreTestConfiguration config) {
+void empty_batch(const CoreTestConfiguration& config) {
   test_invoke_empty_body(config);
 }
 

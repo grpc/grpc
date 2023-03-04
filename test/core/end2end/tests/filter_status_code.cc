@@ -79,7 +79,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Simple request via a server filter that saves the reported status code.
-static void test_request(CoreTestConfiguration config) {
+static void test_request(const CoreTestConfiguration& config) {
   g_client_code_recv = false;
   g_server_code_recv = false;
 
@@ -323,7 +323,7 @@ static const grpc_channel_filter test_server_filter = {
 // Registration
 //
 
-void filter_status_code(CoreTestConfiguration config) {
+void filter_status_code(const CoreTestConfiguration& config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);

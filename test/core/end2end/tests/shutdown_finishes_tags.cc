@@ -75,7 +75,7 @@ static void test_early_server_shutdown_finishes_tags(
   config.tear_down_data(&f);
 }
 
-void shutdown_finishes_tags(CoreTestConfiguration config) {
+void shutdown_finishes_tags(const CoreTestConfiguration& config) {
   test_early_server_shutdown_finishes_tags(config);
 }
 

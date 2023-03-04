@@ -223,7 +223,7 @@ static void test_retry_cancellation(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void retry_cancellation(CoreTestConfiguration config) {
+void retry_cancellation(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); ++i) {
     test_retry_cancellation(config, cancellation_modes[i]);

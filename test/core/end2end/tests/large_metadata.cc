@@ -46,7 +46,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Request with a large amount of metadata.
-static void test_request_with_large_metadata(CoreTestConfiguration config) {
+static void test_request_with_large_metadata(
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -336,7 +337,7 @@ static void test_request_with_bad_large_metadata_response(
   config.tear_down_data(&f);
 }
 
-void large_metadata(CoreTestConfiguration config) {
+void large_metadata(const CoreTestConfiguration& config) {
   test_request_with_large_metadata(config);
   // TODO(yashykt): Maybe add checks for metadata size in inproc transport too.
   if (strcmp(config.name, "inproc") != 0) {

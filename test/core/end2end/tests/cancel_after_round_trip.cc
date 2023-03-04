@@ -243,7 +243,7 @@ static void test_cancel_after_round_trip(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void cancel_after_round_trip(CoreTestConfiguration config) {
+void cancel_after_round_trip(const CoreTestConfiguration& config) {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {

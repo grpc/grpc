@@ -166,7 +166,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_max_connection_idle(CoreTestConfiguration config) {
+static void test_max_connection_idle(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_core::CqVerifier cqv(f.cq);
@@ -231,7 +231,7 @@ static void test_max_connection_idle(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void max_connection_idle(CoreTestConfiguration config) {
+void max_connection_idle(const CoreTestConfiguration& config) {
   test_max_connection_idle(config);
 }
 

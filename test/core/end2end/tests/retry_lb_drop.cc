@@ -124,7 +124,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // even when there is retry configuration in the service config.
 // - 1 retry allowed for UNAVAILABLE status
 // - first attempt returns UNAVAILABLE due to LB drop but does not retry
-static void test_retry_lb_drop(CoreTestConfiguration config) {
+static void test_retry_lb_drop(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -226,7 +226,7 @@ static void test_retry_lb_drop(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_lb_drop(CoreTestConfiguration config) {
+void retry_lb_drop(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_lb_drop(config);
 }

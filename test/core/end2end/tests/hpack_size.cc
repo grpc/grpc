@@ -340,7 +340,7 @@ static void test_size(CoreTestConfiguration config, int encode_size,
   config.tear_down_data(&f);
 }
 
-void hpack_size(CoreTestConfiguration config) {
+void hpack_size(const CoreTestConfiguration& config) {
   static const int interesting_sizes[] = {4096, 0,     100,
                                           1000, 32768, 4 * 1024 * 1024};
   size_t i, j;

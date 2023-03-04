@@ -44,7 +44,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void test_invoke_simple_request(CoreTestConfiguration config) {
+static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;
@@ -174,7 +174,7 @@ static void test_invoke_simple_request(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void default_host(CoreTestConfiguration config) {
+void default_host(const CoreTestConfiguration& config) {
   test_invoke_simple_request(config);
 }
 

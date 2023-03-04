@@ -51,7 +51,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - 2 retries allowed for ABORTED status
 // - first attempt returns ABORTED
 // - second attempt returns OK
-static void test_retry(CoreTestConfiguration config) {
+static void test_retry(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -276,7 +276,7 @@ static void test_retry(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry(CoreTestConfiguration config) {
+void retry(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry(config);
 }

@@ -52,7 +52,7 @@ static void shutdown_server(CoreTestFixture* f) {
 }
 
 // Send more pings than server allows to trigger server's GOAWAY.
-static void test_bad_ping(CoreTestConfiguration config) {
+static void test_bad_ping(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_arg client_a[] = {
@@ -200,7 +200,7 @@ static void test_bad_ping(CoreTestConfiguration config) {
 
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
-static void test_pings_without_data(CoreTestConfiguration config) {
+static void test_pings_without_data(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
@@ -351,7 +351,7 @@ static void test_pings_without_data(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void bad_ping(CoreTestConfiguration config) {
+void bad_ping(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_bad_ping(config);
   test_pings_without_data(config);

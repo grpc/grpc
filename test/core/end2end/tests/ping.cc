@@ -101,7 +101,7 @@ static void test_ping(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void ping(CoreTestConfiguration config) {
+void ping(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_ping(config, 0);
   test_ping(config, 100);

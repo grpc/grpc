@@ -47,7 +47,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // Tests that we can unref a call while recv ops are started but before
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
-static void test_retry_unref_before_recv(CoreTestConfiguration config) {
+static void test_retry_unref_before_recv(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -191,7 +191,7 @@ static void test_retry_unref_before_recv(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_unref_before_recv(CoreTestConfiguration config) {
+void retry_unref_before_recv(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_unref_before_recv(config);
 }

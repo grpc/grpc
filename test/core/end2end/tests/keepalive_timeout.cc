@@ -55,7 +55,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Client sends a request, then waits for the keepalive watchdog timeouts before
 // returning status.
-static void test_keepalive_timeout(CoreTestConfiguration config) {
+static void test_keepalive_timeout(const CoreTestConfiguration& config) {
   grpc_call* c;
 
   grpc_arg keepalive_arg_elems[3];
@@ -132,7 +132,7 @@ static void test_keepalive_timeout(CoreTestConfiguration config) {
 // with a sleep of 10ms in between. It has a configured keepalive timer of
 // 200ms. In the success case, each ping ack should reset the keepalive timer so
 // that the keepalive ping is never sent.
-static void test_read_delays_keepalive(CoreTestConfiguration config) {
+static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
 #ifdef GRPC_POSIX_SOCKET
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   // It is hard to get the timing right for the polling engine poll.
@@ -338,7 +338,7 @@ static void test_read_delays_keepalive(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void keepalive_timeout(CoreTestConfiguration config) {
+void keepalive_timeout(const CoreTestConfiguration& config) {
   test_keepalive_timeout(config);
   test_read_delays_keepalive(config);
 }

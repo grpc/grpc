@@ -48,7 +48,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // a recv op, where the send op completes but the recv op does not, and
 // then a subsequent recv op is started.  This ensures that we do not
 // incorrectly attempt to replay the send op.
-static void test_retry_send_recv_batch(CoreTestConfiguration config) {
+static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -198,7 +198,7 @@ static void test_retry_send_recv_batch(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_send_recv_batch(CoreTestConfiguration config) {
+void retry_send_recv_batch(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_send_recv_batch(config);
 }

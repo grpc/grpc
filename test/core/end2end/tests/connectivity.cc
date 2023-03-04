@@ -61,7 +61,7 @@ static void child_thread(void* arg) {
   GPR_ASSERT(ev.success == 0);
 }
 
-static void test_connectivity(CoreTestConfiguration config) {
+static void test_connectivity(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state;
   grpc_core::CqVerifier cqv(f.cq);
@@ -192,7 +192,8 @@ static void cb_shutdown(grpc_completion_queue_functor* functor,
   gpr_event_set(&cb_ctx->finished, reinterpret_cast<void*>(1));
 }
 
-static void test_watch_connectivity_cq_callback(CoreTestConfiguration config) {
+static void test_watch_connectivity_cq_callback(
+    const CoreTestConfiguration& config) {
   CallbackContext cb_ctx(cb_watch_connectivity);
   CallbackContext cb_shutdown_ctx(cb_shutdown);
   grpc_completion_queue* cq;
@@ -234,7 +235,7 @@ static void test_watch_connectivity_cq_callback(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void connectivity(CoreTestConfiguration config) {
+void connectivity(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_connectivity(config);
   test_watch_connectivity_cq_callback(config);

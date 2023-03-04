@@ -141,7 +141,7 @@ static void test_cancel_before_invoke(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void cancel_before_invoke(CoreTestConfiguration config) {
+void cancel_before_invoke(const CoreTestConfiguration& config) {
   size_t i;
   for (i = 1; i <= 6; i++) {
     test_cancel_before_invoke(config, i);

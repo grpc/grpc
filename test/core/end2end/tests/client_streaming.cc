@@ -221,7 +221,7 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   config.tear_down_data(&f);
 }
 
-void client_streaming(CoreTestConfiguration config) {
+void client_streaming(const CoreTestConfiguration& config) {
   for (int i = 0; i < 10; i++) {
     test_client_streaming(config, i);
   }

@@ -68,7 +68,7 @@ static void shutdown_server(CoreTestFixture* f) {
   f->server = nullptr;
 }
 
-static void test_max_age_forcibly_close(CoreTestConfiguration config) {
+static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
   grpc_arg server_a[3];
@@ -226,7 +226,7 @@ static void test_max_age_forcibly_close(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-static void test_max_age_gracefully_close(CoreTestConfiguration config) {
+static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
   grpc_arg server_a[3];
@@ -379,7 +379,7 @@ static void test_max_age_gracefully_close(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void max_connection_age(CoreTestConfiguration config) {
+void max_connection_age(const CoreTestConfiguration& config) {
   test_max_age_forcibly_close(config);
   test_max_age_gracefully_close(config);
 }

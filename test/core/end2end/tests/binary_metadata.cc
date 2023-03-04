@@ -283,7 +283,7 @@ static void test_request_response_with_metadata_and_payload(
   config.tear_down_data(&f);
 }
 
-void binary_metadata(CoreTestConfiguration config) {
+void binary_metadata(const CoreTestConfiguration& config) {
   test_request_response_with_metadata_and_payload(config);
 }
 

@@ -51,7 +51,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - 1 retry allowed for ABORTED status
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
-static void test_retry_recv_initial_metadata(CoreTestConfiguration config) {
+static void test_retry_recv_initial_metadata(
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -221,7 +222,7 @@ static void test_retry_recv_initial_metadata(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_recv_initial_metadata(CoreTestConfiguration config) {
+void retry_recv_initial_metadata(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_recv_initial_metadata(config);
 }

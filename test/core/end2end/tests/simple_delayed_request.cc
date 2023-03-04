@@ -143,7 +143,8 @@ static void simple_delayed_request_body(CoreTestConfiguration config,
   grpc_call_unref(s);
 }
 
-static void test_simple_delayed_request_short(CoreTestConfiguration config) {
+static void test_simple_delayed_request_short(
+    const CoreTestConfiguration& config) {
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -158,7 +159,8 @@ static void test_simple_delayed_request_short(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-static void test_simple_delayed_request_long(CoreTestConfiguration config) {
+static void test_simple_delayed_request_long(
+    const CoreTestConfiguration& config) {
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -174,7 +176,7 @@ static void test_simple_delayed_request_long(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void simple_delayed_request(CoreTestConfiguration config) {
+void simple_delayed_request(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);

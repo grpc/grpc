@@ -64,7 +64,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Simple request to test that filters see a consistent view of the
 // call context.
-static void test_request(CoreTestConfiguration config) {
+static void test_request(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -244,7 +244,7 @@ static const grpc_channel_filter test_filter = {
 // Registration
 //
 
-void filter_context(CoreTestConfiguration config) {
+void filter_context(const CoreTestConfiguration& config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);

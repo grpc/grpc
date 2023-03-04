@@ -318,7 +318,7 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 
 }  // namespace
 
-void retry_transparent_not_sent_on_wire(CoreTestConfiguration config) {
+void retry_transparent_not_sent_on_wire(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {

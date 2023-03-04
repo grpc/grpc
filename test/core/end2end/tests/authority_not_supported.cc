@@ -45,7 +45,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Request/response with metadata and payload.
-static void test_with_authority_header(CoreTestConfiguration config) {
+static void test_with_authority_header(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -134,7 +134,7 @@ static void test_with_authority_header(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void authority_not_supported(CoreTestConfiguration config) {
+void authority_not_supported(const CoreTestConfiguration& config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
     return;
   }

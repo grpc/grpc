@@ -734,7 +734,7 @@ static void test_max_receive_message_length_on_compressed_response(
   config.tear_down_data(&f);
 }
 
-void max_message_length(CoreTestConfiguration config) {
+void max_message_length(const CoreTestConfiguration& config) {
   test_max_message_length_on_request(config, false /* send_limit */,
                                      false /* use_service_config */,
                                      false /* use_string_json_value */);

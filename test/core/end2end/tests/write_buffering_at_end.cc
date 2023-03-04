@@ -45,7 +45,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Client sends a request with payload, server reads then returns status.
-static void test_invoke_request_with_payload(CoreTestConfiguration config) {
+static void test_invoke_request_with_payload(
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -225,7 +226,7 @@ static void test_invoke_request_with_payload(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void write_buffering_at_end(CoreTestConfiguration config) {
+void write_buffering_at_end(const CoreTestConfiguration& config) {
   test_invoke_request_with_payload(config);
 }
 

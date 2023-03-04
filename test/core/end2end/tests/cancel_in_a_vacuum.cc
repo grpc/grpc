@@ -65,7 +65,7 @@ static void test_cancel_in_a_vacuum(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void cancel_in_a_vacuum(CoreTestConfiguration config) {
+void cancel_in_a_vacuum(const CoreTestConfiguration& config) {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {

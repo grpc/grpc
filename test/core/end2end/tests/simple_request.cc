@@ -207,14 +207,15 @@ static void simple_request_body(CoreTestConfiguration config,
              expected_calls);
 }
 
-static void test_invoke_simple_request(CoreTestConfiguration config) {
+static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
+static void test_invoke_10_simple_requests(
+    const CoreTestConfiguration& config) {
   int i;
   auto f =
       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
@@ -226,7 +227,7 @@ static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void simple_request(CoreTestConfiguration config) {
+void simple_request(const CoreTestConfiguration& config) {
   int i;
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);

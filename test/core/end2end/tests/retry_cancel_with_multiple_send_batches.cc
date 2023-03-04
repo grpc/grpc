@@ -289,7 +289,8 @@ bool MaybeAddFilter(grpc_core::ChannelStackBuilder* builder) {
 
 }  // namespace
 
-void retry_cancel_with_multiple_send_batches(CoreTestConfiguration config) {
+void retry_cancel_with_multiple_send_batches(
+    const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {

@@ -228,7 +228,7 @@ static void test_invoke_large_request(CoreTestConfiguration config,
 
 static grpc_core::NoDestruct<grpc_core::EventLog> g_event_log;
 
-void invoke_large_request(CoreTestConfiguration config) {
+void invoke_large_request(const CoreTestConfiguration& config) {
   {
     grpc_core::ExecCtx exec_ctx;
     g_event_log->BeginCollection();

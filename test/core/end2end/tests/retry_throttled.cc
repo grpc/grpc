@@ -50,7 +50,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // Tests that we don't retry when throttled.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets ABORTED but is over limit, so no retry is done
-static void test_retry_throttled(CoreTestConfiguration config) {
+static void test_retry_throttled(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -205,7 +205,7 @@ static void test_retry_throttled(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_throttled(CoreTestConfiguration config) {
+void retry_throttled(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_throttled(config);
 }

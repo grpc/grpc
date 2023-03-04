@@ -240,7 +240,7 @@ static void test_invoke_10_request_response_with_payload(
   config.tear_down_data(&f);
 }
 
-void payload(CoreTestConfiguration config) {
+void payload(const CoreTestConfiguration& config) {
   test_invoke_request_response_with_payload(config);
   test_invoke_10_request_response_with_payload(config);
 }

@@ -218,7 +218,7 @@ static void test_request_response_with_metadata_and_payload(
   config.tear_down_data(&f);
 }
 
-void simple_metadata(CoreTestConfiguration config) {
+void simple_metadata(const CoreTestConfiguration& config) {
   test_request_response_with_metadata_and_payload(config);
 }
 

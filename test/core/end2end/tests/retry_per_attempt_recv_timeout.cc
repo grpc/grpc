@@ -55,7 +55,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - first attempt does not receive a response until after perAttemptRecvTimeout
 // - second attempt returns ABORTED
 // - third attempt returns OK
-static void test_retry_per_attempt_recv_timeout(CoreTestConfiguration config) {
+static void test_retry_per_attempt_recv_timeout(
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_call* s0;
@@ -306,7 +307,7 @@ static void test_retry_per_attempt_recv_timeout(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_per_attempt_recv_timeout(CoreTestConfiguration config) {
+void retry_per_attempt_recv_timeout(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_per_attempt_recv_timeout(config);
 }

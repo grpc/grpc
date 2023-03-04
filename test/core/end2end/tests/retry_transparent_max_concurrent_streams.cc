@@ -319,7 +319,8 @@ static void test_retry_transparent_max_concurrent_streams(
   config.tear_down_data(&f);
 }
 
-void retry_transparent_max_concurrent_streams(CoreTestConfiguration config) {
+void retry_transparent_max_concurrent_streams(
+    const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_transparent_max_concurrent_streams(config);
 }

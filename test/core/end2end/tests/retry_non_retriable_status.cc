@@ -50,7 +50,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // Tests that we don't retry for non-retryable status codes.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
-static void test_retry_non_retriable_status(CoreTestConfiguration config) {
+static void test_retry_non_retriable_status(
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -199,7 +200,7 @@ static void test_retry_non_retriable_status(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_non_retriable_status(CoreTestConfiguration config) {
+void retry_non_retriable_status(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_non_retriable_status(config);
 }

@@ -114,7 +114,7 @@ static void test_invoke_simple_request(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void negative_deadline(CoreTestConfiguration config) {
+void negative_deadline(const CoreTestConfiguration& config) {
   size_t i;
   for (i = 1; i <= 4; i++) {
     test_invoke_simple_request(config, i);

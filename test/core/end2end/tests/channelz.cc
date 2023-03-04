@@ -154,7 +154,7 @@ static void run_one_request(CoreTestConfiguration /*config*/, CoreTestFixture f,
   grpc_call_unref(s);
 }
 
-static void test_channelz(CoreTestConfiguration config) {
+static void test_channelz(const CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -213,7 +213,8 @@ static void test_channelz(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-static void test_channelz_with_channel_trace(CoreTestConfiguration config) {
+static void test_channelz_with_channel_trace(
+    const CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -247,7 +248,7 @@ static void test_channelz_with_channel_trace(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-static void test_channelz_disabled(CoreTestConfiguration config) {
+static void test_channelz_disabled(const CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -267,7 +268,7 @@ static void test_channelz_disabled(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void channelz(CoreTestConfiguration config) {
+void channelz(const CoreTestConfiguration& config) {
   test_channelz(config);
   test_channelz_with_channel_trace(config);
   test_channelz_disabled(config);

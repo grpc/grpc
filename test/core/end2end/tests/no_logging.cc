@@ -192,7 +192,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_invoke_simple_request(CoreTestConfiguration config) {
+static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   f = begin_test(config, "test_invoke_simple_request_with_no_error_logging",
                  nullptr, nullptr);
   simple_request_body(config, f);
@@ -200,7 +200,8 @@ static void test_invoke_simple_request(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-static void test_invoke_10_simple_requests(CoreTestConfiguration config) {
+static void test_invoke_10_simple_requests(
+    const CoreTestConfiguration& config) {
   int i;
   auto f =
       begin_test(config, "test_invoke_10_simple_requests_with_no_error_logging",
@@ -225,7 +226,8 @@ static void test_no_error_logging_in_entire_process(
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
 }
 
-static void test_no_logging_in_one_request(CoreTestConfiguration config) {
+static void test_no_logging_in_one_request(
+    const CoreTestConfiguration& config) {
   int i;
   auto f =
       begin_test(config, "test_no_logging_in_last_request", nullptr, nullptr);
@@ -239,7 +241,7 @@ static void test_no_logging_in_one_request(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void no_logging(CoreTestConfiguration config) {
+void no_logging(const CoreTestConfiguration& config) {
   grpc_core::SetEnv("GRPC_TRACE", "");
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 0);

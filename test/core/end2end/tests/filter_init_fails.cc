@@ -67,7 +67,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Simple request via a SERVER_CHANNEL filter that always fails to
 // initialize the call.
-static void test_server_channel_filter(CoreTestConfiguration config) {
+static void test_server_channel_filter(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -168,7 +168,7 @@ static void test_server_channel_filter(CoreTestConfiguration config) {
 
 // Simple request via a CLIENT_CHANNEL or CLIENT_DIRECT_CHANNEL filter
 // that always fails to initialize the call.
-static void test_client_channel_filter(CoreTestConfiguration config) {
+static void test_client_channel_filter(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -258,7 +258,7 @@ static void test_client_channel_filter(CoreTestConfiguration config) {
 
 // Simple request via a CLIENT_SUBCHANNEL filter that always fails to
 // initialize the call.
-static void test_client_subchannel_filter(CoreTestConfiguration config) {
+static void test_client_subchannel_filter(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -414,7 +414,7 @@ static const grpc_channel_filter test_filter = {
 // Registration
 //
 
-static void filter_init_fails_internal(CoreTestConfiguration config) {
+static void filter_init_fails_internal(const CoreTestConfiguration& config) {
   gpr_log(GPR_INFO, "Testing SERVER_CHANNEL filter.");
   g_enable_server_channel_filter = true;
   test_server_channel_filter(config);
@@ -439,7 +439,7 @@ static void filter_init_fails_internal(CoreTestConfiguration config) {
   }
 }
 
-void filter_init_fails(CoreTestConfiguration config) {
+void filter_init_fails(const CoreTestConfiguration& config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);

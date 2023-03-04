@@ -220,7 +220,7 @@ static void request_response_with_payload(
 extern void (*g_load_reporting_fn)(
     const grpc_load_reporting_call_data* call_data);
 
-static void test_load_reporting_hook(CoreTestConfiguration config) {
+static void test_load_reporting_hook(const CoreTestConfiguration& config) {
   // TODO(dgq): this test is currently a noop until LR is fully defined.
   // Leaving the rest here, as it'll likely be reusable.
 
@@ -260,7 +260,7 @@ static void test_load_reporting_hook(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void load_reporting_hook(CoreTestConfiguration config) {
+void load_reporting_hook(const CoreTestConfiguration& config) {
   test_load_reporting_hook(config);
 }
 

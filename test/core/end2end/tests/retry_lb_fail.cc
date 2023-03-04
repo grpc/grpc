@@ -62,7 +62,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - 1 retry allowed for ABORTED status
 // - on first attempt, LB policy fails with ABORTED before application
 //   starts recv_trailing_metadata op
-static void test_retry_lb_fail(CoreTestConfiguration config) {
+static void test_retry_lb_fail(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -161,7 +161,7 @@ static void test_retry_lb_fail(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void retry_lb_fail(CoreTestConfiguration config) {
+void retry_lb_fail(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_lb_fail(config);
 }

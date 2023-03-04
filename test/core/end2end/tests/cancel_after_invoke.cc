@@ -151,7 +151,7 @@ static void test_cancel_after_invoke(CoreTestConfiguration config,
   config.tear_down_data(&f);
 }
 
-void cancel_after_invoke(CoreTestConfiguration config) {
+void cancel_after_invoke(const CoreTestConfiguration& config) {
   unsigned i, j;
 
   for (j = 3; j < 6; j++) {

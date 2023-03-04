@@ -68,7 +68,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // deferred at the point where recv_trailing_metadata was started from
 // the surface.  This resulted in ASAN failures caused by not unreffing
 // a grpc_error.
-static void test_retry_recv_message_replay(CoreTestConfiguration config) {
+static void test_retry_recv_message_replay(
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -309,7 +310,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 
 }  // namespace
 
-void retry_recv_message_replay(CoreTestConfiguration config) {
+void retry_recv_message_replay(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {

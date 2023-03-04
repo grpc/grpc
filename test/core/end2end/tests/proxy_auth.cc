@@ -164,7 +164,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_invoke_proxy_auth(CoreTestConfiguration config) {
+static void test_invoke_proxy_auth(const CoreTestConfiguration& config) {
   // Indicate that the proxy requires user auth
   grpc_arg client_arg;
   client_arg.type = GRPC_ARG_STRING;
@@ -177,7 +177,7 @@ static void test_invoke_proxy_auth(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void proxy_auth(CoreTestConfiguration config) {
+void proxy_auth(const CoreTestConfiguration& config) {
   test_invoke_proxy_auth(config);
 }
 

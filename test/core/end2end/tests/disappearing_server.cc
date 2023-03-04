@@ -155,7 +155,7 @@ static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void disappearing_server_test(CoreTestConfiguration config) {
+static void disappearing_server_test(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
 
@@ -176,7 +176,7 @@ static void disappearing_server_test(CoreTestConfiguration config) {
   config.tear_down_data(&f);
 }
 
-void disappearing_server(CoreTestConfiguration config) {
+void disappearing_server(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
 #ifndef GPR_WINDOWS  // b/148110727 for more details
   disappearing_server_test(config);

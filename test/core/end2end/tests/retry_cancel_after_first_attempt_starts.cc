@@ -164,7 +164,8 @@ static void test_retry_cancel_after_first_attempt_starts(
   config.tear_down_data(&f);
 }
 
-void retry_cancel_after_first_attempt_starts(CoreTestConfiguration config) {
+void retry_cancel_after_first_attempt_starts(
+    const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_cancel_after_first_attempt_starts(config);
 }

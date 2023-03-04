@@ -184,7 +184,7 @@ static void test_request_response_with_metadata_to_be_filtered(
   config.tear_down_data(&f);
 }
 
-void filtered_metadata(CoreTestConfiguration config) {
+void filtered_metadata(const CoreTestConfiguration& config) {
   test_request_response_with_metadata_to_be_filtered(config, "content-length",
                                                      "45");
 }
