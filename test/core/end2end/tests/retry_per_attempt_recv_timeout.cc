@@ -103,14 +103,14 @@ static void test_retry_per_attempt_recv_timeout(
                                      const_cast<char*>(service_config.c_str())),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  CoreTestFixture f = begin_test(config, "test_retry_per_attempt_recv_timeout",
-                                 &client_args, nullptr);
+  auto f = begin_test(config, "test_retry_per_attempt_recv_timeout",
+                      &client_args, nullptr);
 
   grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = n_seconds_from_now(10);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq,
+                               f->cq(),
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -148,7 +148,7 @@ static void test_retry_per_attempt_recv_timeout(
 
   // Server gets a call but does not respond to the call.
   error = grpc_server_request_call(f->server(), &s0, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -169,7 +169,7 @@ static void test_retry_per_attempt_recv_timeout(
 
   // Server gets a second call.
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(201), true);
@@ -229,7 +229,7 @@ static void test_retry_per_attempt_recv_timeout(
 
   // Server gets a third call.
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(301));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(301), true);

@@ -112,7 +112,7 @@ static void request_for_disabled_algorithm(
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -122,7 +122,7 @@ static void request_for_disabled_algorithm(
   grpc_call_details_init(&call_details);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -285,7 +285,7 @@ static void request_with_payload_template_inner(
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -337,7 +337,7 @@ static void request_with_payload_template_inner(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(100), true);

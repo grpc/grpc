@@ -57,7 +57,7 @@ static void simple_request_body(CoreTestFixture f) {
   grpc_slice host = grpc_slice_from_static_string("slartibartfast.local");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                &host, deadline, nullptr);
   GPR_ASSERT(c);
 

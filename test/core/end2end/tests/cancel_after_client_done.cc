@@ -77,7 +77,7 @@ static void test_cancel_after_accept_and_writes_closed(
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -124,7 +124,7 @@ static void test_cancel_after_accept_and_writes_closed(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(2), true);

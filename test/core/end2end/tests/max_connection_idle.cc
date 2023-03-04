@@ -218,7 +218,7 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
 
-  grpc_server_shutdown_and_notify(f->server(), f.cq,
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(0xdead));
   cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Verify();

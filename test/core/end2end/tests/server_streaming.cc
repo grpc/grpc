@@ -52,8 +52,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // writing, and expects to get the status after the messages.
 static void test_server_streaming(CoreTestConfiguration config,
                                   int num_messages) {
-  CoreTestFixture f = begin_test(config, "test_server_streaming", nullptr,
-                                 nullptr, num_messages);
+  auto f = begin_test(config, "test_server_streaming", nullptr, nullptr,
+                      num_messages);
   grpc_call* c;
   grpc_call* s;
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f->cq());
@@ -74,7 +74,7 @@ static void test_server_streaming(CoreTestConfiguration config,
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -122,7 +122,7 @@ static void test_server_streaming(CoreTestConfiguration config,
   cqv->Verify();
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv->Expect(grpc_core::CqVerifier::tag(100), true);

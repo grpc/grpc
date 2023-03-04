@@ -96,7 +96,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);

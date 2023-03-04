@@ -109,13 +109,13 @@ static void test_retry_cancel_with_multiple_send_batches(
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   std::string name =
       absl::StrCat("retry_cancel_with_multiple_send_batches/", mode.name);
-  CoreTestFixture f = begin_test(config, name.c_str(), &client_args, nullptr);
+  auto f = begin_test(config, name.c_str(), &client_args, nullptr);
 
   grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = n_seconds_from_now(3);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(3);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq,
+                               f->cq(),
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);

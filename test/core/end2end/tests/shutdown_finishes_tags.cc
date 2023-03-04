@@ -45,8 +45,8 @@ static void end_test(CoreTestFixture* f) {
 
 static void test_early_server_shutdown_finishes_tags(
     CoreTestConfiguration config) {
-  CoreTestFixture f = begin_test(
-      config, "test_early_server_shutdown_finishes_tags", nullptr, nullptr);
+  auto f = begin_test(config, "test_early_server_shutdown_finishes_tags",
+                      nullptr, nullptr);
   grpc_core::CqVerifier cqv(f->cq());
   grpc_call* s = reinterpret_cast<grpc_call*>(1);
   grpc_call_details call_details;
@@ -59,10 +59,10 @@ static void test_early_server_shutdown_finishes_tags(
   // no new call
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(f->server(), &s, &call_details,
-                                      &request_metadata_recv, f->cq(), f.cq,
+                                      &request_metadata_recv, f->cq(), f->cq(),
                                       grpc_core::CqVerifier::tag(101)));
   shutdown_client(&f);
-  grpc_server_shutdown_and_notify(f->server(), f.cq,
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
   cqv.Expect(grpc_core::CqVerifier::tag(101), false);
   cqv.Expect(grpc_core::CqVerifier::tag(1000), true);

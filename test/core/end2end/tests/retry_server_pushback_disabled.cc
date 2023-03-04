@@ -98,14 +98,14 @@ static void test_retry_server_pushback_disabled(
               "}")),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  CoreTestFixture f = begin_test(config, "retry_server_pushback_disabled",
-                                 &client_args, nullptr);
+  auto f = begin_test(config, "retry_server_pushback_disabled", &client_args,
+                      nullptr);
 
   grpc_core::CqVerifier cqv(f->cq());
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq,
+                               f->cq(),
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -147,7 +147,7 @@ static void test_retry_server_pushback_disabled(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -189,7 +189,7 @@ static void test_retry_server_pushback_disabled(
   grpc_call_details_init(&call_details);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(201), true);

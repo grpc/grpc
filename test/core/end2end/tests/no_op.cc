@@ -37,7 +37,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static void test_no_op(const CoreTestConfiguration& config) {
-  CoreTestFixture f = begin_test(config, "no-op", nullptr, nullptr);
+  auto f = begin_test(config, "no-op", nullptr, nullptr);
 }
 
 void no_op(const CoreTestConfiguration& config) { test_no_op(config); }

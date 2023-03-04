@@ -91,7 +91,7 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   // start watching for a change
   gpr_log(GPR_DEBUG, "watching");
   grpc_channel_watch_connectivity_state(f->client(), GRPC_CHANNEL_IDLE,
-                                        gpr_now(GPR_CLOCK_MONOTONIC), f.cq,
+                                        gpr_now(GPR_CLOCK_MONOTONIC), f->cq(),
                                         grpc_core::CqVerifier::tag(1));
 
   // eventually the child thread completion should trigger
@@ -151,7 +151,7 @@ static void test_connectivity(const CoreTestConfiguration& config) {
                                         grpc_timeout_seconds_to_deadline(10),
                                         f->cq(), grpc_core::CqVerifier::tag(5));
 
-  grpc_server_shutdown_and_notify(f->server(), f.cq,
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(0xdead));
 
   cqv.Expect(grpc_core::CqVerifier::tag(5), true);

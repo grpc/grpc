@@ -69,7 +69,7 @@ static void test_invoke_request_with_payload(
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -100,7 +100,7 @@ static void test_invoke_request_with_payload(
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(f->server(), &s, &call_details,
-                                      &request_metadata_recv, f->cq(), f.cq,
+                                      &request_metadata_recv, f->cq(), f->cq(),
                                       grpc_core::CqVerifier::tag(101)));
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);  // send message is buffered
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);

@@ -152,7 +152,7 @@ static void test_max_message_length_on_request(CoreTestConfiguration config,
   grpc_core::CqVerifier cqv(f->cq());
 
   c = grpc_channel_create_call(
-      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
       grpc_slice_from_static_string("/service/method"), nullptr,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
@@ -201,7 +201,7 @@ static void test_max_message_length_on_request(CoreTestConfiguration config,
   }
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -333,7 +333,7 @@ static void test_max_message_length_on_response(CoreTestConfiguration config,
   grpc_core::CqVerifier cqv(f->cq());
 
   c = grpc_channel_create_call(
-      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
       grpc_slice_from_static_string("/service/method"), nullptr,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
@@ -376,7 +376,7 @@ static void test_max_message_length_on_response(CoreTestConfiguration config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -483,7 +483,7 @@ static void test_max_receive_message_length_on_compressed_request(
   }
   grpc_core::CqVerifier cqv(f->cq());
   c = grpc_channel_create_call(
-      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
       grpc_slice_from_static_string("/service/method"), nullptr,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
@@ -528,7 +528,7 @@ static void test_max_receive_message_length_on_compressed_request(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -621,7 +621,7 @@ static void test_max_receive_message_length_on_compressed_response(
   grpc_core::CqVerifier cqv(f->cq());
 
   c = grpc_channel_create_call(
-      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
       grpc_slice_from_static_string("/service/method"), nullptr,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
@@ -664,7 +664,7 @@ static void test_max_receive_message_length_on_compressed_response(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);

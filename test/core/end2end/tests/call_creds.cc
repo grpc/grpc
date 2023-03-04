@@ -120,7 +120,7 @@ static void request_response_with_payload_and_call_creds(
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
   if (use_secure_call_creds) {
@@ -205,7 +205,7 @@ static void request_response_with_payload_and_call_creds(
     GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
   } else {
     error = grpc_server_request_call(f->server(), &s, &call_details,
-                                     &request_metadata_recv, f->cq(), f.cq,
+                                     &request_metadata_recv, f->cq(), f->cq(),
                                      grpc_core::CqVerifier::tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -398,7 +398,7 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_core::CqVerifier cqv(f->cq());
 
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 

@@ -149,10 +149,10 @@ void resource_quota_server(const CoreTestConfiguration& config) {
   }
 
   for (int i = 0; i < NUM_CALLS; i++) {
-    client_calls[i] =
-        grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                 f->cq(), grpc_slice_from_static_string("/foo"),
-                                 nullptr, n_seconds_from_now(60), nullptr);
+    client_calls[i] = grpc_channel_create_call(
+        f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
+        grpc_slice_from_static_string("/foo"), nullptr,
+        grpc_timeout_seconds_to_deadline(60), nullptr);
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -195,8 +195,8 @@ void resource_quota_server(const CoreTestConfiguration& config) {
   while (pending_client_calls + pending_server_recv_calls +
              pending_server_end_calls >
          0) {
-    grpc_event ev =
-        grpc_completion_queue_next(f->cq(), n_seconds_from_now(60), nullptr);
+    grpc_event ev = grpc_completion_queue_next(
+        f->cq(), grpc_timeout_seconds_to_deadline(60), nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
     int ev_tag = static_cast<int>(reinterpret_cast<intptr_t>(ev.tag));

@@ -65,8 +65,8 @@ static void test_cancel_after_invoke(CoreTestConfiguration config,
   grpc_op ops[6];
   grpc_op* op;
   grpc_call* c;
-  CoreTestFixture f = begin_test(config, "test_cancel_after_invoke", mode,
-                                 test_ops, nullptr, nullptr);
+  auto f = begin_test(config, "test_cancel_after_invoke", mode, test_ops,
+                      nullptr, nullptr);
   grpc_core::CqVerifier cqv(f->cq());
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -83,7 +83,7 @@ static void test_cancel_after_invoke(CoreTestConfiguration config,
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 

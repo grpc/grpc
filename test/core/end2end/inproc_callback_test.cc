@@ -260,7 +260,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static gpr_timespec grpc_timeout_seconds_to_deadline(5) {
-  return n_seconds_from_now(5);
+  return grpc_timeout_seconds_to_deadline(5);
 }
 
 static void drain_cq(grpc_completion_queue* /*cq*/) {
@@ -299,7 +299,7 @@ static void simple_request_body(CoreTestConfiguration /* config */,
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
 
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -344,7 +344,7 @@ static void simple_request_body(CoreTestConfiguration /* config */,
 
   // Register a call at the server-side to match the incoming client call
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
 

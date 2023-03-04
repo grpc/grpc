@@ -81,15 +81,13 @@ class CoreTestFixture {
 
   void ShutdownServer() {
     if (server_ == nullptr) return;
-    grpc_server_shutdown_and_notify(server_, cq_,
-                                    grpc_core::CqVerifier::tag(1000));
+    grpc_server_shutdown_and_notify(server_, cq_, server_);
     grpc_event ev;
     do {
-      ev = grpc_completion_queue_next(
-          f->cq(), grpc_timeout_seconds_to_deadline(5), nullptr);
-    } while (ev.type != GRPC_OP_COMPLETE ||
-             ev.tag != grpc_core::CqVerifier::tag(1000));
-    grpc_server_destroy(f->server);
+      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
+                                      nullptr);
+    } while (ev.type != GRPC_OP_COMPLETE || ev.tag != server_);
+    grpc_server_destroy(server_);
     server_ = nullptr;
   }
 
@@ -116,7 +114,7 @@ struct CoreTestConfiguration {
   // test expect to find in call_details.host
   const char* overridden_call_host;
 
-  absl::AnyInvocable<std::unique_ptr<CoreTestFixture>(
+  std::function<std::unique_ptr<CoreTestFixture>(
       const grpc_core::ChannelArgs& client_args,
       const grpc_core::ChannelArgs& server_args)>
       create_fixture;

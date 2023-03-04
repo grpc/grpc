@@ -58,7 +58,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_REALTIME);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 

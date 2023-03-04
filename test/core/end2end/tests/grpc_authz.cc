@@ -86,7 +86,7 @@ static void test_allow_authorized_request(CoreTestFixture f) {
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -124,7 +124,7 @@ static void test_allow_authorized_request(CoreTestFixture f) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -186,7 +186,7 @@ static void test_deny_unauthorized_request(CoreTestFixture f) {
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -467,9 +467,9 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  CoreTestFixture f = begin_test(
-      config, "test_file_watcher_init_deny_request_no_match_in_policy", nullptr,
-      &server_args);
+  auto f = begin_test(config,
+                      "test_file_watcher_init_deny_request_no_match_in_policy",
+                      nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_deny_unauthorized_request(f);
 }
@@ -505,8 +505,8 @@ static void test_file_watcher_valid_policy_reload(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  CoreTestFixture f = begin_test(
-      config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
+  auto f = begin_test(config, "test_file_watcher_valid_policy_reload", nullptr,
+                      &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
   gpr_event on_reload_done;
@@ -643,8 +643,8 @@ static void test_file_watcher_recovers_from_failure(
   };
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
-  CoreTestFixture f = begin_test(
-      config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
+  auto f = begin_test(config, "test_file_watcher_recovers_from_failure",
+                      nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
   gpr_event on_first_reload_done;

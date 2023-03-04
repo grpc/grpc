@@ -48,7 +48,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static gpr_timespec one_second_from_now(void) { return n_seconds_from_now(1); }
+static gpr_timespec one_second_from_now(void) {
+  return grpc_timeout_seconds_to_deadline(1);
+}
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -65,7 +67,7 @@ static void test_invoke_request_with_flags(
       grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  CoreTestFixture f = begin_test(
+  auto f = begin_test(
       config,
       absl::StrCat("test_invoke_request_with_flags[",
                    absl::Hex(flags_for_op[GRPC_OP_SEND_INITIAL_METADATA]), ",",
@@ -92,7 +94,7 @@ static void test_invoke_request_with_flags(
 
   gpr_timespec deadline = one_second_from_now();
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 

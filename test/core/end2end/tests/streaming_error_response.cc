@@ -70,8 +70,8 @@ static void test(CoreTestConfiguration config, bool request_status_early,
   grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
   grpc_byte_buffer* response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
-  CoreTestFixture f = begin_test(config, "streaming_error_response", nullptr,
-                                 nullptr, request_status_early);
+  auto f = begin_test(config, "streaming_error_response", nullptr, nullptr,
+                      request_status_early);
   grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
@@ -89,7 +89,7 @@ static void test(CoreTestConfiguration config, bool request_status_early,
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   GPR_ASSERT(!recv_message_separately || request_status_early);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -126,7 +126,7 @@ static void test(CoreTestConfiguration config, bool request_status_early,
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(f->server(), &s, &call_details,
-                                      &request_metadata_recv, f->cq(), f.cq,
+                                      &request_metadata_recv, f->cq(), f->cq(),
                                       grpc_core::CqVerifier::tag(101)));
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();

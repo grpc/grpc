@@ -84,7 +84,7 @@ static void test_keepalive_timeout(const CoreTestConfiguration& config) {
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -148,8 +148,8 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   keepalive_arg_elems[2].value.integer = 0;
   grpc_channel_args keepalive_args = {GPR_ARRAY_SIZE(keepalive_arg_elems),
                                       keepalive_arg_elems};
-  CoreTestFixture f = begin_test(config, "test_read_delays_keepalive",
-                                 &keepalive_args, nullptr);
+  auto f = begin_test(config, "test_read_delays_keepalive", &keepalive_args,
+                      nullptr);
   // Disable ping ack to trigger the keepalive timeout
   grpc_set_disable_ping_ack(true);
   grpc_call* c;
@@ -177,7 +177,7 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -210,7 +210,7 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(100), true);

@@ -71,7 +71,7 @@ static void test_retry_transparent_max_concurrent_streams(
 
   // Client starts a call.
   grpc_call* c = grpc_channel_create_call(
-      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
       grpc_slice_from_static_string("/service/method"), nullptr, deadline,
       nullptr);
   GPR_ASSERT(c);
@@ -116,7 +116,7 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_call_details call_details;
   grpc_call_details_init(&call_details);
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -129,7 +129,7 @@ static void test_retry_transparent_max_concurrent_streams(
   // We set wait_for_ready for this call, so that if it retries before
   // the server comes back up, it stays pending.
   grpc_call* c2 = grpc_channel_create_call(
-      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
       grpc_slice_from_static_string("/service/method"), nullptr, deadline,
       nullptr);
   GPR_ASSERT(c2);
@@ -170,7 +170,7 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start server shutdown.
-  grpc_server_shutdown_and_notify(f->server(), f.cq,
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(102));
 
   // Server handles the first call.
@@ -241,7 +241,7 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(201), true);

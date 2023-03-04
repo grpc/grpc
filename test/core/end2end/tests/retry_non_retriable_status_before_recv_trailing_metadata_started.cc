@@ -94,7 +94,7 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
               "}")),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  CoreTestFixture f = begin_test(
+  auto f = begin_test(
       config,
       "retry_non_retriable_status_before_recv_trailing_metadata_started",
       &client_args, nullptr);
@@ -103,7 +103,7 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq,
+                               f->cq(),
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -137,7 +137,7 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);

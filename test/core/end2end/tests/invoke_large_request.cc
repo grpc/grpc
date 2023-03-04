@@ -53,7 +53,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, n_seconds_from_now(5), nullptr);
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -72,8 +73,8 @@ static void test_invoke_large_request(CoreTestConfiguration config,
   args[0].value.integer = message_size;
   grpc_channel_args channel_args = {GPR_ARRAY_SIZE(args), args};
 
-  CoreTestFixture f = begin_test(config, "test_invoke_large_request",
-                                 &channel_args, &channel_args);
+  auto f = begin_test(config, "test_invoke_large_request", &channel_args,
+                      &channel_args);
 
   grpc_slice request_payload_slice = make_slice(message_size);
   grpc_slice response_payload_slice = make_slice(message_size);
@@ -97,9 +98,9 @@ static void test_invoke_large_request(CoreTestConfiguration config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = n_seconds_from_now(300);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(300);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -146,7 +147,7 @@ static void test_invoke_large_request(CoreTestConfiguration config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);

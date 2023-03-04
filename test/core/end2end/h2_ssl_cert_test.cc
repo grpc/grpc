@@ -312,7 +312,7 @@ static void simple_request_body(CoreTestFixture f,
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                &host, deadline, nullptr);
   GPR_ASSERT(c);
 

@@ -70,7 +70,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -108,7 +108,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f.cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -130,10 +130,10 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   // failures when testing with HTTP proxy. See
   // https://github.com/grpc/grpc/issues/14471
   //
-  gpr_sleep_until(n_seconds_from_now(1));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // shutdown and destroy the server
-  grpc_server_shutdown_and_notify(f->server(), f.cq,
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
   grpc_server_cancel_all_calls(f->server());
 

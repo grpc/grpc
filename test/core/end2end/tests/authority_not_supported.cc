@@ -69,7 +69,7 @@ static void test_with_authority_header(const CoreTestConfiguration& config) {
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f.cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                &host, deadline, nullptr);
   GPR_ASSERT(c);
 
