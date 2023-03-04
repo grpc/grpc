@@ -1984,7 +1984,6 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
-        "//:parse_address",
     ],
 )
 

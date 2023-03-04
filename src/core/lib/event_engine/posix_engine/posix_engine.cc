@@ -41,7 +41,6 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_driver.h"
 #include "src/core/lib/event_engine/poller.h"
@@ -53,7 +52,6 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -516,7 +514,7 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
         on_resolve(std::move(result));
       },
       event_engine_);
-  if (!request->Initialize(/*check_port=*/true).ok()) {
+  if (!request->Initialize(options_.dns_server, /*check_port=*/true).ok()) {
     abort();
   }
   {

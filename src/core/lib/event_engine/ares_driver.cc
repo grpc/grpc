@@ -21,6 +21,7 @@
 #include <initializer_list>
 #include <type_traits>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "ares.h"
@@ -28,13 +29,17 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef _WIN32
 #else
@@ -178,7 +183,9 @@ GrpcAresRequest::~GrpcAresRequest() {
   }
 }
 
-absl::Status GrpcAresRequest::Initialize(bool check_port) {
+absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
+                                         bool check_port) {
+  absl::MutexLock lock(&mu_);
   GPR_ASSERT(!initialized_);
   absl::string_view port;
   GPR_ASSERT(grpc_core::SplitHostPort(name_, &host_, &port));
@@ -208,7 +215,10 @@ absl::Status GrpcAresRequest::Initialize(bool check_port) {
     return GRPC_ERROR_CREATE(absl::StrCat(
         "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
   }
-  // TODO(yijiem): If dns_server is specified, use it.
+  error = SetRequestDNSServer(dns_server);
+  if (!error.ok()) {
+    return error;
+  }
   initialized_ = true;
   return absl::OkStatus();
 }
@@ -305,6 +315,41 @@ void GrpcAresRequest::Work() {
     }
   }
   fd_node_list_.swap(new_list);
+}
+
+absl::Status GrpcAresRequest::SetRequestDNSServer(
+    absl::string_view dns_server) {
+  if (!dns_server.empty()) {
+    GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", this,
+                         dns_server.data());
+    grpc_resolved_address addr;
+    if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
+      dns_server_addr_.family = AF_INET;
+      struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
+      memcpy(&dns_server_addr_.addr.addr4, &in->sin_addr,
+             sizeof(struct in_addr));
+      dns_server_addr_.tcp_port = grpc_sockaddr_get_port(&addr);
+      dns_server_addr_.udp_port = grpc_sockaddr_get_port(&addr);
+    } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
+                                        /*log_errors=*/false)) {
+      dns_server_addr_.family = AF_INET6;
+      struct sockaddr_in6* in6 =
+          reinterpret_cast<struct sockaddr_in6*>(addr.addr);
+      memcpy(&dns_server_addr_.addr.addr6, &in6->sin6_addr,
+             sizeof(struct in6_addr));
+      dns_server_addr_.tcp_port = grpc_sockaddr_get_port(&addr);
+      dns_server_addr_.udp_port = grpc_sockaddr_get_port(&addr);
+    } else {
+      return GRPC_ERROR_CREATE(
+          absl::StrCat("cannot parse authority ", dns_server));
+    }
+    int status = ares_set_servers_ports(channel_, &dns_server_addr_);
+    if (status != ARES_SUCCESS) {
+      return GRPC_ERROR_CREATE(absl::StrCat(
+          "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
+    }
+  }
+  return absl::OkStatus();
 }
 
 void GrpcAresRequest::OnReadable(FdNodeList::FdNode* fd_node,

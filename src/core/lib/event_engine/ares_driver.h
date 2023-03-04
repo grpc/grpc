@@ -34,6 +34,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
+#include "absl/types/optional.h"
 
 #include "include/grpc/event_engine/event_engine.h"
 #include <grpc/support/log.h>
@@ -151,7 +152,7 @@ class GrpcAresRequest
       EventEngine* event_engine);
   ~GrpcAresRequest() override;
 
-  absl::Status Initialize(bool check_port);
+  absl::Status Initialize(absl::string_view dns_server, bool check_port);
   virtual void Start() = 0;
   // Cancel the lookup and start the shutdown process
   void Cancel();
@@ -184,6 +185,9 @@ class GrpcAresRequest
   void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
+  absl::Status SetRequestDNSServer(absl::string_view dns_server)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   void OnReadable(FdNodeList::FdNode* fd_node, absl::Status status)
       ABSL_LOCKS_EXCLUDED(mu_);
   void OnWritable(FdNodeList::FdNode* fd_node, absl::Status status)
@@ -205,6 +209,7 @@ class GrpcAresRequest
   /// port to fill in sockaddr_in, parsed from the name to resolve
   uint16_t port_ = 0;
   const EventEngine::Duration timeout_;
+  struct ares_addr_port_node dns_server_addr_ ABSL_GUARDED_BY(mu_);
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
   absl::Status error_ = absl::OkStatus();
   RegisterSocketWithPollerCallback register_socket_with_poller_cb_;
