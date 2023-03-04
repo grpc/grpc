@@ -77,7 +77,7 @@ static void test_invoke_request_with_flags(
                    grpc_call_error_to_string(call_start_batch_expected_result))
           .c_str(),
       nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -91,9 +91,9 @@ static void test_invoke_request_with_flags(
   grpc_call_error expectation;
 
   gpr_timespec deadline = one_second_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -152,9 +152,6 @@ static void test_invoke_request_with_flags(
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void request_with_flags(const CoreTestConfiguration& config) {

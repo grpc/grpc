@@ -96,12 +96,13 @@ static void test_cancel_after_round_trip(CoreTestConfiguration config,
 
   CoreTestFixture f = begin_test(config, "cancel_after_round_trip", mode,
                                  use_service_config, args, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
   gpr_timespec deadline = use_service_config
                               ? gpr_inf_future(GPR_CLOCK_MONOTONIC)
-                              : five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                              : grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -137,8 +138,8 @@ static void test_cancel_after_round_trip(CoreTestConfiguration config,
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -236,9 +237,6 @@ static void test_cancel_after_round_trip(CoreTestConfiguration config,
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(args);
   }
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void cancel_after_round_trip(const CoreTestConfiguration& config) {

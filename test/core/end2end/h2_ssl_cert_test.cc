@@ -99,7 +99,7 @@ static void chttp2_init_server_secure_fullstack(
     grpc_server_destroy(f->server);
   }
   f->server = grpc_server_create(server_args, nullptr);
-  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq(), nullptr);
   GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
                                         server_creds));
   grpc_server_credentials_release(server_creds);
@@ -287,10 +287,10 @@ static void drain_cq(grpc_completion_queue* cq) {
 // Side effect - Also shuts down and drains the completion queue.
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq,
+  grpc_server_shutdown_and_notify(f->server, f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
+  grpc_completion_queue_shutdown(f->cq());
+  drain_cq(f->cq());
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -298,22 +298,22 @@ static void shutdown_server(CoreTestFixture* f) {
 static void end_test(CoreTestFixture* f) {
   shutdown_client(f);
   shutdown_server(f);
-  grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->cq());
 }
 
 static void simple_request_body(CoreTestFixture f,
                                 test_result expected_result) {
   grpc_call* c;
   gpr_timespec deadline = five_seconds_time();
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_call_error error;
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               &host, deadline, nullptr);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));

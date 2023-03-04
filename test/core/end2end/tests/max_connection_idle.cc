@@ -48,7 +48,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
                                 CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f->cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -63,7 +63,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -106,7 +106,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f->server, &s, &call_details,
-                                   &request_metadata_recv, f->cq, f->cq,
+                                   &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -167,7 +167,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 static void test_max_connection_idle(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
@@ -187,17 +187,17 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
   config.init_server(&f, &server_args);
 
   // check that we're still in idle, and start connecting
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f->client(), 1) ==
              GRPC_CHANNEL_IDLE);
   // we'll go through some set of transitions (some might be missed), until
   // READY is reached
   while (state != GRPC_CHANNEL_READY) {
-    grpc_channel_watch_connectivity_state(f.client, state,
-                                          grpc_timeout_seconds_to_deadline(10),
-                                          f.cq, grpc_core::CqVerifier::tag(99));
+    grpc_channel_watch_connectivity_state(
+        f->client(), state, grpc_timeout_seconds_to_deadline(10), f->cq(),
+        grpc_core::CqVerifier::tag(99));
     cqv.Expect(grpc_core::CqVerifier::tag(99), true);
     cqv.Verify();
-    state = grpc_channel_check_connectivity_state(f.client, 0);
+    state = grpc_channel_check_connectivity_state(f->client(), 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
                state == GRPC_CHANNEL_TRANSIENT_FAILURE);
@@ -208,26 +208,26 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
 
   // wait for the channel to reach its maximum idle time
   grpc_channel_watch_connectivity_state(
-      f.client, GRPC_CHANNEL_READY,
+      f->client(), GRPC_CHANNEL_READY,
       gpr_time_add(grpc_timeout_milliseconds_to_deadline(3000),
                    gpr_time_from_millis(MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN)),
-      f.cq, grpc_core::CqVerifier::tag(99));
+      f->cq(), grpc_core::CqVerifier::tag(99));
   cqv.Expect(grpc_core::CqVerifier::tag(99), true);
   cqv.Verify();
-  state = grpc_channel_check_connectivity_state(f.client, 0);
+  state = grpc_channel_check_connectivity_state(f->client(), 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
 
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv.Expect(tag(0xdead), true);
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Verify();
 
-  grpc_server_destroy(f.server);
-  grpc_channel_destroy(f.client);
-  grpc_completion_queue_shutdown(f.cq);
-  drain_cq(f.cq);
-  grpc_completion_queue_destroy(f.cq);
-  config.tear_down_data(&f);
+  grpc_server_destroy(f->server());
+  grpc_channel_destroy(f->client());
+  grpc_completion_queue_shutdown(f->cq());
+  drain_cq(f->cq());
+  grpc_completion_queue_destroy(f->cq());
 }
 
 void max_connection_idle(const CoreTestConfiguration& config) {

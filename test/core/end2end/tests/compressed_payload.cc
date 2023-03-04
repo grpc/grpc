@@ -106,14 +106,14 @@ static void request_for_disabled_algorithm(
         server_args.Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, false);
   }
 
-  f = begin_test(config, test_name, client_args.ToC().get(),
-                 server_args.ToC().get(), decompress_in_core);
-  grpc_core::CqVerifier cqv(f.cq);
+  auto f = begin_test(config, test_name, client_args.ToC().get(),
+                      server_args.ToC().get(), decompress_in_core);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -121,8 +121,8 @@ static void request_for_disabled_algorithm(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -222,8 +222,6 @@ static void request_for_disabled_algorithm(
   grpc_slice_unref(request_payload_slice);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void request_with_payload_template_inner(
@@ -281,14 +279,14 @@ static void request_with_payload_template_inner(
     server_args =
         server_args.Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, false);
   }
-  f = begin_test(config, test_name, client_args.ToC().get(),
-                 server_args.ToC().get(), decompress_in_core);
-  grpc_core::CqVerifier cqv(f.cq);
+  auto f = begin_test(config, test_name, client_args.ToC().get(),
+                      server_args.ToC().get(), decompress_in_core);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -338,8 +336,8 @@ static void request_with_payload_template_inner(
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(100), true);
@@ -506,9 +504,6 @@ static void request_with_payload_template_inner(
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void request_with_payload_template(

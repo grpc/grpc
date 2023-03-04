@@ -125,10 +125,10 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   } else {
     p = grpc_iomgr_create_endpoint_pair("test", &args);
   }
-  f.client_ep = p.client;
-  f.server_ep = p.server;
-  grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
-  grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
+  f->client() _ep = p.client;
+  f->server() _ep = p.server;
+  grpc_endpoint_add_to_pollset(f->client() _ep, g_pollset);
+  grpc_endpoint_add_to_pollset(f->server() _ep, g_pollset);
 
   return f;
 }

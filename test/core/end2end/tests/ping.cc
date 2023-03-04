@@ -34,7 +34,7 @@
 static void test_ping(CoreTestConfiguration config,
                       int min_time_between_pings_ms) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
@@ -56,47 +56,47 @@ static void test_ping(CoreTestConfiguration config,
   config.init_client(&f, &client_args);
   config.init_server(&f, &server_args);
 
-  grpc_channel_ping(f.client, f.cq, grpc_core::CqVerifier::tag(0), nullptr);
+  grpc_channel_ping(f->client(), f->cq(), grpc_core::CqVerifier::tag(0),
+                    nullptr);
   cqv.Expect(grpc_core::CqVerifier::tag(0), false);
 
   // check that we're still in idle, and start connecting
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f->client(), 1) ==
              GRPC_CHANNEL_IDLE);
   // we'll go through some set of transitions (some might be missed), until
   // READY is reached
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        f.client, state,
+        f->client(), state,
         gpr_time_add(grpc_timeout_seconds_to_deadline(3),
                      gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
                                           GPR_TIMESPAN)),
-        f.cq, grpc_core::CqVerifier::tag(99));
+        f->cq(), grpc_core::CqVerifier::tag(99));
     cqv.Expect(grpc_core::CqVerifier::tag(99), true);
     cqv.Verify();
-    state = grpc_channel_check_connectivity_state(f.client, 0);
+    state = grpc_channel_check_connectivity_state(f->client(), 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
                state == GRPC_CHANNEL_TRANSIENT_FAILURE);
   }
 
   for (i = 1; i <= PING_NUM; i++) {
-    grpc_channel_ping(f.client, f.cq, tag(i), nullptr);
+    grpc_channel_ping(f->client(), f->cq(), tag(i), nullptr);
     cqv.Expect(tag(i), true);
     cqv.Verify();
   }
 
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv.Expect(tag(0xdead), true);
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Verify();
 
   // cleanup server
-  grpc_server_destroy(f.server);
+  grpc_server_destroy(f->server());
 
-  grpc_channel_destroy(f.client);
-  grpc_completion_queue_shutdown(f.cq);
-  grpc_completion_queue_destroy(f.cq);
-
-  config.tear_down_data(&f);
+  grpc_channel_destroy(f->client());
+  grpc_completion_queue_shutdown(f->cq());
+  grpc_completion_queue_destroy(f->cq());
 }
 
 void ping(const CoreTestConfiguration& config) {

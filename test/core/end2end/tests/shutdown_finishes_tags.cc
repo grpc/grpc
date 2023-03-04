@@ -38,16 +38,16 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static void end_test(CoreTestFixture* f) {
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_shutdown(f->cq());
+  drain_cq(f->cq());
+  grpc_completion_queue_destroy(f->cq());
 }
 
 static void test_early_server_shutdown_finishes_tags(
     CoreTestConfiguration config) {
   CoreTestFixture f = begin_test(
       config, "test_early_server_shutdown_finishes_tags", nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_call* s = reinterpret_cast<grpc_call*>(1);
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
@@ -58,21 +58,18 @@ static void test_early_server_shutdown_finishes_tags(
   // upon shutdown, the server should finish all requested calls indicating
   // no new call
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(101)));
   shutdown_client(&f);
-  grpc_server_shutdown_and_notify(f.server, f.cq,
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
                                   grpc_core::CqVerifier::tag(1000));
   cqv.Expect(grpc_core::CqVerifier::tag(101), false);
   cqv.Expect(grpc_core::CqVerifier::tag(1000), true);
   cqv.Verify();
   GPR_ASSERT(s == nullptr);
 
-  grpc_server_destroy(f.server);
-
-  end_test(&f);
-  config.tear_down_data(&f);
+  grpc_server_destroy(f->server());
 }
 
 void shutdown_finishes_tags(const CoreTestConfiguration& config) {

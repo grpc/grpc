@@ -89,10 +89,11 @@ static void test_retry_cancel_after_first_attempt_starts(
   CoreTestFixture f = begin_test(
       config, "retry_cancel_after_first_attempt_starts", &client_args, nullptr);
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -157,9 +158,6 @@ static void test_retry_cancel_after_first_attempt_starts(
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void retry_cancel_after_first_attempt_starts(

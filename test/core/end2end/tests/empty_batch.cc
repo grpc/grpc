@@ -42,14 +42,14 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 static void empty_batch_body(CoreTestConfiguration /*config*/,
                              CoreTestFixture f) {
   grpc_call* c;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_call_error error;
   grpc_op* op = nullptr;
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   error =
@@ -62,10 +62,8 @@ static void empty_batch_body(CoreTestConfiguration /*config*/,
 }
 
 static void test_invoke_empty_body(const CoreTestConfiguration& config) {
-  f = begin_test(config, "test_invoke_empty_body", nullptr, nullptr);
+  auto f = begin_test(config, "test_invoke_empty_body", nullptr, nullptr);
   empty_batch_body(config, f);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void empty_batch(const CoreTestConfiguration& config) {

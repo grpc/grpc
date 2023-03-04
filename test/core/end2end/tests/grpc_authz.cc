@@ -55,11 +55,12 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq,
+  grpc_server_shutdown_and_notify(f->server, f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(f->cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(
+        f->cq(), grpc_timeout_seconds_to_deadline(5), nullptr);
   } while (ev.type != GRPC_OP_COMPLETE ||
            ev.tag != grpc_core::CqVerifier::tag(1000));
   grpc_server_destroy(f->server);
@@ -81,12 +82,12 @@ static void test_allow_authorized_request(CoreTestFixture f) {
   grpc_slice details = grpc_empty_slice();
   int was_cancelled = 2;
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -122,8 +123,8 @@ static void test_allow_authorized_request(CoreTestFixture f) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -181,12 +182,12 @@ static void test_deny_unauthorized_request(CoreTestFixture f) {
   grpc_call_error error;
   grpc_slice details = grpc_empty_slice();
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -267,9 +268,6 @@ static void test_static_init_allow_authorized_request(
                       nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_static_init_deny_unauthorized_request(
@@ -315,9 +313,6 @@ static void test_static_init_deny_unauthorized_request(
                       nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_deny_unauthorized_request(f);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_static_init_deny_request_no_match_in_policy(
@@ -354,9 +349,6 @@ static void test_static_init_deny_request_no_match_in_policy(
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_deny_unauthorized_request(f);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_file_watcher_init_allow_authorized_request(
@@ -394,9 +386,6 @@ static void test_file_watcher_init_allow_authorized_request(
                       nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_file_watcher_init_deny_unauthorized_request(
@@ -445,9 +434,6 @@ static void test_file_watcher_init_deny_unauthorized_request(
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_deny_unauthorized_request(f);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_file_watcher_init_deny_request_no_match_in_policy(
@@ -486,9 +472,6 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
       &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_deny_unauthorized_request(f);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_file_watcher_valid_policy_reload(
@@ -569,9 +552,6 @@ static void test_file_watcher_valid_policy_reload(
   test_deny_unauthorized_request(f);
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
       ->SetCallbackForTesting(nullptr);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_file_watcher_invalid_policy_skip_reload(
@@ -630,9 +610,6 @@ static void test_file_watcher_invalid_policy_skip_reload(
   test_allow_authorized_request(f);
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
       ->SetCallbackForTesting(nullptr);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_file_watcher_recovers_from_failure(
@@ -733,9 +710,6 @@ static void test_file_watcher_recovers_from_failure(
   test_deny_unauthorized_request(f);
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
       ->SetCallbackForTesting(nullptr);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void grpc_authz(const CoreTestConfiguration& config) {

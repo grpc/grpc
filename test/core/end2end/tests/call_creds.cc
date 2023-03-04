@@ -115,13 +115,13 @@ static void request_response_with_payload_and_call_creds(
   grpc_auth_context* server_auth_context = nullptr;
   grpc_auth_context* client_auth_context = nullptr;
 
-  f = begin_test(config, test_name, use_secure_call_creds, 0);
-  grpc_core::CqVerifier cqv(f.cq);
+  auto f = begin_test(config, test_name, use_secure_call_creds, 0);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
   if (use_secure_call_creds) {
     creds =
@@ -204,8 +204,8 @@ static void request_response_with_payload_and_call_creds(
     cqv.Verify();
     GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
   } else {
-    error = grpc_server_request_call(f.server, &s, &call_details,
-                                     &request_metadata_recv, f.cq, f.cq,
+    error = grpc_server_request_call(f->server(), &s, &call_details,
+                                     &request_metadata_recv, f->cq(), f.cq,
                                      grpc_core::CqVerifier::tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -342,9 +342,6 @@ static void request_response_with_payload_and_call_creds(
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_request_response_with_payload_and_call_creds(
@@ -381,7 +378,7 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_op* op;
   grpc_call* c;
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -396,13 +393,13 @@ static void test_request_with_server_rejecting_client_creds(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_call_credentials* creds;
 
-  f = begin_test(config, "test_request_with_server_rejecting_client_creds",
-                 false, 1);
-  grpc_core::CqVerifier cqv(f.cq);
+  auto f = begin_test(config, "test_request_with_server_rejecting_client_creds",
+                      false, 1);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
@@ -467,9 +464,6 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_slice_unref(details);
 
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void call_creds(const CoreTestConfiguration& config) {

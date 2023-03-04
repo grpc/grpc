@@ -71,7 +71,7 @@ static void test_request(const CoreTestConfiguration& config) {
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   CoreTestFixture f = begin_test(config, "filter_latency", nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -90,10 +90,10 @@ static void test_request(const CoreTestConfiguration& config) {
   gpr_mu_unlock(&g_mu);
   const gpr_timespec start_time = gpr_now(GPR_CLOCK_REALTIME);
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -134,8 +134,8 @@ static void test_request(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -184,9 +184,6 @@ static void test_request(const CoreTestConfiguration& config) {
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 
   const gpr_timespec end_time = gpr_now(GPR_CLOCK_REALTIME);
   const gpr_timespec max_latency = gpr_time_sub(end_time, start_time);

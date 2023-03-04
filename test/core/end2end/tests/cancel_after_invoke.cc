@@ -49,10 +49,10 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq,
+  grpc_server_shutdown_and_notify(f->server, f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
   grpc_event ev = grpc_completion_queue_next(
-      f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+      f->cq(), grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == grpc_core::CqVerifier::tag(1000));
   grpc_server_destroy(f->server);
@@ -67,7 +67,7 @@ static void test_cancel_after_invoke(CoreTestConfiguration config,
   grpc_call* c;
   CoreTestFixture f = begin_test(config, "test_cancel_after_invoke", mode,
                                  test_ops, nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -81,10 +81,10 @@ static void test_cancel_after_invoke(CoreTestConfiguration config,
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -146,9 +146,6 @@ static void test_cancel_after_invoke(CoreTestConfiguration config,
   grpc_slice_unref(details);
 
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void cancel_after_invoke(const CoreTestConfiguration& config) {

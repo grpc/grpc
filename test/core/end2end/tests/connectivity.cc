@@ -62,7 +62,7 @@ static void child_thread(void* arg) {
 static void test_connectivity(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   child_events ce;
 
   auto client_args = grpc_core::ChannelArgs()
@@ -82,15 +82,15 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   gpr_event_wait(&ce.started, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
   // channels should start life in IDLE, and stay there
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 0) ==
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f->client(), 0) ==
              GRPC_CHANNEL_IDLE);
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 0) ==
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f->client(), 0) ==
              GRPC_CHANNEL_IDLE);
 
   // start watching for a change
   gpr_log(GPR_DEBUG, "watching");
-  grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_IDLE,
+  grpc_channel_watch_connectivity_state(f->client(), GRPC_CHANNEL_IDLE,
                                         gpr_now(GPR_CLOCK_MONOTONIC), f.cq,
                                         grpc_core::CqVerifier::tag(1));
 
@@ -98,27 +98,27 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   thd.Join();
 
   // check that we're still in idle, and start connecting
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f->client(), 1) ==
              GRPC_CHANNEL_IDLE);
   // start watching for a change
-  grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_IDLE,
+  grpc_channel_watch_connectivity_state(f->client(), GRPC_CHANNEL_IDLE,
                                         grpc_timeout_seconds_to_deadline(10),
-                                        f.cq, grpc_core::CqVerifier::tag(2));
+                                        f->cq(), grpc_core::CqVerifier::tag(2));
 
   // and now the watch should trigger
   cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify();
-  state = grpc_channel_check_connectivity_state(f.client, 0);
+  state = grpc_channel_check_connectivity_state(f->client(), 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING);
 
   // quickly followed by a transition to TRANSIENT_FAILURE
-  grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_CONNECTING,
+  grpc_channel_watch_connectivity_state(f->client(), GRPC_CHANNEL_CONNECTING,
                                         grpc_timeout_seconds_to_deadline(10),
-                                        f.cq, grpc_core::CqVerifier::tag(3));
+                                        f->cq(), grpc_core::CqVerifier::tag(3));
   cqv.Expect(grpc_core::CqVerifier::tag(3), true);
   cqv.Verify();
-  state = grpc_channel_check_connectivity_state(f.client, 0);
+  state = grpc_channel_check_connectivity_state(f->client(), 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING);
 
@@ -132,12 +132,12 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   // we'll go through some set of transitions (some might be missed), until
   // READY is reached
   while (state != GRPC_CHANNEL_READY) {
-    grpc_channel_watch_connectivity_state(f.client, state,
-                                          grpc_timeout_seconds_to_deadline(10),
-                                          f.cq, grpc_core::CqVerifier::tag(4));
+    grpc_channel_watch_connectivity_state(
+        f->client(), state, grpc_timeout_seconds_to_deadline(10), f->cq(),
+        grpc_core::CqVerifier::tag(4));
     cqv.Expect(grpc_core::CqVerifier::tag(4), true);
     cqv.Verify(grpc_core::Duration::Seconds(20));
-    state = grpc_channel_check_connectivity_state(f.client, 0);
+    state = grpc_channel_check_connectivity_state(f->client(), 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
                state == GRPC_CHANNEL_TRANSIENT_FAILURE);
@@ -147,29 +147,28 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   // we should go immediately to TRANSIENT_FAILURE
   gpr_log(GPR_DEBUG, "*** SHUTTING DOWN SERVER ***");
 
-  grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_READY,
+  grpc_channel_watch_connectivity_state(f->client(), GRPC_CHANNEL_READY,
                                         grpc_timeout_seconds_to_deadline(10),
-                                        f.cq, grpc_core::CqVerifier::tag(5));
+                                        f->cq(), grpc_core::CqVerifier::tag(5));
 
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
 
   cqv.Expect(grpc_core::CqVerifier::tag(5), true);
-  cqv.Expect(tag(0xdead), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Verify();
-  state = grpc_channel_check_connectivity_state(f.client, 0);
+  state = grpc_channel_check_connectivity_state(f->client(), 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
 
   // cleanup server
-  grpc_server_destroy(f.server);
+  grpc_server_destroy(f->server());
 
   gpr_log(GPR_DEBUG, "*** SHUTDOWN SERVER ***");
 
-  grpc_channel_destroy(f.client);
-  grpc_completion_queue_shutdown(f.cq);
-  grpc_completion_queue_destroy(f.cq);
-
-  config.tear_down_data(&f);
+  grpc_channel_destroy(f->client());
+  grpc_completion_queue_shutdown(f->cq());
+  grpc_completion_queue_destroy(f->cq());
 }
 
 static void cb_watch_connectivity(grpc_completion_queue_functor* functor,
@@ -202,7 +201,7 @@ static void test_watch_connectivity_cq_callback(
   config.init_client(&f, nullptr);
 
   // start connecting
-  grpc_channel_check_connectivity_state(f.client, 1);
+  grpc_channel_check_connectivity_state(f->client(), 1);
 
   // create the cq callback
   cq = grpc_completion_queue_create_for_callback(&cb_shutdown_ctx.functor,
@@ -210,7 +209,7 @@ static void test_watch_connectivity_cq_callback(
 
   // start watching for any change, cb is immediately called
   // and no dead lock should be raised
-  grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_IDLE,
+  grpc_channel_watch_connectivity_state(f->client(), GRPC_CHANNEL_IDLE,
                                         grpc_timeout_seconds_to_deadline(3), cq,
                                         &cb_ctx.functor);
 
@@ -226,13 +225,11 @@ static void test_watch_connectivity_cq_callback(
                  gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
   // cleanup
-  grpc_channel_destroy(f.client);
+  grpc_channel_destroy(f->client());
   grpc_completion_queue_destroy(cq);
 
   // cq is not used in this test
-  grpc_completion_queue_destroy(f.cq);
-
-  config.tear_down_data(&f);
+  grpc_completion_queue_destroy(f->cq());
 }
 
 void connectivity(const CoreTestConfiguration& config) {

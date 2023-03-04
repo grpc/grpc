@@ -67,7 +67,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Tests cancellation with multiple send op batches.
 static void test_retry_cancel_with_multiple_send_batches(
-    CoreTestConfiguration config, cancellation_mode mode) {
+    const CoreTestConfiguration& config, cancellation_mode mode) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -111,10 +111,11 @@ static void test_retry_cancel_with_multiple_send_batches(
       absl::StrCat("retry_cancel_with_multiple_send_batches/", mode.name);
   CoreTestFixture f = begin_test(config, name.c_str(), &client_args, nullptr);
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
   gpr_timespec deadline = n_seconds_from_now(3);
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -194,9 +195,6 @@ static void test_retry_cancel_with_multiple_send_batches(
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 namespace {

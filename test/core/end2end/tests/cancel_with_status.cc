@@ -50,10 +50,10 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq,
+  grpc_server_shutdown_and_notify(f->server, f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
   grpc_event ev = grpc_completion_queue_next(
-      f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+      f->cq(), grpc_timeout_seconds_to_deadline(5), nullptr);
   gpr_log(GPR_DEBUG, "shutdown event: %s", grpc_event_string(&ev).c_str());
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == grpc_core::CqVerifier::tag(1000));
@@ -65,15 +65,15 @@ static void end_test(CoreTestFixture* f) {
   shutdown_client(f);
   shutdown_server(f);
 
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_shutdown(f->cq());
+  drain_cq(f->cq());
+  grpc_completion_queue_destroy(f->cq());
 }
 
 static void simple_request_body(CoreTestConfiguration /*config*/,
                                 CoreTestFixture f, size_t num_ops) {
   grpc_call* c;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -84,10 +84,10 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 
   gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -143,11 +143,9 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 
 static void test_invoke_simple_request(CoreTestConfiguration config,
                                        size_t num_ops) {
-  f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr,
-                 nullptr);
+  auto f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr,
+                      nullptr);
   simple_request_body(config, f, num_ops);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void cancel_with_status(const CoreTestConfiguration& config) {

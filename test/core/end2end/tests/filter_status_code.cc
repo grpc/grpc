@@ -84,7 +84,7 @@ static void test_request(const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   auto f = begin_test(config, "filter_status_code", nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -103,10 +103,10 @@ static void test_request(const CoreTestConfiguration& config) {
   g_server_status_code = GRPC_STATUS_OK;
   gpr_mu_unlock(&g_mu);
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
   gpr_mu_lock(&g_mu);
   g_client_call_stack = grpc_call_get_call_stack(c);
@@ -145,8 +145,8 @@ static void test_request(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -196,9 +196,6 @@ static void test_request(const CoreTestConfiguration& config) {
 
   grpc_call_unref(s);
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 
   // Perform checks after test tear-down
   // Guards against the case that there's outstanding channel-related work on a
@@ -344,7 +341,7 @@ void filter_status_code(const CoreTestConfiguration& config) {
         register_stage(GRPC_CLIENT_DIRECT_CHANNEL, &test_client_filter);
         register_stage(GRPC_SERVER_CHANNEL, &test_server_filter);
       },
-      [config] { test_request(config); });
+      [&config] { test_request(config); });
 }
 
 void filter_status_code_pre_init(void) {

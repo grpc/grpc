@@ -238,7 +238,7 @@ void inproc_init_server(CoreTestFixture* f,
     grpc_server_destroy(f->server);
   }
   f->server = grpc_server_create(server_args, nullptr);
-  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq(), nullptr);
   grpc_server_start(f->server);
 }
 
@@ -259,21 +259,23 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static gpr_timespec five_seconds_from_now() { return n_seconds_from_now(5); }
+static gpr_timespec grpc_timeout_seconds_to_deadline(5) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue* /*cq*/) {
   // Wait for the shutdown callback to arrive, or fail the test
-  GPR_ASSERT(g_shutdown_callback->Wait(five_seconds_from_now()));
+  GPR_ASSERT(g_shutdown_callback->Wait(grpc_timeout_seconds_to_deadline(5)));
   gpr_log(GPR_DEBUG, "CQ shutdown wait complete");
   delete g_shutdown_callback;
 }
 
 static void shutdown_server(CoreTestFixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq,
+  grpc_server_shutdown_and_notify(f->server, f->cq(),
                                   grpc_core::CqVerifier::tag(1));
   expect_tag(1, true);
-  verify_tags(five_seconds_from_now());
+  verify_tags(grpc_timeout_seconds_to_deadline(5));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -294,11 +296,11 @@ static void simple_request_body(CoreTestConfiguration /* config */,
   grpc_slice details;
   int was_cancelled = 2;
   char* peer;
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -341,8 +343,8 @@ static void simple_request_body(CoreTestConfiguration /* config */,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Register a call at the server-side to match the incoming client call
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -416,10 +418,8 @@ static void simple_request_body(CoreTestConfiguration /* config */,
 }
 
 static void test_invoke_simple_request(const CoreTestConfiguration& config) {
-  f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
+  auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_invoke_10_simple_requests(
@@ -431,8 +431,6 @@ static void test_invoke_10_simple_requests(
     simple_request_body(config, f);
     gpr_log(GPR_INFO, "Running test: Passed simple request %d", i);
   }
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_invoke_many_simple_requests(
@@ -449,8 +447,6 @@ static void test_invoke_many_simple_requests(
       gpr_timespec_to_micros(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), t1)) /
       many;
   gpr_log(GPR_INFO, "Time per ping %f us", us);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void simple_request(const CoreTestConfiguration& config) {

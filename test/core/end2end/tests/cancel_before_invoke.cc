@@ -52,7 +52,7 @@ static void test_cancel_before_invoke(CoreTestConfiguration config,
   grpc_call* c;
   auto f =
       begin_test(config, "cancel_before_invoke", test_ops, nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -66,10 +66,10 @@ static void test_cancel_before_invoke(CoreTestConfiguration config,
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_cancel(c, nullptr));
@@ -135,9 +135,6 @@ static void test_cancel_before_invoke(CoreTestConfiguration config,
   grpc_slice_unref(details);
 
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void cancel_before_invoke(const CoreTestConfiguration& config) {

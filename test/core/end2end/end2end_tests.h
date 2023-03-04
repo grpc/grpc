@@ -27,6 +27,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "test/core/util/test_config.h"
 
 // Test feature flags.
 #define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
@@ -85,7 +86,7 @@ class CoreTestFixture {
     grpc_event ev;
     do {
       ev = grpc_completion_queue_next(
-          f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+          f->cq(), grpc_timeout_seconds_to_deadline(5), nullptr);
     } while (ev.type != GRPC_OP_COMPLETE ||
              ev.tag != grpc_core::CqVerifier::tag(1000));
     grpc_server_destroy(f->server);

@@ -43,7 +43,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 static void simple_request_body(CoreTestFixture f) {
   grpc_call* c;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -55,10 +55,10 @@ static void simple_request_body(CoreTestFixture f) {
   grpc_slice details;
 
   grpc_slice host = grpc_slice_from_static_string("slartibartfast.local");
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               &host, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -108,10 +108,8 @@ static void simple_request_body(CoreTestFixture f) {
 }
 
 static void test_invoke_simple_request(const CoreTestConfiguration& config) {
-  f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
+  auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(f);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void bad_hostname(const CoreTestConfiguration& config) {

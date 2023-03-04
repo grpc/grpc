@@ -193,7 +193,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
                                 CoreTestFixture f, size_t index) {
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -217,9 +217,10 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   extra_metadata[2].value =
       grpc_slice_from_static_string(dragons[index % GPR_ARRAY_SIZE(dragons)]);
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, gpr_inf_future(GPR_CLOCK_MONOTONIC),
+                               nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -255,8 +256,8 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -328,14 +329,12 @@ static void test_size(CoreTestConfiguration config, int encode_size,
 
   std::string name =
       absl::StrFormat("test_size:e=%d:d=%d", encode_size, decode_size);
-  f = begin_test(config, name.c_str(),
-                 encode_size != 4096 ? &client_args : nullptr,
-                 decode_size != 4096 ? &server_args : nullptr);
+  auto f = begin_test(config, name.c_str(),
+                      encode_size != 4096 ? &client_args : nullptr,
+                      decode_size != 4096 ? &server_args : nullptr);
   for (i = 0; i < 4 * GPR_ARRAY_SIZE(hobbits); i++) {
     simple_request_body(config, f, i);
   }
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void hpack_size(const CoreTestConfiguration& config) {

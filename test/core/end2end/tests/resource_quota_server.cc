@@ -139,9 +139,10 @@ void resource_quota_server(const CoreTestConfiguration& config) {
   }
 
   for (int i = 0; i < NUM_CALLS; i++) {
-    error = grpc_server_request_call(
-        f.server, &server_calls[i], &call_details[i], &request_metadata_recv[i],
-        f.cq, f.cq, tag(SERVER_START_BASE_TAG + i));
+    error = grpc_server_request_call(f->server(), &server_calls[i],
+                                     &call_details[i],
+                                     &request_metadata_recv[i], f->cq(),
+                                     f->cq(), tag(SERVER_START_BASE_TAG + i));
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     pending_server_start_calls++;
@@ -149,8 +150,8 @@ void resource_quota_server(const CoreTestConfiguration& config) {
 
   for (int i = 0; i < NUM_CALLS; i++) {
     client_calls[i] =
-        grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                 f.cq, grpc_slice_from_static_string("/foo"),
+        grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                 f->cq(), grpc_slice_from_static_string("/foo"),
                                  nullptr, n_seconds_from_now(60), nullptr);
 
     memset(ops, 0, sizeof(ops));
@@ -195,7 +196,7 @@ void resource_quota_server(const CoreTestConfiguration& config) {
              pending_server_end_calls >
          0) {
     grpc_event ev =
-        grpc_completion_queue_next(f.cq, n_seconds_from_now(60), nullptr);
+        grpc_completion_queue_next(f->cq(), n_seconds_from_now(60), nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
     int ev_tag = static_cast<int>(reinterpret_cast<intptr_t>(ev.tag));
@@ -321,9 +322,6 @@ void resource_quota_server(const CoreTestConfiguration& config) {
 
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 
   free(client_calls);
   free(server_calls);

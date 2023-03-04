@@ -54,7 +54,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   auto f =
       begin_test(config, "test_early_server_shutdown_finishes_inflight_calls",
                  nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -67,9 +67,9 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   int was_cancelled = 2;
 
   gpr_timespec deadline = n_seconds_from_now(10);
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -105,15 +105,16 @@ static void test_early_server_shutdown_finishes_inflight_calls(
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   // shutdown and destroy the server
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
   cqv.VerifyEmpty();
 
   memset(ops, 0, sizeof(ops));
@@ -141,7 +142,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Expect(tag(0xdead), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
@@ -158,9 +159,6 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void graceful_server_shutdown(const CoreTestConfiguration& config) {

@@ -68,7 +68,7 @@ static void shutdown_server(CoreTestFixture* f) {
 
 static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
-  auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
+  auto cqv = std::make_unique<grpc_core::CqVerifier>(f->cq());
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
@@ -98,9 +98,9 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
   grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -136,13 +136,13 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_event ev = grpc_completion_queue_next(
-      f.cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+      f->cq(), gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == grpc_core::CqVerifier::tag(1) ||
              ev.tag == grpc_core::CqVerifier::tag(101));
@@ -199,8 +199,9 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
     // Request failed before getting to the server
   }
 
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv->Expect(tag(0xdead), true);
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
+  cqv->Expect(grpc_core::CqVerifier::tag(0xdead), true);
   if (s == nullptr) {
     cqv->Expect(grpc_core::CqVerifier::tag(101), false);
   }
@@ -221,13 +222,11 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
   cqv.reset();
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
-  auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
+  auto cqv = std::make_unique<grpc_core::CqVerifier>(f->cq());
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
@@ -257,9 +256,9 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
   grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -295,13 +294,13 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_event ev = grpc_completion_queue_next(
-      f.cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+      f->cq(), gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == grpc_core::CqVerifier::tag(1) ||
              ev.tag == grpc_core::CqVerifier::tag(101));
@@ -352,8 +351,9 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
     // Request failed before getting to the server
   }
 
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv->Expect(tag(0xdead), true);
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
+  cqv->Expect(grpc_core::CqVerifier::tag(0xdead), true);
   if (s == nullptr) {
     cqv->Expect(grpc_core::CqVerifier::tag(101), false);
   }
@@ -375,8 +375,6 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
   cqv.reset();
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void max_connection_age(const CoreTestConfiguration& config) {

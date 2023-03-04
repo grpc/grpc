@@ -53,7 +53,7 @@ static void test_invoke_request_with_payload(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   auto f =
       begin_test(config, "test_invoke_request_with_payload", nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -66,10 +66,10 @@ static void test_invoke_request_with_payload(
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -110,8 +110,8 @@ static void test_invoke_request_with_payload(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(101)));
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
@@ -175,9 +175,6 @@ static void test_invoke_request_with_payload(
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void request_with_payload(const CoreTestConfiguration& config) {

@@ -78,7 +78,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
                                 CoreTestFixture f) {
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -91,10 +91,10 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   int was_cancelled = 2;
   char* peer;
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -133,8 +133,8 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -191,11 +191,10 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 }
 
 static void test_invoke_simple_request(const CoreTestConfiguration& config) {
-  f = begin_test(config, "test_invoke_simple_request_with_no_error_logging",
+  auto f =
+      begin_test(config, "test_invoke_simple_request_with_no_error_logging",
                  nullptr, nullptr);
   simple_request_body(config, f);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_invoke_10_simple_requests(
@@ -209,8 +208,6 @@ static void test_invoke_10_simple_requests(
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
   simple_request_body(config, f);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_no_error_logging_in_entire_process(
@@ -235,8 +232,6 @@ static void test_no_logging_in_one_request(
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_log);
   simple_request_body(config, f);
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void no_logging(const CoreTestConfiguration& config) {

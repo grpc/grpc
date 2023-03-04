@@ -112,6 +112,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 

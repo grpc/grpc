@@ -51,9 +51,9 @@ static void end_test(CoreTestFixture* f) {
   shutdown_client(f);
   shutdown_server(f);
 
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_shutdown(f->cq());
+  drain_cq(f->cq());
+  grpc_completion_queue_destroy(f->cq());
 }
 
 // Client sends a request with payload, potentially requesting status early. The
@@ -72,7 +72,7 @@ static void test(CoreTestConfiguration config, bool request_status_early,
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
   CoreTestFixture f = begin_test(config, "streaming_error_response", nullptr,
                                  nullptr, request_status_early);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -86,11 +86,11 @@ static void test(CoreTestConfiguration config, bool request_status_early,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   GPR_ASSERT(!recv_message_separately || request_status_early);
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -125,8 +125,8 @@ static void test(CoreTestConfiguration config, bool request_status_early,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(101)));
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
@@ -247,9 +247,6 @@ static void test(CoreTestConfiguration config, bool request_status_early,
   grpc_byte_buffer_destroy(response_payload2);
   grpc_byte_buffer_destroy(response_payload1_recv);
   grpc_byte_buffer_destroy(response_payload2_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void streaming_error_response(const CoreTestConfiguration& config) {

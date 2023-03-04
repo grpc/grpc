@@ -52,7 +52,7 @@ static void shutdown_server(CoreTestFixture* f) {
 // Send more pings than server allows to trigger server's GOAWAY.
 static void test_bad_ping(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_arg client_a[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
@@ -87,9 +87,9 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -125,8 +125,8 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -139,7 +139,7 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   // needed here.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
-    grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
+    grpc_channel_ping(f->client(), f->cq(), tag(200 + i), nullptr);
     cqv.Expect(tag(200 + i), true);
     if (i == MAX_PING_STRIKES + 2) {
       cqv.Expect(grpc_core::CqVerifier::tag(1), true);
@@ -174,8 +174,9 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
 
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv.Expect(tag(0xdead), true);
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Verify();
 
   grpc_call_unref(s);
@@ -192,15 +193,13 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
 static void test_pings_without_data(const CoreTestConfiguration& config) {
   CoreTestFixture f = config.create_fixture(nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
   grpc_arg client_a[] = {
@@ -238,9 +237,9 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -276,8 +275,8 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -288,7 +287,7 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   // MAX_PING_STRIKES will actually be sent and the rpc will still succeed.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
-    grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
+    grpc_channel_ping(f->client(), f->cq(), tag(200 + i), nullptr);
     if (i <= MAX_PING_STRIKES) {
       cqv.Expect(tag(200 + i), true);
     }
@@ -324,8 +323,9 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv.Expect(tag(0xdead), true);
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
+                                  grpc_core::CqVerifier::tag(0xdead));
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
 
   // Also expect the previously blocked pings to complete with an error
   cqv.Expect(tag(200 + MAX_PING_STRIKES + 1), false);
@@ -345,8 +345,6 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void bad_ping(const CoreTestConfiguration& config) {

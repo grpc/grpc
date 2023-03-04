@@ -90,10 +90,11 @@ static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   auto f = begin_test(config, "retry_send_recv_batch", &client_args, nullptr);
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -133,8 +134,8 @@ static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call.
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -191,9 +192,6 @@ static void test_retry_send_recv_batch(const CoreTestConfiguration& config) {
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void retry_send_recv_batch(const CoreTestConfiguration& config) {

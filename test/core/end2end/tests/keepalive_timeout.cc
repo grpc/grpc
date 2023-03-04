@@ -70,7 +70,7 @@ static void test_keepalive_timeout(const CoreTestConfiguration& config) {
                                       keepalive_arg_elems};
 
   auto f = begin_test(config, "keepalive_timeout", &keepalive_args, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -82,10 +82,10 @@ static void test_keepalive_timeout(const CoreTestConfiguration& config) {
   // Disable ping ack to trigger the keepalive timeout
   grpc_set_disable_ping_ack(true);
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -121,9 +121,6 @@ static void test_keepalive_timeout(const CoreTestConfiguration& config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 // Verify that reads reset the keepalive ping timer. The client sends 30 pings
@@ -157,7 +154,7 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   grpc_set_disable_ping_ack(true);
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -178,10 +175,10 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello you");
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -212,8 +209,8 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(100), true);
@@ -331,9 +328,6 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_slice_unref(details);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void keepalive_timeout(const CoreTestConfiguration& config) {

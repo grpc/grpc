@@ -110,7 +110,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     if (call1 != nullptr) grpc_call_unref(call1);
     grpc_call_details_destroy(&call_details1);
     grpc_metadata_array_destroy(&request_metadata1);
-    grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
+    grpc_server_shutdown_and_notify(server, cq,
+                                    grpc_core::CqVerifier::tag(0xdead));
     grpc_server_cancel_all_calls(server);
     grpc_core::Timestamp deadline =
         grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(5);

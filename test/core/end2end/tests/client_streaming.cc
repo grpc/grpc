@@ -50,7 +50,7 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   auto f = begin_test(config, "test_client_streaming", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -66,10 +66,10 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -93,8 +93,8 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(100), true);
@@ -214,9 +214,6 @@ static void test_client_streaming(CoreTestConfiguration config, int messages) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_slice_unref(details);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void client_streaming(const CoreTestConfiguration& config) {

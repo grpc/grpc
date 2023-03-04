@@ -52,7 +52,7 @@ static void run_one_request(CoreTestConfiguration /*config*/, CoreTestFixture f,
                             bool request_is_success) {
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -64,10 +64,10 @@ static void run_one_request(CoreTestConfiguration /*config*/, CoreTestFixture f,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -103,8 +103,8 @@ static void run_one_request(CoreTestConfiguration /*config*/, CoreTestFixture f,
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -161,13 +161,13 @@ static void test_channelz(const CoreTestConfiguration& config) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
-  f = begin_test(config, "test_channelz", &args, &args);
+  auto f = begin_test(config, "test_channelz", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(f.client);
+      grpc_channel_get_channelz_node(f->client());
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_core::Server::FromC(f.server)->channelz_node();
+      grpc_core::Server::FromC(f->server())->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   std::string json = channelz_channel->RenderJsonString();
@@ -206,9 +206,6 @@ static void test_channelz(const CoreTestConfiguration& config) {
 
   json = channelz_server->RenderServerSockets(0, 100);
   GPR_ASSERT(json.find("\"end\":true") != json.npos);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_channelz_with_channel_trace(
@@ -221,13 +218,13 @@ static void test_channelz_with_channel_trace(
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
-  f = begin_test(config, "test_channelz_with_channel_trace", &args, &args);
+  auto f = begin_test(config, "test_channelz_with_channel_trace", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(f.client);
+      grpc_channel_get_channelz_node(f->client());
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_core::Server::FromC(f.server)->channelz_node();
+      grpc_core::Server::FromC(f->server())->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   run_one_request(config, f, true);
@@ -241,9 +238,6 @@ static void test_channelz_with_channel_trace(
   GPR_ASSERT(json.find("\"trace\"") != json.npos);
   GPR_ASSERT(json.find("\"description\":\"Server created\"") != json.npos);
   GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") != json.npos);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_channelz_disabled(const CoreTestConfiguration& config) {
@@ -255,15 +249,13 @@ static void test_channelz_disabled(const CoreTestConfiguration& config) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
-  f = begin_test(config, "test_channelz_disabled", &args, &args);
+  auto f = begin_test(config, "test_channelz_disabled", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(f.client);
+      grpc_channel_get_channelz_node(f->client());
   GPR_ASSERT(channelz_channel == nullptr);
   // one successful request
   run_one_request(config, f, true);
   GPR_ASSERT(channelz_channel == nullptr);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void channelz(const CoreTestConfiguration& config) {

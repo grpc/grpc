@@ -103,10 +103,11 @@ static void test_retry_lb_fail(const CoreTestConfiguration& config) {
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   auto f = begin_test(config, "retry_lb_fail", &client_args, nullptr);
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -154,9 +155,6 @@ static void test_retry_lb_fail(const CoreTestConfiguration& config) {
   int num_picks = g_num_lb_picks.load(std::memory_order_relaxed);
   gpr_log(GPR_INFO, "NUM LB PICKS: %d", num_picks);
   GPR_ASSERT(num_picks == 2);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void retry_lb_fail(const CoreTestConfiguration& config) {

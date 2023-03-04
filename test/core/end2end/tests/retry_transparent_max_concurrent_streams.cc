@@ -65,15 +65,15 @@ static void test_retry_transparent_max_concurrent_streams(
   auto f = begin_test(config, "retry_transparent_max_concurrent_streams",
                       nullptr, &server_args);
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
 
   // Client starts a call.
-  grpc_call* c =
-      grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
+  grpc_call* c = grpc_channel_create_call(
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"), nullptr, deadline,
+      nullptr);
   GPR_ASSERT(c);
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -115,8 +115,8 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details call_details;
   grpc_call_details_init(&call_details);
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -128,10 +128,10 @@ static void test_retry_transparent_max_concurrent_streams(
   // Client starts a second call.
   // We set wait_for_ready for this call, so that if it retries before
   // the server comes back up, it stays pending.
-  grpc_call* c2 =
-      grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
+  grpc_call* c2 = grpc_channel_create_call(
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"), nullptr, deadline,
+      nullptr);
   GPR_ASSERT(c2);
   grpc_byte_buffer* request_payload2 =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -170,7 +170,7 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start server shutdown.
-  grpc_server_shutdown_and_notify(f.server, f.cq,
+  grpc_server_shutdown_and_notify(f->server(), f.cq,
                                   grpc_core::CqVerifier::tag(102));
 
   // Server handles the first call.
@@ -233,15 +233,15 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_call_unref(c);
 
   // Destroy server and then restart it.
-  grpc_server_destroy(f.server);
+  grpc_server_destroy(f->server());
   f.server = nullptr;
   config.init_server(&f, &server_args);
 
   // Server should get the second call.
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(201), true);
@@ -313,9 +313,6 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(0 == grpc_slice_str_cmp(details2, "xyz"));
   grpc_slice_unref(details2);
   grpc_call_unref(c2);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void retry_transparent_max_concurrent_streams(

@@ -45,7 +45,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
                                 CoreTestFixture f) {
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -57,10 +57,10 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -95,8 +95,8 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f.cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
@@ -179,8 +179,9 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   server_args.num_args = 1;
   server_args.args = &server_arg;
 
-  f = begin_test(config, "test_max_concurrent_streams", nullptr, &server_args);
-  grpc_core::CqVerifier cqv(f.cq);
+  auto f =
+      begin_test(config, "test_max_concurrent_streams", nullptr, &server_args);
+  grpc_core::CqVerifier cqv(f->cq());
 
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_metadata_array_init(&initial_metadata_recv1);
@@ -198,18 +199,18 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   // start two requests - ensuring that the second is not accepted until
   // the first completes
   deadline = n_seconds_from_now(1000);
-  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                f.cq, grpc_slice_from_static_string("/alpha"),
-                                nullptr, deadline, nullptr);
+  c1 = grpc_channel_create_call(
+      f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
+      grpc_slice_from_static_string("/alpha"), nullptr, deadline, nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                f.cq, grpc_slice_from_static_string("/beta"),
+  c2 = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f->cq(), grpc_slice_from_static_string("/beta"),
                                 nullptr, deadline, nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s1, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s1, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(101)));
 
   memset(ops, 0, sizeof(ops));
@@ -284,8 +285,8 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   got_server_start = 0;
   live_call = -1;
   while (!got_client_start || !got_server_start) {
-    ev = grpc_completion_queue_next(f.cq, grpc_timeout_seconds_to_deadline(3),
-                                    nullptr);
+    ev = grpc_completion_queue_next(
+        f->cq(), grpc_timeout_seconds_to_deadline(3), nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(ev.success);
     if (ev.tag == grpc_core::CqVerifier::tag(101)) {
@@ -339,8 +340,8 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   grpc_call_details_destroy(&call_details);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s2, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s2, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(201)));
   cqv.Expect(grpc_core::CqVerifier::tag(201), true);
   cqv.Verify();
@@ -385,9 +386,6 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv2);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_max_concurrent_streams_with_timeout_on_first(
@@ -420,9 +418,10 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   server_args.num_args = 1;
   server_args.args = &server_arg;
 
-  f = begin_test(config, "test_max_concurrent_streams_with_timeout_on_first",
+  auto f =
+      begin_test(config, "test_max_concurrent_streams_with_timeout_on_first",
                  nullptr, &server_args);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_metadata_array_init(&initial_metadata_recv1);
@@ -439,18 +438,19 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   // start two requests - ensuring that the second is not accepted until
   // the first completes
-  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                f.cq, grpc_slice_from_static_string("/alpha"),
-                                nullptr, n_seconds_from_now(3), nullptr);
+  c1 =
+      grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(), grpc_slice_from_static_string("/alpha"),
+                               nullptr, n_seconds_from_now(3), nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                f.cq, grpc_slice_from_static_string("/beta"),
+  c2 = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f->cq(), grpc_slice_from_static_string("/beta"),
                                 nullptr, n_seconds_from_now(1000), nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s1, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s1, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(101)));
 
   memset(ops, 0, sizeof(ops));
@@ -528,8 +528,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   grpc_call_details_destroy(&call_details);
   grpc_call_details_init(&call_details);
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s2, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s2, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(201)));
 
   cqv.Expect(grpc_core::CqVerifier::tag(302), true);
@@ -579,9 +579,6 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   grpc_metadata_array_destroy(&trailing_metadata_recv2);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_max_concurrent_streams_with_timeout_on_second(
@@ -613,9 +610,10 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   server_args.num_args = 1;
   server_args.args = &server_arg;
 
-  f = begin_test(config, "test_max_concurrent_streams_with_timeout_on_second",
+  auto f =
+      begin_test(config, "test_max_concurrent_streams_with_timeout_on_second",
                  nullptr, &server_args);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_metadata_array_init(&initial_metadata_recv1);
@@ -633,18 +631,19 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   // start two requests - ensuring that the second is not accepted until
   // the first completes , and the second request will timeout in the
   // concurrent_list
-  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                f.cq, grpc_slice_from_static_string("/alpha"),
-                                nullptr, n_seconds_from_now(1000), nullptr);
+  c1 =
+      grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(), grpc_slice_from_static_string("/alpha"),
+                               nullptr, n_seconds_from_now(1000), nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                f.cq, grpc_slice_from_static_string("/beta"),
+  c2 = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f->cq(), grpc_slice_from_static_string("/beta"),
                                 nullptr, n_seconds_from_now(3), nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s1, &call_details,
-                                      &request_metadata_recv, f.cq, f.cq,
+             grpc_server_request_call(f->server(), &s1, &call_details,
+                                      &request_metadata_recv, f->cq(), f.cq,
                                       grpc_core::CqVerifier::tag(101)));
 
   memset(ops, 0, sizeof(ops));
@@ -768,9 +767,6 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   grpc_metadata_array_destroy(&trailing_metadata_recv2);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void max_concurrent_streams(const CoreTestConfiguration& config) {

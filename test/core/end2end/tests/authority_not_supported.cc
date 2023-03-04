@@ -56,7 +56,7 @@ static void test_with_authority_header(const CoreTestConfiguration& config) {
                               grpc_slice_from_static_string("val2"),
                               {{nullptr, nullptr, nullptr, nullptr}}}};
   auto f = begin_test(config, "test_with_authority_header", nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -67,10 +67,10 @@ static void test_with_authority_header(const CoreTestConfiguration& config) {
   grpc_slice details;
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f.cq, grpc_slice_from_static_string("/foo"),
+                               &host, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -127,9 +127,6 @@ static void test_with_authority_header(const CoreTestConfiguration& config) {
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 void authority_not_supported(const CoreTestConfiguration& config) {
