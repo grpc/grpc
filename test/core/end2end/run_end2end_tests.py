@@ -29,8 +29,9 @@ def main():
     assert len(sys.argv) >= 2, UsageString()
     test_fixture = sys.argv[1]
     r = runfiles.Create()
-    executable_name = r.Rlocation(
-        os.path.join(os.environ["TEST_WORKSPACE"], test_fixture))
+    # even bazel on Windows appears to use the '/' delimiter
+    path = "/".join([os.environ["TEST_WORKSPACE"], test_fixture])
+    executable_name = r.Rlocation(path)
     cmds = [executable_name]
     if len(sys.argv) > 2:
         cmds.extend(sys.argv[2:])
