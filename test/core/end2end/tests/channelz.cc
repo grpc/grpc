@@ -48,8 +48,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void run_one_request(CoreTestConfiguration /*config*/, CoreTestFixture f,
-                            bool request_is_success) {
+static void run_one_request(const CoreTestConfiguration& /*config*/,
+                            CoreTestFixture* f, bool request_is_success) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -177,14 +177,14 @@ static void test_channelz(const CoreTestConfiguration& config) {
   GPR_ASSERT(json.find("\"callsSucceeded\"") == json.npos);
 
   // one successful request
-  run_one_request(config, f, true);
+  run_one_request(config, f.get(), true);
 
   json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json.find("\"callsStarted\":\"1\"") != json.npos);
   GPR_ASSERT(json.find("\"callsSucceeded\":\"1\"") != json.npos);
 
   // one failed request
-  run_one_request(config, f, false);
+  run_one_request(config, f.get(), false);
 
   json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json.find("\"callsStarted\":\"2\"") != json.npos);
@@ -227,7 +227,7 @@ static void test_channelz_with_channel_trace(
       grpc_core::Server::FromC(f->server())->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
-  run_one_request(config, f, true);
+  run_one_request(config, f.get(), true);
 
   std::string json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json.find("\"trace\"") != json.npos);
@@ -254,7 +254,7 @@ static void test_channelz_disabled(const CoreTestConfiguration& config) {
       grpc_channel_get_channelz_node(f->client());
   GPR_ASSERT(channelz_channel == nullptr);
   // one successful request
-  run_one_request(config, f, true);
+  run_one_request(config, f.get(), true);
   GPR_ASSERT(channelz_channel == nullptr);
 }
 

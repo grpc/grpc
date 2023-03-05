@@ -56,6 +56,8 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -129,8 +131,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    grpc_call_error error = grpc_call_start_batch(
-        call, ops, (size_t)(op - ops), grpc_core::CqVerifier::tag(1), nullptr);
+    grpc_call_error error =
+        grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
 
