@@ -160,15 +160,6 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   state = grpc_channel_check_connectivity_state(f->client(), 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
-
-  // cleanup server
-  grpc_server_destroy(f->server());
-
-  gpr_log(GPR_DEBUG, "*** SHUTDOWN SERVER ***");
-
-  grpc_channel_destroy(f->client());
-  grpc_completion_queue_shutdown(f->cq());
-  grpc_completion_queue_destroy(f->cq());
 }
 
 static void cb_watch_connectivity(grpc_completion_queue_functor* functor,
@@ -224,13 +215,6 @@ static void test_watch_connectivity_cq_callback(
   grpc_completion_queue_shutdown(cq);
   gpr_event_wait(&cb_shutdown_ctx.finished,
                  gpr_inf_future(GPR_CLOCK_MONOTONIC));
-
-  // cleanup
-  grpc_channel_destroy(f->client());
-  grpc_completion_queue_destroy(cq);
-
-  // cq is not used in this test
-  grpc_completion_queue_destroy(f->cq());
 }
 
 void connectivity(const CoreTestConfiguration& config) {
