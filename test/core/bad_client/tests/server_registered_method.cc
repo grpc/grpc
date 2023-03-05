@@ -16,8 +16,6 @@
 //
 //
 
-#include <stdint.h>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

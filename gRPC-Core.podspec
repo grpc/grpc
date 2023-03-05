@@ -2795,6 +2795,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/grpc_authorization_policy_provider.h',
                       'src/core/lib/security/authorization/rbac_translator.cc',
                       'src/core/lib/security/authorization/rbac_translator.h',
+                      'src/core/plugin_registry/grpc_plugin_registry_noextra.cc',
                       'test/core/end2end/cq_verifier.cc',
                       'test/core/end2end/cq_verifier.h',
                       'test/core/end2end/data/client_certs.cc',

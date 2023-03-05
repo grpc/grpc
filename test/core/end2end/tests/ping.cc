@@ -81,8 +81,8 @@ static void test_ping(CoreTestConfiguration config,
   }
 
   for (i = 1; i <= PING_NUM; i++) {
-    grpc_channel_ping(f->client(), f->cq(), tag(i), nullptr);
-    cqv.Expect(tag(i), true);
+    grpc_channel_ping(f->client(), f->cq(), tan(i), nullptr);
+    cqv.Expect(tan(i), true);
     cqv.Verify();
   }
 

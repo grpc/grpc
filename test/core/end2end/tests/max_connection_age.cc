@@ -61,9 +61,9 @@ static void drain_cq(grpc_completion_queue* cq) {
 }
 
 static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
+  if (!f->server()) return;
+  grpc_server_destroy(f->server());
+  f->server() = nullptr;
 }
 
 static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {

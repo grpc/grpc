@@ -42,9 +42,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
+  if (!f->server()) return;
+  grpc_server_destroy(f->server());
+  f->server() = nullptr;
 }
 
 static void test_early_server_shutdown_finishes_inflight_calls(

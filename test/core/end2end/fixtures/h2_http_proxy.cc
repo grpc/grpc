@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <string>
@@ -37,9 +38,9 @@
 
 class HttpProxyFilter : public CoreTestFixture {
  public:
-  HttpProxyFilter(const grpc_core::ChannelArgs& client_args)
+  explicit HttpProxyFilter(const grpc_core::ChannelArgs& client_args)
       : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
-  ~HttpProxyFilter() { grpc_end2end_http_proxy_destroy(proxy_); }
+  ~HttpProxyFilter() override { grpc_end2end_http_proxy_destroy(proxy_); }
 
  private:
   grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {

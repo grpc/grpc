@@ -14,10 +14,11 @@
 // limitations under the License.
 //
 
-#include <stdint.h>
 #include <string.h>
 
 #include <atomic>
+#include <functional>
+#include <memory>
 
 #include "absl/status/status.h"
 

@@ -54,8 +54,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq(),
+  if (!f->server()) return;
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
   grpc_event ev;
   do {
@@ -63,8 +63,8 @@ static void shutdown_server(CoreTestFixture* f) {
         f->cq(), grpc_timeout_seconds_to_deadline(5), nullptr);
   } while (ev.type != GRPC_OP_COMPLETE ||
            ev.tag != grpc_core::CqVerifier::tag(1000));
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
+  grpc_server_destroy(f->server());
+  f->server() = nullptr;
 }
 
 static void test_allow_authorized_request(CoreTestFixture f) {

@@ -89,7 +89,7 @@ static void init_ping_pong_request(int call_idx) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
                                                    metadata_ops,
                                                    (size_t)(op - metadata_ops),
-                                                   tag(call_idx), nullptr));
+                                                   tan(call_idx), nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 }
 
@@ -109,7 +109,7 @@ static void finish_ping_pong_request(int call_idx) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
                                                    status_ops,
                                                    (size_t)(op - status_ops),
-                                                   tag(call_idx), nullptr));
+                                                   tan(call_idx), nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);

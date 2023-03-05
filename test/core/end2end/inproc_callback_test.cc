@@ -228,18 +228,18 @@ static CoreTestFixture inproc_create_fixture(
 
 void inproc_init_client(CoreTestFixture* f,
                         const grpc_channel_args* client_args) {
-  f->client = grpc_inproc_channel_create(f->server, client_args, nullptr);
+  f->client() = grpc_inproc_channel_create(f->server(), client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
 void inproc_init_server(CoreTestFixture* f,
                         const grpc_channel_args* server_args) {
-  if (f->server) {
-    grpc_server_destroy(f->server);
+  if (f->server()) {
+    grpc_server_destroy(f->server());
   }
-  f->server = grpc_server_create(server_args, nullptr);
-  grpc_server_register_completion_queue(f->server, f->cq(), nullptr);
-  grpc_server_start(f->server);
+  f->server() = grpc_server_create(server_args, nullptr);
+  grpc_server_register_completion_queue(f->server(), f->cq(), nullptr);
+  grpc_server_start(f->server());
 }
 
 void inproc_tear_down(CoreTestFixture* f) {
@@ -259,9 +259,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static gpr_timespec grpc_timeout_seconds_to_deadline(5) {
-  return grpc_timeout_seconds_to_deadline(5);
-}
+static gpr_timespec grpc_timeout_seconds_to_deadline(5);
+{ return grpc_timeout_seconds_to_deadline(5); }
 
 static void drain_cq(grpc_completion_queue* /*cq*/) {
   // Wait for the shutdown callback to arrive, or fail the test

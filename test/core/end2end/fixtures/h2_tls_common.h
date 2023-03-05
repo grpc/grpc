@@ -25,7 +25,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "secure_fixture.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -40,6 +39,7 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/util/tls_utils.h"
 
 // For normal TLS connections.
@@ -158,7 +158,7 @@ class TlsFixture : public SecureFixture {
       }
     }
   }
-  ~TlsFixture() {
+  ~TlsFixture() override {
     grpc_tls_certificate_provider_release(client_provider_);
     grpc_tls_certificate_provider_release(server_provider_);
     grpc_tls_certificate_verifier_release(client_verifier_);

@@ -234,7 +234,7 @@ static void test_retry_transparent_max_concurrent_streams(
 
   // Destroy server and then restart it.
   grpc_server_destroy(f->server());
-  f.server = nullptr;
+  f->server() = nullptr;
   config.init_server(&f, &server_args);
 
   // Server should get the second call.

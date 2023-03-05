@@ -331,10 +331,10 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Expect(tag(live_call + 2), true);
+  cqv.Expect(tan(live_call + 2), true);
   // first request is finished, we should be able to start the second
   live_call = (live_call == 300) ? 400 : 300;
-  cqv.Expect(tag(live_call + 1), true);
+  cqv.Expect(tan(live_call + 1), true);
   cqv.Verify();
 
   grpc_call_details_destroy(&call_details);
@@ -369,7 +369,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(live_call + 2), true);
+  cqv.Expect(tan(live_call + 2), true);
   cqv.Expect(grpc_core::CqVerifier::tag(202), true);
   cqv.Verify();
 

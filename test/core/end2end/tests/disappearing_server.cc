@@ -31,9 +31,9 @@
 #include "test/core/util/test_config.h"
 
 static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
+  if (!f->server()) return;
+  grpc_server_destroy(f->server());
+  f->server() = nullptr;
 }
 
 static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
@@ -53,7 +53,7 @@ static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
   int was_cancelled = 2;
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
                                f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -90,7 +90,7 @@ static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
                                 grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error = grpc_server_request_call(f->server, &s, &call_details,
+  error = grpc_server_request_call(f->server(), &s, &call_details,
                                    &request_metadata_recv, f->cq(), f->cq(),
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -99,7 +99,7 @@ static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
 
   // should be able to shut down the server early
   // - and still complete the request
-  grpc_server_shutdown_and_notify(f->server, f->cq(),
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
 
   memset(ops, 0, sizeof(ops));

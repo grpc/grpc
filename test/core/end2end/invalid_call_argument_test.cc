@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <limits.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <initializer_list>

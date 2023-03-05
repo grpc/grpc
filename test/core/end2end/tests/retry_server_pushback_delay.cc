@@ -19,6 +19,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <functional>
+#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"

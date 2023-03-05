@@ -177,14 +177,12 @@ TEST_F(RawEnd2EndTest, PureAsyncService) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx_, send_request_, cq_.get()));
   service->RequestEcho(&srv_ctx_, &recv_request_, &response_writer, cq_.get(),
-                       cq_.get(), grpc_core::CqVerifier::tag(2));
-  response_reader->Finish(&recv_response_, &recv_status_,
-                          grpc_core::CqVerifier::tag(4));
+                       cq_.get(), tag(2));
+  response_reader->Finish(&recv_response_, &recv_status_, tag(4));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request_.message(), recv_request_.message());
   send_response_.set_message(recv_request_.message());
-  response_writer.Finish(send_response_, Status::OK,
-                         grpc_core::CqVerifier::tag(3));
+  response_writer.Finish(send_response_, Status::OK, tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response_.message(), recv_response_.message());
@@ -204,17 +202,15 @@ TEST_F(RawEnd2EndTest, RawServerUnary) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx_, send_request_, cq_.get()));
   service->RequestEcho(&srv_ctx_, &recv_request_buffer_, &response_writer,
-                       cq_.get(), cq_.get(), grpc_core::CqVerifier::tag(2));
-  response_reader->Finish(&recv_response_, &recv_status_,
-                          grpc_core::CqVerifier::tag(4));
+                       cq_.get(), cq_.get(), tag(2));
+  response_reader->Finish(&recv_response_, &recv_status_, tag(4));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_TRUE(ParseFromByteBuffer(&recv_request_buffer_, &recv_request_));
   EXPECT_EQ(send_request_.message(), recv_request_.message());
   send_response_.set_message(recv_request_.message());
   EXPECT_TRUE(
       SerializeToByteBufferInPlace(&send_response_, &send_response_buffer_));
-  response_writer.Finish(send_response_buffer_, Status::OK,
-                         grpc_core::CqVerifier::tag(3));
+  response_writer.Finish(send_response_buffer_, Status::OK, tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response_.message(), recv_response_.message());
@@ -233,16 +229,15 @@ TEST_F(RawEnd2EndTest, RawServerClientStreaming) {
 
   send_request_.set_message("hello client streaming");
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
-      stub_->AsyncRequestStream(&cli_ctx_, &recv_response_, cq_.get(),
-                                grpc_core::CqVerifier::tag(1)));
+      stub_->AsyncRequestStream(&cli_ctx_, &recv_response_, cq_.get(), tag(1)));
 
   service->RequestRequestStream(&srv_ctx_, &srv_stream, cq_.get(), cq_.get(),
-                                grpc_core::CqVerifier::tag(2));
+                                tag(2));
 
   Verifier().Expect(2, true).Expect(1, true).Verify(cq_.get());
 
-  cli_stream->Write(send_request_, grpc_core::CqVerifier::tag(3));
-  srv_stream.Read(&recv_request_buffer_, grpc_core::CqVerifier::tag(4));
+  cli_stream->Write(send_request_, tag(3));
+  srv_stream.Read(&recv_request_buffer_, Verifier::tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
   EXPECT_EQ(send_request_.message(), recv_request_.message());

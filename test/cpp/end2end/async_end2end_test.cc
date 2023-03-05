@@ -357,18 +357,15 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
           stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
       service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
-                            cq_.get(), cq_.get(),
-                            grpc_core::CqVerifier::tag(2));
+                            cq_.get(), cq_.get(), tag(2));
 
-      response_reader->Finish(&recv_response, &recv_status,
-                              grpc_core::CqVerifier::tag(4));
+      response_reader->Finish(&recv_response, &recv_status, tag(4));
 
       Verifier().Expect(2, true).Verify(cq_.get());
       EXPECT_EQ(send_request.message(), recv_request.message());
 
       send_response.set_message(recv_request.message());
-      response_writer.Finish(send_response, Status::OK,
-                             grpc_core::CqVerifier::tag(3));
+      response_writer.Finish(send_response, Status::OK, tag(3));
       Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
       EXPECT_EQ(send_response.message(), recv_response.message());
@@ -412,12 +409,11 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
-  srv_ctx.AsyncNotifyWhenDone(grpc_core::CqVerifier::tag(5));
+  srv_ctx.AsyncNotifyWhenDone(tag(5));
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), grpc_core::CqVerifier::tag(2));
+                        cq_.get(), tag(2));
 
-  response_reader->Finish(&recv_response, &recv_status,
-                          grpc_core::CqVerifier::tag(4));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -428,7 +424,7 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
       Status(
           static_cast<StatusCode>(recv_request.param().expected_error().code()),
           recv_request.param().expected_error().error_message()),
-      grpc_core::CqVerifier::tag(3));
+      tag(3));
   Verifier().Expect(3, true).Expect(4, true).Expect(5, true).Verify(cq_.get());
 
   EXPECT_EQ(recv_response.message(), "");
@@ -520,16 +516,14 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
   Verifier().Verify(cq_.get(), time_now);
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), grpc_core::CqVerifier::tag(2));
-  response_reader->Finish(&recv_response, &recv_status,
-                          grpc_core::CqVerifier::tag(4));
+                        cq_.get(), tag(2));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get(), time_limit);
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK,
-                         grpc_core::CqVerifier::tag(3));
+  response_writer.Finish(send_response, Status::OK, Verifier::tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(
       cq_.get(), std::chrono::system_clock::time_point::max());
 
