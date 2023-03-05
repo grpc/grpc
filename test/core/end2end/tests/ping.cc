@@ -86,13 +86,6 @@ static void test_ping(const CoreTestConfiguration& config,
                                   grpc_core::CqVerifier::tag(0xdead));
   cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Verify();
-
-  // cleanup server
-  grpc_server_destroy(f->server());
-
-  grpc_channel_destroy(f->client());
-  grpc_completion_queue_shutdown(f->cq());
-  grpc_completion_queue_destroy(f->cq());
 }
 
 void ping(const CoreTestConfiguration& config) {
