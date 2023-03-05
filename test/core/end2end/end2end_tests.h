@@ -61,23 +61,15 @@ class CoreTestFixture {
   grpc_server* server() { return server_; }
   grpc_channel* client() { return client_; }
 
-  void InitServer(const grpc_core::ChannelArgs& args);
-  void InitClient(const grpc_core::ChannelArgs& args);
-
- protected:
-  void SetServer(grpc_server* server);
-  void SetClient(grpc_channel* client);
-
- private:
-  virtual grpc_server* MakeServer(const grpc_core::ChannelArgs& args) = 0;
-  virtual grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) = 0;
-
-  void DrainCq() {
-    grpc_event ev;
-    do {
-      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
-                                      nullptr);
-    } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+  void InitServer(const grpc_core::ChannelArgs& args) {
+    if (server_ != nullptr) ShutdownServer();
+    server_ = MakeServer(args);
+    GPR_ASSERT(server_ != nullptr);
+  }
+  void InitClient(const grpc_core::ChannelArgs& args) {
+    if (client_ != nullptr) ShutdownClient();
+    client_ = MakeClient(args);
+    GPR_ASSERT(client_ != nullptr);
   }
 
   void ShutdownServer() {
@@ -96,6 +88,22 @@ class CoreTestFixture {
     if (client_ == nullptr) return;
     grpc_channel_destroy(client_);
     client_ = nullptr;
+  }
+
+ protected:
+  void SetServer(grpc_server* server);
+  void SetClient(grpc_channel* client);
+
+ private:
+  virtual grpc_server* MakeServer(const grpc_core::ChannelArgs& args) = 0;
+  virtual grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) = 0;
+
+  void DrainCq() {
+    grpc_event ev;
+    do {
+      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
+                                      nullptr);
+    } while (ev.type != GRPC_QUEUE_SHUTDOWN);
   }
 
   grpc_completion_queue* cq_ = grpc_completion_queue_create_for_next(nullptr);

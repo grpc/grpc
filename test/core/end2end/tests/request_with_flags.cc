@@ -55,15 +55,8 @@ static gpr_timespec one_second_from_now(void) {
   return grpc_timeout_seconds_to_deadline(1);
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, one_second_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
 static void test_invoke_request_with_flags(
-    CoreTestConfiguration config, uint32_t* flags_for_op,
+    const CoreTestConfiguration& config, uint32_t* flags_for_op,
     grpc_call_error call_start_batch_expected_result) {
   grpc_call* c;
   grpc_slice request_payload_slice =

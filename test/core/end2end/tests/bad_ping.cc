@@ -28,6 +28,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -35,43 +36,23 @@
 
 #define MAX_PING_STRIKES 2
 
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server()) return;
-  grpc_server_destroy(f->server());
-  f->server() = nullptr;
-}
-
 // Send more pings than server allows to trigger server's GOAWAY.
 static void test_bad_ping(const CoreTestConfiguration& config) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_core::CqVerifier cqv(f->cq());
-  grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
-  grpc_arg server_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
-          300000 /* 5 minutes */),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+  auto client_args = grpc_core::ChannelArgs()
+                         .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
+                         .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
+  auto server_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
+               grpc_core::Duration::Minutes(5).millis())
+          .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, MAX_PING_STRIKES)
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
 
-  config.init_client(&f, &client_args);
-  config.init_server(&f, &server_args);
+  f->InitClient(client_args);
+  f->InitServer(server_args);
 
   grpc_call* c;
   grpc_call* s;
@@ -139,8 +120,9 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
   // needed here.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
-    grpc_channel_ping(f->client(), f->cq(), tan(200 + i), nullptr);
-    cqv.Expect(tan(200 + i), true);
+    grpc_channel_ping(f->client(), f->cq(), grpc_core::CqVerifier::tag(200 + i),
+                      nullptr);
+    cqv.Expect(grpc_core::CqVerifier::tag(200 + i), true);
     if (i == MAX_PING_STRIKES + 2) {
       cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     }
@@ -198,30 +180,24 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
 static void test_pings_without_data(const CoreTestConfiguration& config) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_core::CqVerifier cqv(f->cq());
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
-  grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA),
-          MAX_PING_STRIKES),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
-  grpc_arg server_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
-          300000 /* 5 minutes */),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+  auto client_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, MAX_PING_STRIKES)
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
+  auto server_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
+               grpc_core::Duration::Minutes(5).millis())
+          .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, MAX_PING_STRIKES)
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
 
-  config.init_client(&f, &client_args);
-  config.init_server(&f, &server_args);
+  f->InitClient(client_args);
+  f->InitServer(server_args);
 
   grpc_call* c;
   grpc_call* s;
@@ -287,9 +263,10 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   // MAX_PING_STRIKES will actually be sent and the rpc will still succeed.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
-    grpc_channel_ping(f->client(), f->cq(), tan(200 + i), nullptr);
+    grpc_channel_ping(f->client(), f->cq(), grpc_core::CqVerifier::tag(200 + i),
+                      nullptr);
     if (i <= MAX_PING_STRIKES) {
-      cqv.Expect(tan(200 + i), true);
+      cqv.Expect(grpc_core::CqVerifier::tag(200 + i), true);
     }
     cqv.Verify();
   }
@@ -328,8 +305,8 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
 
   // Also expect the previously blocked pings to complete with an error
-  cqv.Expect(tan(200 + MAX_PING_STRIKES + 1), false);
-  cqv.Expect(tag(200 + MAX_PING_STRIKES + 2), false);
+  cqv.Expect(grpc_core::CqVerifier::tag(200 + MAX_PING_STRIKES + 1), false);
+  cqv.Expect(grpc_core::CqVerifier::tag(200 + MAX_PING_STRIKES + 2), false);
 
   cqv.Verify();
 

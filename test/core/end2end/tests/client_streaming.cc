@@ -49,7 +49,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // server reads them. After reading some messages, the server sends the status.
 // Client writes fail after that due to the end of stream and the client
 // subsequently requests and receives the status.
-static void test_client_streaming(CoreTestConfiguration config, int messages) {
+static void test_client_streaming(const CoreTestConfiguration& config,
+                                  int messages) {
   auto f = begin_test(config, "test_client_streaming", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;

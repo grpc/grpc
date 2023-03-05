@@ -35,6 +35,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
@@ -139,10 +140,10 @@ void resource_quota_server(const CoreTestConfiguration& config) {
   }
 
   for (int i = 0; i < NUM_CALLS; i++) {
-    error = grpc_server_request_call(f->server(), &server_calls[i],
-                                     &call_details[i],
-                                     &request_metadata_recv[i], f->cq(),
-                                     f->cq(), tan(SERVER_START_BASE_TAG + i));
+    error = grpc_server_request_call(
+        f->server(), &server_calls[i], &call_details[i],
+        &request_metadata_recv[i], f->cq(), f->cq(),
+        grpc_core::CqVerifier::tag(SERVER_START_BASE_TAG + i));
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     pending_server_start_calls++;
@@ -184,9 +185,9 @@ void resource_quota_server(const CoreTestConfiguration& config) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(client_calls[i], ops,
-                                  static_cast<size_t>(op - ops),
-                                  tan(CLIENT_BASE_TAG + i), nullptr);
+    error = grpc_call_start_batch(
+        client_calls[i], ops, static_cast<size_t>(op - ops),
+        grpc_core::CqVerifier::tag(CLIENT_BASE_TAG + i), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     pending_client_calls++;
@@ -252,7 +253,7 @@ void resource_quota_server(const CoreTestConfiguration& config) {
       op++;
       error = grpc_call_start_batch(
           server_calls[call_id], ops, static_cast<size_t>(op - ops),
-          tan(SERVER_RECV_BASE_TAG + call_id), nullptr);
+          grpc_core::CqVerifier::tag(SERVER_RECV_BASE_TAG + call_id), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
 
       GPR_ASSERT(pending_server_start_calls > 0);
@@ -293,7 +294,7 @@ void resource_quota_server(const CoreTestConfiguration& config) {
       op++;
       error = grpc_call_start_batch(
           server_calls[call_id], ops, static_cast<size_t>(op - ops),
-          tan(SERVER_END_BASE_TAG + call_id), nullptr);
+          grpc_core::CqVerifier::tag(SERVER_END_BASE_TAG + call_id), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
 
       GPR_ASSERT(pending_server_recv_calls > 0);

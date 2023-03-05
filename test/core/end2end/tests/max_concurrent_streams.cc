@@ -389,7 +389,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
 }
 
 static void test_max_concurrent_streams_with_timeout_on_first(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_arg server_arg;
   grpc_channel_args server_args;
   grpc_call* c1;
@@ -583,7 +583,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 }
 
 static void test_max_concurrent_streams_with_timeout_on_second(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_arg server_arg;
   grpc_channel_args server_args;
   grpc_call* c1;

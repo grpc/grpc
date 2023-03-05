@@ -36,14 +36,6 @@
 #define MAX_CONNECTION_IDLE_MS 2000
 #define MAX_CONNECTION_AGE_MS 9999
 
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
 static void simple_request_body(CoreTestConfiguration /*config*/,
                                 CoreTestFixture* f) {
   grpc_call* c;
@@ -165,26 +157,22 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 }
 
 static void test_max_connection_idle(const CoreTestConfiguration& config) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_core::CqVerifier cqv(f->cq());
 
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
-                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
-                         .ToC();
-  grpc_arg server_a[2];
-  server_a[0].type = GRPC_ARG_INTEGER;
-  server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
-  server_a[0].value.integer = MAX_CONNECTION_IDLE_MS;
-  server_a[1].type = GRPC_ARG_INTEGER;
-  server_a[1].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
-  server_a[1].value.integer = MAX_CONNECTION_AGE_MS;
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000);
+  auto server_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, MAX_CONNECTION_IDLE_MS)
+          .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS);
 
-  config.init_client(&f, client_args.get());
-  config.init_server(&f, &server_args);
+  f->InitClient(client_args);
+  f->InitServer(server_args);
 
   // check that we're still in idle, and start connecting
   GPR_ASSERT(grpc_channel_check_connectivity_state(f->client(), 1) ==
@@ -204,7 +192,7 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
   }
 
   // Use a simple request to cancel and reset the max idle timer
-  simple_request_body(config, &f);
+  simple_request_body(config, f.get());
 
   // wait for the channel to reach its maximum idle time
   grpc_channel_watch_connectivity_state(
@@ -222,12 +210,6 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
                                   grpc_core::CqVerifier::tag(0xdead));
   cqv.Expect(grpc_core::CqVerifier::tag(0xdead), true);
   cqv.Verify();
-
-  grpc_server_destroy(f->server());
-  grpc_channel_destroy(f->client());
-  grpc_completion_queue_shutdown(f->cq());
-  drain_cq(f->cq());
-  grpc_completion_queue_destroy(f->cq());
 }
 
 void max_connection_idle(const CoreTestConfiguration& config) {

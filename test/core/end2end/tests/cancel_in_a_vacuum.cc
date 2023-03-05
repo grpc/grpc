@@ -45,7 +45,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Cancel and do nothing
-static void test_cancel_in_a_vacuum(CoreTestConfiguration config,
+static void test_cancel_in_a_vacuum(const CoreTestConfiguration& config,
                                     cancellation_mode mode) {
   grpc_call* c;
   auto f =

@@ -59,7 +59,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static void request_for_disabled_algorithm(
-    CoreTestConfiguration config, const char* test_name,
+    const CoreTestConfiguration& config, const char* test_name,
     uint32_t send_flags_bitmask,
     grpc_compression_algorithm algorithm_to_disable,
     grpc_compression_algorithm requested_client_compression_algorithm,
@@ -227,7 +227,7 @@ static void request_for_disabled_algorithm(
 }
 
 static void request_with_payload_template_inner(
-    CoreTestConfiguration config, const char* test_name,
+    const CoreTestConfiguration& config, const char* test_name,
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
@@ -509,7 +509,7 @@ static void request_with_payload_template_inner(
 }
 
 static void request_with_payload_template(
-    CoreTestConfiguration config, const char* test_name,
+    const CoreTestConfiguration& config, const char* test_name,
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
@@ -535,7 +535,7 @@ static void request_with_payload_template(
 }
 
 static void test_invoke_request_with_exceptionally_uncompressed_payload(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   request_with_payload_template(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
       GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
@@ -544,7 +544,7 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
 }
 
 static void test_invoke_request_with_uncompressed_payload(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   request_with_payload_template(
       config, "test_invoke_request_with_uncompressed_payload", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
@@ -553,7 +553,7 @@ static void test_invoke_request_with_uncompressed_payload(
 }
 
 static void test_invoke_request_with_compressed_payload(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
@@ -562,7 +562,7 @@ static void test_invoke_request_with_compressed_payload(
 }
 
 static void test_invoke_request_with_send_message_before_initial_metadata(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
@@ -571,7 +571,7 @@ static void test_invoke_request_with_send_message_before_initial_metadata(
 }
 
 static void test_invoke_request_with_server_level(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   request_with_payload_template(
       config, "test_invoke_request_with_server_level", 0, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE /* ignored */,
@@ -579,7 +579,7 @@ static void test_invoke_request_with_server_level(
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_metadata gzip_compression_override;
   grpc_metadata identity_compression_override;
 
@@ -619,7 +619,7 @@ static void test_invoke_request_with_compressed_payload_md_override(
 }
 
 static void test_invoke_request_with_disabled_algorithm(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   request_for_disabled_algorithm(config,
                                  "test_invoke_request_with_disabled_algorithm",
                                  0, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,

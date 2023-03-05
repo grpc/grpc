@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -52,37 +53,19 @@
 // The grace period for the test to observe the channel shutdown process
 #define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 3000
 
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server()) return;
-  grpc_server_destroy(f->server());
-  f->server() = nullptr;
-}
-
 static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f->cq());
-  grpc_arg server_a[3];
-  server_a[0].type = GRPC_ARG_INTEGER;
-  server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
-  server_a[0].value.integer = MAX_CONNECTION_AGE_MS;
-  server_a[1].type = GRPC_ARG_INTEGER;
-  server_a[1].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS);
-  server_a[1].value.integer = MAX_CONNECTION_AGE_GRACE_MS;
-  server_a[2].type = GRPC_ARG_INTEGER;
-  server_a[2].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
-  server_a[2].value.integer = MAX_CONNECTION_IDLE_MS;
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+  auto server_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
+          .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS,
+               MAX_CONNECTION_AGE_GRACE_MS)
+          .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, MAX_CONNECTION_IDLE_MS);
 
-  config.init_client(&f, nullptr);
-  config.init_server(&f, &server_args);
+  f->InitClient(grpc_core::ChannelArgs());
+  f->InitServer(server_args);
 
   grpc_call* c;
   grpc_call* s = nullptr;
@@ -225,22 +208,17 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
 }
 
 static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f->cq());
-  grpc_arg server_a[3];
-  server_a[0].type = GRPC_ARG_INTEGER;
-  server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
-  server_a[0].value.integer = MAX_CONNECTION_AGE_MS;
-  server_a[1].type = GRPC_ARG_INTEGER;
-  server_a[1].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS);
-  server_a[1].value.integer = INT_MAX;
-  server_a[2].type = GRPC_ARG_INTEGER;
-  server_a[2].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
-  server_a[2].value.integer = MAX_CONNECTION_IDLE_MS;
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+  auto server_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
+          .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS, INT_MAX)
+          .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, MAX_CONNECTION_IDLE_MS);
 
-  config.init_client(&f, nullptr);
-  config.init_server(&f, &server_args);
+  f->InitClient(grpc_core::ChannelArgs());
+  f->InitServer(server_args);
 
   grpc_call* c;
   grpc_call* s = nullptr;

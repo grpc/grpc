@@ -51,7 +51,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // restarted.  The second call will fail in that transport instance and
 // will be transparently retried after the server starts up again.
 static void test_retry_transparent_max_concurrent_streams(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");

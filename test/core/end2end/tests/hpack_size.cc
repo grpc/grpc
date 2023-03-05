@@ -189,8 +189,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(CoreTestConfiguration /*config*/,
-                                CoreTestFixture f, size_t index) {
+static void simple_request_body(const CoreTestConfiguration& /*config*/,
+                                CoreTestFixture* f, size_t index) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -306,7 +306,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_size(CoreTestConfiguration config, int encode_size,
+static void test_size(const CoreTestConfiguration& config, int encode_size,
                       int decode_size) {
   size_t i;
 
@@ -333,7 +333,7 @@ static void test_size(CoreTestConfiguration config, int encode_size,
                       encode_size != 4096 ? &client_args : nullptr,
                       decode_size != 4096 ? &server_args : nullptr);
   for (i = 0; i < 4 * GPR_ARRAY_SIZE(hobbits); i++) {
-    simple_request_body(config, f, i);
+    simple_request_body(config, f.get(), i);
   }
 }
 

@@ -67,8 +67,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static void request_response_with_payload(
-    CoreTestConfiguration config, CoreTestFixture f, const char* method_name,
-    const char* request_msg, const char* response_msg,
+    const CoreTestConfiguration& config, CoreTestFixture f,
+    const char* method_name, const char* request_msg, const char* response_msg,
     grpc_metadata* initial_lr_metadata, grpc_metadata* trailing_lr_metadata) {
   grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
   grpc_slice response_payload_slice =

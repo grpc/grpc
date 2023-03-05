@@ -51,7 +51,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // Client requests status along with the initial metadata. Server streams
 // messages and ends with a non-OK status. Client reads after server is done
 // writing, and expects to get the status after the messages.
-static void test_server_streaming(CoreTestConfiguration config,
+static void test_server_streaming(const CoreTestConfiguration& config,
                                   int num_messages) {
   auto f = begin_test(config, "test_server_streaming", nullptr, nullptr,
                       num_messages);

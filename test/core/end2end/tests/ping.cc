@@ -31,30 +31,25 @@
 
 #define PING_NUM 5
 
-static void test_ping(CoreTestConfiguration config,
+static void test_ping(const CoreTestConfiguration& config,
                       int min_time_between_pings_ms) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_core::CqVerifier cqv(f->cq());
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
-  grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
-  grpc_arg server_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
-          0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+  auto client_args = grpc_core::ChannelArgs()
+                         .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
+                         .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+  auto server_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
+               min_time_between_pings_ms)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
 
-  config.init_client(&f, &client_args);
-  config.init_server(&f, &server_args);
+  f->InitClient(client_args);
+  f->InitServer(server_args);
 
   grpc_channel_ping(f->client(), f->cq(), grpc_core::CqVerifier::tag(0),
                     nullptr);
@@ -81,8 +76,9 @@ static void test_ping(CoreTestConfiguration config,
   }
 
   for (i = 1; i <= PING_NUM; i++) {
-    grpc_channel_ping(f->client(), f->cq(), tan(i), nullptr);
-    cqv.Expect(tan(i), true);
+    grpc_channel_ping(f->client(), f->cq(), grpc_core::CqVerifier::tag(i),
+                      nullptr);
+    cqv.Expect(grpc_core::CqVerifier::tag(i), true);
     cqv.Verify();
   }
 

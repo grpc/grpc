@@ -66,7 +66,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
 static void test_retry_recv_trailing_metadata_error(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];

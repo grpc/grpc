@@ -44,7 +44,7 @@ static void end_test(CoreTestFixture* f) {
 }
 
 static void test_early_server_shutdown_finishes_tags(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_early_server_shutdown_finishes_tags",
                       nullptr, nullptr);
   grpc_core::CqVerifier cqv(f->cq());

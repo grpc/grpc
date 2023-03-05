@@ -54,7 +54,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - first attempt returns ABORTED
 // - second attempt returns OK
 static void test_retry_send_initial_metadata_refs(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];

@@ -39,8 +39,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void empty_batch_body(CoreTestConfiguration /*config*/,
-                             CoreTestFixture f) {
+static void empty_batch_body(const CoreTestConfiguration& /*config*/,
+                             CoreTestFixture* f) {
   grpc_call* c;
   grpc_core::CqVerifier cqv(f->cq());
   grpc_call_error error;
@@ -63,7 +63,7 @@ static void empty_batch_body(CoreTestConfiguration /*config*/,
 
 static void test_invoke_empty_body(const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_empty_body", nullptr, nullptr);
-  empty_batch_body(config, f);
+  empty_batch_body(config, f.get());
 }
 
 void empty_batch(const CoreTestConfiguration& config) {

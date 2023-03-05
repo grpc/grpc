@@ -47,7 +47,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // Tests that we can unref a call after the first attempt starts but
 // before any ops complete.  This should not cause a memory leak.
 static void test_retry_cancel_after_first_attempt_starts(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;

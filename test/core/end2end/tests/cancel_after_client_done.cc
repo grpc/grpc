@@ -51,7 +51,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Cancel after accept with a writes closed, no payload
 static void test_cancel_after_accept_and_writes_closed(
-    CoreTestConfiguration config, cancellation_mode mode) {
+    const CoreTestConfiguration& config, cancellation_mode mode) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_call* c;

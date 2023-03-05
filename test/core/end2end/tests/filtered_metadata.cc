@@ -46,7 +46,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Request/response with metadata which should be filtered
 static void test_request_response_with_metadata_to_be_filtered(
-    CoreTestConfiguration config, const char* filtered_md_key,
+    const CoreTestConfiguration& config, const char* filtered_md_key,
     const char* filter_md_value) {
   grpc_call* c;
   grpc_call* s;

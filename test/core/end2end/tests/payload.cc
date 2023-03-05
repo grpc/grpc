@@ -63,7 +63,7 @@ static grpc_slice generate_random_slice() {
 }
 
 static void request_response_with_payload(CoreTestConfiguration /*config*/,
-                                          CoreTestFixture f) {
+                                          CoreTestFixture* f) {
   // Create large request and response bodies. These are big enough to require
   // multiple round trips to deliver to the peer, and their exact contents of
   // will be verified on completion.
@@ -218,19 +218,19 @@ static void request_response_with_payload(CoreTestConfiguration /*config*/,
 // Client sends a request with payload, server reads then returns a response
 // payload and status.
 static void test_invoke_request_response_with_payload(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_request_response_with_payload",
                       nullptr, nullptr);
-  request_response_with_payload(config, f);
+  request_response_with_payload(config, f.get());
 }
 
 static void test_invoke_10_request_response_with_payload(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   int i;
   auto f = begin_test(config, "test_invoke_10_request_response_with_payload",
                       nullptr, nullptr);
   for (i = 0; i < 10; i++) {
-    request_response_with_payload(config, f);
+    request_response_with_payload(config, f.get());
   }
 }
 

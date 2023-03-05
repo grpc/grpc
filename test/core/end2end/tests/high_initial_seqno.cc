@@ -155,7 +155,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   cqv.VerifyEmpty();
 }
 
-static void test_invoke_10_simple_requests(CoreTestConfiguration config,
+static void test_invoke_10_simple_requests(const CoreTestConfiguration& config,
                                            int initial_sequence_number) {
   int i;
 

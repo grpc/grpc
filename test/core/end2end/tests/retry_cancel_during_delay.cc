@@ -56,7 +56,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Tests retry cancellation during backoff.
-static void test_retry_cancel_during_delay(CoreTestConfiguration config,
+static void test_retry_cancel_during_delay(const CoreTestConfiguration& config,
                                            cancellation_mode mode) {
   grpc_call* c;
   grpc_call* s;

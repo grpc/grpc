@@ -62,7 +62,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Tests transparent retries when the call was never sent out on the wire.
 static void test_retry_transparent_not_sent_on_wire(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];

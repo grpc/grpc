@@ -48,31 +48,19 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   // We intentionally do not pass the client and server args to
   // create_fixture(), since we don't want the limit enforced on the
   // proxy, only on the backend server.
-  f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
   f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
   return f;
 }
 
-static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server()) return;
-  grpc_server_shutdown_and_notify(f->server(), f->cq(),
-                                  grpc_core::CqVerifier::tag(1000));
-  grpc_event ev = grpc_completion_queue_next(
-      f->cq(), grpc_timeout_seconds_to_deadline(5), nullptr);
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == grpc_core::CqVerifier::tag(1000));
-  grpc_server_destroy(f->server());
-  f->server() = nullptr;
-}
-
 // Test with request larger than the limit.
 // If send_limit is true, applies send limit on client; otherwise, applies
 // recv limit on server.
-static void test_max_message_length_on_request(CoreTestConfiguration config,
-                                               bool send_limit,
-                                               bool use_service_config,
-                                               bool use_string_json_value) {
+static void test_max_message_length_on_request(
+    const CoreTestConfiguration& config, bool send_limit,
+    bool use_service_config, bool use_string_json_value) {
   gpr_log(GPR_INFO,
           "testing request with send_limit=%d use_service_config=%d "
           "use_string_json_value=%d",
@@ -253,10 +241,9 @@ done:
 // Test with response larger than the limit.
 // If send_limit is true, applies send limit on server; otherwise, applies
 // recv limit on client.
-static void test_max_message_length_on_response(CoreTestConfiguration config,
-                                                bool send_limit,
-                                                bool use_service_config,
-                                                bool use_string_json_value) {
+static void test_max_message_length_on_response(
+    const CoreTestConfiguration& config, bool send_limit,
+    bool use_service_config, bool use_string_json_value) {
   gpr_log(GPR_INFO,
           "testing response with send_limit=%d use_service_config=%d "
           "use_string_json_value=%d",
@@ -447,7 +434,7 @@ static grpc_metadata gzip_compression_override() {
 
 // Test receive message limit with compressed request larger than the limit
 static void test_max_receive_message_length_on_compressed_request(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   gpr_log(GPR_INFO, "test max receive message length on compressed request");
 
   grpc_call* c = nullptr;
@@ -583,7 +570,7 @@ static void test_max_receive_message_length_on_compressed_request(
 
 // Test receive message limit with compressed response larger than the limit.
 static void test_max_receive_message_length_on_compressed_response(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   gpr_log(GPR_INFO,
           "testing max receive message length on compressed response");
 

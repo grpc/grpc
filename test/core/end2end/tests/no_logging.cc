@@ -74,8 +74,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(CoreTestConfiguration /*config*/,
-                                CoreTestFixture f) {
+static void simple_request_body(const CoreTestConfiguration& /*config*/,
+                                CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -194,7 +194,7 @@ static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   auto f =
       begin_test(config, "test_invoke_simple_request_with_no_error_logging",
                  nullptr, nullptr);
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 }
 
 static void test_invoke_10_simple_requests(
@@ -204,14 +204,14 @@ static void test_invoke_10_simple_requests(
       begin_test(config, "test_invoke_10_simple_requests_with_no_error_logging",
                  nullptr, nullptr);
   for (i = 0; i < 10; i++) {
-    simple_request_body(config, f);
+    simple_request_body(config, f.get());
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 }
 
 static void test_no_error_logging_in_entire_process(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   int i;
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_error_log);
   for (i = 0; i < 10; i++) {
@@ -227,10 +227,10 @@ static void test_no_logging_in_one_request(
   auto f =
       begin_test(config, "test_no_logging_in_last_request", nullptr, nullptr);
   for (i = 0; i < 10; i++) {
-    simple_request_body(config, f);
+    simple_request_body(config, f.get());
   }
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_log);
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
 }
 

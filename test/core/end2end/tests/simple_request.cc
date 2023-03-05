@@ -57,8 +57,8 @@ static void check_peer(char* peer_name) {
   }
 }
 
-static void simple_request_body(CoreTestConfiguration config,
-                                CoreTestFixture f) {
+static void simple_request_body(const CoreTestConfiguration& config,
+                                CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -207,7 +207,7 @@ static void simple_request_body(CoreTestConfiguration config,
 
 static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 }
 
 static void test_invoke_10_simple_requests(
@@ -216,7 +216,7 @@ static void test_invoke_10_simple_requests(
   auto f =
       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
   for (i = 0; i < 10; i++) {
-    simple_request_body(config, f);
+    simple_request_body(config, f.get());
     gpr_log(GPR_INFO, "Running test: Passed simple request %d", i);
   }
 }

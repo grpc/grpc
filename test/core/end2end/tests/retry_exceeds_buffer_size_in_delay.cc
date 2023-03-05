@@ -54,7 +54,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - client sends a 100 KiB message, thus exceeding the buffer size limit
 // - retry attempt gets ABORTED but is not retried
 static void test_retry_exceeds_buffer_size_in_delay(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];

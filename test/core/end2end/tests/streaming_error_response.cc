@@ -47,20 +47,11 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void end_test(CoreTestFixture* f) {
-  shutdown_client(f);
-  shutdown_server(f);
-
-  grpc_completion_queue_shutdown(f->cq());
-  drain_cq(f->cq());
-  grpc_completion_queue_destroy(f->cq());
-}
-
 // Client sends a request with payload, potentially requesting status early. The
 // server reads and streams responses. The client cancels the RPC to get an
 // error status. (Server sending a non-OK status is not considered an error
 // status.)
-static void test(CoreTestConfiguration config, bool request_status_early,
+static void test(const CoreTestConfiguration& config, bool request_status_early,
                  bool recv_message_separately) {
   grpc_call* c;
   grpc_call* s;

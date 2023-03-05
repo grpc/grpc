@@ -50,7 +50,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // Tests that we correctly clean up if the second attempt finishes
 // before we have finished replaying all of the send ops.
 static void test_retry_streaming_succeeds_before_replay_finished(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -347,7 +347,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
 }
 
 void retry_streaming_succeeds_before_replay_finished(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_streaming_succeeds_before_replay_finished(config);
 }

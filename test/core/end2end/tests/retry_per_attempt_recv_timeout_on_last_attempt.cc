@@ -52,7 +52,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - 1 retry allowed for ABORTED status
 // - both attempts do not receive a response until after perAttemptRecvTimeout
 static void test_retry_per_attempt_recv_timeout_on_last_attempt(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_call* s0;
@@ -212,7 +212,7 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
 }
 
 void retry_per_attempt_recv_timeout_on_last_attempt(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_per_attempt_recv_timeout_on_last_attempt(config);
 }

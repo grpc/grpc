@@ -53,7 +53,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
 static void
 test_retry_non_retriable_status_before_recv_trailing_metadata_started(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -212,7 +212,7 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
 }
 
 void retry_non_retriable_status_before_recv_trailing_metadata_started(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_non_retriable_status_before_recv_trailing_metadata_started(config);
 }

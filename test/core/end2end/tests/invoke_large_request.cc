@@ -52,14 +52,6 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
 static grpc_slice make_slice(int message_size) {
   GPR_ASSERT(message_size > 0);
   grpc_slice slice = grpc_slice_malloc(message_size);
@@ -67,7 +59,7 @@ static grpc_slice make_slice(int message_size) {
   return slice;
 }
 
-static void test_invoke_large_request(CoreTestConfiguration config,
+static void test_invoke_large_request(const CoreTestConfiguration& config,
                                       int message_size) {
   grpc_arg args[1];
   args[0].type = GRPC_ARG_INTEGER;

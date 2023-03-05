@@ -49,7 +49,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Cancel before invoke
-static void test_cancel_before_invoke(CoreTestConfiguration config,
+static void test_cancel_before_invoke(const CoreTestConfiguration& config,
                                       size_t test_ops) {
   grpc_op ops[6];
   grpc_op* op;

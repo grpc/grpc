@@ -52,7 +52,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Tests retry cancellation.
-static void test_retry_cancellation(CoreTestConfiguration config,
+static void test_retry_cancellation(const CoreTestConfiguration& config,
                                     cancellation_mode mode) {
   grpc_call* c;
   grpc_call* s;

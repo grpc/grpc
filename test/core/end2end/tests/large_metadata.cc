@@ -204,7 +204,7 @@ static void test_request_with_large_metadata(
 
 // Server responds with metadata larger than what the client accepts.
 static void test_request_with_bad_large_metadata_response(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
   arg.key = const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE);

@@ -46,7 +46,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Client pings and server pongs. Repeat messages rounds before finishing.
-static void test_pingpong_streaming(CoreTestConfiguration config,
+static void test_pingpong_streaming(const CoreTestConfiguration& config,
                                     int messages) {
   auto f = begin_test(config, "test_pingpong_streaming", nullptr, nullptr);
   grpc_call* c;

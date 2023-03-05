@@ -63,7 +63,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Request/response with metadata and payload.
 static void test_request_response_with_metadata_and_payload(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =

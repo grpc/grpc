@@ -24,6 +24,7 @@
 
 #include <openssl/crypto.h>
 
+#include "fixtures/secure_fixture.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -57,20 +58,6 @@ struct fullstack_secure_fixture_data {
   std::string localaddr;
 };
 
-static CoreTestFixture chttp2_create_fixture_secure_fullstack(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/) {
-  int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
-  memset(&f, 0, sizeof(f));
-
-  ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-
-  f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(nullptr);
-  return f;
-}
-
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,
                                  size_t /*md_count*/,
@@ -80,148 +67,91 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-static void chttp2_init_client_secure_fullstack(
-    CoreTestFixture* f, const grpc_channel_args* client_args,
-    grpc_channel_credentials* creds) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client() = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
-  GPR_ASSERT(f->client != nullptr);
-  grpc_channel_credentials_release(creds);
-}
-
-static void chttp2_init_server_secure_fullstack(
-    CoreTestFixture* f, const grpc_channel_args* server_args,
-    grpc_server_credentials* server_creds) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  if (f->server()) {
-    grpc_server_destroy(f->server());
-  }
-  f->server() = grpc_server_create(server_args, nullptr);
-  grpc_server_register_completion_queue(f->server(), f->cq(), nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
-                                        server_creds));
-  grpc_server_credentials_release(server_creds);
-  grpc_server_start(f->server());
-}
-
-void chttp2_tear_down_secure_fullstack(CoreTestFixture* f) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  delete ffd;
-}
-
-static int fail_server_auth_check(const grpc_channel_args* server_args) {
-  size_t i;
-  if (server_args == nullptr) return 0;
-  for (i = 0; i < server_args->num_args; i++) {
-    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
-        0) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-#define SERVER_INIT_NAME(REQUEST_TYPE) \
-  chttp2_init_server_simple_ssl_secure_fullstack_##REQUEST_TYPE
-
-#define SERVER_INIT(REQUEST_TYPE)                                           \
-  static void SERVER_INIT_NAME(REQUEST_TYPE)(                               \
-      CoreTestFixture * f, const grpc_channel_args* server_args) {          \
-    grpc_ssl_pem_key_cert_pair pem_cert_key_pair;                           \
-    if (!test_server1_key_id.empty()) {                                     \
-      pem_cert_key_pair.private_key = test_server1_key_id.c_str();          \
-      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
-    } else {                                                                \
-      pem_cert_key_pair.private_key = test_server1_key;                     \
-      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
-    }                                                                       \
-    grpc_server_credentials* ssl_creds =                                    \
-        grpc_ssl_server_credentials_create_ex(                              \
-            test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL);     \
-    if (fail_server_auth_check(server_args)) {                              \
-      grpc_auth_metadata_processor processor = {process_auth_failure, NULL, \
-                                                NULL};                      \
-      grpc_server_credentials_set_auth_metadata_processor(ssl_creds,        \
-                                                          processor);       \
-    }                                                                       \
-    chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);         \
-  }
-
-SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE)
-SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY)
-SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY)
-SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY)
-SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY)
-
-#define CLIENT_INIT_NAME(cert_type) \
-  chttp2_init_client_simple_ssl_secure_fullstack_##cert_type
-
 typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
 
-#define CLIENT_INIT(cert_type)                                              \
-  static void CLIENT_INIT_NAME(cert_type)(                                  \
-      CoreTestFixture * f, const grpc_channel_args* client_args) {          \
-    grpc_channel_credentials* ssl_creds = NULL;                             \
-    grpc_ssl_pem_key_cert_pair self_signed_client_key_cert_pair = {         \
-        test_self_signed_client_key, test_self_signed_client_cert};         \
-    grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {              \
-        test_signed_client_key, test_signed_client_cert};                   \
-    grpc_ssl_pem_key_cert_pair bad_client_key_cert_pair = {                 \
-        test_self_signed_client_key, test_signed_client_cert};              \
-    grpc_ssl_pem_key_cert_pair* key_cert_pair = NULL;                       \
-    switch (cert_type) {                                                    \
-      case SELF_SIGNED:                                                     \
-        key_cert_pair = &self_signed_client_key_cert_pair;                  \
-        break;                                                              \
-      case SIGNED:                                                          \
-        key_cert_pair = &signed_client_key_cert_pair;                       \
-        break;                                                              \
-      case BAD_CERT_PAIR:                                                   \
-        key_cert_pair = &bad_client_key_cert_pair;                          \
-        break;                                                              \
-      default:                                                              \
-        break;                                                              \
-    }                                                                       \
-    ssl_creds = grpc_ssl_credentials_create(test_root_cert, key_cert_pair,  \
-                                            NULL, NULL);                    \
-    grpc_arg ssl_name_override = {                                          \
-        GRPC_ARG_STRING,                                                    \
-        const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),               \
-        {const_cast<char*>("foo.test.google.fr")}};                         \
-    grpc_channel_args* new_client_args =                                    \
-        grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1); \
-    chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);     \
-    {                                                                       \
-      grpc_core::ExecCtx exec_ctx;                                          \
-      grpc_channel_args_destroy(new_client_args);                           \
-    }                                                                       \
+class TestFixture : public SecureFixture {
+ public:
+  TestFixture(grpc_ssl_client_certificate_request_type request_type,
+              certtype cert_type)
+      : request_type_(request_type), cert_type_(cert_type) {}
+
+  static auto MakeFactory(grpc_ssl_client_certificate_request_type request_type,
+                          certtype cert_type) {
+    return [request_type, cert_type](const grpc_core::ChannelArgs&,
+                                     const grpc_core::ChannelArgs&) {
+      return std::make_unique<TestFixture>(request_type, cert_type);
+    };
   }
 
-CLIENT_INIT(NONE)
-CLIENT_INIT(SELF_SIGNED)
-CLIENT_INIT(SIGNED)
-CLIENT_INIT(BAD_CERT_PAIR)
+ private:
+  grpc_core::ChannelArgs MutateClientArgs(
+      grpc_core::ChannelArgs args) override {
+    return args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr");
+  }
+
+  grpc_server_credentials* MakeServerCreds(
+      const grpc_core::ChannelArgs& args) override {
+    grpc_ssl_pem_key_cert_pair pem_cert_key_pair;
+    if (!test_server1_key_id.empty()) {
+      pem_cert_key_pair.private_key = test_server1_key_id.c_str();
+      pem_cert_key_pair.cert_chain = test_server1_cert;
+    } else {
+      pem_cert_key_pair.private_key = test_server1_key;
+      pem_cert_key_pair.cert_chain = test_server1_cert;
+    }
+    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create_ex(
+        test_root_cert, &pem_cert_key_pair, 1, request_type_, nullptr);
+    if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
+      grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
+                                                nullptr};
+      grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
+    }
+    return ssl_creds;
+  }
+
+  grpc_channel_credentials* MakeClientCreds(
+      const grpc_core::ChannelArgs& args) override {
+    grpc_ssl_pem_key_cert_pair self_signed_client_key_cert_pair = {
+        test_self_signed_client_key, test_self_signed_client_cert};
+    grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {
+        test_signed_client_key, test_signed_client_cert};
+    grpc_ssl_pem_key_cert_pair bad_client_key_cert_pair = {
+        test_self_signed_client_key, test_signed_client_cert};
+    grpc_ssl_pem_key_cert_pair* key_cert_pair = NULL;
+    switch (cert_type_) {
+      case SELF_SIGNED:
+        key_cert_pair = &self_signed_client_key_cert_pair;
+        break;
+      case SIGNED:
+        key_cert_pair = &signed_client_key_cert_pair;
+        break;
+      case BAD_CERT_PAIR:
+        key_cert_pair = &bad_client_key_cert_pair;
+        break;
+      default:
+        break;
+    }
+    return grpc_ssl_credentials_create(test_root_cert, key_cert_pair, NULL,
+                                       NULL);
+  }
+
+  grpc_ssl_client_certificate_request_type request_type_;
+  certtype cert_type_;
+};
 
 #define TEST_NAME(enum_name, cert_type, result) \
   "chttp2/ssl_" #enum_name "_" #cert_type "_" #result "_"
 
 typedef enum { SUCCESS, FAIL } test_result;
 
-#define SSL_TEST(request_type, cert_type, result)     \
-  {                                                   \
-    {TEST_NAME(request_type, cert_type, result),      \
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |       \
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | \
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,        \
-     "foo.test.google.fr",                            \
-     chttp2_create_fixture_secure_fullstack,          \
-     CLIENT_INIT_NAME(cert_type),                     \
-     SERVER_INIT_NAME(request_type),                  \
-     chttp2_tear_down_secure_fullstack},              \
-        result                                        \
+#define SSL_TEST(request_type, cert_type, result)                              \
+  {                                                                            \
+    {TEST_NAME(request_type, cert_type, result),                               \
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |                                \
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                          \
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
+     "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
+        result                                                                 \
   }
 
 // All test configurations
@@ -270,41 +200,10 @@ static CoreTestConfig_wrapper configs[] = {
              BAD_CERT_PAIR, FAIL),
 };
 
-static gpr_timespec n_seconds_time(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-// Shuts down the server.
-// Side effect - Also shuts down and drains the completion queue.
-static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq(),
-                                  grpc_core::CqVerifier::tag(1000));
-  grpc_completion_queue_shutdown(f->cq());
-  drain_cq(f->cq());
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void end_test(CoreTestFixture* f) {
-  shutdown_client(f);
-  shutdown_server(f);
-  grpc_completion_queue_destroy(f->cq());
-}
-
-static void simple_request_body(CoreTestFixture f,
+static void simple_request_body(CoreTestFixture* f,
                                 test_result expected_result) {
   grpc_call* c;
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
@@ -339,20 +238,18 @@ class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfig_wrapper> {
     gpr_log(GPR_INFO, "SSL_CERT_tests/%s", GetParam().config.name);
   }
   void SetUp() override {
-    fixture_ = GetParam().config.create_fixture(nullptr, nullptr);
-    GetParam().config.init_server(&fixture_, nullptr);
-    GetParam().config.init_client(&fixture_, nullptr);
+    fixture_ = GetParam().config.create_fixture(grpc_core::ChannelArgs(),
+                                                grpc_core::ChannelArgs());
+    fixture_->InitServer(grpc_core::ChannelArgs());
+    fixture_->InitClient(grpc_core::ChannelArgs());
   }
-  void TearDown() override {
-    end_test(&fixture_);
-    GetParam().config.tear_down_data(&fixture_);
-  }
+  void TearDown() override { fixture_.reset(); }
 
-  CoreTestFixture fixture_;
+  std::unique_ptr<CoreTestFixture> fixture_;
 };
 
 TEST_P(H2SslCertTest, SimpleRequestBody) {
-  simple_request_body(fixture_, GetParam().result);
+  simple_request_body(fixture_.get(), GetParam().result);
 }
 
 #ifndef OPENSSL_IS_BORINGSSL

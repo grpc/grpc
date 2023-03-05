@@ -31,7 +31,7 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void simple_delayed_request_body(CoreTestConfiguration config,
+static void simple_delayed_request_body(const CoreTestConfiguration& config,
                                         CoreTestFixture* f,
                                         const grpc_channel_args* client_args,
                                         const grpc_channel_args* server_args,
@@ -150,7 +150,8 @@ static void test_simple_delayed_request_short(
                          .ToC();
   gpr_log(GPR_INFO, "Running test: %s/%s", "test_simple_delayed_request_short",
           config.name);
-  f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
 
   simple_delayed_request_body(config, &f, client_args.get(), nullptr, 100000);
 }
@@ -165,7 +166,8 @@ static void test_simple_delayed_request_long(
 
   gpr_log(GPR_INFO, "Running test: %s/%s", "test_simple_delayed_request_long",
           config.name);
-  f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   // This timeout should be longer than a single retry
   simple_delayed_request_body(config, &f, client_args.get(), nullptr, 1500000);
 }

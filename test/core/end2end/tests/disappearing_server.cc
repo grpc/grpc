@@ -155,7 +155,8 @@ static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
 }
 
 static void disappearing_server_test(const CoreTestConfiguration& config) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_core::CqVerifier cqv(f->cq());
 
   gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",

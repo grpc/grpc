@@ -21,25 +21,14 @@
 #include <functional>
 #include <memory>
 
+#include "inproc_fixture.h"
+
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
-
-class InprocFixture : public CoreTestFixture {
- private:
-  grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
-    auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
-    grpc_server_start(server);
-    return server;
-  }
-  grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) override {
-    return grpc_inproc_channel_create(server(), args.ToC().get(), nullptr);
-  }
-};
 
 // All test configurations
 static CoreTestConfiguration configs[] = {{

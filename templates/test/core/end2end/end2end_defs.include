@@ -48,7 +48,7 @@ void grpc_end2end_tests_pre_init(void) {
 
 // NOLINTNEXTLINE(readability-function-size)
 void grpc_end2end_tests(int argc, char **argv,
-                        CoreTestConfiguration config) {
+                    const CoreTestConfiguration& config) {
   int i;
 
   GPR_ASSERT(g_pre_init_called);

@@ -141,7 +141,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
   grpc_call_unref(c);
 }
 
-static void test_invoke_simple_request(CoreTestConfiguration config,
+static void test_invoke_simple_request(const CoreTestConfiguration& config,
                                        size_t num_ops) {
   auto f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr,
                       nullptr);

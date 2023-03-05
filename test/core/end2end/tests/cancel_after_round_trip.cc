@@ -51,7 +51,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Cancel after accept, no payload
-static void test_cancel_after_round_trip(CoreTestConfiguration config,
+static void test_cancel_after_round_trip(const CoreTestConfiguration& config,
                                          cancellation_mode mode,
                                          bool use_service_config) {
   grpc_op ops[6];

@@ -48,7 +48,7 @@ static void shutdown_server(CoreTestFixture* f) {
 }
 
 static void test_early_server_shutdown_finishes_inflight_calls(
-    CoreTestConfiguration config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   auto f =

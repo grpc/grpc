@@ -60,7 +60,8 @@ static void child_thread(void* arg) {
 }
 
 static void test_connectivity(const CoreTestConfiguration& config) {
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_connectivity_state state;
   grpc_core::CqVerifier cqv(f->cq());
   child_events ce;
@@ -68,13 +69,12 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
-                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
-                         .ToC();
+                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000);
 
-  config.init_client(&f, client_args.get());
+  f->InitClient(client_args);
 
-  ce.channel = f.client;
-  ce.cq = f.cq;
+  ce.channel = f->client();
+  ce.cq = f->cq();
   gpr_event_init(&ce.started);
   grpc_core::Thread thd("grpc_connectivity", child_thread, &ce);
   thd.Start();
@@ -125,7 +125,7 @@ static void test_connectivity(const CoreTestConfiguration& config) {
   gpr_log(GPR_DEBUG, "*** STARTING SERVER ***");
 
   // now let's bring up a server to connect to
-  config.init_server(&f, nullptr);
+  f->InitServer(grpc_core::ChannelArgs());
 
   gpr_log(GPR_DEBUG, "*** STARTED SERVER ***");
 
@@ -196,9 +196,10 @@ static void test_watch_connectivity_cq_callback(
   CallbackContext cb_ctx(cb_watch_connectivity);
   CallbackContext cb_shutdown_ctx(cb_shutdown);
   grpc_completion_queue* cq;
-  CoreTestFixture f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
 
-  config.init_client(&f, nullptr);
+  f->InitClient(grpc_core::ChannelArgs());
 
   // start connecting
   grpc_channel_check_connectivity_state(f->client(), 1);
