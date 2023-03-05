@@ -54,8 +54,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
 grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {

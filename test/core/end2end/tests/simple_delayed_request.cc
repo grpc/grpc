@@ -50,8 +50,8 @@ static void simple_delayed_request_body(const CoreTestConfiguration& config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  config.init_client(f, client_args);
-  config.init_server(f, server_args);
+  f->InitClient(grpc_core::ChannelArgs());
+  f->InitServer(grpc_core::ChannelArgs());
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
@@ -153,7 +153,8 @@ static void test_simple_delayed_request_short(
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
 
-  simple_delayed_request_body(config, &f, client_args.get(), nullptr, 100000);
+  simple_delayed_request_body(config, f.get(), client_args.get(), nullptr,
+                              100000);
 }
 
 static void test_simple_delayed_request_long(
@@ -169,7 +170,8 @@ static void test_simple_delayed_request_long(
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   // This timeout should be longer than a single retry
-  simple_delayed_request_body(config, &f, client_args.get(), nullptr, 1500000);
+  simple_delayed_request_body(config, f.get(), client_args.get(), nullptr,
+                              1500000);
 }
 
 void simple_delayed_request(const CoreTestConfiguration& config) {

@@ -80,6 +80,11 @@ class CoreTestFixture {
       ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
                                       nullptr);
     } while (ev.type != GRPC_OP_COMPLETE || ev.tag != server_);
+    DestroyServer();
+  }
+
+  void DestroyServer() {
+    if (server_ == nullptr) return;
     grpc_server_destroy(server_);
     server_ = nullptr;
   }

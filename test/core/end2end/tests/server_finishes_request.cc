@@ -41,8 +41,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(CoreTestConfiguration /*config*/,
-                                CoreTestFixture f) {
+static void simple_request_body(const CoreTestConfiguration& /*config*/,
+                                CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -143,7 +143,7 @@ static void simple_request_body(CoreTestConfiguration /*config*/,
 
 static void test_invoke_simple_request(const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 }
 
 void server_finishes_request(const CoreTestConfiguration& config) {

@@ -75,7 +75,7 @@ static CoreTestConfiguration configs[] = {
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      nullptr,
      [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
-       return std::unique_ptr<CompressionFixture>();
+       return std::make_unique<CompressionFixture>();
      }},
 };
 

@@ -43,8 +43,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(CoreTestConfiguration /*config*/,
-                                CoreTestFixture f) {
+static void simple_request_body(const CoreTestConfiguration& /*config*/,
+                                CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -170,7 +170,7 @@ static void test_invoke_proxy_auth(const CoreTestConfiguration& config) {
   client_arg.value.string = const_cast<char*>(GRPC_TEST_HTTP_PROXY_AUTH_CREDS);
   grpc_channel_args client_args = {1, &client_arg};
   auto f = begin_test(config, "test_invoke_proxy_auth", &client_args, nullptr);
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 }
 
 void proxy_auth(const CoreTestConfiguration& config) {

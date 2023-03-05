@@ -26,19 +26,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void shutdown_server(CoreTestFixture* f) {
-  if (!f->server()) return;
-  grpc_server_destroy(f->server());
-  f->server() = nullptr;
-}
-
-static void do_request_and_shutdown_server(CoreTestConfiguration /*config*/,
-                                           CoreTestFixture* f,
-                                           grpc_core::CqVerifier& cqv) {
+static void do_request_and_shutdown_server(
+    const CoreTestConfiguration& /*config*/, CoreTestFixture* f,
+    grpc_core::CqVerifier& cqv) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -162,15 +157,15 @@ static void disappearing_server_test(const CoreTestConfiguration& config) {
   gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
           config.name);
 
-  config.init_client(&f, nullptr);
-  config.init_server(&f, nullptr);
+  f->InitClient(grpc_core::ChannelArgs());
+  f->InitServer(grpc_core::ChannelArgs());
 
-  do_request_and_shutdown_server(config, &f, cqv);
+  do_request_and_shutdown_server(config, f.get(), cqv);
 
   // now destroy and recreate the server
-  config.init_server(&f, nullptr);
+  f->InitServer(grpc_core::ChannelArgs());
 
-  do_request_and_shutdown_server(config, &f, cqv);
+  do_request_and_shutdown_server(config, f.get(), cqv);
 }
 
 void disappearing_server(const CoreTestConfiguration& config) {

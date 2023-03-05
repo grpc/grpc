@@ -36,7 +36,7 @@
 #define MAX_CONNECTION_IDLE_MS 2000
 #define MAX_CONNECTION_AGE_MS 9999
 
-static void simple_request_body(CoreTestConfiguration /*config*/,
+static void simple_request_body(const CoreTestConfiguration& /*config*/,
                                 CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;

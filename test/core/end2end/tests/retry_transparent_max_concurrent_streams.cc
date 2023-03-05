@@ -32,12 +32,12 @@
 
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    const grpc_core::ChannelArgs& client_args,
+    const grpc_core::ChannelArgs& server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
+  auto f = config.create_fixture(client_args, server_args);
+  f->InitServer(server_args);
+  f->InitClient(client_args);
   return f;
 }
 
@@ -59,11 +59,10 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   grpc_call_error error;
 
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_MAX_CONCURRENT_STREAMS), 1);
-  grpc_channel_args server_args = {1, &arg};
+  auto server_args =
+      grpc_core::ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1);
   auto f = begin_test(config, "retry_transparent_max_concurrent_streams",
-                      nullptr, &server_args);
+                      grpc_core::ChannelArgs(), server_args);
 
   grpc_core::CqVerifier cqv(f->cq());
 
@@ -233,9 +232,8 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_call_unref(c);
 
   // Destroy server and then restart it.
-  grpc_server_destroy(f->server());
-  f->server() = nullptr;
-  config.init_server(&f, &server_args);
+  f->ShutdownServer();
+  f->InitServer(server_args);
 
   // Server should get the second call.
   grpc_metadata_array_init(&request_metadata_recv);

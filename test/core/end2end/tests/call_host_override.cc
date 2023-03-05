@@ -38,14 +38,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
                                  grpc_core::ChannelArgs::FromC(server_args));
-  grpc_arg fake_security_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr:1234")}};
-  grpc_channel_args* new_client_args = grpc_channel_args_copy_and_add(
-      client_args, &fake_security_name_override, 1);
-  config.init_client(&f, new_client_args);
-  grpc_channel_args_destroy(new_client_args);
+  f->InitClient(
+      grpc_core::ChannelArgs::FromC(client_args)
+          .Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr:1234"));
   f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
   return f;
 }

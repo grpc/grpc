@@ -41,8 +41,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(CoreTestConfiguration /*config*/,
-                                CoreTestFixture f) {
+static void simple_request_body(const CoreTestConfiguration& /*config*/,
+                                CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -192,9 +192,9 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
 
   // perform a ping-pong to ensure that settings have had a chance to round
   // trip
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
   // perform another one to make sure that the one stream case still works
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 
   // start two requests - ensuring that the second is not accepted until
   // the first completes
@@ -331,10 +331,10 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Expect(tan(live_call + 2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(live_call + 2), true);
   // first request is finished, we should be able to start the second
   live_call = (live_call == 300) ? 400 : 300;
-  cqv.Expect(tan(live_call + 1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(live_call + 1), true);
   cqv.Verify();
 
   grpc_call_details_destroy(&call_details);
@@ -369,7 +369,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
                                 grpc_core::CqVerifier::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tan(live_call + 2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(live_call + 2), true);
   cqv.Expect(grpc_core::CqVerifier::tag(202), true);
   cqv.Verify();
 
@@ -432,9 +432,9 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   // perform a ping-pong to ensure that settings have had a chance to round
   // trip
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
   // perform another one to make sure that the one stream case still works
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 
   // start two requests - ensuring that the second is not accepted until
   // the first completes
@@ -625,9 +625,9 @@ static void test_max_concurrent_streams_with_timeout_on_second(
 
   // perform a ping-pong to ensure that settings have had a chance to round
   // trip
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
   // perform another one to make sure that the one stream case still works
-  simple_request_body(config, f);
+  simple_request_body(config, f.get());
 
   // start two requests - ensuring that the second is not accepted until
   // the first completes , and the second request will timeout in the

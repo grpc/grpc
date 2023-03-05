@@ -62,8 +62,8 @@ static grpc_slice generate_random_slice() {
   return out;
 }
 
-static void request_response_with_payload(CoreTestConfiguration /*config*/,
-                                          CoreTestFixture* f) {
+static void request_response_with_payload(
+    const CoreTestConfiguration& /*config*/, CoreTestFixture* f) {
   // Create large request and response bodies. These are big enough to require
   // multiple round trips to deliver to the peer, and their exact contents of
   // will be verified on completion.

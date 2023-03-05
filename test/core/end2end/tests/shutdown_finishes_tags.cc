@@ -37,12 +37,6 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void end_test(CoreTestFixture* f) {
-  grpc_completion_queue_shutdown(f->cq());
-  drain_cq(f->cq());
-  grpc_completion_queue_destroy(f->cq());
-}
-
 static void test_early_server_shutdown_finishes_tags(
     const CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_early_server_shutdown_finishes_tags",
@@ -61,15 +55,13 @@ static void test_early_server_shutdown_finishes_tags(
              grpc_server_request_call(f->server(), &s, &call_details,
                                       &request_metadata_recv, f->cq(), f->cq(),
                                       grpc_core::CqVerifier::tag(101)));
-  shutdown_client(&f);
+  f->ShutdownClient();
   grpc_server_shutdown_and_notify(f->server(), f->cq(),
                                   grpc_core::CqVerifier::tag(1000));
   cqv.Expect(grpc_core::CqVerifier::tag(101), false);
   cqv.Expect(grpc_core::CqVerifier::tag(1000), true);
   cqv.Verify();
   GPR_ASSERT(s == nullptr);
-
-  grpc_server_destroy(f->server());
 }
 
 void shutdown_finishes_tags(const CoreTestConfiguration& config) {
