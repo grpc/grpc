@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package XorJob;
+
+service CalXor {
+  rpc CalculateXor(CalXorRequest) returns(CalXorResponse) {}
+}
+
+message CalXorRequest {
+  uint64 num1 = 1;
+  uint64 num2 = 2;
+}
+
+message CalXorResponse {
+  uint64 num = 1;
+}
