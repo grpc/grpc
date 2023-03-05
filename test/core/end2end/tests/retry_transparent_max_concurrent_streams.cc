@@ -232,7 +232,7 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_call_unref(c);
 
   // Destroy server and then restart it.
-  f->ShutdownServer();
+  f->DestroyServer();
   f->InitServer(server_args);
 
   // Server should get the second call.

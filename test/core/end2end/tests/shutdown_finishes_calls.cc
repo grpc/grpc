@@ -125,14 +125,16 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // shutdown and destroy the server
-  f->ShutdownServer();
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
+                                  grpc_core::CqVerifier::tag(1000));
+  grpc_server_cancel_all_calls(f->server());
 
   cqv.Expect(grpc_core::CqVerifier::tag(1000), true);
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  grpc_server_destroy(f->server());
+  f->DestroyServer();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
