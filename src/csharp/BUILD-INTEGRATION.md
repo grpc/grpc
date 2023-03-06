@@ -36,6 +36,9 @@ Support is provided for the following platforms:
 * MacOS (x64 and arm64 via using the x64 binaries)
 * Linux (x86, x64, and arm64)
 
+You can still use the MSBuild integration provided by `Grpc.Tools` for other architectures.
+See [Using Grpc.Tools with unsupported architectures](#unsupported-arch) below.
+
 ## Adding `.proto` files to a project
 
 To add `.proto` files to a project edit the project’s `.csproj` file and add an item group with a `<Protobuf>` element that refers to the `.proto` file, e.g.
@@ -227,6 +230,7 @@ Quick links to the examples below:
 * [Generate proto and gRPC C# sources from .proto files (no C# compile)](#nocompile)
 * [Visual Studio: setting per-file `.proto` file options](#visualstudio)
 * [Bypassing Grpc.Tools to run the protocol buffers compiler explicitly](#compiler)
+* [Using Grpc.Tools with unsupported architectures](#unsupported-arch)
 
 ---
 ## <a name="ProtoRoot"></a>ProtoRoot - Common root for one or more `.proto` files
@@ -484,6 +488,42 @@ then in your project file:
   </Target>
 ```
 Do not include any `<Protobuf>` items in the project file as that will invoke the `Grpc.Tools` build and your files will be compiled twice.
+
+---
+
+## <a name="unsupported-arch"></a>Using Grpc.Tools with unsupported architectures
+
+You can still use the MSBuild integration provided by `Grpc.Tools` for architectures where
+the binaries are not included in the `Grpc.Tools` NuGet package.
+
+If you are able to build your own binaries for `protoc` and `grpc_csharp_plugin`, or
+find pre-built binaries provided by the commuity, then you can define a couple of
+environment variables to tell `Grpc.Tools` to use those binaries.
+
+Note: You need `Grpc.Tools` version 2.50.0 or later for these environment variables to
+be recognised.
+
+For example, there are community provided packages for the gRPC plugins for Alpine Linux using the *musl* C standard library:
+[https://pkgs.alpinelinux.org/packages?name=grpc-plugins](https://pkgs.alpinelinux.org/packages?name=grpc-plugins)
+
+To use these:
+```bash
+# Build or install the binaries for your architecture.
+
+# e.g. for Alpine Linux the grpc-plugins package can be used
+#        See https://pkgs.alpinelinux.org/package/edge/community/x86_64/grpc-plugins
+apk add grpc-plugins  # Alpine Linux specific package installer
+
+# Set environment variables for the built/installed protoc and grpc_csharp_plugin binaries
+export PROTOBUF_PROTOC=/usr/bin/protoc
+export GRPC_PROTOC_PLUGIN=/usr/bin/grpc_csharp_plugin
+
+# When the dotnet build runs the Grpc.Tools NuGet package will use the binaries
+# pointed to by the environment variables
+dotnet build
+```
+
+
 
 ---
 
