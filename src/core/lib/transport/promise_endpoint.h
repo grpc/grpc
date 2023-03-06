@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
-#define GRPC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <functional>
+#include <initializer_list>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -32,6 +33,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -311,4 +313,4 @@ class PromiseEndpoint {
 
 }  // namespace grpc
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
