@@ -26,7 +26,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 
 #include "grpc/support/log.h"
@@ -291,12 +290,9 @@ TEST_F(PromiseEndpointTest, OneReadSuccessful) {
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.Read(kBuffer.size());
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->JoinIntoString(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer);
   activity.Deactivate();
 }
 
@@ -309,12 +305,9 @@ TEST_F(PromiseEndpointTest, OneReadFailed) {
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.Read(kDummyRequestSize);
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -329,32 +322,23 @@ TEST_F(PromiseEndpointTest, MutipleReadsOneInternalReadSuccessful) {
   {
     auto promise = promise_endpoint_.Read(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(0, 4));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer.substr(0, 4));
   }
   {
     auto promise = promise_endpoint_.Read(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(4, 2));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer.substr(4, 2));
   }
   {
     auto promise = promise_endpoint_.Read(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(6));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer.substr(6));
   }
   activity.Deactivate();
 }
@@ -371,12 +355,9 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsSuccessful) {
   EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
   auto promise = promise_endpoint_.Read(kBuffer.size());
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->JoinIntoString(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer);
   activity.Deactivate();
 }
 
@@ -394,12 +375,9 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsFailed) {
   EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
   auto promise = promise_endpoint_.Read(kDummyRequestSize);
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -424,33 +402,24 @@ TEST_F(PromiseEndpointTest, MutipleReadsMutipleInternalReadsSuccessful) {
   {
     auto promise = promise_endpoint_.Read(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(),
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(),
               kBuffer1 + kBuffer2 + kBuffer3.substr(0, 1));
   }
   {
     auto promise = promise_endpoint_.Read(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer3.substr(1) + kBuffer4);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer3.substr(1) + kBuffer4);
   }
   {
     auto promise = promise_endpoint_.Read(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer5 + kBuffer6);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer5 + kBuffer6);
   }
   activity.Deactivate();
 }
@@ -470,34 +439,25 @@ TEST_F(PromiseEndpointTest,
   {
     auto promise = promise_endpoint_.Read(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer1.substr(0, 4));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer1.substr(0, 4));
   }
   {
     auto promise = promise_endpoint_.Read(kDummyRequestSize);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(!result.ok());
-    EXPECT_EQ(kDummyErrorStatus, result.status());
+    ASSERT_TRUE(poll.ready());
+    ASSERT_FALSE(poll.value().ok());
+    EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   }
   // What remains from `kBuffer1` will be invalidated since there is an error
   // after it.
   {
     auto promise = promise_endpoint_.Read(kBuffer2.size());
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer2);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer2);
   }
   activity.Deactivate();
 }
@@ -511,17 +471,14 @@ TEST_F(PromiseEndpointTest, OneReadAndWaitSuccessful) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.Read(kBuffer.size());
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextReadReady();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(*absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->JoinIntoString(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer);
   activity.Deactivate();
 }
 
@@ -533,17 +490,14 @@ TEST_F(PromiseEndpointTest, OneReadAndWaitFailed) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.Read(kDummyRequestSize);
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextReadReady();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(*absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -559,16 +513,13 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitSuccessful) {
   EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
   auto promise = promise_endpoint_.Read(kBuffer.size());
   for (size_t i = 0; i < kBuffer.size(); ++i) {
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     mock_endpoint_.MarkNextReadReady();
   }
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->JoinIntoString(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer);
   activity.Deactivate();
 }
 
@@ -586,16 +537,13 @@ TEST_F(PromiseEndpointTest, OneReadMultipleInternalReadsAndWaitFailed) {
   EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
   auto promise = promise_endpoint_.Read(kDummyRequestSize);
   for (size_t i = 0; i < kReadTaskSize; ++i) {
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     mock_endpoint_.MarkNextReadReady();
   }
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-            nullptr);
-  absl::StatusOr<grpc_core::SliceBuffer> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -613,44 +561,35 @@ TEST_F(PromiseEndpointTest,
   EXPECT_CALL(mock_endpoint_, Read).Times(3);
   {
     auto promise = promise_endpoint_.Read(4u);
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     EXPECT_CALL(activity, WakeupRequested).Times(1);
     mock_endpoint_.MarkNextReadReady();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer1.substr(0, 4));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer1.substr(0, 4));
   }
   {
     auto promise = promise_endpoint_.Read(kDummyRequestSize);
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     EXPECT_CALL(activity, WakeupRequested).Times(1);
     mock_endpoint_.MarkNextReadReady();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(!result.ok());
-    EXPECT_EQ(kDummyErrorStatus, result.status());
+    ASSERT_TRUE(poll.ready());
+    ASSERT_FALSE(poll.value().ok());
+    EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   }
   // What remains from `kBuffer1` will be invalidated since there is an error
   // after it.
   {
     auto promise = promise_endpoint_.Read(kBuffer2.size());
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     EXPECT_CALL(activity, WakeupRequested).Times(1);
     mock_endpoint_.MarkNextReadReady();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer2);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer2);
   }
   activity.Deactivate();
 }
@@ -665,11 +604,9 @@ TEST_F(PromiseEndpointTest, OneReadSliceSuccessful) {
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->as_string_view(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->as_string_view(), kBuffer);
   activity.Deactivate();
 }
 
@@ -682,11 +619,9 @@ TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -701,29 +636,23 @@ TEST_F(PromiseEndpointTest, MutipleReadSlicesOneInternalReadSuccessful) {
   {
     auto promise = promise_endpoint_.ReadSlice(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer.substr(0, 4));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer.substr(0, 4));
   }
   {
     auto promise = promise_endpoint_.ReadSlice(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer.substr(4, 2));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer.substr(4, 2));
   }
   {
     auto promise = promise_endpoint_.ReadSlice(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer.substr(6));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer.substr(6));
   }
   activity.Deactivate();
 }
@@ -740,11 +669,9 @@ TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsSuccessful) {
   EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
   auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->as_string_view(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->as_string_view(), kBuffer);
   activity.Deactivate();
 }
 
@@ -762,11 +689,9 @@ TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsFailed) {
   EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
   auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -791,30 +716,24 @@ TEST_F(PromiseEndpointTest, MutipleReadSlicesMutipleInternalReadsSuccessful) {
   {
     auto promise = promise_endpoint_.ReadSlice(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(),
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(),
               kBuffer1 + kBuffer2 + kBuffer3.substr(0, 1));
   }
   {
     auto promise = promise_endpoint_.ReadSlice(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer3.substr(1) + kBuffer4);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer3.substr(1) + kBuffer4);
   }
   {
     auto promise = promise_endpoint_.ReadSlice(2u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer5 + kBuffer6);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer5 + kBuffer6);
   }
   activity.Deactivate();
 }
@@ -834,31 +753,25 @@ TEST_F(PromiseEndpointTest,
   {
     auto promise = promise_endpoint_.ReadSlice(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer1.substr(0, 4));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer1.substr(0, 4));
   }
   {
     auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(!result.ok());
-    EXPECT_EQ(kDummyErrorStatus, result.status());
+    ASSERT_TRUE(poll.ready());
+    ASSERT_FALSE(poll.value().ok());
+    EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   }
   // What remains from `kBuffer1` will be invalidated since there is an error
   // after it.
   {
     auto promise = promise_endpoint_.ReadSlice(kBuffer2.size());
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer2);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer2);
   }
   activity.Deactivate();
 }
@@ -872,16 +785,14 @@ TEST_F(PromiseEndpointTest, OneReadSliceAndWaitSuccessful) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextReadReady();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(*absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->as_string_view(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->as_string_view(), kBuffer);
   activity.Deactivate();
 }
 
@@ -893,16 +804,14 @@ TEST_F(PromiseEndpointTest, OneReadSliceAndWaitFailed) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextReadReady();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(*absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -919,15 +828,13 @@ TEST_F(PromiseEndpointTest,
   EXPECT_CALL(mock_endpoint_, Read).Times(kBuffer.size());
   auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
   for (size_t i = 0; i < kBuffer.size(); ++i) {
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     mock_endpoint_.MarkNextReadReady();
   }
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->as_string_view(), kBuffer);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(poll.value()->as_string_view(), kBuffer);
   activity.Deactivate();
 }
 
@@ -945,15 +852,13 @@ TEST_F(PromiseEndpointTest, OneReadSliceMultipleInternalReadsAndWaitFailed) {
   EXPECT_CALL(mock_endpoint_, Read).Times(kReadTaskSize);
   auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
   for (size_t i = 0; i < kReadTaskSize; ++i) {
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     mock_endpoint_.MarkNextReadReady();
   }
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-  absl::StatusOr<grpc_core::Slice> result =
-      std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -971,41 +876,35 @@ TEST_F(PromiseEndpointTest,
   EXPECT_CALL(mock_endpoint_, Read).Times(3);
   {
     auto promise = promise_endpoint_.ReadSlice(4u);
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     EXPECT_CALL(activity, WakeupRequested).Times(1);
     mock_endpoint_.MarkNextReadReady();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer1.substr(0, 4));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer1.substr(0, 4));
   }
   {
     auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     EXPECT_CALL(activity, WakeupRequested).Times(1);
     mock_endpoint_.MarkNextReadReady();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(!result.ok());
-    EXPECT_EQ(kDummyErrorStatus, result.status());
+    ASSERT_TRUE(poll.ready());
+    ASSERT_FALSE(poll.value().ok());
+    EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   }
   // What remains from `kBuffer1` will be invalidated since there is an error
   // after it.
   {
     auto promise = promise_endpoint_.ReadSlice(kBuffer2.size());
-    EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+    EXPECT_TRUE(promise().pending());
     EXPECT_CALL(activity, WakeupRequested).Times(1);
     mock_endpoint_.MarkNextReadReady();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer2);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer2);
   }
   activity.Deactivate();
 }
@@ -1020,11 +919,9 @@ TEST_F(PromiseEndpointTest, OneReadByteSuccessful) {
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadByte();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
-  absl::StatusOr<uint8_t> result =
-      std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(*result, kBuffer[0]);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(*poll.value(), kBuffer[0]);
   activity.Deactivate();
 }
 
@@ -1037,11 +934,9 @@ TEST_F(PromiseEndpointTest, OneReadByteFailed) {
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadByte();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
-  absl::StatusOr<uint8_t> result =
-      std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -1056,11 +951,9 @@ TEST_F(PromiseEndpointTest, MutipleReadBytesOneInternalReadSuccessful) {
   for (size_t i = 0; i < kBuffer.size(); ++i) {
     auto promise = promise_endpoint_.ReadByte();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
-    absl::StatusOr<uint8_t> result =
-        std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(*result, kBuffer[i]);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(*poll.value(), kBuffer[i]);
   }
   activity.Deactivate();
 }
@@ -1074,16 +967,14 @@ TEST_F(PromiseEndpointTest, OneReadByteAndWaitSuccessful) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadByte();
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  ASSERT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextReadReady();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
-  absl::StatusOr<uint8_t> result =
-      std::move(*absl::get_if<absl::StatusOr<uint8_t>>(&poll));
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(*result, kBuffer[0]);
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(*poll.value(), kBuffer[0]);
   activity.Deactivate();
 }
 
@@ -1099,30 +990,23 @@ TEST_F(PromiseEndpointTest,
   {
     auto promise = promise_endpoint_.Read(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(), kBuffer.substr(0, 4));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer.substr(0, 4));
   }
   {
     auto promise = promise_endpoint_.ReadSlice(3u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(), kBuffer.substr(4, 3));
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(), kBuffer.substr(4, 3));
   }
   {
     auto promise = promise_endpoint_.ReadByte();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
-    absl::StatusOr<uint8_t> result =
-        std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(*result, kBuffer[7]);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(*poll.value(), kBuffer[7]);
   }
   activity.Deactivate();
 }
@@ -1149,32 +1033,25 @@ TEST_F(PromiseEndpointTest,
   {
     auto promise = promise_endpoint_.Read(4u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::SliceBuffer>>(&poll),
-              nullptr);
-    absl::StatusOr<grpc_core::SliceBuffer> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::SliceBuffer>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->JoinIntoString(),
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->JoinIntoString(),
               kBuffer1 + kBuffer2 + kBuffer3.substr(0, 1));
   }
   {
     auto promise = promise_endpoint_.ReadSlice(3u);
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<grpc_core::Slice>>(&poll), nullptr);
-    absl::StatusOr<grpc_core::Slice> result =
-        std::move(absl::get<absl::StatusOr<grpc_core::Slice>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(result->as_string_view(),
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(poll.value()->as_string_view(),
               kBuffer3.substr(1) + kBuffer4 + kBuffer5);
   }
   {
     auto promise = promise_endpoint_.ReadByte();
     auto poll = promise();
-    ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
-    absl::StatusOr<uint8_t> result =
-        std::move(absl::get<absl::StatusOr<uint8_t>>(poll));
-    EXPECT_TRUE(result.ok());
-    EXPECT_EQ(*result, kBuffer6[0]);
+    ASSERT_TRUE(poll.ready());
+    ASSERT_TRUE(poll.value().ok());
+    EXPECT_EQ(*poll.value(), kBuffer6[0]);
   }
   activity.Deactivate();
 }
@@ -1187,16 +1064,14 @@ TEST_F(PromiseEndpointTest, OneReadByteAndWaitFailed) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Read).Times(1);
   auto promise = promise_endpoint_.ReadByte();
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  ASSERT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextReadReady();
   auto poll = promise();
-  ASSERT_NE(absl::get_if<absl::StatusOr<uint8_t>>(&poll), nullptr);
-  absl::StatusOr<uint8_t> result =
-      std::move(*absl::get_if<absl::StatusOr<uint8_t>>(&poll));
-  EXPECT_FALSE(result.ok());
-  EXPECT_EQ(kDummyErrorStatus, result.status());
+  ASSERT_TRUE(poll.ready());
+  ASSERT_FALSE(poll.value().ok());
+  EXPECT_EQ(kDummyErrorStatus, poll.value().status());
   activity.Deactivate();
 }
 
@@ -1208,7 +1083,9 @@ TEST_F(PromiseEndpointTest, OneWriteSuccessful) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
   auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(absl::OkStatus(), absl::get<absl::Status>(promise()));
+  auto poll = promise();
+  ASSERT_TRUE(poll.ready());
+  EXPECT_EQ(absl::OkStatus(), poll.value());
   activity.Deactivate();
 }
 
@@ -1220,7 +1097,9 @@ TEST_F(PromiseEndpointTest, OneWriteFailed) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
   auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(kDummyErrorStatus, absl::get<absl::Status>(promise()));
+  auto poll = promise();
+  ASSERT_TRUE(poll.ready());
+  EXPECT_EQ(kDummyErrorStatus, poll.value());
   activity.Deactivate();
 }
 
@@ -1232,11 +1111,13 @@ TEST_F(PromiseEndpointTest, WriteAndWaitSuccessful) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
   auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextWriteReady();
-  EXPECT_EQ(absl::OkStatus(), absl::get<absl::Status>(promise()));
+  auto poll = promise();
+  ASSERT_TRUE(poll.ready());
+  EXPECT_EQ(absl::OkStatus(), poll.value());
   activity.Deactivate();
 }
 
@@ -1248,11 +1129,13 @@ TEST_F(PromiseEndpointTest, WriteAndWaitFailed) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
   auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
-  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(promise()));
+  EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
   mock_endpoint_.MarkNextWriteReady();
-  EXPECT_EQ(kDummyErrorStatus, absl::get<absl::Status>(promise()));
+  auto poll = promise();
+  ASSERT_TRUE(poll.ready());
+  EXPECT_EQ(kDummyErrorStatus, poll.value());
   activity.Deactivate();
 }
 
