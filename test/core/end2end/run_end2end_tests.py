@@ -35,6 +35,7 @@ def main():
     cmds = [executable_name]
     if len(sys.argv) > 2:
         cmds.extend(sys.argv[2:])
+    print("DO NOT SUBMIT", cmds)
     subprocess.run(cmds, check=True)
 
 
