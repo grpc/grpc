@@ -62,7 +62,8 @@ class SockpairFixture : public CoreTestFixture {
   }
   grpc_channel* MakeClient(const grpc_core::ChannelArgs& in_args) override {
     grpc_core::ExecCtx exec_ctx;
-    auto args = MutateClientArgs(in_args);
+    auto args = MutateClientArgs(in_args).Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                              "test-authority");
     grpc_transport* transport;
     auto client_channel_args = grpc_core::CoreConfiguration::Get()
                                    .channel_args_preconditioning()
