@@ -19,6 +19,11 @@ if(gRPC_PROTOBUF_PROVIDER STREQUAL "module")
   if(NOT protobuf_BUILD_TESTS)
     set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
   endif()
+  #if(NOT protobuf_INSTALL)
+  #  # leaving protobuf_INSTALL enabled would break the build.
+  #  set(protobuf_INSTALL OFF)
+  #endif()
+  set(utf8_range_ENABLE_INSTALL ON)
   # Disable building protobuf with zlib. Building protobuf with zlib breaks
   # the build if zlib is not installed on the system.
   if(NOT protobuf_WITH_ZLIB)
