@@ -23,7 +23,9 @@ namespace {
 
 class TestServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer() { Crash("Not implemented"); }
+  ServerCallTracer* CreateNewServerCallTracer() override {
+    Crash("Not implemented");
+  }
 };
 
 TEST(ServerCallTracerFactoryTest, GlobalRegistration) {
