@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include "gtest/gtest.h"
-#include "src/core/lib/channel/server_call_tracer.h"
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/server_call_tracer.h"
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
@@ -22,9 +23,7 @@ namespace {
 
 class TestServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer() {
-    Crash("Not implemented");
-  }
+  ServerCallTracer* CreateNewServerCallTracer() { Crash("Not implemented"); }
 };
 
 TEST(ServerCallTracerFactoryTest, GlobalRegistration) {
