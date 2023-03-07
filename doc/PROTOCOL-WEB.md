@@ -48,14 +48,9 @@ Content-Type
 HTTP wire protocols
 
 1. support any HTTP/*, with no dependency on HTTP/2 specific framing
-2. send lower-case header/trailer names over HTTP/2 (following [RFC
-   9113](https://www.rfc-editor.org/rfc/rfc9113#section-8.2-2)) and send
-   header/trailer names using any case over HTTP/1.1 (following [RFC
-   9112](https://www.rfc-editor.org/rfc/rfc9112.html#section-5-1))
-3. compare header/trailer names case-insensitively (following [RFC
-   9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.1-3)) where
-   possible, and normalize header/trailer names to lower-case otherwise
-4. use EOF (end of body) to close the stream
+2. header names may be upper- or mixed-case over HTTP/1.1, but trailers encoded in
+   the last length-prefixed message must always use lower-case names.
+3. use EOF (end of body) to close the stream
 
 ---
 
