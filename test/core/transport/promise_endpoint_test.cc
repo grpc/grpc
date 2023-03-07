@@ -14,8 +14,6 @@
 
 #include "src/core/lib/transport/promise_endpoint.h"
 
-#include <sys/socket.h>
-
 #include <algorithm>
 #include <cstring>
 #include <functional>
@@ -29,6 +27,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/log.h>
 
