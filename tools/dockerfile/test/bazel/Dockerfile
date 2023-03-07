@@ -32,8 +32,7 @@ RUN apt-get update && apt-get -y install \
   libtool \
   make \
   vim \
-  wget \
-  gdb
+  wget
 
 #========================
 # Bazel installation
@@ -64,6 +63,8 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global protocol.file.allow always
 
+
+RUN apt-get install -y gdb
 
 RUN mkdir -p /var/local/jenkins
 
