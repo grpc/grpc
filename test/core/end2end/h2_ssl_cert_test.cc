@@ -108,7 +108,7 @@ class TestFixture : public SecureFixture {
   }
 
   grpc_channel_credentials* MakeClientCreds(
-      const grpc_core::ChannelArgs& args) override {
+      const grpc_core::ChannelArgs&) override {
     grpc_ssl_pem_key_cert_pair self_signed_client_key_cert_pair = {
         test_self_signed_client_key, test_self_signed_client_cert};
     grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {

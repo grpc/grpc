@@ -69,9 +69,7 @@ static CoreTestConfiguration configs[] = {
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE,
-     nullptr,
-     [](const grpc_core::ChannelArgs& client_args,
-        const grpc_core::ChannelArgs& server_args) {
+     nullptr, [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
        return std::make_unique<FakesecFixture>();
      }}};
 

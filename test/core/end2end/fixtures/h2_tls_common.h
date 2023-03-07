@@ -172,7 +172,7 @@ class TlsFixture : public SecureFixture {
   }
 
   grpc_channel_credentials* MakeClientCreds(
-      const grpc_core::ChannelArgs& args) override {
+      const grpc_core::ChannelArgs&) override {
     grpc_tls_credentials_options* options =
         grpc_tls_credentials_options_create();
     grpc_tls_credentials_options_set_verify_server_cert(

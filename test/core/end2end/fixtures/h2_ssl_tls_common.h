@@ -51,7 +51,7 @@ class SslTlsFixture : public SecureFixture {
   }
 
   grpc_channel_credentials* MakeClientCreds(
-      const grpc_core::ChannelArgs& args) override {
+      const grpc_core::ChannelArgs&) override {
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
     if (ssl_creds != nullptr) {

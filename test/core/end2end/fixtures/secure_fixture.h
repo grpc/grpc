@@ -27,6 +27,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 
+// Base class for a fixture that just needs to select cred types (or mutate
+// client/server channel args).
 class SecureFixture : public CoreTestFixture {
  public:
   explicit SecureFixture(std::string localaddr = grpc_core::JoinHostPort(
@@ -67,17 +69,18 @@ class SecureFixture : public CoreTestFixture {
   std::string localaddr_;
 };
 
+// Fixture that uses insecure credentials.
 class InsecureFixture : public SecureFixture {
  public:
   using SecureFixture::SecureFixture;
 
  private:
   grpc_channel_credentials* MakeClientCreds(
-      const grpc_core::ChannelArgs& args) override {
+      const grpc_core::ChannelArgs&) override {
     return grpc_insecure_credentials_create();
   }
   grpc_server_credentials* MakeServerCreds(
-      const grpc_core::ChannelArgs& args) override {
+      const grpc_core::ChannelArgs&) override {
     return grpc_insecure_server_credentials_create();
   }
 };
