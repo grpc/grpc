@@ -15,28 +15,46 @@
 # Cross-platform test runner for gRPC end2end tests
 
 import os
+from pathlib import Path
 import subprocess
 import sys
 
 from rules_python.python.runfiles import runfiles
+from typing import Tuple
 
 
-def UsageString() -> str:
-    return "Usage: run.py test_fixture [test ...]"
+def GetBinaryAbsolutePath(fixture_name: str) -> str:
+    """Finds the absolute path to the test binary using bazel's runfile library.
 
-
-def main():
-    assert len(sys.argv) >= 2, UsageString()
-    test_fixture = sys.argv[1]
+    On Windows, there are no symlinks in the runfiles directory like there are
+    on Posix systems. This tool solves the problem of locating the test
+    binaries on any platform.
+    """
     r = runfiles.Create()
-    # even bazel on Windows appears to use the '/' delimiter
-    path = "/".join([os.environ["TEST_WORKSPACE"], test_fixture])
-    executable_name = r.Rlocation(path)
-    cmds = [executable_name]
+    # bazel's Rlocation search expects the '/' delimiter, even on Windows
+    fixture_path = "/".join([os.environ["TEST_WORKSPACE"], fixture_name])
+    return r.Rlocation(str(fixture_path))
+
+
+def SplitBinaryPathByRunfileLocation(abspath: str) -> Tuple[str, str]:
+    """Converts the path to platform-specific cwd and related path strings."""
+    exec_cwd, exec_path = str(Path(abspath)).split(os.environ["TEST_WORKSPACE"])
+    exec_cwd += os.environ["TEST_WORKSPACE"]
+    exec_path = exec_path.strip(os.path.sep)
+    return exec_cwd, exec_path
+
+
+def main() -> None:
+    assert len(sys.argv) >= 2, "Usage: run.py test_fixture [test ...]"
+    executable_name = GetBinaryAbsolutePath(sys.argv[1])
+    # To avoid long filenames on Windows, split the executable name into a reasonable cwd and path.
+    exec_cwd, exec_path = SplitBinaryPathByRunfileLocation(executable_name)
+    cmds = [exec_path]
     if len(sys.argv) > 2:
         cmds.extend(sys.argv[2:])
-    print("DO NOT SUBMIT", cmds)
-    subprocess.run(cmds, check=True)
+    print(f"Executing {cmds} in cwd={exec_cwd}")
+    # On Windows, shell=True is necessary for `cwd` to be used for the binary search path.
+    subprocess.run(' '.join(cmds), check=True, cwd=exec_cwd, shell=True)
 
 
 if __name__ == "__main__":
