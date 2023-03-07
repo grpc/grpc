@@ -106,27 +106,18 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
 }
 
 void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
-  (void)location;
-  grpc_closure* c = list->head;
-  while (c != nullptr) {
-    grpc_closure* next = c->next_data.next;
-#ifndef NDEBUG
-    if (c->scheduled) {
-      Crash(absl::StrFormat(
-          "Closure already scheduled. (closure: %p, created: [%s:%d], "
-          "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
-          c, c->file_created, c->line_created, c->file_initiated,
-          c->line_initiated, location.file(), location.line()));
+  grpc_closure_list* destlist = grpc_core::ExecCtx::Get()->closure_list();
+
+  if (list->head != nullptr) {
+    if (destlist->head == nullptr) {
+      destlist->head = list->head;
+      destlist->tail = list->tail;
+    } else {
+      destlist->tail->next_data.next = list->head;
+      destlist->tail = list->tail;
     }
-    c->scheduled = true;
-    c->file_initiated = location.file();
-    c->line_initiated = location.line();
-    c->run = false;
-    GPR_ASSERT(c->cb != nullptr);
-#endif
-    exec_ctx_sched(c);
-    c = next;
   }
+
   list->head = list->tail = nullptr;
 }
 
