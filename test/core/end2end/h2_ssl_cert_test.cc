@@ -25,7 +25,6 @@
 
 #include <openssl/crypto.h>
 
-#include "fixtures/secure_fixture.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -45,6 +44,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/util/test_config.h"
 
 static std::string test_server1_key_id;
