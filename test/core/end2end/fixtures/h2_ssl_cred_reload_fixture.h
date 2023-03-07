@@ -52,6 +52,7 @@ class SslCredReloadFixture : public SecureFixture {
   }
   grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs& args) override {
+    server_credential_reloaded_ = false;
     grpc_ssl_server_credentials_options* options =
         grpc_ssl_server_credentials_create_options_using_config_fetcher(
             GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,

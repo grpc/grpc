@@ -77,7 +77,7 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
   }
 
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
-  call_->StartCall(grpc_core::CqVerifier::tag(1));
+  call_->StartCall(tag(1));
   void* got_tag;
   bool ok;
   cq_.Next(&got_tag, &ok);
@@ -96,7 +96,7 @@ void CliCall::Write(const std::string& request) {
   grpc_slice s = grpc_slice_from_copied_buffer(request.data(), request.size());
   grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
-  call_->Write(send_buffer, grpc_core::CqVerifier::tag(2));
+  call_->Write(send_buffer, tag(2));
   cq_.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
 }
@@ -107,7 +107,7 @@ bool CliCall::Read(std::string* response,
   bool ok;
 
   grpc::ByteBuffer recv_buffer;
-  call_->Read(&recv_buffer, grpc_core::CqVerifier::tag(3));
+  call_->Read(&recv_buffer, tag(3));
 
   if (!cq_.Next(&got_tag, &ok) || !ok) {
     return false;
@@ -130,7 +130,7 @@ void CliCall::WritesDone() {
   void* got_tag;
   bool ok;
 
-  call_->WritesDone(grpc_core::CqVerifier::tag(4));
+  call_->WritesDone(tag(4));
   cq_.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
 }
@@ -140,7 +140,7 @@ void CliCall::WriteAndWait(const std::string& request) {
   grpc::ByteBuffer send_buffer(&req_slice, 1);
 
   gpr_mu_lock(&write_mu_);
-  call_->Write(send_buffer, grpc_core::CqVerifier::tag(2));
+  call_->Write(send_buffer, tag(2));
   write_done_ = false;
   while (!write_done_) {
     gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -150,7 +150,7 @@ void CliCall::WriteAndWait(const std::string& request) {
 
 void CliCall::WritesDoneAndWait() {
   gpr_mu_lock(&write_mu_);
-  call_->WritesDone(grpc_core::CqVerifier::tag(4));
+  call_->WritesDone(tag(4));
   write_done_ = false;
   while (!write_done_) {
     gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -164,17 +164,17 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   bool ok;
   grpc::ByteBuffer recv_buffer;
 
-  call_->Read(&recv_buffer, grpc_core::CqVerifier::tag(3));
+  call_->Read(&recv_buffer, tag(3));
   bool cq_result = cq_.Next(&got_tag, &ok);
 
-  while (got_tag != grpc_core::CqVerifier::tag(3)) {
+  while (got_tag != tag(3)) {
     gpr_mu_lock(&write_mu_);
     write_done_ = true;
     gpr_cv_signal(&write_cv_);
     gpr_mu_unlock(&write_mu_);
 
     cq_result = cq_.Next(&got_tag, &ok);
-    if (got_tag == grpc_core::CqVerifier::tag(2)) {
+    if (got_tag == tag(2)) {
       GPR_ASSERT(ok);
     }
   }
@@ -186,7 +186,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
       gpr_mu_lock(&write_mu_);
       if (!write_done_) {
         cq_.Next(&got_tag, &ok);
-        GPR_ASSERT(got_tag != grpc_core::CqVerifier::tag(2));
+        GPR_ASSERT(got_tag != tag(2));
         write_done_ = true;
         gpr_cv_signal(&write_cv_);
       }
@@ -213,7 +213,7 @@ Status CliCall::Finish(IncomingMetadataContainer* server_trailing_metadata) {
   bool ok;
   grpc::Status status;
 
-  call_->Finish(&status, grpc_core::CqVerifier::tag(5));
+  call_->Finish(&status, tag(5));
   cq_.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
   if (server_trailing_metadata) {
