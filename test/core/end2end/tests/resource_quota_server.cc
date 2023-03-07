@@ -323,6 +323,8 @@ void resource_quota_server(const CoreTestConfiguration& config) {
           NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
           deadline_exceeded, unavailable);
 
+  f->ShutdownServer();
+
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
 

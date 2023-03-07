@@ -216,6 +216,7 @@ static void test_watch_connectivity_cq_callback(
   grpc_completion_queue_shutdown(cq);
   gpr_event_wait(&cb_shutdown_ctx.finished,
                  gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  grpc_completion_queue_destroy(cq);
 }
 
 void connectivity(const CoreTestConfiguration& config) {

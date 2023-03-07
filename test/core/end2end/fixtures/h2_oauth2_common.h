@@ -133,6 +133,7 @@ class Oauth2Fixture : public SecureFixture {
                                                   nullptr);
     grpc_channel_credentials_release(ssl_creds);
     grpc_call_credentials_release(oauth2_creds);
+    grpc_slice_unref(ca_slice);
     return ssl_oauth2_creds;
   }
 

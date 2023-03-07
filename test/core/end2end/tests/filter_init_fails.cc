@@ -151,6 +151,8 @@ static void test_server_channel_filter(const CoreTestConfiguration& config) {
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
   }
 
+  f->ShutdownServer();
+
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -237,6 +239,8 @@ static void test_client_channel_filter(const CoreTestConfiguration& config) {
     GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
   }
+
+  f->ShutdownServer();
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

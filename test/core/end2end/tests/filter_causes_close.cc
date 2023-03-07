@@ -135,6 +135,8 @@ static void test_request(const CoreTestConfiguration& config) {
   GPR_ASSERT(0 ==
              grpc_slice_str_cmp(details, "Failure that's not preventable."));
 
+  f->ShutdownServer();
+
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
