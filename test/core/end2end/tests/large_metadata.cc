@@ -265,7 +265,6 @@ static void test_request_with_large_metadata_between_soft_and_hard_limits(
       grpc_slice actual_error =
           grpc_slice_split_head(&client_details, strlen(expected_error));
       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-
       grpc_slice_unref(actual_error);
     } else {
       GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -307,6 +306,7 @@ static void test_request_with_large_metadata_above_hard_limit(
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
     grpc_slice_unref(client_details);
   }
 
@@ -355,6 +355,7 @@ static void test_request_with_large_metadata_soft_limit_above_hard_limit(
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
     grpc_slice_unref(client_details);
   }
 
@@ -401,7 +402,6 @@ static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
       grpc_slice actual_error =
           grpc_slice_split_head(&client_details, strlen(expected_error));
       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-
       grpc_slice_unref(actual_error);
     } else {
       GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -423,6 +423,7 @@ static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
     grpc_slice_unref(client_details);
   }
 
@@ -467,6 +468,7 @@ static void test_request_with_large_metadata_hard_limit_below_default_hard(
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
     grpc_slice_unref(client_details);
   }
 
@@ -514,7 +516,6 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
       grpc_slice actual_error =
           grpc_slice_split_head(&client_details, strlen(expected_error));
       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-
       grpc_slice_unref(actual_error);
     } else {
       GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -536,6 +537,7 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
     grpc_slice_unref(client_details);
   }
 
