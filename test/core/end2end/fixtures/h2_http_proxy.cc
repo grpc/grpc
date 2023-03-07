@@ -40,7 +40,11 @@ class HttpProxyFilter : public CoreTestFixture {
  public:
   explicit HttpProxyFilter(const grpc_core::ChannelArgs& client_args)
       : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
-  ~HttpProxyFilter() override { grpc_end2end_http_proxy_destroy(proxy_); }
+  ~HttpProxyFilter() override {
+    ShutdownClient();
+    ShutdownServer();
+    grpc_end2end_http_proxy_destroy(proxy_);
+  }
 
  private:
   grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
@@ -54,17 +58,18 @@ class HttpProxyFilter : public CoreTestFixture {
     grpc_server_start(server);
     return server;
   }
+
   grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) override {
     // If testing for proxy auth, add credentials to proxy uri
-    const char* proxy_auth_str = grpc_channel_args_find_string(
-        args.ToC().get(), GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
+    absl::optional<std::string> proxy_auth_str =
+        args.GetOwnedString(GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
     std::string proxy_uri;
-    if (proxy_auth_str == nullptr) {
+    if (!proxy_auth_str.has_value()) {
       proxy_uri = absl::StrFormat(
           "http://%s", grpc_end2end_http_proxy_get_proxy_name(proxy_));
     } else {
       proxy_uri =
-          absl::StrFormat("http://%s@%s", proxy_auth_str,
+          absl::StrFormat("http://%s@%s", proxy_auth_str->c_str(),
                           grpc_end2end_http_proxy_get_proxy_name(proxy_));
     }
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();

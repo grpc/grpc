@@ -166,6 +166,11 @@ class TlsFixture : public SecureFixture {
   }
 
  private:
+  grpc_core::ChannelArgs MutateClientArgs(
+      grpc_core::ChannelArgs args) override {
+    return args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr");
+  }
+
   grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs& args) override {
     grpc_tls_credentials_options* options =
@@ -187,6 +192,7 @@ class TlsFixture : public SecureFixture {
     grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
     return creds;
   }
+
   grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs& args) override {
     grpc_tls_credentials_options* options =
