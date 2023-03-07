@@ -2210,6 +2210,7 @@ grpc_cc_library(
     name = "ares_driver",
     srcs = [
         "lib/event_engine/ares_driver.cc",
+        "lib/event_engine/nameser.h",
     ],
     hdrs = [
         "lib/event_engine/ares_driver.h",
@@ -2217,6 +2218,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/strings",
         "absl/strings:str_format",
         "absl/synchronization",
         "absl/types:optional",
@@ -2235,6 +2237,7 @@ grpc_cc_library(
     deps = [
         "error",
         "examine_stack",
+        "status_helper",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -2242,6 +2245,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
     ],
 )
 

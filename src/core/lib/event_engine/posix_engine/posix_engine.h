@@ -158,7 +158,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
    private:
     absl::Mutex mu_;
-    absl::flat_hash_set<GrpcAresRequest*> inflight_requests_;
+    absl::flat_hash_set<GrpcAresRequest*> inflight_requests_
+        ABSL_GUARDED_BY(mu_);
     const ResolverOptions options_;
     PosixEnginePollerManager* poller_manager_;
     PosixEventEngine* event_engine_;

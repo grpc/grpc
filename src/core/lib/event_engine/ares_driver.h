@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstdint>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -51,6 +52,8 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef _WIN32
+// TODO(yijiem): this will not be a WinSocket but a wrapper type (virtual
+// socket) which bridges the IOCP model with c-ares socket operations.
 using PollerHandle = std::unique_ptr<WinSocket>;
 #else
 using PollerHandle = EventHandle*;
@@ -210,6 +213,7 @@ class GrpcAresRequest
   uint16_t port_ = 0;
   const EventEngine::Duration timeout_;
   struct ares_addr_port_node dns_server_addr_ ABSL_GUARDED_BY(mu_);
+  size_t pending_queries_ ABSL_GUARDED_BY(mu_) = 0;
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
   absl::Status error_ = absl::OkStatus();
   RegisterSocketWithPollerCallback register_socket_with_poller_cb_;
@@ -219,9 +223,9 @@ class GrpcAresRequest
   EventEngine* event_engine_;
 };
 
-using OnResolveCallback = absl::AnyInvocable<void(
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>,
-    GrpcAresRequest*)>;
+template <typename T>
+using OnResolveCallback =
+    absl::AnyInvocable<void(absl::StatusOr<std::vector<T>>, intptr_t)>;
 
 // A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
 // lookup
@@ -229,19 +233,20 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
  public:
   explicit GrpcAresHostnameRequest(
       absl::string_view name, absl::string_view default_port,
-      EventEngine::Duration timeout,
+      EventEngine::Duration timeout, bool is_balancer,
       RegisterSocketWithPollerCallback register_socket_with_poller_cb,
-      OnResolveCallback on_resolve, EventEngine* event_engine)
+      OnResolveCallback<EventEngine::ResolvedAddress> on_resolve,
+      EventEngine* event_engine)
       : GrpcAresRequest(name, default_port, timeout,
                         std::move(register_socket_with_poller_cb),
                         event_engine),
+        is_balancer_(is_balancer),
         on_resolve_(std::move(on_resolve)) {}
 
   bool is_balancer() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return is_balancer_;
   }
   const char* qtype() const { return "Unimplemented"; }
-
   void Start() ABSL_LOCKS_EXCLUDED(mu_) override;
   void OnResolve(
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
@@ -250,23 +255,36 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
  private:
   ~GrpcAresHostnameRequest() override;
 
-  size_t pending_queries_ = 0;
   std::vector<EventEngine::ResolvedAddress> result_;
   /// is it a grpclb address
-  bool is_balancer_ ABSL_GUARDED_BY(mu_) = false;
-  OnResolveCallback on_resolve_ ABSL_GUARDED_BY(mu_);
+  const bool is_balancer_ ABSL_GUARDED_BY(mu_);
+  OnResolveCallback<EventEngine::ResolvedAddress> on_resolve_
+      ABSL_GUARDED_BY(mu_);
 };
 
 class GrpcAresSRVRequest : public GrpcAresRequest {
  public:
-  explicit GrpcAresSRVRequest();
-
+  explicit GrpcAresSRVRequest(
+      absl::string_view name, EventEngine::Duration timeout,
+      RegisterSocketWithPollerCallback register_socket_with_poller_cb,
+      OnResolveCallback<EventEngine::DNSResolver::SRVRecord> on_resolve,
+      EventEngine* event_engine)
+      : GrpcAresRequest(name, absl::nullopt, timeout,
+                        std::move(register_socket_with_poller_cb),
+                        event_engine),
+        on_resolve_(std::move(on_resolve)) {}
+  const char* service_name() { return service_name_.c_str(); }
   void Start() ABSL_LOCKS_EXCLUDED(mu_) override;
+  void OnResolve(
+      absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
+  std::string service_name_;
+  OnResolveCallback<EventEngine::DNSResolver::SRVRecord> on_resolve_;
 };
 
-class GrpcAresTXTRequest : public GrpcAresRequest {};
+// class GrpcAresTXTRequest : public GrpcAresRequest {};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -31,6 +31,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
@@ -38,8 +39,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef _WIN32
 #else
@@ -156,6 +155,43 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     }
   }
   request->OnResolve(std::move(resolved_addresses));
+}
+
+void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
+                              unsigned char* abuf,
+                              int alen) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  // This callback is invoked from the c-ares library, so disable thread safety
+  // analysis. Note that we are guaranteed to be holding r->mu, though.
+  GrpcAresSRVRequest* r = static_cast<GrpcAresSRVRequest*>(arg);
+  if (status != ARES_SUCCESS) {
+    std::string error_msg = absl::StrFormat(
+        "C-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
+        r->service_name(), ares_strerror(status));
+    GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
+                         error_msg.c_str());
+    grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
+    // r->error = grpc_error_add_child(error, r->error);
+    r->OnResolve(error);
+    return;
+  }
+  GRPC_CARES_TRACE_LOG(
+      "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
+      r->service_name());
+  struct ares_srv_reply* reply = nullptr;
+  const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
+  GRPC_CARES_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r, parse_status);
+  std::vector<EventEngine::DNSResolver::SRVRecord> result;
+  if (parse_status == ARES_SUCCESS) {
+    for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
+         srv_it = srv_it->next) {
+      result.emplace_back(srv_it->host, srv_it->port, srv_it->priority,
+                          srv_it->weight);
+    }
+  }
+  if (reply != nullptr) {
+    ares_free_data(reply);
+  }
+  r->OnResolve(std::move(result));
 }
 
 }  // namespace
@@ -453,12 +489,11 @@ void GrpcAresHostnameRequest::OnResolve(
     // TODO(yijiem): cancel timers here
     if (error_.ok()) {
       // TODO(yijiem): sort the addresses
-      event_engine_->Run(
-          [on_resolve = std::move(on_resolve_), result = std::move(result_),
-           request = static_cast<GrpcAresRequest*>(this)]() mutable {
-            on_resolve(std::move(result),
-                       static_cast<GrpcAresRequest*>(request));
-          });
+      event_engine_->Run([on_resolve = std::move(on_resolve_),
+                          result = std::move(result_),
+                          token = reinterpret_cast<intptr_t>(this)]() mutable {
+        on_resolve(std::move(result), token);
+      });
     } else {
       // The reason that we are using EventEngine::Run() here is that we are
       // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
@@ -469,24 +504,39 @@ void GrpcAresHostnameRequest::OnResolve(
       // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
       // warning though it might be false positive.
       //
-      // Another way might work is to unlock and then call on_resolve_ provided
-      // that on_resolve_ will not change after object construction.
-      event_engine_->Run(
-          [on_resolve = std::move(on_resolve_), error = std::move(error_),
-           request = static_cast<GrpcAresRequest*>(this)]() mutable {
-            on_resolve(std::move(error),
-                       static_cast<GrpcAresRequest*>(request));
-          });
+      // Another way might work is to std::move away on_resolve_, result_ or
+      // error_ under lock, then unlock and then call on_resolve.
+      event_engine_->Run([on_resolve = std::move(on_resolve_),
+                          error = std::move(error_),
+                          token = reinterpret_cast<intptr_t>(this)]() mutable {
+        on_resolve(std::move(error), token);
+      });
     }
     Unref(DEBUG_LOCATION, "shutting down");
   }
 }
 
+// TODO(yijiem): Don't query for SRV records if the target is "localhost"
 void GrpcAresSRVRequest::Start() {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
-  // ares_query(channel_, service_name.c_str(), ns_c_in, ns_t_srv,
-  //            on_srv_query_done_locked, static_cast<void*>(this));
+  // Query the SRV record
+  service_name_ = absl::StrCat("_grpclb._tcp.", host_);
+  ares_query(channel_, service_name_.c_str(), ns_c_in, ns_t_srv,
+             on_srv_query_done_locked, static_cast<void*>(this));
+  Work();
+}
+
+void GrpcAresSRVRequest::OnResolve(
+    absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> result) {
+  shutting_down_ = true;
+  // TODO(yijiem): cancel timers here
+  event_engine_->Run([on_resolve = std::move(on_resolve_),
+                      result = std::move(result),
+                      token = reinterpret_cast<intptr_t>(this)]() mutable {
+    on_resolve(std::move(result), token);
+  });
+  Unref(DEBUG_LOCATION, "shutting down");
 }
 
 }  // namespace experimental

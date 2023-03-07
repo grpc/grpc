@@ -304,7 +304,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     };
     /// DNS SRV record type.
     struct SRVRecord {
+      explicit SRVRecord(const char* host, int port, int priority, int weight)
+          : host(host), port(port), priority(priority), weight(weight) {}
       std::string host;
+      /// in host order
       int port = 0;
       int priority = 0;
       int weight = 0;
