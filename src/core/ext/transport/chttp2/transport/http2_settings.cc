@@ -25,7 +25,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-const uint16_t grpc_setting_id_to_wire_id[] = {1, 2, 3, 4, 5, 6, 65027, 65028};
+const uint16_t grpc_setting_id_to_wire_id[] = {1, 2,     3,     4,    5,
+                                               6, 65027, 65028, 65029};
 
 bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id* out) {
   uint32_t i = wire_id - 1;
@@ -61,4 +62,5 @@ const grpc_chttp2_setting_parameters
          GRPC_CHTTP2_CLAMP_INVALID_VALUE, GRPC_HTTP2_PROTOCOL_ERROR},
         {"GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE", 0u, 16384u, 2147483647u,
          GRPC_CHTTP2_CLAMP_INVALID_VALUE, GRPC_HTTP2_PROTOCOL_ERROR},
-};
+        {"GRPC_MAX_HEADER_LIST_SIZE_SOFT_LIMIT", 16777216u, 0u, 16777216u,
+         GRPC_CHTTP2_CLAMP_INVALID_VALUE, GRPC_HTTP2_PROTOCOL_ERROR}};

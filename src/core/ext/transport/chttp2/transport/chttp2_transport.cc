@@ -103,7 +103,8 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
-#define DEFAULT_MAX_HEADER_LIST_SIZE (8 * 1024)
+#define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
+#define DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT (8 * 1024)
 
 #define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
 #define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
@@ -394,8 +395,14 @@ static void read_channel_args(grpc_chttp2_transport* t,
                        0,
                        INT32_MAX,
                        {true, true}},
-                      {GRPC_ARG_MAX_METADATA_SIZE,
+                      {GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE,
                        GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+                       -1,
+                       0,
+                       INT32_MAX,
+                       {true, true}},
+                      {GRPC_ARG_MAX_METADATA_SIZE,
+                       GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT,
                        -1,
                        0,
                        INT32_MAX,
@@ -427,6 +434,19 @@ static void read_channel_args(grpc_chttp2_transport* t,
       if (value >= 0) {
         queue_setting_update(t, setting.setting_id,
                              grpc_core::Clamp(value, setting.min, setting.max));
+      } else if (setting.setting_id ==
+                 GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE) {
+        // Set value to 2 * soft limit if this is larger than
+        // `DEFAULT_MAX_HEADER_LIST_SIZE` and
+        // `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` is not set.
+        const int value = channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE)
+                              .value_or(setting.default_value) *
+                          2;
+        if (value > DEFAULT_MAX_HEADER_LIST_SIZE) {
+          queue_setting_update(
+              t, setting.setting_id,
+              grpc_core::Clamp(value, setting.min, setting.max));
+        }
       }
     } else if (channel_args.Contains(setting.channel_arg_name)) {
       gpr_log(GPR_DEBUG, "%s is not available on %s",
@@ -562,6 +582,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   }
   queue_setting_update(this, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        DEFAULT_MAX_HEADER_LIST_SIZE);
+  queue_setting_update(this,
+                       GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT,
+                       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT);
   queue_setting_update(this,
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
