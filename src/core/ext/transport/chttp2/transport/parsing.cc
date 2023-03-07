@@ -476,6 +476,10 @@ static grpc_error_handle init_header_skip_frame_parser(
       "header", grpc_chttp2_header_parser_parse, &t->hpack_parser};
   t->hpack_parser.BeginFrame(
       nullptr,
+      /*metadata_size_soft_limit=*/
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT],
+      /*metadata_size_hard_limit=*/
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
       hpack_boundary_type(t, is_eoh), priority_type,
@@ -692,6 +696,10 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
   }
   t->hpack_parser.BeginFrame(
       incoming_metadata_buffer,
+      /*metadata_size_soft_limit=*/
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT],
+      /*metadata_size_hard_limit=*/
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
       hpack_boundary_type(t, is_eoh), priority_type,
