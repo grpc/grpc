@@ -26,6 +26,8 @@
 bool squelch = true;
 bool leak_check = true;
 
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
@@ -61,8 +63,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
 
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_call(server, &call1, &call_details1,
-                                        &request_metadata1, cq, cq,
-                                        grpc_core::CqVerifier::tag(1)));
+                                        &request_metadata1, cq, cq, tag(1)));
     requested_calls++;
 
     grpc_event ev;
@@ -76,7 +77,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         case GRPC_QUEUE_SHUTDOWN:
           break;
         case GRPC_OP_COMPLETE:
-          if (ev.tag == grpc_core::CqVerifier::tag(1)) {
+          if (ev.tag == tag(1)) {
             requested_calls--;
             // TODO(ctiller): keep reading that call!
           }
@@ -89,8 +90,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     if (call1 != nullptr) grpc_call_unref(call1);
     grpc_call_details_destroy(&call_details1);
     grpc_metadata_array_destroy(&request_metadata1);
-    grpc_server_shutdown_and_notify(server, cq,
-                                    grpc_core::CqVerifier::tag(0xdead));
+    grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
     grpc_core::Timestamp deadline =
         grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(5);

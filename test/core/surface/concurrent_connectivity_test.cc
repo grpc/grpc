@@ -120,7 +120,7 @@ void server_thread(void* vargs) {
       grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
   ev = grpc_completion_queue_next(args->cq, deadline, nullptr);
   ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
-  ASSERT_EQ(ev.tag, grpc_core::CqVerifier::tag(0xd1e));
+  ASSERT_EQ(ev.tag, tag(0xd1e));
 }
 
 static void on_connect(void* vargs, grpc_endpoint* tcp,
@@ -231,8 +231,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     for (auto& th : threads) {
       th.Join();
     }
-    grpc_server_shutdown_and_notify(args.server, args.cq,
-                                    grpc_core::CqVerifier::tag(0xd1e));
+    grpc_server_shutdown_and_notify(args.server, args.cq, tag(0xd1e));
 
     server2.Join();
     grpc_server_destroy(args.server);

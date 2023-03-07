@@ -139,12 +139,10 @@ class NonblockingTest : public ::testing::Test {
           stub_->PrepareAsyncEcho(&cli_ctx, send_request, cq_.get()));
 
       response_reader->StartCall();
-      response_reader->Finish(&recv_response, &recv_status,
-                              grpc_core::CqVerifier::tag(4));
+      response_reader->Finish(&recv_response, &recv_status, tag(4));
 
       service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
-                            cq_.get(), cq_.get(),
-                            grpc_core::CqVerifier::tag(2));
+                            cq_.get(), cq_.get(), tag(2));
 
       void* got_tag;
       bool ok;
@@ -154,8 +152,7 @@ class NonblockingTest : public ::testing::Test {
       EXPECT_EQ(send_request.message(), recv_request.message());
 
       send_response.set_message(recv_request.message());
-      response_writer.Finish(send_response, Status::OK,
-                             grpc_core::CqVerifier::tag(3));
+      response_writer.Finish(send_response, Status::OK, tag(3));
 
       int tagsum = 0;
       int tagprod = 1;

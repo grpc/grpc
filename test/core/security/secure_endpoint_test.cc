@@ -166,10 +166,9 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   }
 
   if (leftover_nslices == 0) {
-    f.client();
-    _ep = grpc_secure_endpoint_create(fake_read_protector,
-                                      fake_read_zero_copy_protector, tcp.client,
-                                      nullptr, &args, 0);
+    f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
+                                              fake_read_zero_copy_protector,
+                                              tcp.client, nullptr, &args, 0);
   } else {
     unsigned i;
     tsi_result result;
@@ -211,18 +210,16 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     encrypted_leftover = grpc_slice_from_copied_buffer(
         reinterpret_cast<const char*>(encrypted_buffer),
         total_buffer_size - buffer_size);
-    f.client();
-    _ep = grpc_secure_endpoint_create(fake_read_protector,
-                                      fake_read_zero_copy_protector, tcp.client,
-                                      &encrypted_leftover, &args, 1);
+    f.client_ep = grpc_secure_endpoint_create(
+        fake_read_protector, fake_read_zero_copy_protector, tcp.client,
+        &encrypted_leftover, &args, 1);
     grpc_slice_unref(encrypted_leftover);
     gpr_free(encrypted_buffer);
   }
 
-  f.server();
-  _ep = grpc_secure_endpoint_create(fake_write_protector,
-                                    fake_write_zero_copy_protector, tcp.server,
-                                    nullptr, &args, 0);
+  f.server_ep = grpc_secure_endpoint_create(fake_write_protector,
+                                            fake_write_zero_copy_protector,
+                                            tcp.server, nullptr, &args, 0);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
   return f;
@@ -288,8 +285,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
 
   grpc_slice_buffer_init(&incoming);
   GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(f.client() _ep, &incoming, &done_closure,
-                     /*urgent=*/false,
+  grpc_endpoint_read(f.client_ep, &incoming, &done_closure, /*urgent=*/false,
                      /*min_progress_size=*/1);
 
   grpc_core::ExecCtx::Get()->Flush();
@@ -297,12 +293,10 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   ASSERT_EQ(incoming.count, 1);
   ASSERT_TRUE(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(f.client() _ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
-  grpc_endpoint_shutdown(f.server() _ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
-  grpc_endpoint_destroy(f->client() _ep);
-  grpc_endpoint_destroy(f->server() _ep);
+  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("test_leftover end"));
+  grpc_endpoint_shutdown(f.server_ep, GRPC_ERROR_CREATE("test_leftover end"));
+  grpc_endpoint_destroy(f.client_ep);
+  grpc_endpoint_destroy(f.server_ep);
 
   grpc_slice_unref(s);
   grpc_slice_buffer_destroy(&incoming);

@@ -105,8 +105,6 @@ class TransportCounter {
 
 int TransportCounter::count_ = 0;
 
-void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 // Perform a simple RPC where the server cancels the request with
 // grpc_call_cancel_with_status
 grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,

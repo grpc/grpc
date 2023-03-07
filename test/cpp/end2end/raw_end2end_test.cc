@@ -237,27 +237,26 @@ TEST_F(RawEnd2EndTest, RawServerClientStreaming) {
   Verifier().Expect(2, true).Expect(1, true).Verify(cq_.get());
 
   cli_stream->Write(send_request_, tag(3));
-  srv_stream.Read(&recv_request_buffer_, Verifier::tag(4));
+  srv_stream.Read(&recv_request_buffer_, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
   EXPECT_EQ(send_request_.message(), recv_request_.message());
 
-  cli_stream->Write(send_request_, grpc_core::CqVerifier::tag(5));
-  srv_stream.Read(&recv_request_buffer_, grpc_core::CqVerifier::tag(6));
+  cli_stream->Write(send_request_, tag(5));
+  srv_stream.Read(&recv_request_buffer_, tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
 
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
   EXPECT_EQ(send_request_.message(), recv_request_.message());
-  cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
-  srv_stream.Read(&recv_request_buffer_, grpc_core::CqVerifier::tag(8));
+  cli_stream->WritesDone(tag(7));
+  srv_stream.Read(&recv_request_buffer_, tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
   send_response_.set_message(recv_request_.message());
   SerializeToByteBufferInPlace(&send_response_, &send_response_buffer_);
-  srv_stream.Finish(send_response_buffer_, Status::OK,
-                    grpc_core::CqVerifier::tag(9));
-  cli_stream->Finish(&recv_status_, grpc_core::CqVerifier::tag(10));
+  srv_stream.Finish(send_response_buffer_, Status::OK, tag(9));
+  cli_stream->Finish(&recv_status_, tag(10));
   Verifier().Expect(9, true).Expect(10, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response_.message(), recv_response_.message());
@@ -275,12 +274,10 @@ TEST_F(RawEnd2EndTest, RawServerServerStreaming) {
 
   send_request_.set_message("hello server streaming");
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
-      stub_->AsyncResponseStream(&cli_ctx_, send_request_, cq_.get(),
-                                 grpc_core::CqVerifier::tag(1)));
+      stub_->AsyncResponseStream(&cli_ctx_, send_request_, cq_.get(), tag(1)));
 
   service->RequestResponseStream(&srv_ctx_, &recv_request_buffer_, &srv_stream,
-                                 cq_.get(), cq_.get(),
-                                 grpc_core::CqVerifier::tag(2));
+                                 cq_.get(), cq_.get(), tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
@@ -288,21 +285,21 @@ TEST_F(RawEnd2EndTest, RawServerServerStreaming) {
 
   send_response_.set_message(recv_request_.message());
   SerializeToByteBufferInPlace(&send_response_, &send_response_buffer_);
-  srv_stream.Write(send_response_buffer_, grpc_core::CqVerifier::tag(3));
-  cli_stream->Read(&recv_response_, grpc_core::CqVerifier::tag(4));
+  srv_stream.Write(send_response_buffer_, tag(3));
+  cli_stream->Read(&recv_response_, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   EXPECT_EQ(send_response_.message(), recv_response_.message());
 
-  srv_stream.Write(send_response_buffer_, grpc_core::CqVerifier::tag(5));
-  cli_stream->Read(&recv_response_, grpc_core::CqVerifier::tag(6));
+  srv_stream.Write(send_response_buffer_, tag(5));
+  cli_stream->Read(&recv_response_, tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
   EXPECT_EQ(send_response_.message(), recv_response_.message());
 
-  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
-  cli_stream->Read(&recv_response_, grpc_core::CqVerifier::tag(8));
+  srv_stream.Finish(Status::OK, tag(7));
+  cli_stream->Read(&recv_response_, tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
-  cli_stream->Finish(&recv_status_, grpc_core::CqVerifier::tag(9));
+  cli_stream->Finish(&recv_status_, tag(9));
   Verifier().Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status_.ok());
@@ -320,33 +317,32 @@ TEST_F(RawEnd2EndTest, RawServerBidiStreaming) {
 
   send_request_.set_message("hello bidi streaming");
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(stub_->AsyncBidiStream(&cli_ctx_, cq_.get(),
-                                        grpc_core::CqVerifier::tag(1)));
+      cli_stream(stub_->AsyncBidiStream(&cli_ctx_, cq_.get(), tag(1)));
 
   service->RequestBidiStream(&srv_ctx_, &srv_stream, cq_.get(), cq_.get(),
-                             grpc_core::CqVerifier::tag(2));
+                             tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
-  cli_stream->Write(send_request_, grpc_core::CqVerifier::tag(3));
-  srv_stream.Read(&recv_request_buffer_, grpc_core::CqVerifier::tag(4));
+  cli_stream->Write(send_request_, tag(3));
+  srv_stream.Read(&recv_request_buffer_, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
   EXPECT_EQ(send_request_.message(), recv_request_.message());
 
   send_response_.set_message(recv_request_.message());
   SerializeToByteBufferInPlace(&send_response_, &send_response_buffer_);
-  srv_stream.Write(send_response_buffer_, grpc_core::CqVerifier::tag(5));
-  cli_stream->Read(&recv_response_, grpc_core::CqVerifier::tag(6));
+  srv_stream.Write(send_response_buffer_, tag(5));
+  cli_stream->Read(&recv_response_, tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
   EXPECT_EQ(send_response_.message(), recv_response_.message());
 
-  cli_stream->WritesDone(grpc_core::CqVerifier::tag(7));
-  srv_stream.Read(&recv_request_buffer_, grpc_core::CqVerifier::tag(8));
+  cli_stream->WritesDone(tag(7));
+  srv_stream.Read(&recv_request_buffer_, tag(8));
   Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
 
-  srv_stream.Finish(Status::OK, grpc_core::CqVerifier::tag(9));
-  cli_stream->Finish(&recv_status_, grpc_core::CqVerifier::tag(10));
+  srv_stream.Finish(Status::OK, tag(9));
+  cli_stream->Finish(&recv_status_, tag(10));
   Verifier().Expect(9, true).Expect(10, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status_.ok());

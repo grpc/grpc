@@ -687,22 +687,20 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  f.client();
-  _ep = grpc_tcp_create(
+  f.client_ep = grpc_tcp_create(
       grpc_fd_create(sv[0], "fixture:client", false),
       TcpOptionsFromEndpointConfig(
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(
               grpc_core::ChannelArgs::FromC(&args))),
       "test");
-  f.server();
-  _ep = grpc_tcp_create(
+  f.server_ep = grpc_tcp_create(
       grpc_fd_create(sv[1], "fixture:server", false),
       TcpOptionsFromEndpointConfig(
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(
               grpc_core::ChannelArgs::FromC(&args))),
       "test");
-  grpc_endpoint_add_to_pollset(f.client() _ep, g_pollset);
-  grpc_endpoint_add_to_pollset(f.server() _ep, g_pollset);
+  grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
+  grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 

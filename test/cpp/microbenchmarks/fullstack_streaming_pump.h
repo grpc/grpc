@@ -52,12 +52,11 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     ServerContext svr_ctx;
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
     service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                              fixture->cq(), grpc_core::CqVerifier::tag(0));
+                              fixture->cq(), tag(0));
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
     ClientContext cli_ctx;
-    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(),
-                                            grpc_core::CqVerifier::tag(1));
+    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
     void* t;
     bool ok;
@@ -68,21 +67,21 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
-    response_rw.Read(&recv_request, grpc_core::CqVerifier::tag(0));
+    response_rw.Read(&recv_request, tag(0));
     for (auto _ : state) {
-      request_rw->Write(send_request, grpc_core::CqVerifier::tag(1));
+      request_rw->Write(send_request, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        if (t == grpc_core::CqVerifier::tag(0)) {
-          response_rw.Read(&recv_request, grpc_core::CqVerifier::tag(0));
-        } else if (t == grpc_core::CqVerifier::tag(1)) {
+        if (t == tag(0)) {
+          response_rw.Read(&recv_request, tag(0));
+        } else if (t == tag(1)) {
           break;
         } else {
           grpc_core::Crash("unreachable");
         }
       }
     }
-    request_rw->WritesDone(grpc_core::CqVerifier::tag(1));
+    request_rw->WritesDone(tag(1));
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -90,9 +89,9 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
-    response_rw.Finish(Status::OK, grpc_core::CqVerifier::tag(0));
+    response_rw.Finish(Status::OK, tag(0));
     Status final_status;
-    request_rw->Finish(&final_status, grpc_core::CqVerifier::tag(1));
+    request_rw->Finish(&final_status, tag(1));
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -120,12 +119,11 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     ServerContext svr_ctx;
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
     service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                              fixture->cq(), grpc_core::CqVerifier::tag(0));
+                              fixture->cq(), tag(0));
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
     ClientContext cli_ctx;
-    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(),
-                                            grpc_core::CqVerifier::tag(1));
+    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
     void* t;
     bool ok;
@@ -136,21 +134,21 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
-    request_rw->Read(&recv_response, grpc_core::CqVerifier::tag(0));
+    request_rw->Read(&recv_response, tag(0));
     for (auto _ : state) {
-      response_rw.Write(send_response, grpc_core::CqVerifier::tag(1));
+      response_rw.Write(send_response, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        if (t == grpc_core::CqVerifier::tag(0)) {
-          request_rw->Read(&recv_response, grpc_core::CqVerifier::tag(0));
-        } else if (t == grpc_core::CqVerifier::tag(1)) {
+        if (t == tag(0)) {
+          request_rw->Read(&recv_response, tag(0));
+        } else if (t == tag(1)) {
           break;
         } else {
           grpc_core::Crash("unreachable");
         }
       }
     }
-    response_rw.Finish(Status::OK, grpc_core::CqVerifier::tag(1));
+    response_rw.Finish(Status::OK, tag(1));
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));

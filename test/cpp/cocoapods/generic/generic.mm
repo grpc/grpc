@@ -180,20 +180,19 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
     }
 
     std::unique_ptr<GenericClientAsyncReaderWriter> call =
-        generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, grpc_core::CqVerifier::tag(1));
+        generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
     [self client_ok:1];
     Slice send_slice = Slice("hello world", 11);
     std::unique_ptr<ByteBuffer> send_buffer =
         std::unique_ptr<ByteBuffer>(new ByteBuffer(&send_slice, 1));
-    call->Write(*send_buffer, grpc_core::CqVerifier::tag(2));
+    call->Write(*send_buffer, tag(2));
     // Send ByteBuffer can be destroyed after calling Write.
     send_buffer.reset();
     [self client_ok:2];
-    call->WritesDone(grpc_core::CqVerifier::tag(3));
+    call->WritesDone(tag(3));
     [self client_ok:3];
 
-    generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(), srv_cq_.get(),
-                                 grpc_core::CqVerifier::tag(4));
+    generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(), srv_cq_.get(), tag(4));
 
     [self verify_ok:srv_cq_.get() i:4 expect_ok:true];
     XCTAssertEqual(server_host_, srv_ctx.host().substr(0, server_host_.length()));
@@ -205,24 +204,24 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
     }
 
     ByteBuffer recv_buffer;
-    stream.Read(&recv_buffer, grpc_core::CqVerifier::tag(5));
+    stream.Read(&recv_buffer, tag(5));
     [self server_ok:5];
     XCTAssertTrue(byte_buffer_eq_string(&recv_buffer, "hello world"));
 
     send_buffer = std::unique_ptr<ByteBuffer>(new ByteBuffer(recv_buffer));
-    stream.Write(*send_buffer, grpc_core::CqVerifier::tag(6));
+    stream.Write(*send_buffer, tag(6));
     send_buffer.reset();
     [self server_ok:6];
 
-    stream.Finish(Status::OK, grpc_core::CqVerifier::tag(7));
+    stream.Finish(Status::OK, tag(7));
     [self server_ok:7];
 
     recv_buffer.Clear();
-    call->Read(&recv_buffer, grpc_core::CqVerifier::tag(8));
+    call->Read(&recv_buffer, tag(8));
     [self client_ok:8];
     XCTAssertTrue(byte_buffer_eq_string(&recv_buffer, "hello world"));
 
-    call->Finish(&recv_status, grpc_core::CqVerifier::tag(9));
+    call->Finish(&recv_status, tag(9));
     [self client_ok:9];
 
     XCTAssertTrue(recv_status.ok());

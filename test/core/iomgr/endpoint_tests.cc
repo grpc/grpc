@@ -230,10 +230,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
             num_bytes, slice_size);
   }
 
-  state.read_ep = f.client();
-  _ep;
-  state.write_ep = f.server();
-  _ep;
+  state.read_ep = f.client_ep;
+  state.write_ep = f.server_ep;
   state.target_bytes = num_bytes;
   state.bytes_read = 0;
   state.current_write_size = write_size;
@@ -322,32 +320,32 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_slice_buffer_init(&slice_buffer);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_endpoint_add_to_pollset(f.client() _ep, g_pollset);
-  grpc_endpoint_read(f.client() _ep, &slice_buffer,
+  grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
+  grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx),
                      /*urgent=*/false, /*min_progress_size=*/1);
   wait_for_fail_count(&fail_count, 0);
-  grpc_endpoint_shutdown(f.client() _ep, GRPC_ERROR_CREATE("Test Shutdown"));
+  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("Test Shutdown"));
   wait_for_fail_count(&fail_count, 1);
-  grpc_endpoint_read(f.client() _ep, &slice_buffer,
+  grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx),
                      /*urgent=*/false, /*min_progress_size=*/1);
   wait_for_fail_count(&fail_count, 2);
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
-  grpc_endpoint_write(f->client() _ep, &slice_buffer,
+  grpc_endpoint_write(f.client_ep, &slice_buffer,
                       GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                           grpc_schedule_on_exec_ctx),
                       nullptr, /*max_frame_size=*/INT_MAX);
   wait_for_fail_count(&fail_count, 3);
-  grpc_endpoint_shutdown(f->client() _ep, GRPC_ERROR_CREATE("Test Shutdown"));
+  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("Test Shutdown"));
   wait_for_fail_count(&fail_count, 3);
 
   grpc_slice_buffer_destroy(&slice_buffer);
 
-  grpc_endpoint_destroy(f->client() _ep);
-  grpc_endpoint_destroy(f->server() _ep);
+  grpc_endpoint_destroy(f.client_ep);
+  grpc_endpoint_destroy(f.server_ep);
 }
 
 void grpc_endpoint_tests(grpc_endpoint_test_config config,
