@@ -189,402 +189,379 @@ static void test_request_with_large_metadata_under_soft_limit(
     GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
     grpc_slice_unref(client_details);
   }
-
-  // end_test(&f);
-  // config.tear_down_data(&f);
 }
 
-// // Server responds with metadata between soft and hard limits of what client
-// // accepts. Some requests should be rejected.
-// static void test_request_with_large_metadata_between_soft_and_hard_limits(
-//     grpc_end2end_test_config config) {
-//   const size_t soft_limit = 32 * 1024;
-//   const size_t hard_limit = 45 * 1024;
-//   const size_t metadata_size = (soft_limit + hard_limit) / 2;
-//   grpc_arg arg[] = {
-//       grpc_channel_arg_integer_create(
-//           const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024),
-//       grpc_channel_arg_integer_create(
-//           const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
-//           hard_limit + 1024)};
-//   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-//   grpc_end2end_test_fixture f = begin_test(
-//       config, "test_request_with_large_metadata_between_soft_and_hard_limits",
-//       &args, &args);
+// Server responds with metadata between soft and hard limits of what client
+// accepts. Some requests should be rejected.
+static void test_request_with_large_metadata_between_soft_and_hard_limits(
+    const CoreTestConfiguration& config) {
+  const size_t soft_limit = 32 * 1024;
+  const size_t hard_limit = 45 * 1024;
+  const size_t metadata_size = (soft_limit + hard_limit) / 2;
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
+          hard_limit + 1024)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+  auto f = begin_test(
+      config, "test_request_with_large_metadata_between_soft_and_hard_limits",
+      &args, &args);
 
-//   int num_requests_rejected = 0;
-//   for (int i = 0; i < 100; i++) {
-//     grpc_slice client_details;
-//     auto status = send_metadata(f, metadata_size, &client_details);
-//     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
-//       num_requests_rejected++;
-//       const char* expected_error =
-//           "received initial metadata size exceeds soft limit";
-//       grpc_slice actual_error =
-//           grpc_slice_split_head(&client_details, strlen(expected_error));
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//       grpc_slice_unref(actual_error);
-//     } else {
-//       GPR_ASSERT(status == GRPC_STATUS_OK);
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     }
-//     grpc_slice_unref(client_details);
-//   }
+  int num_requests_rejected = 0;
+  for (int i = 0; i < 100; i++) {
+    grpc_slice client_details;
+    auto status = send_metadata(f.get(), metadata_size, &client_details);
+    if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
+      num_requests_rejected++;
+      const char* expected_error =
+          "received initial metadata size exceeds soft limit";
+      grpc_slice actual_error =
+          grpc_slice_split_head(&client_details, strlen(expected_error));
+      GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+      grpc_slice_unref(actual_error);
+    } else {
+      GPR_ASSERT(status == GRPC_STATUS_OK);
+      GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    }
+    grpc_slice_unref(client_details);
+  }
 
-//   // Check that some requests were rejected.
-//   GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
-//   end_test(&f);
-//   config.tear_down_data(&f);
-// }
+  // Check that some requests were rejected.
+  GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
+}
 
-// // Server responds with metadata above hard limit of what the client accepts.
-// // All requests should be rejected.
-// static void test_request_with_large_metadata_above_hard_limit(
-//     grpc_end2end_test_config config) {
-//   const size_t soft_limit = 32 * 1024;
-//   const size_t hard_limit = 45 * 1024;
-//   const size_t metadata_size = hard_limit * 1.5;
-//   grpc_arg arg[] = {
-//       grpc_channel_arg_integer_create(
-//           const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024),
-//       grpc_channel_arg_integer_create(
-//           const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
-//           hard_limit + 1024)};
-//   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-//   grpc_end2end_test_fixture f =
-//       begin_test(config, "test_request_with_large_metadata_above_hard_limit",
-//                  &args, &args);
+// Server responds with metadata above hard limit of what the client accepts.
+// All requests should be rejected.
+static void test_request_with_large_metadata_above_hard_limit(
+    const CoreTestConfiguration& config) {
+  const size_t soft_limit = 32 * 1024;
+  const size_t hard_limit = 45 * 1024;
+  const size_t metadata_size = hard_limit * 1.5;
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
+          hard_limit + 1024)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+  auto f =
+      begin_test(config, "test_request_with_large_metadata_above_hard_limit",
+                 &args, &args);
 
-//   for (int i = 0; i < 100; i++) {
-//     grpc_slice client_details;
-//     auto status = send_metadata(f, metadata_size, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-//     const char* expected_error =
-//         "received initial metadata size exceeds hard limit";
-//     grpc_slice actual_error =
-//         grpc_slice_split_head(&client_details, strlen(expected_error));
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//     grpc_slice_unref(actual_error);
-//     grpc_slice_unref(client_details);
-//   }
+  for (int i = 0; i < 100; i++) {
+    grpc_slice client_details;
+    auto status = send_metadata(f.get(), metadata_size, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    const char* expected_error =
+        "received initial metadata size exceeds hard limit";
+    grpc_slice actual_error =
+        grpc_slice_split_head(&client_details, strlen(expected_error));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
+    grpc_slice_unref(client_details);
+  }
+}
 
-//   end_test(&f);
-//   config.tear_down_data(&f);
-// }
+// Set soft limit higher than hard limit. All requests above hard limit should
+// be rejected, all requests below hard limit should be accepted (soft limit
+// should not be respected).
+static void test_request_with_large_metadata_soft_limit_above_hard_limit(
+    const CoreTestConfiguration& config) {
+  const size_t soft_limit = 64 * 1024;
+  const size_t hard_limit = 32 * 1024;
+  const size_t metadata_size_below_hard_limit = hard_limit;
+  const size_t metadata_size_above_hard_limit = hard_limit * 2;
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
+          hard_limit + 1024)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+  auto f = begin_test(
+      config, "test_request_with_large_metadata_soft_limit_above_hard_limit",
+      &args, &args);
 
-// // Set soft limit higher than hard limit. All requests above hard limit should
-// // be rejected, all requests below hard limit should be accepted (soft limit
-// // should not be respected).
-// static void test_request_with_large_metadata_soft_limit_above_hard_limit(
-//     grpc_end2end_test_config config) {
-//   const size_t soft_limit = 64 * 1024;
-//   const size_t hard_limit = 32 * 1024;
-//   const size_t metadata_size_below_hard_limit = hard_limit;
-//   const size_t metadata_size_above_hard_limit = hard_limit * 2;
-//   grpc_arg arg[] = {
-//       grpc_channel_arg_integer_create(
-//           const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024),
-//       grpc_channel_arg_integer_create(
-//           const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
-//           hard_limit + 1024)};
-//   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-//   grpc_end2end_test_fixture f = begin_test(
-//       config, "test_request_with_large_metadata_soft_limit_above_hard_limit",
-//       &args, &args);
+  // Send 50 requests below hard limit. Should be accepted.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_below_hard_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    grpc_slice_unref(client_details);
+  }
 
-//   // Send 50 requests below hard limit. Should be accepted.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_below_hard_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_OK);
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     grpc_slice_unref(client_details);
-//   }
+  // Send 50 requests above hard limit. Should be rejected.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    const char* expected_error =
+        "received initial metadata size exceeds hard limit";
+    grpc_slice actual_error =
+        grpc_slice_split_head(&client_details, strlen(expected_error));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
+    grpc_slice_unref(client_details);
+  }
+}
 
-//   // Send 50 requests above hard limit. Should be rejected.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_above_hard_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-//     const char* expected_error =
-//         "received initial metadata size exceeds hard limit";
-//     grpc_slice actual_error =
-//         grpc_slice_split_head(&client_details, strlen(expected_error));
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//     grpc_slice_unref(actual_error);
-//     grpc_slice_unref(client_details);
-//   }
+// Set soft limit * 1.25 higher than default hard limit and do not set hard
+// limit. Soft limit * 1.25 should be used as hard limit.
+static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
+    const CoreTestConfiguration& config) {
+  const size_t soft_limit = 32 * 1024;
+  const size_t metadata_size_below_soft_limit = soft_limit;
+  const size_t metadata_size_above_hard_limit = soft_limit * 1.5;
+  const size_t metadata_size_between_limits =
+      (soft_limit + soft_limit * 1.25) / 2;
+  grpc_arg arg[] = {grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+  auto f = begin_test(
+      config,
+      "test_request_with_large_metadata_soft_limit_overrides_default_hard",
+      &args, &args);
 
-//   end_test(&f);
-//   config.tear_down_data(&f);
-// }
+  // Send 50 requests below soft limit. Should be accepted.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_below_soft_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    grpc_slice_unref(client_details);
+  }
 
-// // Set soft limit * 1.25 higher than default hard limit and do not set hard
-// // limit. Soft limit * 1.25 should be used as hard limit.
-// static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
-//     grpc_end2end_test_config config) {
-//   const size_t soft_limit = 32 * 1024;
-//   const size_t metadata_size_below_soft_limit = soft_limit;
-//   const size_t metadata_size_above_hard_limit = soft_limit * 1.5;
-//   const size_t metadata_size_between_limits =
-//       (soft_limit + soft_limit * 1.25) / 2;
-//   grpc_arg arg[] = {grpc_channel_arg_integer_create(
-//       const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024)};
-//   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-//   grpc_end2end_test_fixture f = begin_test(
-//       config,
-//       "test_request_with_large_metadata_soft_limit_overrides_default_hard",
-//       &args, &args);
+  // Send 100 requests between soft and hard limits. Some should be rejected.
+  int num_requests_rejected = 0;
+  for (int i = 0; i < 100; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_between_limits, &client_details);
+    if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
+      num_requests_rejected++;
+      const char* expected_error =
+          "received initial metadata size exceeds soft limit";
+      grpc_slice actual_error =
+          grpc_slice_split_head(&client_details, strlen(expected_error));
+      GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+      grpc_slice_unref(actual_error);
+    } else {
+      GPR_ASSERT(status == GRPC_STATUS_OK);
+      GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    }
+    grpc_slice_unref(client_details);
+  }
+  // Check that some requests were rejected.
+  GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
 
-//   // Send 50 requests below soft limit. Should be accepted.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_below_soft_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_OK);
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     grpc_slice_unref(client_details);
-//   }
+  // Send 50 requests above hard limit. Should be rejected.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    const char* expected_error =
+        "received initial metadata size exceeds hard limit";
+    grpc_slice actual_error =
+        grpc_slice_split_head(&client_details, strlen(expected_error));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
+    grpc_slice_unref(client_details);
+  }
+}
 
-//   // Send 100 requests between soft and hard limits. Some should be rejected.
-//   int num_requests_rejected = 0;
-//   for (int i = 0; i < 100; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_between_limits, &client_details);
-//     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
-//       num_requests_rejected++;
-//       const char* expected_error =
-//           "received initial metadata size exceeds soft limit";
-//       grpc_slice actual_error =
-//           grpc_slice_split_head(&client_details, strlen(expected_error));
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//       grpc_slice_unref(actual_error);
-//     } else {
-//       GPR_ASSERT(status == GRPC_STATUS_OK);
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     }
-//     grpc_slice_unref(client_details);
-//   }
-//   // Check that some requests were rejected.
-//   GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
+// Set hard limit * 0.8 higher than default soft limit and do not set soft
+// limit. Hard limit * 0.8 should be used as soft limit.
+static void test_request_with_large_metadata_hard_limit_overrides_default_soft(
+    const CoreTestConfiguration& config) {
+  const size_t hard_limit = 32 * 1024;
+  const size_t metadata_size_below_soft_limit = hard_limit * 0.5;
+  const size_t metadata_size_above_hard_limit = hard_limit * 1.5;
+  const size_t metadata_size_between_limits =
+      (hard_limit * 0.8 + hard_limit) / 2;
+  grpc_arg arg[] = {grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
+      hard_limit + 1024)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+  auto f = begin_test(
+      config,
+      "test_request_with_large_metadata_hard_limit_overrides_default_soft",
+      &args, &args);
 
-//   // Send 50 requests above hard limit. Should be rejected.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_above_hard_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-//     const char* expected_error =
-//         "received initial metadata size exceeds hard limit";
-//     grpc_slice actual_error =
-//         grpc_slice_split_head(&client_details, strlen(expected_error));
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//     grpc_slice_unref(actual_error);
-//     grpc_slice_unref(client_details);
-//   }
+  // Send 50 requests below soft limit. Should be accepted.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_below_soft_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    grpc_slice_unref(client_details);
+  }
 
-//   end_test(&f);
-//   config.tear_down_data(&f);
-// }
+  // Send 100 requests between soft and hard limits. Some should be rejected.
+  int num_requests_rejected = 0;
+  for (int i = 0; i < 100; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_between_limits, &client_details);
+    if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
+      num_requests_rejected++;
+      const char* expected_error =
+          "received initial metadata size exceeds soft limit";
+      grpc_slice actual_error =
+          grpc_slice_split_head(&client_details, strlen(expected_error));
+      GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+      grpc_slice_unref(actual_error);
+    } else {
+      GPR_ASSERT(status == GRPC_STATUS_OK);
+      GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    }
+    grpc_slice_unref(client_details);
+  }
+  // Check that some requests were rejected.
+  GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
 
-// // Set hard limit * 0.8 higher than default soft limit and do not set soft
-// // limit. Hard limit * 0.8 should be used as soft limit.
-// static void test_request_with_large_metadata_hard_limit_overrides_default_soft(
-//     grpc_end2end_test_config config) {
-//   const size_t hard_limit = 32 * 1024;
-//   const size_t metadata_size_below_soft_limit = hard_limit * 0.5;
-//   const size_t metadata_size_above_hard_limit = hard_limit * 1.5;
-//   const size_t metadata_size_between_limits =
-//       (hard_limit * 0.8 + hard_limit) / 2;
-//   grpc_arg arg[] = {grpc_channel_arg_integer_create(
-//       const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
-//       hard_limit + 1024)};
-//   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-//   grpc_end2end_test_fixture f = begin_test(
-//       config,
-//       "test_request_with_large_metadata_hard_limit_overrides_default_soft",
-//       &args, &args);
+  // Send 50 requests above hard limit. Should be rejected.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    const char* expected_error =
+        "received initial metadata size exceeds hard limit";
+    grpc_slice actual_error =
+        grpc_slice_split_head(&client_details, strlen(expected_error));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
+    grpc_slice_unref(client_details);
+  }
+}
 
-//   // Send 50 requests below soft limit. Should be accepted.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_below_soft_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_OK);
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     grpc_slice_unref(client_details);
-//   }
+// Set hard limit lower than default hard limit and ensure new limit is
+// respected. Default soft limit is not respected since hard limit is lower than
+// soft limit.
+static void test_request_with_large_metadata_hard_limit_below_default_hard(
+    const CoreTestConfiguration& config) {
+  const size_t hard_limit = 4 * 1024;
+  const size_t metadata_size_below_hard_limit = hard_limit;
+  const size_t metadata_size_above_hard_limit = hard_limit * 2;
+  grpc_arg arg[] = {grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
+      hard_limit + 1024)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+  auto f = begin_test(
+      config, "test_request_with_large_metadata_hard_limit_below_default_hard",
+      &args, &args);
 
-//   // Send 100 requests between soft and hard limits. Some should be rejected.
-//   int num_requests_rejected = 0;
-//   for (int i = 0; i < 100; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_between_limits, &client_details);
-//     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
-//       num_requests_rejected++;
-//       const char* expected_error =
-//           "received initial metadata size exceeds soft limit";
-//       grpc_slice actual_error =
-//           grpc_slice_split_head(&client_details, strlen(expected_error));
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//       grpc_slice_unref(actual_error);
-//     } else {
-//       GPR_ASSERT(status == GRPC_STATUS_OK);
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     }
-//     grpc_slice_unref(client_details);
-//   }
-//   // Check that some requests were rejected.
-//   GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
+  // Send 50 requests below hard limit. Should be accepted.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_below_hard_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    grpc_slice_unref(client_details);
+  }
 
-//   // Send 50 requests above hard limit. Should be rejected.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_above_hard_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-//     const char* expected_error =
-//         "received initial metadata size exceeds hard limit";
-//     grpc_slice actual_error =
-//         grpc_slice_split_head(&client_details, strlen(expected_error));
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//     grpc_slice_unref(actual_error);
-//     grpc_slice_unref(client_details);
-//   }
+  // Send 50 requests above hard limit. Should be rejected.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    const char* expected_error =
+        "received initial metadata size exceeds hard limit";
+    grpc_slice actual_error =
+        grpc_slice_split_head(&client_details, strlen(expected_error));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
+    grpc_slice_unref(client_details);
+  }
+}
 
-//   end_test(&f);
-//   config.tear_down_data(&f);
-// }
+// Set soft limit lower than default soft limit and ensure new limit is
+// respected. Hard limit should be default hard since this is greater than 2 *
+// soft limit.
+static void test_request_with_large_metadata_soft_limit_below_default_soft(
+    const CoreTestConfiguration& config) {
+  const size_t soft_limit = 1 * 1024;
+  const size_t metadata_size_below_soft_limit = soft_limit;
+  // greater than 2 * soft, less than default hard
+  const size_t metadata_size_between_limits = 6 * 1024;
+  const size_t metadata_size_above_hard_limit = 32 * 1024;
+  grpc_arg arg[] = {grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+  auto f = begin_test(
+      config, "test_request_with_large_metadata_soft_limit_below_default_soft",
+      &args, &args);
 
-// // Set hard limit lower than default hard limit and ensure new limit is
-// // respected. Default soft limit is not respected since hard limit is lower than
-// // soft limit.
-// static void test_request_with_large_metadata_hard_limit_below_default_hard(
-//     grpc_end2end_test_config config) {
-//   const size_t hard_limit = 4 * 1024;
-//   const size_t metadata_size_below_hard_limit = hard_limit;
-//   const size_t metadata_size_above_hard_limit = hard_limit * 2;
-//   grpc_arg arg[] = {grpc_channel_arg_integer_create(
-//       const_cast<char*>(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE),
-//       hard_limit + 1024)};
-//   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-//   grpc_end2end_test_fixture f = begin_test(
-//       config, "test_request_with_large_metadata_hard_limit_below_default_hard",
-//       &args, &args);
+  // Send 50 requests below soft limit. Should be accepted.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_below_soft_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    grpc_slice_unref(client_details);
+  }
 
-//   // Send 50 requests below hard limit. Should be accepted.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_below_hard_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_OK);
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     grpc_slice_unref(client_details);
-//   }
+  // Send 100 requests between soft and hard limits. Some should be rejected.
+  int num_requests_rejected = 0;
+  for (int i = 0; i < 100; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_between_limits, &client_details);
+    if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
+      num_requests_rejected++;
+      const char* expected_error =
+          "received initial metadata size exceeds soft limit";
+      grpc_slice actual_error =
+          grpc_slice_split_head(&client_details, strlen(expected_error));
+      GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+      grpc_slice_unref(actual_error);
+    } else {
+      GPR_ASSERT(status == GRPC_STATUS_OK);
+      GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
+    }
+    grpc_slice_unref(client_details);
+  }
+  // Check that some requests were rejected.
+  GPR_ASSERT((abs(num_requests_rejected - 50) <= 45));
 
-//   // Send 50 requests above hard limit. Should be rejected.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_above_hard_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-//     const char* expected_error =
-//         "received initial metadata size exceeds hard limit";
-//     grpc_slice actual_error =
-//         grpc_slice_split_head(&client_details, strlen(expected_error));
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//     grpc_slice_unref(actual_error);
-//     grpc_slice_unref(client_details);
-//   }
-
-//   end_test(&f);
-//   config.tear_down_data(&f);
-// }
-
-// // Set soft limit lower than default soft limit and ensure new limit is
-// // respected. Hard limit should be default hard since this is greater than 2 *
-// // soft limit.
-// static void test_request_with_large_metadata_soft_limit_below_default_soft(
-//     grpc_end2end_test_config config) {
-//   const size_t soft_limit = 1 * 1024;
-//   const size_t metadata_size_below_soft_limit = soft_limit;
-//   // greater than 2 * soft, less than default hard
-//   const size_t metadata_size_between_limits = 6 * 1024;
-//   const size_t metadata_size_above_hard_limit = 32 * 1024;
-//   grpc_arg arg[] = {grpc_channel_arg_integer_create(
-//       const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024)};
-//   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-//   grpc_end2end_test_fixture f = begin_test(
-//       config, "test_request_with_large_metadata_soft_limit_below_default_soft",
-//       &args, &args);
-
-//   // Send 50 requests below soft limit. Should be accepted.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_below_soft_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_OK);
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     grpc_slice_unref(client_details);
-//   }
-
-//   // Send 100 requests between soft and hard limits. Some should be rejected.
-//   int num_requests_rejected = 0;
-//   for (int i = 0; i < 100; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_between_limits, &client_details);
-//     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
-//       num_requests_rejected++;
-//       const char* expected_error =
-//           "received initial metadata size exceeds soft limit";
-//       grpc_slice actual_error =
-//           grpc_slice_split_head(&client_details, strlen(expected_error));
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//       grpc_slice_unref(actual_error);
-//     } else {
-//       GPR_ASSERT(status == GRPC_STATUS_OK);
-//       GPR_ASSERT(0 == grpc_slice_str_cmp(client_details, "xyz"));
-//     }
-//     grpc_slice_unref(client_details);
-//   }
-//   // Check that some requests were rejected.
-//   GPR_ASSERT((abs(num_requests_rejected - 50) <= 45));
-
-//   // Send 50 requests above hard limit. Should be rejected.
-//   for (int i = 0; i < 50; i++) {
-//     grpc_slice client_details;
-//     auto status =
-//         send_metadata(f, metadata_size_above_hard_limit, &client_details);
-//     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-//     const char* expected_error =
-//         "received initial metadata size exceeds hard limit";
-//     grpc_slice actual_error =
-//         grpc_slice_split_head(&client_details, strlen(expected_error));
-//     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
-//     grpc_slice_unref(actual_error);
-//     grpc_slice_unref(client_details);
-//   }
-
-//   end_test(&f);
-//   config.tear_down_data(&f);
-// }
+  // Send 50 requests above hard limit. Should be rejected.
+  for (int i = 0; i < 50; i++) {
+    grpc_slice client_details;
+    auto status =
+        send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    const char* expected_error =
+        "received initial metadata size exceeds hard limit";
+    grpc_slice actual_error =
+        grpc_slice_split_head(&client_details, strlen(expected_error));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
+    grpc_slice_unref(actual_error);
+    grpc_slice_unref(client_details);
+  }
+}
 
 void large_metadata(const CoreTestConfiguration& config) {
   test_request_with_large_metadata_under_soft_limit(config);
   // TODO(yashykt): Maybe add checks for metadata size in inproc transport too.
   if (strcmp(config.name, "inproc") != 0) {
-    // test_request_with_large_metadata_between_soft_and_hard_limits(config);
-    // test_request_with_large_metadata_above_hard_limit(config);
-    // test_request_with_large_metadata_soft_limit_above_hard_limit(config);
-    // test_request_with_large_metadata_soft_limit_overrides_default_hard(config);
-    // test_request_with_large_metadata_hard_limit_overrides_default_soft(config);
-    // test_request_with_large_metadata_hard_limit_below_default_hard(config);
-    // test_request_with_large_metadata_soft_limit_below_default_soft(config);
+    test_request_with_large_metadata_between_soft_and_hard_limits(config);
+    test_request_with_large_metadata_above_hard_limit(config);
+    test_request_with_large_metadata_soft_limit_above_hard_limit(config);
+    test_request_with_large_metadata_soft_limit_overrides_default_hard(config);
+    test_request_with_large_metadata_hard_limit_overrides_default_soft(config);
+    test_request_with_large_metadata_hard_limit_below_default_hard(config);
+    test_request_with_large_metadata_soft_limit_below_default_soft(config);
   }
 }
 
