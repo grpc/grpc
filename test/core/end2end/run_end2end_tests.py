@@ -39,19 +39,9 @@ def GetBinaryAbsolutePath(fixture_name: str) -> str:
 def SplitBinaryPathByRunfileLocation(abspath: str) -> Tuple[str, str]:
     """Converts the path to platform-specific cwd and related path strings."""
     exec_cwd, exec_path = None, abspath
-    if sys.platform == "win32":
-        # Minimize the path length.
-        exec_cwd, exec_path = str(Path(abspath)).split(os.environ["TEST_WORKSPACE"])
-        exec_cwd += os.environ["TEST_WORKSPACE"]
-        exec_path = exec_path.strip(os.path.sep)
-        if len(exec_path) > 90:
-            # TODO(hork): Find a way to enable Windows CI tests with long
-            # filenames. Changing the CWD further will break tls/ssl tests'
-            # search for certificates. This flag currently only affects
-            # experiments for tests with already-long names, such as 
-            # //test/core/end2end:h2_tls_certwatch_async_tls1_3_test@retry_exceeds_buffer_size_in_subseq@experiment=promise_based_server_call
-            print("Path is too long for Windows. Skipping test")
-            sys.exit(0)
+    if sys.platform == "win32" and len(abspath) > 260:
+        print(f"Path is too long for Windows ({len(abspath)} > 260). Skipping test")
+        sys.exit(0)
     return exec_cwd, exec_path
 
 
