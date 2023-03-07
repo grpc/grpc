@@ -38,10 +38,8 @@ def GetBinaryAbsolutePath(fixture_name: str) -> str:
 
 def SplitBinaryPathByRunfileLocation(abspath: str) -> Tuple[str, str]:
     """Converts the path to platform-specific cwd and related path strings."""
-    exec_cwd, exec_path = str(Path(abspath)).split(os.environ["TEST_WORKSPACE"])
-    exec_cwd += os.environ["TEST_WORKSPACE"]
-    exec_path = exec_path.strip(os.path.sep)
-    return exec_cwd, exec_path
+    path = Path(abspath)
+    return path.parent, path.name
 
 
 def main() -> None:
