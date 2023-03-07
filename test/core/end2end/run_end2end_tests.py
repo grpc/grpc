@@ -18,9 +18,9 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from typing import Tuple
 
 from rules_python.python.runfiles import runfiles
-from typing import Tuple
 
 
 def GetBinaryAbsolutePath(fixture_name: str) -> str:
@@ -43,7 +43,9 @@ def SplitBinaryPathByRunfileLocation(abspath: str) -> Tuple[str, str]:
         # Escape the `=` in experiments, which is a special character on Windows
         exec_path = f"\"{exec_path}\""
         if len(exec_path) > 260:
-            print(f"Path is too long for Windows ({len(exec_path)} > 260). Skipping test:", exec_path)
+            print(
+                f"Path is too long for Windows ({len(exec_path)} > 260). Skipping test:",
+                exec_path)
             sys.exit(0)
     return exec_cwd, exec_path
 
