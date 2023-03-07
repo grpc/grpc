@@ -148,7 +148,7 @@ class PromiseEndpoint {
                                      ret.c_slice_buffer());
 
         read_result_.reset();
-        return ret;
+        return std::move(ret);
       }
     };
   }
