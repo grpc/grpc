@@ -179,7 +179,6 @@
       'dependencies': [
         'grpc_authorization_provider',
         'grpc_test_util',
-        'grpc_test_util_unsecure',
       ],
       'sources': [
         'test/core/end2end/cq_verifier.cc',

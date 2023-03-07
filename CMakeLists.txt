@@ -1548,7 +1548,6 @@ target_link_libraries(end2end_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_authorization_provider
   grpc_test_util
-  grpc_test_util_unsecure
 )
 
 
@@ -13090,7 +13089,6 @@ target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc_test_util_unsecure
 )
 
 
