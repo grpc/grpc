@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H2_SSL_TLS_COMMON_H
-#define H2_SSL_TLS_COMMON_H
+#ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
+#define GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
 
 #include <string.h>
-
-#include <string>
-
-#include "secure_fixture.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -29,15 +25,12 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/end2end/fixtures/secure_fixture.h"
 
 class Oauth2Fixture : public SecureFixture {
  public:
@@ -184,4 +177,4 @@ class Oauth2Fixture : public SecureFixture {
   grpc_tls_version tls_version_;
 };
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H

@@ -24,6 +24,7 @@
 #include <string>
 
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

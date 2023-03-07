@@ -16,7 +16,8 @@
 //
 //
 
-#include <stdint.h>
+#include <functional>
+#include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

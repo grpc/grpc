@@ -21,7 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <functional>
 #include <initializer_list>
+#include <memory>
 
 #include "absl/strings/str_format.h"
 
@@ -32,8 +34,8 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"

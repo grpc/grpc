@@ -17,29 +17,16 @@
 //
 
 #include <stdio.h>
-#include <string.h>
 
-#include <string>
-
-#include "h2_oauth2_common.h"
+#include <functional>
+#include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
+#include "test/core/end2end/fixtures/h2_oauth2_common.h"
 #include "test/core/util/test_config.h"
 
 // All test configurations

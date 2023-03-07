@@ -15,7 +15,10 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_INPROC_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_INPROC_FIXTURE_H
 
+#include <grpc/grpc.h>
+
 #include "src/core/ext/transport/inproc/inproc_transport.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 
 class InprocFixture : public CoreTestFixture {
@@ -31,4 +34,4 @@ class InprocFixture : public CoreTestFixture {
   }
 };
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FIXTURES_INPROC_FIXTURE_H

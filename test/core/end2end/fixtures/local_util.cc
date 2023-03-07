@@ -26,8 +26,6 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "test/core/end2end/fixtures/local_util.h"
-
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,
                                  size_t /*md_count*/,

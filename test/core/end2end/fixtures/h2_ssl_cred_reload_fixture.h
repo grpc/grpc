@@ -15,10 +15,20 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_SSL_CRED_RELOAD_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_H2_SSL_CRED_RELOAD_FIXTURE_H
 
-#include <grpc/grpc.h>
+#include <stddef.h>
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 
 class SslCredReloadFixture : public SecureFixture {

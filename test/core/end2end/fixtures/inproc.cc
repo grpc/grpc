@@ -21,13 +21,11 @@
 #include <functional>
 #include <memory>
 
-#include "inproc_fixture.h"
-
 #include <grpc/grpc.h>
 
-#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/end2end/fixtures/inproc_fixture.h"
 #include "test/core/util/test_config.h"
 
 // All test configurations

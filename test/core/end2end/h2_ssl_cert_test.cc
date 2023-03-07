@@ -16,10 +16,11 @@
 //
 //
 
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <functional>
+#include <memory>
 #include <string>
 
 #include <openssl/crypto.h>
@@ -40,13 +41,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 static std::string test_server1_key_id;
