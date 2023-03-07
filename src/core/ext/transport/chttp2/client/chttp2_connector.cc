@@ -360,7 +360,6 @@ grpc_channel* grpc_channel_create(const char* target,
                                     .PreconditionChannelArgs(c_args)
                                     .SetObject(creds->Ref())
                                     .SetObject(g_factory));
-    gpr_log(GPR_DEBUG, "CHANNEL_ARGS:%s", args.ToString().c_str());
     // Create channel.
     auto r = grpc_core::CreateChannel(target, args);
     if (r.ok()) {
