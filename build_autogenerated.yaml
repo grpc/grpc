@@ -774,6 +774,7 @@ libs:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -1555,6 +1556,7 @@ libs:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -2114,6 +2116,7 @@ libs:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -2508,6 +2511,7 @@ libs:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -3575,6 +3579,7 @@ libs:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -3848,6 +3853,7 @@ libs:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -7394,6 +7400,7 @@ targets:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -7650,6 +7657,7 @@ targets:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -10786,6 +10794,16 @@ targets:
   - linux
   - posix
   - mac
+- name: server_call_tracer_factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/server_call_tracer_factory_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: server_chttp2_test
   gtest: true
   build: test

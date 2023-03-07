@@ -1149,6 +1149,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test)
   endif()
+  add_dependencies(buildtests_cxx server_call_tracer_factory_test)
   add_dependencies(buildtests_cxx server_chttp2_test)
   add_dependencies(buildtests_cxx server_config_selector_test)
   add_dependencies(buildtests_cxx server_context_test_spouse_test)
@@ -2164,6 +2165,7 @@ add_library(grpc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/server_call_tracer.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -2852,6 +2854,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/server_call_tracer.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -4370,6 +4373,7 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/server_call_tracer.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -11460,6 +11464,7 @@ add_executable(frame_test
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/server_call_tracer.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -18244,6 +18249,43 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(server_call_tracer_factory_test
+  test/core/channel/server_call_tracer_factory_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(server_call_tracer_factory_test PUBLIC cxx_std_14)
+target_include_directories(server_call_tracer_factory_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_call_tracer_factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
