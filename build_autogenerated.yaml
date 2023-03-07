@@ -140,7 +140,6 @@ libs:
   deps:
   - grpc_authorization_provider
   - grpc_test_util
-  - grpc_test_util_unsecure
 - name: gpr
   build: all
   language: c
@@ -8466,7 +8465,6 @@ targets:
   - test/core/end2end/h2_ssl_cert_test.cc
   deps:
   - grpc_test_util
-  - grpc_test_util_unsecure
 - name: h2_ssl_session_reuse_test
   gtest: true
   build: test
