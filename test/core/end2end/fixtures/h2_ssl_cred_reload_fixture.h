@@ -33,7 +33,7 @@
 
 class SslCredReloadFixture : public SecureFixture {
  public:
-  SslCredReloadFixture(grpc_tls_version tls_version)
+  explicit SslCredReloadFixture(grpc_tls_version tls_version)
       : tls_version_(tls_version) {}
 
   static const char* CaCertPath() { return "src/core/tsi/test_creds/ca.pem"; }

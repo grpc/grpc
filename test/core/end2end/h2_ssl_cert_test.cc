@@ -115,7 +115,7 @@ class TestFixture : public SecureFixture {
         test_signed_client_key, test_signed_client_cert};
     grpc_ssl_pem_key_cert_pair bad_client_key_cert_pair = {
         test_self_signed_client_key, test_signed_client_cert};
-    grpc_ssl_pem_key_cert_pair* key_cert_pair = NULL;
+    grpc_ssl_pem_key_cert_pair* key_cert_pair = nullptr;
     switch (cert_type_) {
       case SELF_SIGNED:
         key_cert_pair = &self_signed_client_key_cert_pair;
@@ -129,8 +129,8 @@ class TestFixture : public SecureFixture {
       default:
         break;
     }
-    return grpc_ssl_credentials_create(test_root_cert, key_cert_pair, NULL,
-                                       NULL);
+    return grpc_ssl_credentials_create(test_root_cert, key_cert_pair, nullptr,
+                                       nullptr);
   }
 
   grpc_ssl_client_certificate_request_type request_type_;

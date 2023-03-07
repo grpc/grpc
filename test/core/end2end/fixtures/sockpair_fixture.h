@@ -42,7 +42,7 @@
 
 class SockpairFixture : public CoreTestFixture {
  public:
-  SockpairFixture(const grpc_core::ChannelArgs& ep_args)
+  explicit SockpairFixture(const grpc_core::ChannelArgs& ep_args)
       : ep_(grpc_iomgr_create_endpoint_pair("fixture", ep_args.ToC().get())) {}
 
  private:
