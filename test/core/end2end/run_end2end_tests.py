@@ -42,10 +42,12 @@ def SplitBinaryPathByRunfileLocation(abspath: str) -> Tuple[str, str]:
     if sys.platform == "win32":
         # Escape the `=` in experiments, which is a special character on Windows
         exec_path = f"\"{exec_path}\""
-        if len(exec_path) > 260:
+        # Confirmed via experimentation on Windows
+        max_length = 257
+        if len(exec_path) > max_length:
             print(
-                f"Path is too long for Windows ({len(exec_path)} > 260). Skipping test:",
-                exec_path)
+                f"Path is too long for Windows ({len(exec_path)} > {max_length}). Skipping test: {exec_path}"
+            )
             sys.exit(0)
     return exec_cwd, exec_path
 
