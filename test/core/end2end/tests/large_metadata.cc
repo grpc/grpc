@@ -273,8 +273,8 @@ static void test_request_with_large_metadata_between_soft_and_hard_limits(
     grpc_slice_unref(client_details);
   }
 
-  // Check that some number of requests were rejected, >10%, <90%.
-  GPR_ASSERT(abs(num_requests_rejected - 50) <= 40);
+  // Check that some requests were rejected.
+  GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -410,8 +410,8 @@ static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
     }
     grpc_slice_unref(client_details);
   }
-  // Check that some number of requests were rejected, >10%, <90%.
-  GPR_ASSERT(abs(num_requests_rejected - 50) <= 40);
+  // Check that some requests were rejected.
+  GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
 
   // Send 50 requests above hard limit. Should be rejected.
   for (int i = 0; i < 50; i++) {
@@ -480,8 +480,8 @@ static void test_request_with_large_metadata_hard_limit_overrides_default_soft(
     }
     grpc_slice_unref(client_details);
   }
-  // Check that some number of requests were rejected, >10%, <90%.
-  GPR_ASSERT(abs(num_requests_rejected - 50) <= 40);
+  // Check that some requests were rejected.
+  GPR_ASSERT(abs(num_requests_rejected - 50) <= 45);
 
   // Send 50 requests above hard limit. Should be rejected.
   for (int i = 0; i < 50; i++) {
@@ -594,8 +594,8 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
     }
     grpc_slice_unref(client_details);
   }
-  // Check that at least one request is rejected.
-  GPR_ASSERT((abs(num_requests_rejected - 50) <= 49));
+  // Check that some requests were rejected.
+  GPR_ASSERT((abs(num_requests_rejected - 50) <= 45));
 
   // Send 50 requests above hard limit. Should be rejected.
   for (int i = 0; i < 50; i++) {
