@@ -72,13 +72,11 @@ WindowsEndpoint::WindowsEndpoint(
 }
 
 WindowsEndpoint::~WindowsEndpoint() {
-  io_state_->socket->Shutdown(DEBUG_LOCATION, "~WindowsEndpoint");
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p destroyed", this);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("~WindowsEndpoint::%p", this);
 }
 
 absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
-  absl::SleepFor(absl::Milliseconds(1));
-  // GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
   if (io_state_->socket->IsShutdown()) {
     return absl::UnavailableError("Socket is shutting down.");
   }
@@ -127,7 +125,7 @@ absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
 
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* /* args */) {
-  // GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
   if (io_state_->socket->IsShutdown()) {
     executor_->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::UnavailableError("Socket is shutting down."));
@@ -155,7 +153,7 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 
 bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
-  // GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
   if (io_state_->socket->IsShutdown()) {
     executor_->Run([on_writable = std::move(on_writable)]() mutable {
       on_writable(absl::UnavailableError("Socket is shutting down."));
@@ -302,12 +300,9 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   }
   GPR_DEBUG_ASSERT(result.bytes_transferred > 0);
   GPR_DEBUG_ASSERT(result.bytes_transferred <= buffer_->Length());
-  // gpr_log(GPR_DEBUG, "DO NOT SUBMIT: got bytes: %d",
-  // result.bytes_transferred);
   buffer_->MoveFirstNBytesIntoSliceBuffer(result.bytes_transferred,
                                           last_read_buffer_);
   if (buffer_->Length() == 0) {
-    // gpr_log(GPR_DEBUG, "DO NOT SUBMIT: empty buffer!");
     buffer_->Swap(last_read_buffer_);
     return ExecuteCallbackAndReset(status);
   }
@@ -322,9 +317,6 @@ void WindowsEndpoint::HandleReadClosure::Run() {
 bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead(
     absl::Status status) {
   if (last_read_buffer_.Length() > 0) {
-    gpr_log(GPR_DEBUG,
-            "DO NOT SUBMIT: returning instead of async call, %d > 0 ",
-            last_read_buffer_.Length());
     buffer_->Swap(last_read_buffer_);
     io_state_->endpoint->executor_->Run(
         [this, status]() { ExecuteCallbackAndReset(status); });
@@ -361,7 +353,6 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
     status = GRPC_WSA_ERROR(result.wsa_error, "WSASend");
   } else {
     GPR_ASSERT(result.bytes_transferred == buffer_->Length());
-    gpr_log(GPR_DEBUG, "DO NOT SUBMIT: wrote %d bytes", buffer_->Length());
   }
   Reset();
   cb(status);

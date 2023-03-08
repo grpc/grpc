@@ -77,7 +77,7 @@ void WinSocket::Shutdown() {
     gpr_free(utf8_message);
   }
   closesocket(socket_);
-  // GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);
 }
 
 void WinSocket::Shutdown(const grpc_core::DebugLocation& location,
