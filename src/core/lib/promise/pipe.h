@@ -520,6 +520,31 @@ class PipeSender {
 #endif
 };
 
+template <typename T>
+class PipeReceiver;
+
+namespace pipe_detail {
+
+// Implementation of PipeReceiver::Next promise.
+template <typename T>
+class Next {
+ public:
+  Next(const Next&) = delete;
+  Next& operator=(const Next&) = delete;
+  Next(Next&& other) noexcept = default;
+  Next& operator=(Next&& other) noexcept = default;
+
+  Poll<absl::optional<T>> operator()() { return center_->Next(); }
+
+ private:
+  friend class PipeReceiver<T>;
+  explicit Next(RefCountedPtr<Center<T>> center) : center_(std::move(center)) {}
+
+  RefCountedPtr<Center<T>> center_;
+};
+
+}  // namespace pipe_detail
+
 // Receive end of a Pipe.
 template <typename T>
 class PipeReceiver {
@@ -539,7 +564,31 @@ class PipeReceiver {
   // message was received, or no value if the other end of the pipe was closed.
   // Blocks the promise until the receiver is either closed or a message is
   // available.
-  auto Next();
+  auto Next() {
+    return Seq(
+        pipe_detail::Next<T>(center_->Ref()),
+        [center = center_->Ref()](absl::optional<T> value) {
+          bool open = value.has_value();
+          bool cancelled = center->cancelled();
+          return If(
+              open,
+              [center = std::move(center), value = std::move(value)]() mutable {
+                auto run = center->Run(std::move(value));
+                return Map(std::move(run),
+                           [center = std::move(center)](
+                               absl::optional<T> value) mutable {
+                             if (value.has_value()) {
+                               center->value() = std::move(*value);
+                               return NextResult<T>(std::move(center));
+                             } else {
+                               center->MarkCancelled();
+                               return NextResult<T>(true);
+                             }
+                           });
+              },
+              [cancelled]() { return NextResult<T>(cancelled); });
+        });
+  }
 
   // Return a promise that resolves when the receiver is closed.
   // The resolved value is a bool - true if the pipe was cancelled, false if it
@@ -625,56 +674,12 @@ class Push {
   absl::variant<T, AwaitingAck> state_;
 };
 
-// Implementation of PipeReceiver::Next promise.
-template <typename T>
-class Next {
- public:
-  Next(const Next&) = delete;
-  Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept = default;
-  Next& operator=(Next&& other) noexcept = default;
-
-  Poll<absl::optional<T>> operator()() { return center_->Next(); }
-
- private:
-  friend class PipeReceiver<T>;
-  explicit Next(RefCountedPtr<Center<T>> center) : center_(std::move(center)) {}
-
-  RefCountedPtr<Center<T>> center_;
-};
-
 }  // namespace pipe_detail
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
   return pipe_detail::Push<T>(center_ == nullptr ? nullptr : center_->Ref(),
                               std::move(value));
-}
-
-template <typename T>
-auto PipeReceiver<T>::Next() {
-  return Seq(
-      pipe_detail::Next<T>(center_->Ref()),
-      [center = center_->Ref()](absl::optional<T> value) {
-        bool open = value.has_value();
-        bool cancelled = center->cancelled();
-        return If(
-            open,
-            [center = std::move(center), value = std::move(value)]() mutable {
-              auto run = center->Run(std::move(value));
-              return Map(std::move(run), [center = std::move(center)](
-                                             absl::optional<T> value) mutable {
-                if (value.has_value()) {
-                  center->value() = std::move(*value);
-                  return NextResult<T>(std::move(center));
-                } else {
-                  center->MarkCancelled();
-                  return NextResult<T>(true);
-                }
-              });
-            },
-            [cancelled]() { return NextResult<T>(cancelled); });
-      });
 }
 
 template <typename T>
