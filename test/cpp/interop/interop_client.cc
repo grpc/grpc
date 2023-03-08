@@ -37,11 +37,13 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/histogram.h"
+#include "test/cpp/interop/backend_metrics_lb_policy.h"
 #include "test/cpp/interop/client_helper.h"
 
 namespace grpc {
@@ -79,10 +81,27 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
     GPR_ASSERT(!(inspector.WasCompressed()));
   }
 }
+
+void InitializeCustomLbPolicyIfNeeded() {
+  // Load balancing policy builder is global. For now, all instances of the
+  // LB policy will store data in the same collection. All interop_clients in
+  // the same process will also share the collection
+  // Realistically, we do not yet need synchronization as only a single test is
+  // running at a time.
+  static bool initialized = false;
+  if (!initialized) {
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          RegisterBackendMetricsLbPolicy(builder);
+        });
+    initialized = true;
+  }
+}
 }  // namespace
 
 InteropClient::ServiceStub::ServiceStub(
-    ChannelCreationFunc channel_creation_func, bool new_stub_every_call)
+    std::function<std::shared_ptr<grpc::Channel>()> channel_creation_func,
+    bool new_stub_every_call)
     : channel_creation_func_(std::move(channel_creation_func)),
       channel_(channel_creation_func_()),
       new_stub_every_call_(new_stub_every_call) {
@@ -119,7 +138,14 @@ void InteropClient::ServiceStub::ResetChannel() {
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
+    : serviceStub_(
+          [&]() {
+            InitializeCustomLbPolicyIfNeeded();
+            return channel_creation_func(
+                std::bind(&LoadReportTracker::SetupOnChannel,
+                          &load_report_tracker_, std::placeholders::_1));
+          },
+          new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
@@ -930,6 +956,26 @@ bool InteropClient::DoPickFirstUnary() {
   return true;
 }
 
+bool InteropClient::DoOrcaPerRpc() {
+  load_report_tracker_.ClearPerRpcLoadReports();
+  gpr_log(GPR_DEBUG, "testing orca per rpc");
+  SimpleRequest request;
+  SimpleResponse response;
+  ClientContext context;
+  auto orca_report = request.mutable_orca_per_rpc_report();
+  orca_report->set_cpu_utilization(0.8210);
+  orca_report->set_mem_utilization(0.5847);
+  orca_report->mutable_request_cost()->emplace("cost", 3456.32);
+  orca_report->mutable_utilization()->emplace("util", 0.30499);
+  auto status = serviceStub_.Get()->UnaryCall(&context, request, &response);
+  if (!AssertStatusOk(status, context.debug_error_string())) {
+    return false;
+  }
+  load_report_tracker_.AssertHasSinglePerRpcLoadReport(*orca_report);
+  gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
+  return true;
+}
+
 bool InteropClient::DoCustomMetadata() {
   const std::string kEchoInitialMetadataKey("x-grpc-test-echo-initial");
   const std::string kInitialMetadataValue("test_initial_metadata_value");
@@ -1248,6 +1294,8 @@ bool InteropClient::DoUnimplementedMethod() {
   gpr_log(GPR_DEBUG, "unimplemented rpc done.");
   return true;
 }
+
+void InteropClient::SetupMetricTracking(ChannelArguments* arguments) {}
 
 }  // namespace testing
 }  // namespace grpc

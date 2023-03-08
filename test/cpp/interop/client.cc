@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -68,6 +69,7 @@ ABSL_FLAG(
     //"large_unary : single request and (large) response;\n"
     //"long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
     //"oauth2_auth_token: raw oauth2 access token auth;\n"
+    //"orca_per_rpc: custom LB policy receives per-query metric reports;\n"
     //"per_rpc_creds: raw oauth2 access token on a single rpc;\n"
     //"ping_pong : full-duplex streaming;\n"
     //"response streaming;\n"
@@ -124,6 +126,9 @@ ABSL_FLAG(
     bool, log_metadata_and_status, false,
     "If set to 'true', will print received initial and trailing metadata, "
     "grpc-status and error message to the console, in a stable format.");
+ABSL_FLAG(std::string, service_config_json, "",
+          "Disables service config lookups and sets the provided string as the "
+          "default service config");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -197,7 +202,7 @@ int main(int argc, char** argv) {
   grpc::testing::ChannelCreationFunc channel_creation_func;
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   if (absl::GetFlag(FLAGS_additional_metadata).empty()) {
-    channel_creation_func = [test_case]() {
+    channel_creation_func = [test_case](auto setup_args) {
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           factories;
@@ -205,7 +210,15 @@ int main(int argc, char** argv) {
         factories.emplace_back(
             new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
       }
-      return CreateChannelForTestCase(test_case, std::move(factories));
+      grpc::ChannelArguments arguments;
+      std::string service_config_json =
+          absl::GetFlag(FLAGS_service_config_json);
+      if (!service_config_json.empty()) {
+        arguments.SetServiceConfigJSON(service_config_json);
+      }
+      setup_args(&arguments);
+      return CreateChannelForTestCase(test_case, std::move(factories),
+                                      std::move(arguments));
     };
   } else {
     std::multimap<std::string, std::string> additional_metadata;
@@ -214,7 +227,7 @@ int main(int argc, char** argv) {
       return 1;
     }
 
-    channel_creation_func = [test_case, additional_metadata]() {
+    channel_creation_func = [test_case, additional_metadata](auto setup_args) {
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           factories;
@@ -225,7 +238,15 @@ int main(int argc, char** argv) {
         factories.emplace_back(
             new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
       }
-      return CreateChannelForTestCase(test_case, std::move(factories));
+      grpc::ChannelArguments arguments;
+      std::string service_config_json =
+          absl::GetFlag(FLAGS_service_config_json);
+      if (!service_config_json.empty()) {
+        arguments.SetServiceConfigJSON(service_config_json);
+      }
+      setup_args(&arguments);
+      return CreateChannelForTestCase(test_case, std::move(factories),
+                                      arguments);
     };
   }
 
@@ -267,6 +288,8 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
   actions["pick_first_unary"] =
       std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
+  actions["orca_per_rpc"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
   if (absl::GetFlag(FLAGS_use_tls)) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
