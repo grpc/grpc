@@ -1,25 +1,26 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
 #include <algorithm>
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <thread>
@@ -41,6 +42,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
@@ -162,7 +164,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
   GPR_ASSERT(error.ok());
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
-          grpc_error_std_string(error).c_str());
+          grpc_core::StatusToString(error).c_str());
   GPR_ASSERT(response.status == 200);
   GPR_ASSERT(response.body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
@@ -174,7 +176,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
-          grpc_error_std_string(error).c_str());
+          grpc_core::StatusToString(error).c_str());
   GPR_ASSERT(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });

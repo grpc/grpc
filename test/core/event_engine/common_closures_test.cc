@@ -19,8 +19,6 @@
 #include "absl/functional/any_invocable.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/gprpp/notification.h"
 
 using ::grpc_event_engine::experimental::AnyInvocableClosure;

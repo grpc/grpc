@@ -41,8 +41,8 @@ TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
 
 TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
   grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Msg"),
-      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED);
+      GRPC_ERROR_CREATE("Msg"), grpc_core::StatusIntProperty::kRpcStatus,
+      GRPC_STATUS_CANCELLED);
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
@@ -53,8 +53,8 @@ TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
 
 TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   std::vector<grpc_error_handle> children = {
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child1"),
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child2"),
+      GRPC_ERROR_CREATE("Child1"),
+      grpc_error_set_int(GRPC_ERROR_CREATE("Child2"),
                          grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_RESOURCE_EXHAUSTED),
   };
@@ -117,7 +117,7 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
 
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
   grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      GRPC_ERROR_CREATE(
           "weighted_target: all children report state TRANSIENT_FAILURE"),
       grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   absl::Status status = grpc_error_to_absl_status(error);

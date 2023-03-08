@@ -170,7 +170,6 @@ class RlsEnd2endTest : public ::testing::Test {
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
     grpc_core::CoreConfiguration::Reset();
   }
 
@@ -204,8 +203,8 @@ class RlsEnd2endTest : public ::testing::Test {
                                                   nullptr));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = grpc::CreateCustomChannel(
-        absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
+    channel_ = grpc::CreateCustomChannel(absl::StrCat("fake:///", kServerName),
+                                         std::move(creds), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -235,7 +234,7 @@ class RlsEnd2endTest : public ::testing::Test {
   }
 
   struct RpcOptions {
-    int timeout_ms = 1000;
+    int timeout_ms = 2000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
 

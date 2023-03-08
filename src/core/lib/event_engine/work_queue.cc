@@ -15,8 +15,6 @@
 
 #include "src/core/lib/event_engine/work_queue.h"
 
-#include <cstdint>
-#include <memory>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -147,15 +145,7 @@ EventEngine::Closure* WorkQueue::PopLocked(bool front)
             std::memory_order_relaxed) == kInvalidTimestamp) {
       return nullptr;
     }
-    if (!most_recent_element_lock_.TryLock()) return nullptr;
-    absl::optional<Storage> ret;
-    if (GPR_LIKELY(most_recent_element_.has_value())) {
-      most_recent_element_enqueue_timestamp_.store(kInvalidTimestamp,
-                                                   std::memory_order_relaxed);
-      ret = std::exchange(most_recent_element_, absl::nullopt);
-    }
-    most_recent_element_lock_.Unlock();
-    return ret->closure();
+    return TryPopMostRecentElement();
   }
   // the queue has elements, let's pop one and update timestamps
   Storage ret_s;

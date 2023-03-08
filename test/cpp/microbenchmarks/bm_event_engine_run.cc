@@ -15,8 +15,13 @@
 #include <atomic>
 #include <cmath>
 #include <memory>
+#include <vector>
 
 #include <benchmark/benchmark.h>
+
+#include "absl/debugging/leak_check.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -33,7 +38,6 @@ namespace {
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::ResetDefaultEventEngine;
 
 struct FanoutParameters {
   int depth;
@@ -58,7 +62,6 @@ void BM_EventEngine_RunSmallLambda(benchmark::State& state) {
     signal.WaitForNotification();
     count.store(0);
   }
-  ResetDefaultEventEngine();
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunSmallLambda)
@@ -86,7 +89,6 @@ void BM_EventEngine_RunLargeLambda(benchmark::State& state) {
     signal.WaitForNotification();
     count.store(0);
   }
-  ResetDefaultEventEngine();
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunLargeLambda)
@@ -98,15 +100,20 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
   int cb_count = state.range(0);
   grpc_core::Notification* signal = new grpc_core::Notification();
   std::atomic_int count{0};
-  AnyInvocableClosure closure([signal_holder = &signal, cb_count, &count]() {
-    if (++count == cb_count) {
-      (*signal_holder)->Notify();
-    }
-  });
+  // Ignore leaks from this closure. For simplicty, this closure is not deleted
+  // because the closure may still be executing after the EventEngine is
+  // destroyed. This is because the default posix EventEngine's thread pool may
+  // get destroyed separately from the EventEngine.
+  AnyInvocableClosure* closure = absl::IgnoreLeak(
+      new AnyInvocableClosure([signal_holder = &signal, cb_count, &count]() {
+        if (++count == cb_count) {
+          (*signal_holder)->Notify();
+        }
+      }));
   auto engine = GetDefaultEventEngine();
   for (auto _ : state) {
     for (int i = 0; i < cb_count; i++) {
-      engine->Run(&closure);
+      engine->Run(closure);
     }
     signal->WaitForNotification();
     state.PauseTiming();
@@ -116,7 +123,6 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
     state.ResumeTiming();
   }
   delete signal;
-  ResetDefaultEventEngine();
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunClosure)
@@ -208,8 +214,8 @@ void ClosureFanOutCallback(EventEngine::Closure* child_closure,
     return;
   }
   if (local_cnt > params.limit) {
-    gpr_log(GPR_ERROR, "Ran too many closures: %d/%d", local_cnt, params.limit);
-    abort();
+    grpc_core::Crash(absl::StrFormat("Ran too many closures: %d/%d", local_cnt,
+                                     params.limit));
   }
   if (child_closure == nullptr) return;
   for (int i = 0; i < params.fanout; i++) {

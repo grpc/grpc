@@ -37,7 +37,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"

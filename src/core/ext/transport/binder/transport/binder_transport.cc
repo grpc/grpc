@@ -35,6 +35,8 @@
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -212,7 +214,7 @@ static void recv_initial_metadata_locked(void* arg,
       if (!gbs->is_client) {
         // For server, we expect :authority and :path in initial metadata.
         if (!ContainsAuthorityAndPath(*args->initial_metadata)) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          return GRPC_ERROR_CREATE(
               "Missing :authority or :path in initial metadata");
         }
       }
@@ -370,6 +372,19 @@ class MetadataEncoder {
 }  // namespace
 }  // namespace grpc_binder
 
+static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
+  grpc_binder_transport* gbt = static_cast<grpc_binder_transport*>(gt);
+  if (gbt->accept_stream_fn) {
+    gpr_log(GPR_INFO, "Accepting a stream");
+    // must pass in a non-null value.
+    (*gbt->accept_stream_fn)(gbt->accept_stream_user_data, &gbt->base, gbt);
+  } else {
+    ++gbt->accept_stream_fn_called_count_;
+    gpr_log(GPR_INFO, "accept_stream_fn not set, current count = %d",
+            gbt->accept_stream_fn_called_count_);
+  }
+}
+
 static void perform_stream_op_locked(void* stream_op,
                                      grpc_error_handle /*error*/) {
   grpc_transport_stream_op_batch* op =
@@ -390,7 +405,7 @@ static void perform_stream_op_locked(void* stream_op,
           gbs->GetTxCode(), gbt->is_client);
       cancel_tx->SetSuffix(grpc_binder::Metadata{});
       cancel_tx->SetStatus(1);
-      absl::Status status = gbt->wire_writer->RpcCall(std::move(cancel_tx));
+      (void)gbt->wire_writer->RpcCall(std::move(cancel_tx));
     }
     cancel_stream_locked(gbt, gbs, op->payload->cancel_stream.cancel_error);
     if (op->on_complete != nullptr) {
@@ -551,7 +566,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->on_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
                             absl_status_to_grpc_error(status));
-    gpr_log(GPR_INFO, "on_complete closure schuduled");
+    gpr_log(GPR_INFO, "on_complete closure scheduled");
   }
   GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
 }
@@ -575,9 +590,9 @@ static void close_transport_locked(grpc_binder_transport* gbt) {
   while (!gbt->registered_stream.empty()) {
     cancel_stream_locked(
         gbt, gbt->registered_stream.begin()->second,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("transport closed"),
-            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
+        grpc_error_set_int(GRPC_ERROR_CREATE("transport closed"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
+                           GRPC_STATUS_UNAVAILABLE));
   }
 }
 
@@ -595,8 +610,16 @@ static void perform_transport_op_locked(void* transport_op,
     gbt->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
   }
   if (op->set_accept_stream) {
-    gbt->accept_stream_fn = op->set_accept_stream_fn;
     gbt->accept_stream_user_data = op->set_accept_stream_user_data;
+    gbt->accept_stream_fn = op->set_accept_stream_fn;
+    gpr_log(GPR_DEBUG, "accept_stream_fn_called_count_ = %d",
+            gbt->accept_stream_fn_called_count_);
+    while (gbt->accept_stream_fn_called_count_ > 0) {
+      --gbt->accept_stream_fn_called_count_;
+      gbt->combiner->Run(
+          GRPC_CLOSURE_CREATE(accept_stream_locked, gbt, nullptr),
+          absl::OkStatus());
+    }
   }
   if (op->on_consumed) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
@@ -630,7 +653,7 @@ static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
   grpc_binder_transport* gbt = gbs->t;
   cancel_stream_locked(
       gbt, gbs,
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("destroy stream"),
+      grpc_error_set_int(GRPC_ERROR_CREATE("destroy stream"),
                          grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_UNAVAILABLE));
   gbs->~grpc_binder_stream();
@@ -684,14 +707,6 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
 
 static const grpc_transport_vtable* get_vtable() { return &vtable; }
 
-static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
-  grpc_binder_transport* gbt = static_cast<grpc_binder_transport*>(gt);
-  if (gbt->accept_stream_fn) {
-    // must pass in a non-null value.
-    (*gbt->accept_stream_fn)(gbt->accept_stream_user_data, &gbt->base, gbt);
-  }
-}
-
 grpc_binder_transport::grpc_binder_transport(
     std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
@@ -715,7 +730,7 @@ grpc_binder_transport::grpc_binder_transport(
   GRPC_BINDER_REF_TRANSPORT(this, "wire reader");
   wire_reader = grpc_core::MakeOrphanable<grpc_binder::WireReaderImpl>(
       transport_stream_receiver, is_client, security_policy,
-      /*on_destruct_callback=*/
+      // on_destruct_callback=
       [this] {
         // Unref transport when destructed.
         GRPC_BINDER_UNREF_TRANSPORT(this, "wire reader");

@@ -340,3 +340,88 @@ grpc_cc_binary(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_binary(
+    name = "xds_federation_client",
+    srcs = [
+        "xds_federation_client.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    language = "C++",
+    deps = [
+        ":client_helper_lib",
+        "//:grpc++",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_server",
+    srcs = [
+        "observability_interop_server_bootstrap.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":interop_server_lib",
+        "//:grpc++",
+        "//:grpcpp_gcp_observability",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "observability_interop_client_main",
+    srcs = [
+        "observability_client.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":client_helper_lib",
+        "//:grpcpp_gcp_observability",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_client",
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":observability_interop_client_main",
+        "//:grpc++",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_test",
+    srcs = ["interop_test.cc"],
+    data = [
+        ":observability_interop_client",
+        ":observability_interop_server",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    tags = [
+        "no_windows",
+        "nobuilder",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)

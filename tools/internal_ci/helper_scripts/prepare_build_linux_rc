@@ -36,9 +36,6 @@ else
   sudo service docker restart
 fi
 
-# Download Docker images from DockerHub
-export DOCKERHUB_ORGANIZATION=grpctesting
-
 git submodule update --init
 
 python3 -m pip install six

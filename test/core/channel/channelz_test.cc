@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channelz.h"
 
@@ -449,8 +449,8 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   Json array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, 2);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array_value());
-  EXPECT_EQ(static_cast<intptr_t>(3), uuids[0]);
-  EXPECT_EQ(static_cast<intptr_t>(5), uuids[1]);
+  EXPECT_EQ(3, uuids[0]);
+  EXPECT_EQ(5, uuids[1]);
   json_str = ChannelzRegistry::GetTopChannels(4);
   parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
@@ -458,7 +458,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, 1);
   uuids = GetUuidListFromArray(array.array_value());
-  EXPECT_EQ(static_cast<intptr_t>(5), uuids[0]);
+  EXPECT_EQ(5, uuids[0]);
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {

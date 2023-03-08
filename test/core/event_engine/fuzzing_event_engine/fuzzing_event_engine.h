@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
-#define GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 
 #include <chrono>
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <ratio>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -29,7 +30,7 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -117,4 +118,4 @@ class FuzzingEventEngine : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H

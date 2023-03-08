@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -47,7 +48,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "test/core/util/test_config.h"
 
@@ -598,8 +598,7 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
     if (it == config_json.object_value().end()) {
       return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
     } else if (it->second.type() != Json::Type::NUMBER) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:config field:value not of type number");
+      *error = GRPC_ERROR_CREATE("field:config field:value not of type number");
     } else {
       int value = 0;
       EXPECT_TRUE(absl::SimpleAtoi(it->second.string_value(), &value));

@@ -21,16 +21,20 @@ extern "C" {
 #endif
 
 struct envoy_config_route_v3_RouteConfiguration;
+struct envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry;
 struct envoy_config_route_v3_Vhds;
 typedef struct envoy_config_route_v3_RouteConfiguration envoy_config_route_v3_RouteConfiguration;
+typedef struct envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry;
 typedef struct envoy_config_route_v3_Vhds envoy_config_route_v3_Vhds;
 extern const upb_MiniTable envoy_config_route_v3_RouteConfiguration_msginit;
+extern const upb_MiniTable envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_msginit;
 extern const upb_MiniTable envoy_config_route_v3_Vhds_msginit;
 struct envoy_config_core_v3_ConfigSource;
 struct envoy_config_core_v3_HeaderValueOption;
 struct envoy_config_route_v3_ClusterSpecifierPlugin;
 struct envoy_config_route_v3_RouteAction_RequestMirrorPolicy;
 struct envoy_config_route_v3_VirtualHost;
+struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
 struct google_protobuf_UInt32Value;
 extern const upb_MiniTable envoy_config_core_v3_ConfigSource_msginit;
@@ -38,6 +42,7 @@ extern const upb_MiniTable envoy_config_core_v3_HeaderValueOption_msginit;
 extern const upb_MiniTable envoy_config_route_v3_ClusterSpecifierPlugin_msginit;
 extern const upb_MiniTable envoy_config_route_v3_RouteAction_RequestMirrorPolicy_msginit;
 extern const upb_MiniTable envoy_config_route_v3_VirtualHost_msginit;
+extern const upb_MiniTable google_protobuf_Any_msginit;
 extern const upb_MiniTable google_protobuf_BoolValue_msginit;
 extern const upb_MiniTable google_protobuf_UInt32Value_msginit;
 
@@ -192,6 +197,21 @@ UPB_INLINE void envoy_config_route_v3_RouteConfiguration_clear_ignore_path_param
 UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_ignore_path_parameters_in_path_matching(const envoy_config_route_v3_RouteConfiguration* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(3, 3), bool);
 }
+UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_has_typed_per_filter_config(const envoy_config_route_v3_RouteConfiguration* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(56, 112));
+}
+UPB_INLINE void envoy_config_route_v3_RouteConfiguration_clear_typed_per_filter_config(const envoy_config_route_v3_RouteConfiguration* msg) {
+  _upb_array_detach(msg, UPB_SIZE(56, 112));
+}
+UPB_INLINE size_t envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_size(const envoy_config_route_v3_RouteConfiguration* msg) {
+  return _upb_msg_map_size(msg, UPB_SIZE(56, 112));
+}
+UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_get(const envoy_config_route_v3_RouteConfiguration* msg, upb_StringView key, struct google_protobuf_Any** val) {
+  return _upb_msg_map_get(msg, UPB_SIZE(56, 112), &key, 0, val, sizeof(*val));
+}
+UPB_INLINE const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_next(const envoy_config_route_v3_RouteConfiguration* msg, size_t* iter) {
+  return (const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry*)_upb_msg_map_next(msg, UPB_SIZE(56, 112), iter);
+}
 
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_name(envoy_config_route_v3_RouteConfiguration *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
@@ -330,6 +350,36 @@ UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_ignore_port_in_host
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_ignore_path_parameters_in_path_matching(envoy_config_route_v3_RouteConfiguration *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(3, 3), bool) = value;
+}
+UPB_INLINE void envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_clear(envoy_config_route_v3_RouteConfiguration* msg) { _upb_msg_map_clear(msg, UPB_SIZE(56, 112)); }
+UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_set(envoy_config_route_v3_RouteConfiguration* msg, upb_StringView key, struct google_protobuf_Any* val, upb_Arena* a) {
+  return _upb_msg_map_set(msg, UPB_SIZE(56, 112), &key, 0, &val, sizeof(val), a);
+}
+UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_delete(envoy_config_route_v3_RouteConfiguration* msg, upb_StringView key) {
+  return _upb_msg_map_delete(msg, UPB_SIZE(56, 112), &key, 0);
+}
+UPB_INLINE envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_nextmutable(envoy_config_route_v3_RouteConfiguration* msg, size_t* iter) {
+  return (envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry*)_upb_msg_map_next(msg, UPB_SIZE(56, 112), iter);
+}
+
+/* envoy.config.route.v3.RouteConfiguration.TypedPerFilterConfigEntry */
+
+UPB_INLINE upb_StringView envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_key(const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* msg) {
+  upb_StringView ret;
+  _upb_msg_map_key(msg, &ret, 0);
+  return ret;
+}
+UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_has_value(const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE const struct google_protobuf_Any* envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_value(const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* msg) {
+  struct google_protobuf_Any* ret;
+  _upb_msg_map_value(msg, &ret, sizeof(ret));
+  return ret;
+}
+
+UPB_INLINE void envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_set_value(envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry *msg, struct google_protobuf_Any* value) {
+  _upb_msg_map_set_value(msg, &value, sizeof(struct google_protobuf_Any*));
 }
 
 /* envoy.config.route.v3.Vhds */

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/util/mock_endpoint.h"
 
@@ -78,9 +78,9 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
-                            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                "Endpoint Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, m->on_read,
+        GRPC_ERROR_CREATE_REFERENCING("Endpoint Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->mu);

@@ -133,6 +133,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr_platform",
-        "//:useful",
+        "//src/core:useful",
     ],
 )

@@ -1,31 +1,34 @@
 
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* This file is auto-generated */
+// This file is auto-generated
 
 #include "test/core/end2end/end2end_tests.h"
 
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 
 static bool g_pre_init_called = false;
 
@@ -105,8 +108,6 @@ extern void max_message_length(grpc_end2end_test_config config);
 extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
-extern void no_error_on_hotpath(grpc_end2end_test_config config);
-extern void no_error_on_hotpath_pre_init(void);
 extern void no_logging(grpc_end2end_test_config config);
 extern void no_logging_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
@@ -259,7 +260,6 @@ void grpc_end2end_tests_pre_init(void) {
   max_connection_idle_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
-  no_error_on_hotpath_pre_init();
   no_logging_pre_init();
   no_op_pre_init();
   payload_pre_init();
@@ -363,7 +363,6 @@ void grpc_end2end_tests(int argc, char **argv,
     max_connection_idle(config);
     max_message_length(config);
     negative_deadline(config);
-    no_error_on_hotpath(config);
     no_logging(config);
     no_op(config);
     payload(config);
@@ -573,10 +572,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("negative_deadline", argv[i])) {
       negative_deadline(config);
-      continue;
-    }
-    if (0 == strcmp("no_error_on_hotpath", argv[i])) {
-      no_error_on_hotpath(config);
       continue;
     }
     if (0 == strcmp("no_logging", argv[i])) {
@@ -799,7 +794,6 @@ void grpc_end2end_tests(int argc, char **argv,
       write_buffering_at_end(config);
       continue;
     }
-    gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
-    abort();
+    grpc_core::Crash(absl::StrFormat( "not a test: '%s'", argv[i]));
   }
 }

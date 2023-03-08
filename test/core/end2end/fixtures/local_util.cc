@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/end2end/fixtures/local_util.h"
 
@@ -45,11 +45,11 @@ void grpc_end2end_local_chttp2_init_client_fullstack(
   grpc_channel_credentials_release(creds);
 }
 
-/*
- * Check if server should fail auth check. If it is true, a different metadata
- * processor will be installed that always fails in processing client's
- * metadata.
- */
+//
+// Check if server should fail auth check. If it is true, a different metadata
+// processor will be installed that always fails in processing client's
+// metadata.
+//
 static bool fail_server_auth_check(const grpc_channel_args* server_args) {
   size_t i;
   if (server_args == nullptr) return false;

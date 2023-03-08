@@ -93,7 +93,7 @@ Slice Slice::FromRefcountAndBytes(grpc_slice_refcount* r, const uint8_t* begin,
                                   const uint8_t* end) {
   grpc_slice out;
   out.refcount = r;
-  if (r != grpc_slice_refcount::NoopRefcount()) r->Ref();
+  if (r != grpc_slice_refcount::NoopRefcount()) r->Ref({});
   out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
   out.data.refcounted.length = end - begin;
   return Slice(out);

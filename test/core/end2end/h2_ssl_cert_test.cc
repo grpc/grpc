@@ -1,37 +1,46 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include <string>
+
 #include <openssl/crypto.h>
 
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/support/string_ref.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -48,7 +57,8 @@ struct fullstack_secure_fixture_data {
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
@@ -71,7 +81,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
 }
 
 static void chttp2_init_client_secure_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* client_args,
+    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args,
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
@@ -81,7 +91,7 @@ static void chttp2_init_client_secure_fullstack(
 }
 
 static void chttp2_init_server_secure_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* server_args,
+    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args,
     grpc_server_credentials* server_creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
@@ -102,7 +112,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   delete ffd;
 }
 
-static int fail_server_auth_check(grpc_channel_args* server_args) {
+static int fail_server_auth_check(const grpc_channel_args* server_args) {
   size_t i;
   if (server_args == nullptr) return 0;
   for (i = 0; i < server_args->num_args; i++) {
@@ -117,27 +127,27 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 #define SERVER_INIT_NAME(REQUEST_TYPE) \
   chttp2_init_server_simple_ssl_secure_fullstack_##REQUEST_TYPE
 
-#define SERVER_INIT(REQUEST_TYPE)                                           \
-  static void SERVER_INIT_NAME(REQUEST_TYPE)(                               \
-      grpc_end2end_test_fixture * f, grpc_channel_args * server_args) {     \
-    grpc_ssl_pem_key_cert_pair pem_cert_key_pair;                           \
-    if (!test_server1_key_id.empty()) {                                     \
-      pem_cert_key_pair.private_key = test_server1_key_id.c_str();          \
-      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
-    } else {                                                                \
-      pem_cert_key_pair.private_key = test_server1_key;                     \
-      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
-    }                                                                       \
-    grpc_server_credentials* ssl_creds =                                    \
-        grpc_ssl_server_credentials_create_ex(                              \
-            test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL);     \
-    if (fail_server_auth_check(server_args)) {                              \
-      grpc_auth_metadata_processor processor = {process_auth_failure, NULL, \
-                                                NULL};                      \
-      grpc_server_credentials_set_auth_metadata_processor(ssl_creds,        \
-                                                          processor);       \
-    }                                                                       \
-    chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);         \
+#define SERVER_INIT(REQUEST_TYPE)                                            \
+  static void SERVER_INIT_NAME(REQUEST_TYPE)(                                \
+      grpc_end2end_test_fixture * f, const grpc_channel_args* server_args) { \
+    grpc_ssl_pem_key_cert_pair pem_cert_key_pair;                            \
+    if (!test_server1_key_id.empty()) {                                      \
+      pem_cert_key_pair.private_key = test_server1_key_id.c_str();           \
+      pem_cert_key_pair.cert_chain = test_server1_cert;                      \
+    } else {                                                                 \
+      pem_cert_key_pair.private_key = test_server1_key;                      \
+      pem_cert_key_pair.cert_chain = test_server1_cert;                      \
+    }                                                                        \
+    grpc_server_credentials* ssl_creds =                                     \
+        grpc_ssl_server_credentials_create_ex(                               \
+            test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL);      \
+    if (fail_server_auth_check(server_args)) {                               \
+      grpc_auth_metadata_processor processor = {process_auth_failure, NULL,  \
+                                                NULL};                       \
+      grpc_server_credentials_set_auth_metadata_processor(ssl_creds,         \
+                                                          processor);        \
+    }                                                                        \
+    chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);          \
   }
 
 SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE)
@@ -152,8 +162,8 @@ SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY)
 typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
 
 #define CLIENT_INIT(cert_type)                                               \
-  static void CLIENT_INIT_NAME(cert_type)(grpc_end2end_test_fixture * f,     \
-                                          grpc_channel_args * client_args) { \
+  static void CLIENT_INIT_NAME(cert_type)(                                   \
+      grpc_end2end_test_fixture * f, const grpc_channel_args* client_args) { \
     grpc_channel_credentials* ssl_creds = NULL;                              \
     grpc_ssl_pem_key_cert_pair self_signed_client_key_cert_pair = {          \
         test_self_signed_client_key, test_self_signed_client_cert};          \
@@ -214,7 +224,7 @@ typedef enum { SUCCESS, FAIL } test_result;
         result                                        \
   }
 
-/* All test configurations */
+// All test configurations
 typedef struct grpc_end2end_test_config_wrapper {
   grpc_end2end_test_config config;
   test_result result;
@@ -260,7 +270,7 @@ static grpc_end2end_test_config_wrapper configs[] = {
              BAD_CERT_PAIR, FAIL),
 };
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_timespec n_seconds_time(int n) {
   return grpc_timeout_seconds_to_deadline(n);
@@ -324,7 +334,7 @@ static void simple_request_body(grpc_end2end_test_fixture f,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);
+  cqv.Expect(tag(1), expected_result == SUCCESS);
   cqv.Verify();
 
   grpc_call_unref(c);
@@ -376,21 +386,23 @@ int main(int argc, char** argv) {
   char* roots_filename;
 
   grpc::testing::TestEnvironment env(&argc, argv);
-  /* Set the SSL roots env var. */
+  // Set the SSL roots env var.
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
   GPR_ASSERT(roots_filename != nullptr);
   GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
+  grpc_core::ConfigVars::Overrides config_overrides;
+  config_overrides.default_ssl_roots_file_path = roots_filename;
+  grpc_core::ConfigVars::SetOverrides(config_overrides);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
 
-  /* Cleanup. */
+  // Cleanup.
   remove(roots_filename);
   gpr_free(roots_filename);
 

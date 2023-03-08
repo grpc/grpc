@@ -28,7 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
@@ -43,11 +42,13 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
@@ -64,7 +65,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -79,7 +80,6 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -217,9 +217,9 @@ struct GlobalObjects {
       case filter_fuzzer::GlobalObjectAction::kFinishCheckCallHost:
         channel_security_connector->FinishCheckCallHost(
             action.finish_check_call_host().qry(),
-            absl::Status(
-                absl::StatusCode(action.finish_check_call_host().status()),
-                action.finish_check_call_host().message()));
+            absl::Status(static_cast<absl::StatusCode>(
+                             action.finish_check_call_host().status()),
+                         action.finish_check_call_host().message()));
         break;
     }
   }
@@ -248,7 +248,9 @@ RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                             GlobalObjects* globals) {
-  ChannelArgs args = ChannelArgs().SetObject(ResourceQuota::Default());
+  ChannelArgs args = CoreConfiguration::Get()
+                         .channel_args_preconditioning()
+                         .PreconditionChannelArgs(nullptr);
   for (const auto& arg : fuzz_args) {
     if (arg.key() == ResourceQuota::ChannelArgName()) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kResourceQuota) {
@@ -400,16 +402,16 @@ class MainLoop {
    public:
     WakeCall(MainLoop* main_loop, uint32_t id)
         : main_loop_(main_loop), id_(id) {}
-    void Wakeup() override {
+    void Wakeup(void*) override {
       for (const uint32_t already : main_loop_->wakeups_) {
         if (already == id_) return;
       }
       main_loop_->wakeups_.push_back(id_);
       delete this;
     }
-    void Drop() override { delete this; }
+    void Drop(void*) override { delete this; }
 
-    std::string ActivityDebugTag() const override {
+    std::string ActivityDebugTag(void*) const override {
       return "WakeCall(" + std::to_string(id_) + ")";
     }
 
@@ -433,10 +435,12 @@ class MainLoop {
           CallArgs call_args, NextPromiseFactory) override {
         Call* call = static_cast<Call*>(Activity::current());
         if (call->server_initial_metadata_) {
-          call_args.server_initial_metadata->Set(
-              call->server_initial_metadata_.get());
+          call->server_initial_metadata_push_promise_.emplace(
+              call_args.server_initial_metadata->Push(
+                  ServerMetadataHandle(call->server_initial_metadata_.get(),
+                                       Arena::PooledDeleter(nullptr))));
         } else {
-          call->unset_incoming_server_initial_metadata_latch_ =
+          call->unpushed_incoming_server_initial_metadata_pipe_ =
               call_args.server_initial_metadata;
         }
         return [call]() -> Poll<ServerMetadataHandle> {
@@ -469,10 +473,10 @@ class MainLoop {
          const filter_fuzzer::Metadata& client_initial_metadata, bool is_client)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
-      auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
+      auto* server_initial_metadata = arena_->New<Pipe<ServerMetadataHandle>>();
       CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
                                                  &client_initial_metadata_)),
-                         server_initial_metadata, nullptr, nullptr};
+                         &server_initial_metadata->sender, nullptr, nullptr};
       if (is_client) {
         promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
             std::move(call_args));
@@ -522,17 +526,19 @@ class MainLoop {
     void Orphan() override { abort(); }
     void ForceImmediateRepoll() override { context_->set_continue(); }
     Waker MakeOwningWaker() override {
-      return Waker(new WakeCall(main_loop_, id_));
+      return Waker(new WakeCall(main_loop_, id_), nullptr);
     }
     Waker MakeNonOwningWaker() override { return MakeOwningWaker(); }
 
     void RecvInitialMetadata(const filter_fuzzer::Metadata& metadata) {
       if (server_initial_metadata_ == nullptr) {
         LoadMetadata(metadata, &server_initial_metadata_);
-        if (auto* latch = std::exchange(
-                unset_incoming_server_initial_metadata_latch_, nullptr)) {
+        if (auto* pipe = std::exchange(
+                unpushed_incoming_server_initial_metadata_pipe_, nullptr)) {
           ScopedContext context(this);
-          latch->Set(server_initial_metadata_.get());
+          server_initial_metadata_push_promise_.emplace(
+              pipe->Push(ServerMetadataHandle(server_initial_metadata_.get(),
+                                              Arena::PooledDeleter(nullptr))));
         }
       }
     }
@@ -550,7 +556,8 @@ class MainLoop {
     }
 
     void SetFinalInfo(filter_fuzzer::FinalInfo final_info) {
-      final_info_ = std::make_unique<filter_fuzzer::FinalInfo>(final_info);
+      final_info_ =
+          std::make_unique<filter_fuzzer::FinalInfo>(std::move(final_info));
     }
 
    private:
@@ -586,7 +593,7 @@ class MainLoop {
     };
 
     template <typename R>
-    absl::optional<FragmentHandle<R>> LoadMetadata(
+    absl::optional<Arena::PoolPtr<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
       if (*out != nullptr) return absl::nullopt;
       *out = std::make_unique<R>(arena_.get());
@@ -594,22 +601,22 @@ class MainLoop {
         (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
                        [](absl::string_view, const Slice&) {});
       }
-      return FragmentHandle<R>::TestOnlyWrap(out->get());
+      return Arena::PoolPtr<R>(out->get(), Arena::PooledDeleter(nullptr));
     }
 
     void Step() {
       if (!promise_.has_value()) return;
       auto r = (*promise_)();
-      if (absl::holds_alternative<Pending>(r)) return;
-      ServerMetadataHandle md = std::move(absl::get<ServerMetadataHandle>(r));
+      if (r.pending()) return;
+      ServerMetadataHandle md = std::move(r.value());
       if (md.get() != server_trailing_metadata_.get()) md->~ServerMetadata();
       promise_.reset();
     }
 
     Poll<ServerMetadataHandle> CheckCompletion() {
       if (server_trailing_metadata_ != nullptr) {
-        return ServerMetadataHandle::TestOnlyWrap(
-            server_trailing_metadata_.get());
+        return ServerMetadataHandle(server_trailing_metadata_.get(),
+                                    Arena::PooledDeleter(nullptr));
       }
       server_trailing_metadata_waker_ = MakeOwningWaker();
       return Pending{};
@@ -622,8 +629,10 @@ class MainLoop {
     std::unique_ptr<filter_fuzzer::FinalInfo> final_info_;
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
     std::unique_ptr<ServerMetadata> server_initial_metadata_;
-    Latch<ServerMetadata*>* unset_incoming_server_initial_metadata_latch_ =
-        nullptr;
+    PipeSender<ServerMetadataHandle>*
+        unpushed_incoming_server_initial_metadata_pipe_ = nullptr;
+    absl::optional<PipeSender<ServerMetadataHandle>::PushType>
+        server_initial_metadata_push_promise_;
     std::unique_ptr<ServerMetadata> server_trailing_metadata_;
     Waker server_trailing_metadata_waker_;
     CallFinalization finalization_;
@@ -676,8 +685,8 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
 
   grpc_core::ChannelStackBuilderImpl builder(
       msg.stack_name().c_str(),
-      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
-  builder.SetChannelArgs(channel_args);
+      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()),
+      channel_args);
   builder.AppendFilter(filter);
   const bool is_client =
       grpc_channel_stack_type_is_client(builder.channel_stack_type());

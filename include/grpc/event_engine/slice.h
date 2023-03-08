@@ -25,6 +25,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -177,8 +178,9 @@ struct CopyConstructors {
 
 }  // namespace slice_detail
 
-class MutableSlice : public slice_detail::BaseSlice,
-                     public slice_detail::CopyConstructors<MutableSlice> {
+class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
+    : public slice_detail::BaseSlice,
+      public slice_detail::CopyConstructors<MutableSlice> {
  public:
   MutableSlice() = default;
   explicit MutableSlice(const grpc_slice& slice);
@@ -212,8 +214,9 @@ class MutableSlice : public slice_detail::BaseSlice,
   uint8_t& operator[](size_t i) { return mutable_data()[i]; }
 };
 
-class Slice : public slice_detail::BaseSlice,
-              public slice_detail::CopyConstructors<Slice> {
+class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
+    : public slice_detail::BaseSlice,
+      public slice_detail::CopyConstructors<Slice> {
  public:
   Slice() = default;
   ~Slice();
@@ -279,6 +282,23 @@ class Slice : public slice_detail::BaseSlice,
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
                                     const uint8_t* begin, const uint8_t* end);
 };
+
+namespace internal {
+template <>
+struct SliceCastable<Slice, grpc_slice> {};
+template <>
+struct SliceCastable<grpc_slice, Slice> {};
+
+template <>
+struct SliceCastable<MutableSlice, grpc_slice> {};
+template <>
+struct SliceCastable<grpc_slice, MutableSlice> {};
+
+template <>
+struct SliceCastable<MutableSlice, Slice> {};
+template <>
+struct SliceCastable<Slice, MutableSlice> {};
+}  // namespace internal
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -23,6 +23,7 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -36,6 +37,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
 
@@ -93,7 +95,7 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
         service_config_call_data->GetMethodParsedConfig(
             filter->service_config_parser_index_));
     if (method_params == nullptr) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
+      error = GRPC_ERROR_CREATE("No RBAC policy found.");
     } else {
       RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
       auto* authorization_engine =
@@ -102,8 +104,7 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
               ->Evaluate(EvaluateArgs(calld->recv_initial_metadata_,
                                       &chand->per_channel_evaluate_args_))
               .type == AuthorizationEngine::Decision::Type::kDeny) {
-        error =
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
+        error = GRPC_ERROR_CREATE("Unauthorized RPC rejected");
       }
     }
     if (!error.ok()) {
@@ -145,16 +146,15 @@ RbacFilter::RbacFilter(size_t index,
 grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
                                    grpc_channel_element_args* args) {
   GPR_ASSERT(elem->filter == &kFilterVtable);
-  auto* auth_context = grpc_find_auth_context_in_args(args->channel_args);
+  auto* auth_context = args->channel_args.GetObject<grpc_auth_context>();
   if (auth_context == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No auth context found");
+    return GRPC_ERROR_CREATE("No auth context found");
   }
-  auto* transport = grpc_channel_args_find_pointer<grpc_transport>(
-      args->channel_args, GRPC_ARG_TRANSPORT);
+  auto* transport = args->channel_args.GetObject<grpc_transport>();
   if (transport == nullptr) {
     // This should never happen since the transport is always set on the server
     // side.
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No transport configured");
+    return GRPC_ERROR_CREATE("No transport configured");
   }
   new (elem->channel_data) RbacFilter(
       grpc_channel_stack_filter_instance_number(args->channel_stack, elem),

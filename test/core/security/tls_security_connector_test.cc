@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
@@ -30,13 +30,13 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -325,12 +325,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
-  distributor->SetErrorForCert(
-      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
-      absl::nullopt);
-  distributor->SetErrorForCert(
-      kIdentityCertName, absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  distributor->SetErrorForCert(kRootCertName, GRPC_ERROR_CREATE(kErrorMessage),
+                               absl::nullopt);
+  distributor->SetErrorForCert(kIdentityCertName, absl::nullopt,
+                               GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
@@ -878,12 +876,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
-  distributor->SetErrorForCert(
-      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
-      absl::nullopt);
-  distributor->SetErrorForCert(
-      kIdentityCertName, absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  distributor->SetErrorForCert(kRootCertName, GRPC_ERROR_CREATE(kErrorMessage),
+                               absl::nullopt);
+  distributor->SetErrorForCert(kIdentityCertName, absl::nullopt,
+                               GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);

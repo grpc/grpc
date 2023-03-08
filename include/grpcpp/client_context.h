@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 /// A ClientContext allows the person implementing a service client to:
 ///
@@ -38,13 +38,13 @@
 #include <memory>
 #include <string>
 
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/create_auth_context.h>
-#include <grpcpp/impl/codegen/metadata_map.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/support/log.h>
+#include <grpcpp/impl/create_auth_context.h>
+#include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
@@ -224,16 +224,16 @@ class ClientContext {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  ///\endverbatim
+  ///
   void AddMetadata(const std::string& meta_key, const std::string& meta_value);
 
   /// Return a collection of initial metadata key-value pairs. Note that keys
@@ -246,7 +246,7 @@ class ClientContext {
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
-    GPR_CODEGEN_ASSERT(initial_metadata_received_);
+    GPR_ASSERT(initial_metadata_received_);
     return *recv_initial_metadata_.map();
   }
 
@@ -373,9 +373,7 @@ class ClientContext {
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
 
   /// Returns the census context that has been set, or nullptr if not set.
-  struct census_context* census_context() const {
-    return census_context_;
-  }
+  struct census_context* census_context() const { return census_context_; }
 
   /// Send a best-effort out-of-band cancel on the call associated with
   /// this client context.  The call could be in any stage; e.g., if it is
@@ -386,6 +384,9 @@ class ClientContext {
   /// Note that TryCancel() does not change any of the tags that are pending
   /// on the completion queue. All pending tags will still be delivered
   /// (though their ok result may reflect the effect of cancellation).
+  ///
+  /// This method is thread-safe, and can be called multiple times from any
+  /// thread.
   void TryCancel();
 
   /// Global Callbacks

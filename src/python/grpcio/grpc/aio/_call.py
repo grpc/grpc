@@ -19,7 +19,7 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import AsyncIterable, Optional, Tuple
+from typing import AsyncIterator, Optional, Tuple
 
 import grpc
 from grpc import _common
@@ -86,7 +86,7 @@ class AioRpcError(grpc.RpcError):
           trailing_metadata: Optional metadata that could be sent by the Server.
         """
 
-        super().__init__(self)
+        super().__init__()
         self._code = code
         self._details = details
         self._initial_metadata = initial_metadata
@@ -294,7 +294,7 @@ class _UnaryResponseMixin(Call):
 
 
 class _StreamResponseMixin(Call):
-    _message_aiter: AsyncIterable[ResponseType]
+    _message_aiter: AsyncIterator[ResponseType]
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
@@ -325,7 +325,7 @@ class _StreamResponseMixin(Call):
         # If the read operation failed, Core should explain why.
         await self._raise_for_status()
 
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         self._update_response_style(_APIStyle.ASYNC_GENERATOR)
         if self._message_aiter is None:
             self._message_aiter = self._fetch_stream_responses()
@@ -341,7 +341,7 @@ class _StreamResponseMixin(Call):
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
-            await self._raise_for_status()
+            raise
 
         if raw_response is cygrpc.EOF:
             return cygrpc.EOF
@@ -449,7 +449,7 @@ class _StreamRequestMixin(Call):
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
-            await self._raise_for_status()
+            raise
 
     async def _done_writing(self) -> None:
         if self.done():
@@ -463,7 +463,7 @@ class _StreamRequestMixin(Call):
             except asyncio.CancelledError:
                 if not self.cancelled():
                     self.cancel()
-                await self._raise_for_status()
+                raise
 
     async def write(self, request: RequestType) -> None:
         self._raise_for_different_style(_APIStyle.READER_WRITER)
@@ -602,6 +602,7 @@ class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
+            raise
 
         if self._cython_call.is_ok():
             return _common.deserialize(serialized_response,

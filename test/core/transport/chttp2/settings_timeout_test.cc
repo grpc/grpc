@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <inttypes.h>
 
@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -173,8 +174,7 @@ class Client {
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_,
-                           GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
+    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE("shutdown"));
     grpc_slice_buffer_destroy(&read_buffer);
     return retval;
   }
@@ -207,8 +207,7 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s",
-              grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "OnEventDone(): %s", StatusToString(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);

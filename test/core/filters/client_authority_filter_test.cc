@@ -18,7 +18,6 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -34,9 +33,6 @@
 
 namespace grpc_core {
 namespace {
-
-auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
 ChannelArgs TestChannelArgs(absl::string_view default_authority) {
   return ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
@@ -64,14 +60,17 @@ TEST(ClientAuthorityFilterTest, NonStringArgFails) {
 TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
       TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   bool seen = false;
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
+                                    Arena::PooledDeleter(nullptr)),
                nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
@@ -81,12 +80,12 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
         seen = true;
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch);
+              return ServerMetadataHandle(&trailing_metadata_batch,
+                                          Arena::PooledDeleter(nullptr));
             });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
+  EXPECT_TRUE(result.ready());
   EXPECT_TRUE(seen);
 }
 
@@ -94,7 +93,9 @@ TEST(ClientAuthorityFilterTest,
      PromiseCompletesImmediatelyAndDoesNotClobberAlreadySetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
       TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   initial_metadata_batch.Set(HttpAuthorityMetadata(),
@@ -103,7 +104,8 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
+                                    Arena::PooledDeleter(nullptr)),
                nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
@@ -113,12 +115,12 @@ TEST(ClientAuthorityFilterTest,
         seen = true;
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch);
+              return ServerMetadataHandle(&trailing_metadata_batch,
+                                          Arena::PooledDeleter(nullptr));
             });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
+  EXPECT_TRUE(result.ready());
   EXPECT_TRUE(seen);
 }
 
@@ -127,5 +129,10 @@ TEST(ClientAuthorityFilterTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  // TODO(ctiller): promise_based_call currently demands to instantiate an event
+  // engine which needs grpc to be initialized.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

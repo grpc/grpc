@@ -50,10 +50,12 @@ _SETTINGS = {
                 clamp_invalid_value),
     'GRPC_ALLOW_TRUE_BINARY_METADATA':
         Setting(0xfe03, 0, 0, 1, clamp_invalid_value),
+    'GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE':
+        Setting(0xfe04, 0, 16384, 0x7fffffff, clamp_invalid_value),
 }
 
 H = open('src/core/ext/transport/chttp2/transport/http2_settings.h', 'w')
-C = open('src/core/ext/transport/chttp2/transport/http2_settings.c', 'w')
+C = open('src/core/ext/transport/chttp2/transport/http2_settings.cc', 'w')
 
 
 # utility: print a big comment block into a set of files
@@ -91,14 +93,15 @@ print("#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H",
 print("#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H",
       file=H)
 print(file=H)
+print("#include <grpc/support/port_platform.h>", file=H)
 print("#include <stdint.h>", file=H)
-print("#include <stdbool.h>", file=H)
 print(file=H)
 
+print("#include <grpc/support/port_platform.h>", file=C)
 print("#include \"src/core/ext/transport/chttp2/transport/http2_settings.h\"",
       file=C)
 print(file=C)
-print("#include <grpc/support/useful.h>", file=C)
+print("#include \"src/core/lib/gpr/useful.h\"", file=C)
 print("#include \"src/core/lib/transport/http2_errors.h\"", file=C)
 print(file=C)
 
@@ -162,7 +165,7 @@ for i, r in enumerate(p.r):
         print('case %d: h += %d; break;' % (i, r), file=C)
 print("""
   }
-  *out = (grpc_chttp2_setting_id)h;
+  *out = static_cast<grpc_chttp2_setting_id>(h);
   return h < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) && grpc_setting_id_to_wire_id[h] == wire_id;
 }
 """ % cgargs,

@@ -24,11 +24,12 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -309,10 +310,10 @@ class FailFirstTenCallsFilter {
         if (!batch->cancel_stream) {
           grpc_transport_stream_op_batch_finish_with_failure(
               batch,
-              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "FailFirstTenCallsFilter failing batch"),
-                                 grpc_core::StatusIntProperty::kRpcStatus,
-                                 GRPC_STATUS_UNAVAILABLE),
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE("FailFirstTenCallsFilter failing batch"),
+                  grpc_core::StatusIntProperty::kRpcStatus,
+                  GRPC_STATUS_UNAVAILABLE),
               calld->call_combiner_);
           return;
         }

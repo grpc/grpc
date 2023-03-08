@@ -17,6 +17,7 @@
 #include <fstream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <queue>
 #include <set>
@@ -46,14 +47,21 @@ struct Hash {
   bool operator<(const Hash& other) const {
     return memcmp(bytes, other.bytes, SHA256_DIGEST_LENGTH) < 0;
   }
+  std::string ToString() const {
+    std::string result;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+      absl::StrAppend(&result, absl::Hex(bytes[i], absl::kZeroPad2));
+    }
+    return result;
+  }
 };
 
 // Given a vector of ints (T), return a Hash object with the sha256
 template <typename T>
 Hash HashVec(const std::vector<T>& v) {
   Hash h;
-  SHA1(reinterpret_cast<const uint8_t*>(v.data()), v.size() * sizeof(T),
-       h.bytes);
+  SHA256(reinterpret_cast<const uint8_t*>(v.data()), v.size() * sizeof(T),
+         h.bytes);
   return h;
 }
 
@@ -679,27 +687,29 @@ class TableBuilder {
       std::vector<std::string> lines;
       const uint64_t max_inner = MaxInner();
       const uint64_t max_outer = MaxOuter();
-      std::vector<std::string> emit_names;
-      std::vector<std::string> inner_names;
-      std::vector<std::string> outer_names;
+      std::vector<std::unique_ptr<Array>> emit_names;
+      std::vector<std::unique_ptr<Array>> inner_names;
+      std::vector<std::unique_ptr<Array>> outer_names;
       for (size_t i = 0; i < slices.size(); i++) {
         emit_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-            slices[i].emit, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_emit"),
+            "uint8_t", slices[i].emit, true, global_decls, global_values));
         inner_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_inner"), TypeForMax(max_inner),
-            slices[i].inner, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_inner"),
+            TypeForMax(max_inner), slices[i].inner, true, global_decls,
+            global_values));
         outer_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_outer"), TypeForMax(max_outer),
-            slices[i].outer, false, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_outer"),
+            TypeForMax(max_outer), slices[i].outer, false, global_decls,
+            global_values));
       }
       if (slice_bits == 0) {
-        global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
-                                     "(size_t i) { return ", inner_names[0],
-                                     "[", outer_names[0], "[i]]; }"));
+        global_fns->Add(absl::StrCat(
+            "static inline uint64_t GetOp", id, "(size_t i) { return ",
+            inner_names[0]->Index(outer_names[0]->Index("i")), "; }"));
         global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
-                                     emit_names[0], "[emit]; }"));
+                                     emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
@@ -765,23 +775,24 @@ class TableBuilder {
       Sink* const global_values = builder->ctx_->global_values();
       uint64_t max_op = MaxOp();
       const int id = builder->id_;
-      std::vector<std::string> emit_names;
-      std::vector<std::string> ops_names;
+      std::vector<std::unique_ptr<Array>> emit_names;
+      std::vector<std::unique_ptr<Array>> ops_names;
       for (size_t i = 0; i < slices.size(); i++) {
         emit_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-            slices[i].emit, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_emit"),
+            "uint8_t", slices[i].emit, true, global_decls, global_values));
         ops_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_ops"), TypeForMax(max_op),
-            slices[i].ops, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_ops"),
+            TypeForMax(max_op), slices[i].ops, true, global_decls,
+            global_values));
       }
       if (slice_bits == 0) {
         global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
-                                     "(size_t i) { return ", ops_names[0],
-                                     "[i]; }"));
+                                     "(size_t i) { return ",
+                                     ops_names[0]->Index("i"), "; }"));
         global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
-                                     emit_names[0], "[emit]; }"));
+                                     emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
@@ -838,29 +849,221 @@ class TableBuilder {
     return table;
   }
 
+  class Array {
+   public:
+    virtual ~Array() = default;
+    virtual std::string Index(absl::string_view value) = 0;
+    virtual std::string ArrayName() = 0;
+    virtual int Cost() = 0;
+  };
+
+  class NamedArray : public Array {
+   public:
+    explicit NamedArray(std::string name) : name_(std::move(name)) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(name_, "[", value, "]");
+    }
+    std::string ArrayName() override { return name_; }
+    int Cost() override { abort(); }
+
+   private:
+    std::string name_;
+  };
+
+  class IdentityArray : public Array {
+   public:
+    std::string Index(absl::string_view value) override {
+      return std::string(value);
+    }
+    std::string ArrayName() override { abort(); }
+    int Cost() override { return 0; }
+  };
+
+  class ConstantArray : public Array {
+   public:
+    explicit ConstantArray(std::string value) : value_(std::move(value)) {}
+    std::string Index(absl::string_view index) override {
+      return absl::StrCat("((void)", index, ", ", value_, ")");
+    }
+    std::string ArrayName() override { abort(); }
+    int Cost() override { return 0; }
+
+   private:
+    std::string value_;
+  };
+
+  class OffsetArray : public Array {
+   public:
+    explicit OffsetArray(int offset) : offset_(offset) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(value, " + ", offset_);
+    }
+    std::string ArrayName() override { abort(); }
+    int Cost() override { return 10; }
+
+   private:
+    int offset_;
+  };
+
+  class LinearDivideArray : public Array {
+   public:
+    LinearDivideArray(int offset, int divisor)
+        : offset_(offset), divisor_(divisor) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(value, "/", divisor_, " + ", offset_);
+    }
+    std::string ArrayName() override { abort(); }
+    int Cost() override { return 20 + (offset_ != 0 ? 10 : 0); }
+
+   private:
+    int offset_;
+    int divisor_;
+  };
+
+  class TwoElemArray : public Array {
+   public:
+    TwoElemArray(std::string value0, std::string value1)
+        : value0_(std::move(value0)), value1_(std::move(value1)) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(value, " ? ", value1_, " : ", value0_);
+    }
+    std::string ArrayName() override { abort(); }
+    int Cost() override { return 40; }
+
+   private:
+    std::string value0_;
+    std::string value1_;
+  };
+
+  class Composite2Array : public Array {
+   public:
+    Composite2Array(std::unique_ptr<Array> a, std::unique_ptr<Array> b,
+                    int split)
+        : a_(std::move(a)), b_(std::move(b)), split_(split) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(
+          "(", value, " < ", split_, " ? (", a_->Index(value), ") : (",
+          b_->Index(absl::StrCat("(", value, "-", split_, ")")), "))");
+    }
+    std::string ArrayName() override { abort(); }
+    int Cost() override { return 40 + a_->Cost() + b_->Cost(); }
+
+   private:
+    std::unique_ptr<Array> a_;
+    std::unique_ptr<Array> b_;
+    int split_;
+  };
+
   // Helper to generate a compound table (an array of arrays)
-  static void GenCompound(int id, std::vector<std::string> names,
+  static void GenCompound(int id,
+                          const std::vector<std::unique_ptr<Array>>& arrays,
                           std::string ext, std::string type, Sink* global_decls,
                           Sink* global_values) {
     global_decls->Add(absl::StrCat("static const ", type, "* const table", id,
-                                   "_", ext, "_[", names.size(), "];"));
+                                   "_", ext, "_[", arrays.size(), "];"));
     global_values->Add(absl::StrCat("const ", type,
                                     "* const HuffDecoderCommon::table", id, "_",
-                                    ext, "_[", names.size(), "] = {"));
-    for (const std::string& name : names) {
-      global_values->Add(absl::StrCat("  ", name, ","));
+                                    ext, "_[", arrays.size(), "] = {"));
+    for (const std::unique_ptr<Array>& array : arrays) {
+      global_values->Add(absl::StrCat("  ", array->ArrayName(), ","));
     }
     global_values->Add("};");
   }
 
+  // Try to create a simple function equivalent to a mapping implied by a set of
+  // values.
+  static const int kMaxArrayToFunctionRecursions = 1;
+  template <typename T>
+  static std::unique_ptr<Array> ArrayToFunction(
+      const std::vector<T>& values,
+      int recurse = kMaxArrayToFunctionRecursions) {
+    std::unique_ptr<Array> best = nullptr;
+    auto note_solution = [&best](std::unique_ptr<Array> a) {
+      if (best != nullptr && best->Cost() <= a->Cost()) return;
+      best = std::move(a);
+    };
+    // constant => k,k,k,k,...
+    bool is_constant = true;
+    for (size_t i = 1; i < values.size(); i++) {
+      if (values[i] != values[0]) {
+        is_constant = false;
+        break;
+      }
+    }
+    if (is_constant) {
+      note_solution(std::make_unique<ConstantArray>(absl::StrCat(values[0])));
+    }
+    // identity => 0,1,2,3,...
+    bool is_identity = true;
+    for (size_t i = 0; i < values.size(); i++) {
+      if (values[i] != i) {
+        is_identity = false;
+        break;
+      }
+    }
+    if (is_identity) {
+      note_solution(std::make_unique<IdentityArray>());
+    }
+    // offset => k,k+1,k+2,k+3,...
+    bool is_offset = true;
+    for (size_t i = 1; i < values.size(); i++) {
+      if (values[i] - values[0] != i) {
+        is_offset = false;
+        break;
+      }
+    }
+    if (is_offset) {
+      note_solution(std::make_unique<OffsetArray>(values[0]));
+    }
+    // offset => k,k,k+1,k+1,...
+    for (int d = 2; d < 32; d++) {
+      bool is_linear = true;
+      for (size_t i = 1; i < values.size(); i++) {
+        if (values[i] - values[0] != (i / d)) {
+          is_linear = false;
+          break;
+        }
+      }
+      if (is_linear) {
+        note_solution(std::make_unique<LinearDivideArray>(values[0], d));
+      }
+    }
+    // Two items can be resolved with a conditional
+    if (values.size() == 2) {
+      note_solution(std::make_unique<TwoElemArray>(absl::StrCat(values[0]),
+                                                   absl::StrCat(values[1])));
+    }
+    if ((recurse > 0 && values.size() >= 6) ||
+        (recurse == kMaxArrayToFunctionRecursions)) {
+      for (size_t i = 1; i < values.size() - 1; i++) {
+        std::vector<T> left(values.begin(), values.begin() + i);
+        std::vector<T> right(values.begin() + i, values.end());
+        std::unique_ptr<Array> left_array = ArrayToFunction(left, recurse - 1);
+        std::unique_ptr<Array> right_array =
+            ArrayToFunction(right, recurse - 1);
+        if (left_array && right_array) {
+          note_solution(std::make_unique<Composite2Array>(
+              std::move(left_array), std::move(right_array), i));
+        }
+      }
+    }
+    return best;
+  }
+
   // Helper to generate an array of values
   template <typename T>
-  std::string GenArray(std::string name, std::string type,
-                       const std::vector<T>& values, bool hex,
-                       Sink* global_decls, Sink* global_values) const {
+  std::unique_ptr<Array> GenArray(bool force_array, std::string name,
+                                  std::string type,
+                                  const std::vector<T>& values, bool hex,
+                                  Sink* global_decls,
+                                  Sink* global_values) const {
+    if (!force_array) {
+      auto fn = ArrayToFunction(values);
+      if (fn != nullptr) return fn;
+    }
     auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
     if (previous_name.has_value()) {
-      return absl::StrCat(*previous_name, "_");
+      return std::make_unique<NamedArray>(absl::StrCat(*previous_name, "_"));
     }
     std::vector<std::string> elems;
     elems.reserve(values.size());
@@ -884,7 +1087,7 @@ class TableBuilder {
                                     name, "_[", values.size(), "] = {"));
     global_values->Add(absl::StrCat("  ", data));
     global_values->Add("};");
-    return absl::StrCat(name, "_");
+    return std::make_unique<NamedArray>(absl::StrCat(name, "_"));
   }
 
   // Choose an encoding for this set of tables.

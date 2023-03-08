@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <initializer_list>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -53,7 +54,7 @@ static void chttp2_init_server_fullstack_uds(
   grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, UDS);
 }
 
-/* All test configurations */
+// All test configurations
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack_local_abstract_uds_percent_encoded",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |

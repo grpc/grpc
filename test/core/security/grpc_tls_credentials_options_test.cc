@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
@@ -27,9 +27,9 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"

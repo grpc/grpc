@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -27,7 +27,6 @@
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -37,7 +36,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
@@ -52,7 +50,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 
@@ -83,7 +80,7 @@ static bool maybe_prepend_client_auth_filter(
 static bool maybe_prepend_server_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
   if (builder->channel_args().Contains(GRPC_SERVER_CREDENTIALS_ARG)) {
-    builder->PrependFilter(&grpc_server_auth_filter);
+    builder->PrependFilter(&grpc_core::ServerAuthFilter::kFilter);
   }
   return true;
 }
@@ -120,6 +117,9 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
 static void do_basic_init(void) {
   grpc_core::InitInternally = grpc_init;
   grpc_core::ShutdownInternally = grpc_shutdown;
+  grpc_core::IsInitializedInternally = []() {
+    return grpc_is_initialized() != 0;
+  };
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
@@ -156,7 +156,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     grpc_resolver_dns_ares_shutdown();
-    grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;
@@ -182,11 +181,12 @@ void grpc_shutdown(void) {
     grpc_core::ApplicationCallbackExecCtx* acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
-        !grpc_event_engine::posix_engine::TimerManager::
+        !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
         (acec == nullptr ||
          (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
-             0)) {
+             0) &&
+        grpc_core::ExecCtx::Get() == nullptr) {
       // just run clean-up when this is called on non-executor thread.
       gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
       g_shutting_down = true;

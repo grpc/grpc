@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 
+#include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
@@ -31,10 +32,9 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
-/* -- Fake transport security credentials. -- */
+// -- Fake transport security credentials. --
 
 namespace {
 
@@ -90,7 +90,7 @@ grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
       expected_targets);
 }
 
-/* -- Metadata-only test credentials. -- */
+// -- Metadata-only test credentials. --
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_md_only_test_credentials::GetRequestMetadata(

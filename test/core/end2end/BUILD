@@ -34,8 +34,8 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc",
-        "//:match",
-        "//:time",
+        "//src/core:match",
+        "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -58,22 +58,29 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
     language = "C++",
     deps = [
-        "//:channel_args_preconditioning",
         "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:httpcli",
-        "//:iomgr_fwd",
-        "//:pollset_set",
-        "//:resolved_address",
-        "//:slice_refcount",
         "//:sockaddr_utils",
-        "//:time",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:channel_args_preconditioning",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:iomgr_fwd",
+        "//src/core:pollset_set",
+        "//src/core:resolved_address",
+        "//src/core:slice_refcount",
+        "//src/core:status_helper",
+        "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -87,6 +94,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -101,7 +109,6 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
     ],
 )
@@ -112,11 +119,16 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:exec_ctx",
         "//:gpr",
-        "//:gpr_atm",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:iomgr_fwd",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:gpr_atm",
+        "//src/core:iomgr_fwd",
+        "//src/core:slice",
+        "//src/core:status_helper",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -127,9 +139,10 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:exec_ctx",
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -149,9 +162,10 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:iomgr_port",
-        "//:resolved_address",
         "//:sockaddr_utils",
+        "//src/core:error",
+        "//src/core:iomgr_port",
+        "//src/core:resolved_address",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -168,16 +182,20 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:debug_location",
-        "//:default_event_engine",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_resolver_dns_ares",
-        "//:grpc_sockaddr",
-        "//:iomgr_fwd",
-        "//:resolved_address",
         "//:server_address",
-        "//:time",
+        "//src/core:channel_args",
+        "//src/core:closure",
+        "//src/core:default_event_engine",
+        "//src/core:error",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_fwd",
+        "//src/core:resolved_address",
+        "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -185,15 +203,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "inproc_callback_test",
     srcs = ["inproc_callback_test.cc"],
+    external_deps = ["absl/strings:str_format"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "local_util",
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
-        "//:grpc_transport_inproc",
+        "//src/core:grpc_transport_inproc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -206,7 +224,6 @@ grpc_cc_test(
         "cq_verifier",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc",
         "//:grpc_public_hdrs",
         "//test/core/util:grpc_test_util",
     ],
@@ -217,8 +234,8 @@ grpc_cc_test(
     srcs = ["multiple_server_queues_test.cc"],
     language = "C++",
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -231,7 +248,6 @@ grpc_cc_test(
         "cq_verifier",
         "//:exec_ctx",
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
@@ -240,6 +256,31 @@ grpc_cc_test(
 )
 
 grpc_end2end_tests()
+
+grpc_cc_test(
+    name = "h2_ssl_cert_test",
+    srcs = [
+        "end2end_tests.h",
+        "h2_ssl_cert_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "libcrypto",
+    ],
+    language = "C++",
+    deps = [
+        "cq_verifier",
+        "local_util",
+        "ssl_test_data",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "h2_ssl_session_reuse_test",
@@ -259,10 +300,13 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:config_vars",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:useful",
+        "//src/core:channel_args",
+        "//src/core:error",
+        "//src/core:useful",
         "//test/core/util:grpc_test_util",
     ],
 )

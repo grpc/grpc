@@ -1,26 +1,27 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdint.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
@@ -82,8 +83,8 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
-  /* body generated with
-   * tools/codegen/core/gen_server_registered_method_bad_client_test_body.py */
+  // body generated with
+  // tools/codegen/core/gen_server_registered_method_bad_client_test_body.py
   GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, nullptr,
                            PFX_STR "\x00\x00\x00\x00\x00\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);

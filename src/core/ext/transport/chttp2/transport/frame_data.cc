@@ -1,26 +1,28 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 
 #include <stdlib.h>
+
+#include <initializer_list>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -104,7 +106,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
       }
       break;
     default:
-      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      error = GRPC_ERROR_CREATE(
           absl::StrFormat("Bad GRPC frame type 0x%02x", header[0]));
       error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
                                  static_cast<intptr_t>(s->id));
@@ -147,9 +149,9 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
   if (is_last && s->received_last_frame) {
     grpc_chttp2_mark_stream_closed(
         t, s, true, false,
-        t->is_client ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                           "Data frame with END_STREAM flag received")
-                     : absl::OkStatus());
+        t->is_client
+            ? GRPC_ERROR_CREATE("Data frame with END_STREAM flag received")
+            : absl::OkStatus());
   }
 
   return absl::OkStatus();

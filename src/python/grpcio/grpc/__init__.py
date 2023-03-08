@@ -24,7 +24,6 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-import six
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -45,7 +44,7 @@ class FutureCancelledError(Exception):
     """Indicates that the computation underlying a Future was cancelled."""
 
 
-class Future(six.with_metaclass(abc.ABCMeta)):
+class Future(abc.ABC):
     """A representation of a computation in another control flow.
 
     Computations represented by a Future may be yet to be begun,
@@ -283,7 +282,7 @@ class StatusCode(enum.Enum):
 #############################  gRPC Status  ################################
 
 
-class Status(six.with_metaclass(abc.ABCMeta)):
+class Status(abc.ABC):
     """Describes the status of an RPC.
 
     This is an EXPERIMENTAL API.
@@ -306,7 +305,7 @@ class RpcError(Exception):
 ##############################  Shared Context  ################################
 
 
-class RpcContext(six.with_metaclass(abc.ABCMeta)):
+class RpcContext(abc.ABC):
     """Provides RPC-related information and action."""
 
     @abc.abstractmethod
@@ -356,7 +355,7 @@ class RpcContext(six.with_metaclass(abc.ABCMeta)):
 #########################  Invocation-Side Context  ############################
 
 
-class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
+class Call(RpcContext, metaclass=abc.ABCMeta):
     """Invocation-side utility object for an RPC."""
 
     @abc.abstractmethod
@@ -407,7 +406,7 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
 ##############  Invocation-Side Interceptor Interfaces & Classes  ##############
 
 
-class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
+class ClientCallDetails(abc.ABC):
     """Describes an RPC to be invoked.
 
     Attributes:
@@ -416,14 +415,13 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+      wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
       compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This is an EXPERIMENTAL option.
+        grpc.compression.Gzip.
     """
 
 
-class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
@@ -457,7 +455,7 @@ class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+class UnaryStreamClientInterceptor(abc.ABC):
     """Affords intercepting unary-stream invocations."""
 
     @abc.abstractmethod
@@ -491,7 +489,7 @@ class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+class StreamUnaryClientInterceptor(abc.ABC):
     """Affords intercepting stream-unary invocations."""
 
     @abc.abstractmethod
@@ -525,7 +523,7 @@ class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+class StreamStreamClientInterceptor(abc.ABC):
     """Affords intercepting stream-stream invocations."""
 
     @abc.abstractmethod
@@ -592,7 +590,7 @@ class CallCredentials(object):
         self._credentials = credentials
 
 
-class AuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
+class AuthMetadataContext(abc.ABC):
     """Provides information to call credentials metadata plugins.
 
     Attributes:
@@ -601,7 +599,7 @@ class AuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
     """
 
 
-class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
+class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
     def __call__(self, metadata, error):
@@ -614,7 +612,7 @@ class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class AuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
+class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
     def __call__(self, context, callback):
@@ -660,7 +658,7 @@ class ServerCertificateConfiguration(object):
 ########################  Multi-Callable Interfaces  ###########################
 
 
-class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
+class UnaryUnaryMultiCallable(abc.ABC):
     """Affords invoking a unary-unary RPC from client-side."""
 
     @abc.abstractmethod
@@ -681,10 +679,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -714,10 +711,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -747,10 +743,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -762,7 +757,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
+class UnaryStreamMultiCallable(abc.ABC):
     """Affords invoking a unary-stream RPC from client-side."""
 
     @abc.abstractmethod
@@ -783,10 +778,9 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -797,7 +791,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
+class StreamUnaryMultiCallable(abc.ABC):
     """Affords invoking a stream-unary RPC from client-side."""
 
     @abc.abstractmethod
@@ -819,10 +813,9 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -853,10 +846,9 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -886,10 +878,9 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -901,7 +892,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
+class StreamStreamMultiCallable(abc.ABC):
     """Affords invoking a stream-stream RPC on client-side."""
 
     @abc.abstractmethod
@@ -922,10 +913,9 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
-          wait_for_ready: This is an EXPERIMENTAL argument. An optional
-            flag to enable :term:`wait_for_ready` mechanism.
+          wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -939,7 +929,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 #############################  Channel Interface  ##############################
 
 
-class Channel(six.with_metaclass(abc.ABCMeta)):
+class Channel(abc.ABC):
     """Affords RPC invocation via generic methods on client-side.
 
     Channel objects implement the Context Manager type, although they need not
@@ -1080,12 +1070,12 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 ##########################  Service-Side Context  ##############################
 
 
-class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
+class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     """A context object passed to method implementations."""
 
     @abc.abstractmethod
     def invocation_metadata(self):
-        """Accesses the metadata from the sent by the client.
+        """Accesses the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.
@@ -1139,8 +1129,6 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     def set_compression(self, compression):
         """Set the compression algorithm to be used for the entire call.
-
-        This is an EXPERIMENTAL method.
 
         Args:
           compression: An element of grpc.compression, e.g.
@@ -1274,8 +1262,6 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     def disable_next_message_compression(self):
         """Disables compression for the next response message.
 
-        This is an EXPERIMENTAL method.
-
         This method will override any compression configuration set during
         server creation or set on the call.
         """
@@ -1285,7 +1271,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 #####################  Service-Side Handler Interfaces  ########################
 
 
-class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
+class RpcMethodHandler(abc.ABC):
     """An implementation of a single RPC method.
 
     Attributes:
@@ -1321,7 +1307,7 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
     """
 
 
-class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
+class HandlerCallDetails(abc.ABC):
     """Describes an RPC that has just arrived for service.
 
     Attributes:
@@ -1330,7 +1316,7 @@ class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
     """
 
 
-class GenericRpcHandler(six.with_metaclass(abc.ABCMeta)):
+class GenericRpcHandler(abc.ABC):
     """An implementation of arbitrarily many RPC methods."""
 
     @abc.abstractmethod
@@ -1347,7 +1333,7 @@ class GenericRpcHandler(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
+class ServiceRpcHandler(GenericRpcHandler, metaclass=abc.ABCMeta):
     """An implementation of RPC methods belonging to a service.
 
     A service handles RPC methods with structured names of the form
@@ -1370,7 +1356,7 @@ class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
 ####################  Service-Side Interceptor Interfaces  #####################
 
 
-class ServerInterceptor(six.with_metaclass(abc.ABCMeta)):
+class ServerInterceptor(abc.ABC):
     """Affords intercepting incoming RPCs on the service-side."""
 
     @abc.abstractmethod
@@ -1395,7 +1381,7 @@ class ServerInterceptor(six.with_metaclass(abc.ABCMeta)):
 #############################  Server Interface  ###############################
 
 
-class Server(six.with_metaclass(abc.ABCMeta)):
+class Server(abc.ABC):
     """Services RPCs."""
 
     @abc.abstractmethod
@@ -1969,7 +1955,7 @@ def insecure_channel(target, options=None, compression=None):
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
 
     Returns:
       A Channel.
@@ -1990,7 +1976,7 @@ def secure_channel(target, credentials, options=None, compression=None):
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
 
     Returns:
       A Channel.
@@ -2057,7 +2043,7 @@ def server(thread_pool,
         indicate no limit.
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
-        lifetime of the server unless overridden. This is an EXPERIMENTAL option.
+        lifetime of the server unless overridden.
       xds: If set to true, retrieves server configuration via xDS. This is an
         EXPERIMENTAL option.
 
@@ -2083,8 +2069,6 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
 @enum.unique
 class Compression(enum.IntEnum):
     """Indicates the compression method to be used for an RPC.
-
-       This enumeration is part of an EXPERIMENTAL API.
 
        Attributes:
         NoCompression: Do not use compression algorithm.

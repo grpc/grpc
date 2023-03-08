@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
-#define GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
+#define GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,7 +26,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
@@ -190,7 +189,7 @@ class ObservableWatch final : private WatchCommitter {
 
   Poll<Result> operator()() {
     auto r = state_->PollWatch(&version_seen_);
-    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+    if (auto* p = r.value_if_ready()) {
       if (p->has_value()) {
         promise_ = Promise(factory_(std::move(**p), this));
       } else {
@@ -293,4 +292,4 @@ class Observable {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H

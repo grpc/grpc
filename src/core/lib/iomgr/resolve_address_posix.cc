@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -32,6 +32,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -105,25 +106,23 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   // parse name, splitting it into host and port parts
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    err = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        StatusStrProperty::kTargetAddress, name);
+    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                             StatusStrProperty::kTargetAddress, name);
     goto done;
   }
   if (port.empty()) {
     if (default_port.empty()) {
-      err = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          StatusStrProperty::kTargetAddress, name);
+      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
+                               StatusStrProperty::kTargetAddress, name);
       goto done;
     }
     port = std::string(default_port);
   }
   // Call getaddrinfo
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
-  hints.ai_socktype = SOCK_STREAM; /* stream socket */
-  hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
+  hints.ai_family = AF_UNSPEC;      // ipv4 or ipv6
+  hints.ai_socktype = SOCK_STREAM;  // stream socket
+  hints.ai_flags = AI_PASSIVE;      // for wildcard IP address
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
@@ -143,9 +142,8 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     err = grpc_error_set_str(
         grpc_error_set_str(
             grpc_error_set_str(
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
-                    StatusIntProperty::kErrorNo, s),
+                grpc_error_set_int(GRPC_ERROR_CREATE(gai_strerror(s)),
+                                   StatusIntProperty::kErrorNo, s),
                 StatusStrProperty::kOsError, gai_strerror(s)),
             StatusStrProperty::kSyscall, "getaddrinfo"),
         StatusStrProperty::kTargetAddress, name);

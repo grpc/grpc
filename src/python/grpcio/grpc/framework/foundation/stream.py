@@ -15,10 +15,8 @@
 
 import abc
 
-import six
 
-
-class Consumer(six.with_metaclass(abc.ABCMeta)):
+class Consumer(abc.ABC):
     """Interface for consumers of finite streams of values or objects."""
 
     @abc.abstractmethod

@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  FROM php:8.0.0-zts-buster
+  FROM php:8.1-buster
 
   RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y ${'\\'}
     autoconf automake git libtool pkg-config ${'\\'}
@@ -25,14 +25,8 @@
 
   WORKDIR /tmp
 
-  # install pear
-  RUN apt-get install expect -y && ${'\\'}
-    curl -LO http://pear.php.net/go-pear.phar && ${'\\'}
-    expect -c 'spawn php ./go-pear.phar; expect "or Enter to continue:"; send "\n"; expect "Currently used php.ini"; send "\n"; expect eof' && ${'\\'}
-    rm go-pear.phar
-
-  <%include file="../download_phpunit.include" />
+  <%include file="../download_phpunit9.include" />
 
   <%include file="../pecl_ext_build_src.include" />
 
-  CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", "--ignore-valgrind-undef-errors"]
+  <%include file="../dockerfile_cmd.include" />

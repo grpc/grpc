@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -43,7 +43,7 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
           reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
           GRPC_SLICE_LENGTH(slice), GPR_DUMP_HEX | GPR_DUMP_ASCII, &len));
       grpc_error_handle error = grpc_error_set_str(
-          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
+          grpc_error_set_int(GRPC_ERROR_CREATE(err_desc),
                              grpc_core::StatusIntProperty::kOffset,
                              p - GRPC_SLICE_START_PTR(slice)),
           grpc_core::StatusStrProperty::kRawBytes,
@@ -75,16 +75,13 @@ constexpr LegalHeaderKeyBits g_legal_header_key_bits;
 
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
   if (GRPC_SLICE_LENGTH(slice) == 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot be zero length");
+    return GRPC_ERROR_CREATE("Metadata keys cannot be zero length");
   }
   if (GRPC_SLICE_LENGTH(slice) > UINT32_MAX) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot be larger than UINT32_MAX");
+    return GRPC_ERROR_CREATE("Metadata keys cannot be larger than UINT32_MAX");
   }
   if (GRPC_SLICE_START_PTR(slice)[0] == ':') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot start with :");
+    return GRPC_ERROR_CREATE("Metadata keys cannot start with :");
   }
   return conforms_to(slice, g_legal_header_key_bits, "Illegal header key");
 }

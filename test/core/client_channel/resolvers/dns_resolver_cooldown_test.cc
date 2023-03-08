@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <inttypes.h>
 
@@ -42,6 +42,8 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -59,6 +61,8 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr int kMinResolutionPeriodMs = 1000;
 
@@ -89,7 +93,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   explicit TestDNSResolver(
       std::shared_ptr<grpc_core::DNSResolver> default_resolver)
       : default_resolver_(std::move(default_resolver)),
-        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+        engine_(GetDefaultEventEngine()) {}
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   TaskHandle LookupHostname(
@@ -297,7 +301,7 @@ struct OnResolutionCallbackArg {
 };
 
 // Set to true by the last callback in the resolution chain.
-static bool g_all_callbacks_invoked;
+static grpc_core::NoDestruct<grpc_core::Notification> g_all_callbacks_invoked;
 
 // It's interesting to run a few rounds of this test because as
 // we run more rounds, the base starting time
@@ -314,7 +318,7 @@ static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
                     grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
   delete cb_arg;
-  g_all_callbacks_invoked = true;
+  g_all_callbacks_invoked->Notify();
 }
 
 static void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
@@ -381,6 +385,7 @@ static void start_test_under_work_serializer(void* arg) {
       kMinResolutionPeriodMs);
   grpc_channel_args cooldown_args = {1, &cooldown_arg};
   args.args = grpc_core::ChannelArgs::FromC(&cooldown_args);
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   ASSERT_NE(res_cb_arg->resolver, nullptr);
   // First resolution, would incur in system-level resolution.
@@ -416,7 +421,7 @@ TEST(DnsResolverCooldownTest, MainTest) {
   test_cooldown();
 
   grpc_shutdown();
-  ASSERT_TRUE(g_all_callbacks_invoked);
+  g_all_callbacks_invoked->WaitForNotification();
 }
 
 int main(int argc, char** argv) {

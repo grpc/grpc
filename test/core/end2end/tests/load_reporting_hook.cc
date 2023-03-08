@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
@@ -28,6 +28,7 @@
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -258,15 +259,15 @@ static void request_response_with_payload(
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-/* override the default for testing purposes */
+// override the default for testing purposes
 extern void (*g_load_reporting_fn)(
     const grpc_load_reporting_call_data* call_data);
 
 static void test_load_reporting_hook(grpc_end2end_test_config config) {
-  /* TODO(dgq): this test is currently a noop until LR is fully defined.
-   * Leaving the rest here, as it'll likely be reusable. */
+  // TODO(dgq): this test is currently a noop until LR is fully defined.
+  // Leaving the rest here, as it'll likely be reusable.
 
-  /* Introduce load reporting for the server through its arguments */
+  // Introduce load reporting for the server through its arguments
   grpc_arg arg = grpc_load_reporting_enable_arg();
   grpc_channel_args* lr_server_args =
       grpc_channel_args_copy_and_add(nullptr, &arg, 1);

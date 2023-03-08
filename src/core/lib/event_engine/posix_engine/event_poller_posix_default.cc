@@ -21,10 +21,13 @@
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
+#ifdef GRPC_POSIX_SOCKET_TCP
 namespace {
 
 bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
@@ -33,26 +36,34 @@ bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
 
 }  // namespace
 
-PosixEventPoller* GetDefaultPoller(Scheduler* scheduler) {
+PosixEventPoller* MakeDefaultPoller(Scheduler* scheduler) {
   PosixEventPoller* poller = nullptr;
   auto strings =
       absl::StrSplit(grpc_core::ConfigVars::Get().PollStrategy(), ',');
   for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
        it++) {
     if (PollStrategyMatches(*it, "epoll1")) {
-      poller = GetEpoll1Poller(scheduler);
+      poller = MakeEpoll1Poller(scheduler);
     }
     if (poller == nullptr && PollStrategyMatches(*it, "poll")) {
       // If epoll1 fails and if poll strategy matches "poll", use Poll poller
-      poller = GetPollPoller(scheduler, /*use_phony_poll=*/false);
+      poller = MakePollPoller(scheduler, /*use_phony_poll=*/false);
     } else if (poller == nullptr && PollStrategyMatches(*it, "none")) {
       // If epoll1 fails and if poll strategy matches "none", use phony poll
       // poller.
-      poller = GetPollPoller(scheduler, /*use_phony_poll=*/true);
+      poller = MakePollPoller(scheduler, /*use_phony_poll=*/true);
     }
   }
   return poller;
 }
 
-}  // namespace posix_engine
+#else  // GRPC_POSIX_SOCKET_TCP
+
+PosixEventPoller* MakeDefaultPoller(Scheduler* /*scheduler*/) {
+  return nullptr;
+}
+
+#endif  // GRPC_POSIX_SOCKET_TCP
+
+}  // namespace experimental
 }  // namespace grpc_event_engine

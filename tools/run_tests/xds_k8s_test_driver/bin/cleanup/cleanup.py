@@ -20,7 +20,7 @@ Typical usage examples:
 python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
     --project=grpc-testing\
     --network=default-vpc\
-    --kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec-v2-us-central1-a\
+    --kube_context=gke_grpc-testing_us-central1-a_psm-interop-security
     --resource_prefix='required-but-does-not-matter'\
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
 """
@@ -55,7 +55,7 @@ GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
 SECONDARY_ZONE = 'us-west1-b'
 
-PSM_SECURITY_PREFIX = 'xds-k8s-security'  # Prefix for gke resources to delete.
+PSM_SECURITY_PREFIX = 'psm-interop'  # Prefix for gke resources to delete.
 URL_MAP_TEST_PREFIX = 'interop-psm-url-map'  # Prefix for url-map test resources to delete.
 
 KEEP_PERIOD_HOURS = flags.DEFINE_integer(

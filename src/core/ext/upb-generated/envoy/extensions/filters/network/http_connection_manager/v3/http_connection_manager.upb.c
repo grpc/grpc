@@ -33,7 +33,7 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Sub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_submsgs[31] = {
+static const upb_MiniTable_Sub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_submsgs[32] = {
   {.submsg = &envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit},
   {.submsg = &envoy_config_route_v3_RouteConfiguration_msginit},
   {.submsg = &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit},
@@ -65,13 +65,14 @@ static const upb_MiniTable_Sub envoy_extensions_filters_network_http_connection_
   {.submsg = &envoy_config_core_v3_SchemeHeaderTransformation_msginit},
   {.submsg = &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ProxyStatusConfig_msginit},
   {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
 };
 
-static const upb_MiniTable_Field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[48] = {
+static const upb_MiniTable_Field envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[50] = {
   {1, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(52, 56), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(188, 328), UPB_SIZE(-25, -25), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(188, 328), UPB_SIZE(-25, -25), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(192, 336), UPB_SIZE(-25, -25), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(192, 336), UPB_SIZE(-25, -25), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(60, 72), UPB_SIZE(0, 0), 2, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(64, 80), UPB_SIZE(1, 1), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(68, 88), UPB_SIZE(2, 2), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
@@ -96,7 +97,7 @@ static const upb_MiniTable_Field envoy_extensions_filters_network_http_connectio
   {28, UPB_SIZE(132, 216), UPB_SIZE(12, 12), 16, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {29, UPB_SIZE(136, 224), UPB_SIZE(13, 13), 17, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {30, UPB_SIZE(140, 232), UPB_SIZE(14, 14), 18, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {31, UPB_SIZE(188, 328), UPB_SIZE(-25, -25), 19, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {31, UPB_SIZE(192, 336), UPB_SIZE(-25, -25), 19, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {32, UPB_SIZE(28, 28), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {33, UPB_SIZE(29, 29), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {34, UPB_SIZE(32, 32), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -107,7 +108,7 @@ static const upb_MiniTable_Field envoy_extensions_filters_network_http_connectio
   {39, UPB_SIZE(37, 37), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {40, UPB_SIZE(156, 264), UPB_SIZE(18, 18), 23, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {41, UPB_SIZE(160, 272), UPB_SIZE(19, 19), 24, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {42, UPB_SIZE(192, 336), UPB_SIZE(-41, -41), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {42, UPB_SIZE(196, 344), UPB_SIZE(-41, -41), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {43, UPB_SIZE(164, 280), UPB_SIZE(20, 20), 25, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {44, UPB_SIZE(168, 288), UPB_SIZE(21, 21), 26, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {45, UPB_SIZE(44, 44), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -116,12 +117,14 @@ static const upb_MiniTable_Field envoy_extensions_filters_network_http_connectio
   {48, UPB_SIZE(176, 304), UPB_SIZE(22, 22), 28, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {49, UPB_SIZE(180, 312), UPB_SIZE(23, 23), 29, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {50, UPB_SIZE(184, 320), UPB_SIZE(24, 24), 30, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {51, UPB_SIZE(49, 49), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {52, UPB_SIZE(188, 328), UPB_SIZE(0, 0), 31, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[0],
-  UPB_SIZE(200, 344), 48, kUpb_ExtMode_NonExtendable, 10, 255, 0,
+  UPB_SIZE(200, 352), 50, kUpb_ExtMode_NonExtendable, 10, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_submsgs[6] = {

@@ -36,6 +36,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -82,8 +83,7 @@ class NativeDNSRequest {
 
 }  // namespace
 
-NativeDNSResolver::NativeDNSResolver()
-    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+NativeDNSResolver::NativeDNSResolver() {}
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -102,7 +102,6 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
   int s;
-  size_t i;
   grpc_error_handle error;
   std::vector<grpc_resolved_address> addresses;
 
@@ -111,14 +110,13 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   std::string port;
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrFormat("unparseable host:port: '%s'", name));
+    error =
+        GRPC_ERROR_CREATE(absl::StrFormat("unparseable host:port: '%s'", name));
     goto done;
   }
   if (port.empty()) {
     if (default_port.empty()) {
-      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrFormat("no port in name '%s'", name));
+      error = GRPC_ERROR_CREATE(absl::StrFormat("no port in name '%s'", name));
       goto done;
     }
     port = std::string(default_port);
@@ -126,9 +124,9 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
 
   // Call getaddrinfo
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
-  hints.ai_socktype = SOCK_STREAM; /* stream socket */
-  hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
+  hints.ai_family = AF_UNSPEC;      // ipv4 or ipv6
+  hints.ai_socktype = SOCK_STREAM;  // stream socket
+  hints.ai_flags = AI_PASSIVE;      // for wildcard IP address
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
@@ -157,13 +155,18 @@ done:
   return error_result;
 }
 
+void RunCallbackOnDefaultEventEngine(absl::AnyInvocable<void()> f) {
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->Run([f = std::move(f), engine]() mutable { f(); });
+}
+
 DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolved,
     absl::string_view /* name */, Duration /* deadline */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine_->Run([on_resolved] {
+  RunCallbackOnDefaultEventEngine([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
@@ -178,7 +181,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  engine_->Run([on_resolved] {
+  RunCallbackOnDefaultEventEngine([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(

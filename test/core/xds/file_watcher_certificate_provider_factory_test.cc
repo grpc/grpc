@@ -18,6 +18,8 @@
 
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
+#include <initializer_list>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -26,6 +28,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -51,7 +54,7 @@ TEST(FileWatcherConfigTest, Basic) {
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
-  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << StatusToString(error);
   EXPECT_EQ(config->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ(config->private_key_file(), kPrivateKeyFile);
   EXPECT_EQ(config->root_cert_file(), kRootCertFile);
@@ -71,7 +74,7 @@ TEST(FileWatcherConfigTest, DefaultRefreshInterval) {
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
-  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << StatusToString(error);
   EXPECT_EQ(config->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ(config->private_key_file(), kPrivateKeyFile);
   EXPECT_EQ(config->root_cert_file(), kRootCertFile);
@@ -89,7 +92,7 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
-  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << StatusToString(error);
   EXPECT_TRUE(config->identity_cert_file().empty());
   EXPECT_TRUE(config->private_key_file().empty());
   EXPECT_EQ(config->root_cert_file(), kRootCertFile);
@@ -108,7 +111,7 @@ TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
-  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << StatusToString(error);
   EXPECT_EQ(config->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ(config->private_key_file(), kPrivateKeyFile);
   EXPECT_TRUE(config->root_cert_file().empty());
@@ -128,7 +131,7 @@ TEST(FileWatcherConfigTest, WrongTypes) {
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
+  EXPECT_THAT(StatusToString(error),
               ::testing::ContainsRegex(
                   "field:certificate_file error:type should be STRING.*"
                   "field:private_key_file error:type should be STRING.*"
@@ -149,7 +152,7 @@ TEST(FileWatcherConfigTest, IdentityCertProvidedButPrivateKeyMissing) {
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
+  EXPECT_THAT(StatusToString(error),
               ::testing::ContainsRegex(
                   "fields \"certificate_file\" and \"private_key_file\" must "
                   "be both set or both unset."));
@@ -166,21 +169,21 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
+  EXPECT_THAT(StatusToString(error),
               ::testing::ContainsRegex(
                   "fields \"certificate_file\" and \"private_key_file\" must "
                   "be both set or both unset."));
 }
 
 TEST(FileWatcherConfigTest, EmptyJsonObject) {
-  std::string json_str = absl::StrFormat("{}");
+  std::string json_str = "{}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      StatusToString(error),
       ::testing::ContainsRegex("At least one of \"certificate_file\" and "
                                "\"ca_certificate_file\" must be specified."));
 }

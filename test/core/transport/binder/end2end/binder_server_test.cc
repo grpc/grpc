@@ -23,12 +23,10 @@
 #include "absl/memory/memory.h"
 
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/binder_credentials.h>
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
-#include "src/core/ext/transport/binder/server/binder_server.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -54,7 +52,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
 
   void SetAuthMetadataProcessor(
       const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 
  private:
@@ -69,9 +67,6 @@ std::shared_ptr<ServerCredentials> BinderServerCredentials() {
 
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
-  grpc::internal::GrpcLibrary init_lib;
-  init_lib.init();
-
   return grpc::CreateChannelInternal(
       "",
       grpc::internal::CreateDirectBinderChannelImplForTesting(

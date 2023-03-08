@@ -19,6 +19,7 @@
 
 #include <string.h>
 
+#include <initializer_list>
 #include <map>
 #include <utility>
 
@@ -37,6 +38,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
@@ -46,6 +48,9 @@
 namespace grpc_core {
 
 namespace {
+
+const char* awsEc2MetadataIpv4Address = "169.254.169.254";
+const char* awsEc2MetadataIpv6Address = "fd00:ec2::254";
 
 const char* kExpectedEnvironmentId = "aws1";
 
@@ -73,6 +78,15 @@ std::string UrlEncode(const absl::string_view& s) {
   return result;
 }
 
+bool ValidateAwsUrl(const std::string& urlString) {
+  absl::StatusOr<URI> url = URI::Parse(urlString);
+  if (!url.ok()) return false;
+  absl::string_view host;
+  absl::string_view port;
+  SplitHostPort(url->authority(), &host, &port);
+  return host == awsEc2MetadataIpv4Address || host == awsEc2MetadataIpv6Address;
+}
+
 }  // namespace
 
 RefCountedPtr<AwsExternalAccountCredentials>
@@ -94,46 +108,53 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   audience_ = options.audience;
   auto it = options.credential_source.object_value().find("environment_id");
   if (it == options.credential_source.object_value().end()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "environment_id field not present.");
+    *error = GRPC_ERROR_CREATE("environment_id field not present.");
     return;
   }
   if (it->second.type() != Json::Type::STRING) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "environment_id field must be a string.");
+    *error = GRPC_ERROR_CREATE("environment_id field must be a string.");
     return;
   }
   if (it->second.string_value() != kExpectedEnvironmentId) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("environment_id does not match.");
+    *error = GRPC_ERROR_CREATE("environment_id does not match.");
     return;
   }
   it = options.credential_source.object_value().find("region_url");
   if (it == options.credential_source.object_value().end()) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("region_url field not present.");
+    *error = GRPC_ERROR_CREATE("region_url field not present.");
     return;
   }
   if (it->second.type() != Json::Type::STRING) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "region_url field must be a string.");
+    *error = GRPC_ERROR_CREATE("region_url field must be a string.");
     return;
   }
   region_url_ = it->second.string_value();
+  if (!ValidateAwsUrl(region_url_)) {
+    *error = GRPC_ERROR_CREATE(absl::StrFormat(
+        "Invalid host for region_url field, expecting %s or %s.",
+        awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
+    return;
+  }
   it = options.credential_source.object_value().find("url");
   if (it != options.credential_source.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     url_ = it->second.string_value();
+    if (!ValidateAwsUrl(url_)) {
+      *error = GRPC_ERROR_CREATE(absl::StrFormat(
+          "Invalid host for url field, expecting %s or %s.",
+          awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
+      return;
+    }
   }
   it = options.credential_source.object_value().find(
       "regional_cred_verification_url");
   if (it == options.credential_source.object_value().end()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "regional_cred_verification_url field not present.");
+    *error =
+        GRPC_ERROR_CREATE("regional_cred_verification_url field not present.");
     return;
   }
   if (it->second.type() != Json::Type::STRING) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    *error = GRPC_ERROR_CREATE(
         "regional_cred_verification_url field must be a string.");
     return;
   }
@@ -143,6 +164,13 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   if (it != options.credential_source.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     imdsv2_session_token_url_ = it->second.string_value();
+    if (!ValidateAwsUrl(imdsv2_session_token_url_)) {
+      *error = GRPC_ERROR_CREATE(absl::StrFormat(
+          "Invalid host for imdsv2_session_token_url field, expecting %s or "
+          "%s.",
+          awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
+      return;
+    }
   }
 }
 
@@ -152,7 +180,7 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
   if (ctx == nullptr) {
     FinishRetrieveSubjectToken(
         "",
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        GRPC_ERROR_CREATE(
             "Missing HTTPRequestContext to start subject token retrieval."));
     return;
   }
@@ -252,8 +280,8 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   absl::StatusOr<URI> uri = URI::Parse(region_url_);
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-                "Invalid region url. %s", uri.status().ToString())));
+        "", GRPC_ERROR_CREATE(absl::StrFormat("Invalid region url. %s",
+                                              uri.status().ToString())));
     return;
   }
   grpc_http_request request;
@@ -305,7 +333,7 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   absl::StatusOr<URI> uri = URI::Parse(url_);
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        "", GRPC_ERROR_CREATE(
                 absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
     return;
   }
@@ -362,16 +390,16 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   }
   if (role_name_.empty()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Missing role name when retrieving signing keys."));
+        "",
+        GRPC_ERROR_CREATE("Missing role name when retrieving signing keys."));
     return;
   }
   std::string url_with_role_name = absl::StrCat(url_, "/", role_name_);
   absl::StatusOr<URI> uri = URI::Parse(url_with_role_name);
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-                "Invalid url with role name: %s.", uri.status().ToString())));
+        "", GRPC_ERROR_CREATE(absl::StrFormat("Invalid url with role name: %s.",
+                                              uri.status().ToString())));
     return;
   }
   grpc_http_request request;
@@ -414,16 +442,15 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
   auto json = Json::Parse(response_body);
   if (!json.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        "", GRPC_ERROR_CREATE(
                 absl::StrCat("Invalid retrieve signing keys response: ",
                              json.status().ToString())));
     return;
   }
   if (json->type() != Json::Type::OBJECT) {
-    FinishRetrieveSubjectToken("",
-                               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "Invalid retrieve signing keys response: "
-                                   "JSON type is not object"));
+    FinishRetrieveSubjectToken(
+        "", GRPC_ERROR_CREATE("Invalid retrieve signing keys response: "
+                              "JSON type is not object"));
     return;
   }
   auto it = json->object_value().find("AccessKeyId");
@@ -432,7 +459,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     access_key_id_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "", GRPC_ERROR_CREATE(absl::StrFormat(
                 "Missing or invalid AccessKeyId in %s.", response_body)));
     return;
   }
@@ -442,7 +469,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     secret_access_key_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "", GRPC_ERROR_CREATE(absl::StrFormat(
                 "Missing or invalid SecretAccessKey in %s.", response_body)));
     return;
   }
@@ -452,8 +479,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     token_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-                "Missing or invalid Token in %s.", response_body)));
+        "", GRPC_ERROR_CREATE(absl::StrFormat("Missing or invalid Token in %s.",
+                                              response_body)));
     return;
   }
   BuildSubjectToken();
@@ -470,18 +497,17 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
         std::map<std::string, std::string>(), &error);
     if (!error.ok()) {
       FinishRetrieveSubjectToken(
-          "", GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "", GRPC_ERROR_CREATE_REFERENCING(
                   "Creating aws request signer failed.", &error, 1));
       return;
     }
   }
   auto signed_headers = signer_->GetSignedRequestHeaders();
   if (!error.ok()) {
-    FinishRetrieveSubjectToken("",
-                               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                   "Invalid getting signed request"
-                                   "headers.",
-                                   &error, 1));
+    FinishRetrieveSubjectToken(
+        "", GRPC_ERROR_CREATE_REFERENCING("Invalid getting signed request"
+                                          "headers.",
+                                          &error, 1));
     return;
   }
   // Construct subject token

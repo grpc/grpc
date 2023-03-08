@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <mutex>
 #include <thread>
@@ -43,6 +43,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -61,9 +62,6 @@
 
 #include <gtest/gtest.h>
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -322,8 +320,8 @@ std::string TestScenario::AsString() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),

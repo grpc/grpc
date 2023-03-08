@@ -33,13 +33,13 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -83,12 +83,12 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
     if (root_being_watched && !root_has_update) {
-      root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest root certificates.");
+      root_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }
     if (identity_being_watched && !identity_has_update) {
-      identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest identity certificates.");
+      identity_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
     }
     if (!root_cert_error.ok() || !identity_cert_error.ok()) {
       distributor_->SetErrorForCert(cert_name, root_cert_error,
@@ -117,6 +117,8 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 }  // namespace
 
+static constexpr int64_t kMinimumFileWatcherRefreshIntervalSeconds = 1;
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
     std::string root_cert_path, int64_t refresh_interval_sec)
@@ -125,6 +127,12 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       root_cert_path_(std::move(root_cert_path)),
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+  if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
+    gpr_log(GPR_INFO,
+            "FileWatcherCertificateProvider refresh_interval_sec_ set to value "
+            "less than minimum. Overriding configured value to minimum.");
+    refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
+  }
   // Private key and identity cert files must be both set or both unset.
   GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
@@ -177,12 +185,12 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
     if (root_being_watched && !root_certificate.has_value()) {
-      root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest root certificates.");
+      root_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }
     if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
-      identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest identity certificates.");
+      identity_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
     }
     if (!root_cert_error.ok() || !identity_cert_error.ok()) {
       distributor_->SetErrorForCert(cert_name, root_cert_error,
@@ -238,11 +246,10 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   }
   if (root_cert_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
-    grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Unable to get latest root certificates.");
+    grpc_error_handle root_cert_error =
+        GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     grpc_error_handle identity_cert_error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Unable to get latest identity certificates.");
+        GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
@@ -284,8 +291,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
       grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
   if (!root_error.ok()) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
-            root_cert_full_path.c_str(),
-            grpc_error_std_string(root_error).c_str());
+            root_cert_full_path.c_str(), StatusToString(root_error).c_str());
     return absl::nullopt;
   }
   std::string root_cert(StringViewFromSlice(root_slice));
@@ -299,7 +305,7 @@ namespace {
 // it logs the error and returns 0.
 time_t GetModificationTime(const char* filename) {
   time_t ts = 0;
-  absl::Status status = GetFileModificationTime(filename, &ts);
+  (void)GetFileModificationTime(filename, &ts);
   return ts;
 }
 
@@ -342,8 +348,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
         grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
     if (!key_error.ok()) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              private_key_path.c_str(),
-              grpc_error_std_string(key_error).c_str());
+              private_key_path.c_str(), StatusToString(key_error).c_str());
       continue;
     }
     grpc_error_handle cert_error =
@@ -351,7 +356,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     if (!cert_error.ok()) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               identity_certificate_path.c_str(),
-              grpc_error_std_string(cert_error).c_str());
+              StatusToString(cert_error).c_str());
       continue;
     }
     std::string private_key(StringViewFromSlice(key_slice.slice));
@@ -382,6 +387,11 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   gpr_log(GPR_ERROR,
           "All retry attempts failed. Will try again after the next interval.");
   return absl::nullopt;
+}
+
+int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
+    const {
+  return refresh_interval_sec_;
 }
 
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
@@ -435,7 +445,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 
 }  // namespace grpc_core
 
-/** -- Wrapper APIs declared in grpc_security.h -- **/
+/// -- Wrapper APIs declared in grpc_security.h -- *
 
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {

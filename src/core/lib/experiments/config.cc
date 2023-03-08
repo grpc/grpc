@@ -31,8 +31,11 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
 namespace grpc_core {
 
 namespace {
@@ -53,7 +56,11 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
-    experiments.enabled[i] = g_experiment_metadata[i].default_value;
+    if (!g_forced_experiments[i].forced) {
+      experiments.enabled[i] = g_experiment_metadata[i].default_value;
+    } else {
+      experiments.enabled[i] = g_forced_experiments[i].value;
+    }
   }
   // For each comma-separated experiment in the global config:
   for (auto experiment : absl::StrSplit(
@@ -137,3 +144,12 @@ void ForceEnableExperiment(absl::string_view experiment, bool enable) {
 }
 
 }  // namespace grpc_core
+#else
+namespace grpc_core {
+void PrintExperimentsList() {}
+void ForceEnableExperiment(absl::string_view experiment_name, bool) {
+  Crash(absl::StrCat("ForceEnableExperiment(\"", experiment_name,
+                     "\") called in final build"));
+}
+}  // namespace grpc_core
+#endif

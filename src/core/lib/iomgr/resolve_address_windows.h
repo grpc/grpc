@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -56,11 +56,8 @@ class NativeDNSResolver : public DNSResolver {
 
   // NativeDNSResolver does not support cancellation.
   bool Cancel(TaskHandle handle) override;
-
- private:
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H

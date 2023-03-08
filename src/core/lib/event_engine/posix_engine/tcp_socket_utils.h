@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,7 +26,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -45,12 +45,10 @@
 #ifndef SO_EE_ORIGIN_ZEROCOPY
 #define SO_EE_ORIGIN_ZEROCOPY 5
 #endif
-#endif /* ifdef GRPC_LINUX_ERRQUEUE */
+#endif  // ifdef GRPC_LINUX_ERRQUEUE
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EventEngine;
+namespace experimental {
 
 struct PosixTcpOptions {
   static constexpr int kDefaultReadChunkSize = 8192;
@@ -145,28 +143,9 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec);
 
-// Returns true if resolved_addr is an IPv4-mapped IPv6 address within the
-//  ::ffff:0.0.0.0/96 range, or false otherwise.
-
-//  If resolved_addr4_out is non-NULL, the inner IPv4 address will be copied
-//  here when returning true.
-bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
-                        EventEngine::ResolvedAddress* resolved_addr4_out);
-
-// If resolved_addr is an AF_INET address, writes the corresponding
-// ::ffff:0.0.0.0/96 address to resolved_addr6_out and returns true.  Otherwise
-// returns false.
-bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
-                        EventEngine::ResolvedAddress* resolved_addr6_out);
-
-// Converts a EventEngine::ResolvedAddress into a newly-allocated human-readable
-// string.
-//
-// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
-// If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
-// displayed as plain IPv4.
-absl::StatusOr<std::string> SockaddrToString(
-    const EventEngine::ResolvedAddress* resolved_addr, bool normalize);
+// Unlink the path pointed to by the given address if it refers to UDS path.
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr);
 
 class PosixSocketWrapper {
  public:
@@ -331,7 +310,7 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
   EventEngine::ResolvedAddress mapped_target_addr;
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

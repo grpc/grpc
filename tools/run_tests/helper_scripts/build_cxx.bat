@@ -45,7 +45,7 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
 ) else (
   @rem Use one of the Visual Studio generators.
 
-  cmake -G "%GRPC_CMAKE_GENERATOR%" -A "%GRPC_CMAKE_ARCHITECTURE%" -DgRPC_BUILD_TESTS=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% %* ../.. || goto :error
+  cmake -G "%GRPC_CMAKE_GENERATOR%" -A "%GRPC_CMAKE_ARCHITECTURE%" -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DgRPC_BUILD_TESTS=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% %* ../.. || goto :error
 
   @rem GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
   cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error

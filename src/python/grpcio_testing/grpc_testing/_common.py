@@ -16,8 +16,6 @@
 import abc
 import collections
 
-import six
-
 
 def _fuss(tuplified_metadata):
     return tuplified_metadata + ((
@@ -56,7 +54,7 @@ class ChannelRpcRead(
     pass
 
 
-class ChannelRpcHandler(six.with_metaclass(abc.ABCMeta)):
+class ChannelRpcHandler(abc.ABC):
 
     @abc.abstractmethod
     def initial_metadata(self):
@@ -95,7 +93,7 @@ class ChannelRpcHandler(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class ChannelHandler(six.with_metaclass(abc.ABCMeta)):
+class ChannelHandler(abc.ABC):
 
     @abc.abstractmethod
     def invoke_rpc(self, method_full_rpc_name, invocation_metadata, requests,
@@ -116,7 +114,7 @@ REQUESTS_CLOSED = ServerRpcRead(None, True, False)
 TERMINATED = ServerRpcRead(None, False, True)
 
 
-class ServerRpcHandler(six.with_metaclass(abc.ABCMeta)):
+class ServerRpcHandler(abc.ABC):
 
     @abc.abstractmethod
     def send_initial_metadata(self, initial_metadata):
@@ -139,7 +137,7 @@ class ServerRpcHandler(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Serverish(six.with_metaclass(abc.ABCMeta)):
+class Serverish(abc.ABC):
 
     @abc.abstractmethod
     def invoke_unary_unary(self, method_descriptor, handler,

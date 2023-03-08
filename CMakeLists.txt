@@ -22,16 +22,16 @@
 
 
 
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.51.0-dev")
-set(gRPC_CORE_VERSION     "28.0.0")
-set(gRPC_CORE_SOVERSION   "28")
-set(gRPC_CPP_VERSION      "1.51.0-dev")
-set(gRPC_CPP_SOVERSION    "1.51")
-set(gRPC_CSHARP_VERSION   "2.51.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.51")
+set(PACKAGE_VERSION       "1.54.0-dev")
+set(gRPC_CORE_VERSION     "30.1.0")
+set(gRPC_CORE_SOVERSION   "30")
+set(gRPC_CPP_VERSION      "1.54.0-dev")
+set(gRPC_CPP_SOVERSION    "1.54")
+set(gRPC_CSHARP_VERSION   "2.54.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.54")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -113,6 +113,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_civil_time
   absl_cleanup
   absl_cleanup_internal
+  absl_common_policy_traits
   absl_compressed_tuple
   absl_config
   absl_container_common
@@ -126,6 +127,10 @@ set(gRPC_ABSL_USED_TARGETS
   absl_cordz_update_scope
   absl_cordz_update_tracker
   absl_core_headers
+  absl_crc32c
+  absl_crc_cord_state
+  absl_crc_cpu_detect
+  absl_crc_internal
   absl_debugging_internal
   absl_demangle_internal
   absl_dynamic_annotations
@@ -162,6 +167,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_low_level_hash
   absl_malloc_internal
   absl_memory
+  absl_non_temporal_arm_intrinsics
+  absl_non_temporal_memcpy
   absl_numeric_representation
   absl_optional
   absl_prefetch
@@ -232,25 +239,11 @@ if(WIN32)
   set(_gRPC_PLATFORM_WINDOWS ON)
 endif()
 
- # Use C11 standard
-if (NOT DEFINED CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 11)
-endif()
-
-# Add c++14 flags
-if (NOT DEFINED CMAKE_CXX_STANDARD)
+if (APPLE AND NOT DEFINED CMAKE_CXX_STANDARD)
+  # AppleClang defaults to C++98, so we bump it to C++14.
+  message("CMAKE_CXX_STANDARD was undefined, defaulting to C++14.")
   set(CMAKE_CXX_STANDARD 14)
-else()
-  if (CMAKE_CXX_STANDARD LESS 14)
-    message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
-  endif()
-endif()
-if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-if (NOT DEFINED CMAKE_CXX_EXTENSIONS)
-  set(CMAKE_CXX_EXTENSIONS OFF)
-endif()
+endif ()
 
 if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -309,7 +302,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.51.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.54.0-dev\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
@@ -337,23 +330,28 @@ include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
 include(cmake/download_archive.cmake)
 
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+  include(cmake/systemd.cmake)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ${_gRPC_SYSTEMD_LIBRARIES})
+endif()
+
 # Setup external proto library at third_party/envoy-api with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
-    0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
-    data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
+    08f7828a7ae288ef379db9b7f57af73d77a817c22fd0fc42093a95be3e54194a
+    data-plane-api-5962b1204f4b7b0a2ed7622d0149727f602ae74c
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
-    0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
-    data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
+    https://github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
+    08f7828a7ae288ef379db9b7f57af73d77a817c22fd0fc42093a95be3e54194a
+    data-plane-api-5962b1204f4b7b0a2ed7622d0149727f602ae74c
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -399,18 +397,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
-    5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
-    xds-cb28da3451f158a947dfc45090fe92b07b243bc1
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
+    41ea212940ab44bf7f8a8b4169cfbc612ed2166dafabc0a56a8820ef665fc6a4
+    xds-06c439db220b89134a8a49bad41994560d6537c6
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
-    5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
-    xds-cb28da3451f158a947dfc45090fe92b07b243bc1
+    https://github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
+    41ea212940ab44bf7f8a8b4169cfbc612ed2166dafabc0a56a8820ef665fc6a4
+    xds-06c439db220b89134a8a49bad41994560d6537c6
   )
 endif()
 
@@ -582,9 +580,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/channelz.proto src/proto/grpc/channelz/channelz.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/core/stats.proto src/proto/grpc/core/stats.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -645,21 +640,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/worker_service.proto src/proto/grpc/testing/worker_service.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/testing/xds/ads_for_test.proto src/proto/grpc/testing/xds/ads_for_test.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/testing/xds/cds_for_test.proto src/proto/grpc/testing/xds/cds_for_test.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/testing/xds/eds_for_test.proto src/proto/grpc/testing/xds/eds_for_test.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/testing/xds/lds_rds_for_test.proto src/proto/grpc/testing/xds/lds_rds_for_test.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/testing/xds/lrs_for_test.proto src/proto/grpc/testing/xds/lrs_for_test.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/address.proto src/proto/grpc/testing/xds/v3/address.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -672,6 +652,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/base.proto src/proto/grpc/testing/xds/v3/base.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.proto src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/cluster.proto src/proto/grpc/testing/xds/v3/cluster.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -679,6 +662,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/config_source.proto src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/testing/xds/v3/cookie.proto src/proto/grpc/testing/xds/v3/cookie.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/csds.proto src/proto/grpc/testing/xds/v3/csds.proto
@@ -700,6 +686,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/fault_common.proto src/proto/grpc/testing/xds/v3/fault_common.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/testing/xds/v3/health_check.proto src/proto/grpc/testing/xds/v3/health_check.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/http_connection_manager.proto src/proto/grpc/testing/xds/v3/http_connection_manager.proto
@@ -759,6 +748,12 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/router.proto src/proto/grpc/testing/xds/v3/router.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/testing/xds/v3/stateful_session.proto src/proto/grpc/testing/xds/v3/stateful_session.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/testing/xds/v3/stateful_session_cookie.proto src/proto/grpc/testing/xds/v3/stateful_session_cookie.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/string.proto src/proto/grpc/testing/xds/v3/string.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -799,22 +794,18 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c fd_conservation_posix_test)
   endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fling_stream_test)
-  endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fling_test)
-  endif()
   add_dependencies(buildtests_c goaway_server_test)
   add_dependencies(buildtests_c inproc_callback_test)
   add_dependencies(buildtests_c invalid_call_argument_test)
-  add_dependencies(buildtests_c minimal_stack_is_minimal_test)
   add_dependencies(buildtests_c multiple_server_queues_test)
   add_dependencies(buildtests_c no_server_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     add_dependencies(buildtests_c pollset_windows_starvation_test)
   endif()
   add_dependencies(buildtests_c public_headers_must_be_c89)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c static_stride_scheduler_benchmark)
+  endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c tcp_posix_test)
   endif()
@@ -875,12 +866,14 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx byte_buffer_test)
   add_dependencies(buildtests_cxx c_slice_buffer_test)
   add_dependencies(buildtests_cxx call_finalization_test)
-  add_dependencies(buildtests_cxx call_fragments_test)
-  add_dependencies(buildtests_cxx call_push_pull_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
+  add_dependencies(buildtests_cxx cancel_callback_test)
   add_dependencies(buildtests_cxx cel_authorization_engine_test)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx certificate_provider_store_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx cf_event_engine_test)
+  endif()
   add_dependencies(buildtests_cxx cfstream_test)
   add_dependencies(buildtests_cxx channel_args_test)
   add_dependencies(buildtests_cxx channel_arguments_test)
@@ -899,6 +892,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx client_auth_filter_test)
   add_dependencies(buildtests_cxx client_authority_filter_test)
   add_dependencies(buildtests_cxx client_callback_end2end_test)
+  add_dependencies(buildtests_cxx client_channel_service_config_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_channel_stress_test)
   endif()
@@ -951,6 +945,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx error_test)
   add_dependencies(buildtests_cxx error_utils_test)
   add_dependencies(buildtests_cxx evaluate_args_test)
+  add_dependencies(buildtests_cxx event_engine_wakeup_scheduler_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx event_poller_posix_test)
   endif()
@@ -977,6 +972,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx forkable_test)
   add_dependencies(buildtests_cxx format_request_test)
   add_dependencies(buildtests_cxx frame_handler_test)
+  add_dependencies(buildtests_cxx frame_header_test)
+  add_dependencies(buildtests_cxx frame_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx fuzzing_event_engine_test)
   endif()
@@ -1004,6 +1001,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx grpclb_end2end_test)
   endif()
+  add_dependencies(buildtests_cxx h2_ssl_cert_test)
   add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx handshake_server_with_readahead_handshaker_test)
@@ -1030,6 +1028,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
+  add_dependencies(buildtests_cxx interceptor_list_test)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
@@ -1042,13 +1041,18 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx json_token_test)
   add_dependencies(buildtests_cxx jwt_verifier_test)
   add_dependencies(buildtests_cxx lame_client_test)
-  add_dependencies(buildtests_cxx large_metadata_bad_client_test)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
-  add_dependencies(buildtests_cxx lock_free_event_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx lock_free_event_test)
+  endif()
   add_dependencies(buildtests_cxx log_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx log_too_many_open_files_test)
+  endif()
   add_dependencies(buildtests_cxx loop_test)
+  add_dependencies(buildtests_cxx map_pipe_test)
   add_dependencies(buildtests_cxx match_test)
   add_dependencies(buildtests_cxx matchers_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -1057,10 +1061,13 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx memory_quota_test)
   add_dependencies(buildtests_cxx message_allocator_end2end_test)
   add_dependencies(buildtests_cxx message_compress_test)
+  add_dependencies(buildtests_cxx message_size_service_config_test)
   add_dependencies(buildtests_cxx metadata_map_test)
+  add_dependencies(buildtests_cxx minimal_stack_is_minimal_test)
   add_dependencies(buildtests_cxx miscompile_with_no_unique_address_test)
   add_dependencies(buildtests_cxx mock_stream_test)
   add_dependencies(buildtests_cxx mock_test)
+  add_dependencies(buildtests_cxx mpsc_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx mpscq_test)
   endif()
@@ -1075,6 +1082,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx orca_service_end2end_test)
   add_dependencies(buildtests_cxx orphanable_test)
   add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
+  add_dependencies(buildtests_cxx outlier_detection_lb_config_parser_test)
+  add_dependencies(buildtests_cxx outlier_detection_test)
   add_dependencies(buildtests_cxx overload_test)
   add_dependencies(buildtests_cxx parse_address_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1082,8 +1091,10 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx parsed_metadata_test)
   add_dependencies(buildtests_cxx parser_test)
+  add_dependencies(buildtests_cxx party_test)
   add_dependencies(buildtests_cxx percent_encoding_test)
   add_dependencies(buildtests_cxx periodic_update_test)
+  add_dependencies(buildtests_cxx pick_first_test)
   add_dependencies(buildtests_cxx pid_controller_test)
   add_dependencies(buildtests_cxx pipe_test)
   add_dependencies(buildtests_cxx poll_test)
@@ -1091,7 +1102,15 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx posix_endpoint_test)
   endif()
-  add_dependencies(buildtests_cxx posix_event_engine_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx posix_engine_listener_utils_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx posix_event_engine_connect_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx posix_event_engine_test)
+  endif()
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
   add_dependencies(buildtests_cxx promise_test)
@@ -1100,6 +1119,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx qps_json_driver)
   add_dependencies(buildtests_cxx qps_worker)
   add_dependencies(buildtests_cxx race_test)
+  add_dependencies(buildtests_cxx random_early_detection_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
   add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
@@ -1117,9 +1137,11 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx resolve_address_using_native_resolver_test)
   add_dependencies(buildtests_cxx resource_quota_test)
+  add_dependencies(buildtests_cxx retry_service_config_test)
   add_dependencies(buildtests_cxx retry_throttle_test)
   add_dependencies(buildtests_cxx rls_end2end_test)
   add_dependencies(buildtests_cxx rls_lb_config_parser_test)
+  add_dependencies(buildtests_cxx round_robin_test)
   add_dependencies(buildtests_cxx secure_auth_context_test)
   add_dependencies(buildtests_cxx secure_channel_create_test)
   add_dependencies(buildtests_cxx secure_endpoint_test)
@@ -1167,9 +1189,13 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx ssl_transport_security_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx ssl_transport_security_utils_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx stack_tracer_test)
   endif()
   add_dependencies(buildtests_cxx stat_test)
+  add_dependencies(buildtests_cxx static_stride_scheduler_test)
   add_dependencies(buildtests_cxx stats_test)
   add_dependencies(buildtests_cxx status_conversion_test)
   add_dependencies(buildtests_cxx status_helper_test)
@@ -1197,6 +1223,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx tcp_server_posix_test)
   endif()
+  add_dependencies(buildtests_cxx tcp_socket_utils_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
@@ -1248,10 +1275,15 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx wakeup_fd_posix_test)
   endif()
+  add_dependencies(buildtests_cxx weighted_round_robin_config_test)
+  add_dependencies(buildtests_cxx weighted_round_robin_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     add_dependencies(buildtests_cxx win_socket_test)
   endif()
   add_dependencies(buildtests_cxx window_overflow_bad_client_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+    add_dependencies(buildtests_cxx windows_endpoint_test)
+  endif()
   add_dependencies(buildtests_cxx wire_reader_test)
   add_dependencies(buildtests_cxx wire_writer_test)
   add_dependencies(buildtests_cxx work_queue_test)
@@ -1267,9 +1299,11 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_cluster_end2end_test)
   endif()
+  add_dependencies(buildtests_cxx xds_cluster_resource_type_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_cluster_type_end2end_test)
   endif()
+  add_dependencies(buildtests_cxx xds_common_types_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_core_end2end_test)
   endif()
@@ -1285,20 +1319,31 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_fault_injection_end2end_test)
   endif()
+  add_dependencies(buildtests_cxx xds_http_filters_test)
   add_dependencies(buildtests_cxx xds_interop_client)
   add_dependencies(buildtests_cxx xds_interop_server)
   add_dependencies(buildtests_cxx xds_lb_policy_registry_test)
+  add_dependencies(buildtests_cxx xds_listener_resource_type_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_outlier_detection_end2end_test)
   endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx xds_override_host_end2end_test)
+  endif()
+  add_dependencies(buildtests_cxx xds_override_host_lb_config_parser_test)
+  add_dependencies(buildtests_cxx xds_override_host_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_ring_hash_end2end_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_rls_end2end_test)
   endif()
+  add_dependencies(buildtests_cxx xds_route_config_resource_type_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_routing_end2end_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx xds_wrr_end2end_test)
   endif()
 
   add_custom_target(buildtests
@@ -1311,6 +1356,8 @@ add_library(address_sorting
   third_party/address_sorting/address_sorting_posix.c
   third_party/address_sorting/address_sorting_windows.c
 )
+
+target_compile_features(address_sorting PUBLIC cxx_std_14)
 
 set_target_properties(address_sorting PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -1343,6 +1390,7 @@ target_include_directories(address_sorting
 )
 target_link_libraries(address_sorting
   ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -1360,9 +1408,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
-  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/rbac_translator.cc
-  test/core/compression/args_utils.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
@@ -1411,7 +1456,6 @@ add_library(end2end_tests
   test/core/end2end/tests/max_connection_idle.cc
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
-  test/core/end2end/tests/no_error_on_hotpath.cc
   test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc
@@ -1470,6 +1514,8 @@ add_library(end2end_tests
   test/core/util/test_lb_policies.cc
 )
 
+target_compile_features(end2end_tests PUBLIC cxx_std_14)
+
 set_target_properties(end2end_tests PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
   SOVERSION ${gRPC_CORE_SOVERSION}
@@ -1504,88 +1550,69 @@ target_include_directories(end2end_tests
     third_party/googletest/googlemock
 )
 target_link_libraries(end2end_tests
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_authorization_provider
   grpc_test_util
 )
 
-foreach(_hdr
-  include/grpc/byte_buffer.h
-  include/grpc/byte_buffer_reader.h
-  include/grpc/compression.h
-  include/grpc/fork.h
-  include/grpc/grpc.h
-  include/grpc/grpc_posix.h
-  include/grpc/grpc_security.h
-  include/grpc/grpc_security_constants.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/load_reporting.h
-  include/grpc/slice.h
-  include/grpc/slice_buffer.h
-  include/grpc/status.h
-  include/grpc/support/workaround_list.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
 
 endif()
 
 add_library(gpr
+<<<<<<< HEAD
   src/core/lib/config/config_vars.cc
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
+=======
+  src/core/lib/event_engine/thread_local.cc
+>>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
   src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/android/log.cc
   src/core/lib/gpr/atm.cc
-  src/core/lib/gpr/cpu_iphone.cc
-  src/core/lib/gpr/cpu_linux.cc
-  src/core/lib/gpr/cpu_posix.cc
-  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/iphone/cpu.cc
+  src/core/lib/gpr/linux/cpu.cc
+  src/core/lib/gpr/linux/log.cc
   src/core/lib/gpr/log.cc
-  src/core/lib/gpr/log_android.cc
-  src/core/lib/gpr/log_linux.cc
-  src/core/lib/gpr/log_posix.cc
-  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/msys/tmpfile.cc
+  src/core/lib/gpr/posix/cpu.cc
+  src/core/lib/gpr/posix/log.cc
+  src/core/lib/gpr/posix/string.cc
+  src/core/lib/gpr/posix/sync.cc
+  src/core/lib/gpr/posix/time.cc
+  src/core/lib/gpr/posix/tmpfile.cc
   src/core/lib/gpr/string.cc
-  src/core/lib/gpr/string_posix.cc
-  src/core/lib/gpr/string_util_windows.cc
-  src/core/lib/gpr/string_windows.cc
   src/core/lib/gpr/sync.cc
   src/core/lib/gpr/sync_abseil.cc
-  src/core/lib/gpr/sync_posix.cc
-  src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
-  src/core/lib/gpr/time_posix.cc
   src/core/lib/gpr/time_precise.cc
-  src/core/lib/gpr/time_windows.cc
-  src/core/lib/gpr/tmpfile_msys.cc
-  src/core/lib/gpr/tmpfile_posix.cc
-  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/windows/cpu.cc
+  src/core/lib/gpr/windows/log.cc
+  src/core/lib/gpr/windows/string.cc
+  src/core/lib/gpr/windows/string_util.cc
+  src/core/lib/gpr/windows/sync.cc
+  src/core/lib/gpr/windows/time.cc
+  src/core/lib/gpr/windows/tmpfile.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/env_linux.cc
-  src/core/lib/gprpp/env_posix.cc
-  src/core/lib/gprpp/env_windows.cc
+  src/core/lib/gprpp/crash.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/host_port.cc
+  src/core/lib/gprpp/linux/env.cc
   src/core/lib/gprpp/mpscq.cc
-  src/core/lib/gprpp/stat_posix.cc
-  src/core/lib/gprpp/stat_windows.cc
+  src/core/lib/gprpp/posix/env.cc
+  src/core/lib/gprpp/posix/stat.cc
+  src/core/lib/gprpp/posix/thd.cc
   src/core/lib/gprpp/strerror.cc
   src/core/lib/gprpp/tchar.cc
-  src/core/lib/gprpp/thd_posix.cc
-  src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time_util.cc
+  src/core/lib/gprpp/windows/env.cc
+  src/core/lib/gprpp/windows/stat.cc
+  src/core/lib/gprpp/windows/thd.cc
 )
+
+target_compile_features(gpr PUBLIC cxx_std_14)
 
 set_target_properties(gpr PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -1617,6 +1644,8 @@ target_include_directories(gpr
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(gpr
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
   absl::core_headers
@@ -1646,7 +1675,6 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
@@ -1694,6 +1722,7 @@ endif()
 
 
 add_library(grpc
+  src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -1704,6 +1733,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
+  src/core/ext/filters/client_channel/client_channel_service_config.cc
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
@@ -1723,11 +1753,16 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1742,7 +1777,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_filter.cc
   src/core/ext/filters/client_channel/retry_service_config.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
@@ -1752,18 +1786,19 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  src/core/ext/filters/fault_injection/service_config_parser.cc
+  src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
-  src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  src/core/ext/filters/http/message_compress/compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
-  src/core/ext/filters/server_config_selector/server_config_selector.cc
   src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
+  src/core/ext/filters/stateful_session/stateful_session_filter.cc
+  src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
+  src/core/ext/gcp/metadata_query.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
@@ -1784,6 +1819,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -1860,7 +1896,11 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
+  src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
+  src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c
+  src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c
+  src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c
   src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c
   src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
@@ -1874,12 +1914,14 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
   src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.c
   src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
@@ -1927,6 +1969,7 @@ add_library(grpc
   src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
   src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
   src/core/ext/upb-generated/xds/core/v3/authority.upb.c
+  src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
   src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
   src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
   src/core/ext/upb-generated/xds/core/v3/extension.upb.c
@@ -1935,9 +1978,16 @@ add_library(grpc
   src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
   src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
   src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
+  src/core/ext/upb-generated/xds/type/v3/cel.upb.c
+  src/core/ext/upb-generated/xds/type/v3/range.upb.c
   src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
   src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c
@@ -2007,7 +2057,9 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c
@@ -2019,12 +2071,14 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c
@@ -2066,15 +2120,23 @@ add_library(grpc
   src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c
   src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c
   src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c
   src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c
   src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
   src/core/ext/xds/certificate_provider_store.cc
   src/core/ext/xds/file_watcher_certificate_provider_factory.cc
@@ -2090,12 +2152,13 @@ add_library(grpc
   src/core/ext/xds/xds_cluster_specifier_plugin.cc
   src/core/ext/xds/xds_common_types.cc
   src/core/ext/xds/xds_endpoint.cc
+  src/core/ext/xds/xds_health_status.cc
   src/core/ext/xds/xds_http_fault_filter.cc
   src/core/ext/xds/xds_http_filters.cc
   src/core/ext/xds/xds_http_rbac_filter.cc
+  src/core/ext/xds/xds_http_stateful_session_filter.cc
   src/core/ext/xds/xds_lb_policy_registry.cc
   src/core/ext/xds/xds_listener.cc
-  src/core/ext/xds/xds_resource_type.cc
   src/core/ext/xds/xds_route_config.cc
   src/core/ext/xds/xds_routing.cc
   src/core/ext/xds/xds_server_config_fetcher.cc
@@ -2119,31 +2182,50 @@ add_library(grpc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
+  src/core/lib/debug/histogram_view.cc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
   src/core/lib/event_engine/posix_engine/timer_heap.cc
   src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/event_engine/windows/windows_listener.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -2157,6 +2239,7 @@ add_library(grpc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/dualstack_socket_posix.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2170,6 +2253,9 @@ add_library(grpc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
+  src/core/lib/iomgr/event_engine_shims/closure.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
@@ -2204,6 +2290,7 @@ add_library(grpc
   src/core/lib/iomgr/socket_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
   src/core/lib/iomgr/tcp_client.cc
   src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_posix.cc
@@ -2235,6 +2322,7 @@ add_library(grpc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/sleep.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -2312,6 +2400,7 @@ add_library(grpc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -2336,7 +2425,6 @@ add_library(grpc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_fragments.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -2379,9 +2467,12 @@ add_library(grpc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )
+
+target_compile_features(grpc PUBLIC cxx_std_14)
 
 set_target_properties(grpc PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -2449,6 +2540,7 @@ foreach(_hdr
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -2459,18 +2551,54 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/fork.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
+  include/grpc/impl/codegen/sync_custom.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/compression_types.h
+  include/grpc/impl/connectivity_state.h
+  include/grpc/impl/grpc_types.h
+  include/grpc/impl/propagation_bits.h
+  include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/alloc.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/cpu.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/string_util.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
+  include/grpc/support/sync_custom.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd_id.h
+  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -2505,6 +2633,8 @@ add_library(grpc_test_util
   test/core/util/tls_utils.cc
 )
 
+target_compile_features(grpc_test_util PUBLIC cxx_std_14)
+
 set_target_properties(grpc_test_util PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
   SOVERSION ${gRPC_CORE_SOVERSION}
@@ -2535,6 +2665,8 @@ target_include_directories(grpc_test_util
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_test_util
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::failure_signal_handler
   absl::stacktrace
@@ -2560,6 +2692,8 @@ add_library(grpc_test_util_unsecure
   test/core/util/test_config.cc
   test/core/util/test_tcp_server.cc
 )
+
+target_compile_features(grpc_test_util_unsecure PUBLIC cxx_std_14)
 
 set_target_properties(grpc_test_util_unsecure PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -2591,6 +2725,8 @@ target_include_directories(grpc_test_util_unsecure
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_test_util_unsecure
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::failure_signal_handler
   absl::stacktrace
@@ -2605,6 +2741,7 @@ endif()
 endif()
 
 add_library(grpc_unsecure
+  src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -2615,6 +2752,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
+  src/core/ext/filters/client_channel/client_channel_service_config.cc
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
@@ -2634,6 +2772,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -2647,7 +2787,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_filter.cc
   src/core/ext/filters/client_channel/retry_service_config.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
@@ -2657,12 +2796,11 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  src/core/ext/filters/fault_injection/service_config_parser.cc
+  src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
-  src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  src/core/ext/filters/http/message_compress/compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2684,6 +2822,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -2702,6 +2841,9 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
@@ -2727,31 +2869,50 @@ add_library(grpc_unsecure
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
+  src/core/lib/debug/histogram_view.cc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
   src/core/lib/event_engine/posix_engine/timer_heap.cc
   src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/event_engine/windows/windows_listener.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -2764,6 +2925,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/dualstack_socket_posix.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2777,6 +2939,9 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
+  src/core/lib/iomgr/event_engine_shims/closure.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
@@ -2811,6 +2976,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/socket_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
   src/core/lib/iomgr/tcp_client.cc
   src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_posix.cc
@@ -2835,12 +3001,12 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json_object_loader.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/load_balancing/lb_policy.cc
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/sleep.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -2856,6 +3022,13 @@ add_library(grpc_unsecure
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/context/security_context.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   src/core/lib/security/credentials/call_creds_util.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
@@ -2880,6 +3053,7 @@ add_library(grpc_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -2904,7 +3078,6 @@ add_library(grpc_unsecure
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_fragments.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -2921,11 +3094,14 @@ add_library(grpc_unsecure
   src/core/lib/uri/uri_parser.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_noextra.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )
+
+target_compile_features(grpc_unsecure PUBLIC cxx_std_14)
 
 set_target_properties(grpc_unsecure PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -2992,6 +3168,7 @@ foreach(_hdr
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -3002,18 +3179,54 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/fork.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
+  include/grpc/impl/codegen/sync_custom.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/compression_types.h
+  include/grpc/impl/connectivity_state.h
+  include/grpc/impl/grpc_types.h
+  include/grpc/impl/propagation_bits.h
+  include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/alloc.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/cpu.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/string_util.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
+  include/grpc/support/sync_custom.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd_id.h
+  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3069,6 +3282,8 @@ add_library(benchmark_helpers
   test/cpp/microbenchmarks/helpers.cc
 )
 
+target_compile_features(benchmark_helpers PUBLIC cxx_std_14)
+
 set_target_properties(benchmark_helpers PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
   SOVERSION ${gRPC_CPP_SOVERSION}
@@ -3104,7 +3319,9 @@ target_include_directories(benchmark_helpers
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(benchmark_helpers
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_unsecure
@@ -3142,17 +3359,14 @@ add_library(grpc++
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/client/xds_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -3164,6 +3378,7 @@ add_library(grpc++
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -3171,13 +3386,11 @@ add_library(grpc++
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/server/xds_server_credentials.cc
   src/cpp/thread_manager/thread_manager.cc
@@ -3186,6 +3399,8 @@ add_library(grpc++
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
 )
+
+target_compile_features(grpc++ PUBLIC cxx_std_14)
 
 set_target_properties(grpc++ PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -3220,6 +3435,7 @@ target_include_directories(grpc++
 target_link_libraries(grpc++
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
@@ -3251,10 +3467,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/completion_queue_tag.h
   include/grpc++/impl/codegen/config.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
   include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/proto_utils.h
@@ -3311,14 +3524,17 @@ foreach(_hdr
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/call_metric_recorder.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
+  include/grpcpp/ext/server_metric_recorder.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_hook.h
+  include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
+  include/grpcpp/impl/channel_interface.h
   include/grpcpp/impl/client_unary_call.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
@@ -3338,11 +3554,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
-  include/grpcpp/impl/codegen/core_codegen.h
-  include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/delegating_channel.h
-  include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
@@ -3371,15 +3584,25 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/create_auth_context.h
+  include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
+  include/grpcpp/impl/intercepted_channel.h
+  include/grpcpp/impl/interceptor_common.h
+  include/grpcpp/impl/metadata_map.h
   include/grpcpp/impl/method_handler_impl.h
+  include/grpcpp/impl/proto_utils.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
   include/grpcpp/impl/server_builder_plugin.h
+  include/grpcpp/impl/server_callback_handlers.h
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
+  include/grpcpp/impl/status.h
+  include/grpcpp/impl/sync.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
@@ -3394,10 +3617,12 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_interface.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
+  include/grpcpp/support/callback_common.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
@@ -3417,6 +3642,7 @@ foreach(_hdr
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
+  include/grpcpp/version_info.h
   include/grpcpp/xds_server_builder.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3441,6 +3667,8 @@ add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
 )
+
+target_compile_features(grpc++_alts PUBLIC cxx_std_14)
 
 set_target_properties(grpc++_alts PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -3475,6 +3703,7 @@ target_include_directories(grpc++_alts
 target_link_libraries(grpc++_alts
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
@@ -3504,6 +3733,8 @@ endif()
 add_library(grpc++_error_details
   src/cpp/util/error_details.cc
 )
+
+target_compile_features(grpc++_error_details PUBLIC cxx_std_14)
 
 set_target_properties(grpc++_error_details PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -3536,7 +3767,9 @@ target_include_directories(grpc++_error_details
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_error_details
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
@@ -3573,6 +3806,8 @@ add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection_plugin.cc
 )
 
+target_compile_features(grpc++_reflection PUBLIC cxx_std_14)
+
 set_target_properties(grpc++_reflection PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
   SOVERSION ${gRPC_CPP_SOVERSION}
@@ -3604,7 +3839,9 @@ target_include_directories(grpc++_reflection
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_reflection
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
@@ -3638,6 +3875,8 @@ if(gRPC_BUILD_TESTS)
 add_library(grpc++_test
   src/cpp/client/channel_test_peer.cc
 )
+
+target_compile_features(grpc++_test PUBLIC cxx_std_14)
 
 set_target_properties(grpc++_test PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -3674,7 +3913,9 @@ target_include_directories(grpc++_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
@@ -3701,6 +3942,8 @@ if(gRPC_BUILD_TESTS)
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
+
+target_compile_features(grpc++_test_config PUBLIC cxx_std_14)
 
 set_target_properties(grpc++_test_config PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -3737,7 +3980,9 @@ target_include_directories(grpc++_test_config
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_test_config
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags_parse
   gpr
@@ -3770,6 +4015,8 @@ add_library(grpc++_test_util
   test/cpp/util/subprocess.cc
   test/cpp/util/test_credentials_provider.cc
 )
+
+target_compile_features(grpc++_test_util PUBLIC cxx_std_14)
 
 set_target_properties(grpc++_test_util PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -3806,7 +4053,9 @@ target_include_directories(grpc++_test_util
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_test_util
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -3823,20 +4072,18 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/insecure_create_auth_context.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -3844,12 +4091,10 @@ add_library(grpc++_unsecure
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -3857,6 +4102,8 @@ add_library(grpc++_unsecure
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
 )
+
+target_compile_features(grpc++_unsecure PUBLIC cxx_std_14)
 
 set_target_properties(grpc++_unsecure PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -3891,6 +4138,7 @@ target_include_directories(grpc++_unsecure
 target_link_libraries(grpc++_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_unsecure
 )
@@ -3922,10 +4170,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/completion_queue_tag.h
   include/grpc++/impl/codegen/config.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
   include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/proto_utils.h
@@ -3981,14 +4226,17 @@ foreach(_hdr
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/call_metric_recorder.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
+  include/grpcpp/ext/server_metric_recorder.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_hook.h
+  include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
+  include/grpcpp/impl/channel_interface.h
   include/grpcpp/impl/client_unary_call.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
@@ -4008,11 +4256,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/config_protobuf.h
-  include/grpcpp/impl/codegen/core_codegen.h
-  include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/delegating_channel.h
-  include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
@@ -4041,15 +4286,25 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/create_auth_context.h
+  include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
+  include/grpcpp/impl/intercepted_channel.h
+  include/grpcpp/impl/interceptor_common.h
+  include/grpcpp/impl/metadata_map.h
   include/grpcpp/impl/method_handler_impl.h
+  include/grpcpp/impl/proto_utils.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
   include/grpcpp/impl/server_builder_plugin.h
+  include/grpcpp/impl/server_callback_handlers.h
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
+  include/grpcpp/impl/status.h
+  include/grpcpp/impl/sync.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
@@ -4062,10 +4317,12 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_interface.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
+  include/grpcpp/support/callback_common.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
@@ -4085,6 +4342,7 @@ foreach(_hdr
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
+  include/grpcpp/version_info.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -4104,15 +4362,400 @@ if(gRPC_INSTALL)
 endif()
 
 
+add_library(grpc_authorization_provider
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/channel/channel_args_preconditioning.cc
+  src/core/lib/channel/channel_stack.cc
+  src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_stack_builder_impl.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
+  src/core/lib/channel/channelz_registry.cc
+  src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/status_util.cc
+  src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/message_compress.cc
+  src/core/lib/config/core_configuration.cc
+  src/core/lib/debug/event_log.cc
+  src/core/lib/debug/histogram_view.cc
+  src/core/lib/debug/stats.cc
+  src/core/lib/debug/stats_data.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/event_engine/windows/windows_listener.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/validation_errors.cc
+  src/core/lib/gprpp/work_serializer.cc
+  src/core/lib/handshaker/proxy_mapper_registry.cc
+  src/core/lib/iomgr/buffer_list.cc
+  src/core/lib/iomgr/call_combiner.cc
+  src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/dualstack_socket_posix.cc
+  src/core/lib/iomgr/endpoint.cc
+  src/core/lib/iomgr/endpoint_cfstream.cc
+  src/core/lib/iomgr/endpoint_pair_posix.cc
+  src/core/lib/iomgr/endpoint_pair_windows.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/error_cfstream.cc
+  src/core/lib/iomgr/ev_apple.cc
+  src/core/lib/iomgr/ev_epoll1_linux.cc
+  src/core/lib/iomgr/ev_poll_posix.cc
+  src/core/lib/iomgr/ev_posix.cc
+  src/core/lib/iomgr/ev_windows.cc
+  src/core/lib/iomgr/event_engine_shims/closure.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/fork_posix.cc
+  src/core/lib/iomgr/fork_windows.cc
+  src/core/lib/iomgr/gethostname_fallback.cc
+  src/core/lib/iomgr/gethostname_host_name_max.cc
+  src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/lib/iomgr/internal_errqueue.cc
+  src/core/lib/iomgr/iocp_windows.cc
+  src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/iomgr_posix.cc
+  src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  src/core/lib/iomgr/iomgr_windows.cc
+  src/core/lib/iomgr/load_file.cc
+  src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/polling_entity.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_windows.cc
+  src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_posix.cc
+  src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_factory_posix.cc
+  src/core/lib/iomgr/socket_mutator.cc
+  src/core/lib/iomgr/socket_utils_common_posix.cc
+  src/core/lib/iomgr/socket_utils_linux.cc
+  src/core/lib/iomgr/socket_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_cfstream.cc
+  src/core/lib/iomgr/tcp_client_posix.cc
+  src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_posix.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  src/core/lib/iomgr/tcp_server_windows.cc
+  src/core/lib/iomgr/tcp_windows.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_generic.cc
+  src/core/lib/iomgr/timer_heap.cc
+  src/core/lib/iomgr/timer_manager.cc
+  src/core/lib/iomgr/unix_sockets_posix.cc
+  src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  src/core/lib/iomgr/wakeup_fd_pipe.cc
+  src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/json/json_reader.cc
+  src/core/lib/json/json_writer.cc
+  src/core/lib/load_balancing/lb_policy.cc
+  src/core/lib/load_balancing/lb_policy_registry.cc
+  src/core/lib/matchers/matchers.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resolver/resolver.cc
+  src/core/lib/resolver/resolver_registry.cc
+  src/core/lib/resolver/server_address.cc
+  src/core/lib/resource_quota/api.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  src/core/lib/security/authorization/grpc_server_authz_filter.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/rbac_translator.cc
+  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/lib/security/context/security_context.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/lib/security/credentials/call_creds_util.cc
+  src/core/lib/security/credentials/composite/composite_credentials.cc
+  src/core/lib/security/credentials/credentials.cc
+  src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/lib/security/credentials/tls/tls_utils.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_supported.cc
+  src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/transport/client_auth_filter.cc
+  src/core/lib/security/transport/secure_endpoint.cc
+  src/core/lib/security/transport/security_handshaker.cc
+  src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/tsi_error.cc
+  src/core/lib/security/util/json_util.cc
+  src/core/lib/service_config/service_config_parser.cc
+  src/core/lib/slice/b64.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/api_trace.cc
+  src/core/lib/surface/builtins.cc
+  src/core/lib/surface/byte_buffer.cc
+  src/core/lib/surface/byte_buffer_reader.cc
+  src/core/lib/surface/call.cc
+  src/core/lib/surface/call_details.cc
+  src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_trace.cc
+  src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_init.cc
+  src/core/lib/surface/channel_ping.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/completion_queue.cc
+  src/core/lib/surface/completion_queue_factory.cc
+  src/core/lib/surface/event_string.cc
+  src/core/lib/surface/init_internally.cc
+  src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server.cc
+  src/core/lib/surface/validate_metadata.cc
+  src/core/lib/surface/version.cc
+  src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/handshaker.cc
+  src/core/lib/transport/handshaker_registry.cc
+  src/core/lib/transport/metadata_batch.cc
+  src/core/lib/transport/parsed_metadata.cc
+  src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/timeout_encoding.cc
+  src/core/lib/transport/transport.cc
+  src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/tsi/transport_security.cc
+  src/core/tsi/transport_security_grpc.cc
+)
+
+target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
+
+set_target_properties(grpc_authorization_provider PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc_authorization_provider PROPERTIES COMPILE_PDB_NAME "grpc_authorization_provider"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_authorization_provider.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc_authorization_provider
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpc_authorization_provider
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_RE2_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
+  absl::flat_hash_map
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::any_invocable
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::span
+  absl::utility
+  gpr
+  upb
+)
+
+foreach(_hdr
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/event_engine/endpoint_config.h
+  include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/internal/slice_cast.h
+  include/grpc/event_engine/memory_allocator.h
+  include/grpc/event_engine/memory_request.h
+  include/grpc/event_engine/port.h
+  include/grpc/event_engine/slice.h
+  include/grpc/event_engine/slice_buffer.h
+  include/grpc/fork.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/grpc_security.h
+  include/grpc/grpc_security_constants.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/fork.h
+  include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_abseil.h
+  include/grpc/impl/codegen/sync_custom.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/compression_types.h
+  include/grpc/impl/connectivity_state.h
+  include/grpc/impl/grpc_types.h
+  include/grpc/impl/propagation_bits.h
+  include/grpc/impl/slice_type.h
+  include/grpc/load_reporting.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
+  include/grpc/status.h
+  include/grpc/support/alloc.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/cpu.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/string_util.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
+  include/grpc/support/sync_custom.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd_id.h
+  include/grpc/support/time.h
+  include/grpc/support/workaround_list.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+
+if(gRPC_INSTALL)
+  install(TARGETS grpc_authorization_provider EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
   src/compiler/node_generator.cc
   src/compiler/objective_c_generator.cc
   src/compiler/php_generator.cc
+  src/compiler/proto_parser_helper.cc
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
 )
+
+target_compile_features(grpc_plugin_support PUBLIC cxx_std_14)
 
 set_target_properties(grpc_plugin_support PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -4145,8 +4788,10 @@ target_include_directories(grpc_plugin_support
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc_plugin_support
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -4184,6 +4829,8 @@ add_library(grpcpp_channelz
   src/cpp/server/channelz/channelz_service_plugin.cc
 )
 
+target_compile_features(grpcpp_channelz PUBLIC cxx_std_14)
+
 set_target_properties(grpcpp_channelz PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
   SOVERSION ${gRPC_CPP_SOVERSION}
@@ -4215,7 +4862,9 @@ target_include_directories(grpcpp_channelz
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpcpp_channelz
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
 )
@@ -4271,6 +4920,8 @@ add_library(upb
   src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
 )
 
+target_compile_features(upb PUBLIC cxx_std_14)
+
 set_target_properties(upb PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
   SOVERSION ${gRPC_CORE_SOVERSION}
@@ -4301,6 +4952,8 @@ target_include_directories(upb
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(upb
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -4322,7 +4975,7 @@ add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.cc
   test/core/end2end/cq_verifier.cc
 )
-
+target_compile_features(bad_server_response_test PUBLIC cxx_std_14)
 target_include_directories(bad_server_response_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4338,6 +4991,8 @@ target_include_directories(bad_server_response_test
 )
 
 target_link_libraries(bad_server_response_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4363,7 +5018,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/subprocess_windows.cc
     test/core/util/tracer_util.cc
   )
-
+  target_compile_features(bad_ssl_alpn_test PUBLIC cxx_std_14)
   target_include_directories(bad_ssl_alpn_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4379,6 +5034,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bad_ssl_alpn_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4405,7 +5062,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/subprocess_windows.cc
     test/core/util/tracer_util.cc
   )
-
+  target_compile_features(bad_ssl_cert_test PUBLIC cxx_std_14)
   target_include_directories(bad_ssl_cert_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4421,6 +5078,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bad_ssl_cert_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4434,7 +5093,7 @@ add_executable(connection_refused_test
   test/core/end2end/connection_refused_test.cc
   test/core/end2end/cq_verifier.cc
 )
-
+target_compile_features(connection_refused_test PUBLIC cxx_std_14)
 target_include_directories(connection_refused_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4450,6 +5109,8 @@ target_include_directories(connection_refused_test
 )
 
 target_link_libraries(connection_refused_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4463,7 +5124,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/cq_verifier.cc
     test/core/end2end/dualstack_socket_test.cc
   )
-
+  target_compile_features(dualstack_socket_test PUBLIC cxx_std_14)
   target_include_directories(dualstack_socket_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4479,6 +5140,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(dualstack_socket_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4504,7 +5167,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/subprocess_windows.cc
     test/core/util/tracer_util.cc
   )
-
+  target_compile_features(fd_conservation_posix_test PUBLIC cxx_std_14)
   target_include_directories(fd_conservation_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4520,96 +5183,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fd_conservation_posix_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(fling_stream_test
-    test/core/end2end/data/client_certs.cc
-    test/core/end2end/data/server1_cert.cc
-    test/core/end2end/data/server1_key.cc
-    test/core/end2end/data/test_root_cert.cc
-    test/core/fling/fling_stream_test.cc
-    test/core/util/cmdline.cc
-    test/core/util/fuzzer_util.cc
-    test/core/util/grpc_profiler.cc
-    test/core/util/histogram.cc
-    test/core/util/mock_endpoint.cc
-    test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
-    test/core/util/resolve_localhost_ip46.cc
-    test/core/util/slice_splitter.cc
-    test/core/util/subprocess_posix.cc
-    test/core/util/subprocess_windows.cc
-    test/core/util/tracer_util.cc
-  )
-
-  target_include_directories(fling_stream_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(fling_stream_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(fling_test
-    test/core/end2end/data/client_certs.cc
-    test/core/end2end/data/server1_cert.cc
-    test/core/end2end/data/server1_key.cc
-    test/core/end2end/data/test_root_cert.cc
-    test/core/fling/fling_test.cc
-    test/core/util/cmdline.cc
-    test/core/util/fuzzer_util.cc
-    test/core/util/grpc_profiler.cc
-    test/core/util/histogram.cc
-    test/core/util/mock_endpoint.cc
-    test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
-    test/core/util/resolve_localhost_ip46.cc
-    test/core/util/slice_splitter.cc
-    test/core/util/subprocess_posix.cc
-    test/core/util/subprocess_windows.cc
-    test/core/util/tracer_util.cc
-  )
-
-  target_include_directories(fling_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(fling_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4623,7 +5198,7 @@ add_executable(goaway_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/goaway_server_test.cc
 )
-
+target_compile_features(goaway_server_test PUBLIC cxx_std_14)
 target_include_directories(goaway_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4639,6 +5214,8 @@ target_include_directories(goaway_server_test
 )
 
 target_link_libraries(goaway_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4651,7 +5228,7 @@ add_executable(inproc_callback_test
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/inproc_callback_test.cc
 )
-
+target_compile_features(inproc_callback_test PUBLIC cxx_std_14)
 target_include_directories(inproc_callback_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4667,6 +5244,8 @@ target_include_directories(inproc_callback_test
 )
 
 target_link_libraries(inproc_callback_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4679,7 +5258,7 @@ add_executable(invalid_call_argument_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/invalid_call_argument_test.cc
 )
-
+target_compile_features(invalid_call_argument_test PUBLIC cxx_std_14)
 target_include_directories(invalid_call_argument_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4695,33 +5274,8 @@ target_include_directories(invalid_call_argument_test
 )
 
 target_link_libraries(invalid_call_argument_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(minimal_stack_is_minimal_test
-  test/core/channel/minimal_stack_is_minimal_test.cc
-)
-
-target_include_directories(minimal_stack_is_minimal_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(minimal_stack_is_minimal_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4733,7 +5287,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(multiple_server_queues_test
   test/core/end2end/multiple_server_queues_test.cc
 )
-
+target_compile_features(multiple_server_queues_test PUBLIC cxx_std_14)
 target_include_directories(multiple_server_queues_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4749,6 +5303,8 @@ target_include_directories(multiple_server_queues_test
 )
 
 target_link_libraries(multiple_server_queues_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4761,7 +5317,7 @@ add_executable(no_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/no_server_test.cc
 )
-
+target_compile_features(no_server_test PUBLIC cxx_std_14)
 target_include_directories(no_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4777,6 +5333,8 @@ target_include_directories(no_server_test
 )
 
 target_link_libraries(no_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4789,7 +5347,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   add_executable(pollset_windows_starvation_test
     test/core/iomgr/pollset_windows_starvation_test.cc
   )
-
+  target_compile_features(pollset_windows_starvation_test PUBLIC cxx_std_14)
   target_include_directories(pollset_windows_starvation_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4805,6 +5363,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   )
 
   target_link_libraries(pollset_windows_starvation_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4815,11 +5375,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(public_headers_must_be_c89
-  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/rbac_translator.cc
   test/core/surface/public_headers_must_be_c89.c
 )
-
+target_compile_features(public_headers_must_be_c89 PUBLIC cxx_std_14)
 target_include_directories(public_headers_must_be_c89
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4835,11 +5393,50 @@ target_include_directories(public_headers_must_be_c89
 )
 
 target_link_libraries(public_headers_must_be_c89
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_authorization_provider
   grpc_test_util
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(static_stride_scheduler_benchmark
+    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+    test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
+  )
+  target_compile_features(static_stride_scheduler_benchmark PUBLIC cxx_std_14)
+  target_include_directories(static_stride_scheduler_benchmark
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(static_stride_scheduler_benchmark
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::algorithm_container
+    absl::any_invocable
+    absl::span
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    gpr
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -4860,7 +5457,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/util/subprocess_windows.cc
     test/core/util/tracer_util.cc
   )
-
+  target_compile_features(tcp_posix_test PUBLIC cxx_std_14)
   target_include_directories(tcp_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4876,6 +5473,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4900,7 +5499,7 @@ add_executable(test_core_iomgr_timer_list_test
   test/core/util/subprocess_windows.cc
   test/core/util/tracer_util.cc
 )
-
+target_compile_features(test_core_iomgr_timer_list_test PUBLIC cxx_std_14)
 target_include_directories(test_core_iomgr_timer_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4916,6 +5515,8 @@ target_include_directories(test_core_iomgr_timer_list_test
 )
 
 target_link_libraries(test_core_iomgr_timer_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4930,7 +5531,7 @@ add_executable(activity_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(activity_test PUBLIC cxx_std_14)
 target_include_directories(activity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4951,7 +5552,9 @@ target_include_directories(activity_test
 )
 
 target_link_libraries(activity_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::hash
@@ -4971,7 +5574,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(address_sorting_test PUBLIC cxx_std_14)
   target_include_directories(address_sorting_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -4992,7 +5595,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(address_sorting_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_config
     grpc++_test_util
@@ -5024,7 +5629,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(address_sorting_test_unsecure PUBLIC cxx_std_14)
   target_include_directories(address_sorting_test_unsecure
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5045,7 +5650,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(address_sorting_test_unsecure
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
@@ -5080,7 +5687,7 @@ add_executable(admin_services_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(admin_services_end2end_test PUBLIC cxx_std_14)
 target_include_directories(admin_services_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5101,7 +5708,9 @@ target_include_directories(admin_services_end2end_test
 )
 
 target_link_libraries(admin_services_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_reflection
   grpcpp_channelz
@@ -5130,7 +5739,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(alarm_test PUBLIC cxx_std_14)
   target_include_directories(alarm_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5151,7 +5760,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(alarm_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
@@ -5167,7 +5778,7 @@ add_executable(alloc_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alloc_test PUBLIC cxx_std_14)
 target_include_directories(alloc_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5188,7 +5799,9 @@ target_include_directories(alloc_test
 )
 
 target_link_libraries(alloc_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5202,7 +5815,7 @@ add_executable(alpn_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alpn_test PUBLIC cxx_std_14)
 target_include_directories(alpn_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5223,7 +5836,9 @@ target_include_directories(alpn_test
 )
 
 target_link_libraries(alpn_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5249,7 +5864,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(alts_concurrent_connectivity_test PUBLIC cxx_std_14)
   target_include_directories(alts_concurrent_connectivity_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5270,7 +5885,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(alts_concurrent_connectivity_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
     grpc_test_util
@@ -5287,7 +5904,7 @@ add_executable(alts_counter_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_counter_test PUBLIC cxx_std_14)
 target_include_directories(alts_counter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5308,7 +5925,9 @@ target_include_directories(alts_counter_test
 )
 
 target_link_libraries(alts_counter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5323,7 +5942,7 @@ add_executable(alts_crypt_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_crypt_test PUBLIC cxx_std_14)
 target_include_directories(alts_crypt_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5344,7 +5963,9 @@ target_include_directories(alts_crypt_test
 )
 
 target_link_libraries(alts_crypt_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5359,7 +5980,7 @@ add_executable(alts_crypter_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_crypter_test PUBLIC cxx_std_14)
 target_include_directories(alts_crypter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5380,7 +6001,9 @@ target_include_directories(alts_crypter_test
 )
 
 target_link_libraries(alts_crypter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5396,7 +6019,7 @@ add_executable(alts_frame_protector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_frame_protector_test PUBLIC cxx_std_14)
 target_include_directories(alts_frame_protector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5417,7 +6040,9 @@ target_include_directories(alts_frame_protector_test
 )
 
 target_link_libraries(alts_frame_protector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5432,7 +6057,7 @@ add_executable(alts_grpc_record_protocol_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_grpc_record_protocol_test PUBLIC cxx_std_14)
 target_include_directories(alts_grpc_record_protocol_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5453,7 +6078,9 @@ target_include_directories(alts_grpc_record_protocol_test
 )
 
 target_link_libraries(alts_grpc_record_protocol_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5468,7 +6095,7 @@ add_executable(alts_handshaker_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_handshaker_client_test PUBLIC cxx_std_14)
 target_include_directories(alts_handshaker_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5489,7 +6116,9 @@ target_include_directories(alts_handshaker_client_test
 )
 
 target_link_libraries(alts_handshaker_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5504,7 +6133,7 @@ add_executable(alts_iovec_record_protocol_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_iovec_record_protocol_test PUBLIC cxx_std_14)
 target_include_directories(alts_iovec_record_protocol_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5525,7 +6154,9 @@ target_include_directories(alts_iovec_record_protocol_test
 )
 
 target_link_libraries(alts_iovec_record_protocol_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5551,7 +6182,7 @@ add_executable(alts_security_connector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_security_connector_test PUBLIC cxx_std_14)
 target_include_directories(alts_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5572,7 +6203,9 @@ target_include_directories(alts_security_connector_test
 )
 
 target_link_libraries(alts_security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5587,7 +6220,7 @@ add_executable(alts_tsi_handshaker_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_tsi_handshaker_test PUBLIC cxx_std_14)
 target_include_directories(alts_tsi_handshaker_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5608,7 +6241,9 @@ target_include_directories(alts_tsi_handshaker_test
 )
 
 target_link_libraries(alts_tsi_handshaker_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5623,7 +6258,7 @@ add_executable(alts_tsi_utils_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_tsi_utils_test PUBLIC cxx_std_14)
 target_include_directories(alts_tsi_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5644,7 +6279,9 @@ target_include_directories(alts_tsi_utils_test
 )
 
 target_link_libraries(alts_tsi_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5658,7 +6295,7 @@ add_executable(alts_util_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_util_test PUBLIC cxx_std_14)
 target_include_directories(alts_util_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5679,7 +6316,9 @@ target_include_directories(alts_util_test
 )
 
 target_link_libraries(alts_util_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_alts
   grpc++_test_util
@@ -5695,7 +6334,7 @@ add_executable(alts_zero_copy_grpc_protector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(alts_zero_copy_grpc_protector_test PUBLIC cxx_std_14)
 target_include_directories(alts_zero_copy_grpc_protector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5716,7 +6355,9 @@ target_include_directories(alts_zero_copy_grpc_protector_test
 )
 
 target_link_libraries(alts_zero_copy_grpc_protector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5730,7 +6371,7 @@ add_executable(arena_promise_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(arena_promise_test PUBLIC cxx_std_14)
 target_include_directories(arena_promise_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5751,7 +6392,9 @@ target_include_directories(arena_promise_test
 )
 
 target_link_libraries(arena_promise_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
 )
@@ -5765,7 +6408,7 @@ add_executable(arena_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(arena_test PUBLIC cxx_std_14)
 target_include_directories(arena_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5786,9 +6429,10 @@ target_include_directories(arena_test
 )
 
 target_link_libraries(arena_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 
@@ -5825,7 +6469,7 @@ add_executable(async_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(async_end2end_test PUBLIC cxx_std_14)
 target_include_directories(async_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5846,7 +6490,9 @@ target_include_directories(async_end2end_test
 )
 
 target_link_libraries(async_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -5872,7 +6518,7 @@ add_executable(auth_context_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(auth_context_test PUBLIC cxx_std_14)
 target_include_directories(auth_context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5893,7 +6539,9 @@ target_include_directories(auth_context_test
 )
 
 target_link_libraries(auth_context_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5907,7 +6555,7 @@ add_executable(auth_property_iterator_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(auth_property_iterator_test PUBLIC cxx_std_14)
 target_include_directories(auth_property_iterator_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5928,7 +6576,9 @@ target_include_directories(auth_property_iterator_test
 )
 
 target_link_libraries(auth_property_iterator_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -5954,7 +6604,7 @@ add_executable(authorization_matchers_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(authorization_matchers_test PUBLIC cxx_std_14)
 target_include_directories(authorization_matchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5975,7 +6625,9 @@ target_include_directories(authorization_matchers_test
 )
 
 target_link_libraries(authorization_matchers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5985,14 +6637,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_policy_provider_test
-  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/rbac_translator.cc
   src/cpp/server/authorization_policy_provider.cc
   test/cpp/server/authorization_policy_provider_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(authorization_policy_provider_test PUBLIC cxx_std_14)
 target_include_directories(authorization_policy_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6013,9 +6663,12 @@ target_include_directories(authorization_policy_provider_test
 )
 
 target_link_libraries(authorization_policy_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc_authorization_provider
   grpc_test_util
 )
 
@@ -6028,7 +6681,7 @@ add_executable(avl_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(avl_test PUBLIC cxx_std_14)
 target_include_directories(avl_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6049,7 +6702,9 @@ target_include_directories(avl_test
 )
 
 target_link_libraries(avl_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::strings
   absl::variant
@@ -6076,7 +6731,7 @@ add_executable(aws_request_signer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(aws_request_signer_test PUBLIC cxx_std_14)
 target_include_directories(aws_request_signer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6097,7 +6752,9 @@ target_include_directories(aws_request_signer_test
 )
 
 target_link_libraries(aws_request_signer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6111,7 +6768,7 @@ add_executable(b64_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(b64_test PUBLIC cxx_std_14)
 target_include_directories(b64_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6132,7 +6789,9 @@ target_include_directories(b64_test
 )
 
 target_link_libraries(b64_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6146,7 +6805,7 @@ add_executable(backoff_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(backoff_test PUBLIC cxx_std_14)
 target_include_directories(backoff_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6167,7 +6826,9 @@ target_include_directories(backoff_test
 )
 
 target_link_libraries(backoff_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6183,7 +6844,7 @@ add_executable(bad_streaming_id_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(bad_streaming_id_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(bad_streaming_id_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6204,7 +6865,9 @@ target_include_directories(bad_streaming_id_bad_client_test
 )
 
 target_link_libraries(bad_streaming_id_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6220,7 +6883,7 @@ add_executable(badreq_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(badreq_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(badreq_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6241,7 +6904,9 @@ target_include_directories(badreq_bad_client_test
 )
 
 target_link_libraries(badreq_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6256,7 +6921,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(bdp_estimator_test PUBLIC cxx_std_14)
   target_include_directories(bdp_estimator_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6277,7 +6942,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bdp_estimator_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -6292,7 +6959,7 @@ add_executable(bin_decoder_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(bin_decoder_test PUBLIC cxx_std_14)
 target_include_directories(bin_decoder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6313,7 +6980,9 @@ target_include_directories(bin_decoder_test
 )
 
 target_link_libraries(bin_decoder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6327,7 +6996,7 @@ add_executable(bin_encoder_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(bin_encoder_test PUBLIC cxx_std_14)
 target_include_directories(bin_encoder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6348,7 +7017,9 @@ target_include_directories(bin_encoder_test
 )
 
 target_link_libraries(bin_encoder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6362,7 +7033,7 @@ add_executable(binder_resolver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(binder_resolver_test PUBLIC cxx_std_14)
 target_include_directories(binder_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6383,7 +7054,9 @@ target_include_directories(binder_resolver_test
 )
 
 target_link_libraries(binder_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6415,7 +7088,7 @@ add_executable(binder_server_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(binder_server_test PUBLIC cxx_std_14)
 target_include_directories(binder_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6436,7 +7109,9 @@ target_include_directories(binder_server_test
 )
 
 target_link_libraries(binder_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -6471,16 +7146,13 @@ add_executable(binder_transport_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -6492,6 +7164,7 @@ add_executable(binder_transport_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -6499,13 +7172,11 @@ add_executable(binder_transport_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -6517,7 +7188,7 @@ add_executable(binder_transport_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(binder_transport_test PUBLIC cxx_std_14)
 target_include_directories(binder_transport_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6538,7 +7209,9 @@ target_include_directories(binder_transport_test
 )
 
 target_link_libraries(binder_transport_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6552,7 +7225,7 @@ add_executable(bitset_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(bitset_test PUBLIC cxx_std_14)
 target_include_directories(bitset_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6573,7 +7246,9 @@ target_include_directories(bitset_test
 )
 
 target_link_libraries(bitset_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::strings
   absl::variant
@@ -6600,7 +7275,7 @@ add_executable(buffer_list_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(buffer_list_test PUBLIC cxx_std_14)
 target_include_directories(buffer_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6621,7 +7296,9 @@ target_include_directories(buffer_list_test
 )
 
 target_link_libraries(buffer_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6635,7 +7312,7 @@ add_executable(byte_buffer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(byte_buffer_test PUBLIC cxx_std_14)
 target_include_directories(byte_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6656,7 +7333,9 @@ target_include_directories(byte_buffer_test
 )
 
 target_link_libraries(byte_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -6670,7 +7349,7 @@ add_executable(c_slice_buffer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(c_slice_buffer_test PUBLIC cxx_std_14)
 target_include_directories(c_slice_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6691,7 +7370,9 @@ target_include_directories(c_slice_buffer_test
 )
 
 target_link_libraries(c_slice_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6705,7 +7386,7 @@ add_executable(call_finalization_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(call_finalization_test PUBLIC cxx_std_14)
 target_include_directories(call_finalization_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6726,83 +7407,11 @@ target_include_directories(call_finalization_test
 )
 
 target_link_libraries(call_finalization_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(call_fragments_test
-  test/core/transport/call_fragments_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(call_fragments_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(call_fragments_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(call_push_pull_test
-  test/core/promise/call_push_pull_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(call_push_pull_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(call_push_pull_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::type_traits
-  absl::status
-  absl::statusor
-  absl::strings
-  absl::variant
 )
 
 
@@ -6816,7 +7425,7 @@ add_executable(cancel_ares_query_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(cancel_ares_query_test PUBLIC cxx_std_14)
 target_include_directories(cancel_ares_query_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6837,7 +7446,9 @@ target_include_directories(cancel_ares_query_test
 )
 
 target_link_libraries(cancel_ares_query_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -6847,8 +7458,133 @@ target_link_libraries(cancel_ares_query_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(cancel_callback_test
+  test/core/promise/cancel_callback_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(cancel_callback_test PUBLIC cxx_std_14)
+target_include_directories(cancel_callback_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(cancel_callback_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(cel_authorization_engine_test
+  src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
+  src/core/ext/upb-generated/envoy/annotations/resource.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/grpc_method_list.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c
+  src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
+  src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
+  src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
+  src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
+  src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
+  src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/hash_policy.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/http.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/range.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/api/httpbody.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/upb-generated/google/type/expr.upb.c
+  src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
+  src/core/ext/upb-generated/udpa/annotations/security.upb.c
+  src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
+  src/core/ext/upb-generated/udpa/annotations/status.upb.c
+  src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/security.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
+  src/core/ext/upb-generated/xds/core/v3/authority.upb.c
+  src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
+  src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
+  src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
+  src/core/ext/upb-generated/xds/core/v3/extension.upb.c
+  src/core/ext/upb-generated/xds/core/v3/resource.upb.c
+  src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
+  src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
+  src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
+  src/core/ext/upb-generated/xds/type/v3/cel.upb.c
+  src/core/ext/upb-generated/xds/type/v3/range.upb.c
+  src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
   src/core/lib/security/authorization/cel_authorization_engine.cc
   test/core/security/cel_authorization_engine_test.cc
   test/core/util/cmdline.cc
@@ -6866,7 +7602,7 @@ add_executable(cel_authorization_engine_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(cel_authorization_engine_test PUBLIC cxx_std_14)
 target_include_directories(cel_authorization_engine_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6887,7 +7623,9 @@ target_include_directories(cel_authorization_engine_test
 )
 
 target_link_libraries(cel_authorization_engine_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6901,7 +7639,7 @@ add_executable(certificate_provider_registry_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(certificate_provider_registry_test PUBLIC cxx_std_14)
 target_include_directories(certificate_provider_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6922,7 +7660,9 @@ target_include_directories(certificate_provider_registry_test
 )
 
 target_link_libraries(certificate_provider_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6936,7 +7676,7 @@ add_executable(certificate_provider_store_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(certificate_provider_store_test PUBLIC cxx_std_14)
 target_include_directories(certificate_provider_store_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6957,12 +7697,58 @@ target_include_directories(certificate_provider_store_test
 )
 
 target_link_libraries(certificate_provider_store_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(cf_event_engine_test
+    src/core/lib/event_engine/cf_engine/cf_engine.cc
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/test_suite/cf_event_engine_test.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/tests/timer_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(cf_event_engine_test PUBLIC cxx_std_14)
+  target_include_directories(cf_event_engine_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(cf_event_engine_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_unsecure
+    grpc_test_util
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -6988,7 +7774,7 @@ add_executable(cfstream_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(cfstream_test PUBLIC cxx_std_14)
 target_include_directories(cfstream_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7009,7 +7795,9 @@ target_include_directories(cfstream_test
 )
 
 target_link_libraries(cfstream_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -7023,7 +7811,7 @@ add_executable(channel_args_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channel_args_test PUBLIC cxx_std_14)
 target_include_directories(channel_args_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7044,7 +7832,9 @@ target_include_directories(channel_args_test
 )
 
 target_link_libraries(channel_args_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7058,7 +7848,7 @@ add_executable(channel_arguments_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channel_arguments_test PUBLIC cxx_std_14)
 target_include_directories(channel_arguments_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7079,7 +7869,9 @@ target_include_directories(channel_arguments_test
 )
 
 target_link_libraries(channel_arguments_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -7106,7 +7898,7 @@ add_executable(channel_creds_registry_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channel_creds_registry_test PUBLIC cxx_std_14)
 target_include_directories(channel_creds_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7127,7 +7919,9 @@ target_include_directories(channel_creds_registry_test
 )
 
 target_link_libraries(channel_creds_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7141,7 +7935,7 @@ add_executable(channel_filter_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channel_filter_test PUBLIC cxx_std_14)
 target_include_directories(channel_filter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7162,7 +7956,9 @@ target_include_directories(channel_filter_test
 )
 
 target_link_libraries(channel_filter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -7177,7 +7973,7 @@ add_executable(channel_stack_builder_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channel_stack_builder_test PUBLIC cxx_std_14)
 target_include_directories(channel_stack_builder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7198,7 +7994,9 @@ target_include_directories(channel_stack_builder_test
 )
 
 target_link_libraries(channel_stack_builder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7212,7 +8010,7 @@ add_executable(channel_stack_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channel_stack_test PUBLIC cxx_std_14)
 target_include_directories(channel_stack_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7233,7 +8031,9 @@ target_include_directories(channel_stack_test
 )
 
 target_link_libraries(channel_stack_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7252,7 +8052,7 @@ add_executable(channel_trace_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channel_trace_test PUBLIC cxx_std_14)
 target_include_directories(channel_trace_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7273,7 +8073,9 @@ target_include_directories(channel_trace_test
 )
 
 target_link_libraries(channel_trace_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -7288,7 +8090,7 @@ add_executable(channelz_registry_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channelz_registry_test PUBLIC cxx_std_14)
 target_include_directories(channelz_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7309,7 +8111,9 @@ target_include_directories(channelz_registry_test
 )
 
 target_link_libraries(channelz_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -7341,7 +8145,7 @@ add_executable(channelz_service_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channelz_service_test PUBLIC cxx_std_14)
 target_include_directories(channelz_service_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7362,7 +8166,9 @@ target_include_directories(channelz_service_test
 )
 
 target_link_libraries(channelz_service_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpcpp_channelz
   grpc++_test_util
@@ -7382,7 +8188,7 @@ add_executable(channelz_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(channelz_test PUBLIC cxx_std_14)
 target_include_directories(channelz_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7403,7 +8209,9 @@ target_include_directories(channelz_test
 )
 
 target_link_libraries(channelz_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -7430,7 +8238,7 @@ add_executable(check_gcp_environment_linux_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(check_gcp_environment_linux_test PUBLIC cxx_std_14)
 target_include_directories(check_gcp_environment_linux_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7451,7 +8259,9 @@ target_include_directories(check_gcp_environment_linux_test
 )
 
 target_link_libraries(check_gcp_environment_linux_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7477,7 +8287,7 @@ add_executable(check_gcp_environment_windows_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(check_gcp_environment_windows_test PUBLIC cxx_std_14)
 target_include_directories(check_gcp_environment_windows_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7498,7 +8308,9 @@ target_include_directories(check_gcp_environment_windows_test
 )
 
 target_link_libraries(check_gcp_environment_windows_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7516,6 +8328,7 @@ add_executable(chunked_vector_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -7530,12 +8343,13 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(chunked_vector_test PUBLIC cxx_std_14)
 target_include_directories(chunked_vector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7556,8 +8370,11 @@ target_include_directories(chunked_vector_test
 )
 
 target_link_libraries(chunked_vector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
   absl::hash
@@ -7603,7 +8420,7 @@ add_executable(cli_call_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(cli_call_test PUBLIC cxx_std_14)
 target_include_directories(cli_call_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7624,7 +8441,9 @@ target_include_directories(cli_call_test
 )
 
 target_link_libraries(cli_call_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -7638,7 +8457,7 @@ add_executable(client_auth_filter_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(client_auth_filter_test PUBLIC cxx_std_14)
 target_include_directories(client_auth_filter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7659,7 +8478,9 @@ target_include_directories(client_auth_filter_test
 )
 
 target_link_libraries(client_auth_filter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
@@ -7673,7 +8494,7 @@ add_executable(client_authority_filter_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(client_authority_filter_test PUBLIC cxx_std_14)
 target_include_directories(client_authority_filter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7694,7 +8515,9 @@ target_include_directories(client_authority_filter_test
 )
 
 target_link_libraries(client_authority_filter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
@@ -7726,7 +8549,7 @@ add_executable(client_callback_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(client_callback_end2end_test PUBLIC cxx_std_14)
 target_include_directories(client_callback_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7747,9 +8570,48 @@ target_include_directories(client_callback_end2end_test
 )
 
 target_link_libraries(client_callback_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(client_channel_service_config_test
+  test/core/client_channel/client_channel_service_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(client_channel_service_config_test PUBLIC cxx_std_14)
+target_include_directories(client_channel_service_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_channel_service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -7787,7 +8649,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(client_channel_stress_test PUBLIC cxx_std_14)
   target_include_directories(client_channel_stress_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7808,7 +8670,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(client_channel_stress_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -7823,7 +8687,7 @@ add_executable(client_channel_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(client_channel_test PUBLIC cxx_std_14)
 target_include_directories(client_channel_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7844,7 +8708,9 @@ target_include_directories(client_channel_test
 )
 
 target_link_libraries(client_channel_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7858,7 +8724,7 @@ add_executable(client_context_test_peer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(client_context_test_peer_test PUBLIC cxx_std_14)
 target_include_directories(client_context_test_peer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7879,7 +8745,9 @@ target_include_directories(client_context_test_peer_test
 )
 
 target_link_libraries(client_context_test_peer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
   grpc++_test_util
@@ -7912,7 +8780,7 @@ add_executable(client_interceptors_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(client_interceptors_end2end_test PUBLIC cxx_std_14)
 target_include_directories(client_interceptors_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7933,7 +8801,9 @@ target_include_directories(client_interceptors_end2end_test
 )
 
 target_link_libraries(client_interceptors_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -7944,6 +8814,10 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(client_lb_end2end_test
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -7964,7 +8838,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-    src/cpp/server/orca/orca_interceptor.cc
     src/cpp/server/orca/orca_service.cc
     test/core/util/test_lb_policies.cc
     test/cpp/end2end/client_lb_end2end_test.cc
@@ -7973,7 +8846,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(client_lb_end2end_test PUBLIC cxx_std_14)
   target_include_directories(client_lb_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7994,7 +8867,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(client_lb_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -8010,7 +8885,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(client_ssl_test PUBLIC cxx_std_14)
   target_include_directories(client_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8031,7 +8906,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(client_ssl_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -8058,7 +8935,7 @@ add_executable(cmdline_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(cmdline_test PUBLIC cxx_std_14)
 target_include_directories(cmdline_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8079,7 +8956,9 @@ target_include_directories(cmdline_test
 )
 
 target_link_libraries(cmdline_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8093,7 +8972,7 @@ add_executable(codegen_test_full
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(codegen_test_full PUBLIC cxx_std_14)
 target_include_directories(codegen_test_full
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8114,7 +8993,9 @@ target_include_directories(codegen_test_full
 )
 
 target_link_libraries(codegen_test_full
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -8129,7 +9010,7 @@ add_executable(codegen_test_minimal
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(codegen_test_minimal PUBLIC cxx_std_14)
 target_include_directories(codegen_test_minimal
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8150,7 +9031,9 @@ target_include_directories(codegen_test_minimal
 )
 
 target_link_libraries(codegen_test_minimal
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -8178,7 +9061,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(combiner_test PUBLIC cxx_std_14)
   target_include_directories(combiner_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8199,7 +9082,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(combiner_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -8214,7 +9099,7 @@ add_executable(common_closures_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(common_closures_test PUBLIC cxx_std_14)
 target_include_directories(common_closures_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8235,7 +9120,9 @@ target_include_directories(common_closures_test
 )
 
 target_link_libraries(common_closures_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
   absl::statusor
@@ -8251,7 +9138,7 @@ add_executable(completion_queue_threading_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(completion_queue_threading_test PUBLIC cxx_std_14)
 target_include_directories(completion_queue_threading_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8272,7 +9159,9 @@ target_include_directories(completion_queue_threading_test
 )
 
 target_link_libraries(completion_queue_threading_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8282,12 +9171,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(compression_test
-  test/core/compression/args_utils.cc
   test/core/compression/compression_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(compression_test PUBLIC cxx_std_14)
 target_include_directories(compression_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8308,7 +9196,9 @@ target_include_directories(compression_test
 )
 
 target_link_libraries(compression_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8322,7 +9212,7 @@ add_executable(concurrent_connectivity_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(concurrent_connectivity_test PUBLIC cxx_std_14)
 target_include_directories(concurrent_connectivity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8343,7 +9233,9 @@ target_include_directories(concurrent_connectivity_test
 )
 
 target_link_libraries(concurrent_connectivity_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8359,7 +9251,7 @@ add_executable(connection_prefix_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(connection_prefix_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(connection_prefix_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8380,7 +9272,9 @@ target_include_directories(connection_prefix_bad_client_test
 )
 
 target_link_libraries(connection_prefix_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8406,7 +9300,7 @@ add_executable(connectivity_state_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(connectivity_state_test PUBLIC cxx_std_14)
 target_include_directories(connectivity_state_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8427,7 +9321,9 @@ target_include_directories(connectivity_state_test
 )
 
 target_link_libraries(connectivity_state_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8458,7 +9354,7 @@ add_executable(context_allocator_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(context_allocator_end2end_test PUBLIC cxx_std_14)
 target_include_directories(context_allocator_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8479,7 +9375,9 @@ target_include_directories(context_allocator_end2end_test
 )
 
 target_link_libraries(context_allocator_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -8505,7 +9403,7 @@ add_executable(context_list_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(context_list_test PUBLIC cxx_std_14)
 target_include_directories(context_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8526,7 +9424,9 @@ target_include_directories(context_list_test
 )
 
 target_link_libraries(context_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8540,7 +9440,7 @@ add_executable(context_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(context_test PUBLIC cxx_std_14)
 target_include_directories(context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8561,8 +9461,11 @@ target_include_directories(context_test
 )
 
 target_link_libraries(context_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
 )
 
 
@@ -8574,7 +9477,7 @@ add_executable(core_configuration_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(core_configuration_test PUBLIC cxx_std_14)
 target_include_directories(core_configuration_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8595,7 +9498,9 @@ target_include_directories(core_configuration_test
 )
 
 target_link_libraries(core_configuration_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
@@ -8609,7 +9514,7 @@ add_executable(cpp_impl_of_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(cpp_impl_of_test PUBLIC cxx_std_14)
 target_include_directories(cpp_impl_of_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8630,7 +9535,9 @@ target_include_directories(cpp_impl_of_test
 )
 
 target_link_libraries(cpp_impl_of_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -8643,7 +9550,7 @@ add_executable(cpu_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(cpu_test PUBLIC cxx_std_14)
 target_include_directories(cpu_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8664,7 +9571,9 @@ target_include_directories(cpu_test
 )
 
 target_link_libraries(cpu_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8680,7 +9589,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(crl_ssl_transport_security_test PUBLIC cxx_std_14)
   target_include_directories(crl_ssl_transport_security_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8701,7 +9610,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(crl_ssl_transport_security_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -8716,7 +9627,7 @@ add_executable(default_engine_methods_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(default_engine_methods_test PUBLIC cxx_std_14)
 target_include_directories(default_engine_methods_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8737,7 +9648,9 @@ target_include_directories(default_engine_methods_test
 )
 
 target_link_libraries(default_engine_methods_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8768,7 +9681,7 @@ add_executable(delegating_channel_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(delegating_channel_test PUBLIC cxx_std_14)
 target_include_directories(delegating_channel_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8789,7 +9702,9 @@ target_include_directories(delegating_channel_test
 )
 
 target_link_libraries(delegating_channel_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -8803,7 +9718,7 @@ add_executable(destroy_grpclb_channel_with_active_connect_stress_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(destroy_grpclb_channel_with_active_connect_stress_test PUBLIC cxx_std_14)
 target_include_directories(destroy_grpclb_channel_with_active_connect_stress_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8824,7 +9739,9 @@ target_include_directories(destroy_grpclb_channel_with_active_connect_stress_tes
 )
 
 target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -8838,7 +9755,7 @@ add_executable(dns_resolver_cooldown_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(dns_resolver_cooldown_test PUBLIC cxx_std_14)
 target_include_directories(dns_resolver_cooldown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8859,7 +9776,9 @@ target_include_directories(dns_resolver_cooldown_test
 )
 
 target_link_libraries(dns_resolver_cooldown_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8873,7 +9792,7 @@ add_executable(dns_resolver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(dns_resolver_test PUBLIC cxx_std_14)
 target_include_directories(dns_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8894,7 +9813,9 @@ target_include_directories(dns_resolver_test
 )
 
 target_link_libraries(dns_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8908,7 +9829,7 @@ add_executable(dual_ref_counted_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(dual_ref_counted_test PUBLIC cxx_std_14)
 target_include_directories(dual_ref_counted_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8929,7 +9850,9 @@ target_include_directories(dual_ref_counted_test
 )
 
 target_link_libraries(dual_ref_counted_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8945,7 +9868,7 @@ add_executable(duplicate_header_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(duplicate_header_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(duplicate_header_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8966,7 +9889,9 @@ target_include_directories(duplicate_header_bad_client_test
 )
 
 target_link_libraries(duplicate_header_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9000,7 +9925,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(end2end_binder_transport_test PUBLIC cxx_std_14)
   target_include_directories(end2end_binder_transport_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9021,7 +9946,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(end2end_binder_transport_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -9058,7 +9985,7 @@ add_executable(end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(end2end_test PUBLIC cxx_std_14)
 target_include_directories(end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9079,7 +10006,9 @@ target_include_directories(end2end_test
 )
 
 target_link_libraries(end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
   grpc++_test_util
@@ -9115,16 +10044,13 @@ add_executable(endpoint_binder_pool_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -9136,6 +10062,7 @@ add_executable(endpoint_binder_pool_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -9143,13 +10070,11 @@ add_executable(endpoint_binder_pool_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -9161,7 +10086,7 @@ add_executable(endpoint_binder_pool_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(endpoint_binder_pool_test PUBLIC cxx_std_14)
 target_include_directories(endpoint_binder_pool_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9182,7 +10107,9 @@ target_include_directories(endpoint_binder_pool_test
 )
 
 target_link_libraries(endpoint_binder_pool_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9192,11 +10119,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(endpoint_config_test
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(endpoint_config_test PUBLIC cxx_std_14)
 target_include_directories(endpoint_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9217,9 +10148,14 @@ target_include_directories(endpoint_config_test
 )
 
 target_link_libraries(endpoint_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
+  absl::any_invocable
+  absl::type_traits
+  absl::statusor
+  gpr
 )
 
 
@@ -9244,7 +10180,7 @@ add_executable(endpoint_pair_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(endpoint_pair_test PUBLIC cxx_std_14)
 target_include_directories(endpoint_pair_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9265,7 +10201,9 @@ target_include_directories(endpoint_pair_test
 )
 
 target_link_libraries(endpoint_pair_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9279,7 +10217,7 @@ add_executable(env_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(env_test PUBLIC cxx_std_14)
 target_include_directories(env_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9300,7 +10238,9 @@ target_include_directories(env_test
 )
 
 target_link_libraries(env_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9326,7 +10266,7 @@ add_executable(error_details_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(error_details_test PUBLIC cxx_std_14)
 target_include_directories(error_details_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9347,7 +10287,9 @@ target_include_directories(error_details_test
 )
 
 target_link_libraries(error_details_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_error_details
   grpc_test_util
@@ -9375,7 +10317,7 @@ add_executable(error_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(error_test PUBLIC cxx_std_14)
 target_include_directories(error_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9396,7 +10338,9 @@ target_include_directories(error_test
 )
 
 target_link_libraries(error_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9422,7 +10366,7 @@ add_executable(error_utils_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(error_utils_test PUBLIC cxx_std_14)
 target_include_directories(error_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9443,7 +10387,9 @@ target_include_directories(error_utils_test
 )
 
 target_link_libraries(error_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9469,7 +10415,7 @@ add_executable(evaluate_args_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(evaluate_args_test PUBLIC cxx_std_14)
 target_include_directories(evaluate_args_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9490,9 +10436,48 @@ target_include_directories(evaluate_args_test
 )
 
 target_link_libraries(evaluate_args_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(event_engine_wakeup_scheduler_test
+  test/core/promise/event_engine_wakeup_scheduler_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(event_engine_wakeup_scheduler_test PUBLIC cxx_std_14)
+target_include_directories(event_engine_wakeup_scheduler_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(event_engine_wakeup_scheduler_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
 )
 
 
@@ -9501,20 +10486,12 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(event_poller_posix_test
-    src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
-    src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
-    src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
-    src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-    src/core/lib/event_engine/posix_engine/lockfree_event.cc
-    src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-    src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
-    src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
     test/core/event_engine/posix/event_poller_posix_test.cc
     test/core/event_engine/posix/posix_engine_test_utils.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(event_poller_posix_test PUBLIC cxx_std_14)
   target_include_directories(event_poller_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9535,7 +10512,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(event_poller_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -9551,7 +10530,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(examine_stack_test PUBLIC cxx_std_14)
   target_include_directories(examine_stack_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9572,7 +10551,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(examine_stack_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -9603,7 +10584,7 @@ add_executable(exception_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(exception_test PUBLIC cxx_std_14)
 target_include_directories(exception_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9624,7 +10605,9 @@ target_include_directories(exception_test
 )
 
 target_link_libraries(exception_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -9639,6 +10622,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -9647,12 +10631,13 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(exec_ctx_wakeup_scheduler_test PUBLIC cxx_std_14)
 target_include_directories(exec_ctx_wakeup_scheduler_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9673,13 +10658,14 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 )
 
 target_link_libraries(exec_ctx_wakeup_scheduler_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -9693,7 +10679,7 @@ add_executable(factory_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(factory_test PUBLIC cxx_std_14)
 target_include_directories(factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9714,9 +10700,10 @@ target_include_directories(factory_test
 )
 
 target_link_libraries(factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 
@@ -9750,16 +10737,13 @@ add_executable(fake_binder_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -9771,6 +10755,7 @@ add_executable(fake_binder_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -9778,13 +10763,11 @@ add_executable(fake_binder_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -9796,7 +10779,7 @@ add_executable(fake_binder_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(fake_binder_test PUBLIC cxx_std_14)
 target_include_directories(fake_binder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9817,7 +10800,9 @@ target_include_directories(fake_binder_test
 )
 
 target_link_libraries(fake_binder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9831,7 +10816,7 @@ add_executable(fake_resolver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(fake_resolver_test PUBLIC cxx_std_14)
 target_include_directories(fake_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9852,7 +10837,9 @@ target_include_directories(fake_resolver_test
 )
 
 target_link_libraries(fake_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9867,7 +10854,7 @@ add_executable(fake_transport_security_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(fake_transport_security_test PUBLIC cxx_std_14)
 target_include_directories(fake_transport_security_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9888,7 +10875,9 @@ target_include_directories(fake_transport_security_test
 )
 
 target_link_libraries(fake_transport_security_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9915,7 +10904,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(fd_posix_test PUBLIC cxx_std_14)
   target_include_directories(fd_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9936,7 +10925,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fd_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -9951,7 +10942,7 @@ add_executable(file_watcher_certificate_provider_factory_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(file_watcher_certificate_provider_factory_test PUBLIC cxx_std_14)
 target_include_directories(file_watcher_certificate_provider_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9972,7 +10963,9 @@ target_include_directories(file_watcher_certificate_provider_factory_test
 )
 
 target_link_libraries(file_watcher_certificate_provider_factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10006,7 +10999,7 @@ add_executable(filter_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(filter_end2end_test PUBLIC cxx_std_14)
 target_include_directories(filter_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10027,7 +11020,9 @@ target_include_directories(filter_end2end_test
 )
 
 target_link_libraries(filter_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -10058,7 +11053,7 @@ add_executable(flaky_network_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(flaky_network_test PUBLIC cxx_std_14)
 target_include_directories(flaky_network_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10079,7 +11074,9 @@ target_include_directories(flaky_network_test
 )
 
 target_link_libraries(flaky_network_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -10099,6 +11096,7 @@ add_executable(flow_control_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -10112,6 +11110,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
@@ -10119,7 +11118,7 @@ add_executable(flow_control_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(flow_control_test PUBLIC cxx_std_14)
 target_include_directories(flow_control_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10140,8 +11139,11 @@ target_include_directories(flow_control_test
 )
 
 target_link_libraries(flow_control_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
   absl::hash
@@ -10165,12 +11167,14 @@ add_executable(for_each_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -10179,12 +11183,13 @@ add_executable(for_each_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(for_each_test PUBLIC cxx_std_14)
 target_include_directories(for_each_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10205,7 +11210,9 @@ target_include_directories(for_each_test
 )
 
 target_link_libraries(for_each_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::any_invocable
@@ -10228,7 +11235,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(fork_test PUBLIC cxx_std_14)
   target_include_directories(fork_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10249,7 +11256,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fork_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -10260,11 +11269,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(forkable_test
+  src/core/lib/event_engine/forkable.cc
   test/core/event_engine/forkable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(forkable_test PUBLIC cxx_std_14)
 target_include_directories(forkable_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10285,9 +11295,14 @@ target_include_directories(forkable_test
 )
 
 target_link_libraries(forkable_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
+  absl::flat_hash_set
+  absl::any_invocable
+  absl::statusor
+  gpr
 )
 
 
@@ -10315,7 +11330,7 @@ add_executable(format_request_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(format_request_test PUBLIC cxx_std_14)
 target_include_directories(format_request_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10336,7 +11351,9 @@ target_include_directories(format_request_test
 )
 
 target_link_libraries(format_request_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10351,7 +11368,7 @@ add_executable(frame_handler_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(frame_handler_test PUBLIC cxx_std_14)
 target_include_directories(frame_handler_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10372,9 +11389,325 @@ target_include_directories(frame_handler_test
 )
 
 target_link_libraries(frame_handler_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(frame_header_test
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  test/core/transport/chaotic_good/frame_header_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(frame_header_test PUBLIC cxx_std_14)
+target_include_directories(frame_header_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(frame_header_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(frame_test
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chttp2/transport/bin_encoder.cc
+  src/core/ext/transport/chttp2/transport/decode_huff.cc
+  src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
+  src/core/ext/transport/chttp2/transport/hpack_parser.cc
+  src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  src/core/ext/transport/chttp2/transport/http_trace.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
+  src/core/ext/transport/chttp2/transport/varint.cc
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/channel/channel_args_preconditioning.cc
+  src/core/lib/channel/channel_stack.cc
+  src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_stack_builder_impl.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
+  src/core/lib/channel/channelz_registry.cc
+  src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/status_util.cc
+  src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/message_compress.cc
+  src/core/lib/config/core_configuration.cc
+  src/core/lib/debug/event_log.cc
+  src/core/lib/debug/histogram_view.cc
+  src/core/lib/debug/stats.cc
+  src/core/lib/debug/stats_data.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/event_engine/windows/windows_listener.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/validation_errors.cc
+  src/core/lib/gprpp/work_serializer.cc
+  src/core/lib/handshaker/proxy_mapper_registry.cc
+  src/core/lib/iomgr/buffer_list.cc
+  src/core/lib/iomgr/call_combiner.cc
+  src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/dualstack_socket_posix.cc
+  src/core/lib/iomgr/endpoint.cc
+  src/core/lib/iomgr/endpoint_cfstream.cc
+  src/core/lib/iomgr/endpoint_pair_posix.cc
+  src/core/lib/iomgr/endpoint_pair_windows.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/error_cfstream.cc
+  src/core/lib/iomgr/ev_apple.cc
+  src/core/lib/iomgr/ev_epoll1_linux.cc
+  src/core/lib/iomgr/ev_poll_posix.cc
+  src/core/lib/iomgr/ev_posix.cc
+  src/core/lib/iomgr/ev_windows.cc
+  src/core/lib/iomgr/event_engine_shims/closure.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/fork_posix.cc
+  src/core/lib/iomgr/fork_windows.cc
+  src/core/lib/iomgr/gethostname_fallback.cc
+  src/core/lib/iomgr/gethostname_host_name_max.cc
+  src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/lib/iomgr/internal_errqueue.cc
+  src/core/lib/iomgr/iocp_windows.cc
+  src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/iomgr_posix.cc
+  src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  src/core/lib/iomgr/iomgr_windows.cc
+  src/core/lib/iomgr/load_file.cc
+  src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/polling_entity.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_windows.cc
+  src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_posix.cc
+  src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_factory_posix.cc
+  src/core/lib/iomgr/socket_mutator.cc
+  src/core/lib/iomgr/socket_utils_common_posix.cc
+  src/core/lib/iomgr/socket_utils_linux.cc
+  src/core/lib/iomgr/socket_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_cfstream.cc
+  src/core/lib/iomgr/tcp_client_posix.cc
+  src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_posix.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  src/core/lib/iomgr/tcp_server_windows.cc
+  src/core/lib/iomgr/tcp_windows.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_generic.cc
+  src/core/lib/iomgr/timer_heap.cc
+  src/core/lib/iomgr/timer_manager.cc
+  src/core/lib/iomgr/unix_sockets_posix.cc
+  src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  src/core/lib/iomgr/wakeup_fd_pipe.cc
+  src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/json/json_reader.cc
+  src/core/lib/json/json_writer.cc
+  src/core/lib/load_balancing/lb_policy.cc
+  src/core/lib/load_balancing/lb_policy_registry.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resolver/resolver.cc
+  src/core/lib/resolver/resolver_registry.cc
+  src/core/lib/resolver/server_address.cc
+  src/core/lib/resource_quota/api.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/lib/service_config/service_config_parser.cc
+  src/core/lib/slice/b64.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/api_trace.cc
+  src/core/lib/surface/builtins.cc
+  src/core/lib/surface/byte_buffer.cc
+  src/core/lib/surface/byte_buffer_reader.cc
+  src/core/lib/surface/call.cc
+  src/core/lib/surface/call_details.cc
+  src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_trace.cc
+  src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_init.cc
+  src/core/lib/surface/channel_ping.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/completion_queue.cc
+  src/core/lib/surface/completion_queue_factory.cc
+  src/core/lib/surface/event_string.cc
+  src/core/lib/surface/init_internally.cc
+  src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server.cc
+  src/core/lib/surface/validate_metadata.cc
+  src/core/lib/surface/version.cc
+  src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/handshaker_registry.cc
+  src/core/lib/transport/metadata_batch.cc
+  src/core/lib/transport/parsed_metadata.cc
+  src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/timeout_encoding.cc
+  src/core/lib/transport/transport.cc
+  src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  test/core/transport/chaotic_good/frame_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(frame_test PUBLIC cxx_std_14)
+target_include_directories(frame_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(frame_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
+  absl::flat_hash_map
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::any_invocable
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::span
+  absl::utility
+  gpr
+  upb
 )
 
 
@@ -10387,15 +11720,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/event_engine/test_suite/event_engine_test.cc
-    test/core/event_engine/test_suite/event_engine_test_utils.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
-    test/core/event_engine/test_suite/timer_test.cc
+    test/core/event_engine/test_suite/tests/timer_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(fuzzing_event_engine_test PUBLIC cxx_std_14)
   target_include_directories(fuzzing_event_engine_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10416,8 +11749,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fuzzing_event_engine_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_unsecure
     grpc_test_util
   )
 
@@ -10451,7 +11787,7 @@ add_executable(generic_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(generic_end2end_test PUBLIC cxx_std_14)
 target_include_directories(generic_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10472,7 +11808,9 @@ target_include_directories(generic_end2end_test
 )
 
 target_link_libraries(generic_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -10480,6 +11818,85 @@ target_link_libraries(generic_end2end_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+<<<<<<< HEAD
+=======
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(global_config_env_test
+    test/core/gprpp/global_config_env_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(global_config_env_test PUBLIC cxx_std_14)
+  target_include_directories(global_config_env_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(global_config_env_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(global_config_test
+  test/core/gprpp/global_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(global_config_test PUBLIC cxx_std_14)
+target_include_directories(global_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(global_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+>>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
 
 add_executable(google_c2p_resolver_test
   test/core/client_channel/resolvers/google_c2p_resolver_test.cc
@@ -10487,7 +11904,7 @@ add_executable(google_c2p_resolver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(google_c2p_resolver_test PUBLIC cxx_std_14)
 target_include_directories(google_c2p_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10508,7 +11925,9 @@ target_include_directories(google_c2p_resolver_test
 )
 
 target_link_libraries(google_c2p_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -10523,7 +11942,7 @@ add_executable(google_mesh_ca_certificate_provider_factory_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(google_mesh_ca_certificate_provider_factory_test PUBLIC cxx_std_14)
 target_include_directories(google_mesh_ca_certificate_provider_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10544,7 +11963,9 @@ target_include_directories(google_mesh_ca_certificate_provider_factory_test
 )
 
 target_link_libraries(google_mesh_ca_certificate_provider_factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10559,7 +11980,7 @@ add_executable(graceful_shutdown_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(graceful_shutdown_test PUBLIC cxx_std_14)
 target_include_directories(graceful_shutdown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10580,7 +12001,9 @@ target_include_directories(graceful_shutdown_test
 )
 
 target_link_libraries(graceful_shutdown_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10606,7 +12029,7 @@ add_executable(grpc_alts_credentials_options_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_alts_credentials_options_test PUBLIC cxx_std_14)
 target_include_directories(grpc_alts_credentials_options_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10627,7 +12050,9 @@ target_include_directories(grpc_alts_credentials_options_test
 )
 
 target_link_libraries(grpc_alts_credentials_options_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10653,7 +12078,7 @@ add_executable(grpc_authorization_engine_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_authorization_engine_test PUBLIC cxx_std_14)
 target_include_directories(grpc_authorization_engine_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10674,7 +12099,9 @@ target_include_directories(grpc_authorization_engine_test
 )
 
 target_link_libraries(grpc_authorization_engine_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10684,8 +12111,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_authorization_policy_provider_test
-  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/rbac_translator.cc
   test/core/security/grpc_authorization_policy_provider_test.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
@@ -10702,7 +12127,7 @@ add_executable(grpc_authorization_policy_provider_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_authorization_policy_provider_test PUBLIC cxx_std_14)
 target_include_directories(grpc_authorization_policy_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10723,8 +12148,11 @@ target_include_directories(grpc_authorization_policy_provider_test
 )
 
 target_link_libraries(grpc_authorization_policy_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_authorization_provider
   grpc_test_util
 )
 
@@ -10749,15 +12177,13 @@ add_executable(grpc_authz_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/rbac_translator.cc
   src/cpp/server/authorization_policy_provider.cc
   test/cpp/end2end/grpc_authz_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_authz_end2end_test PUBLIC cxx_std_14)
 target_include_directories(grpc_authz_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10778,8 +12204,11 @@ target_include_directories(grpc_authz_end2end_test
 )
 
 target_link_libraries(grpc_authz_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_authorization_provider
   grpc++_test_util
 )
 
@@ -10792,7 +12221,7 @@ add_executable(grpc_byte_buffer_reader_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_byte_buffer_reader_test PUBLIC cxx_std_14)
 target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10813,7 +12242,9 @@ target_include_directories(grpc_byte_buffer_reader_test
 )
 
 target_link_libraries(grpc_byte_buffer_reader_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10837,7 +12268,7 @@ add_executable(grpc_cli
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_cli PUBLIC cxx_std_14)
 target_include_directories(grpc_cli
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10858,7 +12289,9 @@ target_include_directories(grpc_cli
 )
 
 target_link_libraries(grpc_cli
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc++_test_config
@@ -10873,7 +12306,7 @@ add_executable(grpc_completion_queue_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_completion_queue_test PUBLIC cxx_std_14)
 target_include_directories(grpc_completion_queue_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10894,7 +12327,9 @@ target_include_directories(grpc_completion_queue_test
 )
 
 target_link_libraries(grpc_completion_queue_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10906,7 +12341,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_CPP_PLUGIN)
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
 )
-
+target_compile_features(grpc_cpp_plugin PUBLIC cxx_std_14)
 target_include_directories(grpc_cpp_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10923,8 +12358,10 @@ target_include_directories(grpc_cpp_plugin
 )
 
 target_link_libraries(grpc_cpp_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -10932,7 +12369,7 @@ target_link_libraries(grpc_cpp_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_cpp_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10946,7 +12383,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_CSHARP_PLUGIN)
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
 )
-
+target_compile_features(grpc_csharp_plugin PUBLIC cxx_std_14)
 target_include_directories(grpc_csharp_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10963,8 +12400,10 @@ target_include_directories(grpc_csharp_plugin
 )
 
 target_link_libraries(grpc_csharp_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -10972,7 +12411,7 @@ target_link_libraries(grpc_csharp_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_csharp_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11000,7 +12439,7 @@ add_executable(grpc_ipv6_loopback_available_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_ipv6_loopback_available_test PUBLIC cxx_std_14)
 target_include_directories(grpc_ipv6_loopback_available_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11021,7 +12460,9 @@ target_include_directories(grpc_ipv6_loopback_available_test
 )
 
 target_link_libraries(grpc_ipv6_loopback_available_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11033,7 +12474,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_NODE_PLUGIN)
 add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
 )
-
+target_compile_features(grpc_node_plugin PUBLIC cxx_std_14)
 target_include_directories(grpc_node_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11050,8 +12491,10 @@ target_include_directories(grpc_node_plugin
 )
 
 target_link_libraries(grpc_node_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -11059,7 +12502,7 @@ target_link_libraries(grpc_node_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_node_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_node_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11073,7 +12516,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN)
 add_executable(grpc_objective_c_plugin
   src/compiler/objective_c_plugin.cc
 )
-
+target_compile_features(grpc_objective_c_plugin PUBLIC cxx_std_14)
 target_include_directories(grpc_objective_c_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11090,8 +12533,10 @@ target_include_directories(grpc_objective_c_plugin
 )
 
 target_link_libraries(grpc_objective_c_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -11099,7 +12544,7 @@ target_link_libraries(grpc_objective_c_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_objective_c_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11113,7 +12558,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_PHP_PLUGIN)
 add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
 )
-
+target_compile_features(grpc_php_plugin PUBLIC cxx_std_14)
 target_include_directories(grpc_php_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11130,8 +12575,10 @@ target_include_directories(grpc_php_plugin
 )
 
 target_link_libraries(grpc_php_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -11139,7 +12586,7 @@ target_link_libraries(grpc_php_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_php_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_php_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11153,7 +12600,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_PYTHON_PLUGIN)
 add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
 )
-
+target_compile_features(grpc_python_plugin PUBLIC cxx_std_14)
 target_include_directories(grpc_python_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11170,8 +12617,10 @@ target_include_directories(grpc_python_plugin
 )
 
 target_link_libraries(grpc_python_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -11179,7 +12628,7 @@ target_link_libraries(grpc_python_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_python_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_python_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11193,7 +12642,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_RUBY_PLUGIN)
 add_executable(grpc_ruby_plugin
   src/compiler/ruby_plugin.cc
 )
-
+target_compile_features(grpc_ruby_plugin PUBLIC cxx_std_14)
 target_include_directories(grpc_ruby_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11210,8 +12659,10 @@ target_include_directories(grpc_ruby_plugin
 )
 
 target_link_libraries(grpc_ruby_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -11219,7 +12670,7 @@ target_link_libraries(grpc_ruby_plugin
 
 
 if(gRPC_INSTALL)
-  install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
+  install(TARGETS grpc_ruby_plugin EXPORT gRPCPluginTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11247,7 +12698,7 @@ add_executable(grpc_tls_certificate_distributor_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_tls_certificate_distributor_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_certificate_distributor_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11268,7 +12719,9 @@ target_include_directories(grpc_tls_certificate_distributor_test
 )
 
 target_link_libraries(grpc_tls_certificate_distributor_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11294,7 +12747,7 @@ add_executable(grpc_tls_certificate_provider_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_tls_certificate_provider_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_certificate_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11315,7 +12768,9 @@ target_include_directories(grpc_tls_certificate_provider_test
 )
 
 target_link_libraries(grpc_tls_certificate_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11341,7 +12796,7 @@ add_executable(grpc_tls_certificate_verifier_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_tls_certificate_verifier_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_certificate_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11362,7 +12817,9 @@ target_include_directories(grpc_tls_certificate_verifier_test
 )
 
 target_link_libraries(grpc_tls_certificate_verifier_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11388,7 +12845,7 @@ add_executable(grpc_tls_credentials_options_comparator_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_tls_credentials_options_comparator_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_credentials_options_comparator_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11409,7 +12866,9 @@ target_include_directories(grpc_tls_credentials_options_comparator_test
 )
 
 target_link_libraries(grpc_tls_credentials_options_comparator_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11435,7 +12894,7 @@ add_executable(grpc_tls_credentials_options_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpc_tls_credentials_options_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_credentials_options_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11456,7 +12915,9 @@ target_include_directories(grpc_tls_credentials_options_test
 )
 
 target_link_libraries(grpc_tls_credentials_options_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11493,7 +12954,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(grpc_tool_test PUBLIC cxx_std_14)
   target_include_directories(grpc_tool_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11514,7 +12975,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(grpc_tool_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_reflection
     grpc++_test_config
@@ -11535,7 +12998,7 @@ add_executable(grpclb_api_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(grpclb_api_test PUBLIC cxx_std_14)
 target_include_directories(grpclb_api_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11556,7 +13019,9 @@ target_include_directories(grpclb_api_test
 )
 
 target_link_libraries(grpclb_api_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -11596,7 +13061,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(grpclb_end2end_test PUBLIC cxx_std_14)
   target_include_directories(grpclb_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11617,7 +13082,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(grpclb_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_config
     grpc++_test_util
@@ -11628,13 +13095,56 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(h2_ssl_cert_test
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/data/client_certs.cc
+  test/core/end2end/data/server1_cert.cc
+  test/core/end2end/data/server1_key.cc
+  test/core/end2end/data/test_root_cert.cc
+  test/core/end2end/fixtures/local_util.cc
+  test/core/end2end/h2_ssl_cert_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(h2_ssl_cert_test PUBLIC cxx_std_14)
+target_include_directories(h2_ssl_cert_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(h2_ssl_cert_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(h2_ssl_session_reuse_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/h2_ssl_session_reuse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(h2_ssl_session_reuse_test PUBLIC cxx_std_14)
 target_include_directories(h2_ssl_session_reuse_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11655,7 +13165,9 @@ target_include_directories(h2_ssl_session_reuse_test
 )
 
 target_link_libraries(h2_ssl_session_reuse_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11671,7 +13183,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(handshake_server_with_readahead_handshaker_test PUBLIC cxx_std_14)
   target_include_directories(handshake_server_with_readahead_handshaker_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11692,7 +13204,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(handshake_server_with_readahead_handshaker_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -11709,7 +13223,7 @@ add_executable(head_of_line_blocking_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(head_of_line_blocking_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11730,7 +13244,9 @@ target_include_directories(head_of_line_blocking_bad_client_test
 )
 
 target_link_libraries(head_of_line_blocking_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11746,7 +13262,7 @@ add_executable(headers_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(headers_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(headers_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11767,7 +13283,9 @@ target_include_directories(headers_bad_client_test
 )
 
 target_link_libraries(headers_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11807,7 +13325,7 @@ add_executable(health_service_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(health_service_end2end_test PUBLIC cxx_std_14)
 target_include_directories(health_service_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11828,7 +13346,9 @@ target_include_directories(health_service_end2end_test
 )
 
 target_link_libraries(health_service_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -11854,7 +13374,7 @@ add_executable(histogram_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(histogram_test PUBLIC cxx_std_14)
 target_include_directories(histogram_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11875,7 +13395,9 @@ target_include_directories(histogram_test
 )
 
 target_link_libraries(histogram_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11889,7 +13411,7 @@ add_executable(host_port_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(host_port_test PUBLIC cxx_std_14)
 target_include_directories(host_port_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11910,7 +13432,9 @@ target_include_directories(host_port_test
 )
 
 target_link_libraries(host_port_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11936,7 +13460,7 @@ add_executable(hpack_encoder_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(hpack_encoder_test PUBLIC cxx_std_14)
 target_include_directories(hpack_encoder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11957,7 +13481,9 @@ target_include_directories(hpack_encoder_test
 )
 
 target_link_libraries(hpack_encoder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -11983,7 +13509,7 @@ add_executable(hpack_parser_table_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(hpack_parser_table_test PUBLIC cxx_std_14)
 target_include_directories(hpack_parser_table_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12004,7 +13530,9 @@ target_include_directories(hpack_parser_table_test
 )
 
 target_link_libraries(hpack_parser_table_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12030,7 +13558,7 @@ add_executable(hpack_parser_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(hpack_parser_test PUBLIC cxx_std_14)
 target_include_directories(hpack_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12051,7 +13579,9 @@ target_include_directories(hpack_parser_test
 )
 
 target_link_libraries(hpack_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12077,7 +13607,7 @@ add_executable(http2_client
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(http2_client PUBLIC cxx_std_14)
 target_include_directories(http2_client
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12098,7 +13628,9 @@ target_include_directories(http2_client
 )
 
 target_link_libraries(http2_client
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -12113,7 +13645,7 @@ add_executable(http_proxy_mapper_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(http_proxy_mapper_test PUBLIC cxx_std_14)
 target_include_directories(http_proxy_mapper_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12134,7 +13666,9 @@ target_include_directories(http_proxy_mapper_test
 )
 
 target_link_libraries(http_proxy_mapper_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12151,7 +13685,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(httpcli_test PUBLIC cxx_std_14)
   target_include_directories(httpcli_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12172,7 +13706,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(httpcli_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -12190,7 +13726,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(httpscli_test PUBLIC cxx_std_14)
   target_include_directories(httpscli_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12211,7 +13747,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(httpscli_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -12247,7 +13785,7 @@ add_executable(hybrid_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(hybrid_end2end_test PUBLIC cxx_std_14)
 target_include_directories(hybrid_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12268,7 +13806,9 @@ target_include_directories(hybrid_end2end_test
 )
 
 target_link_libraries(hybrid_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -12283,7 +13823,7 @@ add_executable(idle_filter_state_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(idle_filter_state_test PUBLIC cxx_std_14)
 target_include_directories(idle_filter_state_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12304,7 +13844,9 @@ target_include_directories(idle_filter_state_test
 )
 
 target_link_libraries(idle_filter_state_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -12317,7 +13859,7 @@ add_executable(if_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(if_test PUBLIC cxx_std_14)
 target_include_directories(if_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12338,11 +13880,13 @@ target_include_directories(if_test
 )
 
 target_link_libraries(if_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
-  absl::variant
+  gpr
 )
 
 
@@ -12354,7 +13898,7 @@ add_executable(init_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(init_test PUBLIC cxx_std_14)
 target_include_directories(init_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12375,7 +13919,9 @@ target_include_directories(init_test
 )
 
 target_link_libraries(init_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12391,7 +13937,7 @@ add_executable(initial_settings_frame_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(initial_settings_frame_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12412,7 +13958,9 @@ target_include_directories(initial_settings_frame_bad_client_test
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12438,7 +13986,7 @@ add_executable(insecure_security_connector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(insecure_security_connector_test PUBLIC cxx_std_14)
 target_include_directories(insecure_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12459,9 +14007,82 @@ target_include_directories(insecure_security_connector_test
 )
 
 target_link_libraries(insecure_security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(interceptor_list_test
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  test/core/promise/interceptor_list_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
+target_include_directories(interceptor_list_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(interceptor_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::any_invocable
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::utility
+  gpr
+  upb
 )
 
 
@@ -12488,7 +14109,7 @@ add_executable(interop_client
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(interop_client PUBLIC cxx_std_14)
 target_include_directories(interop_client
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12509,7 +14130,9 @@ target_include_directories(interop_client
 )
 
 target_link_libraries(interop_client
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -12538,7 +14161,7 @@ add_executable(interop_server
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(interop_server PUBLIC cxx_std_14)
 target_include_directories(interop_server
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12559,7 +14182,9 @@ target_include_directories(interop_server
 )
 
 target_link_libraries(interop_server
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -12576,7 +14201,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(iocp_test PUBLIC cxx_std_14)
   target_include_directories(iocp_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12597,7 +14222,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   )
 
   target_link_libraries(iocp_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -12617,7 +14244,7 @@ add_executable(istio_echo_server_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(istio_echo_server_test PUBLIC cxx_std_14)
 target_include_directories(istio_echo_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12638,7 +14265,9 @@ target_include_directories(istio_echo_server_test
 )
 
 target_link_libraries(istio_echo_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -12654,7 +14283,7 @@ add_executable(join_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(join_test PUBLIC cxx_std_14)
 target_include_directories(join_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12675,12 +14304,13 @@ target_include_directories(join_test
 )
 
 target_link_libraries(join_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::strings
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -12692,7 +14322,7 @@ add_executable(json_object_loader_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(json_object_loader_test PUBLIC cxx_std_14)
 target_include_directories(json_object_loader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12713,7 +14343,9 @@ target_include_directories(json_object_loader_test
 )
 
 target_link_libraries(json_object_loader_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12727,7 +14359,7 @@ add_executable(json_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(json_test PUBLIC cxx_std_14)
 target_include_directories(json_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12748,7 +14380,9 @@ target_include_directories(json_test
 )
 
 target_link_libraries(json_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12774,7 +14408,7 @@ add_executable(json_token_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(json_token_test PUBLIC cxx_std_14)
 target_include_directories(json_token_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12795,7 +14429,9 @@ target_include_directories(json_token_test
 )
 
 target_link_libraries(json_token_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12821,7 +14457,7 @@ add_executable(jwt_verifier_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(jwt_verifier_test PUBLIC cxx_std_14)
 target_include_directories(jwt_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12842,7 +14478,9 @@ target_include_directories(jwt_verifier_test
 )
 
 target_link_libraries(jwt_verifier_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12857,7 +14495,7 @@ add_executable(lame_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(lame_client_test PUBLIC cxx_std_14)
 target_include_directories(lame_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12878,44 +14516,9 @@ target_include_directories(lame_client_test
 )
 
 target_link_libraries(lame_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(large_metadata_bad_client_test
-  test/core/bad_client/bad_client.cc
-  test/core/bad_client/tests/large_metadata.cc
-  test/core/end2end/cq_verifier.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(large_metadata_bad_client_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(large_metadata_bad_client_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -12925,12 +14528,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latch_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/latch_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(latch_test PUBLIC cxx_std_14)
 target_include_directories(latch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12951,7 +14556,9 @@ target_include_directories(latch_test
 )
 
 target_link_libraries(latch_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
@@ -12972,7 +14579,7 @@ add_executable(lb_get_cpu_stats_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(lb_get_cpu_stats_test PUBLIC cxx_std_14)
 target_include_directories(lb_get_cpu_stats_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12993,7 +14600,9 @@ target_include_directories(lb_get_cpu_stats_test
 )
 
 target_link_libraries(lb_get_cpu_stats_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -13008,7 +14617,7 @@ add_executable(lb_load_data_store_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(lb_load_data_store_test PUBLIC cxx_std_14)
 target_include_directories(lb_load_data_store_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13029,7 +14638,9 @@ target_include_directories(lb_load_data_store_test
 )
 
 target_link_libraries(lb_load_data_store_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -13038,40 +14649,44 @@ target_link_libraries(lb_load_data_store_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
-add_executable(lock_free_event_test
-  src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  test/core/event_engine/posix/lock_free_event_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
+  add_executable(lock_free_event_test
+    test/core/event_engine/posix/lock_free_event_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(lock_free_event_test PUBLIC cxx_std_14)
+  target_include_directories(lock_free_event_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
 
-target_include_directories(lock_free_event_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(lock_free_event_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
+  target_link_libraries(lock_free_event_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    grpc_test_util
+  )
 
 
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -13080,7 +14695,7 @@ add_executable(log_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(log_test PUBLIC cxx_std_14)
 target_include_directories(log_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13101,12 +14716,53 @@ target_include_directories(log_test
 )
 
 target_link_libraries(log_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(log_too_many_open_files_test
+    test/core/event_engine/posix/log_too_many_open_files_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(log_too_many_open_files_test PUBLIC cxx_std_14)
+  target_include_directories(log_too_many_open_files_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(log_too_many_open_files_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -13115,7 +14771,7 @@ add_executable(loop_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(loop_test PUBLIC cxx_std_14)
 target_include_directories(loop_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13136,13 +14792,85 @@ target_include_directories(loop_test
 )
 
 target_link_libraries(loop_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(map_pipe_test
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  test/core/promise/map_pipe_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(map_pipe_test PUBLIC cxx_std_14)
+target_include_directories(map_pipe_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(map_pipe_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::any_invocable
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::utility
+  gpr
+  upb
 )
 
 
@@ -13154,7 +14882,7 @@ add_executable(match_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(match_test PUBLIC cxx_std_14)
 target_include_directories(match_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13175,7 +14903,9 @@ target_include_directories(match_test
 )
 
 target_link_libraries(match_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::variant
 )
@@ -13201,7 +14931,7 @@ add_executable(matchers_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(matchers_test PUBLIC cxx_std_14)
 target_include_directories(matchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13222,7 +14952,9 @@ target_include_directories(matchers_test
 )
 
 target_link_libraries(matchers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -13237,7 +14969,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(memory_quota_stress_test PUBLIC cxx_std_14)
   target_include_directories(memory_quota_stress_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13258,7 +14990,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(memory_quota_stress_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util_unsecure
   )
@@ -13273,7 +15007,7 @@ add_executable(memory_quota_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(memory_quota_test PUBLIC cxx_std_14)
 target_include_directories(memory_quota_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13294,7 +15028,9 @@ target_include_directories(memory_quota_test
 )
 
 target_link_libraries(memory_quota_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
 )
@@ -13325,7 +15061,7 @@ add_executable(message_allocator_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(message_allocator_end2end_test PUBLIC cxx_std_14)
 target_include_directories(message_allocator_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13346,7 +15082,9 @@ target_include_directories(message_allocator_end2end_test
 )
 
 target_link_libraries(message_allocator_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -13372,7 +15110,7 @@ add_executable(message_compress_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(message_compress_test PUBLIC cxx_std_14)
 target_include_directories(message_compress_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13393,7 +15131,46 @@ target_include_directories(message_compress_test
 )
 
 target_link_libraries(message_compress_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(message_size_service_config_test
+  test/core/message_size/message_size_service_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(message_size_service_config_test PUBLIC cxx_std_14)
+target_include_directories(message_size_service_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(message_size_service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -13419,7 +15196,7 @@ add_executable(metadata_map_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(metadata_map_test PUBLIC cxx_std_14)
 target_include_directories(metadata_map_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13440,7 +15217,46 @@ target_include_directories(metadata_map_test
 )
 
 target_link_libraries(metadata_map_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(minimal_stack_is_minimal_test
+  test/core/channel/minimal_stack_is_minimal_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(minimal_stack_is_minimal_test PUBLIC cxx_std_14)
+target_include_directories(minimal_stack_is_minimal_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(minimal_stack_is_minimal_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -13454,7 +15270,7 @@ add_executable(miscompile_with_no_unique_address_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(miscompile_with_no_unique_address_test PUBLIC cxx_std_14)
 target_include_directories(miscompile_with_no_unique_address_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13475,7 +15291,9 @@ target_include_directories(miscompile_with_no_unique_address_test
 )
 
 target_link_libraries(miscompile_with_no_unique_address_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -13504,7 +15322,7 @@ add_executable(mock_stream_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(mock_stream_test PUBLIC cxx_std_14)
 target_include_directories(mock_stream_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13525,7 +15343,9 @@ target_include_directories(mock_stream_test
 )
 
 target_link_libraries(mock_stream_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
   grpc++_test_util
@@ -13560,7 +15380,7 @@ add_executable(mock_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(mock_test PUBLIC cxx_std_14)
 target_include_directories(mock_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13581,10 +15401,54 @@ target_include_directories(mock_test
 )
 
 target_link_libraries(mock_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(mpsc_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/mpsc_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(mpsc_test PUBLIC cxx_std_14)
+target_include_directories(mpsc_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(mpsc_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  gpr
 )
 
 
@@ -13597,7 +15461,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(mpscq_test PUBLIC cxx_std_14)
   target_include_directories(mpscq_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13618,7 +15482,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(mpscq_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -13633,7 +15499,7 @@ add_executable(no_destruct_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(no_destruct_test PUBLIC cxx_std_14)
 target_include_directories(no_destruct_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13654,7 +15520,9 @@ target_include_directories(no_destruct_test
 )
 
 target_link_libraries(no_destruct_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -13683,7 +15551,7 @@ add_executable(nonblocking_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(nonblocking_test PUBLIC cxx_std_14)
 target_include_directories(nonblocking_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13704,7 +15572,9 @@ target_include_directories(nonblocking_test
 )
 
 target_link_libraries(nonblocking_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -13718,7 +15588,7 @@ add_executable(notification_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(notification_test PUBLIC cxx_std_14)
 target_include_directories(notification_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13739,7 +15609,9 @@ target_include_directories(notification_test
 )
 
 target_link_libraries(notification_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
@@ -13753,7 +15625,7 @@ add_executable(num_external_connectivity_watchers_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(num_external_connectivity_watchers_test PUBLIC cxx_std_14)
 target_include_directories(num_external_connectivity_watchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13774,7 +15646,9 @@ target_include_directories(num_external_connectivity_watchers_test
 )
 
 target_link_libraries(num_external_connectivity_watchers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -13789,7 +15663,7 @@ add_executable(observable_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(observable_test PUBLIC cxx_std_14)
 target_include_directories(observable_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13810,7 +15684,9 @@ target_include_directories(observable_test
 )
 
 target_link_libraries(observable_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::hash
@@ -13826,15 +15702,16 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(oracle_event_engine_posix_test
-    test/core/event_engine/test_suite/client_test.cc
-    test/core/event_engine/test_suite/event_engine_test.cc
-    test/core/event_engine/test_suite/event_engine_test_utils.cc
-    test/core/event_engine/test_suite/oracle_event_engine_posix.cc
-    test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix_test.cc
+    test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/server_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(oracle_event_engine_posix_test PUBLIC cxx_std_14)
   target_include_directories(oracle_event_engine_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13855,8 +15732,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(oracle_event_engine_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_unsecure
     grpc_test_util
   )
 
@@ -13879,7 +15759,7 @@ add_executable(orca_service_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(orca_service_end2end_test PUBLIC cxx_std_14)
 target_include_directories(orca_service_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13900,7 +15780,9 @@ target_include_directories(orca_service_end2end_test
 )
 
 target_link_libraries(orca_service_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -13914,7 +15796,7 @@ add_executable(orphanable_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(orphanable_test PUBLIC cxx_std_14)
 target_include_directories(orphanable_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13935,7 +15817,9 @@ target_include_directories(orphanable_test
 )
 
 target_link_libraries(orphanable_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -13951,7 +15835,7 @@ add_executable(out_of_bounds_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(out_of_bounds_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(out_of_bounds_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13972,7 +15856,83 @@ target_include_directories(out_of_bounds_bad_client_test
 )
 
 target_link_libraries(out_of_bounds_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(outlier_detection_lb_config_parser_test
+  test/core/client_channel/lb_policy/outlier_detection_lb_config_parser_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(outlier_detection_lb_config_parser_test PUBLIC cxx_std_14)
+target_include_directories(outlier_detection_lb_config_parser_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(outlier_detection_lb_config_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(outlier_detection_test
+  test/core/client_channel/lb_policy/outlier_detection_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(outlier_detection_test PUBLIC cxx_std_14)
+target_include_directories(outlier_detection_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(outlier_detection_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -13986,7 +15946,7 @@ add_executable(overload_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(overload_test PUBLIC cxx_std_14)
 target_include_directories(overload_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14007,7 +15967,9 @@ target_include_directories(overload_test
 )
 
 target_link_libraries(overload_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -14020,7 +15982,7 @@ add_executable(parse_address_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(parse_address_test PUBLIC cxx_std_14)
 target_include_directories(parse_address_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14041,7 +16003,9 @@ target_include_directories(parse_address_test
 )
 
 target_link_libraries(parse_address_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -14056,7 +16020,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(parse_address_with_named_scope_id_test PUBLIC cxx_std_14)
   target_include_directories(parse_address_with_named_scope_id_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14077,7 +16041,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(parse_address_with_named_scope_id_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -14092,7 +16058,7 @@ add_executable(parsed_metadata_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(parsed_metadata_test PUBLIC cxx_std_14)
 target_include_directories(parsed_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14113,7 +16079,9 @@ target_include_directories(parsed_metadata_test
 )
 
 target_link_libraries(parsed_metadata_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -14143,7 +16111,7 @@ add_executable(parser_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(parser_test PUBLIC cxx_std_14)
 target_include_directories(parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14164,9 +16132,49 @@ target_include_directories(parser_test
 )
 
 target_link_libraries(parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(party_test
+  src/core/lib/promise/party.cc
+  test/core/promise/party_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(party_test PUBLIC cxx_std_14)
+target_include_directories(party_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(party_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_unsecure
 )
 
 
@@ -14178,7 +16186,7 @@ add_executable(percent_encoding_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(percent_encoding_test PUBLIC cxx_std_14)
 target_include_directories(percent_encoding_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14199,7 +16207,9 @@ target_include_directories(percent_encoding_test
 )
 
 target_link_libraries(percent_encoding_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -14214,6 +16224,7 @@ add_executable(periodic_update_test
   src/core/lib/debug/trace.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -14222,12 +16233,13 @@ add_executable(periodic_update_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(periodic_update_test PUBLIC cxx_std_14)
 target_include_directories(periodic_update_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14248,7 +16260,9 @@ target_include_directories(periodic_update_test
 )
 
 target_link_libraries(periodic_update_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
   absl::function_ref
@@ -14256,6 +16270,43 @@ target_link_libraries(periodic_update_test
   absl::statusor
   gpr
   upb
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(pick_first_test
+  test/core/client_channel/lb_policy/pick_first_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(pick_first_test PUBLIC cxx_std_14)
+target_include_directories(pick_first_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(pick_first_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -14279,7 +16330,7 @@ add_executable(pid_controller_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(pid_controller_test PUBLIC cxx_std_14)
 target_include_directories(pid_controller_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14300,7 +16351,9 @@ target_include_directories(pid_controller_test
 )
 
 target_link_libraries(pid_controller_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -14310,34 +16363,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(pipe_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/memory_allocator.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(pipe_test PUBLIC cxx_std_14)
 target_include_directories(pipe_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14358,16 +16388,11 @@ target_include_directories(pipe_test
 )
 
 target_link_libraries(pipe_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::any_invocable
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
-  upb
+  grpc
 )
 
 
@@ -14379,7 +16404,7 @@ add_executable(poll_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(poll_test PUBLIC cxx_std_14)
 target_include_directories(poll_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14400,9 +16425,11 @@ target_include_directories(poll_test
 )
 
 target_link_libraries(poll_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::variant
+  gpr
 )
 
 
@@ -14431,7 +16458,7 @@ add_executable(port_sharing_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(port_sharing_end2end_test PUBLIC cxx_std_14)
 target_include_directories(port_sharing_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14452,7 +16479,9 @@ target_include_directories(port_sharing_end2end_test
 )
 
 target_link_libraries(port_sharing_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -14463,28 +16492,15 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(posix_endpoint_test
-    src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
-    src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
-    src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
-    src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-    src/core/lib/event_engine/posix_engine/lockfree_event.cc
-    src/core/lib/event_engine/posix_engine/posix_endpoint.cc
-    src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-    src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
-    src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-    src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
-    src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
-    src/core/lib/gprpp/load_file.cc
-    src/core/lib/iomgr/socket_mutator.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/posix/posix_endpoint_test.cc
     test/core/event_engine/posix/posix_engine_test_utils.cc
-    test/core/event_engine/test_suite/event_engine_test.cc
-    test/core/event_engine/test_suite/event_engine_test_utils.cc
-    test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(posix_endpoint_test PUBLIC cxx_std_14)
   target_include_directories(posix_endpoint_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14505,7 +16521,49 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(posix_endpoint_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_unsecure
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(posix_engine_listener_utils_test
+    test/core/event_engine/posix/posix_engine_listener_utils_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(posix_engine_listener_utils_test PUBLIC cxx_std_14)
+  target_include_directories(posix_engine_listener_utils_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(posix_engine_listener_utils_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -14514,42 +16572,93 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(posix_event_engine_test
-  test/core/event_engine/test_suite/event_engine_test.cc
-  test/core/event_engine/test_suite/event_engine_test_utils.cc
-  test/core/event_engine/test_suite/posix_event_engine_test.cc
-  test/core/event_engine/test_suite/timer_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
+  add_executable(posix_event_engine_connect_test
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/posix/posix_event_engine_connect_test.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(posix_event_engine_connect_test PUBLIC cxx_std_14)
+  target_include_directories(posix_event_engine_connect_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
 
-target_include_directories(posix_event_engine_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(posix_event_engine_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
+  target_link_libraries(posix_event_engine_connect_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_unsecure
+    grpc_test_util
+  )
 
 
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(posix_event_engine_test
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+    test/core/event_engine/test_suite/posix_event_engine_test.cc
+    test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/server_test.cc
+    test/core/event_engine/test_suite/tests/timer_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(posix_event_engine_test PUBLIC cxx_std_14)
+  target_include_directories(posix_event_engine_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(posix_event_engine_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_unsecure
+    grpc_test_util
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -14558,7 +16667,7 @@ add_executable(promise_factory_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(promise_factory_test PUBLIC cxx_std_14)
 target_include_directories(promise_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14579,13 +16688,13 @@ target_include_directories(promise_factory_test
 )
 
 target_link_libraries(promise_factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::bind_front
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -14597,7 +16706,7 @@ add_executable(promise_map_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(promise_map_test PUBLIC cxx_std_14)
 target_include_directories(promise_map_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14618,12 +16727,12 @@ target_include_directories(promise_map_test
 )
 
 target_link_libraries(promise_map_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -14635,7 +16744,7 @@ add_executable(promise_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(promise_test PUBLIC cxx_std_14)
 target_include_directories(promise_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14656,12 +16765,12 @@ target_include_directories(promise_test
 )
 
 target_link_libraries(promise_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -14695,7 +16804,7 @@ add_executable(proto_server_reflection_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(proto_server_reflection_test PUBLIC cxx_std_14)
 target_include_directories(proto_server_reflection_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14716,7 +16825,9 @@ target_include_directories(proto_server_reflection_test
 )
 
 target_link_libraries(proto_server_reflection_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_reflection
   grpc++_test_util
@@ -14731,7 +16842,7 @@ add_executable(proto_utils_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(proto_utils_test PUBLIC cxx_std_14)
 target_include_directories(proto_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14752,7 +16863,9 @@ target_include_directories(proto_utils_test
 )
 
 target_link_libraries(proto_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -14763,10 +16876,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(qps_json_driver
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
@@ -14795,7 +16904,6 @@ add_executable(qps_json_driver
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
-  src/cpp/util/core_stats.cc
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
@@ -14813,7 +16921,7 @@ add_executable(qps_json_driver
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(qps_json_driver PUBLIC cxx_std_14)
 target_include_directories(qps_json_driver
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14834,7 +16942,9 @@ target_include_directories(qps_json_driver
 )
 
 target_link_libraries(qps_json_driver
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -14845,10 +16955,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(qps_worker
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
@@ -14873,7 +16979,6 @@ add_executable(qps_worker
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
-  src/cpp/util/core_stats.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
   test/cpp/qps/client_sync.cc
@@ -14887,7 +16992,7 @@ add_executable(qps_worker
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(qps_worker PUBLIC cxx_std_14)
 target_include_directories(qps_worker
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14908,7 +17013,9 @@ target_include_directories(qps_worker
 )
 
 target_link_libraries(qps_worker
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -14923,7 +17030,7 @@ add_executable(race_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(race_test PUBLIC cxx_std_14)
 target_include_directories(race_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14944,9 +17051,49 @@ target_include_directories(race_test
 )
 
 target_link_libraries(race_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::variant
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(random_early_detection_test
+  src/core/lib/backoff/random_early_detection.cc
+  test/core/backoff/random_early_detection_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(random_early_detection_test PUBLIC cxx_std_14)
+target_include_directories(random_early_detection_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(random_early_detection_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::random_random
 )
 
 
@@ -14979,7 +17126,7 @@ add_executable(raw_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(raw_end2end_test PUBLIC cxx_std_14)
 target_include_directories(raw_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15000,7 +17147,9 @@ target_include_directories(raw_end2end_test
 )
 
 target_link_libraries(raw_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -15014,7 +17163,7 @@ add_executable(rbac_service_config_parser_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(rbac_service_config_parser_test PUBLIC cxx_std_14)
 target_include_directories(rbac_service_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15035,7 +17184,9 @@ target_include_directories(rbac_service_config_parser_test
 )
 
 target_link_libraries(rbac_service_config_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15045,8 +17196,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(rbac_translator_test
-  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/rbac_translator.cc
   test/core/security/rbac_translator_test.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
@@ -15063,7 +17212,7 @@ add_executable(rbac_translator_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(rbac_translator_test PUBLIC cxx_std_14)
 target_include_directories(rbac_translator_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15084,8 +17233,11 @@ target_include_directories(rbac_translator_test
 )
 
 target_link_libraries(rbac_translator_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_authorization_provider
   grpc_test_util
 )
 
@@ -15098,7 +17250,7 @@ add_executable(ref_counted_ptr_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(ref_counted_ptr_test PUBLIC cxx_std_14)
 target_include_directories(ref_counted_ptr_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15119,7 +17271,9 @@ target_include_directories(ref_counted_ptr_test
 )
 
 target_link_libraries(ref_counted_ptr_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15133,7 +17287,7 @@ add_executable(ref_counted_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(ref_counted_test PUBLIC cxx_std_14)
 target_include_directories(ref_counted_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15154,7 +17308,9 @@ target_include_directories(ref_counted_test
 )
 
 target_link_libraries(ref_counted_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15169,7 +17325,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(remove_stream_from_stalled_lists_test PUBLIC cxx_std_14)
   target_include_directories(remove_stream_from_stalled_lists_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15190,7 +17346,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(remove_stream_from_stalled_lists_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -15218,7 +17376,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(resolve_address_using_ares_resolver_posix_test PUBLIC cxx_std_14)
   target_include_directories(resolve_address_using_ares_resolver_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15239,7 +17397,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(resolve_address_using_ares_resolver_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::flags_parse
     grpc_test_util
@@ -15268,7 +17428,7 @@ add_executable(resolve_address_using_ares_resolver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(resolve_address_using_ares_resolver_test PUBLIC cxx_std_14)
 target_include_directories(resolve_address_using_ares_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15289,7 +17449,9 @@ target_include_directories(resolve_address_using_ares_resolver_test
 )
 
 target_link_libraries(resolve_address_using_ares_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
@@ -15317,7 +17479,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(resolve_address_using_native_resolver_posix_test PUBLIC cxx_std_14)
   target_include_directories(resolve_address_using_native_resolver_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15338,7 +17500,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(resolve_address_using_native_resolver_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::flags_parse
     grpc_test_util
@@ -15367,7 +17531,7 @@ add_executable(resolve_address_using_native_resolver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(resolve_address_using_native_resolver_test PUBLIC cxx_std_14)
 target_include_directories(resolve_address_using_native_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15388,7 +17552,9 @@ target_include_directories(resolve_address_using_native_resolver_test
 )
 
 target_link_libraries(resolve_address_using_native_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
@@ -15403,7 +17569,7 @@ add_executable(resource_quota_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(resource_quota_test PUBLIC cxx_std_14)
 target_include_directories(resource_quota_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15424,9 +17590,48 @@ target_include_directories(resource_quota_test
 )
 
 target_link_libraries(resource_quota_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(retry_service_config_test
+  test/core/client_channel/retry_service_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(retry_service_config_test PUBLIC cxx_std_14)
+target_include_directories(retry_service_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(retry_service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -15438,7 +17643,7 @@ add_executable(retry_throttle_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(retry_throttle_test PUBLIC cxx_std_14)
 target_include_directories(retry_throttle_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15459,7 +17664,9 @@ target_include_directories(retry_throttle_test
 )
 
 target_link_libraries(retry_throttle_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15500,7 +17707,7 @@ add_executable(rls_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(rls_end2end_test PUBLIC cxx_std_14)
 target_include_directories(rls_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15521,7 +17728,9 @@ target_include_directories(rls_end2end_test
 )
 
 target_link_libraries(rls_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -15532,11 +17741,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(rls_lb_config_parser_test
-  test/core/client_channel/rls_lb_config_parser_test.cc
+  test/core/client_channel/lb_policy/rls_lb_config_parser_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(rls_lb_config_parser_test PUBLIC cxx_std_14)
 target_include_directories(rls_lb_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15557,7 +17766,46 @@ target_include_directories(rls_lb_config_parser_test
 )
 
 target_link_libraries(rls_lb_config_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(round_robin_test
+  test/core/client_channel/lb_policy/round_robin_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(round_robin_test PUBLIC cxx_std_14)
+target_include_directories(round_robin_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(round_robin_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15571,7 +17819,7 @@ add_executable(secure_auth_context_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(secure_auth_context_test PUBLIC cxx_std_14)
 target_include_directories(secure_auth_context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15592,7 +17840,9 @@ target_include_directories(secure_auth_context_test
 )
 
 target_link_libraries(secure_auth_context_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -15606,7 +17856,7 @@ add_executable(secure_channel_create_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(secure_channel_create_test PUBLIC cxx_std_14)
 target_include_directories(secure_channel_create_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15627,7 +17877,9 @@ target_include_directories(secure_channel_create_test
 )
 
 target_link_libraries(secure_channel_create_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15654,7 +17906,7 @@ add_executable(secure_endpoint_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(secure_endpoint_test PUBLIC cxx_std_14)
 target_include_directories(secure_endpoint_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15675,7 +17927,9 @@ target_include_directories(secure_endpoint_test
 )
 
 target_link_libraries(secure_endpoint_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15701,7 +17955,7 @@ add_executable(security_connector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(security_connector_test PUBLIC cxx_std_14)
 target_include_directories(security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15722,7 +17976,9 @@ target_include_directories(security_connector_test
 )
 
 target_link_libraries(security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15736,7 +17992,7 @@ add_executable(seq_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(seq_test PUBLIC cxx_std_14)
 target_include_directories(seq_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15757,11 +18013,13 @@ target_include_directories(seq_test
 )
 
 target_link_libraries(seq_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -15773,7 +18031,7 @@ add_executable(sequential_connectivity_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(sequential_connectivity_test PUBLIC cxx_std_14)
 target_include_directories(sequential_connectivity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15794,7 +18052,9 @@ target_include_directories(sequential_connectivity_test
 )
 
 target_link_libraries(sequential_connectivity_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15829,7 +18089,7 @@ add_executable(server_builder_plugin_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_builder_plugin_test PUBLIC cxx_std_14)
 target_include_directories(server_builder_plugin_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15850,7 +18110,9 @@ target_include_directories(server_builder_plugin_test
 )
 
 target_link_libraries(server_builder_plugin_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -15893,7 +18155,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(server_builder_test PUBLIC cxx_std_14)
   target_include_directories(server_builder_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15914,7 +18176,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_builder_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
@@ -15959,7 +18223,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(server_builder_with_socket_mutator_test PUBLIC cxx_std_14)
   target_include_directories(server_builder_with_socket_mutator_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15980,7 +18244,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_builder_with_socket_mutator_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
@@ -15996,7 +18262,7 @@ add_executable(server_chttp2_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_chttp2_test PUBLIC cxx_std_14)
 target_include_directories(server_chttp2_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16017,7 +18283,9 @@ target_include_directories(server_chttp2_test
 )
 
 target_link_libraries(server_chttp2_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16031,7 +18299,7 @@ add_executable(server_config_selector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_config_selector_test PUBLIC cxx_std_14)
 target_include_directories(server_config_selector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16052,7 +18320,9 @@ target_include_directories(server_config_selector_test
 )
 
 target_link_libraries(server_config_selector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16066,7 +18336,7 @@ add_executable(server_context_test_spouse_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_context_test_spouse_test PUBLIC cxx_std_14)
 target_include_directories(server_context_test_spouse_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16087,7 +18357,9 @@ target_include_directories(server_context_test_spouse_test
 )
 
 target_link_libraries(server_context_test_spouse_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
   grpc++_test_util
@@ -16118,7 +18390,7 @@ add_executable(server_early_return_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_early_return_test PUBLIC cxx_std_14)
 target_include_directories(server_early_return_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16139,7 +18411,9 @@ target_include_directories(server_early_return_test
 )
 
 target_link_libraries(server_early_return_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -16171,7 +18445,7 @@ add_executable(server_interceptors_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_interceptors_end2end_test PUBLIC cxx_std_14)
 target_include_directories(server_interceptors_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16192,7 +18466,9 @@ target_include_directories(server_interceptors_end2end_test
 )
 
 target_link_libraries(server_interceptors_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -16208,7 +18484,7 @@ add_executable(server_registered_method_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_registered_method_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(server_registered_method_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16229,7 +18505,9 @@ target_include_directories(server_registered_method_bad_client_test
 )
 
 target_link_libraries(server_registered_method_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16272,7 +18550,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(server_request_call_test PUBLIC cxx_std_14)
   target_include_directories(server_request_call_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16293,7 +18571,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_request_call_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
@@ -16311,7 +18591,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(server_ssl_test PUBLIC cxx_std_14)
   target_include_directories(server_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16332,7 +18612,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_ssl_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -16347,7 +18629,7 @@ add_executable(server_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(server_test PUBLIC cxx_std_14)
 target_include_directories(server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16368,7 +18650,9 @@ target_include_directories(server_test
 )
 
 target_link_libraries(server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16403,7 +18687,7 @@ add_executable(service_config_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(service_config_end2end_test PUBLIC cxx_std_14)
 target_include_directories(service_config_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16424,7 +18708,9 @@ target_include_directories(service_config_end2end_test
 )
 
 target_link_libraries(service_config_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -16434,11 +18720,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(service_config_test
-  test/core/client_channel/service_config_test.cc
+  test/core/service_config/service_config_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(service_config_test PUBLIC cxx_std_14)
 target_include_directories(service_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16459,7 +18745,9 @@ target_include_directories(service_config_test
 )
 
 target_link_libraries(service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16485,7 +18773,7 @@ add_executable(settings_timeout_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(settings_timeout_test PUBLIC cxx_std_14)
 target_include_directories(settings_timeout_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16506,7 +18794,9 @@ target_include_directories(settings_timeout_test
 )
 
 target_link_libraries(settings_timeout_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16540,7 +18830,7 @@ add_executable(shutdown_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(shutdown_test PUBLIC cxx_std_14)
 target_include_directories(shutdown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16561,7 +18851,9 @@ target_include_directories(shutdown_test
 )
 
 target_link_libraries(shutdown_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -16577,7 +18869,7 @@ add_executable(simple_request_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(simple_request_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(simple_request_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16598,7 +18890,9 @@ target_include_directories(simple_request_bad_client_test
 )
 
 target_link_libraries(simple_request_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16612,7 +18906,7 @@ add_executable(single_set_ptr_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(single_set_ptr_test PUBLIC cxx_std_14)
 target_include_directories(single_set_ptr_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16633,7 +18927,9 @@ target_include_directories(single_set_ptr_test
 )
 
 target_link_libraries(single_set_ptr_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
@@ -16647,7 +18943,7 @@ add_executable(sleep_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(sleep_test PUBLIC cxx_std_14)
 target_include_directories(sleep_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16668,7 +18964,9 @@ target_include_directories(sleep_test
 )
 
 target_link_libraries(sleep_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
@@ -16678,13 +18976,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
+  src/core/lib/debug/trace.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/slice/slice_string_helpers_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(slice_string_helpers_test PUBLIC cxx_std_14)
 target_include_directories(slice_string_helpers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16705,9 +19005,13 @@ target_include_directories(slice_string_helpers_test
 )
 
 target_link_libraries(slice_string_helpers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::hash
+  absl::statusor
   gpr
 )
 
@@ -16720,7 +19024,7 @@ add_executable(smoke_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(smoke_test PUBLIC cxx_std_14)
 target_include_directories(smoke_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16741,9 +19045,10 @@ target_include_directories(smoke_test
 )
 
 target_link_libraries(smoke_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 
@@ -16756,7 +19061,7 @@ add_executable(sockaddr_resolver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(sockaddr_resolver_test PUBLIC cxx_std_14)
 target_include_directories(sockaddr_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16777,7 +19082,9 @@ target_include_directories(sockaddr_resolver_test
 )
 
 target_link_libraries(sockaddr_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16791,7 +19098,7 @@ add_executable(sockaddr_utils_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(sockaddr_utils_test PUBLIC cxx_std_14)
 target_include_directories(sockaddr_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16812,7 +19119,9 @@ target_include_directories(sockaddr_utils_test
 )
 
 target_link_libraries(sockaddr_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16839,7 +19148,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(socket_utils_test PUBLIC cxx_std_14)
   target_include_directories(socket_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16860,7 +19169,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(socket_utils_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -16875,7 +19186,7 @@ add_executable(sorted_pack_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(sorted_pack_test PUBLIC cxx_std_14)
 target_include_directories(sorted_pack_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16896,7 +19207,9 @@ target_include_directories(sorted_pack_test
 )
 
 target_link_libraries(sorted_pack_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -16909,7 +19222,7 @@ add_executable(spinlock_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(spinlock_test PUBLIC cxx_std_14)
 target_include_directories(spinlock_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16930,7 +19243,9 @@ target_include_directories(spinlock_test
 )
 
 target_link_libraries(spinlock_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16956,7 +19271,7 @@ add_executable(ssl_credentials_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(ssl_credentials_test PUBLIC cxx_std_14)
 target_include_directories(ssl_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16977,7 +19292,9 @@ target_include_directories(ssl_credentials_test
 )
 
 target_link_libraries(ssl_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -16993,7 +19310,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(ssl_transport_security_test PUBLIC cxx_std_14)
   target_include_directories(ssl_transport_security_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17014,7 +19331,48 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(ssl_transport_security_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(ssl_transport_security_utils_test
+    test/core/tsi/ssl_transport_security_utils_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(ssl_transport_security_utils_test PUBLIC cxx_std_14)
+  target_include_directories(ssl_transport_security_utils_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(ssl_transport_security_utils_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -17030,7 +19388,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(stack_tracer_test PUBLIC cxx_std_14)
   target_include_directories(stack_tracer_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17051,7 +19409,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(stack_tracer_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -17066,7 +19426,7 @@ add_executable(stat_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(stat_test PUBLIC cxx_std_14)
 target_include_directories(stat_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17087,9 +19447,51 @@ target_include_directories(stat_test
 )
 
 target_link_libraries(stat_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(static_stride_scheduler_test
+  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(static_stride_scheduler_test PUBLIC cxx_std_14)
+target_include_directories(static_stride_scheduler_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(static_stride_scheduler_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
+  absl::span
+  gpr
 )
 
 
@@ -17101,7 +19503,7 @@ add_executable(stats_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(stats_test PUBLIC cxx_std_14)
 target_include_directories(stats_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17122,7 +19524,9 @@ target_include_directories(stats_test
 )
 
 target_link_libraries(stats_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17148,7 +19552,7 @@ add_executable(status_conversion_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(status_conversion_test PUBLIC cxx_std_14)
 target_include_directories(status_conversion_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17169,7 +19573,9 @@ target_include_directories(status_conversion_test
 )
 
 target_link_libraries(status_conversion_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17183,7 +19589,7 @@ add_executable(status_helper_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(status_helper_test PUBLIC cxx_std_14)
 target_include_directories(status_helper_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17204,7 +19610,9 @@ target_include_directories(status_helper_test
 )
 
 target_link_libraries(status_helper_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17218,7 +19626,7 @@ add_executable(status_util_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(status_util_test PUBLIC cxx_std_14)
 target_include_directories(status_util_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17239,7 +19647,9 @@ target_include_directories(status_util_test
 )
 
 target_link_libraries(status_util_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17267,7 +19677,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(stranded_event_test PUBLIC cxx_std_14)
   target_include_directories(stranded_event_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17288,7 +19698,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(stranded_event_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -17303,7 +19715,7 @@ add_executable(stream_leak_with_queued_flow_control_update_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(stream_leak_with_queued_flow_control_update_test PUBLIC cxx_std_14)
 target_include_directories(stream_leak_with_queued_flow_control_update_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17324,7 +19736,9 @@ target_include_directories(stream_leak_with_queued_flow_control_update_test
 )
 
 target_link_libraries(stream_leak_with_queued_flow_control_update_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17350,7 +19764,7 @@ add_executable(stream_map_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(stream_map_test PUBLIC cxx_std_14)
 target_include_directories(stream_map_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17371,7 +19785,9 @@ target_include_directories(stream_map_test
 )
 
 target_link_libraries(stream_map_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17406,7 +19822,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(streaming_throughput_test PUBLIC cxx_std_14)
   target_include_directories(streaming_throughput_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17427,7 +19843,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(streaming_throughput_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -17455,7 +19873,7 @@ add_executable(streams_not_seen_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(streams_not_seen_test PUBLIC cxx_std_14)
 target_include_directories(streams_not_seen_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17476,7 +19894,9 @@ target_include_directories(streams_not_seen_test
 )
 
 target_link_libraries(streams_not_seen_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17490,7 +19910,7 @@ add_executable(string_ref_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(string_ref_test PUBLIC cxx_std_14)
 target_include_directories(string_ref_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17511,7 +19931,9 @@ target_include_directories(string_ref_test
 )
 
 target_link_libraries(string_ref_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -17526,7 +19948,7 @@ add_executable(string_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(string_test PUBLIC cxx_std_14)
 target_include_directories(string_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17547,7 +19969,9 @@ target_include_directories(string_test
 )
 
 target_link_libraries(string_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17561,7 +19985,7 @@ add_executable(sync_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(sync_test PUBLIC cxx_std_14)
 target_include_directories(sync_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17582,7 +20006,9 @@ target_include_directories(sync_test
 )
 
 target_link_libraries(sync_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17608,7 +20034,7 @@ add_executable(system_roots_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(system_roots_test PUBLIC cxx_std_14)
 target_include_directories(system_roots_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17629,7 +20055,9 @@ target_include_directories(system_roots_test
 )
 
 target_link_libraries(system_roots_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17643,7 +20071,7 @@ add_executable(table_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(table_test PUBLIC cxx_std_14)
 target_include_directories(table_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17664,7 +20092,9 @@ target_include_directories(table_test
 )
 
 target_link_libraries(table_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::strings
@@ -17695,7 +20125,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(tcp_client_posix_test PUBLIC cxx_std_14)
   target_include_directories(tcp_client_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17716,7 +20146,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_client_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -17728,13 +20160,11 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(tcp_posix_socket_utils_test
-    src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-    src/core/lib/iomgr/socket_mutator.cc
     test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(tcp_posix_socket_utils_test PUBLIC cxx_std_14)
   target_include_directories(tcp_posix_socket_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17755,7 +20185,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_posix_socket_utils_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -17783,7 +20215,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(tcp_server_posix_test PUBLIC cxx_std_14)
   target_include_directories(tcp_server_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17804,13 +20236,52 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_server_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(tcp_socket_utils_test
+  test/core/event_engine/tcp_socket_utils_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(tcp_socket_utils_test PUBLIC cxx_std_14)
+target_include_directories(tcp_socket_utils_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(tcp_socket_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -17823,7 +20294,7 @@ add_executable(test_core_event_engine_posix_timer_heap_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_event_engine_posix_timer_heap_test PUBLIC cxx_std_14)
 target_include_directories(test_core_event_engine_posix_timer_heap_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17844,7 +20315,9 @@ target_include_directories(test_core_event_engine_posix_timer_heap_test
 )
 
 target_link_libraries(test_core_event_engine_posix_timer_heap_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
   absl::statusor
@@ -17864,7 +20337,7 @@ add_executable(test_core_event_engine_posix_timer_list_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_event_engine_posix_timer_list_test PUBLIC cxx_std_14)
 target_include_directories(test_core_event_engine_posix_timer_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17885,7 +20358,9 @@ target_include_directories(test_core_event_engine_posix_timer_list_test
 )
 
 target_link_libraries(test_core_event_engine_posix_timer_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
   absl::statusor
@@ -17897,17 +20372,20 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_slice_buffer_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/slice_buffer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_event_engine_slice_buffer_test PUBLIC cxx_std_14)
 target_include_directories(test_core_event_engine_slice_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17928,7 +20406,9 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 )
 
 target_link_libraries(test_core_event_engine_slice_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::any_invocable
@@ -17947,7 +20427,7 @@ add_executable(test_core_gpr_time_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_gpr_time_test PUBLIC cxx_std_14)
 target_include_directories(test_core_gpr_time_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17968,7 +20448,9 @@ target_include_directories(test_core_gpr_time_test
 )
 
 target_link_libraries(test_core_gpr_time_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17978,12 +20460,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_gprpp_load_file_test
-  src/core/lib/gprpp/load_file.cc
   test/core/gprpp/load_file_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_gprpp_load_file_test PUBLIC cxx_std_14)
 target_include_directories(test_core_gprpp_load_file_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18004,7 +20485,9 @@ target_include_directories(test_core_gprpp_load_file_test
 )
 
 target_link_libraries(test_core_gprpp_load_file_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18019,7 +20502,7 @@ add_executable(test_core_gprpp_time_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_gprpp_time_test PUBLIC cxx_std_14)
 target_include_directories(test_core_gprpp_time_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18040,7 +20523,9 @@ target_include_directories(test_core_gprpp_time_test
 )
 
 target_link_libraries(test_core_gprpp_time_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
   absl::statusor
@@ -18068,7 +20553,7 @@ add_executable(test_core_iomgr_load_file_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_iomgr_load_file_test PUBLIC cxx_std_14)
 target_include_directories(test_core_iomgr_load_file_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18089,7 +20574,9 @@ target_include_directories(test_core_iomgr_load_file_test
 )
 
 target_link_libraries(test_core_iomgr_load_file_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18115,7 +20602,7 @@ add_executable(test_core_iomgr_timer_heap_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_iomgr_timer_heap_test PUBLIC cxx_std_14)
 target_include_directories(test_core_iomgr_timer_heap_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18136,7 +20623,9 @@ target_include_directories(test_core_iomgr_timer_heap_test
 )
 
 target_link_libraries(test_core_iomgr_timer_heap_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18162,7 +20651,7 @@ add_executable(test_core_security_credentials_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_security_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_core_security_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18183,7 +20672,9 @@ target_include_directories(test_core_security_credentials_test
 )
 
 target_link_libraries(test_core_security_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18197,7 +20688,7 @@ add_executable(test_core_slice_slice_buffer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_slice_slice_buffer_test PUBLIC cxx_std_14)
 target_include_directories(test_core_slice_slice_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18218,7 +20709,9 @@ target_include_directories(test_core_slice_slice_buffer_test
 )
 
 target_link_libraries(test_core_slice_slice_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18233,7 +20726,7 @@ add_executable(test_core_slice_slice_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_core_slice_slice_test PUBLIC cxx_std_14)
 target_include_directories(test_core_slice_slice_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18254,7 +20747,9 @@ target_include_directories(test_core_slice_slice_test
 )
 
 target_link_libraries(test_core_slice_slice_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
@@ -18269,7 +20764,7 @@ add_executable(test_cpp_client_credentials_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_cpp_client_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_client_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18290,7 +20785,9 @@ target_include_directories(test_cpp_client_credentials_test
 )
 
 target_link_libraries(test_cpp_client_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -18306,7 +20803,7 @@ add_executable(test_cpp_server_credentials_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_cpp_server_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_server_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18327,7 +20824,9 @@ target_include_directories(test_cpp_server_credentials_test
 )
 
 target_link_libraries(test_cpp_server_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -18342,7 +20841,7 @@ add_executable(test_cpp_util_slice_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_cpp_util_slice_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_util_slice_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18363,7 +20862,9 @@ target_include_directories(test_cpp_util_slice_test
 )
 
 target_link_libraries(test_cpp_util_slice_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -18377,7 +20878,7 @@ add_executable(test_cpp_util_time_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(test_cpp_util_time_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_util_time_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18398,7 +20899,9 @@ target_include_directories(test_cpp_util_time_test
 )
 
 target_link_libraries(test_cpp_util_time_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -18412,7 +20915,7 @@ add_executable(thd_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(thd_test PUBLIC cxx_std_14)
 target_include_directories(thd_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18433,7 +20936,9 @@ target_include_directories(thd_test
 )
 
 target_link_libraries(thd_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18447,7 +20952,7 @@ add_executable(thread_manager_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(thread_manager_test PUBLIC cxx_std_14)
 target_include_directories(thread_manager_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18468,7 +20973,9 @@ target_include_directories(thread_manager_test
 )
 
 target_link_libraries(thread_manager_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -18481,11 +20988,12 @@ if(gRPC_BUILD_TESTS)
 add_executable(thread_pool_test
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/gprpp/time.cc
   test/core/event_engine/thread_pool_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(thread_pool_test PUBLIC cxx_std_14)
 target_include_directories(thread_pool_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18506,10 +21014,13 @@ target_include_directories(thread_pool_test
 )
 
 target_link_libraries(thread_pool_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::any_invocable
+  absl::statusor
   gpr
 )
 
@@ -18523,7 +21034,7 @@ add_executable(thread_quota_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(thread_quota_test PUBLIC cxx_std_14)
 target_include_directories(thread_quota_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18544,7 +21055,9 @@ target_include_directories(thread_quota_test
 )
 
 target_link_libraries(thread_quota_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
@@ -18579,7 +21092,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(thread_stress_test PUBLIC cxx_std_14)
   target_include_directories(thread_stress_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18600,7 +21113,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(thread_stress_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -18616,7 +21131,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(time_jump_test PUBLIC cxx_std_14)
   target_include_directories(time_jump_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18637,7 +21152,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(time_jump_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
     grpc_test_util
@@ -18653,7 +21170,7 @@ add_executable(time_util_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(time_util_test PUBLIC cxx_std_14)
 target_include_directories(time_util_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18674,7 +21191,9 @@ target_include_directories(time_util_test
 )
 
 target_link_libraries(time_util_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18700,7 +21219,7 @@ add_executable(timeout_encoding_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(timeout_encoding_test PUBLIC cxx_std_14)
 target_include_directories(timeout_encoding_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18721,7 +21240,9 @@ target_include_directories(timeout_encoding_test
 )
 
 target_link_libraries(timeout_encoding_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18735,7 +21256,7 @@ add_executable(timer_manager_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(timer_manager_test PUBLIC cxx_std_14)
 target_include_directories(timer_manager_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18756,7 +21277,9 @@ target_include_directories(timer_manager_test
 )
 
 target_link_libraries(timer_manager_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18770,7 +21293,7 @@ add_executable(timer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(timer_test PUBLIC cxx_std_14)
 target_include_directories(timer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18791,7 +21314,9 @@ target_include_directories(timer_test
 )
 
 target_link_libraries(timer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -18807,7 +21332,7 @@ add_executable(tls_certificate_verifier_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(tls_certificate_verifier_test PUBLIC cxx_std_14)
 target_include_directories(tls_certificate_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18828,7 +21353,9 @@ target_include_directories(tls_certificate_verifier_test
 )
 
 target_link_libraries(tls_certificate_verifier_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -18859,7 +21386,7 @@ add_executable(tls_key_export_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(tls_key_export_test PUBLIC cxx_std_14)
 target_include_directories(tls_key_export_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18880,7 +21407,9 @@ target_include_directories(tls_key_export_test
 )
 
 target_link_libraries(tls_key_export_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -18906,7 +21435,7 @@ add_executable(tls_security_connector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(tls_security_connector_test PUBLIC cxx_std_14)
 target_include_directories(tls_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18927,7 +21456,9 @@ target_include_directories(tls_security_connector_test
 )
 
 target_link_libraries(tls_security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -18942,7 +21473,7 @@ add_executable(too_many_pings_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(too_many_pings_test PUBLIC cxx_std_14)
 target_include_directories(too_many_pings_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18963,7 +21494,9 @@ target_include_directories(too_many_pings_test
 )
 
 target_link_libraries(too_many_pings_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
@@ -18975,13 +21508,11 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(traced_buffer_list_test
-    src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-    src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
     test/core/event_engine/posix/traced_buffer_list_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(traced_buffer_list_test PUBLIC cxx_std_14)
   target_include_directories(traced_buffer_list_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19002,7 +21533,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(traced_buffer_list_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -19017,7 +21550,7 @@ add_executable(transport_security_common_api_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(transport_security_common_api_test PUBLIC cxx_std_14)
 target_include_directories(transport_security_common_api_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19038,7 +21571,9 @@ target_include_directories(transport_security_common_api_test
 )
 
 target_link_libraries(transport_security_common_api_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19052,7 +21587,7 @@ add_executable(transport_security_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(transport_security_test PUBLIC cxx_std_14)
 target_include_directories(transport_security_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19073,7 +21608,9 @@ target_include_directories(transport_security_test
 )
 
 target_link_libraries(transport_security_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19108,16 +21645,13 @@ add_executable(transport_stream_receiver_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -19129,6 +21663,7 @@ add_executable(transport_stream_receiver_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -19136,13 +21671,11 @@ add_executable(transport_stream_receiver_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -19153,7 +21686,7 @@ add_executable(transport_stream_receiver_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(transport_stream_receiver_test PUBLIC cxx_std_14)
 target_include_directories(transport_stream_receiver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19174,7 +21707,9 @@ target_include_directories(transport_stream_receiver_test
 )
 
 target_link_libraries(transport_stream_receiver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19188,7 +21723,7 @@ add_executable(try_join_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(try_join_test PUBLIC cxx_std_14)
 target_include_directories(try_join_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19209,14 +21744,14 @@ target_include_directories(try_join_test
 )
 
 target_link_libraries(try_join_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::strings
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -19228,7 +21763,7 @@ add_executable(try_seq_metadata_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(try_seq_metadata_test PUBLIC cxx_std_14)
 target_include_directories(try_seq_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19249,7 +21784,9 @@ target_include_directories(try_seq_metadata_test
 )
 
 target_link_libraries(try_seq_metadata_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
 )
@@ -19263,7 +21800,7 @@ add_executable(try_seq_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(try_seq_test PUBLIC cxx_std_14)
 target_include_directories(try_seq_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19284,13 +21821,14 @@ target_include_directories(try_seq_test
 )
 
 target_link_libraries(try_seq_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -19302,7 +21840,7 @@ add_executable(unique_type_name_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(unique_type_name_test PUBLIC cxx_std_14)
 target_include_directories(unique_type_name_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19323,7 +21861,9 @@ target_include_directories(unique_type_name_test
 )
 
 target_link_libraries(unique_type_name_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::str_format
   absl::strings
@@ -19341,7 +21881,7 @@ add_executable(unknown_frame_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(unknown_frame_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(unknown_frame_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19362,7 +21902,9 @@ target_include_directories(unknown_frame_bad_client_test
 )
 
 target_link_libraries(unknown_frame_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19376,7 +21918,7 @@ add_executable(uri_parser_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(uri_parser_test PUBLIC cxx_std_14)
 target_include_directories(uri_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19397,9 +21939,10 @@ target_include_directories(uri_parser_test
 )
 
 target_link_libraries(uri_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 
@@ -19412,7 +21955,7 @@ add_executable(useful_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(useful_test PUBLIC cxx_std_14)
 target_include_directories(useful_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19433,7 +21976,9 @@ target_include_directories(useful_test
 )
 
 target_link_libraries(useful_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::strings
   absl::variant
@@ -19448,7 +21993,7 @@ add_executable(validation_errors_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(validation_errors_test PUBLIC cxx_std_14)
 target_include_directories(validation_errors_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19469,7 +22014,9 @@ target_include_directories(validation_errors_test
 )
 
 target_link_libraries(validation_errors_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19483,7 +22030,7 @@ add_executable(varint_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(varint_test PUBLIC cxx_std_14)
 target_include_directories(varint_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19504,7 +22051,9 @@ target_include_directories(varint_test
 )
 
 target_link_libraries(varint_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19515,13 +22064,11 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(wakeup_fd_posix_test
-    src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-    src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
     test/core/event_engine/posix/wakeup_fd_posix_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(wakeup_fd_posix_test PUBLIC cxx_std_14)
   target_include_directories(wakeup_fd_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19542,13 +22089,89 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(wakeup_fd_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(weighted_round_robin_config_test
+  test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(weighted_round_robin_config_test PUBLIC cxx_std_14)
+target_include_directories(weighted_round_robin_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(weighted_round_robin_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(weighted_round_robin_test
+  test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(weighted_round_robin_test PUBLIC cxx_std_14)
+target_include_directories(weighted_round_robin_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(weighted_round_robin_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
@@ -19559,7 +22182,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(win_socket_test PUBLIC cxx_std_14)
   target_include_directories(win_socket_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19580,7 +22203,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   )
 
   target_link_libraries(win_socket_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -19597,7 +22222,7 @@ add_executable(window_overflow_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(window_overflow_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(window_overflow_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19618,12 +22243,54 @@ target_include_directories(window_overflow_bad_client_test
 )
 
 target_link_libraries(window_overflow_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+
+  add_executable(windows_endpoint_test
+    test/core/event_engine/windows/create_sockpair.cc
+    test/core/event_engine/windows/windows_endpoint_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(windows_endpoint_test PUBLIC cxx_std_14)
+  target_include_directories(windows_endpoint_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(windows_endpoint_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -19653,16 +22320,13 @@ add_executable(wire_reader_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -19674,6 +22338,7 @@ add_executable(wire_reader_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -19681,13 +22346,11 @@ add_executable(wire_reader_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -19699,7 +22362,7 @@ add_executable(wire_reader_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(wire_reader_test PUBLIC cxx_std_14)
 target_include_directories(wire_reader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19720,7 +22383,9 @@ target_include_directories(wire_reader_test
 )
 
 target_link_libraries(wire_reader_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19755,16 +22420,13 @@ add_executable(wire_writer_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/codegen/codegen_init.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
@@ -19776,6 +22438,7 @@ add_executable(wire_writer_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
@@ -19783,13 +22446,11 @@ add_executable(wire_writer_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/orca/call_metric_recorder.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -19801,7 +22462,7 @@ add_executable(wire_writer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(wire_writer_test PUBLIC cxx_std_14)
 target_include_directories(wire_writer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19822,7 +22483,9 @@ target_include_directories(wire_writer_test
 )
 
 target_link_libraries(wire_writer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -19837,7 +22500,7 @@ add_executable(work_queue_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(work_queue_test PUBLIC cxx_std_14)
 target_include_directories(work_queue_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19858,7 +22521,9 @@ target_include_directories(work_queue_test
 )
 
 target_link_libraries(work_queue_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
 )
@@ -19873,7 +22538,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(work_serializer_test PUBLIC cxx_std_14)
   target_include_directories(work_serializer_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19894,7 +22559,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(work_serializer_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -19938,7 +22605,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(writes_per_rpc_test PUBLIC cxx_std_14)
   target_include_directories(writes_per_rpc_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19959,7 +22626,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(writes_per_rpc_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
     grpc_test_util
@@ -19975,7 +22644,7 @@ add_executable(xds_bootstrap_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_bootstrap_test PUBLIC cxx_std_14)
 target_include_directories(xds_bootstrap_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19996,7 +22665,9 @@ target_include_directories(xds_bootstrap_test
 )
 
 target_link_libraries(xds_bootstrap_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -20010,7 +22681,7 @@ add_executable(xds_certificate_provider_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_certificate_provider_test PUBLIC cxx_std_14)
 target_include_directories(xds_certificate_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20031,7 +22702,9 @@ target_include_directories(xds_certificate_provider_test
 )
 
 target_link_libraries(xds_certificate_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -20053,12 +22726,13 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  src/cpp/util/status.cc
   test/core/xds/xds_client_test.cc
   test/core/xds/xds_transport_fake.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_client_test PUBLIC cxx_std_14)
 target_include_directories(xds_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20079,7 +22753,9 @@ target_include_directories(xds_client_test
 )
 
 target_link_libraries(xds_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -20106,18 +22782,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -20154,6 +22818,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -20231,7 +22899,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_cluster_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_cluster_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20252,13 +22920,117 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_cluster_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_cluster_resource_type_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/round_robin.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h
+  src/cpp/util/status.cc
+  test/core/xds/xds_cluster_resource_type_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(xds_cluster_resource_type_test PUBLIC cxx_std_14)
+target_include_directories(xds_cluster_resource_type_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_cluster_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -20280,18 +23052,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -20332,6 +23092,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -20409,7 +23173,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_cluster_type_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_cluster_type_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20430,13 +23194,95 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_cluster_type_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_common_types_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/udpa_typed_struct.grpc.pb.h
+  test/core/xds/xds_common_types_test.cc
+  test/cpp/util/cli_call.cc
+  test/cpp/util/cli_credentials.cc
+  test/cpp/util/proto_file_parser.cc
+  test/cpp/util/proto_reflection_descriptor_database.cc
+  test/cpp/util/service_describer.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(xds_common_types_test PUBLIC cxx_std_14)
+target_include_directories(xds_common_types_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_common_types_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flags
+  grpc++
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -20458,18 +23304,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -20506,6 +23340,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -20582,7 +23420,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_core_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_core_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20603,7 +23441,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_core_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -20635,7 +23475,7 @@ add_executable(xds_credentials_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_credentials_end2end_test PUBLIC cxx_std_14)
 target_include_directories(xds_credentials_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20656,7 +23496,9 @@ target_include_directories(xds_credentials_end2end_test
 )
 
 target_link_libraries(xds_credentials_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
@@ -20682,7 +23524,7 @@ add_executable(xds_credentials_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_credentials_test PUBLIC cxx_std_14)
 target_include_directories(xds_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20703,7 +23545,9 @@ target_include_directories(xds_credentials_test
 )
 
 target_link_libraries(xds_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -20730,18 +23574,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -20786,6 +23618,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -20863,7 +23699,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_csds_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_csds_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20884,7 +23720,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_csds_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -20912,26 +23750,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -20980,6 +23798,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -21060,7 +23882,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21081,7 +23903,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_config
     grpc++_test_util
@@ -21105,15 +23929,20 @@ add_executable(xds_endpoint_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  src/cpp/util/status.cc
   test/core/xds/xds_endpoint_resource_type_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_endpoint_resource_type_test PUBLIC cxx_std_14)
 target_include_directories(xds_endpoint_resource_type_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21134,7 +23963,9 @@ target_include_directories(xds_endpoint_resource_type_test
 )
 
 target_link_libraries(xds_endpoint_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -21161,18 +23992,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -21217,6 +24036,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -21293,7 +24116,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_fault_injection_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_fault_injection_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21314,13 +24137,143 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_fault_injection_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_http_filters_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h
+  test/core/xds/xds_http_filters_test.cc
+  test/cpp/util/cli_call.cc
+  test/cpp/util/cli_credentials.cc
+  test/cpp/util/proto_file_parser.cc
+  test/cpp/util/proto_reflection_descriptor_database.cc
+  test/cpp/util/service_describer.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(xds_http_filters_test PUBLIC cxx_std_14)
+target_include_directories(xds_http_filters_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_http_filters_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flags
+  grpc++
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -21359,7 +24312,7 @@ add_executable(xds_interop_client
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_interop_client PUBLIC cxx_std_14)
 target_include_directories(xds_interop_client
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21380,7 +24333,9 @@ target_include_directories(xds_interop_client
 )
 
 target_link_libraries(xds_interop_client
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_reflection
   grpcpp_channelz
@@ -21432,7 +24387,7 @@ add_executable(xds_interop_server
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_interop_server PUBLIC cxx_std_14)
 target_include_directories(xds_interop_server
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21453,7 +24408,9 @@ target_include_directories(xds_interop_server
 )
 
 target_link_libraries(xds_interop_server
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_reflection
   grpcpp_channelz
@@ -21478,6 +24435,10 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
@@ -21494,6 +24455,10 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
@@ -21531,7 +24496,7 @@ add_executable(xds_lb_policy_registry_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
+target_compile_features(xds_lb_policy_registry_test PUBLIC cxx_std_14)
 target_include_directories(xds_lb_policy_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21552,7 +24517,145 @@ target_include_directories(xds_lb_policy_registry_test
 )
 
 target_link_libraries(xds_lb_policy_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flags
+  grpc++
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_listener_resource_type_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h
+  test/core/xds/xds_listener_resource_type_test.cc
+  test/cpp/util/cli_call.cc
+  test/cpp/util/cli_credentials.cc
+  test/cpp/util/proto_file_parser.cc
+  test/cpp/util/proto_reflection_descriptor_database.cc
+  test/cpp/util/service_describer.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(xds_listener_resource_type_test PUBLIC cxx_std_14)
+target_include_directories(xds_listener_resource_type_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_listener_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
@@ -21580,18 +24683,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -21636,6 +24727,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -21712,7 +24807,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_outlier_detection_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_outlier_detection_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21733,13 +24828,268 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_outlier_detection_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(xds_override_host_end2end_test
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cookie.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/stateful_session_cookie.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+    test/cpp/end2end/test_service_impl.cc
+    test/cpp/end2end/xds/xds_end2end_test_lib.cc
+    test/cpp/end2end/xds/xds_override_host_end2end_test.cc
+    test/cpp/end2end/xds/xds_server.cc
+    test/cpp/util/tls_test_utils.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(xds_override_host_end2end_test PUBLIC cxx_std_14)
+  target_include_directories(xds_override_host_end2end_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(xds_override_host_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc++_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_override_host_lb_config_parser_test
+  test/core/client_channel/lb_policy/xds_override_host_lb_config_parser_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(xds_override_host_lb_config_parser_test PUBLIC cxx_std_14)
+target_include_directories(xds_override_host_lb_config_parser_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_override_host_lb_config_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_override_host_test
+  test/core/client_channel/lb_policy/xds_override_host_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(xds_override_host_test PUBLIC cxx_std_14)
+target_include_directories(xds_override_host_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_override_host_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -21761,18 +25111,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -21813,6 +25151,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -21890,7 +25232,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_ring_hash_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_ring_hash_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21911,7 +25253,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_ring_hash_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -21947,18 +25291,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -21995,6 +25327,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -22072,7 +25408,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_rls_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_rls_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22093,13 +25429,131 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_rls_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_route_config_resource_type_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h
+  test/core/xds/xds_route_config_resource_type_test.cc
+  test/cpp/util/cli_call.cc
+  test/cpp/util/cli_credentials.cc
+  test/cpp/util/proto_file_parser.cc
+  test/cpp/util/proto_reflection_descriptor_database.cc
+  test/cpp/util/service_describer.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(xds_route_config_resource_type_test PUBLIC cxx_std_14)
+target_include_directories(xds_route_config_resource_type_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_route_config_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flags
+  grpc++
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -22121,18 +25575,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
@@ -22177,6 +25619,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -22253,7 +25699,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
-
+  target_compile_features(xds_routing_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_routing_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22274,7 +25720,184 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_routing_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc++_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(xds_wrr_end2end_test
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h
+    test/cpp/end2end/test_service_impl.cc
+    test/cpp/end2end/xds/xds_end2end_test_lib.cc
+    test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_wrr_end2end_test.cc
+    test/cpp/util/tls_test_utils.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(xds_wrr_end2end_test PUBLIC cxx_std_14)
+  target_include_directories(xds_wrr_end2end_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(xds_wrr_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
   )
@@ -22291,6 +25914,10 @@ endif()
 
 if(gRPC_INSTALL)
   install(EXPORT gRPCTargets
+    DESTINATION ${gRPC_INSTALL_CMAKEDIR}
+    NAMESPACE gRPC::
+  )
+  install(EXPORT gRPCPluginTargets
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
     NAMESPACE gRPC::
   )
@@ -22311,6 +25938,7 @@ install(FILES
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findc-ares.cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findre2.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findsystemd.cmake
   DESTINATION ${gRPC_INSTALL_CMAKEDIR}/modules
 )
 
@@ -22318,12 +25946,13 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
   DESTINATION ${gRPC_INSTALL_SHAREDIR})
 
 # Function to generate pkg-config files.
-function(generate_pkgconfig name description version requires
+function(generate_pkgconfig name description version requires requires_private
                             libs libs_private output_filename)
   set(PC_NAME "${name}")
   set(PC_DESCRIPTION "${description}")
   set(PC_VERSION "${version}")
   set(PC_REQUIRES "${requires}")
+  set(PC_REQUIRES_PRIVATE "${requires_private}")
   set(PC_LIB "${libs}")
   set(PC_LIBS_PRIVATE "${libs_private}")
   set(output_filepath "${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}")
@@ -22340,7 +25969,12 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
+<<<<<<< HEAD
   "absl_base absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+=======
+  "absl_base absl_cord absl_core_headers absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  ""
+>>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
   "-lgpr"
   ""
   "gpr.pc")
@@ -22350,9 +25984,16 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
+<<<<<<< HEAD
   "gpr openssl absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
+=======
+  "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "openssl re2 libcares zlib"
+  "-lgrpc"
+  "-laddress_sorting -lupb"
+>>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -22360,9 +26001,14 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
+<<<<<<< HEAD
   "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+=======
+  "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "re2 libcares zlib"
+>>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
   "-lgrpc_unsecure"
-  ""
+  "-laddress_sorting -lupb"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -22370,7 +26016,12 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
+<<<<<<< HEAD
   "grpc absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+=======
+  "grpc absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  ""
+>>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
   "-lgrpc++"
   ""
   "grpc++.pc")
@@ -22380,7 +26031,12 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
+<<<<<<< HEAD
   "grpc_unsecure absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+=======
+  "grpc_unsecure absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  ""
+>>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
   "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")

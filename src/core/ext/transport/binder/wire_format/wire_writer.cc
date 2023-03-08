@@ -25,6 +25,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/crash.h"
+
 #define RETURN_IF_ERROR(expr)           \
   do {                                  \
     const absl::Status status = (expr); \
@@ -126,7 +129,7 @@ absl::Status WireWriterImpl::MakeBinderTransaction(
 
 absl::Status WireWriterImpl::RpcCallFastPath(std::unique_ptr<Transaction> tx) {
   return MakeBinderTransaction(
-      BinderTransportTxCode(tx->GetTxCode()),
+      static_cast<BinderTransportTxCode>(tx->GetTxCode()),
       [this, tx = tx.get()](
           WritableParcel* parcel) ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_mu_) {
         RETURN_IF_ERROR(parcel->WriteInt32(tx->GetFlags()));
@@ -244,7 +247,7 @@ void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
   }
   bool is_last_chunk = true;
   absl::Status result = MakeBinderTransaction(
-      BinderTransportTxCode(stream_tx->tx->GetTxCode()),
+      static_cast<BinderTransportTxCode>(stream_tx->tx->GetTxCode()),
       [stream_tx, &is_last_chunk, this](WritableParcel* parcel)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_mu_) {
             return RunStreamTx(stream_tx, parcel, &is_last_chunk);
@@ -305,12 +308,12 @@ absl::Status WireWriterImpl::SendAck(int64_t num_bytes) {
     return absl::OkStatus();
   }
   // Otherwise, we can directly send ack.
-  absl::Status result = MakeBinderTransaction(
-      BinderTransportTxCode(BinderTransportTxCode::ACKNOWLEDGE_BYTES),
-      [num_bytes](WritableParcel* parcel) {
-        RETURN_IF_ERROR(parcel->WriteInt64(num_bytes));
-        return absl::OkStatus();
-      });
+  absl::Status result =
+      MakeBinderTransaction((BinderTransportTxCode::ACKNOWLEDGE_BYTES),
+                            [num_bytes](WritableParcel* parcel) {
+                              RETURN_IF_ERROR(parcel->WriteInt64(num_bytes));
+                              return absl::OkStatus();
+                            });
   if (!result.ok()) {
     gpr_log(GPR_ERROR, "Failed to make binder transaction %s",
             result.ToString().c_str());

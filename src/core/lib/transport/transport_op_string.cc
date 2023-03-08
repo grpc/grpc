@@ -1,24 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -32,23 +33,30 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-/* These routines are here to facilitate debugging - they produce string
-   representations of various transport data structures */
+// These routines are here to facilitate debugging - they produce string
+// representations of various transport data structures
 
 std::string grpc_transport_stream_op_batch_string(
-    grpc_transport_stream_op_batch* op) {
+    grpc_transport_stream_op_batch* op, bool truncate) {
   std::vector<std::string> out;
 
   if (op->send_initial_metadata) {
     out.push_back(" SEND_INITIAL_METADATA{");
-    out.push_back(op->payload->send_initial_metadata.send_initial_metadata
-                      ->DebugString());
+    if (truncate) {
+      out.push_back(absl::StrFormat(
+          "Length=%zu", op->payload->send_initial_metadata
+                            .send_initial_metadata->TransportSize()));
+    } else {
+      out.push_back(op->payload->send_initial_metadata.send_initial_metadata
+                        ->DebugString());
+    }
     out.push_back("}");
   }
 
@@ -66,8 +74,14 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->send_trailing_metadata) {
     out.push_back(" SEND_TRAILING_METADATA{");
-    out.push_back(op->payload->send_trailing_metadata.send_trailing_metadata
-                      ->DebugString());
+    if (truncate) {
+      out.push_back(absl::StrFormat(
+          "Length=%zu", op->payload->send_trailing_metadata
+                            .send_trailing_metadata->TransportSize()));
+    } else {
+      out.push_back(op->payload->send_trailing_metadata.send_trailing_metadata
+                        ->DebugString());
+    }
     out.push_back("}");
   }
 
@@ -86,7 +100,7 @@ std::string grpc_transport_stream_op_batch_string(
   if (op->cancel_stream) {
     out.push_back(absl::StrCat(
         " CANCEL:",
-        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
+        grpc_core::StatusToString(op->payload->cancel_stream.cancel_error)));
   }
 
   return absl::StrJoin(out, "");
@@ -109,12 +123,12 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
 
   if (!op->disconnect_with_error.ok()) {
     out.push_back(absl::StrCat(
-        " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
+        " DISCONNECT:", grpc_core::StatusToString(op->disconnect_with_error)));
   }
 
   if (!op->goaway_error.ok()) {
-    out.push_back(
-        absl::StrCat(" SEND_GOAWAY:", grpc_error_std_string(op->goaway_error)));
+    out.push_back(absl::StrCat(" SEND_GOAWAY:",
+                               grpc_core::StatusToString(op->goaway_error)));
   }
 
   if (op->set_accept_stream) {
@@ -142,5 +156,5 @@ void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
                       grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op) {
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
-          grpc_transport_stream_op_batch_string(op).c_str());
+          grpc_transport_stream_op_batch_string(op, false).c_str());
 }

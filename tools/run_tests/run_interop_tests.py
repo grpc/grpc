@@ -626,9 +626,8 @@ class PythonAsyncIOLanguage:
 
     def server_cmd(self, args):
         return [
-            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
-            'py39/bin/python', 'src/python/grpcio_tests/setup.py',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):

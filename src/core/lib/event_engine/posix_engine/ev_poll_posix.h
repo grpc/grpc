@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,16 +24,16 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class PollEventHandle;
 
@@ -74,7 +74,7 @@ class PollPoller : public PosixEventPoller {
     PollEventHandle* next = nullptr;
     PollEventHandle* prev = nullptr;
   };
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   Scheduler* scheduler_;
   std::atomic<int> ref_count_{1};
   bool use_phony_poll_;
@@ -89,9 +89,9 @@ class PollPoller : public PosixEventPoller {
 // It use_phony_poll is true, it implies that the poller is declared
 // non-polling and any attempt to schedule a blocking poll will result in a
 // crash failure.
-PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll);
+PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H

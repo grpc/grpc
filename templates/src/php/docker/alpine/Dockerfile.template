@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  FROM php:${settings.php_version.php_current_version()}-alpine3.9
+  FROM php:${settings.php_version.php_current_version()}-alpine3.15
 
   RUN apk add autoconf g++ make zlib-dev git bash wget linux-headers
 
@@ -27,4 +27,4 @@
 
   <%include file="../pecl_ext_build_src.include" />
 
-  CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests"]
+  <%include file="../dockerfile_cmd.include" />

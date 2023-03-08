@@ -137,8 +137,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void ShutdownAndDestroy() {
     shutdown_ = true;
     ExecCtx exec_ctx;
-    grpc_endpoint_shutdown(
-        fds_.client, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Client shutdown"));
+    grpc_endpoint_shutdown(fds_.client, GRPC_ERROR_CREATE("Client shutdown"));
     ExecCtx::Get()->Flush();
     client_poll_thread_->join();
     GPR_ASSERT(read_end_notification_.WaitForNotificationWithTimeout(
@@ -177,9 +176,11 @@ class GracefulShutdownTest : public ::testing::Test {
   // Waits for \a bytes to show up in read_bytes_
   void WaitForReadBytes(absl::string_view bytes) {
     std::atomic<bool> done{false};
+    auto start_time = absl::Now();
     {
       MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
+        ASSERT_LT(absl::Now() - start_time, absl::Seconds(60));
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }
     }

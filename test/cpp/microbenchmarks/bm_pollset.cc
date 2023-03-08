@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Test out pollset latencies */
+// Test out pollset latencies
 
 #include <string.h>
 
@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -47,7 +48,6 @@ static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {
 }
 
 static void BM_CreateDestroyPollset(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_malloc(ps_sz));
   gpr_mu* mu;
@@ -65,7 +65,6 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
   }
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_CreateDestroyPollset);
 
@@ -73,7 +72,6 @@ BENCHMARK(BM_CreateDestroyPollset);
 static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
   // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
   // what the speed of light would be if we abstracted perfectly
-  TrackCounters track_counters;
   int epfd = epoll_create1(0);
   GPR_ASSERT(epfd != -1);
   size_t nev = state.range(0);
@@ -94,7 +92,6 @@ static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
   }
   close(epfd);
   delete[] ev;
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_PollEmptyPollset_SpeedOfLight)
     ->Args({1, 0})
@@ -110,7 +107,6 @@ BENCHMARK(BM_PollEmptyPollset_SpeedOfLight)
 #endif
 
 static void BM_PollEmptyPollset(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
@@ -127,12 +123,10 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_PollEmptyPollset);
 
 static void BM_PollAddFd(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
@@ -155,7 +149,6 @@ static void BM_PollAddFd(benchmark::State& state) {
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_PollAddFd);
 
@@ -181,7 +174,6 @@ TestClosure* MakeTestClosure(F f) {
 static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
   // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
   // what the speed of light would be if we abstracted perfectly
-  TrackCounters track_counters;
   int epfd = epoll_create1(0);
   GPR_ASSERT(epfd != -1);
   epoll_event ev[100];
@@ -206,13 +198,11 @@ static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
   }
   close(fd);
   close(epfd);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_SingleThreadPollOneFd_SpeedOfLight);
 #endif
 
 static void BM_SingleThreadPollOneFd(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
@@ -248,7 +238,6 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_wakeup_fd_destroy(&wakeup_fd);
   gpr_free(ps);
-  track_counters.Finish(state);
   delete continue_closure;
 }
 BENCHMARK(BM_SingleThreadPollOneFd);
