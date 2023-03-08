@@ -476,15 +476,13 @@ TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
       "EDS resource eds_service_name contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        if (result.status.ok()) return true;
-        EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-        EXPECT_THAT(result.status.error_message(),
-                    ::testing::MatchesRegex(kErrorMessage));
-        return false;
-      });
+  SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) {
+    if (result.status.ok()) return true;
+    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_THAT(result.status.error_message(),
+                ::testing::MatchesRegex(kErrorMessage));
+    return false;
+  });
   // Shut down backend.  This triggers a connectivity state update from the
   // deactivated child of the weighted_target policy.
   ShutdownAllBackends();
