@@ -196,7 +196,7 @@ class BackendMetricsLbPolicyFactory : public LoadBalancingPolicyFactory {
   }
 
   virtual absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json) const override {
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<BackendMetricsLbPolicyFactoryConfig>();
   }
 };
