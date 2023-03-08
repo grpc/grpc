@@ -72,7 +72,8 @@ WindowsEndpoint::WindowsEndpoint(
 }
 
 WindowsEndpoint::~WindowsEndpoint() {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("~WindowsEndpoint::%p", this);
+  io_state_->socket->Shutdown(DEBUG_LOCATION, "~WindowsEndpoint");
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p destroyed", this);
 }
 
 absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
