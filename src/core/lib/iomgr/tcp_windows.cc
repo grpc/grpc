@@ -192,6 +192,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
       grpc_slice_buffer_reset_and_unref(tcp->read_slices);
     } else {
       if (info->bytes_transferred != 0 && !tcp->shutting_down) {
+        gpr_log(GPR_DEBUG, "DO NOT SUBMIT: bytes: %d", info->bytes_transferred);
         GPR_ASSERT((size_t)info->bytes_transferred <= tcp->read_slices->length);
         if (static_cast<size_t>(info->bytes_transferred) !=
             tcp->read_slices->length) {
@@ -290,6 +291,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 
   // Did we get data immediately ? Yay.
   if (info->wsa_error != WSAEWOULDBLOCK) {
+    gpr_log(GPR_DEBUG, "DO NOT SUBMIT: got %d immediately", bytes_read);
     info->bytes_transferred = bytes_read;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &tcp->on_read, absl::OkStatus());
     return;
