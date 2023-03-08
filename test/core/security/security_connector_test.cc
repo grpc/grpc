@@ -682,6 +682,22 @@ static void test_default_ssl_roots(void) {
   // instead
   overrides.default_ssl_roots_file_path = roots_env_var_file_path;
   grpc_core::ConfigVars::SetOverrides(overrides);
+  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
+  roots_contents = grpc_slice_to_c_string(roots);
+  grpc_slice_unref(roots);
+  ASSERT_STREQ(roots_contents, roots_for_env_var);
+  gpr_free(roots_contents);
+
+  // Now reset the env var. We should fall back to the value overridden using
+  // the api.
+  overrides.default_ssl_roots_file_path = "";
+  grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_set_ssl_roots_override_callback(override_roots_success);
+  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
+  roots_contents = grpc_slice_to_c_string(roots);
+  grpc_slice_unref(roots);
+  ASSERT_STREQ(roots_contents, roots_for_override_api);
+  gpr_free(roots_contents);
 
   // Now setup a permanent failure for the overridden roots and we should get
   // an empty slice.
