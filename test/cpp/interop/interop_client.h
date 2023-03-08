@@ -38,9 +38,11 @@ typedef std::function<void(const InteropClientContextInspector&,
                            const SimpleRequest*, const SimpleResponse*)>
     CheckerFn;
 
+typedef std::function<std::shared_ptr<Channel>()> ChannelCreationFunc;
+
 typedef std::function<std::shared_ptr<Channel>(
     std::function<void(ChannelArguments*)>)>
-    ChannelCreationFunc;
+    ChannelCreationFuncWithCustomArgs;
 
 class InteropClient {
  public:
@@ -51,6 +53,10 @@ class InteropClient {
   explicit InteropClient(ChannelCreationFunc channel_creation_func,
                          bool new_stub_every_test_case,
                          bool do_not_abort_on_transient_failures);
+  /// Same as ctor above, allows customizing channel arguments
+  explicit InteropClient(
+      ChannelCreationFuncWithCustomArgs channel_creation_func,
+      bool new_stub_every_test_case, bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
   void Reset(const std::shared_ptr<Channel>& channel);

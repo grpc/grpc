@@ -138,6 +138,16 @@ void InteropClient::ServiceStub::ResetChannel() {
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
+    : InteropClient(
+          [&channel_creation_func](
+              std::function<void(ChannelArguments*)> arguments) {
+            return channel_creation_func();
+          },
+          new_stub_every_test_case, do_not_abort_on_transient_failures) {}
+
+InteropClient::InteropClient(
+    ChannelCreationFuncWithCustomArgs channel_creation_func,
+    bool new_stub_every_test_case, bool do_not_abort_on_transient_failures)
     : serviceStub_(
           [&]() {
             InitializeCustomLbPolicyIfNeeded();

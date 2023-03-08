@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
   grpc::testing::ChannelCreationFunc channel_creation_func;
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   if (absl::GetFlag(FLAGS_additional_metadata).empty()) {
-    channel_creation_func = [test_case](auto) {
+    channel_creation_func = [test_case]() {
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           factories;
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
       return 1;
     }
 
-    channel_creation_func = [test_case, additional_metadata](auto) {
+    channel_creation_func = [test_case, additional_metadata]() {
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           factories;
