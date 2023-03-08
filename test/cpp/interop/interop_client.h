@@ -44,9 +44,6 @@ typedef std::function<std::shared_ptr<Channel>(
 
 class InteropClient {
  public:
-  using LoadReportsFromLbPolicy =
-      std::vector<absl::optional<xds::data::orca::v3::OrcaLoadReport>>;
-
   /// If new_stub_every_test_case is true, a new TestService::Stub object is
   /// created for every test case
   /// If do_not_abort_on_transient_failures is true, abort() is not called
