@@ -327,11 +327,11 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:tsi_ssl_credentials",
         "//src/core:channel_args",
         "//src/core:error",
         "//src/core:useful",
