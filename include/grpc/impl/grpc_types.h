@@ -296,12 +296,14 @@ typedef struct {
 /** Maximum metadata size (soft limit), in bytes. Note this limit applies to the
    max sum of all metadata key-value entries in a batch of headers. Some random
    sample of requests between this limit and
-   `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` will be rejected. Defaults to 8 KB.
+   `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` will be rejected. Defaults to maximum
+   of 8 KB and `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` * 0.8 (if set).
  */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** Maximum metadata size (hard limit), in bytes. Note this limit applies to the
    max sum of all metadata key-value entries in a batch of headers. All requests
-   exceeding this limit will be rejected. Defaults to 16 KB. */
+   exceeding this limit will be rejected. Defaults to maximum of 16 KB and
+   `GRPC_ARG_MAX_METADATA_SIZE` * 1.25 (if set). */
 #define GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE "grpc.absolute_max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
