@@ -374,6 +374,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+                   std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
                    grpc_core::HPackParser::Priority::None,
                    grpc_core::HPackParser::LogInfo{
