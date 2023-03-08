@@ -35,6 +35,9 @@ class SecureFixture : public CoreTestFixture {
                              "localhost", grpc_pick_unused_port_or_die()))
       : localaddr_(std::move(localaddr)) {}
 
+ protected:
+  const std::string& localaddr() const { return localaddr_; }
+
  private:
   virtual grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs& args) = 0;

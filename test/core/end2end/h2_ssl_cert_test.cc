@@ -256,7 +256,7 @@ TEST_P(H2SslCertTest, SimpleRequestBodyUseEngine) {
   test_server1_key_id.clear();
   test_server1_key_id.append("engine:libengine_passthrough:");
   test_server1_key_id.append(test_server1_key);
-  simple_request_body(fixture_, GetParam().result);
+  simple_request_body(fixture_.get(), GetParam().result);
 }
 #endif
 #endif
