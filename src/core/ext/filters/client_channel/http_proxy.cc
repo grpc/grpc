@@ -20,6 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <memory>
@@ -30,6 +31,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -55,12 +57,14 @@
 namespace grpc_core {
 namespace {
 
-static bool ServerInCIDRRange(std::string server_host, absl::string_view no_proxy_entry) {
+bool ServerInCIDRRange(std::string server_host,
+                       absl::string_view no_proxy_entry) {
   auto server_address = StringToSockaddr(server_host, 0);
   if (!server_address.ok()) {
     return false;
   }
-  std::vector<absl::string_view> cidr = absl::StrSplit(no_proxy_entry, '/', absl::SkipEmpty());
+  std::vector<absl::string_view> cidr =
+      absl::StrSplit(no_proxy_entry, '/', absl::SkipEmpty());
   if (cidr.size() != 2) {
     return false;
   }
@@ -71,7 +75,8 @@ static bool ServerInCIDRRange(std::string server_host, absl::string_view no_prox
   uint32_t mask_bits = 0;
   if (absl::SimpleAtoi(cidr[1], &mask_bits)) {
     grpc_sockaddr_mask_bits(&*proxy_address, mask_bits);
-    return grpc_sockaddr_match_subnet(&*server_address, &*proxy_address, mask_bits);
+    return grpc_sockaddr_match_subnet(&*server_address, &*proxy_address,
+                                      mask_bits);
   }
   return false;
 }
