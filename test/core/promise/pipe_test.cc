@@ -383,6 +383,36 @@ TEST_F(PipeTest, CanFlowControlThroughManyStages) {
   ASSERT_TRUE(*done);
 }
 
+TEST_F(PipeTest, AwaitClosedWorks) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        pipe->sender.InterceptAndMap([](int value) { return value + 1; });
+        return Seq(
+            // Concurrently:
+            // - wait for closed on both ends
+            // - close the sender, which will signal the receiver to return an
+            //   end-of-stream.
+            Join(pipe->receiver.AwaitClosed(), pipe->sender.AwaitClosed(),
+                 [pipe]() mutable {
+                   pipe->sender.Close();
+                   return absl::OkStatus();
+                 }),
+            // Verify we received end-of-stream and closed the sender.
+            [](std::tuple<bool, bool, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result));
+              EXPECT_FALSE(std::get<1>(result));
+              EXPECT_EQ(std::get<2>(result), absl::OkStatus());
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
 class FakeActivity final : public Activity {
  public:
   void Orphan() override {}

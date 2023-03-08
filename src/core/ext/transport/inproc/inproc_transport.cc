@@ -909,8 +909,6 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
   return ret;
 }
 
-void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
-
 void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                        grpc_transport_stream_op_batch* op) {
   INPROC_LOG(GPR_INFO, "perform_stream_op %p %p %p", gt, gs, op);
@@ -936,7 +934,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   // completed).  This can go away once we move to a new C++ closure API
   // that provides the ability to create a barrier closure.
   if (on_complete == nullptr) {
-    on_complete = grpc_core::NewClosure([](grpc_error_handle) {});
+    on_complete = op->on_complete =
+        grpc_core::NewClosure([](grpc_error_handle) {});
   }
 
   if (op->cancel_stream) {

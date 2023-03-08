@@ -62,7 +62,6 @@ BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
                            grpc_stream_refcount* stream_refcount)
     : party(static_cast<Party*>(Activity::current())->Ref()),
       stream_refcount(stream_refcount) {
-  memset(&batch, 0, sizeof(batch));
   batch.payload = payload;
 #ifndef NDEBUG
   grpc_stream_ref(stream_refcount, "pending-batch");

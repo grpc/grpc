@@ -39,6 +39,11 @@ template <typename T>
 class Context : public ContextType<T> {
  public:
   explicit Context(T* p) : old_(current_) { current_ = p; }
+  // HACKY, try to remove.
+  // If a context is present, then don't override it during context
+  // initialization.
+  // Currently used to keep BatchBuilder across multiple ops in Call StartBatch,
+  // but we should be able to drop this once we have promise based transports.
   Context(KeepExistingIfPresent, T* p) : old_(current_) {
     if (current_ == nullptr) current_ = p;
   }

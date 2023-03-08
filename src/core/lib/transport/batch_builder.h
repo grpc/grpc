@@ -87,6 +87,14 @@ class BatchBuilder {
 
   // Returns a promise that will resolve to a ServerMetadataHandle when the send
   // is completed.
+  //
+  // If convert_to_cancellation is true, then the status will be converted to a
+  // cancellation batch instead of a trailing metadata op in a coalesced batch.
+  //
+  // This quirk exists as in the filter based stack upon which our transports
+  // were written if a trailing metadata op were sent it always needed to be
+  // paired with an initial op batch, and the transports would wait for the
+  // initial metadata batch to arrive (in case of reordering up the stack).
   auto SendServerTrailingMetadata(Target target, ServerMetadataHandle metadata,
                                   bool convert_to_cancellation);
 
@@ -201,6 +209,13 @@ class BatchBuilder {
       IncrementRefCount();
       return RefCountedPtr<Batch>(this);
     }
+    // Get an initialized pending completion.
+    // There are four pending completions potentially contained within a batch.
+    // They can be rather large so we don't create all of them always. Instead,
+    // we dynamically create them on the arena as needed.
+    // This method either returns the existing completion in a batch if that
+    // completion has already been initialized, or it creates a new completion
+    // and returns that.
     template <typename T>
     T* GetInitializedCompletion(T*(Batch::*field)) {
       if (this->*field != nullptr) return this->*field;
@@ -213,7 +228,10 @@ class BatchBuilder {
       }
       return this->*field;
     }
+    // grpc_transport_perform_stream_op on target.stream
     void PerformWith(Target target);
+    // Take a promise, and return a promise that holds a ref on this batch until
+    // the promise completes or is cancelled.
     template <typename P>
     auto RefUntil(P promise) {
       return [self = Ref(), promise = std::move(promise)]() mutable {
@@ -231,8 +249,15 @@ class BatchBuilder {
     uint8_t refs = 0;
   };
 
+  // Get a batch for the given target.
+  // Currently: if the current batch is for this target, return it - otherwise
+  // flush the batch and start a new one (and return that).
+  // This function may change in the future to allow multiple batches to be
+  // building at once (if that turns out to be useful for hedging).
   Batch* GetBatch(Target target);
+  // Flush the current batch down to the transport.
   void FlushBatch();
+  // Create a cancel batch with its own payload.
   Batch* MakeCancel(grpc_stream_refcount* stream_refcount, absl::Status status);
 
   // Note: we don't distinguish between client and server metadata here.

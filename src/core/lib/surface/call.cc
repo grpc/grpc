@@ -1938,7 +1938,7 @@ class PromiseBasedCall : public Call,
                   void (*destroy)(void* value)) override;
   void* ContextGet(grpc_context_index elem) const override;
   void SetCompletionQueue(grpc_completion_queue* cq) override;
-  bool Completed() final { return completed_.load(std::memory_order_relaxed); }
+  bool Completed() final { return finished_.IsSet(); }
 
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
@@ -2160,10 +2160,7 @@ class PromiseBasedCall : public Call,
   void StartSendMessage(const grpc_op& op, const Completion& completion,
                         PipeSender<MessageHandle>* sender);
 
-  void set_completed() {
-    completed_.store(true, std::memory_order_relaxed);
-    finished_.Set();
-  }
+  void set_completed() { finished_.Set(); }
 
   // Returns a promise that resolves to Empty whenever the call is completed.
   auto finished() { return finished_.Wait(); }
@@ -2301,14 +2298,9 @@ class PromiseBasedCall : public Call,
   Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
   grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
       deadline_mu_) deadline_task_;
-  // finished_ & completed_ represent the same state: is the call all done.
-  // finished_ is used for the promise returned by finished(), and can be
-  // awaited in a promise.
-  // completed_ is used for observing this state from outside of the activity
-  // (and hence outside the activity provided mutual exclusion).
-  Latch<void> finished_;
-  std::atomic<bool> completed_{false};
-  // Becomes true on GRPC_OP_SEND_MESSAGE, and false once that message has been
+  ExternallyObservableLatch<void> finished_;
+  // Non-zero with an outstanding GRPC_OP_SEND_INITIAL_METADATA or
+  // GRPC_OP_SEND_MESSAGE (one count each), and 0 once those payloads have been
   // pushed onto the outgoing pipe.
   std::atomic<uint8_t> sends_queued_{0};
   // Waiter for when sends_queued_ becomes 0.
