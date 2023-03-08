@@ -100,7 +100,7 @@ TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
 // equals data read at the other end of the stream.
 TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
@@ -175,7 +175,7 @@ TEST_F(EventEngineServerTest,
   grpc_core::ExecCtx ctx;
   static constexpr int kNumListenerAddresses = 10;  // N
   static constexpr int kNumConnections = 10;        // M
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
