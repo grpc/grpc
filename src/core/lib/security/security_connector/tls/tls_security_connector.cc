@@ -74,6 +74,7 @@ void PendingVerifierRequestInit(
   bool has_common_name = false;
   bool has_peer_cert = false;
   bool has_peer_cert_full_chain = false;
+  bool has_verified_root_cert_subject = false;
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
   std::vector<char*> email_names;
@@ -105,6 +106,11 @@ void PendingVerifierRequestInit(
     } else if (strcmp(prop->name, TSI_X509_IP_PEER_PROPERTY) == 0) {
       char* ip = CopyCoreString(prop->value.data, prop->value.length);
       ip_names.emplace_back(ip);
+    } else if (strcmp(prop->name,
+                      TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY) == 0) {
+      request->peer_info.verified_root_cert_subject =
+          CopyCoreString(prop->value.data, prop->value.length);
+      has_verified_root_cert_subject = true;
     }
   }
   if (!has_common_name) {
@@ -115,6 +121,9 @@ void PendingVerifierRequestInit(
   }
   if (!has_peer_cert_full_chain) {
     request->peer_info.peer_cert_full_chain = nullptr;
+  }
+  if (!has_verified_root_cert_subject) {
+    request->peer_info.verified_root_cert_subject = nullptr;
   }
   request->peer_info.san_names.uri_names_size = uri_names.size();
   if (!uri_names.empty()) {
@@ -201,6 +210,9 @@ void PendingVerifierRequestDestroy(
   }
   if (request->peer_info.peer_cert_full_chain != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
+  }
+  if (request->peer_info.verified_root_cert_subject != nullptr) {
+    gpr_free(const_cast<char*>(request->peer_info.verified_root_cert_subject));
   }
 }
 
