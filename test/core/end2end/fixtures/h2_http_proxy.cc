@@ -42,6 +42,8 @@ class HttpProxyFilter : public CoreTestFixture {
   explicit HttpProxyFilter(const grpc_core::ChannelArgs& client_args)
       : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
   ~HttpProxyFilter() override {
+    // Need to shut down the proxy users before closing the proxy (otherwise we
+    // hang).
     ShutdownClient();
     ShutdownServer();
     grpc_end2end_http_proxy_destroy(proxy_);

@@ -52,10 +52,6 @@ static std::string test_server1_key_id;
 namespace grpc {
 namespace testing {
 
-struct fullstack_secure_fixture_data {
-  std::string localaddr;
-};
-
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,
                                  size_t /*md_count*/,
@@ -153,12 +149,12 @@ typedef enum { SUCCESS, FAIL } test_result;
   }
 
 // All test configurations
-typedef struct CoreTestConfig_wrapper {
+struct CoreTestConfigWrapper {
   CoreTestConfiguration config;
   test_result result;
-} CoreTestConfig_wrapper;
+};
 
-static CoreTestConfig_wrapper configs[] = {
+static CoreTestConfigWrapper configs[] = {
     SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NONE, SUCCESS),
     SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SELF_SIGNED, SUCCESS),
     SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SIGNED, SUCCESS),
@@ -230,7 +226,7 @@ static void simple_request_body(CoreTestFixture* f,
   grpc_call_unref(c);
 }
 
-class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfig_wrapper> {
+class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfigWrapper> {
  protected:
   H2SslCertTest() {
     gpr_log(GPR_INFO, "SSL_CERT_tests/%s", GetParam().config.name);

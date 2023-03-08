@@ -44,8 +44,7 @@ static void test_ping(const CoreTestConfiguration& config,
                          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
   auto server_args =
       grpc_core::ChannelArgs()
-          .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
-               min_time_between_pings_ms)
+          .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 0)
           .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
 
   f->InitClient(client_args);
