@@ -44,7 +44,6 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

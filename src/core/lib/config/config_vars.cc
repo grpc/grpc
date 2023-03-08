@@ -22,8 +22,6 @@
 
 #include "src/core/lib/config/config_vars.h"
 
-#include <cstdint>
-
 #include "absl/flags/flag.h"
 
 #include "src/core/lib/config/load_config.h"

@@ -264,6 +264,7 @@ grpc_cc_test(
         "h2_ssl_cert_test.cc",
     ],
     external_deps = [
+        "absl/types:optional",
         "gtest",
         "libcrypto",
     ],
@@ -272,6 +273,7 @@ grpc_cc_test(
         "cq_verifier",
         "local_util",
         "ssl_test_data",
+        "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",

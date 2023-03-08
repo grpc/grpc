@@ -1539,8 +1539,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/ssl/ssl_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/ssl_utils.cc )
   s.files += %w( src/core/lib/security/security_connector/ssl_utils.h )
-  s.files += %w( src/core/lib/security/security_connector/ssl_utils_config.cc )
-  s.files += %w( src/core/lib/security/security_connector/ssl_utils_config.h )
   s.files += %w( src/core/lib/security/security_connector/tls/tls_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/tls/tls_security_connector.h )
   s.files += %w( src/core/lib/security/transport/auth_filters.h )

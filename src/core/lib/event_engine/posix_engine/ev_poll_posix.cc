@@ -40,7 +40,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL

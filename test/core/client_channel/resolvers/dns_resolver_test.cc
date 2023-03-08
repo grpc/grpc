@@ -31,8 +31,6 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

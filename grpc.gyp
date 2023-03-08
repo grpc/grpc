@@ -307,13 +307,10 @@
         'absl/types:variant',
       ],
       'sources': [
-<<<<<<< HEAD
         'src/core/lib/config/config_vars.cc',
         'src/core/lib/config/config_vars_non_generated.cc',
         'src/core/lib/config/load_config.cc',
-=======
         'src/core/lib/event_engine/thread_local.cc',
->>>>>>> 1548038a09a95c3a00ec92b67a404cf3aacec489
         'src/core/lib/gpr/alloc.cc',
         'src/core/lib/gpr/android/log.cc',
         'src/core/lib/gpr/atm.cc',
@@ -1043,7 +1040,6 @@
         'src/core/lib/security/security_connector/security_connector.cc',
         'src/core/lib/security/security_connector/ssl/ssl_security_connector.cc',
         'src/core/lib/security/security_connector/ssl_utils.cc',
-        'src/core/lib/security/security_connector/ssl_utils_config.cc',
         'src/core/lib/security/security_connector/tls/tls_security_connector.cc',
         'src/core/lib/security/transport/client_auth_filter.cc',
         'src/core/lib/security/transport/secure_endpoint.cc',
