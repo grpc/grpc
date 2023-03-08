@@ -649,8 +649,8 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
       state == GRPC_CHANNEL_READY) {
     connectivity_state_ = state;
   }
-  // Notify the LB policy.
-  weighted_target_policy_->UpdateStateLocked();
+  // Update the LB policy's state if this child is not deactivated.
+  if (weight_ != 0) weighted_target_policy_->UpdateStateLocked();
 }
 
 void WeightedTargetLb::WeightedChild::DeactivateLocked() {

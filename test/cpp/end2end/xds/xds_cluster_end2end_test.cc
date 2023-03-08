@@ -459,7 +459,8 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   });
 }
 
-TEST_P(EdsTest, LocalityBecomesEmpty) {
+// This tests the bug described in https://github.com/grpc/grpc/issues/32486.
+TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
   CreateAndStartBackends(1);
   // Initial EDS resource has one locality with no endpoints.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -484,6 +485,11 @@ TEST_P(EdsTest, LocalityBecomesEmpty) {
                     ::testing::MatchesRegex(kErrorMessage));
         return false;
       });
+  // Shut down backend.  This triggers a connectivity state update from the
+  // deactivated child of the weighted_target policy.
+  ShutdownAllBackends();
+  // Now restart the backend.
+  StartAllBackends();
   // Re-add endpoint.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
