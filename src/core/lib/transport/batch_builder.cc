@@ -16,8 +16,6 @@
 
 #include "src/core/lib/transport/batch_builder.h"
 
-#include <string.h>
-
 #include <type_traits>
 
 #include "src/core/lib/promise/poll.h"
