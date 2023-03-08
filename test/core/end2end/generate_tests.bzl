@@ -77,7 +77,9 @@ END2END_FIXTURES = {
         _platforms = ["linux", "mac", "posix"],
         tags = ["no_test_ios"],
     ),
-    "h2_full": _fixture_options(),
+    "h2_full": _fixture_options(
+        tags = ["event_engine_client_test"],
+    ),
     "h2_full_no_retry": _fixture_options(supports_retry = False),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
     "h2_full+trace": _fixture_options(tracing = True),

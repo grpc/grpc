@@ -29,7 +29,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   WindowsEndpoint(const EventEngine::ResolvedAddress& peer_address,
                   std::unique_ptr<WinSocket> socket,
                   MemoryAllocator&& allocator, const EndpointConfig& config,
-                  Executor* Executor);
+                  Executor* Executor, std::shared_ptr<EventEngine> engine);
   ~WindowsEndpoint() override;
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
@@ -93,6 +93,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   MemoryAllocator allocator_;
   Executor* executor_;
   std::shared_ptr<AsyncIOState> io_state_;
+  std::shared_ptr<EventEngine> engine_;
 };
 
 }  // namespace experimental

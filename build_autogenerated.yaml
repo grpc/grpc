@@ -8476,6 +8476,17 @@ targets:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - grpc_test_util
+- name: h2_tls_peer_property_external_verifier_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
+  deps:
+  - grpc_test_util
 - name: handshake_server_with_readahead_handshaker_test
   gtest: true
   build: test
