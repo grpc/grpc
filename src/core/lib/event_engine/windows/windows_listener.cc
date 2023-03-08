@@ -200,7 +200,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
       peer_address, listener_->iocp_->Watch(io_state_->accept_socket),
       listener_->memory_allocator_factory_->CreateMemoryAllocator(
           absl::StrFormat("listener endpoint %s", peer_name)),
-      listener_->config_, listener_->executor_);
+      listener_->config_, listener_->executor_, listener_->engine_);
   listener_->accept_cb_(
       std::move(endpoint),
       listener_->memory_allocator_factory_->CreateMemoryAllocator(

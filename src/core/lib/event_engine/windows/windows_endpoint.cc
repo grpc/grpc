@@ -42,11 +42,13 @@ constexpr int kMaxWSABUFCount = 16;
 WindowsEndpoint::WindowsEndpoint(
     const EventEngine::ResolvedAddress& peer_address,
     std::unique_ptr<WinSocket> socket, MemoryAllocator&& allocator,
-    const EndpointConfig& /* config */, Executor* executor)
+    const EndpointConfig& /* config */, Executor* executor,
+    std::shared_ptr<EventEngine> engine)
     : peer_address_(peer_address),
       allocator_(std::move(allocator)),
       executor_(executor),
-      io_state_(std::make_shared<AsyncIOState>(this, std::move(socket))) {
+      io_state_(std::make_shared<AsyncIOState>(this, std::move(socket))),
+      engine_(engine) {
   char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
   int addr_len = sizeof(addr);
   if (getsockname(io_state_->socket->raw_socket(),
@@ -62,7 +64,8 @@ WindowsEndpoint::WindowsEndpoint(
 }
 
 WindowsEndpoint::~WindowsEndpoint() {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p destoyed", this);
+  io_state_->socket->Shutdown(DEBUG_LOCATION, "~WindowsEndpoint");
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p destroyed", this);
 }
 
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
@@ -304,16 +307,16 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   // Deletes the shared_ptr when this closure returns
   auto io_state = std::move(io_state_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Write Event",
-                                   io_state_->endpoint);
+                                   io_state->endpoint);
   auto cb = std::move(cb_);
   const auto result = io_state->socket->write_info()->result();
-  Reset();
   absl::Status status;
   if (result.wsa_error != 0) {
     status = GRPC_WSA_ERROR(result.wsa_error, "WSASend");
   } else {
     GPR_ASSERT(result.bytes_transferred == buffer_->Length());
   }
+  Reset();
   cb(status);
 }
 
