@@ -632,14 +632,14 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
                              // & bottom of the stack.
                              //
                              // There's a small set of filters (retry, this one,
-                             // lame client) that terminate stacks and need a
-                             // richer set of semantics, but that ends up being
-                             // fine because we can spawn tasks in parties to
-                             // handle those edge cases, and keep the majority
-                             // of filters simple: they just call
-                             // InterceptAndMap on a handful of filters at call
-                             // initialization time and then proceed to actually
-                             // filter.
+                             // lame client, clinet channel) that terminate
+                             // stacks and need a richer set of semantics, but
+                             // that ends up being fine because we can spawn
+                             // tasks in parties to handle those edge cases, and
+                             // keep the majority of filters simple: they just
+                             // call InterceptAndMap on a handful of filters at
+                             // call initialization time and then proceed to
+                             // actually filter.
                              //
                              // So that's the plan, why isn't it enacted here?
                              //
