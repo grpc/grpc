@@ -110,6 +110,8 @@ find_library(log-lib
 add_library(grpc-interop
   SHARED
   src/main/cpp/grpc-interop.cc
+  ${GRPC_SRC_DIR}/test/cpp/interop/backend_metrics_lb_policy.h
+  ${GRPC_SRC_DIR}/test/cpp/interop/backend_metrics_lb_policy.cc
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.h
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc
   ${GRPC_SRC_DIR}/test/core/util/histogram.h
