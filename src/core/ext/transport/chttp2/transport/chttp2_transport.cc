@@ -3116,9 +3116,24 @@ void grpc_chttp2_transport_start_reading(
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
-  t->notify_on_receive_settings = notify_on_receive_settings;
-  t->notify_on_close = notify_on_close;
   t->combiner->Run(
-      GRPC_CLOSURE_INIT(&t->read_action_locked, read_action_locked, t, nullptr),
+      grpc_core::NewClosure([t, notify_on_receive_settings,
+                             notify_on_close](grpc_error_handle) {
+        if (!t->closed_with_error.ok()) {
+          if (notify_on_receive_settings != nullptr) {
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
+                                    t->closed_with_error);
+          }
+          if (notify_on_close != nullptr) {
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
+                                    t->closed_with_error);
+          }
+          GRPC_CHTTP2_UNREF_TRANSPORT(t, "reading_action");
+          return;
+        }
+        t->notify_on_receive_settings = notify_on_receive_settings;
+        t->notify_on_close = notify_on_close;
+        read_action_locked(t, absl::OkStatus());
+      }),
       absl::OkStatus());
 }
