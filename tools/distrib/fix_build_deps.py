@@ -136,8 +136,7 @@ EXTERNAL_DEPS = {
         'address_sorting',
     'ares.h':
         'cares',
-    'fuzztest/fuzztest.h':
-        ['fuzztest', 'fuzztest_main'],
+    'fuzztest/fuzztest.h': ['fuzztest', 'fuzztest_main'],
     'google/api/monitored_resource.pb.h':
         'google/api:monitored_resource_cc_proto',
     'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
