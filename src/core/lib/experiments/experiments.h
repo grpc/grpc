@@ -64,8 +64,6 @@ inline bool IsPeerStateBasedFramingEnabled() { return false; }
 inline bool IsFlowControlFixesEnabled() { return true; }
 inline bool IsMemoryPressureControllerEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_NEW_HPACK_HUFFMAN_DECODER
-inline bool IsNewHpackHuffmanDecoderEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -74,6 +72,8 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
+inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsTraceRecordCallopsEnabled() { return false; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
@@ -91,28 +91,32 @@ inline bool IsMemoryPressureControllerEnabled() {
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled(5);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_NEW_HPACK_HUFFMAN_DECODER
-inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(6); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
-inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(7); }
+inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(6); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
-inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(8); }
+inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(7); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
-inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(9); }
+inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(8); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
-inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(10); }
+inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(9); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 inline bool IsPromiseBasedServerCallEnabled() {
-  return IsExperimentEnabled(11);
+  return IsExperimentEnabled(10);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRANSPORT_SUPPLIES_CLIENT_LATENCY
 inline bool IsTransportSuppliesClientLatencyEnabled() {
-  return IsExperimentEnabled(12);
+  return IsExperimentEnabled(11);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(13); }
+inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(12); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
+inline bool IsScheduleCancellationOverWriteEnabled() {
+  return IsExperimentEnabled(13);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
+inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(14); }
 
-constexpr const size_t kNumExperiments = 14;
+constexpr const size_t kNumExperiments = 15;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

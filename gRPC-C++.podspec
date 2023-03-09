@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.53.0-dev'
+  version = '1.54.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -248,6 +248,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
+                      'src/core/ext/filters/client_channel/client_channel_internal.h',
                       'src/core/ext/filters/client_channel/client_channel_service_config.h',
                       'src/core/ext/filters/client_channel/config_selector.h',
                       'src/core/ext/filters/client_channel/connector.h',
@@ -255,7 +256,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
-                      'src/core/ext/filters/client_channel/lb_call_state_internal.h',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                       'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                       'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
@@ -301,6 +301,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                       'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                       'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h',
+                      'src/core/ext/gcp/metadata_query.h',
                       'src/core/ext/transport/binder/client/binder_connector.cc',
                       'src/core/ext/transport/binder/client/binder_connector.h',
                       'src/core/ext/transport/binder/client/channel_create.cc',
@@ -764,7 +765,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
                       'src/core/lib/event_engine/resolved_address_internal.h',
                       'src/core/lib/event_engine/shim.h',
-                      'src/core/lib/event_engine/socket_notifier.h',
                       'src/core/lib/event_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/thread_local.h',
                       'src/core/lib/event_engine/thread_pool.h',
@@ -775,6 +775,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/windows/win_socket.h',
                       'src/core/lib/event_engine/windows/windows_endpoint.h',
                       'src/core/lib/event_engine/windows/windows_engine.h',
+                      'src/core/lib/event_engine/windows/windows_listener.h',
                       'src/core/lib/experiments/config.h',
                       'src/core/lib/experiments/experiments.h',
                       'src/core/lib/gpr/alloc.h',
@@ -1199,6 +1200,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
                               'src/core/ext/filters/client_channel/client_channel_factory.h',
+                              'src/core/ext/filters/client_channel/client_channel_internal.h',
                               'src/core/ext/filters/client_channel/client_channel_service_config.h',
                               'src/core/ext/filters/client_channel/config_selector.h',
                               'src/core/ext/filters/client_channel/connector.h',
@@ -1206,7 +1208,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/health/health_check_client.h',
                               'src/core/ext/filters/client_channel/http_proxy.h',
-                              'src/core/ext/filters/client_channel/lb_call_state_internal.h',
                               'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                               'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                               'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
@@ -1252,6 +1253,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                               'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                               'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h',
+                              'src/core/ext/gcp/metadata_query.h',
                               'src/core/ext/transport/binder/client/binder_connector.h',
                               'src/core/ext/transport/binder/client/channel_create_impl.h',
                               'src/core/ext/transport/binder/client/connection_id_generator.h',
@@ -1697,7 +1699,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
                               'src/core/lib/event_engine/resolved_address_internal.h',
                               'src/core/lib/event_engine/shim.h',
-                              'src/core/lib/event_engine/socket_notifier.h',
                               'src/core/lib/event_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/thread_local.h',
                               'src/core/lib/event_engine/thread_pool.h',
@@ -1708,6 +1709,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/windows/win_socket.h',
                               'src/core/lib/event_engine/windows/windows_endpoint.h',
                               'src/core/lib/event_engine/windows/windows_engine.h',
+                              'src/core/lib/event_engine/windows/windows_listener.h',
                               'src/core/lib/experiments/config.h',
                               'src/core/lib/experiments/experiments.h',
                               'src/core/lib/gpr/alloc.h',

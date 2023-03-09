@@ -403,6 +403,7 @@ void ServerContextBase::SetLoadReportingCosts(
 
 void ServerContextBase::CreateCallMetricRecorder(
     experimental::ServerMetricRecorder* server_metric_recorder) {
+  if (call_.call == nullptr) return;
   GPR_ASSERT(call_metric_recorder_ == nullptr);
   grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
   auto* backend_metric_state =

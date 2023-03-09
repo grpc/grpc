@@ -155,6 +155,8 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
   interceptor_methods_.SetCall(&call_wrapper_);
   interceptor_methods_.SetReverse();
   call_cq_->RegisterAvalanching();  // This op will trigger more ops
+  call_metric_recording_enabled_ = server_->call_metric_recording_enabled();
+  server_metric_recorder_ = server_->server_metric_recorder();
 }
 
 ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
@@ -170,8 +172,8 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
     }
     return true;
   }
-  context_->set_call(call_, server_->call_metric_recording_enabled(),
-                     server_->server_metric_recorder());
+  context_->set_call(call_, call_metric_recording_enabled_,
+                     server_metric_recorder_);
   context_->cq_ = call_cq_;
   if (call_wrapper_.call() == nullptr) {
     // Fill it since it is empty.

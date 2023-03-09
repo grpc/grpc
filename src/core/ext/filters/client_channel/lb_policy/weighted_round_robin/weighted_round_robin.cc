@@ -560,6 +560,13 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   if (scheduler_or.has_value()) {
     scheduler =
         std::make_shared<StaticStrideScheduler>(std::move(*scheduler_or));
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+      gpr_log(GPR_INFO, "[WRR %p picker %p] new scheduler: %p", wrr_.get(),
+              this, scheduler.get());
+    }
+  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO, "[WRR %p picker %p] no scheduler, falling back to RR",
+            wrr_.get(), this);
   }
   {
     MutexLock lock(&scheduler_mu_);

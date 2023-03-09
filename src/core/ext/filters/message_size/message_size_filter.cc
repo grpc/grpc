@@ -305,7 +305,7 @@ static grpc_error_handle message_size_init_channel_elem(
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (chand) channel_data();
   chand->limits = grpc_core::MessageSizeParsedConfig::GetFromChannelArgs(
-      grpc_core::ChannelArgs::FromC(args->channel_args));
+      args->channel_args);
   return absl::OkStatus();
 }
 

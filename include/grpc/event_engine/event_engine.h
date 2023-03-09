@@ -33,6 +33,11 @@ namespace grpc_event_engine {
 namespace experimental {
 
 ////////////////////////////////////////////////////////////////////////////////
+/// The EventEngine Interface
+///
+/// Overview
+/// --------
+///
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
 ///
@@ -44,7 +49,8 @@ namespace experimental {
 ///
 /// A default cross-platform EventEngine instance is provided by gRPC.
 ///
-/// LIFESPAN AND OWNERSHIP
+/// Lifespan and Ownership
+/// ----------------------
 ///
 /// gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure
 /// that the engines remain available until they are no longer needed. Depending
@@ -70,6 +76,19 @@ namespace experimental {
 ///    builder.SetEventEngine(engine);
 ///    std::unique_ptr<Server> server(builder.BuildAndStart());
 ///    server->Wait();
+///
+///
+/// Blocking EventEngine Callbacks
+/// -----------------------------
+///
+/// Doing blocking work in EventEngine callbacks is generally not advisable.
+/// While gRPC's default EventEngine implementations have some capacity to scale
+/// their thread pools to avoid starvation, this is not an instantaneous
+/// process. Further, user-provided EventEngines may not be optimized to handle
+/// excessive blocking work at all.
+///
+/// *Best Practice* : Occasional blocking work may be fine, but we do not
+/// recommend running a mostly blocking workload in EventEngine threads.
 ///
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
@@ -162,10 +181,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Reads data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
-    /// \a buffer, and the \a on_read callback is called. The caller must ensure
-    /// that the callback has access to the buffer when executed later.
-    /// Ownership of the buffer is not transferred. Valid slices *may* be placed
-    /// into the buffer even if the callback is invoked with a non-OK Status.
+    /// \a buffer. If the read succeeds immediately, it returns true and the \a
+    /// on_read callback is not executed. Otherwise it returns false and the \a
+    /// on_read callback executes asynchronously when the read completes. The
+    /// caller must ensure that the callback has access to the buffer when it
+    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
+    /// be placed into the buffer even if the callback is invoked with a non-OK
+    /// Status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -176,7 +198,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+    virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
                       SliceBuffer* buffer, const ReadArgs* args) = 0;
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
@@ -194,12 +216,14 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     };
     /// Writes data out on the connection.
     ///
-    /// \a on_writable is called when the connection is ready for more data. The
-    /// Slices within the \a data buffer may be mutated at will by the Endpoint
-    /// until \a on_writable is called. The \a data SliceBuffer will remain
-    /// valid after calling \a Write, but its state is otherwise undefined.  All
-    /// bytes in \a data must have been written before calling \a on_writable
-    /// unless an error has occurred.
+    /// If the write succeeds immediately, it returns true and the
+    /// \a on_writable callback is not executed. Otherwise it returns false and
+    /// the \a on_writable callback is called asynchronously when the connection
+    /// is ready for more data. The Slices within the \a data buffer may be
+    /// mutated at will by the Endpoint until \a on_writable is called. The \a
+    /// data SliceBuffer will remain valid after calling \a Write, but its state
+    /// is otherwise undefined.  All bytes in \a data must have been written
+    /// before calling \a on_writable unless an error has occurred.
     ///
     /// There can be at most one outstanding write per Endpoint at any given
     /// time. An outstanding write is one in which the \a on_writable callback
@@ -210,7 +234,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+    virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                        SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.

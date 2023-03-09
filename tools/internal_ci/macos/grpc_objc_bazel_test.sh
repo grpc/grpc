@@ -56,6 +56,7 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:CppCronetTests
   //src/objective-c/tests:CronetTests
   //src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests

@@ -267,10 +267,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   // Invoke callbacks for all pending requests.
   while (pending_request != nullptr) {
     if (status == GRPC_CREDENTIALS_OK) {
-      pending_request->md->Append(
-          GRPC_AUTHORIZATION_METADATA_KEY, access_token_value->Ref(),
-          [](absl::string_view, const grpc_core::Slice&) { abort(); });
-      pending_request->result = std::move(pending_request->md);
+      pending_request->result = access_token_value->Ref();
     } else {
       auto err = GRPC_ERROR_CREATE_REFERENCING(
           "Error occurred when fetching oauth2 token.", &error, 1);
@@ -338,7 +335,15 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
         if (!pending_request->done.load(std::memory_order_acquire)) {
           return grpc_core::Pending{};
         }
-        return std::move(pending_request->result);
+        if (pending_request->result.ok()) {
+          pending_request->md->Append(
+              GRPC_AUTHORIZATION_METADATA_KEY,
+              std::move(*pending_request->result),
+              [](absl::string_view, const grpc_core::Slice&) { abort(); });
+          return std::move(pending_request->md);
+        } else {
+          return pending_request->result.status();
+        }
       };
 }
 

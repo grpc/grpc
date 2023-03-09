@@ -68,26 +68,27 @@ class ThreadPool final : public Forkable, public Executor {
     explicit Queue(unsigned reserve_threads)
         : reserve_threads_(reserve_threads) {}
     bool Step();
-    void SetShutdown() { SetState(State::kShutdown); }
-    void SetForking() { SetState(State::kForking); }
     // Add a callback to the queue.
     // Return true if we should also spin up a new thread.
     bool Add(absl::AnyInvocable<void()> callback);
-    void Reset() { SetState(State::kRunning); }
+    void SetShutdown(bool is_shutdown);
+    void SetForking(bool is_forking);
     bool IsBacklogged();
     void SleepIfRunning();
 
    private:
-    enum class State { kRunning, kShutdown, kForking };
-
-    void SetState(State state);
-
-    grpc_core::Mutex mu_;
-    grpc_core::CondVar cv_;
-    std::queue<absl::AnyInvocable<void()>> callbacks_ ABSL_GUARDED_BY(mu_);
-    unsigned threads_waiting_ ABSL_GUARDED_BY(mu_) = 0;
     const unsigned reserve_threads_;
-    State state_ ABSL_GUARDED_BY(mu_) = State::kRunning;
+    grpc_core::Mutex queue_mu_;
+    grpc_core::CondVar cv_;
+    std::queue<absl::AnyInvocable<void()>> callbacks_
+        ABSL_GUARDED_BY(queue_mu_);
+    unsigned threads_waiting_ ABSL_GUARDED_BY(queue_mu_) = 0;
+    // Track shutdown and fork bits separately.
+    // It's possible for a ThreadPool to initiate shut down while fork handlers
+    // are running, and similarly possible for a fork event to occur during
+    // shutdown.
+    bool shutdown_ ABSL_GUARDED_BY(queue_mu_) = false;
+    bool forking_ ABSL_GUARDED_BY(queue_mu_) = false;
   };
 
   class ThreadCount {
@@ -97,9 +98,9 @@ class ThreadPool final : public Forkable, public Executor {
     void BlockUntilThreadCount(int threads, const char* why);
 
    private:
-    grpc_core::Mutex mu_;
+    grpc_core::Mutex thread_count_mu_;
     grpc_core::CondVar cv_;
-    int threads_ ABSL_GUARDED_BY(mu_) = 0;
+    int threads_ ABSL_GUARDED_BY(thread_count_mu_) = 0;
   };
 
   struct State {

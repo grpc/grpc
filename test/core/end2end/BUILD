@@ -258,8 +258,60 @@ grpc_cc_test(
 grpc_end2end_tests()
 
 grpc_cc_test(
+    name = "h2_ssl_cert_test",
+    srcs = [
+        "end2end_tests.h",
+        "h2_ssl_cert_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "libcrypto",
+    ],
+    language = "C++",
+    deps = [
+        "cq_verifier",
+        "local_util",
+        "ssl_test_data",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "h2_ssl_session_reuse_test",
     srcs = ["h2_ssl_session_reuse_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "cq_verifier",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:tsi_ssl_credentials",
+        "//src/core:channel_args",
+        "//src/core:error",
+        "//src/core:useful",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "h2_tls_peer_property_external_verifier_test",
+    srcs = ["h2_tls_peer_property_external_verifier_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",

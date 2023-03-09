@@ -39,7 +39,9 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/types:optional",
+        "google/api:monitored_resource_cc_proto",
         "googleapis_monitoring_grpc_service",
         "googleapis_trace_grpc_service",
         "opencensus-stats",
@@ -50,12 +52,13 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
+        "environment_autodetect",
         "observability_config",
         "observability_logging_sink",
         "//:gpr",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
-        "//src/cpp/ext/filters/logging:logging_filter",
+        "//src/core:logging_filter",
     ],
 )
 
@@ -100,7 +103,7 @@ grpc_cc_library(
         "observability_logging_sink.h",
     ],
     external_deps = [
-        "absl/base",
+        "absl/base:core_headers",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -112,14 +115,60 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
+        "environment_autodetect",
         "observability_config",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
+        "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:json",
+        "//src/core:logging_sink",
         "//src/core:time",
-        "//src/cpp/ext/filters/logging:logging_sink",
+    ],
+)
+
+grpc_cc_library(
+    name = "environment_autodetect",
+    srcs = [
+        "environment_autodetect.cc",
+    ],
+    hdrs = [
+        "environment_autodetect.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    visibility = [
+        "//src/cpp/ext/gcp:__subpackages__",
+        "//test:__subpackages__",
+    ],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc++",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//src/core:closure",
+        "//src/core:default_event_engine",
+        "//src/core:env",
+        "//src/core:error",
+        "//src/core:gcp_metadata_query",
+        "//src/core:iomgr_fwd",
+        "//src/core:load_file",
+        "//src/core:slice",
+        "//src/core:status_helper",
+        "//src/core:time",
     ],
 )

@@ -169,14 +169,12 @@ bool FilterTestBase::Call::Impl::StepOnce() {
 
   if (push_server_initial_metadata_.has_value()) {
     auto r = (*push_server_initial_metadata_)();
-    if (!absl::holds_alternative<Pending>(r)) {
-      push_server_initial_metadata_.reset();
-    }
+    if (r.ready()) push_server_initial_metadata_.reset();
   }
 
   if (next_server_initial_metadata_.has_value()) {
     auto r = (*next_server_initial_metadata_)();
-    if (auto* p = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+    if (auto* p = r.value_if_ready()) {
       if (p->has_value()) call_->ForwardedServerInitialMetadata(*p->value());
       next_server_initial_metadata_.reset();
     }
@@ -193,14 +191,12 @@ bool FilterTestBase::Call::Impl::StepOnce() {
 
     if (push_server_to_client_messages_.has_value()) {
       auto r = (*push_server_to_client_messages_)();
-      if (!absl::holds_alternative<Pending>(r)) {
-        push_server_to_client_messages_.reset();
-      }
+      if (r.ready()) push_server_to_client_messages_.reset();
     }
 
     {
       auto r = (*next_server_to_client_messages_)();
-      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
+      if (auto* p = r.value_if_ready()) {
         if (p->has_value()) call_->ForwardedMessageServerToClient(*p->value());
         next_server_to_client_messages_.reset();
         Activity::current()->ForceImmediateRepoll();
@@ -225,14 +221,12 @@ bool FilterTestBase::Call::Impl::StepOnce() {
 
     if (push_client_to_server_messages_.has_value()) {
       auto r = (*push_client_to_server_messages_)();
-      if (!absl::holds_alternative<Pending>(r)) {
-        push_client_to_server_messages_.reset();
-      }
+      if (r.ready()) push_client_to_server_messages_.reset();
     }
 
     {
       auto r = (*next_client_to_server_messages_)();
-      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
+      if (auto* p = r.value_if_ready()) {
         if (p->has_value()) call_->ForwardedMessageClientToServer(*p->value());
         next_client_to_server_messages_.reset();
         Activity::current()->ForceImmediateRepoll();
@@ -250,9 +244,9 @@ bool FilterTestBase::Call::Impl::StepOnce() {
   }
 
   auto r = (*promise_)();
-  if (absl::holds_alternative<Pending>(r)) return false;
+  if (r.pending()) return false;
   promise_.reset();
-  call_->Finished(*absl::get<ServerMetadataHandle>(r));
+  call_->Finished(*r.value());
   return true;
 }
 
@@ -268,7 +262,7 @@ class FilterTestBase::Call::ScopedContext final
    public:
     explicit TestWakeable(ScopedContext* ctx)
         : tag_(ctx->DebugTag()), impl_(ctx->impl_) {}
-    void Wakeup() override {
+    void Wakeup(void*) override {
       std::unique_ptr<TestWakeable> self(this);
       auto impl = impl_.lock();
       if (impl == nullptr) return;
@@ -277,8 +271,8 @@ class FilterTestBase::Call::ScopedContext final
         if (impl != nullptr) impl->StepLoop();
       });
     }
-    void Drop() override { delete this; }
-    std::string ActivityDebugTag() const override { return tag_; }
+    void Drop(void*) override { delete this; }
+    std::string ActivityDebugTag(void*) const override { return tag_; }
 
    private:
     const std::string tag_;
@@ -294,8 +288,12 @@ class FilterTestBase::Call::ScopedContext final
 
   void Orphan() override { Crash("Orphan called on Call::ScopedContext"); }
   void ForceImmediateRepoll() override { repoll_ = true; }
-  Waker MakeOwningWaker() override { return Waker(new TestWakeable(this)); }
-  Waker MakeNonOwningWaker() override { return Waker(new TestWakeable(this)); }
+  Waker MakeOwningWaker() override {
+    return Waker(new TestWakeable(this), nullptr);
+  }
+  Waker MakeNonOwningWaker() override {
+    return Waker(new TestWakeable(this), nullptr);
+  }
   std::string DebugTag() const override {
     return absl::StrFormat("FILTER_TEST_CALL[%p]", impl_.get());
   }

@@ -1016,19 +1016,6 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  GTEST_FLAG_SET(death_test_style, "threadsafe");
-  // Make sure that we blow up (via abort() from the security connector) when
-  // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED(
-      {
-        ResetStub(0, kApplicationTargetName_ + ";lb");
-        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
-        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
-      },
-      "");
-}
-
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   SetNextResolutionAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
@@ -1472,6 +1459,23 @@ TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
   // We need to wait for all backends to come online.
   WaitForAllBackends();
   EXPECT_EQ(balancers_[0]->service_.service_names().back(), "test_service");
+}
+
+// This death test is kept separate from the rest to ensure that it's run before
+// any others. See https://github.com/grpc/grpc/pull/32269 for details.
+using SingleBalancerDeathTest = SingleBalancerTest;
+
+TEST_F(SingleBalancerDeathTest, SecureNaming) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH_IF_SUPPORTED(
+      {
+        ResetStub(0, kApplicationTargetName_ + ";lb");
+        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
+        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
+      },
+      "");
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {

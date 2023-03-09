@@ -24,7 +24,10 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <functional>
+#include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -47,9 +50,12 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -58,6 +64,8 @@
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
+#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "src/cpp/ext/filters/census/promise_notification.h"
 
 namespace grpc {
 namespace internal {
@@ -68,54 +76,58 @@ constexpr uint32_t
     OpenCensusCallTracer::OpenCensusCallAttemptTracer::kMaxTagsLen;
 
 //
-// OpenCensusClientChannelData
+// OpenCensusClientFilter
 //
 
-grpc_error_handle OpenCensusClientChannelData::Init(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
-  bool observability_enabled = grpc_core::ChannelArgs::FromC(args->channel_args)
-                                   .GetInt(GRPC_ARG_ENABLE_OBSERVABILITY)
-                                   .value_or(true);
+const grpc_channel_filter OpenCensusClientFilter::kFilter =
+    grpc_core::MakePromiseBasedFilter<OpenCensusClientFilter,
+                                      grpc_core::FilterEndpoint::kClient, 0>(
+        "opencensus_client");
+
+absl::StatusOr<OpenCensusClientFilter> OpenCensusClientFilter::Create(
+    const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+  bool observability_enabled =
+      args.GetInt(GRPC_ARG_ENABLE_OBSERVABILITY).value_or(true);
   // Only run the Post-Init Registry if observability is enabled to avoid
   // running into a cyclic loop for exporter channels.
   if (observability_enabled) {
     OpenCensusRegistry::Get().RunFunctionsPostInit();
   }
-  tracing_enabled_ = observability_enabled;
-  return absl::OkStatus();
+  return OpenCensusClientFilter(/*tracing_enabled=*/observability_enabled);
 }
 
-//
-// OpenCensusClientChannelData::OpenCensusClientCallData
-//
-
-grpc_error_handle OpenCensusClientChannelData::OpenCensusClientCallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
-  tracer_ = args->arena->New<OpenCensusCallTracer>(
-      args, (static_cast<OpenCensusClientChannelData*>(elem->channel_data))
-                ->tracing_enabled_);
-  GPR_DEBUG_ASSERT(args->context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
-  args->context[GRPC_CONTEXT_CALL_TRACER].value = tracer_;
-  args->context[GRPC_CONTEXT_CALL_TRACER].destroy = [](void* tracer) {
-    (static_cast<OpenCensusCallTracer*>(tracer))->~OpenCensusCallTracer();
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+OpenCensusClientFilter::MakeCallPromise(
+    grpc_core::CallArgs call_args,
+    grpc_core::NextPromiseFactory next_promise_factory) {
+  auto continue_making_call_promise = [this,
+                                       next_promise_factory =
+                                           std::move(next_promise_factory),
+                                       call_args =
+                                           std::move(call_args)]() mutable {
+    auto* path = call_args.client_initial_metadata->get_pointer(
+        grpc_core::HttpPathMetadata());
+    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
+    auto* tracer = grpc_core::GetContext<grpc_core::Arena>()
+                       ->ManagedNew<OpenCensusCallTracer>(
+                           call_context,
+                           path != nullptr ? path->Ref() : grpc_core::Slice(),
+                           grpc_core::GetContext<grpc_core::Arena>(),
+                           OpenCensusTracingEnabled() && tracing_enabled_);
+    GPR_DEBUG_ASSERT(call_context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
+    call_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
+    call_context[GRPC_CONTEXT_CALL_TRACER].destroy = nullptr;
+    return next_promise_factory(std::move(call_args));
   };
-  return absl::OkStatus();
-}
-
-void OpenCensusClientChannelData::OpenCensusClientCallData::
-    StartTransportStreamOpBatch(grpc_call_element* elem,
-                                TransportStreamOpBatch* op) {
-  // Note that we are generating the overall call context here instead of in
-  // the constructor of `OpenCensusCallTracer` due to the semantics of
-  // `grpc_census_call_set_context` which allows the application to set the
-  // census context for a call anytime before the first call to
-  // `grpc_call_start_batch`.
-  if (op->op()->send_initial_metadata && OpenCensusTracingEnabled() &&
-      (static_cast<OpenCensusClientChannelData*>(elem->channel_data))
-          ->tracing_enabled_) {
-    tracer_->GenerateContext();
+  // If the OpenCensus plugin is not yet ready, then wait for it to be ready.
+  if (!grpc::internal::OpenCensusRegistry::Get().Ready()) {
+    auto notification = std::make_shared<PromiseNotification>();
+    grpc::internal::OpenCensusRegistry::Get().NotifyOnReady(
+        [notification]() { notification->Notify(); });
+    return grpc_core::Seq([notification]() { return notification->Wait(); },
+                          std::move(continue_making_call_promise));
   }
-  grpc_call_next_op(elem, op->op());
+  return continue_making_call_promise();
 }
 
 //
@@ -129,7 +141,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       arena_allocated_(arena_allocated),
       context_(parent_->CreateCensusContextForCallAttempt()),
       start_time_(absl::Now()) {
-  if (OpenCensusTracingEnabled() && parent_->tracing_enabled_) {
+  if (parent_->tracing_enabled_) {
     context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
     context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
   }
@@ -143,7 +155,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
-  if (OpenCensusTracingEnabled() && parent_->tracing_enabled_) {
+  if (parent_->tracing_enabled_) {
     char tracing_buf[kMaxTraceContextLen];
     size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                                kMaxTraceContextLen);
@@ -227,7 +239,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
-    grpc_error_handle /*cancel_error*/) {
+    absl::Status /*cancel_error*/) {
   status_code_ = absl::StatusCode::kCancelled;
 }
 
@@ -249,7 +261,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
       parent_->time_at_last_attempt_end_ = absl::Now();
     }
   }
-  if (OpenCensusTracingEnabled() && parent_->tracing_enabled_) {
+  if (parent_->tracing_enabled_) {
     if (status_code_ != absl::StatusCode::kOk) {
       context_.Span().SetStatus(
           static_cast<opencensus::trace::StatusCode>(status_code_),
@@ -274,13 +286,20 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
 // OpenCensusCallTracer
 //
 
-OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args,
-                                           bool tracing_enabled)
-    : call_context_(args->context),
-      path_(grpc_slice_ref(args->path)),
+OpenCensusCallTracer::OpenCensusCallTracer(
+    grpc_call_context_element* call_context, grpc_core::Slice path,
+    grpc_core::Arena* arena, bool tracing_enabled)
+    : call_context_(call_context),
+      path_(std::move(path)),
       method_(GetMethod(path_)),
-      arena_(args->arena),
-      tracing_enabled_(tracing_enabled) {}
+      arena_(arena),
+      tracing_enabled_(tracing_enabled) {
+  auto* parent_context = reinterpret_cast<CensusContext*>(
+      call_context_[GRPC_CONTEXT_TRACING].value);
+  GenerateClientContext(tracing_enabled_ ? absl::StrCat("Sent.", method_) : "",
+                        &context_,
+                        (parent_context == nullptr) ? nullptr : parent_context);
+}
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
   if (OpenCensusStatsEnabled()) {
@@ -293,16 +312,9 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
          {RpcClientRetryDelayPerCall(), ToDoubleMilliseconds(retry_delay_)}},
         tags);
   }
-  if (OpenCensusTracingEnabled() && tracing_enabled_) {
+  if (tracing_enabled_) {
     context_.EndSpan();
   }
-}
-
-void OpenCensusCallTracer::GenerateContext() {
-  auto* parent_context = reinterpret_cast<CensusContext*>(
-      call_context_[GRPC_CONTEXT_TRACING].value);
-  GenerateClientContext(absl::StrCat("Sent.", method_), &context_,
-                        (parent_context == nullptr) ? nullptr : parent_context);
 }
 
 OpenCensusCallTracer::OpenCensusCallAttemptTracer*
@@ -342,7 +354,7 @@ void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
 }
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
-  if (!OpenCensusTracingEnabled() || !tracing_enabled_) return CensusContext();
+  if (!tracing_enabled_) return CensusContext(context_.tags());
   GPR_DEBUG_ASSERT(context_.Context().IsValid());
   auto context = CensusContext(absl::StrCat("Attempt.", method_),
                                &(context_.Span()), context_.tags());
