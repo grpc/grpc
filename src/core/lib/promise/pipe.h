@@ -467,7 +467,7 @@ class Push {
     if (center_ == nullptr) return false;
     if (auto* p = absl::get_if<T>(&state_)) {
       auto r = center_->Push(p);
-      if (auto* ok = absl::get_if<bool>(&r)) {
+      if (auto* ok = r.value_if_ready()) {
         state_.template emplace<AwaitingAck>();
         if (!*ok) return false;
       } else {

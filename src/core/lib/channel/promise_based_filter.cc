@@ -29,7 +29,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/variant.h"
 
 #include <grpc/status.h>
 
@@ -92,6 +91,9 @@ BaseCallData::BaseCallData(
       arena_(args->arena),
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
+      call_context_(flags & kFilterExaminesCallContext
+                        ? arena_->New<CallContext>(nullptr)
+                        : nullptr),
       context_(args->context),
       server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
@@ -282,6 +284,9 @@ BaseCallData::Flusher::~Flusher() {
   };
   for (size_t i = 1; i < release_.size(); i++) {
     auto* batch = release_[i];
+    if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+      batch->is_traced = true;
+    }
     if (grpc_trace_channel.enabled()) {
       gpr_log(
           GPR_INFO, "FLUSHER:queue batch to forward in closure: %s",
@@ -504,7 +509,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kPushedToPipe: {
       GPR_ASSERT(push_.has_value());
       auto r_push = (*push_)();
-      if (auto* p = absl::get_if<bool>(&r_push)) {
+      if (auto* p = r_push.value_if_ready()) {
         if (grpc_trace_channel.enabled()) {
           gpr_log(GPR_INFO,
                   "%s SendMessage.WakeInsideCombiner push complete, result=%s",
@@ -518,7 +523,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       }
       GPR_ASSERT(next_.has_value());
       auto r_next = (*next_)();
-      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r_next)) {
+      if (auto* p = r_next.value_if_ready()) {
         if (grpc_trace_channel.enabled()) {
           gpr_log(GPR_INFO,
                   "%s SendMessage.WakeInsideCombiner next complete, "
@@ -531,16 +536,16 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
         state_ = State::kForwardedBatch;
         batch_.ResumeWith(flusher);
         next_.reset();
-        if (!absl::holds_alternative<Pending>((*push_)())) push_.reset();
+        if ((*push_)().ready()) push_.reset();
       }
     } break;
     case State::kForwardedBatch:
-      if (push_.has_value() && !absl::holds_alternative<Pending>((*push_)())) {
+      if (push_.has_value() && (*push_)().ready()) {
         push_.reset();
       }
       break;
     case State::kBatchCompleted:
-      if (push_.has_value() && absl::holds_alternative<Pending>((*push_)())) {
+      if (push_.has_value() && (*push_)().pending()) {
         break;
       }
       if (completed_status_.ok()) {
@@ -835,7 +840,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kPushedToPipe: {
       GPR_ASSERT(push_.has_value());
       auto r_push = (*push_)();
-      if (auto* p = absl::get_if<bool>(&r_push)) {
+      if (auto* p = r_push.value_if_ready()) {
         if (grpc_trace_channel.enabled()) {
           gpr_log(GPR_INFO,
                   "%s ReceiveMessage.WakeInsideCombiner push complete: %s",
@@ -848,7 +853,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       }
       GPR_ASSERT(next_.has_value());
       auto r_next = (*next_)();
-      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r_next)) {
+      if (auto* p = r_next.value_if_ready()) {
         next_.reset();
         if (p->has_value()) {
           *intercepted_slice_buffer_ = std::move(*(**p)->payload());
@@ -885,7 +890,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kCompletedWhilePulledFromPipe:
     case State::kPulledFromPipe: {
       GPR_ASSERT(push_.has_value());
-      if (!absl::holds_alternative<Pending>((*push_)())) {
+      if ((*push_)().ready()) {
         if (grpc_trace_channel.enabled()) {
           gpr_log(GPR_INFO,
                   "%s ReceiveMessage.WakeInsideCombiner push complete",
@@ -1019,8 +1024,7 @@ class ClientCallData::PollContext {
     }
     if (self_->server_initial_metadata_pipe() != nullptr) {
       if (self_->recv_initial_metadata_->metadata_push_.has_value()) {
-        if (!absl::holds_alternative<Pending>(
-                (*self_->recv_initial_metadata_->metadata_push_)())) {
+        if ((*self_->recv_initial_metadata_->metadata_push_)().ready()) {
           self_->recv_initial_metadata_->metadata_push_.reset();
         }
       }
@@ -1059,8 +1063,7 @@ class ClientCallData::PollContext {
           GPR_ASSERT(self_->recv_initial_metadata_->metadata_next_.has_value());
           Poll<NextResult<ServerMetadataHandle>> p =
               (*self_->recv_initial_metadata_->metadata_next_)();
-          if (NextResult<ServerMetadataHandle>* nr =
-                  absl::get_if<kPollReadyIdx>(&p)) {
+          if (NextResult<ServerMetadataHandle>* nr = p.value_if_ready()) {
             if (nr->has_value()) {
               ServerMetadataHandle md = std::move(nr->value());
               if (self_->recv_initial_metadata_->metadata != md.get()) {
@@ -1097,7 +1100,7 @@ class ClientCallData::PollContext {
                     return h->DebugString();
                   }).c_str());
         }
-        if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
+        if (auto* r = poll.value_if_ready()) {
           auto md = std::move(*r);
           if (self_->send_message() != nullptr) {
             self_->send_message()->Done(*md, flusher_);
@@ -2376,8 +2379,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           server_initial_metadata_pipe()->receiver.Next());
     }
     if (send_initial_metadata_->metadata_push_.has_value()) {
-      if (!absl::holds_alternative<Pending>(
-              (*send_initial_metadata_->metadata_push_)())) {
+      if ((*send_initial_metadata_->metadata_push_)().ready()) {
         if (grpc_trace_channel.enabled()) {
           gpr_log(GPR_INFO, "%s: WakeInsideCombiner: metadata_push done",
                   LogTag().c_str());
@@ -2453,7 +2455,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
                   return (*h)->DebugString();
                 }).c_str());
       }
-      if (auto* nr = absl::get_if<NextResult<ServerMetadataHandle>>(&p)) {
+      if (auto* nr = p.value_if_ready()) {
         ServerMetadataHandle md = std::move(nr->value());
         if (send_initial_metadata_->batch->payload->send_initial_metadata
                 .send_initial_metadata != md.get()) {
@@ -2465,7 +2467,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         send_initial_metadata_->batch.ResumeWith(flusher);
       }
     }
-    if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
+    if (auto* r = poll.value_if_ready()) {
       promise_ = ArenaPromise<ServerMetadataHandle>();
       auto* md = UnwrapMetadata(std::move(*r));
       bool destroy_md = true;

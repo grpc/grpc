@@ -997,6 +997,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx h2_ssl_cert_test)
   add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
+  add_dependencies(buildtests_cxx h2_tls_peer_property_external_verifier_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx handshake_server_with_readahead_handshaker_test)
   endif()
@@ -1042,6 +1043,9 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx lock_free_event_test)
   endif()
   add_dependencies(buildtests_cxx log_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx log_too_many_open_files_test)
+  endif()
   add_dependencies(buildtests_cxx loop_test)
   add_dependencies(buildtests_cxx map_pipe_test)
   add_dependencies(buildtests_cxx match_test)
@@ -7476,7 +7480,7 @@ target_link_libraries(cancel_callback_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::variant
+  gpr
 )
 
 
@@ -13160,6 +13164,44 @@ target_link_libraries(h2_ssl_session_reuse_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(h2_tls_peer_property_external_verifier_test
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(h2_tls_peer_property_external_verifier_test PUBLIC cxx_std_14)
+target_include_directories(h2_tls_peer_property_external_verifier_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(h2_tls_peer_property_external_verifier_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(handshake_server_with_readahead_handshaker_test
@@ -13871,7 +13913,7 @@ target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
-  absl::variant
+  gpr
 )
 
 
@@ -14294,9 +14336,8 @@ target_link_libraries(join_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::strings
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -14712,6 +14753,45 @@ target_link_libraries(log_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(log_too_many_open_files_test
+    test/core/event_engine/posix/log_too_many_open_files_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(log_too_many_open_files_test PUBLIC cxx_std_14)
+  target_include_directories(log_too_many_open_files_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(log_too_many_open_files_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
   test/core/promise/loop_test.cc
@@ -14744,10 +14824,9 @@ target_link_libraries(loop_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -16377,7 +16456,7 @@ target_link_libraries(poll_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::variant
+  gpr
 )
 
 
@@ -16642,9 +16721,7 @@ target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::bind_front
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -16682,9 +16759,7 @@ target_link_libraries(promise_map_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -16722,9 +16797,7 @@ target_link_libraries(promise_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
-  absl::optional
-  absl::variant
+  gpr
 )
 
 
@@ -17009,7 +17082,7 @@ target_link_libraries(race_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::variant
+  gpr
 )
 
 
@@ -17974,8 +18047,8 @@ target_link_libraries(seq_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -21705,11 +21778,9 @@ target_link_libraries(try_join_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::strings
-  absl::variant
   absl::utility
+  gpr
 )
 
 
@@ -21784,10 +21855,9 @@ target_link_libraries(try_seq_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::variant
   absl::utility
+  gpr
 )
 
 

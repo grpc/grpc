@@ -62,6 +62,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -134,6 +135,7 @@ static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 static constexpr uint8_t kFilterIsLast = 2;
 static constexpr uint8_t kFilterExaminesOutboundMessages = 4;
 static constexpr uint8_t kFilterExaminesInboundMessages = 8;
+static constexpr uint8_t kFilterExaminesCallContext = 16;
 
 namespace promise_filter_detail {
 
@@ -197,7 +199,8 @@ class BaseCallData : public Activity, private Wakeable {
         public promise_detail::Context<grpc_polling_entity>,
         public promise_detail::Context<CallFinalization>,
         public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine> {
+            grpc_event_engine::experimental::EventEngine>,
+        public promise_detail::Context<CallContext> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
@@ -207,7 +210,8 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
           promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
-              call_data->event_engine_) {}
+              call_data->event_engine_),
+          promise_detail::Context<CallContext>(call_data->call_context_) {}
   };
 
   class Flusher {
@@ -549,6 +553,7 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* const call_combiner_;
   const Timestamp deadline_;
   CallFinalization finalization_;
+  CallContext* call_context_ = nullptr;
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
