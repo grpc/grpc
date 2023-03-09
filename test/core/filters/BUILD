@@ -128,7 +128,6 @@ grpc_proto_fuzzer(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "C++",
     proto = "filter_fuzzer.proto",
