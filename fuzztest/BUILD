@@ -17,4 +17,9 @@ load(":grpc_fuzz_test.bzl", "grpc_fuzz_test")
 grpc_fuzz_test(
     name = "fuzztest_test",
     srcs = ["fuzztest_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
 )
