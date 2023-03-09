@@ -36,7 +36,6 @@ build:windows_opt --compilation_mode=opt
 build:windows_dbg --compilation_mode=dbg
 
 build:asan --strip=never
-build:asan --cxxopt=-std=c++17
 build:asan --copt=-fsanitize=address
 build:asan --copt=-O0
 build:asan --copt=-fno-omit-frame-pointer
