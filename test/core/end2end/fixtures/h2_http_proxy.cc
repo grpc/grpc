@@ -43,7 +43,7 @@ class HttpProxyFilter : public CoreTestFixture {
       : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
   ~HttpProxyFilter() override {
     // Need to shut down the proxy users before closing the proxy (otherwise we
-    // hang).
+    // become stuck).
     ShutdownClient();
     ShutdownServer();
     grpc_end2end_http_proxy_destroy(proxy_);
