@@ -24,7 +24,6 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
         srcs = srcs,
         tags = tags + ["grpc-fuzzer", "no-cache"],
         deps = deps,
-        copts = ["-std=c++17"],
         external_deps = [
             "gtest",
             "fuzztest_main",
