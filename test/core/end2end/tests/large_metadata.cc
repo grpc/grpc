@@ -390,9 +390,9 @@ static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
     grpc_slice_unref(client_details);
   }
 
-  // Send 50 requests between soft and hard limits. Some should be rejected.
+  // Send 100 requests between soft and hard limits. Some should be rejected.
   int num_requests_rejected = 0;
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 100; i++) {
     grpc_slice client_details;
     auto status =
         send_metadata(f, metadata_size_between_limits, &client_details);
@@ -460,9 +460,9 @@ static void test_request_with_large_metadata_hard_limit_overrides_default_soft(
     grpc_slice_unref(client_details);
   }
 
-  // Send 50 requests between soft and hard limits. Some should be rejected.
+  // Send 100 requests between soft and hard limits. Some should be rejected.
   int num_requests_rejected = 0;
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 100; i++) {
     grpc_slice client_details;
     auto status =
         send_metadata(f, metadata_size_between_limits, &client_details);
@@ -574,9 +574,9 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
     grpc_slice_unref(client_details);
   }
 
-  // Send 50 requests between soft and hard limits. Some should be rejected.
+  // Send 100 requests between soft and hard limits. Some should be rejected.
   int num_requests_rejected = 0;
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 100; i++) {
     grpc_slice client_details;
     auto status =
         send_metadata(f, metadata_size_between_limits, &client_details);
