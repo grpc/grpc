@@ -534,12 +534,14 @@ CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
 GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+CPPFLAGS := -Ithird_party/abseil-cpp $(CPPFLAGS)
 
 # Setup re2 dependency
 
 RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
 RE2_MERGE_OBJS = $(LIBRE2_OBJS)
 RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
+CPPFLAGS := -Ithird_party/re2 $(CPPFLAGS)
 
 # Setup upb dependency
 
