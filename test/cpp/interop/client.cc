@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
       }
       setup_args(&arguments);
       return CreateChannelForTestCase(test_case, std::move(factories),
-                                      std::move(arguments));
+                                      arguments);
     };
   } else {
     std::multimap<std::string, std::string> additional_metadata;

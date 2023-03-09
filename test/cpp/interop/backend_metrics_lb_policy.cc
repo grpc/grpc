@@ -29,7 +29,11 @@ namespace testing {
 
 namespace {
 
-using namespace grpc_core;
+using grpc_core::CoreConfiguration;
+using grpc_core::LoadBalancingPolicy;
+using grpc_core::MakeRefCounted;
+using grpc_core::OrphanablePtr;
+using grpc_core::RefCountedPtr;
 
 constexpr absl::string_view kBackendMetricsLbPolicyName =
     "test_backend_metrics_load_balancer";
@@ -59,7 +63,7 @@ BackendMetricDataToOrcaLoadReport(
 
 class BackendMetricsLbPolicy : public LoadBalancingPolicy {
  public:
-  BackendMetricsLbPolicy(Args args)
+  explicit BackendMetricsLbPolicy(Args args)
       : LoadBalancingPolicy(std::move(args), /*initial_refcount=*/2) {
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
@@ -116,11 +120,12 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
 
   class Helper : public ChannelControlHelper {
    public:
-    Helper(RefCountedPtr<BackendMetricsLbPolicy> parent)
+    explicit Helper(RefCountedPtr<BackendMetricsLbPolicy> parent)
         : parent_(std::move(parent)) {}
 
-    RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override {
+    RefCountedPtr<grpc_core::SubchannelInterface> CreateSubchannel(
+        grpc_core::ServerAddress address,
+        const grpc_core::ChannelArgs& args) override {
       return parent_->channel_control_helper()->CreateSubchannel(
           std::move(address), args);
     }
@@ -176,7 +181,8 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
   LoadReportTracker* load_report_tracker_;
 };
 
-class BackendMetricsLbPolicyFactory : public LoadBalancingPolicyFactory {
+class BackendMetricsLbPolicyFactory
+    : public grpc_core::LoadBalancingPolicyFactory {
  private:
   class BackendMetricsLbPolicyFactoryConfig
       : public LoadBalancingPolicy::Config {
@@ -192,11 +198,11 @@ class BackendMetricsLbPolicyFactory : public LoadBalancingPolicyFactory {
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<BackendMetricsLbPolicy>(std::move(args));
+    return grpc_core::MakeOrphanable<BackendMetricsLbPolicy>(std::move(args));
   }
 
-  virtual absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const grpc_core::Json& /*json*/) const override {
     return MakeRefCounted<BackendMetricsLbPolicyFactoryConfig>();
   }
 };
@@ -212,12 +218,12 @@ void LoadReportTracker::SetupOnChannel(ChannelArguments* arguments) {
 }
 
 void LoadReportTracker::RecordPerRpcLoadReport(
-    const grpc_core::BackendMetricData* metrics_data) {
-  if (metrics_data == nullptr) {
-    per_rpc_load_reports_.emplace_back(absl::nullopt);
-  } else {
+    const grpc_core::BackendMetricData* backend_metric_data) {
+  if (backend_metric_data != nullptr) {
     per_rpc_load_reports_.emplace_back(
-        BackendMetricDataToOrcaLoadReport(metrics_data));
+        BackendMetricDataToOrcaLoadReport(backend_metric_data));
+  } else {
+    per_rpc_load_reports_.emplace_back(absl::nullopt);
   }
 }
 
