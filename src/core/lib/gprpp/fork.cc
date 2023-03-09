@@ -67,7 +67,6 @@ class ExecCtxState {
     // EventEngine is expected to terminate all threads before fork, and so this
     // extra work is unnecessary
     if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
-      gpr_atm_no_barrier_fetch_add(&count_, 1);
       return;
     }
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
@@ -89,7 +88,12 @@ class ExecCtxState {
     }
   }
 
-  void DecExecCtxCount() { gpr_atm_no_barrier_fetch_add(&count_, -1); }
+  void DecExecCtxCount() {
+    if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
+      return;
+    }
+    gpr_atm_no_barrier_fetch_add(&count_, -1);
+  }
 
   bool BlockExecCtx() {
     // Assumes there is an active ExecCtx when this function is called
