@@ -213,8 +213,8 @@ void RegisterBackendMetricsLbPolicy(CoreConfiguration::Builder* builder) {
       std::make_unique<BackendMetricsLbPolicyFactory>());
 }
 
-void LoadReportTracker::SetupOnChannel(ChannelArguments* arguments) {
-  arguments->SetPointer(kMetricsTrackerAttribute, this);
+std::map<std::string, void*> LoadReportTracker::GetChannelArgs() {
+  return {{kMetricsTrackerAttribute, this}};
 }
 
 void LoadReportTracker::RecordPerRpcLoadReport(

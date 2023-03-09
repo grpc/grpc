@@ -41,7 +41,7 @@ typedef std::function<void(const InteropClientContextInspector&,
 typedef std::function<std::shared_ptr<Channel>()> ChannelCreationFunc;
 
 typedef std::function<std::shared_ptr<Channel>(
-    std::function<void(ChannelArguments*)>)>
+    const std::map<std::string, void*>&)>
     ChannelCreationFuncWithCustomArgs;
 
 class InteropClient {
@@ -132,7 +132,7 @@ class InteropClient {
     void ResetChannel();
 
    private:
-    std::function<std::shared_ptr<Channel>()> channel_creation_func_;
+    ChannelCreationFunc channel_creation_func_;
     std::unique_ptr<TestService::Stub> stub_;
     std::unique_ptr<UnimplementedService::Stub> unimplemented_service_stub_;
     std::shared_ptr<Channel> channel_;
@@ -167,8 +167,6 @@ class InteropClient {
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures
   bool do_not_abort_on_transient_failures_;
-  // Load Orca metrics captured by the custom LB policy. Needs to be initialized
-  // first as it sets up LB policy
   LoadReportTracker load_report_tracker_;
 };
 

@@ -100,8 +100,7 @@ void InitializeCustomLbPolicyIfNeeded() {
 }  // namespace
 
 InteropClient::ServiceStub::ServiceStub(
-    std::function<std::shared_ptr<grpc::Channel>()> channel_creation_func,
-    bool new_stub_every_call)
+    ChannelCreationFunc channel_creation_func, bool new_stub_every_call)
     : channel_creation_func_(std::move(channel_creation_func)),
       channel_(channel_creation_func_()),
       new_stub_every_call_(new_stub_every_call) {
@@ -139,10 +138,7 @@ InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
     : InteropClient(
-          [&channel_creation_func](
-              std::function<void(ChannelArguments*)> /*arguments*/) {
-            return channel_creation_func();
-          },
+          [&](const auto& /*arguments*/) { return channel_creation_func(); },
           new_stub_every_test_case, do_not_abort_on_transient_failures) {}
 
 InteropClient::InteropClient(
@@ -151,9 +147,7 @@ InteropClient::InteropClient(
     : serviceStub_(
           [&]() {
             InitializeCustomLbPolicyIfNeeded();
-            return channel_creation_func(
-                std::bind(&LoadReportTracker::SetupOnChannel,
-                          &load_report_tracker_, std::placeholders::_1));
+            return channel_creation_func(load_report_tracker_.GetChannelArgs());
           },
           new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}

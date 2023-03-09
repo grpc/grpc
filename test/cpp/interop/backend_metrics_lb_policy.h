@@ -32,7 +32,7 @@ class OrcaMetricsProcessor {};
 
 class LoadReportTracker {
  public:
-  void SetupOnChannel(ChannelArguments* arguments);
+  std::map<std::string, void*> GetChannelArgs();
   void RecordPerRpcLoadReport(
       const grpc_core::BackendMetricData* backend_metric_data);
 
