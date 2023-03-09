@@ -36,7 +36,7 @@ class CallFinalization {
  public:
   // Add a step to the finalization context.
   // Takes a callable with a signature compatible with:
-  // (const grpc_call_final_info&) -> void.
+  // (const grpc_call_final_info*) -> void.
   // Finalizers are run in the reverse order they are added.
   template <typename F>
   void Add(F&& t) {

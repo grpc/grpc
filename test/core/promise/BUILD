@@ -80,7 +80,10 @@ grpc_cc_test(
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:cancel_callback"],
+    deps = [
+        "//src/core:cancel_callback",
+        "//src/core:poll",
+    ],
 )
 
 grpc_cc_test(
@@ -96,10 +99,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "arena_promise_test",
     srcs = ["arena_promise_test.cc"],
-    external_deps = [
-        "absl/types:variant",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     tags = [
         "promise_test",
@@ -146,7 +146,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:race"],
+    deps = [
+        "//src/core:poll",
+        "//src/core:race",
+    ],
 )
 
 grpc_cc_test(
@@ -224,10 +227,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "seq_test",
     srcs = ["seq_test.cc"],
-    external_deps = [
-        "absl/types:variant",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -249,10 +249,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "try_seq_metadata_test",
     srcs = ["try_seq_metadata_test.cc"],
-    external_deps = [
-        "absl/types:variant",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -283,6 +280,7 @@ grpc_cc_test(
         "//:promise",
         "//src/core:activity",
         "//src/core:join",
+        "//src/core:poll",
         "//src/core:seq",
         "//src/core:wait_set",
     ],
@@ -536,6 +534,7 @@ grpc_cc_test(
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:notification",
+        "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:sleep",

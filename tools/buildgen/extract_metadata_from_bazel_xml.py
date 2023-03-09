@@ -657,7 +657,8 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith('test/cpp/ext/filters/census:') and
         not test.startswith('test/core/xds:xds_channel_stack_modifier_test') and
         not test.startswith('test/cpp/ext/gcp:') and
-        not test.startswith('test/cpp/ext/filters/logging:')
+        not test.startswith('test/cpp/ext/filters/logging:') and
+        not test.startswith('test/cpp/interop:observability_interop')
     ]
 
     # missing opencensus/stats/stats.h

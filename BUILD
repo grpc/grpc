@@ -1013,6 +1013,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
         "absl/hash",
         "absl/memory",
         "absl/meta:type_traits",
@@ -2349,7 +2350,6 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = [
@@ -3663,7 +3663,6 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],

@@ -3164,7 +3164,11 @@ class ClientChannel::FilterBasedLoadBalancedCall::LbQueuedCallCanceller {
                                     YieldCallCombinerIfPendingBatchesFound);
       }
     }
-    GRPC_CALL_STACK_UNREF(lb_call->owning_call_, "LbQueuedCallCanceller");
+    // Unref lb_call before unreffing the call stack, since unreffing
+    // the call stack may destroy the arena in which lb_call is allocated.
+    auto* owning_call = lb_call->owning_call_;
+    self->lb_call_.reset();
+    GRPC_CALL_STACK_UNREF(owning_call, "LbQueuedCallCanceller");
     delete self;
   }
 

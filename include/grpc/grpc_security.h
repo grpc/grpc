@@ -931,6 +931,10 @@ typedef struct grpc_tls_custom_verification_check_request {
      * grpc_security_constants.h.
      * TODO(ZhenLian): Consider fixing this in the future. */
     const char* peer_cert_full_chain;
+    /* The verified root cert subject.
+     * This value will only be filled if the cryptographic peer certificate
+     * verification was successful */
+    const char* verified_root_cert_subject;
   } peer_info;
 } grpc_tls_custom_verification_check_request;
 
