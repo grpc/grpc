@@ -67,9 +67,11 @@ LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
-# The second param us a "Frame object", which doesn't have a built-in type yet.
-_SignalHandler = Callable[[Union[int, signal.Signals], Optional[FrameType]],
-                          Any]
+# pylint: disable=no-member
+# pylint complains about signal.Signals for some reason.
+_SignalNum = Union[int, signal.Signals]
+_SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
+# pylint: enable=no-member
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
@@ -184,7 +186,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         self._prev_sigint_handler = signal.signal(signal.SIGINT,
                                                   self.handle_sigint)
 
-    def handle_sigint(self, signalnum: Union[int, signal.Signals],
+    def handle_sigint(self, signalnum: _SignalNum,
                       frame: Optional[FrameType]) -> None:
         logger.info('Caught Ctrl+C, cleaning up...')
         self._handling_sigint = True
