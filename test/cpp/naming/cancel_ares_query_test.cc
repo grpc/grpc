@@ -186,7 +186,7 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
 
 class CancelDuringAresQuery : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.dns_resolver = "ares";
     grpc_core::ConfigVars::SetOverrides(overrides);
