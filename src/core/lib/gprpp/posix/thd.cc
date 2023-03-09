@@ -175,7 +175,9 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
     gpr_mu_unlock(&mu_);
   }
 
-  void Join() override { pthread_join(pthread_id_, nullptr); }
+  void Join() override {
+    GPR_ASSERT(pthread_join(pthread_id_, nullptr) == 0);
+  }
 
  private:
   gpr_mu mu_;
