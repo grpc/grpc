@@ -149,6 +149,10 @@ void UnlinkIfUnixDomainSocket(
 
 class PosixSocketWrapper {
  public:
+  // Tries to set the socket to dualstack. Returns true on success.
+  // This is typically checked before creating a PosixSocketWrapper
+  static bool SetSocketDualStack(int fd);
+
   explicit PosixSocketWrapper(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
 
   PosixSocketWrapper() : fd_(-1){};
@@ -237,9 +241,6 @@ class PosixSocketWrapper {
     // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
     DSMODE_DUALSTACK
   };
-
-  // Tries to set the socket to dualstack. Returns true on success.
-  bool SetSocketDualStack();
 
   // Returns the underlying file-descriptor.
   int Fd() const { return fd_; }

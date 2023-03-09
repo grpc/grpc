@@ -620,9 +620,9 @@ absl::Status PosixSocketWrapper::ApplySocketMutatorInOptions(
   return SetSocketMutator(usage, options.socket_mutator);
 }
 
-bool PosixSocketWrapper::SetSocketDualStack() {
+bool PosixSocketWrapper::SetSocketDualStack(int fd) {
   const int off = 0;
-  return 0 == setsockopt(fd_, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
 }
 
 bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
@@ -700,19 +700,18 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
       newfd = -1;
       errno = EAFNOSUPPORT;
     }
-    if (newfd < 0) {
-      return ErrorForFd(newfd, addr);
-    }
-    PosixSocketWrapper sock(newfd);
     // Check if we've got a valid dualstack socket.
-    if (sock.SetSocketDualStack()) {
+    if (newfd > 0 && PosixSocketWrapper::SetSocketDualStack(newfd)) {
       dsmode = PosixSocketWrapper::DSMode::DSMODE_DUALSTACK;
-      return sock;
+      return PosixSocketWrapper(newfd);
     }
     // If this isn't an IPv4 address, then return whatever we've got.
     if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
+      if (newfd <= 0) {
+        return ErrorForFd(newfd, addr);
+      }
       dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;
-      return sock;
+      return PosixSocketWrapper(newfd);
     }
     // Fall back to AF_INET.
     if (newfd >= 0) {
