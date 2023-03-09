@@ -11,8 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Cross-platform test runner for gRPC end2end tests.
 
-# Cross-platform test runner for gRPC end2end tests
+This script is a stopgap measure, primarily to support running
+experiments on Windows. Under some common configurations, Windows
+suffers from restrictions on filename lengths, and a lack of symlinks.
+There is work being done to enable those in our continuous integration
+system, and work being done to rewrite the end2end test framework. When
+either land, or some other better solution appears, this script should
+be replaced.
+"""
 
 import os
 from pathlib import Path
@@ -26,9 +34,9 @@ from rules_python.python.runfiles import runfiles
 def GetBinaryAbsolutePath(fixture_name: str) -> str:
     """Finds the absolute path to the test binary using bazel's runfile tools.
 
-    On Windows, there are no symlinks in the runfiles directory like there are
-    on Posix systems. This tool solves the problem of locating the test
-    binaries on any platform.
+    On Windows, there are no symlinks in the runfiles directory like
+    there are on Posix systems. This tool solves the problem of locating
+    the test binaries on any platform.
     """
     r = runfiles.Create()
     # bazel's Rlocation search expects the '/' delimiter, even on Windows
