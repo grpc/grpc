@@ -3128,6 +3128,7 @@ void grpc_chttp2_transport_start_reading(
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
                                     t->closed_with_error);
           }
+          GRPC_CHTTP2_UNREF_TRANSPORT(t, "reading_action");
           return;
         }
         t->notify_on_receive_settings = notify_on_receive_settings;
