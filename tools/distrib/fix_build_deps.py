@@ -441,27 +441,48 @@ for dirname in [
     try:
         exec(
             open(build_file, 'r').read(), {
-                'load': lambda filename, *args: None,
-                'licenses': lambda licenses: None,
-                'package': lambda **kwargs: None,
-                'exports_files': lambda files, visibility=None: None,
-                'config_setting': lambda **kwargs: None,
-                'selects': FakeSelects(),
-                'python_config_settings': lambda **kwargs: None,
-                'grpc_cc_binary': grpc_cc_library,
-                'grpc_cc_library': grpc_cc_library,
-                'grpc_cc_test': grpc_cc_library,
-                'grpc_fuzzer': grpc_cc_library,
-                'grpc_proto_fuzzer': grpc_cc_library,
-                'select': lambda d: d["//conditions:default"],
-                'glob': lambda files: None,
-                'grpc_end2end_tests': lambda: None,
-                'grpc_upb_proto_library': lambda name, **kwargs: None,
-                'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
-                'grpc_generate_one_off_targets': lambda: None,
-                'grpc_package': lambda **kwargs: None,
-                'filegroup': lambda name, **kwargs: None,
-                'sh_library': lambda name, **kwargs: None,
+                'load':
+                    lambda filename, *args: None,
+                'licenses':
+                    lambda licenses: None,
+                'package':
+                    lambda **kwargs: None,
+                'exports_files':
+                    lambda files, visibility=None: None,
+                'config_setting':
+                    lambda **kwargs: None,
+                'selects':
+                    FakeSelects(),
+                'python_config_settings':
+                    lambda **kwargs: None,
+                'grpc_cc_binary':
+                    grpc_cc_library,
+                'grpc_cc_library':
+                    grpc_cc_library,
+                'grpc_cc_test':
+                    grpc_cc_library,
+                'grpc_fuzzer':
+                    grpc_cc_library,
+                'grpc_proto_fuzzer':
+                    grpc_cc_library,
+                'select':
+                    lambda d: d["//conditions:default"],
+                'glob':
+                    lambda files: None,
+                'grpc_end2end_tests':
+                    lambda: None,
+                'grpc_upb_proto_library':
+                    lambda name, **kwargs: None,
+                'grpc_upb_proto_reflection_library':
+                    lambda name, **kwargs: None,
+                'grpc_generate_one_off_targets':
+                    lambda: None,
+                'grpc_package':
+                    lambda **kwargs: None,
+                'filegroup':
+                    lambda name, **kwargs: None,
+                'sh_library':
+                    lambda name, **kwargs: None,
             }, {})
     except Exception as e:
         print("Error parsing %s" % build_file)
