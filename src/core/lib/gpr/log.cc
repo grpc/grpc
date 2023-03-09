@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -100,10 +101,10 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
 }
 
 static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
-  if (str == "DEBUG") return GPR_LOG_SEVERITY_DEBUG;
-  if (str == "INFO") return GPR_LOG_SEVERITY_INFO;
-  if (str == "ERROR") return GPR_LOG_SEVERITY_ERROR;
-  if (str == "NONE") return GPR_LOG_SEVERITY_NONE;
+  if (absl::EqualsIgnoreCase(str, "DEBUG")) return GPR_LOG_SEVERITY_DEBUG;
+  if (absl::EqualsIgnoreCase(str, "INFO")) return GPR_LOG_SEVERITY_INFO;
+  if (absl::EqualsIgnoreCase(str, "ERROR")) return GPR_LOG_SEVERITY_ERROR;
+  if (absl::EqualsIgnoreCase(str, "NONE")) return GPR_LOG_SEVERITY_NONE;
   return error_value;
 }
 

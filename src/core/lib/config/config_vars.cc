@@ -21,6 +21,7 @@
 #include "src/core/lib/config/config_vars.h"
 
 #include "absl/flags/flag.h"
+#include "absl/strings/escaping.h"
 
 #include "src/core/lib/config/load_config.h"
 
@@ -34,20 +35,6 @@
 #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
-namespace {
-const char* const default_experiments = "";
-const char* const default_dns_resolver = "";
-const char* const default_trace = "";
-const char* const default_verbosity = "GPR_DEFAULT_LOG_VERBOSITY_STRING";
-const char* const default_stacktrace_minloglevel = "";
-const char* const default_poll_strategy = "all";
-const char* const default_system_ssl_roots_dir = "";
-const char* const default_default_ssl_roots_file_path = "";
-const char* const default_ssl_cipher_suites =
-    "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_"
-    "SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-"
-    "RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384";
-}  // namespace
 ABSL_FLAG(absl::optional<std::string>, grpc_experiments, absl::nullopt,
           "A comma separated list of currently active experiments. Experiments "
           "may be prefixed with a '-' to disable them.");
@@ -104,28 +91,46 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       not_use_system_ssl_roots_(LoadConfig(FLAGS_grpc_not_use_system_ssl_roots,
                                            overrides.not_use_system_ssl_roots,
                                            false)),
-      experiments_(LoadConfig(FLAGS_grpc_experiments, overrides.experiments,
-                              default_experiments)),
-      dns_resolver_(LoadConfig(FLAGS_grpc_dns_resolver, overrides.dns_resolver,
-                               default_dns_resolver)),
-      trace_(LoadConfig(FLAGS_grpc_trace, overrides.trace, default_trace)),
+      experiments_(
+          LoadConfig(FLAGS_grpc_experiments, overrides.experiments, "")),
+      dns_resolver_(
+          LoadConfig(FLAGS_grpc_dns_resolver, overrides.dns_resolver, "")),
+      trace_(LoadConfig(FLAGS_grpc_trace, overrides.trace, "")),
       verbosity_(LoadConfig(FLAGS_grpc_verbosity, overrides.verbosity,
-                            default_verbosity)),
+                            GPR_DEFAULT_LOG_VERBOSITY_STRING)),
       stacktrace_minloglevel_(LoadConfig(FLAGS_grpc_stacktrace_minloglevel,
-                                         overrides.stacktrace_minloglevel,
-                                         default_stacktrace_minloglevel)),
-      poll_strategy_(LoadConfig(FLAGS_grpc_poll_strategy,
-                                overrides.poll_strategy,
-                                default_poll_strategy)),
+                                         overrides.stacktrace_minloglevel, "")),
+      poll_strategy_(
+          LoadConfig(FLAGS_grpc_poll_strategy, overrides.poll_strategy, "all")),
       system_ssl_roots_dir_(LoadConfig(FLAGS_grpc_system_ssl_roots_dir,
-                                       overrides.system_ssl_roots_dir,
-                                       default_system_ssl_roots_dir)),
+                                       overrides.system_ssl_roots_dir, "")),
       default_ssl_roots_file_path_(
           LoadConfig(FLAGS_grpc_default_ssl_roots_file_path,
-                     overrides.default_ssl_roots_file_path,
-                     default_default_ssl_roots_file_path)),
-      ssl_cipher_suites_(LoadConfig(FLAGS_grpc_ssl_cipher_suites,
-                                    overrides.ssl_cipher_suites,
-                                    default_ssl_cipher_suites)) {}
+                     overrides.default_ssl_roots_file_path, "")),
+      ssl_cipher_suites_(LoadConfig(
+          FLAGS_grpc_ssl_cipher_suites, overrides.ssl_cipher_suites,
+          "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_"
+          "SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:"
+          "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384")) {}
+
+std::string ConfigVars::ToString() const {
+  return absl::StrCat(
+      "experiments: ", "\"", absl::CEscape(experiments_), "\"",
+      ", client_channel_backup_poll_interval_ms: ",
+      client_channel_backup_poll_interval_ms_, ", dns_resolver: ", "\"",
+      absl::CEscape(dns_resolver_), "\"", ", trace: ", "\"",
+      absl::CEscape(trace_), "\"", ", verbosity: ", "\"",
+      absl::CEscape(verbosity_), "\"", ", stacktrace_minloglevel: ", "\"",
+      absl::CEscape(stacktrace_minloglevel_), "\"",
+      ", enable_fork_support: ", enable_fork_support_ ? "true" : "false",
+      ", poll_strategy: ", "\"", absl::CEscape(poll_strategy_), "\"",
+      ", abort_on_leaks: ", abort_on_leaks_ ? "true" : "false",
+      ", system_ssl_roots_dir: ", "\"", absl::CEscape(system_ssl_roots_dir_),
+      "\"", ", default_ssl_roots_file_path: ", "\"",
+      absl::CEscape(default_ssl_roots_file_path_), "\"",
+      ", not_use_system_ssl_roots: ",
+      not_use_system_ssl_roots_ ? "true" : "false",
+      ", ssl_cipher_suites: ", "\"", absl::CEscape(ssl_cipher_suites_), "\"");
+}
 
 }  // namespace grpc_core

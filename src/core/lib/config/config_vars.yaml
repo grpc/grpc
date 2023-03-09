@@ -47,7 +47,7 @@
     #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
     #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
     #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
-  default: GPR_DEFAULT_LOG_VERBOSITY_STRING
+  default: $GPR_DEFAULT_LOG_VERBOSITY_STRING
   description:
     Default gRPC logging verbosity
 - name: stacktrace_minloglevel
@@ -64,7 +64,7 @@
     #else
     #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
     #endif  // GRPC_ENABLE_FORK_SUPPORT
-  default: GRPC_ENABLE_FORK_SUPPORT_DEFAULT
+  default: $GRPC_ENABLE_FORK_SUPPORT_DEFAULT
 - name: poll_strategy
   type: string
   description:

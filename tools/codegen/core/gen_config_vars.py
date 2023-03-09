@@ -117,13 +117,31 @@ def bool_default_value(x, name):
         return "true"
     if x == False:
         return "false"
+    if isinstance(x, str) and x.startswith("$"): return x[1:]
     return x
 
 
+def int_default_value(x, name):
+    if isinstance(x, str) and x.startswith("$"): return x[1:]
+    return x
+
+
+def string_default_value(x, name):
+    if x is None: return "\"\""
+    if x.startswith("$"): return x[1:]
+    return c_str(x)
+
+
 DEFAULT_VALUE = {
-    "int": lambda x, name: x,
+    "int": int_default_value,
     "bool": bool_default_value,
-    "string": lambda x, name: "default_" + name,
+    "string": string_default_value,
+}
+
+TO_STRING = {
+    "int": "$",
+    "bool": "$?\"true\":\"false\"",
+    "string": "\"\\\"\", absl::CEscape($), \"\\\"\"",
 }
 
 attrs_in_packing_order = sorted(attrs,
@@ -145,6 +163,7 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print("#include <atomic>", file=H)
     print("#include <stdint.h>", file=H)
     print("#include \"absl/strings/string_view.h\"", file=H)
+    print("#include \"absl/strings/str_cat.h\"", file=H)
     print("#include \"absl/types/optional.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
@@ -171,6 +190,7 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
           file=H)
     print("  // accessing the configuration.", file=H)
     print("  static void Reset();", file=H)
+    print("  std::string ToString() const;", file=H)
     for attr in attrs:
         for line in attr['description'].splitlines():
             print("  // %s" % line, file=H)
@@ -200,6 +220,7 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include \"src/core/lib/config/config_vars.h\"", file=C)
     print("#include \"src/core/lib/config/load_config.h\"", file=C)
+    print("#include \"absl/strings/escaping.h\"", file=C)
     print("#include \"absl/flags/flag.h\"", file=C)
     print(file=C)
 
@@ -207,13 +228,6 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
         if 'prelude' in attr:
             print(attr['prelude'], file=C)
 
-    print("namespace {", file=C)
-    for attr in attrs:
-        if attr['type'] == "string":
-            print("const char* const default_%s = %s;" %
-                  (attr['name'], c_str(attr['default'])),
-                  file=C)
-    print("}", file=C)
     for attr in attrs:
         print(
             "ABSL_FLAG(absl::optional<%s>, %s, absl::nullopt, %s);"
@@ -229,5 +243,16 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
                    for attr in attrs_in_packing_order),
           file=C)
     print("{}", file=C)
+    print(file=C)
+    print("std::string ConfigVars::ToString() const {", file=C)
+    print("  return absl::StrCat(", file=C)
+    for i, attr in enumerate(attrs):
+        if i:
+            print(",", file=C)
+            print(c_str(", " + attr['name'] + ": "), file=C)
+        else:
+            print(c_str(attr['name'] + ": "), file=C)
+        print(",", TO_STRING[attr['type']].replace("$", attr['name'] + "_"), file=C)
+    print(");}", file=C)
     print(file=C)
     print("}", file=C)
