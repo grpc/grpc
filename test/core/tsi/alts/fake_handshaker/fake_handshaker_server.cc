@@ -251,8 +251,8 @@ class FakeHandshakerService : public HandshakerService::Service {
 
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
     const std::string& peer_identity) {
-  return std::unique_ptr<grpc::Service>{new grpc::gcp::FakeHandshakerService(
-      peer_identity)};
+  return std::unique_ptr<grpc::Service>{
+      new grpc::gcp::FakeHandshakerService(peer_identity)};
 }
 
 }  // namespace gcp

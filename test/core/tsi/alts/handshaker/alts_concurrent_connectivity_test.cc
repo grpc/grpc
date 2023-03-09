@@ -107,8 +107,7 @@ class FakeHandshakeServer {
   explicit FakeHandshakeServer() {
     int port = grpc_pick_unused_port_or_die();
     address_ = grpc_core::JoinHostPort("localhost", port);
-    service_ = grpc::gcp::CreateFakeHandshakerService(
-        "peer_identity");
+    service_ = grpc::gcp::CreateFakeHandshakerService("peer_identity");
     grpc::ServerBuilder builder;
     builder.AddListeningPort(address_, grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
