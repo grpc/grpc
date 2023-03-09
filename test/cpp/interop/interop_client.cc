@@ -140,7 +140,7 @@ InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool do_not_abort_on_transient_failures)
     : InteropClient(
           [&channel_creation_func](
-              std::function<void(ChannelArguments*)> arguments) {
+              std::function<void(ChannelArguments*)> /*arguments*/) {
             return channel_creation_func();
           },
           new_stub_every_test_case, do_not_abort_on_transient_failures) {}
@@ -1304,8 +1304,6 @@ bool InteropClient::DoUnimplementedMethod() {
   gpr_log(GPR_DEBUG, "unimplemented rpc done.");
   return true;
 }
-
-void InteropClient::SetupMetricTracking(ChannelArguments* arguments) {}
 
 }  // namespace testing
 }  // namespace grpc

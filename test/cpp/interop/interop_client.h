@@ -164,8 +164,6 @@ class InteropClient {
                        const int32_t min_time_ms_between_rpcs,
                        const int32_t overall_timeout_seconds);
 
-  void SetupMetricTracking(ChannelArguments* arguments);
-
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures
   bool do_not_abort_on_transient_failures_;
