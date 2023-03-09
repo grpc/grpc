@@ -67,11 +67,9 @@ LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
-# pylint: disable=no-member
 # pylint complains about signal.Signals for some reason.
-_SignalNum = Union[int, signal.Signals]
+_SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
 _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
-# pylint: enable=no-member
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
