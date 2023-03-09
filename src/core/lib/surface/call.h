@@ -130,6 +130,9 @@ class CallContext {
 
   ServerCallContext* server_call_context();
 
+  void set_traced(bool traced) { traced_ = traced; }
+  bool traced() const { return traced_; }
+
  private:
   friend class PromiseBasedCall;
   // Call final info.
@@ -140,6 +143,8 @@ class CallContext {
   // TODO(ctiller): remove this once transport APIs are promise based and we
   // don't need refcounting here.
   PromiseBasedCall* const call_;
+  // Is this call traced?
+  bool traced_ = false;
 };
 
 template <>
