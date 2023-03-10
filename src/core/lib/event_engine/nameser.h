@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // TODO(yijiem): we are using c-ares 1.17.2, seems like c-ares provides
-// ares_nameser.h as a public interface since c-ares 1.18.0. We may be able to
+// ares_nameser.h in its public interface since c-ares 1.18.0. We may be able to
 // use that if we decide to upgrade to later version.
 
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_NAMESER_H

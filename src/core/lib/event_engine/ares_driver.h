@@ -199,6 +199,10 @@ class GrpcAresRequest
       ABSL_LOCKS_EXCLUDED(mu_);
 
  protected:
+  template <typename T>
+  using OnResolveCallback =
+      absl::AnyInvocable<void(absl::StatusOr<T>, intptr_t)>;
+
   bool initialized_ = false;
   /// synchronizes access to this request, and also to associated
   /// ev_driver and fd_node objects
@@ -223,20 +227,18 @@ class GrpcAresRequest
   EventEngine* event_engine_;
 };
 
-template <typename T>
-using OnResolveCallback =
-    absl::AnyInvocable<void(absl::StatusOr<std::vector<T>>, intptr_t)>;
-
 // A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
 // lookup
 class GrpcAresHostnameRequest : public GrpcAresRequest {
+ private:
+  using Result = std::vector<EventEngine::ResolvedAddress>;
+
  public:
   explicit GrpcAresHostnameRequest(
       absl::string_view name, absl::string_view default_port,
       EventEngine::Duration timeout, bool is_balancer,
       RegisterSocketWithPollerCallback register_socket_with_poller_cb,
-      OnResolveCallback<EventEngine::ResolvedAddress> on_resolve,
-      EventEngine* event_engine)
+      OnResolveCallback<Result> on_resolve, EventEngine* event_engine)
       : GrpcAresRequest(name, default_port, timeout,
                         std::move(register_socket_with_poller_cb),
                         event_engine),
@@ -258,33 +260,52 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
   std::vector<EventEngine::ResolvedAddress> result_;
   /// is it a grpclb address
   const bool is_balancer_ ABSL_GUARDED_BY(mu_);
-  OnResolveCallback<EventEngine::ResolvedAddress> on_resolve_
-      ABSL_GUARDED_BY(mu_);
+  OnResolveCallback<Result> on_resolve_ ABSL_GUARDED_BY(mu_);
 };
 
 class GrpcAresSRVRequest : public GrpcAresRequest {
+ private:
+  using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
+
  public:
   explicit GrpcAresSRVRequest(
       absl::string_view name, EventEngine::Duration timeout,
       RegisterSocketWithPollerCallback register_socket_with_poller_cb,
-      OnResolveCallback<EventEngine::DNSResolver::SRVRecord> on_resolve,
-      EventEngine* event_engine)
+      OnResolveCallback<Result> on_resolve, EventEngine* event_engine)
       : GrpcAresRequest(name, absl::nullopt, timeout,
                         std::move(register_socket_with_poller_cb),
                         event_engine),
         on_resolve_(std::move(on_resolve)) {}
   const char* service_name() { return service_name_.c_str(); }
   void Start() ABSL_LOCKS_EXCLUDED(mu_) override;
-  void OnResolve(
-      absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> result)
+  void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
   std::string service_name_;
-  OnResolveCallback<EventEngine::DNSResolver::SRVRecord> on_resolve_;
+  OnResolveCallback<Result> on_resolve_;
 };
 
-// class GrpcAresTXTRequest : public GrpcAresRequest {};
+class GrpcAresTXTRequest : public GrpcAresRequest {
+ private:
+  using Result = std::string;
+
+ public:
+  explicit GrpcAresTXTRequest(
+      absl::string_view name, EventEngine::Duration timeout,
+      RegisterSocketWithPollerCallback register_socket_with_poller_cb,
+      OnResolveCallback<Result> on_resolve, EventEngine* event_engine)
+      : GrpcAresRequest(name, absl::nullopt, timeout,
+                        std::move(register_socket_with_poller_cb),
+                        event_engine),
+        on_resolve_(std::move(on_resolve)) {}
+  void Start() ABSL_LOCKS_EXCLUDED(mu_) override;
+  void OnResolve(absl::StatusOr<Result> result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+ private:
+  OnResolveCallback<Result> on_resolve_;
+};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

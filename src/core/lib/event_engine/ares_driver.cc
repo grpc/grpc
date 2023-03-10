@@ -194,6 +194,65 @@ void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
   r->OnResolve(std::move(result));
 }
 
+const char g_service_config_attribute_prefix[] = "grpc_config=";
+
+void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
+                        unsigned char* buf,
+                        int len) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  // This callback is invoked from the c-ares library, so disable thread safety
+  // analysis. Note that we are guaranteed to be holding r->mu, though.
+  GrpcAresTXTRequest* r = static_cast<GrpcAresTXTRequest*>(arg);
+  const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
+  struct ares_txt_ext* result = nullptr;
+  struct ares_txt_ext* reply = nullptr;
+  grpc_error_handle error;
+  if (status != ARES_SUCCESS) goto fail;
+  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
+                       q->name().c_str());
+  status = ares_parse_txt_reply_ext(buf, len, &reply);
+  if (status != ARES_SUCCESS) goto fail;
+  // Find service config in TXT record.
+  for (result = reply; result != nullptr; result = result->next) {
+    if (result->record_start &&
+        memcmp(result->txt, g_service_config_attribute_prefix, prefix_len) ==
+            0) {
+      break;
+    }
+  }
+  // Found a service config record.
+  if (result != nullptr) {
+    size_t service_config_len = result->length - prefix_len;
+    *r->service_config_json_out =
+        static_cast<char*>(gpr_malloc(service_config_len + 1));
+    memcpy(*r->service_config_json_out, result->txt + prefix_len,
+           service_config_len);
+    for (result = result->next; result != nullptr && !result->record_start;
+         result = result->next) {
+      *r->service_config_json_out = static_cast<char*>(
+          gpr_realloc(*r->service_config_json_out,
+                      service_config_len + result->length + 1));
+      memcpy(*r->service_config_json_out + service_config_len, result->txt,
+             result->length);
+      service_config_len += result->length;
+    }
+    (*r->service_config_json_out)[service_config_len] = '\0';
+    GRPC_CARES_TRACE_LOG("request:%p found service config: %s", r,
+                         *r->service_config_json_out);
+  }
+  // Clean up.
+  ares_free_data(reply);
+  grpc_ares_request_unref_locked(r);
+  return;
+fail:
+  std::string error_msg =
+      absl::StrFormat("C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
+                      q->name(), ares_strerror(status));
+  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
+                       error_msg.c_str());
+  error = GRPC_ERROR_CREATE(error_msg);
+  r->error = grpc_error_add_child(error, r->error);
+}
+
 }  // namespace
 
 GrpcAresRequest::GrpcAresRequest(
@@ -439,7 +498,6 @@ void GrpcAresRequest::OnHandleDestroyed(FdNodeList::FdNode* fd_node,
                                         absl::Status status) {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(status.ok());
-  // TODO(yijiem): destroy request
   GRPC_CARES_TRACE_LOG("request: %p OnDone for fd_node: %d", this,
                        fd_node->WrappedFd());
   GRPC_CARES_STACKTRACE();
@@ -471,8 +529,7 @@ void GrpcAresHostnameRequest::Start() {
   Work();
 }
 
-void GrpcAresHostnameRequest::OnResolve(
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
   // TODO(yijiem): handle failure case
   GPR_ASSERT(pending_queries_ > 0);
   pending_queries_--;
@@ -527,8 +584,7 @@ void GrpcAresSRVRequest::Start() {
   Work();
 }
 
-void GrpcAresSRVRequest::OnResolve(
-    absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> result) {
+void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
   shutting_down_ = true;
   // TODO(yijiem): cancel timers here
   event_engine_->Run([on_resolve = std::move(on_resolve_),
@@ -538,6 +594,19 @@ void GrpcAresSRVRequest::OnResolve(
   });
   Unref(DEBUG_LOCATION, "shutting down");
 }
+
+// TODO(yijiem): Don't query for TXT records if the target is "localhost"
+void GrpcAresTXTRequest::Start() {
+  absl::MutexLock lock(&mu_);
+  GPR_ASSERT(initialized_);
+  // Query the TXT record
+  std::string config_name = absl::StrCat("_grpc_config.", host_);
+  ares_search(channel_, config_name.c_str(), ns_c_in, ns_t_txt,
+              on_txt_done_locked, static_cast<void*>(this));
+  Work();
+}
+
+void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
