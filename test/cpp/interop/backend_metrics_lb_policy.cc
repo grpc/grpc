@@ -20,8 +20,6 @@
 
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
-#include "google/protobuf/util/message_differencer.h"
-
 #include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc {
@@ -37,8 +35,6 @@ using grpc_core::RefCountedPtr;
 
 constexpr absl::string_view kBackendMetricsLbPolicyName =
     "test_backend_metrics_load_balancer";
-
-const std::string kMetricsTrackerAttribute = "orca_metrics_tracker";
 
 absl::optional<xds::data::orca::v3::OrcaLoadReport>
 BackendMetricDataToOrcaLoadReport(
@@ -65,13 +61,14 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
  public:
   explicit BackendMetricsLbPolicy(Args args)
       : LoadBalancingPolicy(std::move(args), /*initial_refcount=*/2) {
+    load_report_tracker_ =
+        channel_args().GetPointer<LoadReportTracker>(kMetricsTrackerArgument);
+    GPR_ASSERT(load_report_tracker_ != nullptr);
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
     delegate_args.args = channel_args();
     delegate_args.channel_control_helper =
         std::make_unique<Helper>(RefCountedPtr<BackendMetricsLbPolicy>(this));
-    load_report_tracker_ = delegate_args.args.GetPointer<LoadReportTracker>(
-        kMetricsTrackerAttribute);
     delegate_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             "pick_first", std::move(delegate_args));
@@ -175,7 +172,11 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
     LoadReportTracker* load_report_tracker_;
   };
 
-  void ShutdownLocked() override { delegate_.reset(); }
+  void ShutdownLocked() override {
+    grpc_pollset_set_del_pollset_set(delegate_->interested_parties(),
+                                     interested_parties());
+    delegate_.reset();
+  }
 
   OrphanablePtr<LoadBalancingPolicy> delegate_;
   LoadReportTracker* load_report_tracker_;
@@ -213,27 +214,19 @@ void RegisterBackendMetricsLbPolicy(CoreConfiguration::Builder* builder) {
       std::make_unique<BackendMetricsLbPolicyFactory>());
 }
 
-std::map<std::string, void*> LoadReportTracker::GetChannelArgs() {
-  return {{kMetricsTrackerAttribute, this}};
-}
-
 void LoadReportTracker::RecordPerRpcLoadReport(
     const grpc_core::BackendMetricData* backend_metric_data) {
-  if (backend_metric_data != nullptr) {
-    per_rpc_load_reports_.emplace_back(
-        BackendMetricDataToOrcaLoadReport(backend_metric_data));
-  } else {
-    per_rpc_load_reports_.emplace_back(absl::nullopt);
-  }
+  absl::MutexLock lock(&per_rpc_load_reports_mu_);
+  per_rpc_load_reports_.emplace_back(
+      BackendMetricDataToOrcaLoadReport(backend_metric_data));
 }
 
-void LoadReportTracker::AssertHasSinglePerRpcLoadReport(
-    const xds::data::orca::v3::OrcaLoadReport& expected) {
-  GPR_ASSERT(per_rpc_load_reports_.size() == 1);
-  const auto& actual = per_rpc_load_reports_.front();
-  GPR_ASSERT(actual.has_value());
-  GPR_ASSERT(
-      google::protobuf::util::MessageDifferencer::Equals(*actual, expected));
+std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>>
+LoadReportTracker::GetCollectedPerRpcLoadReports() {
+  absl::MutexLock lock(&per_rpc_load_reports_mu_);
+  std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>> result;
+  std::swap(result, per_rpc_load_reports_);
+  return result;
 }
 
 }  // namespace testing

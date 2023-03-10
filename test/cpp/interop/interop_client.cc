@@ -27,6 +27,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "google/protobuf/util/message_differencer.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -137,20 +138,19 @@ void InteropClient::ServiceStub::ResetChannel() {
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : InteropClient(
-          [&](const auto& /*arguments*/) { return channel_creation_func(); },
-          new_stub_every_test_case, do_not_abort_on_transient_failures) {}
+    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
+      do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 InteropClient::InteropClient(
     ChannelCreationFuncWithCustomArgs channel_creation_func,
     bool new_stub_every_test_case, bool do_not_abort_on_transient_failures)
-    : serviceStub_(
+    : InteropClient(
           [&]() {
             InitializeCustomLbPolicyIfNeeded();
-            return channel_creation_func(load_report_tracker_.GetChannelArgs());
+            return channel_creation_func(
+                load_report_tracker_.channel_arguments());
           },
-          new_stub_every_test_case),
-      do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
+          new_stub_every_test_case, do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
                                    const std::string& optional_debug_string) {
@@ -961,7 +961,8 @@ bool InteropClient::DoPickFirstUnary() {
 }
 
 bool InteropClient::DoOrcaPerRpc() {
-  load_report_tracker_.ClearPerRpcLoadReports();
+  // Clears the load reports
+  load_report_tracker_.GetCollectedPerRpcLoadReports();
   gpr_log(GPR_DEBUG, "testing orca per rpc");
   SimpleRequest request;
   SimpleResponse response;
@@ -975,7 +976,12 @@ bool InteropClient::DoOrcaPerRpc() {
   if (!AssertStatusOk(status, context.debug_error_string())) {
     return false;
   }
-  load_report_tracker_.AssertHasSinglePerRpcLoadReport(*orca_report);
+  auto reports = load_report_tracker_.GetCollectedPerRpcLoadReports();
+  GPR_ASSERT(reports.size() == 1);
+  const auto& actual = reports.front();
+  GPR_ASSERT(actual.has_value());
+  GPR_ASSERT(google::protobuf::util::MessageDifferencer::Equals(*actual,
+                                                                *orca_report));
   gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
   return true;
 }
