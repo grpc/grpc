@@ -63,8 +63,6 @@
 
 namespace {
 
-const int kFakeHandshakeServerMaxConcurrentStreams = 40;
-
 void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
@@ -104,7 +102,7 @@ grpc_channel* create_secure_channel_for_test(
 
 class FakeHandshakeServer {
  public:
-  explicit FakeHandshakeServer() {
+  FakeHandshakeServer() {
     int port = grpc_pick_unused_port_or_die();
     address_ = grpc_core::JoinHostPort("localhost", port);
     service_ = grpc::gcp::CreateFakeHandshakerService("peer_identity");
@@ -132,7 +130,7 @@ class FakeHandshakeServer {
 
 class TestServer {
  public:
-  explicit TestServer() {
+  TestServer() {
     grpc_alts_credentials_options* alts_options =
         grpc_alts_credentials_server_options_create();
     grpc_server_credentials* server_creds =

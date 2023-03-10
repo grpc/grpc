@@ -58,7 +58,7 @@ namespace gcp {
 // It is thread-safe.
 class FakeHandshakerService : public HandshakerService::Service {
  public:
-  FakeHandshakerService(const std::string& peer_identity)
+  explicit FakeHandshakerService(const std::string& peer_identity)
       : peer_identity_(peer_identity) {}
 
   Status DoHandshake(
