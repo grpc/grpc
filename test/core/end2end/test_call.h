@@ -22,6 +22,7 @@
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 
@@ -29,8 +30,7 @@ class TestCall {
  public:
   class ClientCallBuilder {
    public:
-    ClientCallBuilder(grpc_channel* channel, grpc_completion_queue* cq,
-                      std::string method);
+    ClientCallBuilder(CoreTestFixture* f, std::string method);
 
     ClientCallBuilder Timeout(Duration timeout);
     TestCall Create();
@@ -47,7 +47,7 @@ class TestCall {
 
   class IncomingCall {
    public:
-    IncomingCall(grpc_server* s, grpc_completion_queue* cq, int tag);
+    IncomingCall(CoreTestFixture* f, int tag);
 
     absl::string_view method() const;
     TestCall& call();

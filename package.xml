@@ -1000,6 +1000,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/server_call_tracer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/server_call_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />

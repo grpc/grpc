@@ -327,6 +327,7 @@ class ConnectedChannelStream : public Orphanable {
 
   void SchedulePush(grpc_transport_stream_op_batch* batch)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    batch->is_traced = GetContext<CallContext>()->traced();
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%s[connected] Push batch to transport: %s",
               Activity::current()->DebugTag().c_str(),
