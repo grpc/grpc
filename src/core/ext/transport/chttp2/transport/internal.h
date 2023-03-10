@@ -465,6 +465,8 @@ struct grpc_chttp2_transport
   bool keepalive_ping_started = false;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
+  // Soft limit on max header size.
+  uint32_t max_header_list_size_soft_limit = 0;
   grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
