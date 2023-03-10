@@ -73,6 +73,21 @@ using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
+class MemoryAllocatorFactoryWrapper
+    : public grpc_event_engine::experimental::MemoryAllocatorFactory {
+ public:
+  explicit MemoryAllocatorFactoryWrapper(std::string name)
+      : memory_quota_(std::make_shared<grpc_core::MemoryQuota>(name)) {}
+
+  grpc_core::MemoryAllocator CreateMemoryAllocator(
+      absl::string_view name) override {
+    return memory_quota_->CreateEndpointMemoryAllocator(name);
+  }
+
+ private:
+  grpc_core::MemoryQuotaRefPtr memory_quota_;
+};
+
 }  // namespace
 
 // Create a connection using the test EventEngine to a non-existent listener
@@ -94,7 +109,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
         EXPECT_FALSE(status.ok());
       },
       *URIToResolvedAddress(target_addr), config,
-      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
+      memory_quota->CreateEndpointMemoryAllocator("conn-1"), 24h);
   signal.WaitForNotification();
   WaitForSingleOwner(std::move(test_ee));
 }
@@ -135,7 +150,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config, std::make_unique<MemoryAllocatorFactoryWrapper>("foo"));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
@@ -147,8 +162,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
-      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
-      24h);
+      *resolved_addr, config,
+      memory_quota->CreateEndpointMemoryAllocator("conn-1"), 24h);
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
@@ -206,7 +221,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config, std::make_unique<MemoryAllocatorFactoryWrapper>("foo"));
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
@@ -236,7 +251,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
         },
         *URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
         client_config,
-        memory_quota->CreateMemoryAllocator(
+        memory_quota->CreateEndpointMemoryAllocator(
             absl::StrCat("conn-", std::to_string(i))),
         24h);
 

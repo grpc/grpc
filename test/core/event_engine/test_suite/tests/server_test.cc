@@ -72,6 +72,21 @@ using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
+class MemoryAllocatorFactoryWrapper
+    : public grpc_event_engine::experimental::MemoryAllocatorFactory {
+ public:
+  explicit MemoryAllocatorFactoryWrapper(std::string name)
+      : memory_quota_(std::make_shared<grpc_core::MemoryQuota>(name)) {}
+
+  grpc_core::MemoryAllocator CreateMemoryAllocator(
+      absl::string_view name) override {
+    return memory_quota_->CreateEndpointMemoryAllocator(name);
+  }
+
+ private:
+  grpc_core::MemoryQuotaRefPtr memory_quota_;
+};
+
 }  // namespace
 
 TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
@@ -80,7 +95,7 @@ TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
   auto listener = engine->CreateListener(
       [](std::unique_ptr<Endpoint>, grpc_core::MemoryAllocator) {},
       [](absl::Status) {}, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<MemoryAllocatorFactoryWrapper>("foo"));
   // Bind an initial port to ensure normal listener startup
   auto resolved_addr = URIToResolvedAddress(absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
@@ -129,7 +144,7 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config, std::make_unique<MemoryAllocatorFactoryWrapper>("foo"));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
@@ -141,8 +156,8 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
-      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
-      24h);
+      *resolved_addr, config,
+      memory_quota->CreateEndpointMemoryAllocator("conn-1"), 24h);
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
@@ -201,7 +216,7 @@ TEST_F(EventEngineServerTest,
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config, std::make_unique<MemoryAllocatorFactoryWrapper>("foo"));
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
@@ -231,7 +246,7 @@ TEST_F(EventEngineServerTest,
         },
         *URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
         client_config,
-        memory_quota->CreateMemoryAllocator(
+        memory_quota->CreateEndpointMemoryAllocator(
             absl::StrCat("conn-", std::to_string(i))),
         24h);
 

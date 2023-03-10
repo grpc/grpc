@@ -696,4 +696,12 @@ MemoryOwner MemoryQuota::CreateMemoryOwner(absl::string_view name) {
   return MemoryOwner(std::move(impl));
 }
 
+EndpointMemoryAllocator MemoryQuota::CreateEndpointMemoryAllocator(
+    absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
+      memory_quota_,
+      absl::StrCat(memory_quota_->name(), "/ep-allocator/", name));
+  return EndpointMemoryAllocator(std::move(impl));
+}
+
 }  // namespace grpc_core

@@ -493,6 +493,8 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
 
   int GetWrappedFd() { return fd_; }
 
+  void DropUnusedMemory();
+
   void MaybeShutdown(
       absl::Status why,
       absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd);
@@ -506,8 +508,6 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool TcpDoRead(absl::Status& status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void FinishEstimate();
   void AddToEstimate(size_t bytes);
-  void MaybePostReclaimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
-  void PerformReclamation() ABSL_LOCKS_EXCLUDED(read_mu_);
   // Zero copy related helper methods.
   TcpZerocopySendRecord* TcpGetSendZerocopyRecord(
       grpc_event_engine::experimental::SliceBuffer& buf);
@@ -532,7 +532,6 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   PosixSocketWrapper sock_;
   int fd_;
   bool is_first_read_ = true;
-  bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
@@ -567,7 +566,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   // Maintain a shared_ptr to mem_quota_ to ensure the underlying basic memory
   // quota is not deleted until the endpoint is destroyed.
   grpc_core::MemoryQuotaRefPtr mem_quota_;
-  grpc_core::MemoryOwner memory_owner_;
+  grpc_core::EndpointMemoryAllocator ep_memory_allocator_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
 
   void* outgoing_buffer_arg_ = nullptr;
@@ -604,9 +603,12 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       EventHandle* handle, PosixEngineClosure* on_shutdown,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       grpc_event_engine::experimental::MemoryAllocator&& allocator,
-      const PosixTcpOptions& options)
-      : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
-                                    std::move(allocator), options)) {}
+      const PosixTcpOptions& options) {
+    reinterpret_cast<grpc_core::EndpointMemoryAllocator*>(&allocator)
+        ->SetOwningEndpoint(this);
+    impl_ = new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
+                                  std::move(allocator), options);
+  }
 
   bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
@@ -642,6 +644,8 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
                            std::move(on_release_fd));
     }
   }
+
+  void DropUnusedMemory() override { impl_->DropUnusedMemory(); }
 
   ~PosixEndpoint() override {
     if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
@@ -694,6 +698,11 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
     grpc_core::Crash("PosixEndpoint::Shutdown not supported on this platform");
+  }
+
+  void DropUnusedMemory() override {
+    grpc_core::Crash(
+        "PosixEndpoint::DropUnusedMemory not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;

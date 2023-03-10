@@ -42,6 +42,7 @@ int64_t event_engine_tcp_client_connect(
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   auto resource_quota = reinterpret_cast<grpc_core::ResourceQuota*>(
       config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA));
+  GPR_ASSERT(resource_quota != nullptr);
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   EventEngine* engine_ptr = reinterpret_cast<EventEngine*>(
       config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
@@ -69,10 +70,8 @@ int64_t event_engine_tcp_client_connect(
                                 absl_status_to_grpc_error(conn_status));
       },
       CreateResolvedAddress(*addr), config,
-      resource_quota != nullptr
-          ? resource_quota->memory_quota()->CreateMemoryOwner(
-                absl::StrCat("tcp-client:", addr_uri.value()))
-          : grpc_event_engine::experimental::MemoryAllocator(),
+      resource_quota->memory_quota()->CreateEndpointMemoryAllocator(
+                absl::StrCat("tcp-client:", addr_uri.value())),
       std::max(grpc_core::Duration::Milliseconds(1),
                deadline - grpc_core::Timestamp::Now()));
   GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Peer: %s, handle: %" PRId64,

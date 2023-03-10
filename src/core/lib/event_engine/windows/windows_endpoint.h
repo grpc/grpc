@@ -37,6 +37,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
              SliceBuffer* data, const WriteArgs* args) override;
   const EventEngine::ResolvedAddress& GetPeerAddress() const override;
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
+  void DropUnusedMemory() override {};
 
  private:
   struct AsyncIOState;

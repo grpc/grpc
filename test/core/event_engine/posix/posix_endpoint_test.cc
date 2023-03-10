@@ -123,18 +123,17 @@ std::list<Connection> CreateConnectedEndpoints(
     ++g_num_active_connections;
     PosixTcpOptions options = TcpOptionsFromEndpointConfig(config);
     connections.push_back(Connection{
-        CreatePosixEndpoint(
-            handle,
-            PosixEngineClosure::TestOnlyToClosure(
-                [&poller](absl::Status /*status*/) {
-                  if (--g_num_active_connections == 0) {
-                    poller.Kick();
-                  }
-                }),
-            posix_ee,
-            options.resource_quota->memory_quota()->CreateMemoryAllocator(
-                "test"),
-            options),
+        CreatePosixEndpoint(handle,
+                            PosixEngineClosure::TestOnlyToClosure(
+                                [&poller](absl::Status /*status*/) {
+                                  if (--g_num_active_connections == 0) {
+                                    poller.Kick();
+                                  }
+                                }),
+                            posix_ee,
+                            options.resource_quota->memory_quota()
+                                ->CreateEndpointMemoryAllocator("test"),
+                            options),
         std::move(server_endpoint)});
     delete server_signal;
     server_signal = new grpc_core::Notification();

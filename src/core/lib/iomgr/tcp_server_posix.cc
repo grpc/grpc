@@ -89,7 +89,7 @@ class MemoryAllocatorFactoryWrapper
       : memory_quota_(std::move(memory_quota)) {}
 
   MemoryAllocator CreateMemoryAllocator(absl::string_view name) override {
-    return memory_quota_->CreateMemoryAllocator(name);
+    return memory_quota_->CreateEndpointMemoryAllocator(name);
   }
 
  private:

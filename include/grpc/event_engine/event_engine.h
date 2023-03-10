@@ -240,6 +240,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
+
+    /// Implmentations may support this method to drop any internally allocated
+    /// memory which is currently un-used.
+    virtual void DropUnusedMemory() = 0;
   };
 
   /// Called when a new connection is established.

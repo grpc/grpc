@@ -33,6 +33,7 @@
 #include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/support/log.h>
@@ -547,6 +548,62 @@ class MemoryOwner final : public MemoryAllocator {
   }
 };
 
+// EndpointMemoryAllocator is an enhanced MemoryAllocator that can also reclaim
+// memory, and be rebound to a specific event engine endpoint.
+class EndpointMemoryAllocator final : public MemoryAllocator {
+ public:
+  EndpointMemoryAllocator() = default;
+
+  explicit EndpointMemoryAllocator(
+      std::shared_ptr<GrpcMemoryAllocatorImpl> allocator)
+      : MemoryAllocator(std::move(allocator)) {}
+
+  void SetOwningEndpoint(
+      grpc_event_engine::experimental::EventEngine::Endpoint* ep) {
+    ep_ = ep;
+    GPR_DEBUG_ASSERT(ep);
+  }
+
+  // Instantaneous memory pressure in the underlying quota.
+  BasicMemoryQuota::PressureInfo GetPressureInfo() const {
+    if (!is_valid()) return {};
+    return impl()->GetPressureInfo();
+  }
+
+  grpc_slice AllocateSlice(MemoryRequest request) {
+    if (!has_posted_reclaimer_ && ep_ != nullptr) {
+      has_posted_reclaimer_ = true;
+      impl()->PostReclaimer(
+          ReclamationPass::kBenign,
+          [this](absl::optional<grpc_core::ReclamationSweep> sweep) {
+            if (sweep.has_value()) {
+              ep_->DropUnusedMemory();
+              has_posted_reclaimer_ = false;
+            }
+          });
+    }
+    return MakeSlice(request);
+  }
+
+  // Name of this object
+  absl::string_view name() const { return impl()->name(); }
+
+  // Is this object valid (ie has not been moved out of or reset)
+  bool is_valid() const { return impl() != nullptr; }
+
+ private:
+  const GrpcMemoryAllocatorImpl* impl() const {
+    return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
+  }
+
+  GrpcMemoryAllocatorImpl* impl() {
+    return static_cast<GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
+  }
+
+  grpc_event_engine::experimental::EventEngine::Endpoint* ep_ = nullptr;
+  bool has_posted_reclaimer_ = false;
+};
+
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.
 class MemoryQuota final
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
@@ -566,6 +623,7 @@ class MemoryQuota final
 
   MemoryAllocator CreateMemoryAllocator(absl::string_view name) override;
   MemoryOwner CreateMemoryOwner(absl::string_view name);
+  EndpointMemoryAllocator CreateEndpointMemoryAllocator(absl::string_view name);
 
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }

@@ -56,6 +56,8 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
     grpc_core::Crash("unimplemented");
   }
 
+  void DropUnusedMemory() override {}
+
  private:
   // An internal helper class definition of Read operations to be performed
   // by the TCPServerEndpoint.
