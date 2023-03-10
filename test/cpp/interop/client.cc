@@ -208,8 +208,8 @@ int main(int argc, char** argv) {
             std::string(additional_metadata.status().message()).c_str());
     return 1;
   }
-  grpc::testing::ChannelCreationFuncWithCustomArgs channel_creation_func =
-      [test_case, &additional_metadata](const auto& extra_arguments) {
+  grpc::testing::ChannelCreationFunc channel_creation_func =
+      [test_case, &additional_metadata](grpc::ChannelArguments arguments) {
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
             factories;
@@ -222,17 +222,13 @@ int main(int argc, char** argv) {
           factories.emplace_back(
               new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
         }
-        grpc::ChannelArguments arguments;
         std::string service_config_json =
             absl::GetFlag(FLAGS_service_config_json);
         if (!service_config_json.empty()) {
-          arguments.SetServiceConfigJSON(std::move(service_config_json));
-        }
-        for (const auto& arg : extra_arguments) {
-          arguments.SetPointer(arg.first, arg.second);
+          arguments.SetServiceConfigJSON(service_config_json);
         }
         return CreateChannelForTestCase(test_case, std::move(factories),
-                                        std::move(arguments));
+                                        arguments);
       };
 
   grpc::testing::InteropClient client(

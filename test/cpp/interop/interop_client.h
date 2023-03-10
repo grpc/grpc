@@ -38,11 +38,8 @@ typedef std::function<void(const InteropClientContextInspector&,
                            const SimpleRequest*, const SimpleResponse*)>
     CheckerFn;
 
-typedef std::function<std::shared_ptr<Channel>()> ChannelCreationFunc;
-
-typedef std::function<std::shared_ptr<Channel>(
-    const std::map<std::string, void*>&)>
-    ChannelCreationFuncWithCustomArgs;
+typedef std::function<std::shared_ptr<Channel>(ChannelArguments)>
+    ChannelCreationFunc;
 
 class InteropClient {
  public:
@@ -53,10 +50,6 @@ class InteropClient {
   explicit InteropClient(ChannelCreationFunc channel_creation_func,
                          bool new_stub_every_test_case,
                          bool do_not_abort_on_transient_failures);
-  /// Same as ctor above, allows customizing channel arguments
-  explicit InteropClient(
-      ChannelCreationFuncWithCustomArgs channel_creation_func,
-      bool new_stub_every_test_case, bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
   void Reset(const std::shared_ptr<Channel>& channel);
@@ -118,12 +111,13 @@ class InteropClient {
 
  private:
   class ServiceStub {
+    typedef std::function<std::shared_ptr<Channel>()> ChannelCreationFunc;
+
    public:
     // If new_stub_every_call = true, pointer to a new instance of
     // TestServce::Stub is returned by Get() everytime it is called
-    ServiceStub(
-        std::function<std::shared_ptr<grpc::Channel>()> channel_creation_func,
-        bool new_stub_every_call);
+    ServiceStub(ChannelCreationFunc channel_creation_func,
+                bool new_stub_every_call);
 
     TestService::Stub* Get();
     UnimplementedService::Stub* GetUnimplementedServiceStub();
@@ -167,6 +161,7 @@ class InteropClient {
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures
   bool do_not_abort_on_transient_failures_;
+  // Load Orca metrics captured by the custom LB policy.
   LoadReportTracker load_report_tracker_;
 };
 

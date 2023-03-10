@@ -138,19 +138,14 @@ void InteropClient::ServiceStub::ResetChannel() {
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
-      do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
-
-InteropClient::InteropClient(
-    ChannelCreationFuncWithCustomArgs channel_creation_func,
-    bool new_stub_every_test_case, bool do_not_abort_on_transient_failures)
-    : InteropClient(
+    : serviceStub_(
           [&]() {
             InitializeCustomLbPolicyIfNeeded();
             return channel_creation_func(
-                load_report_tracker_.channel_arguments());
+                load_report_tracker_.GetChannelArguments());
           },
-          new_stub_every_test_case, do_not_abort_on_transient_failures) {}
+          new_stub_every_test_case),
+      do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
                                    const std::string& optional_debug_string) {
@@ -961,8 +956,7 @@ bool InteropClient::DoPickFirstUnary() {
 }
 
 bool InteropClient::DoOrcaPerRpc() {
-  // Clears the load reports
-  load_report_tracker_.GetCollectedPerRpcLoadReports();
+  load_report_tracker_.ResetCollectedLoadReports();
   gpr_log(GPR_DEBUG, "testing orca per rpc");
   SimpleRequest request;
   SimpleResponse response;
@@ -976,12 +970,13 @@ bool InteropClient::DoOrcaPerRpc() {
   if (!AssertStatusOk(status, context.debug_error_string())) {
     return false;
   }
-  auto reports = load_report_tracker_.GetCollectedPerRpcLoadReports();
-  GPR_ASSERT(reports.size() == 1);
-  const auto& actual = reports.front();
-  GPR_ASSERT(actual.has_value());
-  GPR_ASSERT(google::protobuf::util::MessageDifferencer::Equals(*actual,
+  auto report = load_report_tracker_.GetFirstLoadReport();
+  GPR_ASSERT(report.ok());
+  GPR_ASSERT(report->has_value());
+  GPR_ASSERT(google::protobuf::util::MessageDifferencer::Equals(report->value(),
                                                                 *orca_report));
+  GPR_ASSERT(load_report_tracker_.GetFirstLoadReport().status().code() ==
+             absl::StatusCode::kNotFound);
   gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
   return true;
 }

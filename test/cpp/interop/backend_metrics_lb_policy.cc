@@ -27,6 +27,8 @@ namespace testing {
 
 namespace {
 
+constexpr absl::string_view kMetricsTrackerArgument = "orca_metrics_tracker";
+
 using grpc_core::CoreConfiguration;
 using grpc_core::LoadBalancingPolicy;
 using grpc_core::MakeRefCounted;
@@ -221,12 +223,26 @@ void LoadReportTracker::RecordPerRpcLoadReport(
       BackendMetricDataToOrcaLoadReport(backend_metric_data));
 }
 
-std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>>
-LoadReportTracker::GetCollectedPerRpcLoadReports() {
+absl::StatusOr<absl::optional<OrcaLoadReport>>
+LoadReportTracker::GetFirstLoadReport() {
   absl::MutexLock lock(&per_rpc_load_reports_mu_);
-  std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>> result;
-  std::swap(result, per_rpc_load_reports_);
-  return result;
+  if (per_rpc_load_reports_.empty()) {
+    return absl::NotFoundError("No per-call load reports received");
+  }
+  auto report = per_rpc_load_reports_.front();
+  per_rpc_load_reports_.pop_front();
+  return report;
+}
+
+void LoadReportTracker::ResetCollectedLoadReports() {
+  absl::MutexLock lock(&per_rpc_load_reports_mu_);
+  per_rpc_load_reports_.clear();
+}
+
+ChannelArguments LoadReportTracker::GetChannelArguments() {
+  ChannelArguments arguments;
+  arguments.SetPointer(std::string(kMetricsTrackerArgument), this);
+  return arguments;
 }
 
 }  // namespace testing

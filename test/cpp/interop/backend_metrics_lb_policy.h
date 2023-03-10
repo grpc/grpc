@@ -29,23 +29,19 @@
 namespace grpc {
 namespace testing {
 
-constexpr absl::string_view kMetricsTrackerArgument = "orca_metrics_tracker";
+using xds::data::orca::v3::OrcaLoadReport;
 
 class LoadReportTracker {
  public:
-  std::map<std::string, void*> channel_arguments() {
-    return {{std::string(kMetricsTrackerArgument), this}};
-  }
-
+  ChannelArguments GetChannelArguments();
+  void ResetCollectedLoadReports();
   void RecordPerRpcLoadReport(
       const grpc_core::BackendMetricData* backend_metric_data);
-
-  std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>>
-  GetCollectedPerRpcLoadReports();
+  absl::StatusOr<absl::optional<OrcaLoadReport>> GetFirstLoadReport();
 
  private:
-  std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>>
-      per_rpc_load_reports_ ABSL_GUARDED_BY(per_rpc_load_reports_mu_);
+  std::deque<absl::optional<OrcaLoadReport>> per_rpc_load_reports_
+      ABSL_GUARDED_BY(per_rpc_load_reports_mu_);
   absl::Mutex per_rpc_load_reports_mu_;
 };
 
