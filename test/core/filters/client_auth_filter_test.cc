@@ -47,9 +47,6 @@
 // was adding.  When we have time, we need to go back and write
 // comprehensive tests for all of the functionality in the filter.
 
-using ::testing::AllOf;
-using ::testing::StrictMock;
-
 namespace grpc_core {
 namespace {
 
@@ -124,23 +121,16 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
       absl::UnauthenticatedError("access denied")));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
   EXPECT_EVENT(Finished(
-      &call,
-      AllOf(HasMetadataKeyValue("grpc-status",
-                                std::to_string(GRPC_STATUS_UNAUTHENTICATED)),
-            HasMetadataKeyValue("grpc-message", "access denied"))));
+      &call, HasMetadataResult(absl::UnauthenticatedError("access denied"))));
   Step();
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   Call call(MakeChannelWithCallCredsResult(absl::AbortedError("nope")));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
-  EXPECT_EVENT(Finished(
-      &call,
-      AllOf(HasMetadataKeyValue("grpc-status",
-                                std::to_string(GRPC_STATUS_INTERNAL)),
-            HasMetadataKeyValue("grpc-message",
-                                "Illegal status code from call credentials; "
-                                "original status: ABORTED: nope"))));
+  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::InternalError(
+                                   "Illegal status code from call credentials; "
+                                   "original status: ABORTED: nope"))));
   Step();
 }
 

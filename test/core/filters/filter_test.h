@@ -56,6 +56,17 @@ MATCHER_P2(HasMetadataKeyValue, key, value, "") {
 // gmock matcher to ensure that a message has a given set of flags.
 MATCHER_P(HasMessageFlags, value, "") { return arg.flags() == value; }
 
+MATCHER_P(HasMetadataResult, absl_status, "") {
+  auto status = arg.get(grpc_core::GrpcStatusMetadata());
+  if (!status.has_value()) return false;
+  if (static_cast<absl::StatusCode>(status.value()) != absl_status.code()) {
+    return false;
+  }
+  auto* message = arg.get_pointer(grpc_core::GrpcMessageMetadata());
+  if (message == nullptr) return absl_status.message().empty();
+  return message->as_string_view() == absl_status.message();
+}
+
 // gmock matcher to ensure that a message has a given payload.
 MATCHER_P(HasMessagePayload, value, "") {
   return arg.payload()->JoinIntoString() == value;
