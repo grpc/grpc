@@ -19,9 +19,9 @@ from __future__ import print_function
 import errno
 import filecmp
 import glob
-import json
 import os
 import os.path
+import pprint
 import shutil
 import subprocess
 import sys
@@ -108,6 +108,18 @@ def bazel_query(query):
     return output.decode("ascii").splitlines()
 
 
+def _pretty_print_list(items):
+    """Pretty print python list"""
+    formatted = pprint.pformat(items, indent=4)
+    # add newline after opening bracket (and fix indent of the next line)
+    if formatted.startswith('['):
+        formatted = formatted[0] + '\n ' + formatted[1:]
+    # add newline before closing bracket
+    if formatted.endswith(']'):
+        formatted = formatted[:-1] + '\n' + formatted[-1]
+    return formatted
+
+
 def get_deps():
     """Write the result of the bazel query `query` against protobuf to
      `out_file`."""
@@ -127,8 +139,8 @@ def get_deps():
     ]
     commit_hash = protobuf_submodule_commit_hash()
     deps_file_content = DEPS_FILE_CONTENT.format(
-        cc_files=json.dumps(sorted(cc_files), indent=4),
-        proto_files=json.dumps(sorted(proto_files), indent=4),
+        cc_files=_pretty_print_list(sorted(cc_files)),
+        proto_files=_pretty_print_list(sorted(proto_files)),
         cc_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT),
         proto_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT),
         commit_hash=COMMIT_HASH_PREFIX + commit_hash + COMMIT_HASH_SUFFIX)
