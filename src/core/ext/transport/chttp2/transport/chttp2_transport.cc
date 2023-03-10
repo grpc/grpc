@@ -376,6 +376,21 @@ static void read_channel_args(grpc_chttp2_transport* t,
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
   }
 
+  const int soft_limit =
+      channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
+  if (soft_limit == -1) {
+    // Set soft limit to 0.8 * hard limit if this is larger than
+    // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
+    // `GRPC_ARG_MAX_METADATA_SIZE` is not set.
+    t->max_header_list_size_soft_limit = std::max(
+        DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT,
+        static_cast<int>(
+            0.8 * channel_args.GetInt(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE)
+                      .value_or(-1)));
+  } else {
+    t->max_header_list_size_soft_limit = soft_limit;
+  }
+
   static const struct {
     absl::string_view channel_arg_name;
     grpc_chttp2_setting_id setting_id;
@@ -397,12 +412,6 @@ static void read_channel_args(grpc_chttp2_transport* t,
                        {true, true}},
                       {GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE,
                        GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-                       -1,
-                       0,
-                       INT32_MAX,
-                       {true, true}},
-                      {GRPC_ARG_MAX_METADATA_SIZE,
-                       GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT,
                        -1,
                        0,
                        INT32_MAX,
@@ -444,20 +453,6 @@ static void read_channel_args(grpc_chttp2_transport* t,
                                  .value_or(setting.default_value) *
                              1.25);
         if (value > DEFAULT_MAX_HEADER_LIST_SIZE) {
-          queue_setting_update(
-              t, setting.setting_id,
-              grpc_core::Clamp(value, setting.min, setting.max));
-        }
-      } else if (setting.setting_id ==
-                 GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT) {
-        // Set value to 0.8 * hard limit if this is larger than
-        // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
-        // `GRPC_ARG_MAX_METADATA_SIZE` is not set.
-        const int value = static_cast<int>(
-            channel_args.GetInt(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE)
-                .value_or(setting.default_value) *
-            0.8);
-        if (value > DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT) {
           queue_setting_update(
               t, setting.setting_id,
               grpc_core::Clamp(value, setting.min, setting.max));
@@ -597,9 +592,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   }
   queue_setting_update(this, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        DEFAULT_MAX_HEADER_LIST_SIZE);
-  queue_setting_update(this,
-                       GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT,
-                       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT);
   queue_setting_update(this,
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 

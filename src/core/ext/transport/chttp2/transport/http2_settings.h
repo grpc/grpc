@@ -34,11 +34,10 @@ typedef enum {
   GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE = 5,             // wire id 6
   GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA = 6,  // wire id 65027
   GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE =
-      7,                                                      // wire id 65028
-  GRPC_CHTTP2_SETTINGS_GRPC_HEADER_LIST_SIZE_SOFT_LIMIT = 8,  // write id 65029
+      7,  // wire id 65028
 } grpc_chttp2_setting_id;
 
-#define GRPC_CHTTP2_NUM_SETTINGS 9
+#define GRPC_CHTTP2_NUM_SETTINGS 8
 extern const uint16_t grpc_setting_id_to_wire_id[];
 
 bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id* out);
