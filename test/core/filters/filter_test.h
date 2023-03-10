@@ -148,20 +148,6 @@ class FilterTestBase : public ::testing::Test {
     // metadata.
     void FinishNextFilter(ServerMetadataHandle md);
 
-    // Mock to trap starting the next filter in the chain.
-    MOCK_METHOD(void, Started, (const ClientMetadata& client_initial_metadata));
-    // Mock to trap receiving server initial metadata in the next filter in the
-    // chain.
-    MOCK_METHOD(void, ForwardedServerInitialMetadata,
-                (const ServerMetadata& server_initial_metadata));
-    // Mock to trap seeing a message forward from client to server.
-    MOCK_METHOD(void, ForwardedMessageClientToServer, (const Message& msg));
-    // Mock to trap seeing a message forward from server to client.
-    MOCK_METHOD(void, ForwardedMessageServerToClient, (const Message& msg));
-    // Mock to trap seeing a call finish in the next filter in the chain.
-    MOCK_METHOD(void, Finished,
-                (const ServerMetadata& server_trailing_metadata));
-
    private:
     friend class Channel;
     class ScopedContext;
@@ -169,6 +155,27 @@ class FilterTestBase : public ::testing::Test {
 
     std::shared_ptr<Impl> impl_;
   };
+
+  struct Events {
+    // Mock to trap starting the next filter in the chain.
+    MOCK_METHOD(void, Started,
+                (Call * call, const ClientMetadata& client_initial_metadata));
+    // Mock to trap receiving server initial metadata in the next filter in the
+    // chain.
+    MOCK_METHOD(void, ForwardedServerInitialMetadata,
+                (Call * call, const ServerMetadata& server_initial_metadata));
+    // Mock to trap seeing a message forward from client to server.
+    MOCK_METHOD(void, ForwardedMessageClientToServer,
+                (Call * call, const Message& msg));
+    // Mock to trap seeing a message forward from server to client.
+    MOCK_METHOD(void, ForwardedMessageServerToClient,
+                (Call * call, const Message& msg));
+    // Mock to trap seeing a call finish in the next filter in the chain.
+    MOCK_METHOD(void, Finished,
+                (Call * call, const ServerMetadata& server_trailing_metadata));
+  };
+
+  ::testing::StrictMock<Events> events;
 
  protected:
   FilterTestBase();
@@ -198,5 +205,8 @@ class FilterTest : public FilterTestBase {
 };
 
 }  // namespace grpc_core
+
+// Expect one of the events corresponding to the methods in FilterTest::Events.
+#define EXPECT_EVENT(event) EXPECT_CALL(events, event)
 
 #endif  // GRPC_TEST_CORE_FILTERS_FILTER_TEST_H

@@ -37,7 +37,6 @@
 #include "src/core/lib/transport/transport.h"
 
 using ::testing::_;
-using ::testing::StrictMock;
 
 namespace grpc_core {
 namespace {
@@ -134,109 +133,111 @@ using AddServerInitialMetadataFilterTest =
 TEST_F(NoOpFilterTest, NoOp) {}
 
 TEST_F(NoOpFilterTest, MakeCall) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
+  Call call(MakeChannel(ChannelArgs()).value());
 }
 
 TEST_F(NoOpFilterTest, MakeClientMetadata) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
+  Call call(MakeChannel(ChannelArgs()).value());
   auto md = call.NewClientMetadata({{":path", "foo.bar"}});
   EXPECT_EQ(md->get_pointer(HttpPathMetadata())->as_string_view(), "foo.bar");
 }
 
 TEST_F(NoOpFilterTest, MakeServerMetadata) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
+  Call call(MakeChannel(ChannelArgs()).value());
   auto md = call.NewServerMetadata({{":status", "200"}});
   EXPECT_EQ(md->get(HttpStatusMetadata()), HttpStatusMetadata::ValueType(200));
 }
 
 TEST_F(NoOpFilterTest, CanStart) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   Step();
 }
 
 TEST_F(DelayStartFilterTest, CanStartWithDelay) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   Step();
 }
 
 TEST_F(NoOpFilterTest, CanCancel) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   call.Cancel();
 }
 
 TEST_F(DelayStartFilterTest, CanCancelWithDelay) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
+  Call call(MakeChannel(ChannelArgs()).value());
   call.Start(call.NewClientMetadata());
   call.Cancel();
 }
 
 TEST_F(AddClientInitialMetadataFilterTest, CanSetClientInitialMetadata) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(HasMetadataKeyValue(":path", "foo.bar")));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, HasMetadataKeyValue(":path", "foo.bar")));
   call.Start(call.NewClientMetadata());
   Step();
 }
 
 TEST_F(NoOpFilterTest, CanFinish) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata());
-  EXPECT_CALL(call, Finished(_));
+  EXPECT_EVENT(Finished(&call, _));
   Step();
 }
 
 TEST_F(AddServerTrailingMetadataFilterTest, CanSetServerTrailingMetadata) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata());
-  EXPECT_CALL(call, Finished(HasMetadataKeyValue(":status", "420")));
+  EXPECT_EVENT(Finished(&call, HasMetadataKeyValue(":status", "420")));
   Step();
 }
 
 TEST_F(NoOpFilterTest, CanProcessServerInitialMetadata) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
-  EXPECT_CALL(call, ForwardedServerInitialMetadata(_));
+  EXPECT_EVENT(ForwardedServerInitialMetadata(&call, _));
   Step();
 }
 
 TEST_F(AddServerInitialMetadataFilterTest, CanSetServerInitialMetadata) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
-  EXPECT_CALL(call, ForwardedServerInitialMetadata(
-                        HasMetadataKeyValue("grpc-encoding", "gzip")));
+  EXPECT_EVENT(ForwardedServerInitialMetadata(
+      &call, HasMetadataKeyValue("grpc-encoding", "gzip")));
   Step();
 }
 
 TEST_F(NoOpFilterTest, CanProcessClientToServerMessage) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   call.ForwardMessageClientToServer(call.NewMessage("abc"));
-  EXPECT_CALL(call, ForwardedMessageClientToServer(HasMessagePayload("abc")));
+  EXPECT_CALL(events,
+              ForwardedMessageClientToServer(&call, HasMessagePayload("abc")));
   Step();
 }
 
 TEST_F(NoOpFilterTest, CanProcessServerToClientMessage) {
-  StrictMock<Call> call(MakeChannel(ChannelArgs()).value());
-  EXPECT_CALL(call, Started(_));
+  Call call(MakeChannel(ChannelArgs()).value());
+  EXPECT_EVENT(Started(&call, _));
   call.Start(call.NewClientMetadata());
   call.ForwardServerInitialMetadata(call.NewServerMetadata());
   call.ForwardMessageServerToClient(call.NewMessage("abc"));
-  EXPECT_CALL(call, ForwardedServerInitialMetadata(_));
-  EXPECT_CALL(call, ForwardedMessageServerToClient(HasMessagePayload("abc")));
+  EXPECT_EVENT(ForwardedServerInitialMetadata(&call, _));
+  EXPECT_CALL(events,
+              ForwardedMessageServerToClient(&call, HasMessagePayload("abc")));
   Step();
 }
 

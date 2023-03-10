@@ -120,29 +120,27 @@ TEST_F(ClientAuthFilterTest, CreateSucceeds) {
 }
 
 TEST_F(ClientAuthFilterTest, CallCredsFails) {
-  StrictMock<Call> call(MakeChannelWithCallCredsResult(
+  Call call(MakeChannelWithCallCredsResult(
       absl::UnauthenticatedError("access denied")));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
-  EXPECT_CALL(
-      call, Finished(AllOf(
-                HasMetadataKeyValue(
-                    "grpc-status", std::to_string(GRPC_STATUS_UNAUTHENTICATED)),
-                HasMetadataKeyValue("grpc-message", "access denied"))));
+  EXPECT_EVENT(Finished(
+      &call,
+      AllOf(HasMetadataKeyValue("grpc-status",
+                                std::to_string(GRPC_STATUS_UNAUTHENTICATED)),
+            HasMetadataKeyValue("grpc-message", "access denied"))));
   Step();
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
-  StrictMock<Call> call(
-      MakeChannelWithCallCredsResult(absl::AbortedError("nope")));
+  Call call(MakeChannelWithCallCredsResult(absl::AbortedError("nope")));
   call.Start(call.NewClientMetadata({{":authority", target()}}));
-  EXPECT_CALL(
-      call,
-      Finished(AllOf(
-          HasMetadataKeyValue("grpc-status",
-                              std::to_string(GRPC_STATUS_INTERNAL)),
-          HasMetadataKeyValue("grpc-message",
-                              "Illegal status code from call credentials; "
-                              "original status: ABORTED: nope"))));
+  EXPECT_EVENT(Finished(
+      &call,
+      AllOf(HasMetadataKeyValue("grpc-status",
+                                std::to_string(GRPC_STATUS_INTERNAL)),
+            HasMetadataKeyValue("grpc-message",
+                                "Illegal status code from call credentials; "
+                                "original status: ABORTED: nope"))));
   Step();
 }
 

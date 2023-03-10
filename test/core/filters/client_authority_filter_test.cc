@@ -52,8 +52,8 @@ TEST_F(ClientAuthorityFilterTest, NonStringArgFails) {
 TEST_F(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   StrictMock<FilterTest::Call> call(
       MakeChannel(TestChannelArgs("foo.test.google.au")).value());
-  EXPECT_CALL(call,
-              Started(HasMetadataKeyValue(":authority", "foo.test.google.au")));
+  EXPECT_EVENT(
+      Started(&call, HasMetadataKeyValue(":authority", "foo.test.google.au")));
   call.Start(call.NewClientMetadata());
 }
 
@@ -61,8 +61,8 @@ TEST_F(ClientAuthorityFilterTest,
        PromiseCompletesImmediatelyAndDoesNotSetAuthority) {
   StrictMock<FilterTest::Call> call(
       MakeChannel(TestChannelArgs("foo.test.google.au")).value());
-  EXPECT_CALL(call,
-              Started(HasMetadataKeyValue(":authority", "bar.test.google.au")));
+  EXPECT_EVENT(
+      Started(&call, HasMetadataKeyValue(":authority", "bar.test.google.au")));
   call.Start(call.NewClientMetadata({{":authority", "bar.test.google.au"}}));
 }
 

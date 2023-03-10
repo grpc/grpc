@@ -65,6 +65,8 @@ class FilterTestBase::Call::Impl
     return channel_->test->event_engine();
   }
 
+  Events& events() { return channel_->test->events; }
+
  private:
   bool StepOnce();
   Poll<ServerMetadataHandle> PollNextFilter();
@@ -121,7 +123,7 @@ void FilterTestBase::Call::Impl::Start(ClientMetadataHandle md) {
         server_to_client_messages_sender_ = args.server_to_client_messages;
         next_server_initial_metadata_.emplace(
             pipe_server_initial_metadata_.receiver.Next());
-        call_->Started(*args.client_initial_metadata);
+        events().Started(call_, *args.client_initial_metadata);
         return [this]() { return PollNextFilter(); };
       });
   EXPECT_NE(promise_, absl::nullopt);
@@ -174,7 +176,9 @@ bool FilterTestBase::Call::Impl::StepOnce() {
   if (next_server_initial_metadata_.has_value()) {
     auto r = (*next_server_initial_metadata_)();
     if (auto* p = r.value_if_ready()) {
-      if (p->has_value()) call_->ForwardedServerInitialMetadata(*p->value());
+      if (p->has_value()) {
+        events().ForwardedServerInitialMetadata(call_, *p->value());
+      }
       next_server_initial_metadata_.reset();
     }
   }
@@ -196,7 +200,9 @@ bool FilterTestBase::Call::Impl::StepOnce() {
     {
       auto r = (*next_server_to_client_messages_)();
       if (auto* p = r.value_if_ready()) {
-        if (p->has_value()) call_->ForwardedMessageServerToClient(*p->value());
+        if (p->has_value()) {
+          events().ForwardedMessageServerToClient(call_, *p->value());
+        }
         next_server_to_client_messages_.reset();
         Activity::current()->ForceImmediateRepoll();
       }
@@ -226,7 +232,9 @@ bool FilterTestBase::Call::Impl::StepOnce() {
     {
       auto r = (*next_client_to_server_messages_)();
       if (auto* p = r.value_if_ready()) {
-        if (p->has_value()) call_->ForwardedMessageClientToServer(*p->value());
+        if (p->has_value()) {
+          events().ForwardedMessageClientToServer(call_, *p->value());
+        }
         next_client_to_server_messages_.reset();
         Activity::current()->ForceImmediateRepoll();
       }
@@ -245,7 +253,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
   auto r = (*promise_)();
   if (r.pending()) return false;
   promise_.reset();
-  call_->Finished(*r.value());
+  events().Finished(call_, *r.value());
   return true;
 }
 
@@ -406,6 +414,9 @@ FilterTestBase::FilterTestBase()
           }(),
           fuzzing_event_engine::Actions()) {}
 
-void FilterTestBase::Step() { event_engine_.TickUntilIdle(); }
+void FilterTestBase::Step() {
+  event_engine_.TickUntilIdle();
+  ::testing::Mock::VerifyAndClearExpectations(&events);
+}
 
 }  // namespace grpc_core
