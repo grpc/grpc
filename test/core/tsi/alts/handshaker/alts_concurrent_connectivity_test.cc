@@ -63,8 +63,6 @@
 
 namespace {
 
-const int kFakeHandshakeServerMaxConcurrentStreams = 40;
-
 void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
@@ -104,17 +102,10 @@ grpc_channel* create_secure_channel_for_test(
 
 class FakeHandshakeServer {
  public:
-  explicit FakeHandshakeServer(bool check_num_concurrent_rpcs) {
+  FakeHandshakeServer() {
     int port = grpc_pick_unused_port_or_die();
     address_ = grpc_core::JoinHostPort("localhost", port);
-    if (check_num_concurrent_rpcs) {
-      service_ = grpc::gcp::CreateFakeHandshakerService(
-          /*expected_max_concurrent_rpcs=*/
-          kFakeHandshakeServerMaxConcurrentStreams, "peer_identity");
-    } else {
-      service_ = grpc::gcp::CreateFakeHandshakerService(
-          /*expected_max_concurrent_rpcs=*/0, "peer_identity");
-    }
+    service_ = grpc::gcp::CreateFakeHandshakerService("peer_identity");
     grpc::ServerBuilder builder;
     builder.AddListeningPort(address_, grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
@@ -139,8 +130,7 @@ class FakeHandshakeServer {
 
 class TestServer {
  public:
-  explicit TestServer()
-      : fake_handshake_server_(true /* check num concurrent rpcs */) {
+  TestServer() {
     grpc_alts_credentials_options* alts_options =
         grpc_alts_credentials_server_options_create();
     grpc_server_credentials* server_creds =
@@ -285,8 +275,7 @@ class ConnectLoopRunner {
 // Perform a few ALTS handshakes sequentially (using the fake, in-process ALTS
 // handshake server).
 TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
-  FakeHandshakeServer fake_handshake_server(
-      true /* check num concurrent rpcs */);
+  FakeHandshakeServer fake_handshake_server;
   TestServer test_server;
   {
     ConnectLoopRunner runner(
@@ -300,8 +289,7 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
 // Run a bunch of concurrent ALTS handshakes on concurrent channels
 // (using the fake, in-process handshake server).
 TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
-  FakeHandshakeServer fake_handshake_server(
-      true /* check num concurrent rpcs */);
+  FakeHandshakeServer fake_handshake_server;
   // Test
   {
     TestServer test_server;
@@ -336,8 +324,7 @@ TEST(AltsConcurrentConnectivityTest,
   // cancellation, and the corresponding fake handshake server's sync
   // method handler returning, enforcing a limit on the number of active
   // RPCs at the fake handshake server would be inherently racey.
-  FakeHandshakeServer fake_handshake_server(
-      false /* check num concurrent rpcs */);
+  FakeHandshakeServer fake_handshake_server;
   // The fake_backend_server emulates a secure (ALTS based) gRPC backend. So
   // it waits for the client to send the first bytes.
   grpc_core::testing::FakeUdpAndTcpServer fake_backend_server(
