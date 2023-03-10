@@ -133,12 +133,19 @@ class Poll {
   // We do a single element union so we can choose when to construct/destruct
   // this value.
   union {
-    T value_;
+    GPR_NO_UNIQUE_ADDRESS T value_;
   };
 };
 
+// Ensure degenerate cases are not defined:
+
+// Can't poll for a Pending
 template <>
 class Poll<Pending>;
+
+// Can't poll for a poll
+template <class T>
+class Poll<Poll<T>>;
 
 template <typename T>
 bool operator==(const Poll<T>& a, const Poll<T>& b) {

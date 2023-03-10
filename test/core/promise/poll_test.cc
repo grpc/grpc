@@ -40,6 +40,16 @@ TEST(PollTest, Ready) {
   EXPECT_EQ(i.value(), 1);
 }
 
+TEST(PollTest, CanMove) {
+  Poll<std::shared_ptr<int>> x = std::make_shared<int>(3);
+  Poll<std::shared_ptr<int>> y = std::make_shared<int>(4);
+  y = std::move(x);
+}
+
+TEST(PollTest, ImplicitConstructor) {
+  Poll<std::shared_ptr<int>> x(std::make_unique<int>(3));
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
