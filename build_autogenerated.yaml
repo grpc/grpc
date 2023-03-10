@@ -20,9 +20,16 @@ libs:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/util/test_lb_policies.h
   src:
@@ -4291,18 +4298,6 @@ targets:
   - test/core/end2end/goaway_server_test.cc
   deps:
   - grpc_test_util
-- name: inproc_callback_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/local_util.h
-  src:
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/inproc_callback_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: invalid_call_argument_test
   build: test
   language: c

@@ -16,8 +16,10 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
+
+#include <functional>
+#include <memory>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -28,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -44,74 +47,22 @@ static const char overridden_fake_md_value[] = "overridden_fake_value";
 
 typedef enum { NONE, OVERRIDE, DESTROY, FAIL } override_mode;
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            bool use_secure_call_creds,
-                                            int fail_server_auth_check) {
-  grpc_end2end_test_fixture f;
+static std::unique_ptr<CoreTestFixture> begin_test(
+    const CoreTestConfiguration& config, const char* test_name,
+    bool use_secure_call_creds, int fail_server_auth_check) {
   gpr_log(GPR_INFO, "Running test: %s%s/%s", test_name,
           use_secure_call_creds ? "_with_secure_call_creds"
                                 : "_with_insecure_call_creds",
           config.name);
-  f = config.create_fixture(nullptr, nullptr);
-  config.init_client(&f, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
+  f->InitClient(grpc_core::ChannelArgs());
+  grpc_core::ChannelArgs server_args;
   if (fail_server_auth_check) {
-    grpc_arg fail_auth_arg = {
-        GRPC_ARG_STRING,
-        const_cast<char*>(FAIL_AUTH_CHECK_SERVER_ARG_NAME),
-        {nullptr}};
-    grpc_channel_args args;
-    args.num_args = 1;
-    args.args = &fail_auth_arg;
-    config.init_server(&f, &args);
-  } else {
-    config.init_server(&f, nullptr);
+    server_args = server_args.Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true);
   }
+  f->InitServer(server_args);
   return f;
-}
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(grpc_end2end_test_fixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
 }
 
 static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
@@ -132,8 +83,8 @@ static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
 }
 
 static void request_response_with_payload_and_call_creds(
-    const char* test_name, grpc_end2end_test_config config, override_mode mode,
-    bool use_secure_call_creds) {
+    const char* test_name, const CoreTestConfiguration& config,
+    override_mode mode, bool use_secure_call_creds) {
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
   grpc_slice request_payload_slice =
@@ -144,7 +95,7 @@ static void request_response_with_payload_and_call_creds(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_end2end_test_fixture f;
+
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -161,13 +112,13 @@ static void request_response_with_payload_and_call_creds(
   grpc_auth_context* server_auth_context = nullptr;
   grpc_auth_context* client_auth_context = nullptr;
 
-  f = begin_test(config, test_name, use_secure_call_creds, 0);
-  grpc_core::CqVerifier cqv(f.cq);
+  auto f = begin_test(config, test_name, use_secure_call_creds, 0);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(), grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
   if (use_secure_call_creds) {
     creds =
@@ -239,22 +190,22 @@ static void request_response_with_payload_and_call_creds(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (mode == FAIL) {
     // Expect the call to fail since the channel credentials did not satisfy the
     // minimum security level requirements.
-    cqv.Expect(tag(1), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     cqv.Verify();
     GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
   } else {
-    error =
-        grpc_server_request_call(f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101));
+    error = grpc_server_request_call(f->server(), &s, &call_details,
+                                     &request_metadata_recv, f->cq(), f->cq(),
+                                     grpc_core::CqVerifier::tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(tag(101), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(101), true);
     cqv.Verify();
     server_auth_context = grpc_call_auth_context(s);
     GPR_ASSERT(server_auth_context != nullptr);
@@ -282,10 +233,10 @@ static void request_response_with_payload_and_call_creds(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  tag(102), nullptr);
+                                  grpc_core::CqVerifier::tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv.Expect(tag(102), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(102), true);
     cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
@@ -309,11 +260,11 @@ static void request_response_with_payload_and_call_creds(
     op->reserved = nullptr;
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  tag(103), nullptr);
+                                  grpc_core::CqVerifier::tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cqv.Expect(tag(103), true);
-    cqv.Expect(tag(1), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(103), true);
+    cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     cqv.Verify();
 
     GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -388,46 +339,43 @@ static void request_response_with_payload_and_call_creds(
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
 static void test_request_response_with_payload_and_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    const CoreTestConfiguration& config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_call_creds", config, NONE,
       use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_and_overridden_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    const CoreTestConfiguration& config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_overridden_call_creds", config,
       OVERRIDE, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_and_deleted_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    const CoreTestConfiguration& config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_deleted_call_creds", config,
       DESTROY, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_fail_to_send_call_creds(
-    grpc_end2end_test_config config, bool use_secure_call_creds) {
+    const CoreTestConfiguration& config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_fail_to_send_call_creds", config,
       FAIL, use_secure_call_creds);
 }
 
 static void test_request_with_server_rejecting_client_creds(
-    grpc_end2end_test_config config) {
+    const CoreTestConfiguration& config) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_call* c;
-  grpc_end2end_test_fixture f;
-  gpr_timespec deadline = five_seconds_from_now();
+
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -442,13 +390,13 @@ static void test_request_with_server_rejecting_client_creds(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_call_credentials* creds;
 
-  f = begin_test(config, "test_request_with_server_rejecting_client_creds",
-                 false, 1);
-  grpc_core::CqVerifier cqv(f.cq);
+  auto f = begin_test(config, "test_request_with_server_rejecting_client_creds",
+                      false, 1);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(), grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
@@ -494,11 +442,11 @@ static void test_request_with_server_rejecting_client_creds(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
@@ -513,12 +461,9 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_slice_unref(details);
 
   grpc_call_unref(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
-void call_creds(grpc_end2end_test_config config) {
+void call_creds(const CoreTestConfiguration& config) {
   // Test fixtures that support call credentials with a minimum security level
   // of GRPC_PRIVACY_AND_INTEGRITY
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {

@@ -14,10 +14,11 @@
 // limitations under the License.
 //
 
-#include <stdint.h>
 #include <string.h>
 
+#include <functional>
 #include <initializer_list>
+#include <memory>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -37,60 +38,15 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static std::unique_ptr<CoreTestFixture> begin_test(
+    const CoreTestConfiguration& config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  f = config.create_fixture(client_args, server_args);
-  config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
+                                 grpc_core::ChannelArgs::FromC(server_args));
+  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
+  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
   return f;
-}
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(grpc_end2end_test_fixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
 }
 
 // Tests perAttemptRecvTimeout:
@@ -99,7 +55,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // - second attempt returns ABORTED
 // - third attempt returns OK
 static void test_retry_per_attempt_recv_timeout(
-    grpc_end2end_test_config config) {
+    const CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_call* s0;
@@ -148,13 +104,14 @@ static void test_retry_per_attempt_recv_timeout(
                                      const_cast<char*>(service_config.c_str())),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_retry_per_attempt_recv_timeout", &client_args, nullptr);
+  auto f = begin_test(config, "test_retry_per_attempt_recv_timeout",
+                      &client_args, nullptr);
 
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
 
-  gpr_timespec deadline = n_seconds_from_now(10);
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(),
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
@@ -186,16 +143,16 @@ static void test_retry_per_attempt_recv_timeout(
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call but does not respond to the call.
-  error =
-      grpc_server_request_call(f.server, &s0, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f->server(), &s0, &call_details,
+                                   &request_metadata_recv, f->cq(), f->cq(),
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
@@ -212,11 +169,11 @@ static void test_retry_per_attempt_recv_timeout(
   grpc_call_details_init(&call_details);
 
   // Server gets a second call.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(201));
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f->cq(),
+                                   grpc_core::CqVerifier::tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(201), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(201), true);
   cqv.Verify();
 
   // Now we can unref the first call.
@@ -259,10 +216,10 @@ static void test_retry_per_attempt_recv_timeout(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(202), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(202), true);
   cqv.Verify();
 
   grpc_call_unref(s);
@@ -272,11 +229,11 @@ static void test_retry_per_attempt_recv_timeout(
   grpc_call_details_init(&call_details);
 
   // Server gets a third call.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(301));
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f->cq(),
+                                   grpc_core::CqVerifier::tag(301));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(301), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(301), true);
   cqv.Verify();
 
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
@@ -298,8 +255,8 @@ static void test_retry_per_attempt_recv_timeout(
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(302),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server sends OK status.
@@ -319,13 +276,13 @@ static void test_retry_per_attempt_recv_timeout(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(303),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(303), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(302), true);
-  cqv.Expect(tag(303), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(302), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(303), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
@@ -345,12 +302,9 @@ static void test_retry_per_attempt_recv_timeout(
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
-void retry_per_attempt_recv_timeout(grpc_end2end_test_config config) {
+void retry_per_attempt_recv_timeout(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_per_attempt_recv_timeout(config);
 }
