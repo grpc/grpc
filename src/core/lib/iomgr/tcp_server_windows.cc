@@ -619,7 +619,6 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
                  nullptr, acceptor);
   };
   auto on_shutdown = [shutdown_complete](absl::Status status) {
-    gpr_log(GPR_DEBUG, "DO NOT SUBMIT: running shutdown_complete");
     RunEventEngineClosure(shutdown_complete, status);
   };
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
@@ -665,9 +664,6 @@ static grpc_error_handle event_engine_add_port(
   GPR_ASSERT(addr != nullptr);
   GPR_ASSERT(port != nullptr);
   auto ee_addr = CreateResolvedAddress(*addr);
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: %s",
-          grpc_event_engine::experimental::ResolvedAddressToString(ee_addr)
-              ->c_str());
   auto out_port = s->ee_listener->Bind(ee_addr);
   *port = out_port.ok() ? *out_port : -1;
   return out_port.status();
