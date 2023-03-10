@@ -459,6 +459,48 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   });
 }
 
+// This tests the bug described in https://github.com/grpc/grpc/issues/32486.
+TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
+  CreateAndStartBackends(1);
+  // Initial EDS resource has one locality with no endpoints.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // EDS update removes all endpoints from the locality.
+  EdsResourceArgs::Locality empty_locality("locality0", {});
+  args = EdsResourceArgs({std::move(empty_locality)});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait for RPCs to start failing.
+  constexpr char kErrorMessage[] =
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name contains empty localities: "
+      "\\[\\{region=\"xds_default_locality_region\", "
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
+  SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) {
+    if (result.status.ok()) return true;
+    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_THAT(result.status.error_message(),
+                ::testing::MatchesRegex(kErrorMessage));
+    return false;
+  });
+  // Shut down backend.  This triggers a connectivity state update from the
+  // deactivated child of the weighted_target policy.
+  ShutdownAllBackends();
+  // Now restart the backend.
+  StartAllBackends();
+  // Re-add endpoint.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should eventually succeed.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
+    }
+  });
+}
+
 TEST_P(EdsTest, NoLocalities) {
   CreateAndStartBackends(1);
   // Initial EDS resource has no localities.
