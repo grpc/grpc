@@ -88,6 +88,8 @@ class Poll {
   Poll(U value) : ready_(true) {
     Construct(&value_, std::move(value));
   }
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  Poll(T&& value) : ready_(true) { Construct(&value_, std::forward<T>(value)); }
   ~Poll() {
     if (ready_) Destruct(&value_);
   }
