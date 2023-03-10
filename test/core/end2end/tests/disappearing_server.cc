@@ -16,8 +16,10 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
+
+#include <functional>
+#include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
@@ -26,51 +28,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(grpc_end2end_test_fixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
-}
-
-static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
-                                           grpc_end2end_test_fixture* f,
-                                           grpc_core::CqVerifier& cqv) {
+static void do_request_and_shutdown_server(
+    const CoreTestConfiguration& /*config*/, CoreTestFixture* f,
+    grpc_core::CqVerifier& cqv) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -84,9 +49,9 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -118,20 +83,21 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f->cq(),
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   // should be able to shut down the server early
   // - and still complete the request
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_server_shutdown_and_notify(f->server(), f->cq(),
+                                  grpc_core::CqVerifier::tag(1000));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -153,13 +119,13 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
-  cqv.Expect(tag(1000), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1000), true);
   cqv.Verify();
   // Please refer https://github.com/grpc/grpc/issues/21221 for additional
   // details.
@@ -185,28 +151,26 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   grpc_call_unref(s);
 }
 
-static void disappearing_server_test(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
+static void disappearing_server_test(const CoreTestConfiguration& config) {
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
+  grpc_core::CqVerifier cqv(f->cq());
 
   gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
           config.name);
 
-  config.init_client(&f, nullptr);
-  config.init_server(&f, nullptr);
+  f->InitClient(grpc_core::ChannelArgs());
+  f->InitServer(grpc_core::ChannelArgs());
 
-  do_request_and_shutdown_server(config, &f, cqv);
+  do_request_and_shutdown_server(config, f.get(), cqv);
 
   // now destroy and recreate the server
-  config.init_server(&f, nullptr);
+  f->InitServer(grpc_core::ChannelArgs());
 
-  do_request_and_shutdown_server(config, &f, cqv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
+  do_request_and_shutdown_server(config, f.get(), cqv);
 }
 
-void disappearing_server(grpc_end2end_test_config config) {
+void disappearing_server(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
 #ifndef GPR_WINDOWS  // b/148110727 for more details
   disappearing_server_test(config);
