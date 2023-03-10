@@ -131,11 +131,11 @@ class Poll {
   // some edge case handling template magic - the complexity would explode and
   // grow over time - versus hand coding the pieces we need here and containing
   // that quirk to one place.
-  GPR_NO_UNIQUE_ADDRESS bool ready_;
+  bool ready_;
   // We do a single element union so we can choose when to construct/destruct
   // this value.
   union {
-    GPR_NO_UNIQUE_ADDRESS T value_;
+    T value_;
   };
 };
 
