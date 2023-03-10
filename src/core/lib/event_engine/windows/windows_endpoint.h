@@ -53,7 +53,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     //
     // Returns true if the callback has been called with some data. Returns
     // false if no data has been read.
-    bool MaybeFinishIfDataHasAlreadyBeenRead(absl::Status status);
+    bool MaybeFinishIfDataHasAlreadyBeenRead();
     // Execute the callback and reset.
     void ExecuteCallbackAndReset(absl::Status status);
     // Swap any leftover slices into the provided buffer

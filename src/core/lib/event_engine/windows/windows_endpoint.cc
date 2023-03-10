@@ -105,8 +105,7 @@ absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
   }
   // If the endpoint has already received some data, and the next call would
   // block, return the data in case that is all the data the reader expects.
-  if (io_state_->handle_read_event.MaybeFinishIfDataHasAlreadyBeenRead(
-          absl::OkStatus())) {
+  if (io_state_->handle_read_event.MaybeFinishIfDataHasAlreadyBeenRead()) {
     return absl::OkStatus();
   }
   // Otherwise, let's retry, by queuing a read.
@@ -315,12 +314,11 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   }
 }
 
-bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead(
-    absl::Status status) {
+bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
   if (last_read_buffer_.Length() > 0) {
     buffer_->Swap(last_read_buffer_);
     io_state_->endpoint->executor_->Run(
-        [this, status]() { ExecuteCallbackAndReset(status); });
+        [this]() { ExecuteCallbackAndReset(absl::OkStatus()); });
     return true;
   }
   return false;
