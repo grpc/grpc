@@ -100,16 +100,44 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "local_util",
+    name = "fixture_support",
     srcs = ["fixtures/local_util.cc"],
     hdrs = [
         "end2end_tests.h",
+        "fixtures/h2_oauth2_common.h",
+        "fixtures/h2_ssl_cred_reload_fixture.h",
+        "fixtures/h2_ssl_tls_common.h",
+        "fixtures/h2_tls_common.h",
+        "fixtures/inproc_fixture.h",
         "fixtures/local_util.h",
+        "fixtures/secure_fixture.h",
+        "fixtures/sockpair_fixture.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     language = "C++",
     deps = [
+        "//:config",
+        "//:exec_ctx",
         "//:gpr",
+        "//:grpc",
         "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:grpc_transport_chttp2",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:channel_args_preconditioning",
+        "//src/core:channel_stack_type",
+        "//src/core:error",
+        "//src/core:grpc_ssl_credentials",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:grpc_transport_inproc",
+        "//src/core:slice",
+        "//src/core:transport_fwd",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -201,22 +229,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "inproc_callback_test",
-    srcs = ["inproc_callback_test.cc"],
-    external_deps = ["absl/strings:str_format"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "local_util",
-        "//:gpr",
-        "//:grpc_public_hdrs",
-        "//src/core:grpc_transport_inproc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "invalid_call_argument_test",
     srcs = ["invalid_call_argument_test.cc"],
     language = "C++",
@@ -270,9 +282,8 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
-        "local_util",
+        "fixture_support",
         "ssl_test_data",
-        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
