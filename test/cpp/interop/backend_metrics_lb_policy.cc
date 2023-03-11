@@ -32,7 +32,6 @@ using grpc_core::LoadBalancingPolicy;
 using grpc_core::MakeRefCounted;
 using grpc_core::OrphanablePtr;
 using grpc_core::RefCountedPtr;
-using xds::data::orca::v3::OrcaLoadReport;
 
 constexpr absl::string_view kBackendMetricsLbPolicyName =
     "test_backend_metrics_load_balancer";
