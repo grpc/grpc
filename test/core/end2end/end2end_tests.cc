@@ -22,7 +22,6 @@
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/end2end_tests.h"
 
 #include "src/core/lib/gprpp/no_destruct.h"
 

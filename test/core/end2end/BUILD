@@ -122,6 +122,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        "cq_verifier",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
