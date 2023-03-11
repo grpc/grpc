@@ -34,8 +34,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -46,8 +46,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Client pings and server pongs. Repeat messages rounds before finishing.
-static void test_pingpong_streaming(const CoreTestConfiguration& config,
-                                    int messages) {
+static void test_pingpong_streaming(
+    const grpc_core::CoreTestConfiguration& config, int messages) {
   auto f = begin_test(config, "test_pingpong_streaming", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;
@@ -225,7 +225,7 @@ static void test_pingpong_streaming(const CoreTestConfiguration& config,
   grpc_slice_unref(details);
 }
 
-void ping_pong_streaming(const CoreTestConfiguration& config) {
+void ping_pong_streaming(const grpc_core::CoreTestConfiguration& config) {
   int i;
 
   for (i = 1; i < 10; i++) {

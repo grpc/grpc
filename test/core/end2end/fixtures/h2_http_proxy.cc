@@ -37,7 +37,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-class HttpProxyFilter : public CoreTestFixture {
+class HttpProxyFilter : public grpc_core::CoreTestFixture {
  public:
   explicit HttpProxyFilter(const grpc_core::ChannelArgs& client_args)
       : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
@@ -90,7 +90,7 @@ class HttpProxyFilter : public CoreTestFixture {
 };
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |

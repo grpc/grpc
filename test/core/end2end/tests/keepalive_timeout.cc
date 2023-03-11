@@ -43,8 +43,8 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -56,7 +56,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Client sends a request, then waits for the keepalive watchdog timeouts before
 // returning status.
-static void test_keepalive_timeout(const CoreTestConfiguration& config) {
+static void test_keepalive_timeout(
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
 
   grpc_arg keepalive_arg_elems[3];
@@ -130,7 +131,8 @@ static void test_keepalive_timeout(const CoreTestConfiguration& config) {
 // with a sleep of 10ms in between. It has a configured keepalive timer of
 // 200ms. In the success case, each ping ack should reset the keepalive timer so
 // that the keepalive ping is never sent.
-static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
+static void test_read_delays_keepalive(
+    const grpc_core::CoreTestConfiguration& config) {
 #ifdef GRPC_POSIX_SOCKET
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   // It is hard to get the timing right for the polling engine poll.
@@ -333,7 +335,7 @@ static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
   grpc_slice_unref(details);
 }
 
-void keepalive_timeout(const CoreTestConfiguration& config) {
+void keepalive_timeout(const grpc_core::CoreTestConfiguration& config) {
   test_keepalive_timeout(config);
   test_read_delays_keepalive(config);
 }

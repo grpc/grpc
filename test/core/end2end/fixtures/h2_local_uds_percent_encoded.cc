@@ -38,7 +38,7 @@
 static std::atomic<int> unique{1};
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/fullstack_local_uds_percent_encoded",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |

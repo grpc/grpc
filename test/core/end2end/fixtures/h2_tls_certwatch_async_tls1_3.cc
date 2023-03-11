@@ -28,7 +28,7 @@
 #include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/util/test_config.h"
 
-static CoreTestConfiguration config = {
+static grpc_core::CoreTestConfiguration config = {
     // client: certificate watcher provider + async external verifier
     // server: certificate watcher provider + async external verifier
     // extra: TLS 1.3

@@ -40,8 +40,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -56,7 +56,7 @@ static gpr_timespec one_second_from_now(void) {
 }
 
 static void test_invoke_request_with_flags(
-    const CoreTestConfiguration& config, uint32_t* flags_for_op,
+    const grpc_core::CoreTestConfiguration& config, uint32_t* flags_for_op,
     grpc_call_error call_start_batch_expected_result) {
   grpc_call* c;
   grpc_slice request_payload_slice =
@@ -152,7 +152,7 @@ static void test_invoke_request_with_flags(
   grpc_byte_buffer_destroy(request_payload_recv);
 }
 
-void request_with_flags(const CoreTestConfiguration& config) {
+void request_with_flags(const grpc_core::CoreTestConfiguration& config) {
   size_t i;
   uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 

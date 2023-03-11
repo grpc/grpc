@@ -37,8 +37,9 @@
 #define MAX_CONNECTION_IDLE_MS 2000
 #define MAX_CONNECTION_AGE_MS 9999
 
-static void simple_request_body(const CoreTestConfiguration& /*config*/,
-                                CoreTestFixture* f) {
+static void simple_request_body(
+    const grpc_core::CoreTestConfiguration& /*config*/,
+    grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -157,7 +158,8 @@ static void simple_request_body(const CoreTestConfiguration& /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_max_connection_idle(const CoreTestConfiguration& config) {
+static void test_max_connection_idle(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
@@ -213,7 +215,7 @@ static void test_max_connection_idle(const CoreTestConfiguration& config) {
   cqv.Verify();
 }
 
-void max_connection_idle(const CoreTestConfiguration& config) {
+void max_connection_idle(const grpc_core::CoreTestConfiguration& config) {
   test_max_connection_idle(config);
 }
 

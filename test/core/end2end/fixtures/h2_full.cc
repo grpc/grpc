@@ -21,6 +21,8 @@
 #include <functional>
 #include <memory>
 
+#include "gtest/gtest.h"
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -28,31 +30,25 @@
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/util/test_config.h"
 
-// All test configurations
-static CoreTestConfiguration configs[] = {
-    {"chttp2/fullstack",
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     nullptr,
-     [](const grpc_core::ChannelArgs& /*client_args*/,
-        const grpc_core::ChannelArgs& /*server_args*/) {
-       return std::make_unique<InsecureFixture>();
-     }},
-};
+namespace grpc_core {
+INSTANTIATE_TEST_SUITE_P(H2Full, CoreEnd2endTest,
+                         ::testing::Values(CoreTestConfiguration{
+                             "chttp2/fullstack",
+                             FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+                                 FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                 FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+                             nullptr,
+                             [](const ChannelArgs& /*client_args*/,
+                                const ChannelArgs& /*server_args*/) {
+                               return std::make_unique<InsecureFixture>();
+                             }}));
+}
 
 int main(int argc, char** argv) {
-  size_t i;
-
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_end2end_tests_pre_init();
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
-
-  for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(argc, argv, configs[i]);
-  }
-
+  int r = RUN_ALL_TESTS();
   grpc_shutdown();
-
-  return 0;
+  return r;
 }

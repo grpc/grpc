@@ -37,8 +37,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args,
     bool request_status_early) {
   gpr_log(GPR_INFO, "Running test: %s/%s/request_status_early=%s", test_name,
@@ -54,8 +54,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // server reads and streams responses. The client cancels the RPC to get an
 // error status. (Server sending a non-OK status is not considered an error
 // status.)
-static void test(const CoreTestConfiguration& config, bool request_status_early,
-                 bool recv_message_separately) {
+static void test(const grpc_core::CoreTestConfiguration& config,
+                 bool request_status_early, bool recv_message_separately) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice response_payload1_slice = grpc_slice_from_copied_string("hello");
@@ -243,7 +243,7 @@ static void test(const CoreTestConfiguration& config, bool request_status_early,
   grpc_byte_buffer_destroy(response_payload2_recv);
 }
 
-void streaming_error_response(const CoreTestConfiguration& config) {
+void streaming_error_response(const grpc_core::CoreTestConfiguration& config) {
   test(config, false, false);
   test(config, true, false);
   test(config, true, true);

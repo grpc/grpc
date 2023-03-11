@@ -38,8 +38,8 @@
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     cancellation_mode mode, bool use_service_config,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "%s", std::string(80, '*').c_str());
@@ -53,9 +53,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Cancel after accept, no payload
-static void test_cancel_after_accept(const CoreTestConfiguration& config,
-                                     cancellation_mode mode,
-                                     bool use_service_config) {
+static void test_cancel_after_accept(
+    const grpc_core::CoreTestConfiguration& config, cancellation_mode mode,
+    bool use_service_config) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_call* c;
@@ -210,7 +210,7 @@ static void test_cancel_after_accept(const CoreTestConfiguration& config,
   }
 }
 
-void cancel_after_accept(const CoreTestConfiguration& config) {
+void cancel_after_accept(const grpc_core::CoreTestConfiguration& config) {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {

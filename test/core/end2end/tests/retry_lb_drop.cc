@@ -108,8 +108,8 @@ void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
 }  // namespace
 }  // namespace grpc_core
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -123,7 +123,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // even when there is retry configuration in the service config.
 // - 1 retry allowed for UNAVAILABLE status
 // - first attempt returns UNAVAILABLE due to LB drop but does not retry
-static void test_retry_lb_drop(const CoreTestConfiguration& config) {
+static void test_retry_lb_drop(const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -223,7 +223,7 @@ static void test_retry_lb_drop(const CoreTestConfiguration& config) {
   grpc_core::g_pick_args_vector = nullptr;
 }
 
-void retry_lb_drop(const CoreTestConfiguration& config) {
+void retry_lb_drop(const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_lb_drop(config);
 }

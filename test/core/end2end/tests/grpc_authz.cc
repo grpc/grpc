@@ -41,8 +41,8 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "%s", std::string(80, '*').c_str());
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
@@ -53,7 +53,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void test_allow_authorized_request(CoreTestFixture* f) {
+static void test_allow_authorized_request(grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -157,7 +157,7 @@ static void test_allow_authorized_request(CoreTestFixture* f) {
   grpc_call_unref(s);
 }
 
-static void test_deny_unauthorized_request(CoreTestFixture* f) {
+static void test_deny_unauthorized_request(grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -222,7 +222,7 @@ static void test_deny_unauthorized_request(CoreTestFixture* f) {
 }
 
 static void test_static_init_allow_authorized_request(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -257,7 +257,7 @@ static void test_static_init_allow_authorized_request(
 }
 
 static void test_static_init_deny_unauthorized_request(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -302,7 +302,7 @@ static void test_static_init_deny_unauthorized_request(
 }
 
 static void test_static_init_deny_request_no_match_in_policy(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -338,7 +338,7 @@ static void test_static_init_deny_request_no_match_in_policy(
 }
 
 static void test_file_watcher_init_allow_authorized_request(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -375,7 +375,7 @@ static void test_file_watcher_init_allow_authorized_request(
 }
 
 static void test_file_watcher_init_deny_unauthorized_request(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -423,7 +423,7 @@ static void test_file_watcher_init_deny_unauthorized_request(
 }
 
 static void test_file_watcher_init_deny_request_no_match_in_policy(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -461,7 +461,7 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
 }
 
 static void test_file_watcher_valid_policy_reload(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -541,7 +541,7 @@ static void test_file_watcher_valid_policy_reload(
 }
 
 static void test_file_watcher_invalid_policy_skip_reload(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -599,7 +599,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
 }
 
 static void test_file_watcher_recovers_from_failure(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -698,7 +698,7 @@ static void test_file_watcher_recovers_from_failure(
       ->SetCallbackForTesting(nullptr);
 }
 
-void grpc_authz(const CoreTestConfiguration& config) {
+void grpc_authz(const grpc_core::CoreTestConfiguration& config) {
   test_static_init_allow_authorized_request(config);
   test_static_init_deny_unauthorized_request(config);
   test_static_init_deny_request_no_match_in_policy(config);

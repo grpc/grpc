@@ -117,6 +117,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "gtest",
     ],
     language = "C++",
     deps = [
@@ -138,6 +139,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:transport_fwd",
         "//test/core/util:grpc_test_util",
+        ":cq_verifier",
     ],
 )
 

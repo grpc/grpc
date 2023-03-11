@@ -84,7 +84,7 @@ class CronetFixture final : public SecureFixture {
 
 /* All test configurations */
 
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS, nullptr,
      [](const grpc_core::ChannelArgs & /*client_args*/,

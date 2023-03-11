@@ -33,8 +33,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -46,7 +46,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Request/response with metadata which should be filtered
 static void test_request_response_with_metadata_to_be_filtered(
-    const CoreTestConfiguration& config, const char* filtered_md_key,
+    const grpc_core::CoreTestConfiguration& config, const char* filtered_md_key,
     const char* filter_md_value) {
   grpc_call* c;
   grpc_call* s;
@@ -182,7 +182,7 @@ static void test_request_response_with_metadata_to_be_filtered(
   grpc_call_unref(s);
 }
 
-void filtered_metadata(const CoreTestConfiguration& config) {
+void filtered_metadata(const grpc_core::CoreTestConfiguration& config) {
   test_request_response_with_metadata_to_be_filtered(config, "content-length",
                                                      "45");
 }

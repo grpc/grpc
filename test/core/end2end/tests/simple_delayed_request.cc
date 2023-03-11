@@ -33,7 +33,7 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void simple_delayed_request_body(CoreTestFixture* f) {
+static void simple_delayed_request_body(grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -140,7 +140,7 @@ static void simple_delayed_request_body(CoreTestFixture* f) {
 }
 
 static void test_simple_delayed_request_short(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -155,7 +155,7 @@ static void test_simple_delayed_request_short(
 }
 
 static void test_simple_delayed_request_long(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -170,7 +170,7 @@ static void test_simple_delayed_request_long(
   simple_delayed_request_body(f.get());
 }
 
-void simple_delayed_request(const CoreTestConfiguration& config) {
+void simple_delayed_request(const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);

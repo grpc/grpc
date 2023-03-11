@@ -31,7 +31,7 @@
 
 #define PING_NUM 5
 
-static void test_ping(const CoreTestConfiguration& config,
+static void test_ping(const grpc_core::CoreTestConfiguration& config,
                       int min_time_between_pings_ms) {
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
@@ -87,7 +87,7 @@ static void test_ping(const CoreTestConfiguration& config,
   cqv.Verify();
 }
 
-void ping(const CoreTestConfiguration& config) {
+void ping(const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_ping(config, 0);
   test_ping(config, 100);

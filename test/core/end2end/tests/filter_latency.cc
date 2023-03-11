@@ -53,8 +53,8 @@ static gpr_mu g_mu;
 static gpr_timespec g_client_latency;
 static gpr_timespec g_server_latency;
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -65,7 +65,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Simple request via a server filter that saves the reported latency value.
-static void test_request(const CoreTestConfiguration& config) {
+static void test_request(const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -260,7 +260,7 @@ static const grpc_channel_filter test_server_filter = {
 // Registration
 //
 
-void filter_latency(const CoreTestConfiguration& config) {
+void filter_latency(const grpc_core::CoreTestConfiguration& config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);

@@ -38,8 +38,8 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "\n\n\nRunning test: %s/%s client_args=%s server_args=%s",
           test_name, config.name,
@@ -59,7 +59,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // If send_limit is true, applies send limit on client; otherwise, applies
 // recv limit on server.
 static void test_max_message_length_on_request(
-    const CoreTestConfiguration& config, bool send_limit,
+    const grpc_core::CoreTestConfiguration& config, bool send_limit,
     bool use_service_config, bool use_string_json_value) {
   gpr_log(GPR_INFO,
           "testing request with send_limit=%d use_service_config=%d "
@@ -242,7 +242,7 @@ done:
 // If send_limit is true, applies send limit on server; otherwise, applies
 // recv limit on client.
 static void test_max_message_length_on_response(
-    const CoreTestConfiguration& config, bool send_limit,
+    const grpc_core::CoreTestConfiguration& config, bool send_limit,
     bool use_service_config, bool use_string_json_value) {
   gpr_log(GPR_INFO,
           "testing response with send_limit=%d use_service_config=%d "
@@ -434,7 +434,7 @@ static grpc_metadata gzip_compression_override() {
 
 // Test receive message limit with compressed request larger than the limit
 static void test_max_receive_message_length_on_compressed_request(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   gpr_log(GPR_INFO, "test max receive message length on compressed request");
 
   grpc_call* c = nullptr;
@@ -570,7 +570,7 @@ static void test_max_receive_message_length_on_compressed_request(
 
 // Test receive message limit with compressed response larger than the limit.
 static void test_max_receive_message_length_on_compressed_response(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   gpr_log(GPR_INFO,
           "testing max receive message length on compressed response");
 
@@ -709,7 +709,7 @@ static void test_max_receive_message_length_on_compressed_response(
   if (s != nullptr) grpc_call_unref(s);
 }
 
-void max_message_length(const CoreTestConfiguration& config) {
+void max_message_length(const grpc_core::CoreTestConfiguration& config) {
   test_max_message_length_on_request(config, false /* send_limit */,
                                      false /* use_service_config */,
                                      false /* use_string_json_value */);

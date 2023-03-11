@@ -38,7 +38,7 @@
 #define MAX_PING_STRIKES 2
 
 // Send more pings than server allows to trigger server's GOAWAY.
-static void test_bad_ping(const CoreTestConfiguration& config) {
+static void test_bad_ping(const grpc_core::CoreTestConfiguration& config) {
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_core::CqVerifier cqv(f->cq());
@@ -180,7 +180,8 @@ static void test_bad_ping(const CoreTestConfiguration& config) {
 
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
-static void test_pings_without_data(const CoreTestConfiguration& config) {
+static void test_pings_without_data(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_core::CqVerifier cqv(f->cq());
@@ -325,7 +326,7 @@ static void test_pings_without_data(const CoreTestConfiguration& config) {
   grpc_call_unref(c);
 }
 
-void bad_ping(const CoreTestConfiguration& config) {
+void bad_ping(const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_bad_ping(config);
   test_pings_without_data(config);

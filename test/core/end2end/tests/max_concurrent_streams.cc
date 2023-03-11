@@ -34,8 +34,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -45,8 +45,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(const CoreTestConfiguration& /*config*/,
-                                CoreTestFixture* f) {
+static void simple_request_body(
+    const grpc_core::CoreTestConfiguration& /*config*/,
+    grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -149,7 +150,8 @@ static void simple_request_body(const CoreTestConfiguration& /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
+static void test_max_concurrent_streams(
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_arg server_arg;
   grpc_channel_args server_args;
   grpc_call* c1;
@@ -393,7 +395,7 @@ static void test_max_concurrent_streams(const CoreTestConfiguration& config) {
 }
 
 static void test_max_concurrent_streams_with_timeout_on_first(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_arg server_arg;
   grpc_channel_args server_args;
   grpc_call* c1;
@@ -587,7 +589,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 }
 
 static void test_max_concurrent_streams_with_timeout_on_second(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_arg server_arg;
   grpc_channel_args server_args;
   grpc_call* c1;
@@ -775,7 +777,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   grpc_call_details_destroy(&call_details);
 }
 
-void max_concurrent_streams(const CoreTestConfiguration& config) {
+void max_concurrent_streams(const grpc_core::CoreTestConfiguration& config) {
   test_max_concurrent_streams_with_timeout_on_first(config);
   test_max_concurrent_streams_with_timeout_on_second(config);
   test_max_concurrent_streams(config);

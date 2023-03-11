@@ -50,7 +50,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-class SslProxyFixture : public CoreTestFixture {
+class SslProxyFixture : public grpc_core::CoreTestFixture {
  public:
   SslProxyFixture(const grpc_core::ChannelArgs& client_args,
                   const grpc_core::ChannelArgs& server_args)
@@ -150,7 +150,7 @@ class SslProxyFixture : public CoreTestFixture {
 
 // All test configurations
 
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |

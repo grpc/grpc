@@ -179,8 +179,8 @@ const char* hobbits[][2] = {
 const char* dragons[] = {"Ancalagon", "Glaurung", "Scatha",
                          "Smaug the Magnificent"};
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -190,8 +190,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(const CoreTestConfiguration& /*config*/,
-                                CoreTestFixture* f, size_t index) {
+static void simple_request_body(
+    const grpc_core::CoreTestConfiguration& /*config*/,
+    grpc_core::CoreTestFixture* f, size_t index) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -307,8 +308,8 @@ static void simple_request_body(const CoreTestConfiguration& /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_size(const CoreTestConfiguration& config, int encode_size,
-                      int decode_size) {
+static void test_size(const grpc_core::CoreTestConfiguration& config,
+                      int encode_size, int decode_size) {
   size_t i;
 
   grpc_arg server_arg;
@@ -338,7 +339,7 @@ static void test_size(const CoreTestConfiguration& config, int encode_size,
   }
 }
 
-void hpack_size(const CoreTestConfiguration& config) {
+void hpack_size(const grpc_core::CoreTestConfiguration& config) {
   static const int interesting_sizes[] = {4096, 0,     100,
                                           1000, 32768, 4 * 1024 * 1024};
   size_t i, j;

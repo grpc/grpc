@@ -30,8 +30,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -41,8 +41,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void empty_batch_body(const CoreTestConfiguration& /*config*/,
-                             CoreTestFixture* f) {
+static void empty_batch_body(const grpc_core::CoreTestConfiguration& /*config*/,
+                             grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_core::CqVerifier cqv(f->cq());
   grpc_call_error error;
@@ -63,12 +63,13 @@ static void empty_batch_body(const CoreTestConfiguration& /*config*/,
   grpc_call_unref(c);
 }
 
-static void test_invoke_empty_body(const CoreTestConfiguration& config) {
+static void test_invoke_empty_body(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_empty_body", nullptr, nullptr);
   empty_batch_body(config, f.get());
 }
 
-void empty_batch(const CoreTestConfiguration& config) {
+void empty_batch(const grpc_core::CoreTestConfiguration& config) {
   test_invoke_empty_body(config);
 }
 

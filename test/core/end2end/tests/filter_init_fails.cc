@@ -54,8 +54,8 @@ static bool g_enable_client_channel_filter = false;
 static bool g_enable_client_subchannel_filter = false;
 static bool g_channel_filter_init_failure = false;
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -67,7 +67,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Simple request via a SERVER_CHANNEL filter that always fails to
 // initialize the call.
-static void test_server_channel_filter(const CoreTestConfiguration& config) {
+static void test_server_channel_filter(
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -167,7 +168,8 @@ static void test_server_channel_filter(const CoreTestConfiguration& config) {
 
 // Simple request via a CLIENT_CHANNEL or CLIENT_DIRECT_CHANNEL filter
 // that always fails to initialize the call.
-static void test_client_channel_filter(const CoreTestConfiguration& config) {
+static void test_client_channel_filter(
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -256,7 +258,8 @@ static void test_client_channel_filter(const CoreTestConfiguration& config) {
 
 // Simple request via a CLIENT_SUBCHANNEL filter that always fails to
 // initialize the call.
-static void test_client_subchannel_filter(const CoreTestConfiguration& config) {
+static void test_client_subchannel_filter(
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -409,7 +412,8 @@ static const grpc_channel_filter test_filter = {
 // Registration
 //
 
-static void filter_init_fails_internal(const CoreTestConfiguration& config) {
+static void filter_init_fails_internal(
+    const grpc_core::CoreTestConfiguration& config) {
   gpr_log(GPR_INFO, "Testing SERVER_CHANNEL filter.");
   g_enable_server_channel_filter = true;
   test_server_channel_filter(config);
@@ -434,7 +438,7 @@ static void filter_init_fails_internal(const CoreTestConfiguration& config) {
   }
 }
 
-void filter_init_fails(const CoreTestConfiguration& config) {
+void filter_init_fails(const grpc_core::CoreTestConfiguration& config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);

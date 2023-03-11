@@ -34,8 +34,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -46,7 +46,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Request/response with metadata and payload.
-static void test_with_authority_header(const CoreTestConfiguration& config) {
+static void test_with_authority_header(
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -132,7 +133,7 @@ static void test_with_authority_header(const CoreTestConfiguration& config) {
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-void authority_not_supported(const CoreTestConfiguration& config) {
+void authority_not_supported(const grpc_core::CoreTestConfiguration& config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
     return;
   }

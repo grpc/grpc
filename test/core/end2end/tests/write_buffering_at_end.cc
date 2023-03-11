@@ -34,8 +34,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -47,7 +47,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 
 // Client sends a request with payload, server reads then returns status.
 static void test_invoke_request_with_payload(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -225,7 +225,7 @@ static void test_invoke_request_with_payload(
   grpc_byte_buffer_destroy(request_payload_recv1);
 }
 
-void write_buffering_at_end(const CoreTestConfiguration& config) {
+void write_buffering_at_end(const grpc_core::CoreTestConfiguration& config) {
   test_invoke_request_with_payload(config);
 }
 

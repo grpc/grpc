@@ -24,11 +24,17 @@
 #include <functional>
 #include <memory>
 
+#include "cq_verifier.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
 
 // Test feature flags.
@@ -48,6 +54,7 @@
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
+namespace grpc_core {
 class CoreTestFixture {
  public:
   virtual ~CoreTestFixture() {
@@ -62,12 +69,12 @@ class CoreTestFixture {
   grpc_server* server() { return server_; }
   grpc_channel* client() { return client_; }
 
-  void InitServer(const grpc_core::ChannelArgs& args) {
+  void InitServer(const ChannelArgs& args) {
     if (server_ != nullptr) ShutdownServer();
     server_ = MakeServer(args);
     GPR_ASSERT(server_ != nullptr);
   }
-  void InitClient(const grpc_core::ChannelArgs& args) {
+  void InitClient(const ChannelArgs& args) {
     if (client_ != nullptr) ShutdownClient();
     client_ = MakeClient(args);
     GPR_ASSERT(client_ != nullptr);
@@ -101,8 +108,8 @@ class CoreTestFixture {
   void SetClient(grpc_channel* client);
 
  private:
-  virtual grpc_server* MakeServer(const grpc_core::ChannelArgs& args) = 0;
-  virtual grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) = 0;
+  virtual grpc_server* MakeServer(const ChannelArgs& args) = 0;
+  virtual grpc_channel* MakeClient(const ChannelArgs& args) = 0;
 
   void DrainCq() {
     grpc_event ev;
@@ -117,6 +124,11 @@ class CoreTestFixture {
   grpc_channel* client_ = nullptr;
 };
 
+Slice RandomSlice(size_t length);
+using ByteBufferUniquePtr =
+    std::unique_ptr<grpc_byte_buffer, void (*)(grpc_byte_buffer*)>;
+ByteBufferUniquePtr ByteBufferFromSlice(Slice slice);
+
 struct CoreTestConfiguration {
   // A descriptive name for this test fixture.
   const char* name;
@@ -130,23 +142,255 @@ struct CoreTestConfiguration {
   const char* overridden_call_host;
 
   std::function<std::unique_ptr<CoreTestFixture>(
-      const grpc_core::ChannelArgs& client_args,
-      const grpc_core::ChannelArgs& server_args)>
+      const ChannelArgs& client_args,
+      const ChannelArgs& server_args)>
       create_fixture;
 };
 
+class CoreEnd2endTest : public ::testing::TestWithParam<CoreTestConfiguration> {
+ public:
+  void SetUp() override;
+  void TearDown() override;
+
+  class Call;
+
+  class ClientCallBuilder {
+   public:
+    ClientCallBuilder(CoreEnd2endTest& test, std::string method)
+        : test_(test), method_(std::move(method)) {}
+
+    ClientCallBuilder& Timeout(Duration timeout) {
+      deadline_ = grpc_timeout_milliseconds_to_deadline(timeout.millis());
+      return *this;
+    }
+    Call Create();
+
+   private:
+    CoreEnd2endTest& test_;
+    const std::string method_;
+    absl::optional<std::string> host_;
+    grpc_call* parent_call_ = nullptr;
+    uint32_t propagation_mask_ = GRPC_PROPAGATE_DEFAULTS;
+    gpr_timespec deadline_;
+  };
+
+  class IncomingMetadata {
+   public:
+    IncomingMetadata() = default;
+    IncomingMetadata(const IncomingMetadata&) = delete;
+    IncomingMetadata& operator=(const IncomingMetadata&) = delete;
+    ~IncomingMetadata() { grpc_metadata_array_destroy(&metadata_); }
+
+    grpc_op MakeOp();
+
+   private:
+    grpc_metadata_array metadata_{0, 0, nullptr};
+  };
+
+  class IncomingMessage {
+   public:
+    IncomingMessage() = default;
+    IncomingMessage(const IncomingMessage&) = delete;
+    IncomingMessage& operator=(const IncomingMessage&) = delete;
+    ~IncomingMessage() { grpc_byte_buffer_destroy(payload_); }
+
+    Slice payload() const;
+
+    grpc_op MakeOp();
+
+   private:
+    grpc_byte_buffer* payload_;
+  };
+
+  class IncomingStatusOnClient {
+   public:
+    IncomingStatusOnClient() = default;
+    IncomingStatusOnClient(const IncomingStatusOnClient&) = delete;
+    IncomingStatusOnClient& operator=(const IncomingStatusOnClient&) = delete;
+    ~IncomingStatusOnClient() {
+      grpc_metadata_array_destroy(&trailing_metadata_);
+      gpr_free(const_cast<char*>(error_string_));
+    }
+
+    grpc_status_code status() const { return status_; }
+    absl::string_view message() const {
+      return status_details_.as_string_view();
+    }
+
+    grpc_op MakeOp();
+
+   private:
+    grpc_metadata_array trailing_metadata_{0, 0, nullptr};
+    grpc_status_code status_;
+    Slice status_details_;
+    const char* error_string_ = nullptr;
+  };
+
+  class IncomingCloseOnServer {
+   public:
+    IncomingCloseOnServer() = default;
+    IncomingCloseOnServer(const IncomingCloseOnServer&) = delete;
+    IncomingCloseOnServer& operator=(const IncomingCloseOnServer&) = delete;
+
+    bool was_cancelled() const { return cancelled_ != 0; }
+
+    grpc_op MakeOp();
+
+   private:
+    int cancelled_;
+  };
+
+  class BatchBuilder {
+   public:
+    BatchBuilder(grpc_call* call, int tag) : call_(call), tag_(tag) {}
+    ~BatchBuilder();
+
+    BatchBuilder(const BatchBuilder&) = delete;
+    BatchBuilder& operator=(const BatchBuilder&) = delete;
+    BatchBuilder(BatchBuilder&&) noexcept = default;
+
+    BatchBuilder& SendInitialMetadata(
+        std::initializer_list<std::pair<absl::string_view, absl::string_view>>
+            md);
+
+    BatchBuilder& SendMessage(Slice payload);
+
+    BatchBuilder& SendCloseFromClient();
+
+    BatchBuilder& SendStatusFromServer(
+        grpc_status_code status, absl::string_view message,
+        std::initializer_list<std::pair<absl::string_view, absl::string_view>>
+            md);
+
+    BatchBuilder& RecvInitialMetadata(IncomingMetadata& md) {
+      ops_.emplace_back(md.MakeOp());
+      return *this;
+    }
+
+    BatchBuilder& RecvMessage(IncomingMessage& msg) {
+      ops_.emplace_back(msg.MakeOp());
+      return *this;
+    }
+
+    BatchBuilder& RecvStatusOnClient(IncomingStatusOnClient& status) {
+      ops_.emplace_back(status.MakeOp());
+      return *this;
+    }
+
+    BatchBuilder& RecvCloseOnServer(IncomingCloseOnServer& close) {
+      ops_.emplace_back(close.MakeOp());
+      return *this;
+    }
+
+   private:
+    class Thing {
+     public:
+      virtual ~Thing() = default;
+    };
+    template <typename T>
+    class SpecificThing final : public Thing {
+     public:
+      template <typename... Args>
+      explicit SpecificThing(Args&&... args)
+          : t_(std::forward<Args>(args)...) {}
+      SpecificThing() = default;
+
+      T& get() { return t_; }
+
+     private:
+      T t_;
+    };
+
+    template <typename T, typename... Args>
+    T& Make(Args&&... args) {
+      things_.emplace_back(new SpecificThing<T>(std::forward<Args>(args)...));
+      return static_cast<SpecificThing<T>*>(things_.back().get())->get();
+    }
+
+    grpc_call* call_;
+    const int tag_;
+    std::vector<grpc_op> ops_;
+    std::vector<std::unique_ptr<Thing>> things_;
+  };
+
+  class Call {
+   public:
+    explicit Call(grpc_call* call) : call_(call) {}
+    Call(const Call&) = delete;
+    Call& operator=(const Call&) = delete;
+    Call(Call&& other) noexcept : call_(std::exchange(other.call_, nullptr)) {}
+    ~Call() { grpc_call_unref(call_); }
+    BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, tag); }
+
+    grpc_call** call_ptr() { return &call_; }
+
+   private:
+    grpc_call* call_;
+  };
+
+  class IncomingCall {
+   public:
+    IncomingCall(CoreEnd2endTest& test, int tag);
+    IncomingCall(const IncomingCall&) = delete;
+    IncomingCall& operator=(const IncomingCall&) = delete;
+    IncomingCall(IncomingCall&&) noexcept = default;
+
+    BatchBuilder NewBatch(int tag) { return impl_->call.NewBatch(tag); }
+
+    absl::string_view method() const {
+      return StringViewFromSlice(impl_->call_details.method);
+    }
+
+   private:
+    struct Impl {
+      Impl() {
+        grpc_call_details_init(&call_details);
+        grpc_metadata_array_init(&request_metadata);
+      }
+      ~Impl() {
+        grpc_call_details_destroy(&call_details);
+        grpc_metadata_array_destroy(&request_metadata);
+      }
+      Call call{nullptr};
+      grpc_call_details call_details;
+      grpc_metadata_array request_metadata;
+    };
+    std::unique_ptr<Impl> impl_;
+  };
+
+  ClientCallBuilder NewClientCall(std::string method) {
+    return ClientCallBuilder(*this, std::move(method));
+  }
+  IncomingCall RequestCall(int tag) { return IncomingCall(*this, tag); }
+
+  using ExpectedResult = CqVerifier::ExpectedResult;
+  using Maybe = CqVerifier::Maybe;
+  using AnyStatus = CqVerifier::AnyStatus;
+  void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
+    cq_verifier_->Expect(CqVerifier::tag(tag), result, whence);
+  }
+  void Step() { cq_verifier_->Verify(); }
+
+ private:
+  std::unique_ptr<CoreTestFixture> fixture_;
+  std::unique_ptr<CqVerifier> cq_verifier_;
+};
+
+}  // namespace grpc_core
+
 void grpc_end2end_tests_pre_init(void);
 void grpc_end2end_tests(int argc, char** argv,
-                        const CoreTestConfiguration& config);
+                        const grpc_core::CoreTestConfiguration& config);
 
-const char* get_host_override_string(const char* str,
-                                     const CoreTestConfiguration& config);
+const char* get_host_override_string(
+    const char* str, const grpc_core::CoreTestConfiguration& config);
 // Returns a pointer to a statically allocated slice: future invocations
 // overwrite past invocations, not threadsafe, etc...
-const grpc_slice* get_host_override_slice(const char* str,
-                                          const CoreTestConfiguration& config);
+const grpc_slice* get_host_override_slice(
+    const char* str, const grpc_core::CoreTestConfiguration& config);
 
-void validate_host_override_string(const char* pattern, grpc_slice str,
-                                   const CoreTestConfiguration& config);
+void validate_host_override_string(
+    const char* pattern, grpc_slice str,
+    const grpc_core::CoreTestConfiguration& config);
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H

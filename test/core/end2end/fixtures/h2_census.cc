@@ -32,7 +32,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-class CensusFixture : public CoreTestFixture {
+class CensusFixture : public grpc_core::CoreTestFixture {
  private:
   grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
     grpc_server_credentials* server_creds =
@@ -59,7 +59,7 @@ class CensusFixture : public CoreTestFixture {
 };
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/fullstack+census",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |

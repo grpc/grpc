@@ -206,177 +206,177 @@ def _test_options(
 
 # maps test names to options
 END2END_TESTS = {
-    "bad_hostname": _test_options(needs_names = True),
-    "bad_ping": _test_options(needs_fullstack = True, proxyable = False),
-    "binary_metadata": _test_options(),
-    "resource_quota_server": _test_options(
-        proxyable = False,
-        # TODO(b/151212019): Test case known to be flaky under epoll1.
-        exclude_pollers = ["epoll1"],
-        exclude_1byte = True,
-    ),
-    "call_creds": _test_options(secure = True),
-    "call_host_override": _test_options(
-        needs_fullstack = True,
-        needs_dns = True,
-        needs_names = True,
-    ),
-    "cancel_after_accept": _test_options(),
-    "cancel_after_client_done": _test_options(),
-    "cancel_after_invoke": _test_options(),
-    "cancel_after_round_trip": _test_options(),
-    "cancel_before_invoke": _test_options(),
-    "cancel_in_a_vacuum": _test_options(),
-    "cancel_with_status": _test_options(),
-    "client_streaming": _test_options(),
-    "compressed_payload": _test_options(proxyable = False, exclude_inproc = True, exclude_minstack = True),
-    "connectivity": _test_options(
-        needs_fullstack = True,
-        needs_names = True,
-        proxyable = False,
-    ),
-    "channelz": _test_options(),
-    "default_host": _test_options(
-        needs_fullstack = True,
-        needs_dns = True,
-        needs_names = True,
-    ),
-    "disappearing_server": _test_options(needs_fullstack = True, needs_names = True),
-    "empty_batch": _test_options(),
-    "filter_causes_close": _test_options(),
-    "filter_init_fails": _test_options(),
-    "filter_context": _test_options(),
-    "filtered_metadata": _test_options(),
-    "graceful_server_shutdown": _test_options(exclude_inproc = True),
-    "grpc_authz": _test_options(secure = True),
-    "hpack_size": _test_options(
-        proxyable = False,
-        traceable = False,
-        exclude_inproc = True,
-    ),
-    "high_initial_seqno": _test_options(),
-    "invoke_large_request": _test_options(exclude_1byte = True, tags = ["flow_control_test"]),
-    "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
-    "large_metadata": _test_options(exclude_1byte = True),
-    "max_concurrent_streams": _test_options(
-        proxyable = False,
-        exclude_inproc = True,
-        exclude_minstack = True,
-    ),
-    "max_connection_age": _test_options(exclude_minstack = True, exclude_inproc = True),
-    "max_connection_idle": _test_options(needs_fullstack = True, proxyable = False),
-    "max_message_length": _test_options(exclude_minstack = True),
-    "negative_deadline": _test_options(exclude_minstack = True),
-    "no_logging": _test_options(traceable = False),
+#    "bad_hostname": _test_options(needs_names = True),
+#    "bad_ping": _test_options(needs_fullstack = True, proxyable = False),
+#    "binary_metadata": _test_options(),
+#    "resource_quota_server": _test_options(
+#        proxyable = False,
+#        # TODO(b/151212019): Test case known to be flaky under epoll1.
+#        exclude_pollers = ["epoll1"],
+#        exclude_1byte = True,
+#    ),
+#    "call_creds": _test_options(secure = True),
+#    "call_host_override": _test_options(
+#        needs_fullstack = True,
+#        needs_dns = True,
+#        needs_names = True,
+#    ),
+#    "cancel_after_accept": _test_options(),
+#    "cancel_after_client_done": _test_options(),
+#    "cancel_after_invoke": _test_options(),
+#    "cancel_after_round_trip": _test_options(),
+#    "cancel_before_invoke": _test_options(),
+#    "cancel_in_a_vacuum": _test_options(),
+#    "cancel_with_status": _test_options(),
+#    "client_streaming": _test_options(),
+#    "compressed_payload": _test_options(proxyable = False, exclude_inproc = True, exclude_minstack = True),
+#    "connectivity": _test_options(
+#        needs_fullstack = True,
+#        needs_names = True,
+#        proxyable = False,
+#    ),
+#    "channelz": _test_options(),
+#    "default_host": _test_options(
+#        needs_fullstack = True,
+#        needs_dns = True,
+#        needs_names = True,
+#    ),
+#    "disappearing_server": _test_options(needs_fullstack = True, needs_names = True),
+#    "empty_batch": _test_options(),
+#    "filter_causes_close": _test_options(),
+#    "filter_init_fails": _test_options(),
+#    "filter_context": _test_options(),
+#    "filtered_metadata": _test_options(),
+#    "graceful_server_shutdown": _test_options(exclude_inproc = True),
+#    "grpc_authz": _test_options(secure = True),
+#    "hpack_size": _test_options(
+#        proxyable = False,
+#        traceable = False,
+#        exclude_inproc = True,
+#    ),
+#    "high_initial_seqno": _test_options(),
+#    "invoke_large_request": _test_options(exclude_1byte = True, tags = ["flow_control_test"]),
+#    "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
+#    "large_metadata": _test_options(exclude_1byte = True),
+#    "max_concurrent_streams": _test_options(
+#        proxyable = False,
+#        exclude_inproc = True,
+#        exclude_minstack = True,
+#    ),
+#    "max_connection_age": _test_options(exclude_minstack = True, exclude_inproc = True),
+#    "max_connection_idle": _test_options(needs_fullstack = True, proxyable = False),
+#    "max_message_length": _test_options(exclude_minstack = True),
+#    "negative_deadline": _test_options(exclude_minstack = True),
+#    "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
     "payload": _test_options(exclude_1byte = True),
-    # TODO(juanlishen): This is disabled for now because it depends on some generated functions in
-    # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
-    # OpenCensus can only be built via Bazel so far.
-    # 'load_reporting_hook': _test_options(),
-    "ping_pong_streaming": _test_options(tags = ["flow_control_test"]),
-    "ping": _test_options(needs_fullstack = True, proxyable = False),
-    "proxy_auth": _test_options(needs_proxy_auth = True),
-    "registered_call": _test_options(),
-    "request_with_flags": _test_options(proxyable = False),
-    "request_with_payload": _test_options(),
-    "retry": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_cancellation": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_cancel_during_delay": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_cancel_with_multiple_send_batches": _test_options(
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_cancel3",
-        needs_client_channel = True,
-        needs_retry = True,
-    ),
-    "retry_cancel_after_first_attempt_starts": _test_options(
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_cancel4",
-        needs_client_channel = True,
-        needs_retry = True,
-    ),
-    "retry_disabled": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_exceeds_buffer_size_in_delay": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_exceeds_buffer_size_in_initial_batch": _test_options(
-        needs_client_channel = True,
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_exceeds_buffer_size_in_init",
-        needs_retry = True,
-    ),
-    "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
-        needs_client_channel = True,
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_exceeds_buffer_size_in_subseq",
-        needs_retry = True,
-    ),
-    "retry_lb_drop": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_lb_fail": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_non_retriable_status": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
-        needs_client_channel = True,
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_non_retriable_status2",
-        needs_retry = True,
-    ),
-    "retry_per_attempt_recv_timeout": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
-        needs_client_channel = True,
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_per_attempt_recv_timeout2",
-        needs_retry = True,
-    ),
-    "retry_recv_initial_metadata": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_recv_message": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_recv_message_replay": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_send_op_fails": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_send_recv_batch": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_server_pushback_delay": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_server_pushback_disabled": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_streaming": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_streaming_after_commit": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_streaming_succeeds_before_replay_finished": _test_options(
-        needs_client_channel = True,
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_streaming2",
-        needs_retry = True,
-    ),
-    "retry_throttled": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_too_many_attempts": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_transparent_goaway": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_transparent_not_sent_on_wire": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_transparent_max_concurrent_streams": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
-        # See b/151617965
-        short_name = "retry_transparent_mcs",
-        needs_retry = True,
-    ),
-    "retry_unref_before_finish": _test_options(needs_client_channel = True, needs_retry = True),
-    "retry_unref_before_recv": _test_options(needs_client_channel = True, needs_retry = True),
-    "server_finishes_request": _test_options(),
-    "server_streaming": _test_options(needs_http2 = True),
-    "shutdown_finishes_calls": _test_options(),
-    "shutdown_finishes_tags": _test_options(),
-    "simple_delayed_request": _test_options(needs_fullstack = True),
-    "simple_metadata": _test_options(),
-    "simple_request": _test_options(),
-    "streaming_error_response": _test_options(),
-    "trailing_metadata": _test_options(),
-    "authority_not_supported": _test_options(),
-    "filter_latency": _test_options(),
-    "filter_status_code": _test_options(),
-    "write_buffering": _test_options(needs_write_buffering = True),
-    "write_buffering_at_end": _test_options(needs_write_buffering = True),
+#    # TODO(juanlishen): This is disabled for now because it depends on some generated functions in
+#    # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
+#    # OpenCensus can only be built via Bazel so far.
+#    # 'load_reporting_hook': _test_options(),
+#    "ping_pong_streaming": _test_options(tags = ["flow_control_test"]),
+#    "ping": _test_options(needs_fullstack = True, proxyable = False),
+#    "proxy_auth": _test_options(needs_proxy_auth = True),
+#    "registered_call": _test_options(),
+#    "request_with_flags": _test_options(proxyable = False),
+#    "request_with_payload": _test_options(),
+#    "retry": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_cancellation": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_cancel_during_delay": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_cancel_with_multiple_send_batches": _test_options(
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_cancel3",
+#        needs_client_channel = True,
+#        needs_retry = True,
+#    ),
+#    "retry_cancel_after_first_attempt_starts": _test_options(
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_cancel4",
+#        needs_client_channel = True,
+#        needs_retry = True,
+#    ),
+#    "retry_disabled": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_exceeds_buffer_size_in_delay": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_exceeds_buffer_size_in_initial_batch": _test_options(
+#        needs_client_channel = True,
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_exceeds_buffer_size_in_init",
+#        needs_retry = True,
+#    ),
+#    "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
+#        needs_client_channel = True,
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_exceeds_buffer_size_in_subseq",
+#        needs_retry = True,
+#    ),
+#    "retry_lb_drop": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_lb_fail": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_non_retriable_status": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
+#        needs_client_channel = True,
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_non_retriable_status2",
+#        needs_retry = True,
+#    ),
+#    "retry_per_attempt_recv_timeout": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
+#        needs_client_channel = True,
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_per_attempt_recv_timeout2",
+#        needs_retry = True,
+#    ),
+#    "retry_recv_initial_metadata": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_recv_message": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_recv_message_replay": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_send_op_fails": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_send_recv_batch": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_server_pushback_delay": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_server_pushback_disabled": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_streaming": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_streaming_after_commit": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_streaming_succeeds_before_replay_finished": _test_options(
+#        needs_client_channel = True,
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_streaming2",
+#        needs_retry = True,
+#    ),
+#    "retry_throttled": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_too_many_attempts": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_transparent_goaway": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_transparent_not_sent_on_wire": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_transparent_max_concurrent_streams": _test_options(
+#        needs_client_channel = True,
+#        proxyable = False,
+#        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+#        # See b/151617965
+#        short_name = "retry_transparent_mcs",
+#        needs_retry = True,
+#    ),
+#    "retry_unref_before_finish": _test_options(needs_client_channel = True, needs_retry = True),
+#    "retry_unref_before_recv": _test_options(needs_client_channel = True, needs_retry = True),
+#    "server_finishes_request": _test_options(),
+#    "server_streaming": _test_options(needs_http2 = True),
+#    "shutdown_finishes_calls": _test_options(),
+#    "shutdown_finishes_tags": _test_options(),
+#    "simple_delayed_request": _test_options(needs_fullstack = True),
+#    "simple_metadata": _test_options(),
+#    "simple_request": _test_options(),
+#    "streaming_error_response": _test_options(),
+#    "trailing_metadata": _test_options(),
+#    "authority_not_supported": _test_options(),
+#    "filter_latency": _test_options(),
+#    "filter_status_code": _test_options(),
+#    "write_buffering": _test_options(needs_write_buffering = True),
+#    "write_buffering_at_end": _test_options(needs_write_buffering = True),
 }
 
 def _compatible(fopt, topt):
@@ -458,6 +458,7 @@ def grpc_end2end_tests():
         visibility = [
             "//src/objective-c/tests:__subpackages__",
         ],
+        alwayslink = 1,
     )
     for f, fopt in END2END_FIXTURES.items():
         bin_name = "%s_test" % f

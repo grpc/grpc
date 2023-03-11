@@ -44,7 +44,7 @@ class SockpairWithMinstackFixture : public SockpairFixture {
 };
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/socketpair+minstack",
      FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES,

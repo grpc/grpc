@@ -39,8 +39,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "%s", std::string(100, '*').c_str());
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
@@ -59,8 +59,8 @@ static void check_peer(char* peer_name) {
   }
 }
 
-static void simple_request_body(const CoreTestConfiguration& config,
-                                CoreTestFixture* f) {
+static void simple_request_body(const grpc_core::CoreTestConfiguration& config,
+                                grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -207,13 +207,14 @@ static void simple_request_body(const CoreTestConfiguration& config,
              expected_calls);
 }
 
-static void test_invoke_simple_request(const CoreTestConfiguration& config) {
+static void test_invoke_simple_request(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f.get());
 }
 
 static void test_invoke_10_simple_requests(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   int i;
   auto f =
       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
@@ -223,7 +224,7 @@ static void test_invoke_10_simple_requests(
   }
 }
 
-void simple_request(const CoreTestConfiguration& config) {
+void simple_request(const grpc_core::CoreTestConfiguration& config) {
   int i;
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);

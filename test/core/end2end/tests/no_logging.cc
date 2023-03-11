@@ -65,8 +65,8 @@ static void log_dispatcher_func(gpr_log_func_args* args) {
   log_func(args);
 }
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -76,8 +76,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(const CoreTestConfiguration& /*config*/,
-                                CoreTestFixture* f) {
+static void simple_request_body(
+    const grpc_core::CoreTestConfiguration& /*config*/,
+    grpc_core::CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -192,7 +193,8 @@ static void simple_request_body(const CoreTestConfiguration& /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_invoke_simple_request(const CoreTestConfiguration& config) {
+static void test_invoke_simple_request(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f =
       begin_test(config, "test_invoke_simple_request_with_no_error_logging",
                  nullptr, nullptr);
@@ -200,7 +202,7 @@ static void test_invoke_simple_request(const CoreTestConfiguration& config) {
 }
 
 static void test_invoke_10_simple_requests(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   int i;
   auto f =
       begin_test(config, "test_invoke_10_simple_requests_with_no_error_logging",
@@ -213,7 +215,7 @@ static void test_invoke_10_simple_requests(
 }
 
 static void test_no_error_logging_in_entire_process(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   int i;
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_error_log);
   for (i = 0; i < 10; i++) {
@@ -224,7 +226,7 @@ static void test_no_error_logging_in_entire_process(
 }
 
 static void test_no_logging_in_one_request(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   int i;
   auto f =
       begin_test(config, "test_no_logging_in_last_request", nullptr, nullptr);
@@ -236,7 +238,7 @@ static void test_no_logging_in_one_request(
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
 }
 
-void no_logging(const CoreTestConfiguration& config) {
+void no_logging(const grpc_core::CoreTestConfiguration& config) {
   grpc_core::SetEnv("GRPC_TRACE", "");
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 0);

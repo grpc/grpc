@@ -35,7 +35,7 @@
 #endif
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/socketpair", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
      [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
        return std::make_unique<SockpairFixture>(grpc_core::ChannelArgs());

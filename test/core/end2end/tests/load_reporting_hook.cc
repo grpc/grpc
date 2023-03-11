@@ -53,8 +53,8 @@ typedef struct {
   bool fully_processed;
 } load_reporting_data;
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
 
@@ -67,8 +67,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 static void request_response_with_payload(
-    const CoreTestConfiguration& config, CoreTestFixture f,
-    const char* method_name, const char* request_msg, const char* response_msg,
+    const grpc_core::CoreTestConfiguration& config,
+    grpc_core::CoreTestFixture f, const char* method_name,
+    const char* request_msg, const char* response_msg,
     grpc_metadata* initial_lr_metadata, grpc_metadata* trailing_lr_metadata) {
   grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
   grpc_slice response_payload_slice =
@@ -220,7 +221,8 @@ static void request_response_with_payload(
 extern void (*g_load_reporting_fn)(
     const grpc_load_reporting_call_data* call_data);
 
-static void test_load_reporting_hook(const CoreTestConfiguration& config) {
+static void test_load_reporting_hook(
+    const grpc_core::CoreTestConfiguration& config) {
   // TODO(dgq): this test is currently a noop until LR is fully defined.
   // Leaving the rest here, as it'll likely be reusable.
 
@@ -259,7 +261,7 @@ static void test_load_reporting_hook(const CoreTestConfiguration& config) {
   }
 }
 
-void load_reporting_hook(const CoreTestConfiguration& config) {
+void load_reporting_hook(const grpc_core::CoreTestConfiguration& config) {
   test_load_reporting_hook(config);
 }
 

@@ -34,8 +34,8 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -45,8 +45,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void simple_request_body(const CoreTestConfiguration& /*config*/,
-                                CoreTestFixture* f, size_t num_ops) {
+static void simple_request_body(
+    const grpc_core::CoreTestConfiguration& /*config*/,
+    grpc_core::CoreTestFixture* f, size_t num_ops) {
   grpc_call* c;
   grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
@@ -108,13 +109,13 @@ static void simple_request_body(const CoreTestConfiguration& /*config*/,
   grpc_call_unref(c);
 }
 
-static void test_invoke_simple_request(const CoreTestConfiguration& config,
-                                       size_t num_ops) {
+static void test_invoke_simple_request(
+    const grpc_core::CoreTestConfiguration& config, size_t num_ops) {
   auto f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f.get(), num_ops);
 }
 
-void negative_deadline(const CoreTestConfiguration& config) {
+void negative_deadline(const grpc_core::CoreTestConfiguration& config) {
   size_t i;
   for (i = 1; i <= 4; i++) {
     test_invoke_simple_request(config, i);

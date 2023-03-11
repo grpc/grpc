@@ -37,8 +37,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -52,7 +52,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // - 1 retry allowed for ABORTED status
 // - both attempts do not receive a response until after perAttemptRecvTimeout
 static void test_retry_per_attempt_recv_timeout_on_last_attempt(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_call* c;
   grpc_call* s;
   grpc_call* s0;
@@ -212,7 +212,7 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
 }
 
 void retry_per_attempt_recv_timeout_on_last_attempt(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_per_attempt_recv_timeout_on_last_attempt(config);
 }

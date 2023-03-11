@@ -41,8 +41,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -59,8 +59,8 @@ static grpc_slice make_slice(int message_size) {
   return slice;
 }
 
-static void test_invoke_large_request(const CoreTestConfiguration& config,
-                                      int message_size) {
+static void test_invoke_large_request(
+    const grpc_core::CoreTestConfiguration& config, int message_size) {
   grpc_arg args[1];
   args[0].type = GRPC_ARG_INTEGER;
   args[0].key = const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
@@ -218,7 +218,7 @@ static void test_invoke_large_request(const CoreTestConfiguration& config,
 
 static grpc_core::NoDestruct<grpc_core::EventLog> g_event_log;
 
-void invoke_large_request(const CoreTestConfiguration& config) {
+void invoke_large_request(const grpc_core::CoreTestConfiguration& config) {
   {
     grpc_core::ExecCtx exec_ctx;
     g_event_log->BeginCollection();

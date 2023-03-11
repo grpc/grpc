@@ -32,7 +32,7 @@
 #include "test/core/util/test_config.h"
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/simple_ssl_fullstack_tls1_2",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |

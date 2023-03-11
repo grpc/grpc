@@ -30,7 +30,7 @@
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/util/test_config.h"
 
-class ProxyFixture : public CoreTestFixture {
+class ProxyFixture : public grpc_core::CoreTestFixture {
  public:
   ProxyFixture(const grpc_core::ChannelArgs& client_args,
                const grpc_core::ChannelArgs& server_args)
@@ -83,7 +83,7 @@ class ProxyFixture : public CoreTestFixture {
 };
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/fullstack+proxy",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |

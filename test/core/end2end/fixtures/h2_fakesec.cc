@@ -63,7 +63,7 @@ class FakesecFixture : public SecureFixture {
 
 // All test configurations
 
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/fake_secure_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |

@@ -52,7 +52,8 @@
 // The grace period for the test to observe the channel shutdown process
 #define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 3000
 
-static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
+static void test_max_age_forcibly_close(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f->cq());
@@ -206,7 +207,8 @@ static void test_max_age_forcibly_close(const CoreTestConfiguration& config) {
   cqv.reset();
 }
 
-static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
+static void test_max_age_gracefully_close(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   auto cqv = std::make_unique<grpc_core::CqVerifier>(f->cq());
@@ -354,7 +356,7 @@ static void test_max_age_gracefully_close(const CoreTestConfiguration& config) {
   cqv.reset();
 }
 
-void max_connection_age(const CoreTestConfiguration& config) {
+void max_connection_age(const grpc_core::CoreTestConfiguration& config) {
   test_max_age_forcibly_close(config);
   test_max_age_gracefully_close(config);
 }

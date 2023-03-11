@@ -53,7 +53,7 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
-class FdFixture : public CoreTestFixture {
+class FdFixture : public grpc_core::CoreTestFixture {
  public:
   FdFixture() { create_sockets(fd_pair_); }
 
@@ -81,7 +81,7 @@ class FdFixture : public CoreTestFixture {
 };
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/fd", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
      [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
        return std::make_unique<FdFixture>();

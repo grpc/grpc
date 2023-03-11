@@ -32,8 +32,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     const grpc_core::ChannelArgs& client_args,
     const grpc_core::ChannelArgs& server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
@@ -53,7 +53,7 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // restarted.  The second call will fail in that transport instance and
 // will be transparently retried after the server starts up again.
 static void test_retry_transparent_max_concurrent_streams(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
@@ -316,7 +316,7 @@ static void test_retry_transparent_max_concurrent_streams(
 }
 
 void retry_transparent_max_concurrent_streams(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_transparent_max_concurrent_streams(config);
 }

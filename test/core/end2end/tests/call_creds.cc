@@ -47,8 +47,8 @@ static const char overridden_fake_md_value[] = "overridden_fake_value";
 
 typedef enum { NONE, OVERRIDE, DESTROY, FAIL } override_mode;
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     bool use_secure_call_creds, int fail_server_auth_check) {
   gpr_log(GPR_INFO, "Running test: %s%s/%s", test_name,
           use_secure_call_creds ? "_with_secure_call_creds"
@@ -83,7 +83,7 @@ static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
 }
 
 static void request_response_with_payload_and_call_creds(
-    const char* test_name, const CoreTestConfiguration& config,
+    const char* test_name, const grpc_core::CoreTestConfiguration& config,
     override_mode mode, bool use_secure_call_creds) {
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
@@ -342,35 +342,39 @@ static void request_response_with_payload_and_call_creds(
 }
 
 static void test_request_response_with_payload_and_call_creds(
-    const CoreTestConfiguration& config, bool use_secure_call_creds) {
+    const grpc_core::CoreTestConfiguration& config,
+    bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_call_creds", config, NONE,
       use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_and_overridden_call_creds(
-    const CoreTestConfiguration& config, bool use_secure_call_creds) {
+    const grpc_core::CoreTestConfiguration& config,
+    bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_overridden_call_creds", config,
       OVERRIDE, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_and_deleted_call_creds(
-    const CoreTestConfiguration& config, bool use_secure_call_creds) {
+    const grpc_core::CoreTestConfiguration& config,
+    bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_deleted_call_creds", config,
       DESTROY, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_fail_to_send_call_creds(
-    const CoreTestConfiguration& config, bool use_secure_call_creds) {
+    const grpc_core::CoreTestConfiguration& config,
+    bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_fail_to_send_call_creds", config,
       FAIL, use_secure_call_creds);
 }
 
 static void test_request_with_server_rejecting_client_creds(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_call* c;
@@ -463,7 +467,7 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_call_unref(c);
 }
 
-void call_creds(const CoreTestConfiguration& config) {
+void call_creds(const grpc_core::CoreTestConfiguration& config) {
   // Test fixtures that support call credentials with a minimum security level
   // of GRPC_PRIVACY_AND_INTEGRITY
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {

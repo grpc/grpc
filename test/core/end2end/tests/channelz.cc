@@ -39,8 +39,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -50,8 +50,9 @@ static std::unique_ptr<CoreTestFixture> begin_test(
   return f;
 }
 
-static void run_one_request(const CoreTestConfiguration& /*config*/,
-                            CoreTestFixture* f, bool request_is_success) {
+static void run_one_request(const grpc_core::CoreTestConfiguration& /*config*/,
+                            grpc_core::CoreTestFixture* f,
+                            bool request_is_success) {
   grpc_call* c;
   grpc_call* s;
   grpc_core::CqVerifier cqv(f->cq());
@@ -154,7 +155,7 @@ static void run_one_request(const CoreTestConfiguration& /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_channelz(const CoreTestConfiguration& config) {
+static void test_channelz(const grpc_core::CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -211,7 +212,7 @@ static void test_channelz(const CoreTestConfiguration& config) {
 }
 
 static void test_channelz_with_channel_trace(
-    const CoreTestConfiguration& config) {
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -242,7 +243,8 @@ static void test_channelz_with_channel_trace(
   GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") != json.npos);
 }
 
-static void test_channelz_disabled(const CoreTestConfiguration& config) {
+static void test_channelz_disabled(
+    const grpc_core::CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -260,7 +262,7 @@ static void test_channelz_disabled(const CoreTestConfiguration& config) {
   GPR_ASSERT(channelz_channel == nullptr);
 }
 
-void channelz(const CoreTestConfiguration& config) {
+void channelz(const grpc_core::CoreTestConfiguration& config) {
   test_channelz(config);
   test_channelz_with_channel_trace(config);
   test_channelz_disabled(config);

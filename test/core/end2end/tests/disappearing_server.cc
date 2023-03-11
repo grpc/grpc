@@ -34,8 +34,8 @@
 #include "test/core/util/test_config.h"
 
 static void do_request_and_shutdown_server(
-    const CoreTestConfiguration& /*config*/, CoreTestFixture* f,
-    grpc_core::CqVerifier& cqv) {
+    const grpc_core::CoreTestConfiguration& /*config*/,
+    grpc_core::CoreTestFixture* f, grpc_core::CqVerifier& cqv) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -151,7 +151,8 @@ static void do_request_and_shutdown_server(
   grpc_call_unref(s);
 }
 
-static void disappearing_server_test(const CoreTestConfiguration& config) {
+static void disappearing_server_test(
+    const grpc_core::CoreTestConfiguration& config) {
   auto f =
       config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   grpc_core::CqVerifier cqv(f->cq());
@@ -170,7 +171,7 @@ static void disappearing_server_test(const CoreTestConfiguration& config) {
   do_request_and_shutdown_server(config, f.get(), cqv);
 }
 
-void disappearing_server(const CoreTestConfiguration& config) {
+void disappearing_server(const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
 #ifndef GPR_WINDOWS  // b/148110727 for more details
   disappearing_server_test(config);

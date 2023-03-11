@@ -44,8 +44,8 @@
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
@@ -56,8 +56,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 }
 
 // Tests retry cancellation during backoff.
-static void test_retry_cancel_during_delay(const CoreTestConfiguration& config,
-                                           cancellation_mode mode) {
+static void test_retry_cancel_during_delay(
+    const grpc_core::CoreTestConfiguration& config, cancellation_mode mode) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -235,7 +235,7 @@ static void test_retry_cancel_during_delay(const CoreTestConfiguration& config,
   grpc_call_unref(c);
 }
 
-void retry_cancel_during_delay(const CoreTestConfiguration& config) {
+void retry_cancel_during_delay(const grpc_core::CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); ++i) {
     test_retry_cancel_during_delay(config, cancellation_modes[i]);

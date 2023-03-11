@@ -33,7 +33,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-class CompressionFixture : public CoreTestFixture {
+class CompressionFixture : public grpc_core::CoreTestFixture {
  private:
   grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
     auto* server = grpc_server_create(
@@ -68,7 +68,7 @@ class CompressionFixture : public CoreTestFixture {
 };
 
 // All test configurations
-static CoreTestConfiguration configs[] = {
+static grpc_core::CoreTestConfiguration configs[] = {
     {"chttp2/fullstack_compression",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |

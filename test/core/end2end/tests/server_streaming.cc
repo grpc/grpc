@@ -35,8 +35,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
+static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
+    const grpc_core::CoreTestConfiguration& config, const char* test_name,
     grpc_channel_args* client_args, grpc_channel_args* server_args,
     int num_messages) {
   gpr_log(GPR_INFO, "%s\nRunning test: %s/%s/%d", std::string(100, '*').c_str(),
@@ -51,8 +51,8 @@ static std::unique_ptr<CoreTestFixture> begin_test(
 // Client requests status along with the initial metadata. Server streams
 // messages and ends with a non-OK status. Client reads after server is done
 // writing, and expects to get the status after the messages.
-static void test_server_streaming(const CoreTestConfiguration& config,
-                                  int num_messages) {
+static void test_server_streaming(
+    const grpc_core::CoreTestConfiguration& config, int num_messages) {
   auto f = begin_test(config, "test_server_streaming", nullptr, nullptr,
                       num_messages);
   grpc_call* c;
@@ -234,7 +234,7 @@ static void test_server_streaming(const CoreTestConfiguration& config,
   grpc_slice_unref(details);
 }
 
-void server_streaming(const CoreTestConfiguration& config) {
+void server_streaming(const grpc_core::CoreTestConfiguration& config) {
   test_server_streaming(config, 0);
   test_server_streaming(config, 1);
   test_server_streaming(config, 10);
