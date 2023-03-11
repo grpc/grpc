@@ -16,9 +16,6 @@
 //
 //
 
-#include <string.h>
-
-#include <functional>
 #include <memory>
 
 #include "gtest/gtest.h"
@@ -42,7 +39,7 @@ INSTANTIATE_TEST_SUITE_P(H2Full, CoreEnd2endTest,
                                 const ChannelArgs& /*server_args*/) {
                                return std::make_unique<InsecureFixture>();
                              }}));
-}
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

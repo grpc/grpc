@@ -19,11 +19,13 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include "absl/memory/memory.h"
 #include "absl/random/random.h"
-#include "cq_verifier.h"
-#include "end2end_tests.h"
+
+#include <grpc/byte_buffer_reader.h>
 
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "test/core/end2end/cq_verifier.h"
 
 namespace grpc_core {
 
@@ -52,7 +54,7 @@ void CoreEnd2endTest::SetUp() {
   fixture_ = GetParam().create_fixture(ChannelArgs(), ChannelArgs());
   fixture_->InitServer(ChannelArgs());
   fixture_->InitClient(ChannelArgs());
-  cq_verifier_.reset(new CqVerifier(fixture_->cq()));
+  cq_verifier_ = absl::make_unique<CqVerifier>(fixture_->cq());
 }
 
 void CoreEnd2endTest::TearDown() {
