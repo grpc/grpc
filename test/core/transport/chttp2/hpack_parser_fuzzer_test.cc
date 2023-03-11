@@ -74,7 +74,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
       }
 
       parser->BeginFrame(
-          &b, max_length, boundary, priority,
+          &b, max_length, max_length, boundary, priority,
           grpc_core::HPackParser::LogInfo{
               1, grpc_core::HPackParser::LogInfo::kHeaders, false});
       int stop_buffering_ctr =

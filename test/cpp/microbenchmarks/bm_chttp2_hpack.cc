@@ -328,7 +328,9 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    { grpc_core::HPackParser(); }
+    {
+      grpc_core::HPackParser();
+    }
     grpc_core::ExecCtx::Get()->Flush();
   }
 }
@@ -349,6 +351,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+               std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
                grpc_core::HPackParser::Priority::None,
                grpc_core::HPackParser::LogInfo{
@@ -371,6 +374,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+                   std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
                    grpc_core::HPackParser::Priority::None,
                    grpc_core::HPackParser::LogInfo{
