@@ -16,13 +16,10 @@
 //
 //
 
-#include <functional>
-#include <memory>
+#include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "gtest/gtest.h"
 
-#include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {

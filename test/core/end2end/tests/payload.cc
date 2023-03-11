@@ -16,28 +16,15 @@
 //
 //
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <gtest/gtest.h>
 
-#include <functional>
-#include <memory>
+#include "gtest/gtest.h"
 
-#include "gmock/gmock.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -49,9 +36,7 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
   auto request_slice = RandomSlice(1024 * 1024);
   auto response_slice = RandomSlice(1024 * 1024);
 
-  auto c = test.NewClientCall("/foo")
-               .Timeout(Duration::Seconds(60))
-               .Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(60)).Create();
 
   CoreEnd2endTest::IncomingMetadata server_initial_md;
   CoreEnd2endTest::IncomingMessage server_message;

@@ -19,22 +19,36 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
+#include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <functional>
+#include <initializer_list>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "cq_verifier.h"
-#include "gmock/gmock.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/byte_buffer_reader.h>
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
 // Test feature flags.
@@ -142,8 +156,7 @@ struct CoreTestConfiguration {
   const char* overridden_call_host;
 
   std::function<std::unique_ptr<CoreTestFixture>(
-      const ChannelArgs& client_args,
-      const ChannelArgs& server_args)>
+      const ChannelArgs& client_args, const ChannelArgs& server_args)>
       create_fixture;
 };
 
