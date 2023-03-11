@@ -153,6 +153,7 @@ grpc_cc_test(
         "end2end_tests.cc",
         "tests/no_op.cc",
         "tests/cancel_after_accept.cc",
+        "tests/cancel_after_client_done.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
             "tests/cancel_test_helpers.h",

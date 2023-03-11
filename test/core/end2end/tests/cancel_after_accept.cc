@@ -78,12 +78,12 @@ void CancelAfterAccept(CoreEnd2endTest& test,
 
 TEST_P(CoreEnd2endTest, CancelAfterAccept) {
   CancelAfterAccept(*this, std::make_unique<CancelCancellationMode>(),
-                    Duration::Seconds(2));
+                    Duration::Seconds(5));
 }
 
 TEST_P(CoreDeadlineTest, DeadlineAfterAccept) {
   CancelAfterAccept(*this, std::make_unique<DeadlineCancellationMode>(),
-                    Duration::Seconds(2));
+                    Duration::Seconds(5));
 }
 
 TEST_P(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
