@@ -42,6 +42,28 @@ class SockpairWithMinstackFixture : public SockpairFixture {
   }
 };
 
+class Sockpair1Byte : public SockpairFixture {
+ public:
+  Sockpair1Byte()
+      : SockpairFixture(grpc_core::ChannelArgs()
+                            .Set(GRPC_ARG_TCP_READ_CHUNK_SIZE, 1)
+                            .Set(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE, 1)
+                            .Set(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE, 1)) {
+    g_fixture_slowdown_factor = 2;
+  }
+  ~Sockpair1Byte() { g_fixture_slowdown_factor = 1; }
+
+ private:
+  grpc_core::ChannelArgs MutateClientArgs(
+      grpc_core::ChannelArgs args) override {
+    return args.Set(GRPC_ARG_MINIMAL_STACK, true);
+  }
+  grpc_core::ChannelArgs MutateServerArgs(
+      grpc_core::ChannelArgs args) override {
+    return args.Set(GRPC_ARG_MINIMAL_STACK, true);
+  }
+};
+
 const char* NameFromConfig(
     const ::testing::TestParamInfo<const CoreTestConfiguration*>& config) {
   return config.param->name;
@@ -63,6 +85,16 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{
             [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
               return std::make_unique<SockpairFixture>(
                   grpc_core::ChannelArgs());
+            }},
+        CoreTestConfiguration{
+            "Chttp2SocketPair1ByteAtATime",
+            FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
+            [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+              return std::make_unique<SockpairFixture>(
+                  grpc_core::ChannelArgs()
+                      .Set(GRPC_ARG_TCP_READ_CHUNK_SIZE, 1)
+                      .Set(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE, 1)
+                      .Set(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE, 1));
             }},
         CoreTestConfiguration{
             "Chttp2SocketPairMinstack",
