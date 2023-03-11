@@ -38,8 +38,7 @@ constexpr absl::string_view kBackendMetricsLbPolicyName =
     "test_backend_metrics_load_balancer";
 constexpr absl::string_view kMetricsTrackerArgument = "orca_metrics_tracker";
 
-absl::optional<xds::data::orca::v3::OrcaLoadReport>
-BackendMetricDataToOrcaLoadReport(
+LoadReportTracker::LoadReportEntry BackendMetricDataToOrcaLoadReport(
     const grpc_core::BackendMetricData* backend_metric_data) {
   if (backend_metric_data == nullptr) {
     return absl::nullopt;

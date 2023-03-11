@@ -41,8 +41,8 @@ class LoadReportTracker {
   absl::optional<LoadReportEntry> GetNextLoadReport();
 
  private:
-  std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>>
-      per_rpc_load_reports_ ABSL_GUARDED_BY(per_rpc_load_reports_mu_);
+  std::deque<LoadReportEntry> per_rpc_load_reports_
+      ABSL_GUARDED_BY(per_rpc_load_reports_mu_);
   absl::Mutex per_rpc_load_reports_mu_;
 };
 
