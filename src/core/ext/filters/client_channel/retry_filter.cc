@@ -132,6 +132,7 @@ namespace grpc_core {
 
 namespace {
 
+using grpc_event_engine::experimental::EventEngine;
 using internal::RetryGlobalConfig;
 using internal::RetryMethodConfig;
 using internal::RetryServiceConfigParser;
@@ -178,7 +179,8 @@ class RetryFilter {
       : client_channel_(args.GetObject<ClientChannel>()),
         per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
         service_config_parser_index_(
-            internal::RetryServiceConfigParser::ParserIndex()) {
+            internal::RetryServiceConfigParser::ParserIndex()),
+        event_engine_(args.GetObject<EventEngine>()) {
     // Get retry throttling parameters from service config.
     auto* service_config = args.GetObject<ServiceConfig>();
     if (service_config == nullptr) return;
@@ -215,6 +217,7 @@ class RetryFilter {
   size_t per_rpc_retry_buffer_size_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   const size_t service_config_parser_index_;
+  EventEngine* event_engine_;
 };
 
 //
@@ -548,7 +551,7 @@ class RetryFilter::CallData {
   // If server_pushback is nullopt, retry_backoff_ is used.
   void StartRetryTimer(absl::optional<Duration> server_pushback);
 
-  static void OnRetryTimer(void* arg, grpc_error_handle error);
+  void OnRetryTimer();
   static void OnRetryTimerLocked(void* arg, grpc_error_handle error);
 
   // Adds a closure to closures to start a transparent retry.
@@ -602,11 +605,12 @@ class RetryFilter::CallData {
 
   // Retry state.
   bool retry_committed_ : 1;
-  bool retry_timer_pending_ : 1;
+  // bool retry_timer_pending_ : 1;
   bool retry_codepath_started_ : 1;
   bool sent_transparent_retry_not_seen_by_server_ : 1;
   int num_attempts_completed_ = 0;
-  grpc_timer retry_timer_;
+  absl::optional<EventEngine::TaskHandle> retry_timer_handle_;
+  // grpc_timer retry_timer_;
   grpc_closure retry_closure_;
 
   // Cached data for retrying send ops.
@@ -2154,7 +2158,7 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       pending_send_message_(false),
       pending_send_trailing_metadata_(false),
       retry_committed_(false),
-      retry_timer_pending_(false),
+      // retry_timer_pending_(false),
       retry_codepath_started_(false),
       sent_transparent_retry_not_seen_by_server_(false) {}
 
@@ -2569,42 +2573,40 @@ void RetryFilter::CallData::StartRetryTimer(
   // Reset call attempt.
   call_attempt_.reset(DEBUG_LOCATION, "StartRetryTimer");
   // Compute backoff delay.
-  Timestamp next_attempt_time;
+  Duration next_attempt_timeout;
+  // Timestamp next_attempt_time;
   if (server_pushback.has_value()) {
     GPR_ASSERT(*server_pushback >= Duration::Zero());
-    next_attempt_time = Timestamp::Now() + *server_pushback;
+    // next_attempt_time = Timestamp::Now() + *server_pushback;
+    next_attempt_timeout = *server_pushback;
     retry_backoff_.Reset();
   } else {
-    next_attempt_time = retry_backoff_.NextAttemptTime();
+    // next_attempt_time = retry_backoff_.NextAttemptTime();
+    next_attempt_timeout = retry_backoff_.NextAttemptTime() - Timestamp::Now();
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: retrying failed call in %" PRId64 " ms", chand_,
-            this, (next_attempt_time - Timestamp::Now()).millis());
+            this, next_attempt_timeout.millis());
   }
   // Schedule retry after computed delay.
-  GRPC_CLOSURE_INIT(&retry_closure_, OnRetryTimer, this, nullptr);
   GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
-  retry_timer_pending_ = true;
-  grpc_timer_init(&retry_timer_, next_attempt_time, &retry_closure_);
+  retry_timer_handle_ = chand_->event_engine_->RunAfter(
+      next_attempt_timeout, [this] { OnRetryTimer(); });
 }
 
-void RetryFilter::CallData::OnRetryTimer(void* arg, grpc_error_handle error) {
-  auto* calld = static_cast<CallData*>(arg);
-  GRPC_CLOSURE_INIT(&calld->retry_closure_, OnRetryTimerLocked, calld, nullptr);
-  GRPC_CALL_COMBINER_START(calld->call_combiner_, &calld->retry_closure_, error,
+void RetryFilter::CallData::OnRetryTimer() {
+  GRPC_CLOSURE_INIT(&retry_closure_, OnRetryTimerLocked, this, nullptr);
+  GRPC_CALL_COMBINER_START(call_combiner_, &retry_closure_, absl::OkStatus(),
                            "retry timer fired");
 }
 
 void RetryFilter::CallData::OnRetryTimerLocked(void* arg,
                                                grpc_error_handle error) {
+  GPR_DEBUG_ASSERT(error.ok());
   auto* calld = static_cast<CallData*>(arg);
-  if (error.ok() && calld->retry_timer_pending_) {
-    calld->retry_timer_pending_ = false;
-    calld->CreateCallAttempt(/*is_transparent_retry=*/false);
-  } else {
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner_, "retry timer cancelled");
-  }
+  calld->retry_timer_handle_.reset();
+  calld->CreateCallAttempt(/*is_transparent_retry=*/false);
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }
 
