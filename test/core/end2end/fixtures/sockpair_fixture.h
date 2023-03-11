@@ -40,7 +40,7 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/end2end/end2end_tests.h"
 
-class SockpairFixture : public CoreTestFixture {
+class SockpairFixture : public grpc_core::CoreTestFixtureTestFixture {
  public:
   explicit SockpairFixture(const grpc_core::ChannelArgs& ep_args)
       : ep_(grpc_iomgr_create_endpoint_pair("fixture", ep_args.ToC().get())) {}
@@ -52,7 +52,7 @@ class SockpairFixture : public CoreTestFixture {
   virtual grpc_core::ChannelArgs MutateServerArgs(grpc_core::ChannelArgs args) {
     return args;
   }
-  grpc_server* MakeServer(const grpc_core::ChannelArgs& in_args) override {
+  grpc_server* MakeServer(const grpc_core::ChannelArgs& in_args) {
     auto args = MutateServerArgs(in_args);
     grpc_core::ExecCtx exec_ctx;
     grpc_transport* transport;
@@ -75,7 +75,7 @@ class SockpairFixture : public CoreTestFixture {
     }
     return server;
   }
-  grpc_channel* MakeClient(const grpc_core::ChannelArgs& in_args) override {
+  grpc_channel* MakeClient(const grpc_core::ChannelArgs& in_args) {
     grpc_core::ExecCtx exec_ctx;
     auto args = grpc_core::CoreConfiguration::Get()
                     .channel_args_preconditioning()
