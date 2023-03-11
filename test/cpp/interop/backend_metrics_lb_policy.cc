@@ -27,16 +27,16 @@ namespace testing {
 
 namespace {
 
-constexpr absl::string_view kMetricsTrackerArgument = "orca_metrics_tracker";
-
 using grpc_core::CoreConfiguration;
 using grpc_core::LoadBalancingPolicy;
 using grpc_core::MakeRefCounted;
 using grpc_core::OrphanablePtr;
 using grpc_core::RefCountedPtr;
+using xds::data::orca::v3::OrcaLoadReport;
 
 constexpr absl::string_view kBackendMetricsLbPolicyName =
     "test_backend_metrics_load_balancer";
+constexpr absl::string_view kMetricsTrackerArgument = "orca_metrics_tracker";
 
 absl::optional<xds::data::orca::v3::OrcaLoadReport>
 BackendMetricDataToOrcaLoadReport(
@@ -223,13 +223,13 @@ void LoadReportTracker::RecordPerRpcLoadReport(
       BackendMetricDataToOrcaLoadReport(backend_metric_data));
 }
 
-absl::StatusOr<absl::optional<OrcaLoadReport>>
-LoadReportTracker::GetFirstLoadReport() {
+absl::optional<LoadReportTracker::LoadReportEntry>
+LoadReportTracker::GetNextLoadReport() {
   absl::MutexLock lock(&per_rpc_load_reports_mu_);
   if (per_rpc_load_reports_.empty()) {
-    return absl::NotFoundError("No per-call load reports received");
+    return absl::nullopt;
   }
-  auto report = per_rpc_load_reports_.front();
+  auto report = std::move(per_rpc_load_reports_.front());
   per_rpc_load_reports_.pop_front();
   return report;
 }

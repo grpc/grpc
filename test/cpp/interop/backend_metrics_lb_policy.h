@@ -28,20 +28,21 @@
 
 namespace grpc {
 namespace testing {
-
-using xds::data::orca::v3::OrcaLoadReport;
-
 class LoadReportTracker {
  public:
+  // A load report, or nullopt if the call had no load report.
+  using LoadReportEntry = absl::optional<xds::data::orca::v3::OrcaLoadReport>;
+
   ChannelArguments GetChannelArguments();
   void ResetCollectedLoadReports();
   void RecordPerRpcLoadReport(
       const grpc_core::BackendMetricData* backend_metric_data);
-  absl::StatusOr<absl::optional<OrcaLoadReport>> GetFirstLoadReport();
+  // Returns the next load report, or nullopt if the queue is empty.
+  absl::optional<LoadReportEntry> GetNextLoadReport();
 
  private:
-  std::deque<absl::optional<OrcaLoadReport>> per_rpc_load_reports_
-      ABSL_GUARDED_BY(per_rpc_load_reports_mu_);
+  std::deque<absl::optional<xds::data::orca::v3::OrcaLoadReport>>
+      per_rpc_load_reports_ ABSL_GUARDED_BY(per_rpc_load_reports_mu_);
   absl::Mutex per_rpc_load_reports_mu_;
 };
 

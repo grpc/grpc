@@ -970,13 +970,12 @@ bool InteropClient::DoOrcaPerRpc() {
   if (!AssertStatusOk(status, context.debug_error_string())) {
     return false;
   }
-  auto report = load_report_tracker_.GetFirstLoadReport();
-  GPR_ASSERT(report.ok());
+  auto report = load_report_tracker_.GetNextLoadReport();
+  GPR_ASSERT(report.has_value());
   GPR_ASSERT(report->has_value());
   GPR_ASSERT(google::protobuf::util::MessageDifferencer::Equals(report->value(),
                                                                 *orca_report));
-  GPR_ASSERT(load_report_tracker_.GetFirstLoadReport().status().code() ==
-             absl::StatusCode::kNotFound);
+  GPR_ASSERT(!load_report_tracker_.GetNextLoadReport().has_value());
   gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
   return true;
 }

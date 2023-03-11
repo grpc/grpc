@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
           arguments.SetServiceConfigJSON(service_config_json);
         }
         return CreateChannelForTestCase(test_case, std::move(factories),
-                                        arguments);
+                                        std::move(arguments));
       };
 
   grpc::testing::InteropClient client(
