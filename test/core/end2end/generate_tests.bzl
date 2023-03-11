@@ -270,11 +270,11 @@ END2END_TESTS = {
 #    "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
     "payload": _test_options(exclude_1byte = True),
-#    # TODO(juanlishen): This is disabled for now because it depends on some generated functions in
-#    # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
-#    # OpenCensus can only be built via Bazel so far.
-#    # 'load_reporting_hook': _test_options(),
-#    "ping_pong_streaming": _test_options(tags = ["flow_control_test"]),
+    # TODO(juanlishen): This is disabled for now because it depends on some generated functions in
+    # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
+    # OpenCensus can only be built via Bazel so far.
+    # 'load_reporting_hook': _test_options(),
+    "ping_pong_streaming": _test_options(tags = ["flow_control_test"]),
 #    "ping": _test_options(needs_fullstack = True, proxyable = False),
 #    "proxy_auth": _test_options(needs_proxy_auth = True),
 #    "registered_call": _test_options(),
