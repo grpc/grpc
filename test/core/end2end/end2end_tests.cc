@@ -51,7 +51,7 @@ ByteBufferUniquePtr ByteBufferFromSlice(Slice slice) {
 }
 
 void CoreEnd2endTest::SetUp() {
-  fixture_ = GetParam().create_fixture(ChannelArgs(), ChannelArgs());
+  fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
   fixture_->InitServer(ChannelArgs());
   fixture_->InitClient(ChannelArgs());
   cq_verifier_ = absl::make_unique<CqVerifier>(fixture_->cq());

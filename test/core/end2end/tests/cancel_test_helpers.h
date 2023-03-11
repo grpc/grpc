@@ -22,22 +22,27 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-typedef struct {
-  const char* name;
-  grpc_call_error (*initiate_cancel)(grpc_call* call, void* reserved);
-  grpc_status_code expect_status;
-  const char* expect_details;
-} cancellation_mode;
-
-static grpc_call_error wait_for_deadline(grpc_call* /*call*/, void* reserved) {
-  (void)reserved;
-  return GRPC_CALL_OK;
-}
-
-static const cancellation_mode cancellation_modes[] = {
-    {"cancel", grpc_call_cancel, GRPC_STATUS_CANCELLED, "CANCELLED"},
-    {"deadline", wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED,
-     "Deadline Exceeded"},
+namespace grpc_core {
+class CancellationMode {
+ public:
+  virtual void Apply(grpc_call* call) = 0;
+  virtual grpc_status_code ExpectedStatus() = 0;
+  virtual ~CancellationMode() = default;
 };
+
+class CancelCancellationMode : public CancellationMode {
+ public:
+  void Apply(grpc_call* call) override { grpc_call_cancel(call, nullptr); }
+  grpc_status_code ExpectedStatus() override { return GRPC_STATUS_CANCELLED; }
+};
+
+class DeadlineCancellationMode : public CancellationMode {
+ public:
+  void Apply(grpc_call* call) override {}
+  grpc_status_code ExpectedStatus() override {
+    return GRPC_STATUS_DEADLINE_EXCEEDED;
+  }
+};
+}  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H

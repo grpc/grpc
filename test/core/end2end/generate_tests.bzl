@@ -221,7 +221,7 @@ END2END_TESTS = {
     #        needs_dns = True,
     #        needs_names = True,
     #    ),
-    #    "cancel_after_accept": _test_options(),
+        "cancel_after_accept": _test_options(),
     #    "cancel_after_client_done": _test_options(),
     #    "cancel_after_invoke": _test_options(),
     #    "cancel_after_round_trip": _test_options(),
@@ -439,7 +439,6 @@ def grpc_end2end_tests():
         srcs = ["end2end_tests.cc", "end2end_test_utils.cc"] +
                ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
         hdrs = [
-            "tests/cancel_test_helpers.h",
             "end2end_tests.h",
         ],
         language = "C++",

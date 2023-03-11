@@ -65,6 +65,7 @@
 #define FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER 64
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
 #define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
+#define FEATURE_MASK_IS_MINSTACK 4096
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -160,7 +161,8 @@ struct CoreTestConfiguration {
       create_fixture;
 };
 
-class CoreEnd2endTest : public ::testing::TestWithParam<CoreTestConfiguration> {
+class CoreEnd2endTest
+    : public ::testing::TestWithParam<const CoreTestConfiguration*> {
  public:
   void SetUp() override;
   void TearDown() override;
@@ -173,6 +175,10 @@ class CoreEnd2endTest : public ::testing::TestWithParam<CoreTestConfiguration> {
         : test_(test), method_(std::move(method)) {}
 
     ClientCallBuilder& Timeout(Duration timeout) {
+      if (timeout == Duration::Infinity()) {
+        deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);
+        return *this;
+      }
       deadline_ = grpc_timeout_milliseconds_to_deadline(timeout.millis());
       return *this;
     }
@@ -336,6 +342,7 @@ class CoreEnd2endTest : public ::testing::TestWithParam<CoreTestConfiguration> {
     BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, tag); }
 
     grpc_call** call_ptr() { return &call_; }
+    grpc_call* c_call() const { return call_; }
 
    private:
     grpc_call* call_;
@@ -384,10 +391,15 @@ class CoreEnd2endTest : public ::testing::TestWithParam<CoreTestConfiguration> {
   }
   void Step() { cq_verifier_->Verify(); }
 
+  void InitClient(const ChannelArgs& args) { fixture_->InitClient(args); }
+
  private:
   std::unique_ptr<CoreTestFixture> fixture_;
   std::unique_ptr<CqVerifier> cq_verifier_;
 };
+
+class CoreDeadlineTest : public CoreEnd2endTest {};
+class CoreClientChannelTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

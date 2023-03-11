@@ -13,7 +13,6 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load(":generate_tests.bzl", "grpc_end2end_tests")
 
 licenses(["notice"])
 
@@ -147,6 +146,36 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
+    name = "end2end_tests",
+    srcs = [
+        "end2end_test_main.cc",
+        "end2end_test_utils.cc",
+        "end2end_tests.cc",
+        "tests/no_op.cc",
+        "tests/cancel_after_accept.cc",
+        "tests/payload.cc",
+        "tests/ping_pong_streaming.cc",
+            "tests/cancel_test_helpers.h",
+    ],
+    external_deps = [
+        "absl/memory",
+        "absl/random",
+        "gtest",
+    ],
+    deps = [
+        "cq_verifier",
+        "fixture_support",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//src/core:channel_args",
+        "//src/core:no_destruct",
+        "//src/core:slice",
+        "//src/core:time",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "bad_server_response_test",
     srcs = ["bad_server_response_test.cc"],
     language = "C++",
@@ -271,8 +300,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
-
-grpc_end2end_tests()
 
 grpc_cc_test(
     name = "h2_ssl_cert_test",
