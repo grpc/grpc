@@ -155,6 +155,7 @@ grpc_cc_test(
         "tests/cancel_after_accept.cc",
         "tests/cancel_after_client_done.cc",
         "tests/cancel_after_invoke.cc",
+        "tests/cancel_before_invoke.cc",
         "tests/empty_batch.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
