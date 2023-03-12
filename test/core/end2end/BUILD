@@ -159,6 +159,7 @@ grpc_cc_test(
         "tests/cancel_in_a_vacuum.cc",
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
+        "tests/hpack_size.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
             "tests/cancel_test_helpers.h",
@@ -179,7 +180,7 @@ grpc_cc_test(
         "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
-    #shard_count = 30,
+    shard_count = 30,
 )
 
 grpc_cc_test(

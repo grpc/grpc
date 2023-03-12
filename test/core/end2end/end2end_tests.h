@@ -63,6 +63,8 @@
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE 8
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 16
 #define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 32
+#define FEATURE_MASK_IS_HTTP2 64
+#define FEATURE_MASK_ENABLES_TRACES 128
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
 #define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
 #define FEATURE_MASK_IS_MINSTACK 4096
@@ -407,22 +409,32 @@ class CoreEnd2endTest
     cq_verifier_->Verify();
   }
 
-  void InitClient(const ChannelArgs& args) { fixture_->InitClient(args); }
-  void InitServer(const ChannelArgs& args) { fixture_->InitServer(args); }
+  void InitClient(const ChannelArgs& args) {
+    initialized_ = true;
+    fixture_->InitClient(args);
+  }
+  void InitServer(const ChannelArgs& args) {
+    initialized_ = true;
+    fixture_->InitServer(args);
+  }
   void ShutdownServerAndNotify(int tag) {
     grpc_server_shutdown_and_notify(fixture_->server(), fixture_->cq(),
                                     CqVerifier::tag(tag));
   }
 
  private:
+  void ForceInitialized();
+
   std::unique_ptr<CoreTestFixture> fixture_;
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
+  bool initialized_ = false;
 };
 
 class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};
 class CoreDelayedConnectionTest : public CoreEnd2endTest {};
+class HpackSizeTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

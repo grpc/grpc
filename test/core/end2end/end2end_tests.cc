@@ -21,6 +21,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
+#include "end2end_tests.h"
 
 #include <grpc/byte_buffer_reader.h>
 
@@ -52,14 +53,14 @@ ByteBufferUniquePtr ByteBufferFromSlice(Slice slice) {
 
 void CoreEnd2endTest::SetUp() {
   fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
-  fixture_->InitServer(ChannelArgs());
-  fixture_->InitClient(ChannelArgs());
+  initialized_ = false;
   cq_verifier_ = absl::make_unique<CqVerifier>(fixture_->cq());
 }
 
 void CoreEnd2endTest::TearDown() {
   cq_verifier_.reset();
   fixture_.reset();
+  initialized_ = false;
 }
 
 grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
@@ -177,6 +178,7 @@ CoreEnd2endTest::BatchBuilder::~BatchBuilder() {
 CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
   absl::optional<Slice> host;
   if (host_.has_value()) host = Slice::FromCopiedString(*host_);
+  test_.ForceInitialized();
   return Call(grpc_channel_create_call(
       test_.fixture_->client(), parent_call_, propagation_mask_,
       test_.fixture_->cq(), Slice::FromCopiedString(method_).c_slice(),
@@ -185,10 +187,19 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
 
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
     : impl_(std::make_unique<Impl>()) {
+  test.ForceInitialized();
   grpc_server_request_call(test.fixture_->server(), impl_->call.call_ptr(),
                            &impl_->call_details, &impl_->request_metadata,
                            test.fixture_->cq(), test.fixture_->cq(),
                            CqVerifier::tag(tag));
+}
+
+void CoreEnd2endTest::ForceInitialized() {
+  if (!initialized_) {
+    initialized_ = true;
+    fixture_->InitServer(ChannelArgs());
+    fixture_->InitClient(ChannelArgs());
+  }
 }
 
 }  // namespace grpc_core

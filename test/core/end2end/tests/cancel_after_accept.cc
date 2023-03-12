@@ -87,6 +87,7 @@ TEST_P(CoreDeadlineTest, DeadlineAfterAccept) {
 }
 
 TEST_P(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
+  InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
