@@ -32,7 +32,7 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-#elif defined(GPR_APPLE)
+#elif defined(GRPC_CFSTREAM)
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 
 namespace grpc_event_engine {
