@@ -162,6 +162,7 @@ grpc_cc_test(
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
         "tests/hpack_size.cc",
+        "tests/negative_deadline.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
         "tests/trailing_metadata.cc",
