@@ -63,7 +63,6 @@
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE 8
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 16
 #define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 32
-#define FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER 64
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
 #define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
 #define FEATURE_MASK_IS_MINSTACK 4096
@@ -175,6 +174,10 @@ class CoreEnd2endTest
     ClientCallBuilder(CoreEnd2endTest& test, std::string method)
         : test_(test), method_(std::move(method)) {}
 
+    ClientCallBuilder& Host(std::string host) {
+      host_ = std::move(host);
+      return *this;
+    }
     ClientCallBuilder& Timeout(Duration timeout) {
       if (timeout == Duration::Infinity()) {
         deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);

@@ -23,11 +23,7 @@
 
 const char* get_host_override_string(
     const char* str, const grpc_core::CoreTestConfiguration& config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    return str;
-  } else {
-    return nullptr;
-  }
+  return str;
 }
 
 const grpc_slice* get_host_override_slice(
@@ -44,7 +40,5 @@ const grpc_slice* get_host_override_slice(
 void validate_host_override_string(
     const char* pattern, grpc_slice str,
     const grpc_core::CoreTestConfiguration& config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
-  }
+  GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
 }

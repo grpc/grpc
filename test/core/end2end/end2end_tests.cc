@@ -109,7 +109,7 @@ grpc_op CoreEnd2endTest::IncomingCloseOnServer::MakeOp() {
 CoreEnd2endTest::BatchBuilder&
 CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>> md) {
-  auto v = Make<std::vector<grpc_metadata>>();
+  auto& v = Make<std::vector<grpc_metadata>>();
   for (const auto& p : md) {
     grpc_metadata m;
     m.key = Make<Slice>(Slice::FromCopiedString(p.first)).c_slice();

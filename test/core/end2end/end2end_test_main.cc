@@ -167,15 +167,14 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{
     std::vector<CoreTestConfiguration>{
 #ifdef GRPC_POSIX_SOCKET
         CoreTestConfiguration{
-            "Chttp2Fd", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
+            "Chttp2Fd", 0, nullptr,
             [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
               return std::make_unique<FdFixture>();
             }},
 #endif
         CoreTestConfiguration{"Chttp2Fullstack",
                               FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-                                  FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                  FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+                                  FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
                               nullptr,
                               [](const ChannelArgs& /*client_args*/,
                                  const ChannelArgs& /*server_args*/) {
@@ -184,30 +183,27 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{
         CoreTestConfiguration{
             "Chttp2FullstackCompression",
             FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
             nullptr,
             [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
               return std::make_unique<CompressionFixture>();
             }},
         CoreTestConfiguration{"Chttp2FullstackNoRetry",
                               FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-                                  FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                  FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+                                  FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
                               nullptr,
                               [](const ChannelArgs& /*client_args*/,
                                  const ChannelArgs& /*server_args*/) {
                                 return std::make_unique<NoRetryFixture>();
                               }},
         CoreTestConfiguration{
-            "Chttp2SocketPair", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
+            "Chttp2SocketPair", 0, nullptr,
             [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
               return std::make_unique<SockpairFixture>(
                   grpc_core::ChannelArgs());
             }},
         CoreTestConfiguration{
-            "Chttp2SocketPair1ByteAtATime",
-            FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
+            "Chttp2SocketPair1ByteAtATime", 0, nullptr,
             [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
               return std::make_unique<SockpairFixture>(
                   grpc_core::ChannelArgs()
@@ -217,9 +213,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{
             }},
         CoreTestConfiguration{
             "Chttp2SocketPairMinstack",
-            FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
-                FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES |
-                FEATURE_MASK_IS_MINSTACK,
+            FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES | FEATURE_MASK_IS_MINSTACK,
             nullptr,
             [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
               return std::make_unique<SockpairWithMinstackFixture>(
