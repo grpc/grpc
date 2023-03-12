@@ -152,6 +152,7 @@ grpc_cc_test(
         "end2end_test_utils.cc",
         "end2end_tests.cc",
         "tests/no_op.cc",
+        "tests/binary_metadata.cc",
         "tests/cancel_after_accept.cc",
         "tests/cancel_after_client_done.cc",
         "tests/cancel_after_invoke.cc",

@@ -142,6 +142,7 @@ class CoreTestFixture {
 };
 
 Slice RandomSlice(size_t length);
+Slice RandomBinarySlice(size_t length);
 using ByteBufferUniquePtr =
     std::unique_ptr<grpc_byte_buffer, void (*)(grpc_byte_buffer*)>;
 ByteBufferUniquePtr ByteBufferFromSlice(Slice slice);
@@ -206,6 +207,8 @@ class CoreEnd2endTest
     IncomingMetadata& operator=(const IncomingMetadata&) = delete;
     ~IncomingMetadata() { grpc_metadata_array_destroy(&metadata_); }
 
+    absl::optional<absl::string_view> Get(absl::string_view key) const;
+
     grpc_op MakeOp();
 
    private:
@@ -243,6 +246,8 @@ class CoreEnd2endTest
     absl::string_view message() const {
       return status_details_.as_string_view();
     }
+    absl::optional<absl::string_view> GetTrailingMetadata(
+        absl::string_view key) const;
 
     grpc_op MakeOp();
 
@@ -370,6 +375,9 @@ class CoreEnd2endTest
     absl::string_view method() const {
       return StringViewFromSlice(impl_->call_details.method);
     }
+
+    absl::optional<absl::string_view> GetInitialMetadata(
+        absl::string_view key) const;
 
    private:
     struct Impl {

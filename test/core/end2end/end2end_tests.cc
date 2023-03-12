@@ -24,15 +24,12 @@
 #include "end2end_tests.h"
 
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
 
 namespace grpc_core {
-
-namespace {
-NoDestruct<absl::InsecureBitGen> g_bitgen;
-}  // namespace
 
 Slice RandomSlice(size_t length) {
   size_t i;
@@ -45,11 +42,33 @@ Slice RandomSlice(size_t length) {
   return Slice::FromCopiedBuffer(output);
 }
 
+Slice RandomBinarySlice(size_t length) {
+  size_t i;
+  std::vector<uint8_t> output;
+  output.reserve(length);
+  for (i = 0; i < length; ++i) {
+    output[i] = rand();
+  }
+  return Slice::FromCopiedBuffer(output);
+}
+
 ByteBufferUniquePtr ByteBufferFromSlice(Slice slice) {
   return ByteBufferUniquePtr(
       grpc_raw_byte_buffer_create(const_cast<grpc_slice*>(&slice.c_slice()), 1),
       grpc_byte_buffer_destroy);
 }
+
+namespace {
+absl::optional<absl::string_view> FindInMetadataArray(
+    const grpc_metadata_array& md, absl::string_view key) {
+  for (size_t i = 0; i < md.count; i++) {
+    if (key == StringViewFromSlice(md.metadata[i].key)) {
+      return StringViewFromSlice(md.metadata[i].value);
+    }
+  }
+  return absl::nullopt;
+}
+}  // namespace
 
 void CoreEnd2endTest::SetUp() {
   fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
@@ -61,6 +80,11 @@ void CoreEnd2endTest::TearDown() {
   cq_verifier_.reset();
   fixture_.reset();
   initialized_ = false;
+}
+
+absl::optional<absl::string_view> CoreEnd2endTest::IncomingMetadata::Get(
+    absl::string_view key) const {
+  return FindInMetadataArray(metadata_, key);
 }
 
 grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
@@ -85,6 +109,12 @@ grpc_op CoreEnd2endTest::IncomingMessage::MakeOp() {
   op.op = GRPC_OP_RECV_MESSAGE;
   op.data.recv_message.recv_message = &payload_;
   return op;
+}
+
+absl::optional<absl::string_view>
+CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
+    absl::string_view key) const {
+  return FindInMetadataArray(trailing_metadata_, key);
 }
 
 grpc_op CoreEnd2endTest::IncomingStatusOnClient::MakeOp() {
@@ -150,7 +180,7 @@ CoreEnd2endTest::BatchBuilder&
 CoreEnd2endTest::BatchBuilder::SendStatusFromServer(
     grpc_status_code status, absl::string_view message,
     std::initializer_list<std::pair<absl::string_view, absl::string_view>> md) {
-  auto v = Make<std::vector<grpc_metadata>>();
+  auto& v = Make<std::vector<grpc_metadata>>();
   for (const auto& p : md) {
     grpc_metadata m;
     m.key = Make<Slice>(Slice::FromCopiedString(p.first)).c_slice();
@@ -192,6 +222,11 @@ CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
                            &impl_->call_details, &impl_->request_metadata,
                            test.fixture_->cq(), test.fixture_->cq(),
                            CqVerifier::tag(tag));
+}
+
+absl::optional<absl::string_view>
+CoreEnd2endTest::IncomingCall::GetInitialMetadata(absl::string_view key) const {
+  return FindInMetadataArray(impl_->request_metadata, key);
 }
 
 void CoreEnd2endTest::ForceInitialized() {
