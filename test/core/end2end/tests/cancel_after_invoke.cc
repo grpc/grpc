@@ -58,7 +58,7 @@ void CancelAfterInvoke6(CoreEnd2endTest& test,
       .SendMessage(RandomSlice(1024))
       .SendCloseFromClient()
       .RecvMessage(server_message);
-  mode->Apply(c.c_call());
+  mode->Apply(c);
   test.Expect(1, true);
   test.Step();
   EXPECT_THAT(server_status.status(),
@@ -78,7 +78,7 @@ void CancelAfterInvoke5(CoreEnd2endTest& test,
       .SendInitialMetadata({})
       .SendMessage(RandomSlice(1024))
       .SendCloseFromClient();
-  mode->Apply(c.c_call());
+  mode->Apply(c);
   test.Expect(1, true);
   test.Step();
   EXPECT_THAT(server_status.status(),
@@ -97,7 +97,7 @@ void CancelAfterInvoke4(CoreEnd2endTest& test,
       .RecvInitialMetadata(server_initial_metadata)
       .SendInitialMetadata({})
       .SendMessage(RandomSlice(1024));
-  mode->Apply(c.c_call());
+  mode->Apply(c);
   test.Expect(1, true);
   test.Step();
   EXPECT_THAT(server_status.status(),
@@ -115,7 +115,7 @@ void CancelAfterInvoke3(CoreEnd2endTest& test,
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata)
       .SendInitialMetadata({});
-  mode->Apply(c.c_call());
+  mode->Apply(c);
   test.Expect(1, true);
   test.Step();
   EXPECT_THAT(server_status.status(),

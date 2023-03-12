@@ -40,7 +40,7 @@ namespace grpc_core {
 
 TEST_P(CoreEnd2endTest, CancelBeforeInvoke6) {
   auto c = NewClientCall("/service/method").Create();
-  grpc_call_cancel(c.c_call(), nullptr);
+  c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingMessage server_message;
@@ -58,7 +58,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke6) {
 
 TEST_P(CoreEnd2endTest, CancelBeforeInvoke5) {
   auto c = NewClientCall("/service/method").Create();
-  grpc_call_cancel(c.c_call(), nullptr);
+  c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -74,7 +74,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke5) {
 
 TEST_P(CoreEnd2endTest, CancelBeforeInvoke4) {
   auto c = NewClientCall("/service/method").Create();
-  grpc_call_cancel(c.c_call(), nullptr);
+  c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
@@ -88,7 +88,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke4) {
 
 TEST_P(CoreEnd2endTest, CancelBeforeInvoke3) {
   auto c = NewClientCall("/service/method").Create();
-  grpc_call_cancel(c.c_call(), nullptr);
+  c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
@@ -101,7 +101,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke3) {
 
 TEST_P(CoreEnd2endTest, CancelBeforeInvoke2) {
   auto c = NewClientCall("/service/method").Create();
-  grpc_call_cancel(c.c_call(), nullptr);
+  c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status).SendInitialMetadata({});
   Expect(1, AnyStatus());
@@ -111,7 +111,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke2) {
 
 TEST_P(CoreEnd2endTest, CancelBeforeInvoke1) {
   auto c = NewClientCall("/service/method").Create();
-  grpc_call_cancel(c.c_call(), nullptr);
+  c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status);
   Expect(1, AnyStatus());

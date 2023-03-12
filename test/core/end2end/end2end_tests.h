@@ -32,6 +32,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "cq_verifier.h"
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
@@ -342,6 +343,7 @@ class CoreEnd2endTest
     Call(Call&& other) noexcept : call_(std::exchange(other.call_, nullptr)) {}
     ~Call() { grpc_call_unref(call_); }
     BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, tag); }
+    void Cancel() { grpc_call_cancel(call_, nullptr); }
 
     grpc_call** call_ptr() { return &call_; }
     grpc_call* c_call() const { return call_; }
@@ -358,6 +360,7 @@ class CoreEnd2endTest
     IncomingCall(IncomingCall&&) noexcept = default;
 
     BatchBuilder NewBatch(int tag) { return impl_->call.NewBatch(tag); }
+    void Cancel() { impl_->call.Cancel(); }
 
     absl::string_view method() const {
       return StringViewFromSlice(impl_->call_details.method);
@@ -389,19 +392,34 @@ class CoreEnd2endTest
   using Maybe = CqVerifier::Maybe;
   using AnyStatus = CqVerifier::AnyStatus;
   void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
+    expectations_++;
     cq_verifier_->Expect(CqVerifier::tag(tag), result, whence);
   }
-  void Step() { cq_verifier_->Verify(); }
+  void Step() {
+    if (expectations_ == 0) {
+      cq_verifier_->VerifyEmpty();
+      return;
+    }
+    expectations_ = 0;
+    cq_verifier_->Verify();
+  }
 
   void InitClient(const ChannelArgs& args) { fixture_->InitClient(args); }
+  void InitServer(const ChannelArgs& args) { fixture_->InitServer(args); }
+  void ShutdownServerAndNotify(int tag) {
+    grpc_server_shutdown_and_notify(fixture_->server(), fixture_->cq(),
+                                    CqVerifier::tag(tag));
+  }
 
  private:
   std::unique_ptr<CoreTestFixture> fixture_;
   std::unique_ptr<CqVerifier> cq_verifier_;
+  int expectations_ = 0;
 };
 
-class CoreDeadlineTest : public CoreEnd2endTest {};
 class CoreClientChannelTest : public CoreEnd2endTest {};
+class CoreDeadlineTest : public CoreEnd2endTest {};
+class CoreDelayedConnectionTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

@@ -68,7 +68,7 @@ void CancelAfterClientDone(
       .SendInitialMetadata({})
       .SendMessage(RandomSlice(1024))
       .RecvCloseOnServer(client_close);
-  cancellation_mode->Apply(c.c_call());
+  cancellation_mode->Apply(c);
   test.Expect(1, true);
   test.Expect(3, true);
   test.Step();

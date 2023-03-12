@@ -22,23 +22,25 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
+#include "test/core/end2end/end2end_tests.h"
+
 namespace grpc_core {
 class CancellationMode {
  public:
-  virtual void Apply(grpc_call* call) = 0;
+  virtual void Apply(CoreEnd2endTest::Call& call) = 0;
   virtual grpc_status_code ExpectedStatus() = 0;
   virtual ~CancellationMode() = default;
 };
 
 class CancelCancellationMode : public CancellationMode {
  public:
-  void Apply(grpc_call* call) override { grpc_call_cancel(call, nullptr); }
+  void Apply(CoreEnd2endTest::Call& call) override { call.Cancel(); }
   grpc_status_code ExpectedStatus() override { return GRPC_STATUS_CANCELLED; }
 };
 
 class DeadlineCancellationMode : public CancellationMode {
  public:
-  void Apply(grpc_call* call) override {}
+  void Apply(CoreEnd2endTest::Call&) override {}
   grpc_status_code ExpectedStatus() override {
     return GRPC_STATUS_DEADLINE_EXCEEDED;
   }
