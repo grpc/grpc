@@ -156,6 +156,7 @@ grpc_cc_test(
         "tests/cancel_after_accept.cc",
         "tests/cancel_after_client_done.cc",
         "tests/cancel_after_invoke.cc",
+        "tests/cancel_after_round_trip.cc",
         "tests/cancel_before_invoke.cc",
         "tests/cancel_in_a_vacuum.cc",
         "tests/disappearing_server.cc",

@@ -26,6 +26,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
 
@@ -71,6 +72,7 @@ absl::optional<absl::string_view> FindInMetadataArray(
 }  // namespace
 
 void CoreEnd2endTest::SetUp() {
+  CoreConfiguration::Reset();
   fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
   initialized_ = false;
   cq_verifier_ = absl::make_unique<CqVerifier>(fixture_->cq());
