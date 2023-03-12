@@ -154,6 +154,8 @@ grpc_cc_test(
         "tests/no_op.cc",
         "tests/cancel_after_accept.cc",
         "tests/cancel_after_client_done.cc",
+        "tests/cancel_after_invoke.cc",
+        "tests/empty_batch.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
             "tests/cancel_test_helpers.h",
@@ -174,6 +176,7 @@ grpc_cc_test(
         "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
+    shard_count = 30,
 )
 
 grpc_cc_test(

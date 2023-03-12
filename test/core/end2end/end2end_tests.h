@@ -190,7 +190,7 @@ class CoreEnd2endTest
     absl::optional<std::string> host_;
     grpc_call* parent_call_ = nullptr;
     uint32_t propagation_mask_ = GRPC_PROPAGATE_DEFAULTS;
-    gpr_timespec deadline_;
+    gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);
   };
 
   class IncomingMetadata {
@@ -211,14 +211,16 @@ class CoreEnd2endTest
     IncomingMessage() = default;
     IncomingMessage(const IncomingMessage&) = delete;
     IncomingMessage& operator=(const IncomingMessage&) = delete;
-    ~IncomingMessage() { grpc_byte_buffer_destroy(payload_); }
+    ~IncomingMessage() {
+      if (payload_ != nullptr) grpc_byte_buffer_destroy(payload_);
+    }
 
     Slice payload() const;
 
     grpc_op MakeOp();
 
    private:
-    grpc_byte_buffer* payload_;
+    grpc_byte_buffer* payload_ = nullptr;
   };
 
   class IncomingStatusOnClient {
