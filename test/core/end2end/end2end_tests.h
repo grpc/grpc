@@ -65,6 +65,7 @@
 #define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 32
 #define FEATURE_MASK_IS_HTTP2 64
 #define FEATURE_MASK_ENABLES_TRACES 128
+#define FEATURE_MASK_1BYTE_AT_A_TIME 256
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
 #define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
 #define FEATURE_MASK_IS_MINSTACK 4096
@@ -286,6 +287,9 @@ class CoreEnd2endTest
             md);
 
     BatchBuilder& SendMessage(Slice payload);
+    BatchBuilder& SendMessage(absl::string_view payload) {
+      return SendMessage(Slice::FromCopiedString(payload));
+    }
 
     BatchBuilder& SendCloseFromClient();
 
@@ -439,6 +443,7 @@ class CoreEnd2endTest
   bool initialized_ = false;
 };
 
+class CoreLargeSendTest : public CoreEnd2endTest {};
 class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};
 class CoreDelayedConnectionTest : public CoreEnd2endTest {};

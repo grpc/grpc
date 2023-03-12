@@ -164,6 +164,7 @@ grpc_cc_test(
         "tests/hpack_size.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
+        "tests/trailing_metadata.cc",
             "tests/cancel_test_helpers.h",
     ],
     external_deps = [

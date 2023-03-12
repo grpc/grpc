@@ -239,6 +239,11 @@ INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest,
                          ::testing::ValuesIn(QueryConfigs(0, 0)),
                          NameFromConfig);
 
+INSTANTIATE_TEST_SUITE_P(
+    CoreLargeSendTests, CoreLargeSendTest,
+    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_1BYTE_AT_A_TIME)),
+    NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(CoreDeadlineTests, CoreDeadlineTest,
                          ::testing::ValuesIn(QueryConfigs(
                              0, FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES)),
