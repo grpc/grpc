@@ -170,6 +170,7 @@ grpc_cc_test(
         "tests/ping_pong_streaming.cc",
         "tests/retry_unref_before_recv.cc",
         "tests/retry.cc",
+        "tests/server_finishes_request.cc",
         "tests/server_streaming.cc",
         "tests/shutdown_finishes_calls.cc",
         "tests/shutdown_finishes_tags.cc",
