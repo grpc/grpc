@@ -159,12 +159,13 @@ CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
 }
 
 CoreEnd2endTest::BatchBuilder& CoreEnd2endTest::BatchBuilder::SendMessage(
-    Slice payload) {
+    Slice payload, uint32_t flags) {
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message =
       Make<ByteBufferUniquePtr>(ByteBufferFromSlice(std::move(payload))).get();
+  op.flags = flags;
   ops_.push_back(op);
   return *this;
 }

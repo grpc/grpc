@@ -66,6 +66,7 @@
 #define FEATURE_MASK_IS_HTTP2 64
 #define FEATURE_MASK_ENABLES_TRACES 128
 #define FEATURE_MASK_1BYTE_AT_A_TIME 256
+#define FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING 512
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
 #define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
 
@@ -285,9 +286,9 @@ class CoreEnd2endTest
         std::initializer_list<std::pair<absl::string_view, absl::string_view>>
             md);
 
-    BatchBuilder& SendMessage(Slice payload);
-    BatchBuilder& SendMessage(absl::string_view payload) {
-      return SendMessage(Slice::FromCopiedString(payload));
+    BatchBuilder& SendMessage(Slice payload, uint32_t flags = 0);
+    BatchBuilder& SendMessage(absl::string_view payload, uint32_t flags = 0) {
+      return SendMessage(Slice::FromCopiedString(payload), flags);
     }
 
     BatchBuilder& SendCloseFromClient();
@@ -456,6 +457,7 @@ class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};
 class HpackSizeTest : public CoreEnd2endTest {};
 class RetryTest : public CoreEnd2endTest {};
+class WriteBufferingTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

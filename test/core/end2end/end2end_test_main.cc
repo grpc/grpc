@@ -530,8 +530,8 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               grpc_core::ChannelArgs());
         }},
     CoreTestConfiguration{
-        "inproc",
-        0,
+        "Inproc",
+        FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
         nullptr,
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<InprocFixture>();
@@ -581,6 +581,11 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
                                      FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)),
     NameFromConfig);
+
+INSTANTIATE_TEST_SUITE_P(WriteBufferingTests, WriteBufferingTest,
+                         ::testing::ValuesIn(QueryConfigs(
+                             0, FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)),
+                         NameFromConfig);
 
 }  // namespace grpc_core
 

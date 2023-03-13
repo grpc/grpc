@@ -170,13 +170,14 @@ grpc_cc_test(
         "tests/ping_pong_streaming.cc",
         "tests/retry.cc",
         "tests/trailing_metadata.cc",
+        "tests/write_buffering.cc",
     ],
     external_deps = [
         "absl/memory",
         "absl/random",
         "gtest",
     ],
-    shard_count = 30,
+    #shard_count = 30,
     deps = [
         "cq_verifier",
         "fixture_support",
