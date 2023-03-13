@@ -194,16 +194,13 @@ genrule(
     name = "messages_gen_proto_file",
     srcs = ["messages.proto"],
     outs = ["messages_gen.proto"],
-    cmd = "sed 's|orca_load_report.proto|orca_load_report_gen.proto|' $< > $@",
+    cmd = "sed '/orca_/d' $< > $@",
 )
 
 grpc_proto_library(
     name = "messages_gen_proto",
     srcs = ["messages_gen_proto_file"],
     has_services = False,
-    deps = [
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_gen_proto",
-    ],
 )
 
 genrule(

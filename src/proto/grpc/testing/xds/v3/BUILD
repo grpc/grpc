@@ -494,17 +494,3 @@ py_proto_library(
     name = "percent_py_pb2",
     deps = [":_percent_proto_only"],
 )
-
-# Test that grpc_proto_library/cc_grpc_library can consume generated files
-genrule(
-    name = "orca_load_report_gen_proto_file",
-    srcs = ["orca_load_report.proto"],
-    outs = ["orca_load_report_gen.proto"],
-    cmd = "cp $< $@",
-)
-
-grpc_proto_library(
-    name = "orca_load_report_gen_proto",
-    srcs = ["orca_load_report_gen_proto_file"],
-    has_services = False,
-)
