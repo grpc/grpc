@@ -123,6 +123,7 @@ grpc_cc_library(
     deps = [
         "cq_verifier",
         "http_proxy",
+        "proxy",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",

@@ -28,7 +28,9 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_oauth2_common.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
+#include "test/core/end2end/fixtures/inproc_fixture.h"
 #include "test/core/end2end/fixtures/local_util.h"
+#include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
 #include "test/core/util/test_config.h"
@@ -291,6 +293,58 @@ class HttpProxyFilter : public grpc_core::CoreTestFixture {
   grpc_end2end_http_proxy* proxy_;
 };
 
+class ProxyFixture : public grpc_core::CoreTestFixture {
+ public:
+  ProxyFixture(const grpc_core::ChannelArgs& client_args,
+               const grpc_core::ChannelArgs& server_args)
+      : proxy_(grpc_end2end_proxy_create(&proxy_def_, client_args.ToC().get(),
+                                         server_args.ToC().get())) {}
+  ~ProxyFixture() override { grpc_end2end_proxy_destroy(proxy_); }
+
+ private:
+  static grpc_server* CreateProxyServer(const char* port,
+                                        const grpc_channel_args* server_args) {
+    grpc_server* s = grpc_server_create(server_args, nullptr);
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(grpc_server_add_http2_port(s, port, server_creds));
+    grpc_server_credentials_release(server_creds);
+    return s;
+  }
+
+  static grpc_channel* CreateProxyClient(const char* target,
+                                         const grpc_channel_args* client_args) {
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    grpc_channel* channel = grpc_channel_create(target, creds, client_args);
+    grpc_channel_credentials_release(creds);
+    return channel;
+  }
+
+  grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
+    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(grpc_server_add_http2_port(
+        server, grpc_end2end_proxy_get_server_port(proxy_), server_creds));
+    grpc_server_credentials_release(server_creds);
+    grpc_server_start(server);
+    return server;
+  }
+
+  grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) override {
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    auto* client = grpc_channel_create(
+        grpc_end2end_proxy_get_client_target(proxy_), creds, args.ToC().get());
+    grpc_channel_credentials_release(creds);
+    GPR_ASSERT(client);
+    return client;
+  }
+  const grpc_end2end_proxy_def proxy_def_ = {CreateProxyServer,
+                                             CreateProxyClient};
+  grpc_end2end_proxy* proxy_;
+};
+
 const char* NameFromConfig(
     const ::testing::TestParamInfo<const CoreTestConfiguration*>& config) {
   return config.param->name;
@@ -409,6 +463,15 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
           return std::make_unique<CensusFixture>();
         }},
     CoreTestConfiguration{
+        "Chttp2FullstackWithProxy",
+        FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+        nullptr,
+        [](const grpc_core::ChannelArgs& client_args,
+           const grpc_core::ChannelArgs& server_args) {
+          return std::make_unique<ProxyFixture>(client_args, server_args);
+        }},
+    CoreTestConfiguration{
         "Chttp2HttpProxy",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
         [](const grpc_core::ChannelArgs& client_args,
@@ -462,7 +525,15 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<SockpairWithMinstackFixture>(
               grpc_core::ChannelArgs());
-        }}}};  // namespace grpc_core
+        }},
+    CoreTestConfiguration{
+        "inproc",
+        0,
+        nullptr,
+        [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+          return std::make_unique<InprocFixture>();
+        },
+    }}};  // namespace grpc_core
 
 std::vector<const CoreTestConfiguration*> QueryConfigs(uint32_t enforce_flags,
                                                        uint32_t exclude_flags) {
