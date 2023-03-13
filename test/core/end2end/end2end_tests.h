@@ -428,13 +428,13 @@ class CoreEnd2endTest
     expectations_++;
     cq_verifier().Expect(CqVerifier::tag(tag), result, whence);
   }
-  void Step() {
+  void Step(SourceLocation whence = {}) {
     if (expectations_ == 0) {
-      cq_verifier().VerifyEmpty();
+      cq_verifier().VerifyEmpty(Duration::Seconds(1), whence);
       return;
     }
     expectations_ = 0;
-    cq_verifier().Verify();
+    cq_verifier().Verify(Duration::Seconds(10), whence);
   }
 
   void InitClient(const ChannelArgs& args) {
@@ -486,6 +486,7 @@ class HpackSizeTest : public CoreEnd2endTest {};
 class RetryTest : public CoreEnd2endTest {};
 class WriteBufferingTest : public CoreEnd2endTest {};
 class Http2Test : public CoreEnd2endTest {};
+class RetryHttp2Test : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

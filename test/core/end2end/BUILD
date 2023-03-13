@@ -168,6 +168,7 @@ grpc_cc_test(
         "tests/no_op.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
+        "tests/retry_transparent_max_concurrent_streams.cc",
         "tests/retry_transparent_not_sent_on_wire.cc",
         "tests/retry_unref_before_finish.cc",
         "tests/retry_unref_before_recv.cc",

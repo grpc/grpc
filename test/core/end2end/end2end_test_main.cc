@@ -592,6 +592,14 @@ INSTANTIATE_TEST_SUITE_P(Http2Tests, Http2Test,
                                                           0)),
                          NameFromConfig);
 
+INSTANTIATE_TEST_SUITE_P(RetryHttp2Tests, RetryHttp2Test,
+                         ::testing::ValuesIn(QueryConfigs(
+                             FEATURE_MASK_IS_HTTP2 |
+                                 FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
+                             FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                                 FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)),
+                         NameFromConfig);
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
