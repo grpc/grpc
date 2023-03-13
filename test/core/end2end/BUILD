@@ -168,6 +168,7 @@ grpc_cc_test(
         "tests/no_op.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
+        "tests/retry_unref_before_recv.cc",
         "tests/retry.cc",
         "tests/server_streaming.cc",
         "tests/shutdown_finishes_calls.cc",
