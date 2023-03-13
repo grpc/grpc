@@ -25,8 +25,6 @@
 #include <type_traits>
 #include <utility>
 
-#include <google/protobuf/util/message_differencer.h>
-
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 
@@ -98,6 +96,42 @@ void InitializeCustomLbPolicyIfNeeded() {
         });
     initialized = true;
   }
+}
+
+bool SameMaps(const std::string& path,
+              const google::protobuf::Map<std::string, double> expected,
+              const google::protobuf::Map<std::string, double> actual) {
+  if (expected.size() != actual.size()) {
+    gpr_log(GPR_ERROR, "Field %s does not match: expected %lu entries, got %lu",
+            path.c_str(), expected.size(), actual.size());
+    return false;
+  }
+  for (const auto& key_value : expected) {
+    auto it = actual.find(key_value.first);
+    if (it == actual.end()) {
+      gpr_log(GPR_ERROR, "In field %s, key %s was not found", path.c_str(),
+              key_value.first.c_str());
+      return false;
+    }
+    if (key_value.second != it->second) {
+      gpr_log(
+          GPR_ERROR, "In field %s, value %s mismatch: expected %f, actual: %f",
+          path.c_str(), key_value.first.c_str(), key_value.second, it->second);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool SameOrcaLoadReports(const xds::data::orca::v3::OrcaLoadReport& expected,
+                         const xds::data::orca::v3::OrcaLoadReport& actual) {
+  GPR_ASSERT(expected.cpu_utilization() == actual.cpu_utilization());
+  GPR_ASSERT(expected.mem_utilization() == actual.mem_utilization());
+  GPR_ASSERT(
+      SameMaps("request_cost", expected.request_cost(), actual.request_cost()));
+  GPR_ASSERT(
+      SameMaps("utilization", expected.utilization(), actual.utilization()));
+  return true;
 }
 }  // namespace
 
@@ -974,8 +1008,7 @@ bool InteropClient::DoOrcaPerRpc() {
   auto report = load_report_tracker_.GetNextLoadReport();
   GPR_ASSERT(report.has_value());
   GPR_ASSERT(report->has_value());
-  GPR_ASSERT(google::protobuf::util::MessageDifferencer::Equals(report->value(),
-                                                                *orca_report));
+  GPR_ASSERT(SameOrcaLoadReports(report->value(), *orca_report));
   GPR_ASSERT(!load_report_tracker_.GetNextLoadReport().has_value());
   gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
   return true;
