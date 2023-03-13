@@ -22,8 +22,11 @@
 #include <grpc/grpc_posix.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/end2end/fixtures/h2_oauth2_common.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
@@ -423,6 +426,22 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         },
     },
     CoreTestConfiguration{
+        "Chttp2SimpleSslWithOauth2FullstackTls12",
+        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+        "foo.test.google.fr",
+        [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+          return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_2);
+        }},
+    CoreTestConfiguration{
+        "Chttp2SimpleSslWithOauth2FullstackTls13",
+        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+        "foo.test.google.fr",
+        [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+          return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_3);
+        }},
+    CoreTestConfiguration{
         "Chttp2SocketPair", FEATURE_MASK_IS_HTTP2, nullptr,
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<SockpairFixture>(grpc_core::ChannelArgs());
@@ -488,6 +507,9 @@ INSTANTIATE_TEST_SUITE_P(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  // TODO(ctiller): make this per fixture?
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
+                        Oauth2Fixture::CaCertPath());
   grpc_init();
   int r = RUN_ALL_TESTS();
   grpc_shutdown();

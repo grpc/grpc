@@ -186,6 +186,11 @@ grpc_cc_test(
         "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
 )
 
 grpc_cc_test(
