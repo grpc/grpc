@@ -1086,7 +1086,6 @@ _BAZEL_DEPS_QUERIES = [
     'deps("//test/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
-    'deps("//src/proto/...")',
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
 ]
