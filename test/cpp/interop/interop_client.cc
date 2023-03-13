@@ -98,9 +98,8 @@ void InitializeCustomLbPolicyIfNeeded() {
   }
 }
 
-bool SameMaps(const std::string& path,
-              const google::protobuf::Map<std::string, double> expected,
-              const google::protobuf::Map<std::string, double> actual) {
+template <typename Map>
+bool SameMaps(const std::string& path, const Map& expected, const Map& actual) {
   if (expected.size() != actual.size()) {
     gpr_log(GPR_ERROR, "Field %s does not match: expected %lu entries, got %lu",
             path.c_str(), expected.size(), actual.size());
