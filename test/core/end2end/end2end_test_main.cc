@@ -587,6 +587,11 @@ INSTANTIATE_TEST_SUITE_P(WriteBufferingTests, WriteBufferingTest,
                              0, FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)),
                          NameFromConfig);
 
+INSTANTIATE_TEST_SUITE_P(Http2Tests, Http2Test,
+                         ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_IS_HTTP2,
+                                                          0)),
+                         NameFromConfig);
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

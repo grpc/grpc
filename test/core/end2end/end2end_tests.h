@@ -470,6 +470,7 @@ class CoreDeadlineTest : public CoreEnd2endTest {};
 class HpackSizeTest : public CoreEnd2endTest {};
 class RetryTest : public CoreEnd2endTest {};
 class WriteBufferingTest : public CoreEnd2endTest {};
+class Http2Test : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 
