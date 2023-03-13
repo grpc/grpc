@@ -248,6 +248,9 @@ class CoreEnd2endTest
     absl::string_view message() const {
       return status_details_.as_string_view();
     }
+    absl::string_view error_string() const {
+      return error_string_ == nullptr ? "" : error_string_;
+    }
     absl::optional<absl::string_view> GetTrailingMetadata(
         absl::string_view key) const;
 
