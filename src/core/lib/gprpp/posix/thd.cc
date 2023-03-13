@@ -36,6 +36,7 @@
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -176,7 +177,12 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
   }
 
   void Join() override {
-    GPR_ASSERT(pthread_join(pthread_id_, nullptr) == 0);
+    int pthread_join_err = pthread_join(pthread_id_, nullptr);
+    if (pthread_join_err != 0) {
+      gpr_log(GPR_ERROR, "pthread_join failed: %s",
+              StrError(pthread_join_err).c_str());
+      grpc_core::Crash();
+    }
   }
 
  private:
