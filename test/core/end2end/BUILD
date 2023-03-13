@@ -164,6 +164,7 @@ grpc_cc_test(
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
         "tests/hpack_size.cc",
+        "tests/filtered_metadata.cc",
         "tests/negative_deadline.cc",
         "tests/no_op.cc",
         "tests/payload.cc",
