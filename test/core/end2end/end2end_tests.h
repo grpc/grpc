@@ -447,6 +447,10 @@ class CoreEnd2endTest
     grpc_server_shutdown_and_notify(fixture_->server(), fixture_->cq(),
                                     CqVerifier::tag(tag));
   }
+  void DestroyServer() { fixture_->DestroyServer(); }
+  void CancelAllCallsOnServer() {
+    grpc_server_cancel_all_calls(fixture_->server());
+  }
 
  private:
   void ForceInitialized();
