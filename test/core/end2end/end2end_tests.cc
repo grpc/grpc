@@ -73,12 +73,11 @@ absl::optional<absl::string_view> FindInMetadataArray(
 
 void CoreEnd2endTest::SetUp() {
   CoreConfiguration::Reset();
-  fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
   initialized_ = false;
-  cq_verifier_ = absl::make_unique<CqVerifier>(fixture_->cq());
 }
 
 void CoreEnd2endTest::TearDown() {
+  if (fixture_ != nullptr) grpc_shutdown();
   cq_verifier_.reset();
   fixture_.reset();
   initialized_ = false;
@@ -215,17 +214,17 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
   if (host_.has_value()) host = Slice::FromCopiedString(*host_);
   test_.ForceInitialized();
   return Call(grpc_channel_create_call(
-      test_.fixture_->client(), parent_call_, propagation_mask_,
-      test_.fixture_->cq(), Slice::FromCopiedString(method_).c_slice(),
+      test_.fixture().client(), parent_call_, propagation_mask_,
+      test_.fixture().cq(), Slice::FromCopiedString(method_).c_slice(),
       host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
 }
 
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
     : impl_(std::make_unique<Impl>()) {
   test.ForceInitialized();
-  grpc_server_request_call(test.fixture_->server(), impl_->call.call_ptr(),
+  grpc_server_request_call(test.fixture().server(), impl_->call.call_ptr(),
                            &impl_->call_details, &impl_->request_metadata,
-                           test.fixture_->cq(), test.fixture_->cq(),
+                           test.fixture().cq(), test.fixture().cq(),
                            CqVerifier::tag(tag));
 }
 
@@ -237,8 +236,8 @@ CoreEnd2endTest::IncomingCall::GetInitialMetadata(absl::string_view key) const {
 void CoreEnd2endTest::ForceInitialized() {
   if (!initialized_) {
     initialized_ = true;
-    fixture_->InitServer(ChannelArgs());
-    fixture_->InitClient(ChannelArgs());
+    fixture().InitServer(ChannelArgs());
+    fixture().InitClient(ChannelArgs());
   }
 }
 

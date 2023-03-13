@@ -426,37 +426,52 @@ class CoreEnd2endTest
   using AnyStatus = CqVerifier::AnyStatus;
   void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
     expectations_++;
-    cq_verifier_->Expect(CqVerifier::tag(tag), result, whence);
+    cq_verifier().Expect(CqVerifier::tag(tag), result, whence);
   }
   void Step() {
     if (expectations_ == 0) {
-      cq_verifier_->VerifyEmpty();
+      cq_verifier().VerifyEmpty();
       return;
     }
     expectations_ = 0;
-    cq_verifier_->Verify();
+    cq_verifier().Verify();
   }
 
   void InitClient(const ChannelArgs& args) {
     initialized_ = true;
-    fixture_->InitClient(args);
+    fixture().InitClient(args);
   }
   void InitServer(const ChannelArgs& args) {
     initialized_ = true;
-    fixture_->InitServer(args);
+    fixture().InitServer(args);
   }
-  void ShutdownAndDestroyClient() { fixture_->ShutdownClient(); }
+  void ShutdownAndDestroyClient() { fixture().ShutdownClient(); }
   void ShutdownServerAndNotify(int tag) {
-    grpc_server_shutdown_and_notify(fixture_->server(), fixture_->cq(),
+    grpc_server_shutdown_and_notify(fixture().server(), fixture().cq(),
                                     CqVerifier::tag(tag));
   }
-  void DestroyServer() { fixture_->DestroyServer(); }
+  void DestroyServer() { fixture().DestroyServer(); }
   void CancelAllCallsOnServer() {
-    grpc_server_cancel_all_calls(fixture_->server());
+    grpc_server_cancel_all_calls(fixture().server());
   }
 
  private:
   void ForceInitialized();
+
+  CoreTestFixture& fixture() {
+    if (fixture_ == nullptr) {
+      grpc_init();
+      fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
+    }
+    return *fixture_;
+  }
+
+  CqVerifier& cq_verifier() {
+    if (cq_verifier_ == nullptr) {
+      cq_verifier_ = absl::make_unique<CqVerifier>(fixture().cq());
+    }
+    return *cq_verifier_;
+  }
 
   std::unique_ptr<CoreTestFixture> fixture_;
   std::unique_ptr<CqVerifier> cq_verifier_;

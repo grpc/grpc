@@ -600,8 +600,5 @@ int main(int argc, char** argv) {
   // TODO(ctiller): make this per fixture?
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
                         Oauth2Fixture::CaCertPath());
-  grpc_init();
-  int r = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return r;
+  return RUN_ALL_TESTS();
 }
