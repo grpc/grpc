@@ -25,9 +25,10 @@
 #include <type_traits>
 #include <utility>
 
+#include <google/protobuf/util/message_differencer.h>
+
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
-#include "google/protobuf/util/message_differencer.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
